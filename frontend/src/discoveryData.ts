@@ -1,0 +1,10 @@
+export type Dream={id:string,title:string,author:string,phase:string,category:string,summary:string,image:string,needs:string[],verse?:string};
+export const dreams:Dream[]=[
+ {id:'louange',title:'Jouer dans une équipe de louange',author:'Sarah',phase:'Initiation',category:'Musique',summary:"Apprendre à accompagner des chants à la guitare dans une équipe de louange.",image:'https://images.unsplash.com/photo-1510915361894-db8b60106cb1?w=850&q=80',needs:['Guitare','Tandem'],verse:'Psaume 150:6'},
+ {id:'jardin',title:'Un jardin pour accueillir',author:'Gustav',phase:'Rêve',category:'Inspiration',summary:'Créer un lieu chaleureux où se retrouver et partager.',image:'https://images.unsplash.com/photo-1490750967868-88aa4486c946?w=850&q=80',needs:['Jardinage','Entraide']},
+ {id:'chant',title:'Composer un chant ensemble',author:'David',phase:'En route',category:'Musique',summary:'Écrire et enregistrer un chant à plusieurs, du premier brouillon au partage.',image:'https://images.unsplash.com/photo-1516280440614-37939bbacd81?w=850&q=80',needs:['Chant','Composition'],verse:'Psaume 96:1'},
+ {id:'parole',title:'Partager une parole qui encourage',author:'Léa',phase:'Initiation',category:'Bible',summary:'Créer une petite collection de versets qui ont encouragé notre communauté.',image:'https://images.unsplash.com/photo-1507842217343-583bb7270b66?w=850&q=80',needs:['Illustration'],verse:'Psaume 150:6'},
+ {id:'atelier',title:'Apprendre le piano à deux',author:'Helena',phase:'En route',category:'Musique',summary:'Organiser des rencontres de piano en tandem, pour apprendre et s’encourager.',image:'https://images.unsplash.com/photo-1520523839897-bd0b52f945a0?w=850&q=80',needs:['Piano','Professeur']},
+ {id:'nature',title:'Trouver l’inspiration dans la création',author:'Noah',phase:'Rêve',category:'Images',summary:'Une promenade photo pour regarder la création avec émerveillement.',image:'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=850&q=80',needs:['Photographie']}
+];
+export const verseText="Que tout ce qui respire loue l’Éternel ! Louez l’Éternel !";
