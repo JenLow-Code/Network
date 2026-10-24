@@ -50,3 +50,20 @@ Dependencies and runtime have not been installed or tested on device in this env
 ### Verification
 
 Source commits were written to GitHub. Actual Cloudflare production deployment, device/browser rendering, runtime playback and TypeScript build have **not** been verified during this update. Inspect Cloudflare build logs and test before using outside a prototype.
+
+## Dreams, gallery and prayer prototype (October 25, 2026)
+
+- Gallery has no action rail. Music cards have a top-right play/pause button playing an original 8.2-second demo snippet; Bible cards show an actual excerpt.
+- Dream stages are **Rêve, Initiation, Croissance, Témoignage**, with quiet colour banners.
+- The Dream detail screen has a compact action rail beside the bottom of its image, small circular talent needs and its title, phase and author above the content.
+- The Bible detail retains the whole Psalm 150 in context. Music and Bible detail pages retain the bottom menu.
+- Navigation includes **Mes rêves**, a four-stage index with stage-specific actions (same dream, offer help, pray, share testimony).
+- **Mes prières du jour** is one simple list shared across eligible Dreams, Bible and Music publications.
+- Fire, joined Dreams and prayer state persist **on the current device/browser only** under a demo email address. They are not server-synchronized.
+- The seed state opens a web/native-compatible modal to select a demo Dream.
+
+### Outstanding backend features
+
+A genuine shared 'same dream' counter, notifying other users, accepted collaboration flows, account-secured data, daily notification scheduling, internal messaging and media uploads are **not** implemented. Do not represent local demo counts as actual community activity.
+
+The screens and files were committed on GitHub; the Cloudflare build, browser rendering, mobile playback and navigation have not been independently verified in this turn.
