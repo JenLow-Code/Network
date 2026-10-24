@@ -1,7 +1,8 @@
 import React,{useState} from 'react';
-import {Modal,Pressable,Share,StyleSheet,Text,View} from 'react-native';
+import {Modal,Pressable,StyleSheet,Text,View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {useApp} from './context';
+import {router} from 'expo-router';
 import {dreams,Publication} from './discoveryData';
 import {colors as c} from './theme';
 export function ActionRail({item}:{item:Publication}){
@@ -16,7 +17,7 @@ export function ActionRail({item}:{item:Publication}){
   </Pressable>;
  return <View style={s.rail}>
   {button(fire?'flame':'flame-outline','Save to Fire list',()=>app.toggleFire(item.id),fire)}
-  {button('chatbubble-outline','Share with someone',()=>{void Share.share({message:item.title+' — JenLow Network'})})}
+  {button('chatbubble-outline','Share with someone',()=>router.push({pathname:'/share/[id]',params:{id:item.id}}))}
   {button(seeded?'leaf':'add-circle-outline','Add to one of my Dreams',()=>setChoosing(true),seeded)}
   {item.type!=='dream'?button(praying?'checkmark-circle':'heart-outline','Save to today’s prayer list',()=>app.togglePrayer(item.id),praying):null}
   <Modal visible={choosing} transparent animationType="fade" onRequestClose={()=>setChoosing(false)}>
