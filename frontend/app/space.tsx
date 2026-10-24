@@ -31,7 +31,7 @@ export default function Space(){
  <View style={{flexDirection:'row',gap:6,marginHorizontal:15,marginBottom:20}}>
  {(['All','Chats','Collabs','Lessons'] as Kind[]).map(t=><Pill key={t} text={t} active={tab===t} onPress={()=>setTab(t)}/>)}</View>
  {activities.filter(x=>tab==='All'||x.kind===tab).map(item=>
- <Pressable key={item.id} onPress={()=>item.kind==='Lessons'?router.push('/agenda'):item.kind!=='Collabs'&&router.push('/chat/helena')} style={{paddingHorizontal:14,paddingVertical:10,flexDirection:'row',alignItems:'center',gap:10,minHeight:65}}>
+ <Pressable key={item.id} onPress={()=>item.kind==='Lessons'?router.push('/chat/system'):item.kind!=='Collabs'&&router.push('/chat/helena')} style={{paddingHorizontal:14,paddingVertical:10,flexDirection:'row',alignItems:'center',gap:10,minHeight:65}}>
  <View style={{width:5,height:5,borderRadius:4,backgroundColor:presence[item.status]}}/>
  {item.name==='system'?<View style={{width:39,height:39,borderRadius:20,backgroundColor:c.pink,alignItems:'center',justifyContent:'center'}}><Ionicons name="notifications-outline" size={22}/></View>:<Avatar size={39}/>}
  <View style={{flex:1}}><Text style={{fontWeight:'700',fontSize:12}}>{item.name} <Text style={{color:'#999',fontWeight:'400'}}>{item.age}</Text></Text><Text style={{fontSize:11,color:'#888',marginTop:4}}>{item.detail}</Text></View>
