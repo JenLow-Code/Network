@@ -21,6 +21,11 @@ type AppState={
   isOnFire:(id:string)=>boolean;
   toggleFire:(id:string)=>void;
   dreamInspirations:Record<string,string[]>;
+  myDreamIds:string[];
+  joinDream:(id:string)=>void;
+  prayerIds:string[];
+  togglePrayer:(id:string)=>void;
+  isPraying:(id:string)=>boolean;
   addToDream:(dreamId:string,publicationId:string)=>void;
 };
 const Context=createContext<AppState|null>(null);
@@ -37,20 +42,22 @@ export function Provider({children}:{children:React.ReactNode}){
  const [messages,setMessages]=useState<Message[]>([{id:'1',text:'Oh?',fromMe:false},{id:'2',text:'Cool',fromMe:false},{id:'3',text:'How does it work?',fromMe:false},{id:'4',text:'Bienvenue sur JenLow Network !',fromMe:true}]);
  const [fireIds,setFireIds]=useState<string[]>([]);
  const [dreamInspirations,setDreamInspirations]=useState<Record<string,string[]>>({});
+ const [myDreamIds,setMyDreamIds]=useState<string[]>([]);
+ const [prayerIds,setPrayerIds]=useState<string[]>([]);
  const [readyFor,setReadyFor]=useState('');
 
  useEffect(()=>{
   let canceled=false;
-  if(!email){setFireIds([]);setDreamInspirations({});setReadyFor('');return;}
+  if(!email){setFireIds([]);setDreamInspirations({});setMyDreamIds([]);setPrayerIds([]);setReadyFor('');return;}
   setReadyFor('');
-  Promise.all([AsyncStorage.getItem(FIRE_KEY(email)),AsyncStorage.getItem(DREAM_KEY(email))])
-   .then(([fire,dreams])=>{
+  Promise.all([AsyncStorage.getItem(FIRE_KEY(email)),AsyncStorage.getItem(DREAM_KEY(email)),AsyncStorage.getItem('jenlow.mine.'+email),AsyncStorage.getItem('jenlow.prayer.'+email)])
+   .then(([fire,dreams,mine,prayers])=>{
     if(canceled)return;
     let ids:string[]=[];
     let links:Record<string,string[]>={};
     try{if(fire){const parsed=JSON.parse(fire);if(Array.isArray(parsed))ids=parsed.filter(x=>typeof x==='string');}}catch{}
     try{if(dreams){const parsed=JSON.parse(dreams);if(parsed&&typeof parsed==='object'&&!Array.isArray(parsed))links=parsed;}}catch{}
-    setFireIds(ids);setDreamInspirations(links);setReadyFor(email);
+    setFireIds(ids);setDreamInspirations(links);try{setMyDreamIds(mine?JSON.parse(mine):[])}catch{setMyDreamIds([])}try{setPrayerIds(prayers?JSON.parse(prayers):[])}catch{setPrayerIds([])}setReadyFor(email);
    }).catch(()=>{if(!canceled){setReadyFor(email);}});
   return ()=>{canceled=true;};
  },[email]);
@@ -58,6 +65,10 @@ export function Provider({children}:{children:React.ReactNode}){
  useEffect(()=>{if(email&&readyFor===email){void AsyncStorage.setItem(FIRE_KEY(email),JSON.stringify(fireIds)).catch(()=>{});}},[fireIds,email,readyFor]);
  useEffect(()=>{if(email&&readyFor===email){void AsyncStorage.setItem(DREAM_KEY(email),JSON.stringify(dreamInspirations)).catch(()=>{});}},[dreamInspirations,email,readyFor]);
 
+ useEffect(()=>{if(email&&readyFor===email)void AsyncStorage.setItem('jenlow.mine.'+email,JSON.stringify(myDreamIds)).catch(()=>{});},[email,readyFor,myDreamIds]);
+ useEffect(()=>{if(email&&readyFor===email)void AsyncStorage.setItem('jenlow.prayer.'+email,JSON.stringify(prayerIds)).catch(()=>{});},[email,readyFor,prayerIds]);
+ const togglePrayer=useCallback((id:string)=>setPrayerIds(prev=>prev.includes(id)?prev.filter(x=>x!==id):[...prev,id]),[]);
+ const joinDream=useCallback((id:string)=>setMyDreamIds(prev=>prev.includes(id)?prev:[...prev,id]),[]);
  const toggleFire=useCallback((id:string)=>setFireIds(ids=>ids.includes(id)?ids.filter(x=>x!==id):[...ids,id]),[]);
  const addToDream=useCallback((dreamId:string,publicationId:string)=>{
   setDreamInspirations(current=>{
@@ -77,8 +88,9 @@ export function Provider({children}:{children:React.ReactNode}){
    if(patch.church!==undefined)setChurch(patch.church);
   },
   messages,send:text=>setMessages(prev=>[...prev,{id:String(Date.now()),text,fromMe:true}]),
+  myDreamIds,joinDream,prayerIds,togglePrayer,isPraying:(id:string)=>prayerIds.includes(id),
   fireIds,isOnFire:(id:string)=>fireIds.includes(id),toggleFire,dreamInspirations,addToDream,
- }),[rejectedContacts,email,name,bio,city,church,messages,fireIds,dreamInspirations,toggleFire,addToDream]);
+ }),[rejectedContacts,email,name,bio,city,church,messages,fireIds,dreamInspirations,toggleFire,addToDream,myDreamIds,prayerIds,joinDream,togglePrayer]);
  return <Context.Provider value={value}>{children}</Context.Provider>;
 }
 export function useApp(){const ctx=useContext(Context);if(!ctx)throw new Error('Provider required');return ctx;}
