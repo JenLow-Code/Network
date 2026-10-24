@@ -19,7 +19,7 @@ export function ActionRail({item}:{item:Publication}){
   {button(fire?'flame':'flame-outline','Save to Fire list',()=>app.toggleFire(item.id),fire)}
   {button('chatbubble-outline','Share with someone',()=>router.push({pathname:'/share/[id]',params:{id:item.id}}))}
   {button(seeded?'leaf':'add-circle-outline','Add to one of my Dreams',()=>setChoosing(true),seeded)}
-  {item.type!=='dream'?button(praying?'checkmark-circle':'heart-outline','Save to today’s prayer list',()=>app.togglePrayer(item.id),praying):null}
+  {item.type!=='dream'?button(praying?'checkmark-circle':'hand-left-outline','Save to today’s prayer list',()=>app.togglePrayer(item.id),praying):null}
   <Modal visible={choosing} transparent animationType="fade" onRequestClose={()=>setChoosing(false)}>
    <View style={s.modalBackdrop}><View style={s.modal}>
     <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
