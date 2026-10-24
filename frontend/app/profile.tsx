@@ -26,7 +26,7 @@ function Stone({index}:{index:number}) {
 }
 function TalentCard({title,index,level}:{title:string,index:number,level:number}){return <View style={{width:160,height:132,borderWidth:1,borderColor:'#ddd',borderRadius:9,alignItems:'center',padding:7,marginRight:10}}>
  <Text style={{fontFamily:'Caveat_700Bold',fontSize:16}}>{title}</Text>
- <View style={{backgroundColor:c.pink,borderRadius:28,width:58,height:58,alignItems:'center',justifyContent:'center'}}><Ionicons name={index===0?'musical-notes':index===1?'mic':'piano'} size={28} color="#111"/></View>
+ <View style={{backgroundColor:c.pink,borderRadius:28,width:58,height:58,alignItems:'center',justifyContent:'center'}}><Ionicons name={index===0?'musical-notes':index===1?'mic':'musical-note'} size={28} color="#111"/></View>
  <View style={{flexDirection:'row',gap:6,marginTop:8}}>{levels.map((l,i)=><View key={i} style={{width:7,height:7,borderRadius:4,backgroundColor:i===level?l.color:'#e9e9e9'}}/>)}</View>
  <Text style={{fontSize:11,color:'#666',marginTop:5}}>Tandem | Professeur</Text>
  </View>}
@@ -37,7 +37,7 @@ export default function Profile(){
  <ScrollView contentContainerStyle={{paddingTop:24,paddingBottom:165,alignItems:'center'}} showsVerticalScrollIndicator={false}>
  <Avatar size={166}/>
  <View style={{flexDirection:'row',alignItems:'center',marginTop:7}}><Editable value={app.name} onSave={v=>app.edit({name:v})}/></View>
- <Text style={{fontWeight:'700',fontSize:23,color:c.pink,marginTop:-27,marginLeft:94,opacity:0}}>.</Text>
+
  <View style={{width:'84%',marginTop:12,marginBottom:21}}><Editable multiline align="left" value={app.bio} onSave={v=>app.edit({bio:v})}/></View>
  <Text style={s.label}>Lieu</Text><View style={{width:175}}><Editable value={app.city} onSave={v=>app.edit({city:v})}/></View>
  <Text style={[s.label,{marginTop:14}]}>Eglise</Text><View style={{width:185}}><Editable value={app.church} onSave={v=>app.edit({church:v})}/></View>
