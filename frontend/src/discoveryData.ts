@@ -5,7 +5,7 @@
  * or a Bible image/reference. Photos are illustrative Unsplash images.
  * A shared Bible image can later be populated by the native share-in extension.
  */
-export type DreamPhase = 'Rêve' | 'Initiation' | 'En route' | 'Accompli';
+export type DreamPhase = 'Rêve' | 'Initiation' | 'Croissance' | 'Témoignage';
 
 type PublicationBase = {
   id: string;
@@ -78,7 +78,7 @@ export const publications: Publication[] = [
   },
   {
     id: 'ensemble', type: 'dream', title: 'Créer une équipe de musique',
-    author: 'Arnaud', phase: 'En route',
+    author: 'Arnaud', phase: 'Croissance',
     summary: 'Former une petite équipe pour faire de la musique et servir ensemble.',
     needs: ['Batterie', 'Piano', 'Chant'],
     image: 'https://images.unsplash.com/photo-1516280440614-37939bbacd81?w=900&q=82',
@@ -100,7 +100,7 @@ export const publications: Publication[] = [
   },
   {
     id: 'photos', type: 'dream', title: 'Partager la beauté de la création',
-    author: 'Esther', phase: 'Accompli',
+    author: 'Esther', phase: 'Témoignage',
     summary: 'Une série de photographies réalisées et partagées avec la communauté.',
     needs: ['Photographie'],
     image: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=900&q=82',
@@ -113,6 +113,14 @@ export const musics = publications.filter((p): p is MusicPublication => p.type =
 export const biblePosts = publications.filter((p): p is BiblePublication => p.type === 'bible');
 export const findPublication = (id: string) => publications.find(item => item.id === id);
 export const verseText = 'Que tout ce qui respire loue l’Éternel ! Louez l’Éternel !';
+export const DREAM_PHASES:DreamPhase[]=['Rêve','Initiation','Croissance','Témoignage'];
+export const PHASE_COLORS:Record<DreamPhase,{background:string;foreground:string}>={
+ 'Rêve':{background:'#E7E7E7',foreground:'#484848'},
+ 'Initiation':{background:'#E0F1E5',foreground:'#397250'},
+ 'Croissance':{background:'#F6EDCE',foreground:'#80651C'},
+ 'Témoignage':{background:'#F2E0E9',foreground:'#963E67'}
+};
+export const verseExcerpt=(p:BiblePublication)=>p.highlightedVerse===1?psalm150[0]:psalm150[5];
 export const psalm150 = [
   'Louez l’Éternel ! Louez Dieu dans son sanctuaire ! Louez-le dans l’étendue, où éclate sa puissance !',
   'Louez-le pour ses hauts faits ! Louez-le selon l’immensité de sa grandeur !',
