@@ -1,4 +1,4 @@
-import React,{useState} from 'react';
+import React,{useRef,useState} from 'react';
 import {Modal,Pressable,ScrollView,Text,TextInput,View,StyleSheet,useWindowDimensions} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {Ionicons} from '@expo/vector-icons';
@@ -73,6 +73,7 @@ function MiniCard({kind,index,onPress}:{kind:Kind,index:number,onPress:()=>void}
 function CardCarousel({kind}:{kind:Kind}){
  const list=kind==='talent'?talents:dreams;
  const [current,setCurrent]=useState(0);
+ const swipeStart=useRef(0);
  const [open,setOpen]=useState(false);
  const [detailIndex,setDetailIndex]=useState(0);
  const {width}=useWindowDimensions();const desktop=width>=740;
@@ -80,7 +81,7 @@ function CardCarousel({kind}:{kind:Kind}){
  return <View style={{width:desktop?'49%':'50%',alignItems:'center'}}>
   <Text style={styles.sectionTitle}>{kind==='talent'?'Mes talents':'Mes rêves'}</Text>
   {desktop?<ScrollView horizontal showsHorizontalScrollIndicator={false} style={{maxWidth:'100%'}}>{list.map((_,i)=><View key={i} style={{marginRight:9}}><MiniCard kind={kind} index={i} onPress={()=>{setDetailIndex(i);setOpen(true)}}/></View>)}</ScrollView>
-  :<View style={{width:itemWidth,alignItems:'center'}}>
+  :<View style={{width:itemWidth,alignItems:'center'}} onTouchStart={e=>{swipeStart.current=e.nativeEvent.pageX}} onTouchEnd={e=>{const dx=e.nativeEvent.pageX-swipeStart.current;if(Math.abs(dx)>35)setCurrent(v=>(v+(dx<0?1:-1)+list.length)%list.length)}}>
     <MiniCard kind={kind} index={current} onPress={()=>{setDetailIndex(current);setOpen(true)}}/>
     <View style={styles.cardStepper}><Pressable onPress={()=>setCurrent((current-1+list.length)%list.length)} accessibilityLabel="Previous card"><Ionicons name="chevron-back" size={18} color="#999"/></Pressable><Text style={{fontSize:10,color:'#888'}}>{current+1}/{list.length}</Text><Pressable onPress={()=>setCurrent((current+1)%list.length)} accessibilityLabel="Next card"><Ionicons name="chevron-forward" size={18} color="#999"/></Pressable></View>
    </View>}
