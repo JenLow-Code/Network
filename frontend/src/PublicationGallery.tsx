@@ -4,6 +4,8 @@ import {Ionicons} from '@expo/vector-icons';
 import {router} from 'expo-router';
 import {Publication} from './discoveryData';
 import {colors as c} from './theme';
+import {useApp} from './context';
+import {ActionRail} from './ActionRail';
 
 export const publicationPath=(p:Publication)=>
  p.type==='dream'?({pathname:'/dream/[id]',params:{id:p.id}} as const):
@@ -27,18 +29,13 @@ export function PublicationTile({item,compact=false}:{item:Publication,compact?:
     <View style={s.shade}/>
     <View style={s.top}><Text style={s.type}>{typeLabel}</Text>{item.type==='music'?<Ionicons name="play-circle" size={35} color="#fff"/>:null}</View>
     <View style={s.bottom}>
-     {item.type==='dream'?<Text style={s.meta}>{item.phase.toUpperCase()}</Text>:null}
+     {item.type==='dream'?<View style={{alignSelf:'flex-start',borderRadius:5,backgroundColor:item.phase==='Rêve'?'#e6e6e6':item.phase==='Initiation'?'#e0f1e4':item.phase==='En route'?'#fff0c8':'#f2e5ef',paddingHorizontal:7,paddingVertical:4}}><Text style={{fontSize:9,color:'#333',fontWeight:'700'}}>{item.phase.toUpperCase()}</Text></View>:null}
      <Text style={s.title} numberOfLines={3}>{item.title}</Text>
      <Text style={s.author}>{item.author}</Text>
     </View>
    </ImageBackground>
   </Pressable>
-  <View style={s.buttons}>
-   <Action icon="share-outline" label="Share" onPress={share}/>
-   {item.type==='dream'?<><Action icon="hand-left-outline" label="Offer help" onPress={open}/><Action icon="add-circle-outline" label="Add as inspiration to my dream" onPress={open}/></>:
-    item.type==='bible'?<><Action icon="bookmark-outline" label="Save verse" onPress={open}/><Action icon="add-circle-outline" label="Add verse to a dream" onPress={open}/></>:
-    <><Action icon="play-circle-outline" label="Listen" onPress={open}/><Action icon="bookmark-outline" label="Save music" onPress={open}/></>}
-  </View>
+  <View style={s.buttons}><ActionRail item={item}/></View>
  </View>;
 }
 
