@@ -9,7 +9,7 @@ import {NetworkLogo,GoogleMark} from '@/brand';
 export default function Login(){
  const [email,setEmail]=useState('');const [error,setError]=useState(false);
  const {login}=useApp();
- function proceed(){if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())){setError(true);return;}setError(false);login(email.trim());router.replace('/space');}
+ function proceed(){if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())){setError(true);return;}setError(false);login(email.trim());router.replace('/discover');}
  function oauth(provider:string){Alert.alert('Coming soon',provider+' sign-in will be enabled after the authentication backend is connected.');}
  return <SafeAreaView style={s.safe}><KeyboardAvoidingView style={{flex:1}} behavior={Platform.OS==='ios'?'padding':undefined}><ScrollView contentContainerStyle={s.root} keyboardShouldPersistTaps="handled">
  <View style={s.top}><NetworkLogo/></View>
