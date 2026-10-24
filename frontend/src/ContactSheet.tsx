@@ -3,8 +3,10 @@ import {Animated,Dimensions,PanResponder,Pressable,StyleSheet,Text,View} from 'r
 import {Ionicons} from '@expo/vector-icons';
 import {router} from 'expo-router';
 import {Avatar} from './components';
+import {useApp} from './context';
 type Status='online'|'busy'|'offline';
 const contacts:{id:string;name:string;subtitle:string;status:Status}[]=[
+ {id:'starryskies23',name:'starryskies23',subtitle:'Collaboration request',status:'busy'},
  {id:'elynn',name:'Elynn Lee',subtitle:'email@fakedomain.net',status:'online'},
  {id:'helena',name:'Helena Hills',subtitle:'Active 11m ago',status:'online'},
  {id:'nebul',name:'nebulanomad',subtitle:'Offline',status:'offline'},
@@ -12,15 +14,16 @@ const contacts:{id:string;name:string;subtitle:string;status:Status}[]=[
 ];
 const statusColor:{[K in Status]:string}={online:'#26C768',busy:'#F16B70',offline:'#B6B6B6'};
 export function ContactSheet(){
+ const {rejectedContacts}=useApp();
  const expandedHeight=Math.min(Dimensions.get('window').height*.64,490);
  const translate=useRef(new Animated.Value(0)).current;
  const [open,setOpen]=useState(false);const openRef=useRef(false);
  function go(next:boolean){openRef.current=next;setOpen(next);Animated.spring(translate,{toValue:next?1:0,useNativeDriver:false,tension:65,friction:12}).start();}
  const pan=useRef(PanResponder.create({onStartShouldSetPanResponder:()=>true,onMoveShouldSetPanResponder:(_,g)=>Math.abs(g.dy)>6,onPanResponderRelease:(_,g)=>{if(g.dy<-24)go(true);else if(g.dy>24)go(false);else go(!openRef.current);}})).current;
- const height=translate.interpolate({inputRange:[0,1],outputRange:[105,expandedHeight]});
+ const height=translate.interpolate({inputRange:[0,1],outputRange:[54,expandedHeight]});
  return <Animated.View style={[styles.shell,{height}]}>
  <View {...pan.panHandlers} style={styles.handleArea}><View style={styles.handle}/><View style={styles.titleRow}><Text style={styles.heading}>Mes contacts</Text><Ionicons name={open?'chevron-down':'chevron-up'} size={16} color="#9a9a9a"/></View></View>
- <View style={{flex:1,overflow:'hidden'}}>{contacts.map((person,i)=><Pressable key={person.id} onPress={()=>router.push('/chat/helena')} style={[styles.contact,{borderBottomWidth:i===contacts.length-1?0:1}]}>
+ <View style={{flex:1,overflow:'hidden'}}>{contacts.filter(p=>!rejectedContacts.includes(p.name)).map((person,i)=><Pressable key={person.id} onPress={()=>router.push('/chat/helena')} style={[styles.contact,{borderBottomWidth:i===contacts.length-1?0:1}]}>
  <View style={styles.avatar}><Avatar size={32}/><View style={[styles.dot,{backgroundColor:statusColor[person.status]}]}/></View>
  <View style={{flex:1}}><Text style={styles.name}>{person.name}</Text><Text style={styles.subtitle}>{person.subtitle}</Text></View>
  <Ionicons name="chatbubble-ellipses-outline" color="#888" size={20}/>
