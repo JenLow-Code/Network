@@ -1,0 +1,1 @@
+import{Redirect}from'expo-router';import{useApp}from'@/context';export default function Index(){const {signedIn}=useApp();return <Redirect href={signedIn?'/space':'/login'}/>}
