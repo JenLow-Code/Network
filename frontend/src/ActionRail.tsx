@@ -13,7 +13,7 @@ export function ActionRail({item,vertical=true}:{item:Publication,vertical?:bool
   const choices=dreams.map(d=>({text:d.title,onPress:()=>{addToDream(d.id,item.id);Alert.alert('Inspiration ajoutée', 'Ajoutée à « '+d.title+' ».')}}));
   Alert.alert('Ajouter à mon rêve','Choisis un rêve :', [...choices,{text:'Annuler',style:'cancel'}]);
  }
- function contact(){router.push('/chat/helena');}
+ function contact(){void Share.share({message:item.title+' — JenLow Network'});}
  const act=(icon:keyof typeof Ionicons.glyphMap,label:string,onPress:()=>void,active=false)=><Pressable key={label} accessibilityLabel={label} accessibilityRole="button" onPress={onPress} style={[s.button,active&&s.active]}><Ionicons name={icon} size={24} color={active?c.pink:'#222'}/></Pressable>;
  return <View style={[s.rail,{flexDirection:vertical?'column':'row'}]}>
   {act(fire?'flame':'flame-outline',fire?'Remove from Fire list':'Save to Fire list',()=>toggleFire(item.id),fire)}
