@@ -5,21 +5,18 @@ import {router} from 'expo-router';
 import {useApp} from './context';
 import {dreams,Publication} from './discoveryData';
 import {colors as c} from './theme';
-export function ActionRail({item,vertical=true}:{item:Publication,vertical?:boolean}){
- const {isOnFire,toggleFire,addToDream}=useApp();
- const fire=isOnFire(item.id);
- function share(){void Share.share({message:item.title+' — JenLow Network'});}
+export function ActionRail({item}:{item:Publication}){
+ const app=useApp(),fire=app.isOnFire(item.id),seeded=Object.values(app.dreamInspirations).some(ids=>ids.includes(item.id));
+ const button=(name:keyof typeof Ionicons.glyphMap,description:string,action:()=>void,active=false)=><Pressable key={description} accessibilityLabel={description} onPress={action} style={[s.button,active&&{backgroundColor:'#f6e8ef'}]}><Ionicons name={name} size={25} color={active?c.pink:'#252525'}/></Pressable>;
  function chooseDream(){
-  const choices=dreams.map(d=>({text:d.title,onPress:()=>{addToDream(d.id,item.id);Alert.alert('Inspiration ajoutée', 'Ajoutée à « '+d.title+' ».')}}));
-  Alert.alert('Ajouter à mon rêve','Choisis un rêve :', [...choices,{text:'Annuler',style:'cancel'}]);
+  const options=dreams.map(d=>({text:d.title,onPress:()=>app.addToDream(d.id,item.id)}));
+  Alert.alert('Ajouter à un rêve','Choisis un de tes rêves',options.concat([{text:'Annuler',onPress:()=>{}}]));
  }
- function contact(){void Share.share({message:item.title+' — JenLow Network'});}
- const act=(icon:keyof typeof Ionicons.glyphMap,label:string,onPress:()=>void,active=false)=><Pressable key={label} accessibilityLabel={label} accessibilityRole="button" onPress={onPress} style={[s.button,active&&s.active]}><Ionicons name={icon} size={24} color={active?c.pink:'#222'}/></Pressable>;
- return <View style={[s.rail,{flexDirection:vertical?'column':'row'}]}>
-  {act(fire?'flame':'flame-outline',fire?'Remove from Fire list':'Save to Fire list',()=>toggleFire(item.id),fire)}
-  {act('person-circle-outline','Contact or share with a person',contact)}
-  {act('add-circle-outline','Add to my dream',chooseDream)}
-  {item.type==='music'?act('play-circle-outline','Open music player',()=>router.push({pathname:'/music/[id]',params:{id:item.id}})):null}
+ const share=()=>{void Share.share({message:item.title+' — JenLow Network'});};
+ return <View style={s.rail}>
+  {button(fire?'flame':'flame-outline','Fire list',()=>app.toggleFire(item.id),fire)}
+  {button('chatbubble-outline','Partager à quelqu’un',share)}
+  {button(seeded?'leaf':'add-circle-outline','Ajouter à mon rêve',chooseDream,seeded)}
  </View>;
 }
-const s=StyleSheet.create({rail:{gap:8,alignItems:'center'},button:{width:37,height:37,alignItems:'center',justifyContent:'center',borderRadius:22,backgroundColor:'#fff'},active:{backgroundColor:'#f9ecf2'}});
+const s=StyleSheet.create({rail:{gap:3,alignItems:'center'},button:{width:36,height:36,justifyContent:'center',alignItems:'center',borderRadius:20,backgroundColor:'#fff'}});
