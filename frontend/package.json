@@ -24,7 +24,8 @@
     "react-native-web": "^0.21.0",
     "expo-font": "~58.0.10",
     "@expo-google-fonts/caveat": "^0.4.2",
-    "react-native-svg": "^15.16.0"
+    "react-native-svg": "^15.16.0",
+    "expo-audio": "*"
   },
   "devDependencies": {
     "@types/react": "~19.3.0",
