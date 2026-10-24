@@ -3,7 +3,7 @@ import {KeyboardAvoidingView,Linking,Platform,Pressable,ScrollView,StyleSheet,Te
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {Ionicons} from '@expo/vector-icons';
 import {router,useLocalSearchParams} from 'expo-router';
-import {Avatar} from '@/components';
+import {Avatar,Nav} from '@/components';
 import {useApp} from '@/context';
 import {colors as c} from '@/theme';
 
@@ -47,7 +47,7 @@ function SystemChat(){
     <Action title="Add to JenLow Agenda" subtitle="Internal agenda — coming soon" icon="book-outline" onPress={()=>router.push('/agenda')}/>
     <Action title="Contact my teacher" subtitle="Open the conversation with nebulanomad" icon="chatbubble-ellipses-outline" onPress={()=>router.push('/chat/teacher')}/>
    </View>
-  </ScrollView>
+  </ScrollView><Nav/>
  </SafeAreaView>;
 }
 function PersonChat({teacher}:{teacher:boolean}){
@@ -63,7 +63,7 @@ function PersonChat({teacher}:{teacher:boolean}){
    <TextInput placeholder="Message..." value={input} onChangeText={setInput} onSubmitEditing={submit} returnKeyType="send" style={s.input}/>
    <Pressable onPress={submit} accessibilityLabel="Send message"><Ionicons name="send" color={c.pink} size={22}/></Pressable>
   </View>
- </KeyboardAvoidingView></SafeAreaView>;
+ </KeyboardAvoidingView><Nav/></SafeAreaView>;
 }
 export default function Chat(){
  const {id}=useLocalSearchParams<{id:string}>();
