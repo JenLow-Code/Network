@@ -13,29 +13,28 @@ type Field='bio'|'city'|'church';
 const levels=[{name:'Absolute beginner',color:'#12663c'},{name:'Curious beginner',color:'#45b96f'},{name:'Intermediate',color:'#efc448'},{name:'Used to',color:'#df6660'},{name:'Professional',color:'#cb1e66'}];
 const talents=[{title:'Batterie',icon:'musical-notes' as const,level:2,detail:'Tandem | Professeur'},{title:'Chant',icon:'mic' as const,level:1,detail:'Tandem | Apprentissage'},{title:'Piano',icon:'musical-note' as const,level:3,detail:'Tandem | Professeur'}];
 function Gallery({kind}:{kind:'talent'|'dream'}){
- const {width}=useWindowDimensions(),mobile=width<700;
+ const {width}=useWindowDimensions();
  const data=kind==='talent'?talents:dreams.slice(0,3);
- const [index,setIndex]=useState(0),[expanded,setExpanded]=useState(false);
- const item=data[index] as any;
- const title=kind==='talent'?'Mes talents':'Mes rêves';
- const photo=kind==='dream'?item.image:null;
- const step=(v:number)=>setIndex((v+data.length)%data.length);
- const view=(i:number)=><Pressable key={i} onPress={()=>{setIndex(i);setExpanded(true)}} style={s.card}>
-    {kind==='dream'?<Image source={{uri:(data[i] as any).image}} style={s.dreamPhoto}/>:
-    <><Text style={{fontFamily:'Caveat_700Bold',fontSize:17,color:'#222'}}>{(data[i] as any).title}</Text><View style={s.talentCircle}><Ionicons name={(data[i] as any).icon} color="#151515" size={31}/></View><View style={[s.levelLine,{backgroundColor:levels[(data[i] as any).level].color}]}/></>}
-    {kind==='dream'?null:<Text numberOfLines={1} style={s.cardCaption}>{(data[i] as any).detail}</Text>}
- </Pressable>;
+ const [current,setCurrent]=useState(0),[expanded,setExpanded]=useState(false);
+ const item=data[current] as any,desktop=width>=740;
+ const next=(direction:number)=>setCurrent(i=>(i+direction+data.length)%data.length);
+ const preview=(i:number)=>{
+  const selected=data[i] as any;
+  return <Pressable key={i} onPress={()=>{setCurrent(i);setExpanded(true)}} style={s.card}>
+   {kind==='talent'?<><Text style={{fontFamily:'Caveat_700Bold',fontSize:16,color:'#111'}}>{selected.title}</Text><View style={s.talentCircle}><Ionicons name={selected.icon} color="#111" size={28}/></View><View style={{flexDirection:'row',gap:5}}>{levels.map((l,n)=><View key={n} style={{width:6,height:6,borderRadius:3,backgroundColor:n===selected.level?l.color:'#e9e9e9'}}/>)}</View><Text numberOfLines={1} style={s.cardCaption}>{selected.detail}</Text></>:
+   <Image source={{uri:selected.image}} style={{width:'100%',height:'100%',borderRadius:6}} resizeMode="cover"/>}
+  </Pressable>;
+ };
  return <View style={{flex:1,minWidth:0,alignItems:'center'}}>
-   <Text style={s.title}>{title}</Text>
-   {mobile?<>{view(index)}<View style={s.arrows}><Pressable onPress={()=>step(index-1)}><Ionicons name="chevron-back" size={16} color="#a8a8a8"/></Pressable><Text style={s.pager}>{index+1} / {data.length}</Text><Pressable onPress={()=>step(index+1)}><Ionicons name="chevron-forward" size={16} color="#a8a8a8"/></Pressable></View></>:
-   <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{maxWidth:'100%'}}><View style={{flexDirection:'row',gap:9}}>{data.map((_,i)=>view(i))}</View></ScrollView>}
+   <Text style={s.title}>{kind==='talent'?'Mes talents':'Mes rêves'}</Text>
+   {desktop?<ScrollView horizontal showsHorizontalScrollIndicator={false} style={{maxWidth:'100%'}}><View style={{flexDirection:'row',gap:8}}>{data.map((_,i)=>preview(i))}</View></ScrollView>:<View style={{width:147,alignItems:'center'}}>{preview(current)}</View>}
    {expanded&&<View style={s.overlay}><View style={s.detail}>
-     <Pressable onPress={()=>setExpanded(false)} style={{alignSelf:'flex-end',padding:8}}><Ionicons name="close" size={24}/></Pressable>
-     {kind==='dream'?<Image source={{uri:photo}} style={s.detailImage}/>:<View style={[s.talentCircle,{width:100,height:100,borderRadius:50}]}><Ionicons name={item.icon} size={50}/></View>}
+     <Pressable onPress={()=>setExpanded(false)} style={{alignSelf:'flex-end',padding:7}}><Ionicons name="close" size={22}/></Pressable>
+     {kind==='dream'?<Image source={{uri:item.image}} style={s.detailImage}/>:<View style={[s.talentCircle,{width:94,height:94,borderRadius:47}]}><Ionicons name={item.icon} size={47}/></View>}
      <Text style={s.detailTitle}>{item.title}</Text>
      <Text style={s.detailDescription}>{kind==='talent'?item.detail:item.summary}</Text>
-     {kind==='talent'?<Text style={{color:levels[item.level].color,fontSize:13,marginTop:12,fontWeight:'700'}}>{levels[item.level].name}</Text>:<Pressable onPress={()=>{setExpanded(false);router.push({pathname:'/dream/[id]',params:{id:item.id}})}}><Text style={{color:c.pink,marginTop:15}}>Discover the dream</Text></Pressable>}
-     <View style={s.detailNav}><Pressable onPress={()=>step(index-1)}><Ionicons name="chevron-back" size={26}/></Pressable><Text>{index+1} / {data.length}</Text><Pressable onPress={()=>step(index+1)}><Ionicons name="chevron-forward" size={26}/></Pressable></View>
+     {kind==='talent'?<Text style={{marginTop:11,color:levels[item.level].color}}>{levels[item.level].name}</Text>:<Pressable onPress={()=>{setExpanded(false);router.push({pathname:'/dream/[id]',params:{id:item.id}})}}><Text style={{color:c.pink,marginTop:12}}>Découvrir ce rêve</Text></Pressable>}
+     <View style={s.detailNav}><Pressable onPress={()=>next(-1)}><Ionicons name="chevron-back" size={25}/></Pressable><Text>{current+1} / {data.length}</Text><Pressable onPress={()=>next(1)}><Ionicons name="chevron-forward" size={25}/></Pressable></View>
    </View></View>}
  </View>;
 }
@@ -60,7 +59,7 @@ export default function Profile(){
     <View style={s.bio}>{field('bio')}</View>
     <Pressable onPress={cancel}><Text style={s.label}>Lieu</Text></Pressable>{field('city')}
     <Pressable onPress={cancel} style={{marginTop:14}}><Text style={s.label}>Eglise</Text></Pressable>{field('church')}
-    <Pressable onPress={cancel} style={s.galleries}><Gallery kind="talent"/><Gallery kind="dream"/></Pressable>
+    <View style={s.galleries}><Gallery kind="talent"/><Gallery kind="dream"/></View>
     <Pressable onPress={cancel}><Text style={[s.title,{marginTop:14,marginBottom:9}]}>Mes pierres</Text></Pressable>
     <StoneDeck/>
     <Pressable onPress={()=>{cancel();app.logout();router.replace('/login')}} style={{marginTop:18}}><Text style={{color:'#999',fontSize:11}}>Se déconnecter</Text></Pressable>
