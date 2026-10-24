@@ -50,13 +50,13 @@ function SystemChat(){
   </ScrollView><Nav/>
  </SafeAreaView>;
 }
-function PersonChat({teacher}:{teacher:boolean}){
+function PersonChat({teacher,recipient,sharedId}:{teacher:boolean;recipient?:string;sharedId?:string}){
  const {messages,send}=useApp();const [input,setInput]=useState('');
  const submit=()=>{const m=input.trim();if(m){send(m);setInput('')}};
  return <SafeAreaView style={{flex:1,backgroundColor:'#fff'}}><KeyboardAvoidingView style={{flex:1}} behavior={Platform.OS==='ios'?'padding':undefined}>
-  <ChatHeader name={teacher?'nebulanomad':'Helena Hills'} subtitle={teacher?'Teacher • Demo contact':'Active 11m ago'}/>
+  <ChatHeader name={recipient|| (teacher?'nebulanomad':'Helena Hills')} subtitle={teacher?'Teacher • Demo contact':'Active 11m ago'}/>
   <ScrollView style={{flex:1}} contentContainerStyle={{padding:16,paddingTop:30,gap:8,flexGrow:1,justifyContent:'flex-end'}}>
-   <Text style={s.day}>Demo conversation</Text>
+   <Text style={s.day}>Demo conversation</Text>{sharedId?<View style={{padding:13,backgroundColor:'#f5f5f5',borderRadius:10}}><Text style={{fontSize:13,fontWeight:'700'}}>Publication partagée</Text><Text style={{fontSize:12,marginTop:6}}>{sharedId}</Text><Text style={{fontSize:11,color:'#888',marginTop:5}}>Aperçu uniquement : aucun message n'a été envoyé.</Text></View>:null}
    {messages.map(m=><View key={m.id} style={[s.bubble,{alignSelf:m.fromMe?'flex-end':'flex-start',backgroundColor:m.fromMe?'#000':c.pink}]}><Text style={{fontSize:13,color:m.fromMe?'#fff':'#111'}}>{m.text}</Text></View>)}
   </ScrollView>
   <View style={s.composer}>
@@ -66,8 +66,8 @@ function PersonChat({teacher}:{teacher:boolean}){
  </KeyboardAvoidingView><Nav/></SafeAreaView>;
 }
 export default function Chat(){
- const {id}=useLocalSearchParams<{id:string}>();
- return id==='system'?<SystemChat/>:<PersonChat teacher={id==='teacher'}/>;
+ const {id,recipient,sharedId}=useLocalSearchParams<{id:string;recipient?:string;sharedId?:string}>();
+ return id==='system'?<SystemChat/>:<PersonChat teacher={id==='teacher'} recipient={recipient} sharedId={sharedId}/>;
 }
 const s=StyleSheet.create({
  header:{flexDirection:'row',gap:10,alignItems:'center',borderBottomWidth:StyleSheet.hairlineWidth,borderColor:'#ececec',padding:15},
