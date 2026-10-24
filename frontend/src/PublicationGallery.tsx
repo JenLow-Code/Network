@@ -7,13 +7,13 @@ import {Publication,PHASE_COLORS,verseExcerpt} from './discoveryData';
 const audio=[require('../assets/audio/pierre-01-douceur.wav'),require('../assets/audio/pierre-02-esperance.wav'),require('../assets/audio/pierre-03-lumiere.wav')];
 export const publicationPath=(p:Publication)=>p.type==='dream'?({pathname:'/dream/[id]',params:{id:p.id}} as const):p.type==='music'?({pathname:'/music/[id]',params:{id:p.id}} as const):({pathname:'/bible/[reference]',params:{reference:p.referenceId,verse:String(p.highlightedVerse)}} as const);
 function MusicCard({index}:{index:0|1|2}){const player=useAudioPlayer(audio[index]);const status=useAudioPlayerStatus(player);const toggle=()=>{if(status.playing)player.pause();else{if(status.didJustFinish)void player.seekTo(0);player.play()}};return <Pressable onPress={toggle} accessibilityLabel={status.playing?'Pause sample':'Play 8 second sample'} style={s.play}><Ionicons name={status.playing?'pause':'play'} size={23} color="#fff"/></Pressable>}
-export function PublicationTile({item}:{item:Publication}){
+export function PublicationTile({item}:{item:Publication}){const talentMatch=item.type==='dream'&&item.needs.some(n=>['Batterie','Piano','Chant'].includes(n))&&(item.phase==='Initiation'||item.phase==='Rêve');
  const [loaded,setLoaded]=useState(false);
  const open=()=>router.push(publicationPath(item) as any);
- return <Pressable onPress={open} accessibilityLabel={'Open '+item.title} style={[s.outer,{height:item.type==='bible'?230:item.type==='music'?250:285}]}>
+ return <Pressable onPress={open} accessibilityLabel={'Open '+item.title} style={[s.outer,{height:item.type==='bible'?188:item.type==='music'?197:213}]}>
   <ImageBackground source={{uri:item.image}} onLoad={()=>setLoaded(true)} resizeMode="cover" style={s.image} imageStyle={{borderRadius:12}}>
    <View style={s.shade}/>
-   <View style={s.top}><Text style={s.type}>{item.type==='dream'?'RÊVE':item.type==='music'?'MUSIQUE':'BIBLE'}</Text></View>
+   <View style={s.top}><Text style={s.type}>{item.type==='dream'?'RÊVE':item.type==='music'?'MUSIQUE':'BIBLE'}</Text>{talentMatch?<View style={{backgroundColor:'#d71d77',paddingHorizontal:7,paddingVertical:4,borderRadius:7,marginTop:7,alignSelf:'flex-start'}}><Text style={{color:'#fff',fontSize:10,fontWeight:'700'}}>✦ Talent compatible</Text></View>:null}</View>
    <View style={s.bottom}>
     {item.type==='dream'?<View style={[s.phase,{backgroundColor:PHASE_COLORS[item.phase].background}]}><Text style={{color:PHASE_COLORS[item.phase].foreground,fontSize:9,fontWeight:'700'}}>{item.phase.toUpperCase()}</Text></View>:null}
     {item.type==='bible'?<Text numberOfLines={4} style={s.verse}>{verseExcerpt(item)}</Text>:null}
