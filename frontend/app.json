@@ -1,0 +1,1 @@
+{"expo":{"name":"JenLow Network","slug":"jenlow-network","scheme":"jenlownetwork","version":"0.1.0","orientation":"portrait","userInterfaceStyle":"light","newArchEnabled":true,"plugins":["expo-router"],"web":{"bundler":"metro","name":"JenLow Network"},"ios":{"supportsTablet":true},"android":{"package":"com.jenlow.network"}}}
