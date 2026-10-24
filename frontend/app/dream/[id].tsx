@@ -9,17 +9,16 @@ import {colors as c} from '@/theme';
 import {ActionRail} from '@/ActionRail';
 import {DreamStageAction} from '@/DreamStageAction';
 import {PHASE_COLORS} from '@/discoveryData';
-import {Nav} from '@/components';
+import {Nav,Avatar} from '@/components';
 export default function DreamDetail(){
  const {id}=useLocalSearchParams<{id:string}>();
  const d=dreams.find(x=>x.id===id);
  if(!d)return <SafeAreaView style={{padding:24}}><Pressable onPress={()=>router.back()}><Text>← Retour</Text></Pressable><Text>Rêve introuvable</Text></SafeAreaView>;
  return <SafeAreaView style={{flex:1,backgroundColor:'#fff'}}><ScrollView style={{flex:1}} contentContainerStyle={{padding:17,paddingBottom:60,maxWidth:840,width:'100%',alignSelf:'center'}}>
-  <Pressable onPress={()=>router.back()} style={{paddingBottom:14}}><Ionicons name="chevron-back" size={27}/></Pressable>
-  <Text style={{fontSize:25,fontFamily:'Caveat_700Bold',textAlign:'center',marginBottom:0}}>{d.title}</Text><Text style={{fontSize:11,color:'#888',textAlign:'center',marginBottom:12}}>{d.author} · {d.phase}</Text>
-  <View style={{flexDirection:'row',gap:6,alignItems:'flex-end'}}><View style={{width:36,justifyContent:'flex-end'}}><ActionRail item={d}/></View><Image source={{uri:d.image}} style={{flex:1,height:205,borderRadius:11,backgroundColor:'#eee'}}/></View>
-  <View style={{alignSelf:'flex-start',backgroundColor:d.phase==='Rêve'?'#eeeeee':d.phase==='Initiation'?'#e9f4e9':d.phase==='En route'?'#f5edcf':'#f5e8ef',borderRadius:5,paddingHorizontal:10,paddingVertical:5,marginTop:13}}><Text style={{fontSize:11,color:'#444',fontWeight:'700'}}>{d.phase.toUpperCase()}</Text></View>
-  <DreamStageAction dream={d}/>
+  <View style={{flexDirection:'row',alignItems:'center',marginBottom:10}}><Pressable onPress={()=>router.back()} style={{width:34}}><Ionicons name="chevron-back" size={27}/></Pressable><View style={{flex:1,alignItems:'center'}}><Text style={{fontSize:25,fontFamily:'Caveat_700Bold',textAlign:'center'}}>{d.title}</Text><Text style={{fontSize:11,color:'#888',textAlign:'center'}}>{d.author} · {d.phase}</Text></View><Avatar size={30}/></View>
+  <View style={{flexDirection:'row',gap:6,alignItems:'flex-end'}}><View style={{width:36,justifyContent:'flex-end'}}><ActionRail item={d}/>{d.phase==='Initiation'?<Pressable onPress={()=>router.push('/chat/teacher')} style={{alignItems:'center',padding:5}}><Ionicons name="hand-left-outline" size={23} color="#333"/></Pressable>:null}</View><Image source={{uri:d.image}} style={{flex:1,height:205,borderRadius:11,backgroundColor:'#eee'}}/></View>
+  <View style={{alignSelf:'flex-start',backgroundColor:d.phase==='Rêve'?'#eeeeee':d.phase==='Initiation'?'#e9f4e9':#f5edcf':'#f5e8ef',borderRadius:5,paddingHorizontal:10,paddingVertical:5,marginTop:13}}><Text style={{fontSize:11,color:'#444',fontWeight:'700'}}>{d.phase.toUpperCase()}</Text></View>
+  {d.phase==='Initiation'?null:<DreamStageAction dream={d}/>}
 
   <Text style={{fontSize:14,lineHeight:22,marginTop:22,color:'#343434'}}>{d.summary}</Text>
   <Text style={{fontSize:16,fontWeight:'700',marginTop:24,marginBottom:10}}>De ce que j’ai besoin</Text>
