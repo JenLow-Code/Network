@@ -6,6 +6,7 @@ import {router} from 'expo-router';
 import {Avatar,Nav,Pill} from '@/components';
 import {ContactSheet} from '@/ContactSheet';
 import {colors as c} from '@/theme';
+import {useApp} from '@/context';
 
 type Kind='All'|'Chats'|'Collabs'|'Lessons';
 type Activity={id:number,kind:Kind,name:string,detail:string,age:string,status:'online'|'busy'|'offline'};
@@ -19,9 +20,10 @@ const initial:Activity[]=[
 ];
 const presence={online:'#24c967',busy:'#ef5c79',offline:'#c8c8c8'};
 export default function Space(){
+ const {rejectContact}=useApp();
  const [tab,setTab]=useState<Kind>('All');const [activities,setActivities]=useState(initial);
  const [decisions,setDecisions]=useState<Record<number,string>>({});
- function answer(id:number,yes:boolean){setDecisions(p=>({...p,[id]:yes?'Accepted':'Declined'}));Alert.alert(yes?'Invitation accepted':'Invitation declined','Demo only — not yet saved to the server.');}
+ function answer(id:number,yes:boolean){if(!yes){const activity=activities.find(a=>a.id===id);if(activity)rejectContact(activity.name);}setDecisions(p=>({...p,[id]:yes?'Accepted':'Declined'}));Alert.alert(yes?'Invitation accepted':'Invitation declined','Demo only — not yet saved to the server.');}
  return <SafeAreaView style={{flex:1,backgroundColor:'#fff'}}>
  <View style={{flex:1}}>
  <ScrollView contentContainerStyle={{paddingTop:15,paddingBottom:148}}>
@@ -29,7 +31,7 @@ export default function Space(){
  <View style={{flexDirection:'row',gap:6,marginHorizontal:15,marginBottom:20}}>
  {(['All','Chats','Collabs','Lessons'] as Kind[]).map(t=><Pill key={t} text={t} active={tab===t} onPress={()=>setTab(t)}/>)}</View>
  {activities.filter(x=>tab==='All'||x.kind===tab).map(item=>
- <Pressable key={item.id} onPress={()=>item.kind!=='Collabs'&&router.push('/chat/helena')} style={{paddingHorizontal:14,paddingVertical:10,flexDirection:'row',alignItems:'center',gap:10,minHeight:65}}>
+ <Pressable key={item.id} onPress={()=>item.kind==='Lessons'?router.push('/agenda'):item.kind!=='Collabs'&&router.push('/chat/helena')} style={{paddingHorizontal:14,paddingVertical:10,flexDirection:'row',alignItems:'center',gap:10,minHeight:65}}>
  <View style={{width:5,height:5,borderRadius:4,backgroundColor:presence[item.status]}}/>
  {item.name==='system'?<View style={{width:39,height:39,borderRadius:20,backgroundColor:c.pink,alignItems:'center',justifyContent:'center'}}><Ionicons name="notifications-outline" size={22}/></View>:<Avatar size={39}/>}
  <View style={{flex:1}}><Text style={{fontWeight:'700',fontSize:12}}>{item.name} <Text style={{color:'#999',fontWeight:'400'}}>{item.age}</Text></Text><Text style={{fontSize:11,color:'#888',marginTop:4}}>{item.detail}</Text></View>
