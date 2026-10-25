@@ -1,16 +1,15 @@
-# Copy to wrangler.toml and enter the actual D1 database UUID (no secrets here).
-name = "jenlow-network-api"
-main = "src/index.ts"
+# Deployment configuration for the free-tier beta API.
+# Copy to wrangler.toml; keep credentials in Cloudflare secret bindings.
+name = "jenlow-network-auth"
+main = "src/worker-runtime.js"
 compatibility_date = "2026-10-25"
 workers_dev = true
 
 [vars]
-ALLOWED_ORIGIN = "https://network.jenlow.net"
-GOOGLE_CLIENT_IDS = "REPLACE_WITH_GOOGLE_WEB_AND_MOBILE_CLIENT_IDS"
-APPLE_CLIENT_IDS = "REPLACE_WITH_APPLE_SERVICE_AND_BUNDLE_IDS"
+ALLOWED_ORIGIN = "https://network.jenlow.net,https://network.jenlow-production.workers.dev"
 
 [[d1_databases]]
 binding = "DB"
-database_name = "jenlow-network"
-database_id = "REPLACE_WITH_DATABASE_UUID"
+database_name = "network"
+database_id = "62ca4199-a913-4444-b176-b5d18c8817d1"
 migrations_dir = "../database/migrations"
