@@ -1,1 +1,45 @@
-{"expo":{"name":"JenLow Network","slug":"jenlow-network","scheme":"jenlownetwork","version":"0.1.0","orientation":"portrait","userInterfaceStyle":"light","newArchEnabled":true,"plugins":["expo-router"],"web":{"bundler":"metro","name":"JenLow Network"},"ios":{"supportsTablet":true},"android":{"package":"com.jenlow.network"}}}
+{
+  "expo": {
+    "name": "JenLow Network",
+    "slug": "jenlow-network",
+    "scheme": "jenlownetwork",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "plugins": [
+      "expo-router",
+      [
+        "expo-sharing",
+        {
+          "ios": {
+            "enabled": true,
+            "activationRule": {
+              "supportsText": true,
+              "supportsWebUrlWithMaxCount": 1,
+              "supportsImageWithMaxCount": 1
+            }
+          },
+          "android": {
+            "enabled": true,
+            "singleShareMimeTypes": [
+              "text/plain",
+              "image/*"
+            ],
+            "multipleShareMimeTypes": []
+          }
+        }
+      ]
+    ],
+    "web": {
+      "bundler": "metro",
+      "name": "JenLow Network"
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.jenlow.network"
+    }
+  }
+}
