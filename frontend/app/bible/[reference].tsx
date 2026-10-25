@@ -14,7 +14,7 @@ export default function Bible(){
  const {verse}=useLocalSearchParams<{reference:string;verse?:string}>();
  const focus=Math.max(1,Math.min(psalm150.length,Number(verse||6)||6));
  const post=biblePosts.find(p=>p.highlightedVerse===focus)||biblePosts[0];
- const inner=useRef<ScrollView>(null);
+ const inner=useRef<any>(null);
  const positions=useRef<Record<number,{y:number,height:number}>>({});
  const [ready,setReady]=useState(false);
  const centre=()=>{
