@@ -1,48 +1,51 @@
 import React,{useState} from 'react';
-import {Modal,Pressable,StyleSheet,Text,View} from 'react-native';
+import {Modal,Pressable,Share,StyleSheet,Text,View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
-import {useApp} from './context';
 import {router} from 'expo-router';
+import {useApp} from './context';
 import {dreams,Publication} from './discoveryData';
-import {colors as c} from './theme';
+import {allowedActions,ActionId} from './domain/publicationRules';
+import {myCircle,matchingTalents,myTalents} from './domain/demoCircle';
 import {PrayerIcon} from './PrayerIcon';
+import {colors as c} from './theme';
+
 export function ActionRail({item}:{item:Publication}){
- const app=useApp();
- const [choosing,setChoosing]=useState(false);
- const fire=app.isOnFire(item.id);
- const praying=app.isPraying(item.id);
+ const app=useApp(),[modal,setModal]=useState<'dream'|'circle'|null>(null);
+ const permitted=allowedActions(item);
  const seeded=Object.values(app.dreamInspirations).some(ids=>ids.includes(item.id));
- const button=(name:keyof typeof Ionicons.glyphMap,label:string,action:()=>void,active=false)=>
-  <Pressable key={label} accessibilityLabel={label} accessibilityRole="button" onPress={action} style={[s.button,active&&s.active]}>
-   <Ionicons name={name} size={20} color={active?c.pink:'#252525'}/>
-  </Pressable>;
+ const activity=(id:ActionId)=>{
+  switch(id){
+   case 'fire': app.toggleFire(item.id);break;
+   case 'prayer': app.togglePrayer(item.id);break;
+   case 'inspire':setModal('dream');break;
+   case 'share-internal':router.push({pathname:'/share/[id]',params:{id:item.id}});break;
+   case 'share-external':void Share.share({message:item.title+' — JenLow Network'});break;
+   case 'offer-help':router.push({pathname:'/chat/[id]',params:{id:'teacher'}});break;
+   case 'introduce':setModal('circle');break;
+   case 'encourage':app.encourage(item.id);break;
+   case 'same-dream':app.joinDream(item.id);break;
+   case 'audio-collab':app.proposeMusic(item.id);break;
+   case 'verse-export':router.push({pathname:'/verse-export/[id]',params:{id:item.id}});break;
+  }
+ };
+ const icons:Partial<Record<ActionId,keyof typeof Ionicons.glyphMap>>={
+  'fire':'flame-outline','share-internal':'chatbubble-outline','share-external':'share-outline',
+  'inspire':'add-circle-outline','encourage':'sparkles-outline','same-dream':'people-outline',
+  'offer-help':'hand-left-outline','introduce':'people-circle-outline',
+  'audio-collab':'mic-outline','verse-export':'download-outline'
+ };
+ const primary=permitted.filter(a=>a!=='prayer'&&(item.type!=='dream'||!['encourage','same-dream','offer-help','introduce'].includes(a)));
  return <View style={s.rail}>
-  {button(fire?'flame':'flame-outline','Save to Fire list',()=>app.toggleFire(item.id),fire)}
-  {button('chatbubble-outline','Share with someone',()=>router.push({pathname:'/share/[id]',params:{id:item.id}}))}
-  {button(seeded?'leaf':'add-circle-outline','Add to one of my Dreams',()=>setChoosing(true),seeded)}
-  {item.type!=='dream'?<Pressable accessibilityLabel="Save to today's prayers" onPress={()=>app.togglePrayer(item.id)} style={[s.button,praying&&s.active]}><PrayerIcon size={27}/></Pressable>:null}
-  <Modal visible={choosing} transparent animationType="fade" onRequestClose={()=>setChoosing(false)}>
-   <View style={s.modalBackdrop}><View style={s.modal}>
-    <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
-     <Text style={{fontWeight:'700',fontSize:17}}>Ajouter à mon rêve</Text>
-     <Pressable onPress={()=>setChoosing(false)} accessibilityLabel="Close"><Ionicons name="close" size={23}/></Pressable>
-    </View>
-    <Text style={{fontSize:12,color:'#777',marginBottom:12}}>Choisis le rêve auquel associer cette inspiration.</Text>
-    {dreams.map(d=><Pressable key={d.id} style={s.choice} onPress={()=>{app.addToDream(d.id,item.id);setChoosing(false)}}>
-     <Ionicons name="leaf-outline" size={18} color="#777"/>
-     <Text style={{fontSize:13,color:'#222',flex:1}}>{d.title}</Text>
-     {app.dreamInspirations[d.id]?.includes(item.id)?<Ionicons name="checkmark" color={c.pink} size={17}/>:null}
-    </Pressable>)}
-    <Text style={{fontSize:10,color:'#999',marginTop:14}}>Les rêves proposés sont des exemples tant que ton compte n’est pas connecté au backend.</Text>
-   </View></View>
-  </Modal>
+  {primary.map(action=><Pressable key={action} accessibilityLabel={action} accessibilityRole="button" onPress={()=>activity(action)} style={s.iconButton}>
+   {action==='inspire'&&seeded?<Ionicons name="leaf" color={c.pink} size={20}/>:<Ionicons name={icons[action]||'add'} color={action==='fire'&&app.isOnFire(item.id)?c.pink:'#222'} size={20}/>}
+  </Pressable>)}
+  {permitted.includes('prayer')?<Pressable accessibilityLabel="Prayer list" onPress={()=>activity('prayer')} style={[s.iconButton,app.isPraying(item.id)&&{backgroundColor:'#f7e9f0'}]}><PrayerIcon size={27}/></Pressable>:null}
+  <Modal visible={modal!==null} transparent animationType="fade" onRequestClose={()=>setModal(null)}><View style={s.overlay}><View style={s.box}>
+   <View style={s.heading}><Text style={{fontWeight:'700',fontSize:16}}>{modal==='circle'?'Présenter quelqu’un':'Ajouter à mon rêve'}</Text><Pressable onPress={()=>setModal(null)}><Ionicons name="close" size={24}/></Pressable></View>
+   {modal==='dream'?dreams.map(d=><Pressable key={d.id} style={s.item} onPress={()=>{app.addToDream(d.id,item.id);setModal(null)}}><Text style={{flex:1,fontSize:13}}>{d.title}</Text>{app.dreamInspirations[d.id]?.includes(item.id)?<Ionicons name="checkmark" color={c.pink} size={18}/>:null}</Pressable>):
+   myCircle.filter(person=>item.type==='dream'&&matchingTalents(item.needs,person.talents).length>0).map(person=><Pressable key={person.id} style={s.item} onPress={()=>{setModal(null);router.push({pathname:'/introduce/[id]',params:{id:item.id,person:person.id}})}}><Text style={{flex:1}}>{person.name} · {person.talents.join(', ')}</Text><Ionicons name="chevron-forward" size={19}/></Pressable>)}
+   <Text style={{color:'#888',fontSize:11,marginTop:12}}>Démo : les invitations et introductions réelles nécessitent le backend.</Text>
+  </View></View></Modal>
  </View>;
 }
-const s=StyleSheet.create({
- rail:{gap:1,alignItems:'center'},
- button:{width:32,height:32,justifyContent:'center',alignItems:'center',borderRadius:20,backgroundColor:'#fff'},
- active:{backgroundColor:'#f6e8ef'},
- modalBackdrop:{flex:1,backgroundColor:'rgba(0,0,0,.40)',alignItems:'center',justifyContent:'center',padding:20},
- modal:{backgroundColor:'#fff',width:'100%',maxWidth:390,padding:20,borderRadius:16},
- choice:{flexDirection:'row',alignItems:'center',padding:11,gap:10,borderBottomWidth:1,borderColor:'#eee'}
-});
+const s=StyleSheet.create({rail:{gap:1,alignItems:'center'},iconButton:{width:32,height:32,justifyContent:'center',alignItems:'center',borderRadius:20,backgroundColor:'#fff'},overlay:{flex:1,justifyContent:'center',padding:20,backgroundColor:'rgba(0,0,0,.38)'},box:{padding:18,backgroundColor:'#fff',borderRadius:15},heading:{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginBottom:13},item:{paddingVertical:12,paddingHorizontal:7,borderBottomWidth:1,borderColor:'#eee',flexDirection:'row',alignItems:'center',gap:9}});
