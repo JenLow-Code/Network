@@ -10,6 +10,6 @@ export function OfflineDreamImage({uri,height=190,label='Dream image',radius=12}
    <Circle cx="246" cy="43" r="26" fill="#ffffff" opacity=".45"/>
    <Path d="M0 161 Q60 101 134 153 Q220 96 320 151 L320 190 L0 190Z" fill="#94b69b" opacity=".30"/>
   </Svg>
-  {uri&&!failed?<Image source={{uri}} onError={()=>setFailed(true)} resizeMode="cover" accessibilityLabel={label} style={StyleSheet.absoluteFillObject}/>:null}
+  {uri&&!failed?<Image source={{uri}} onError={()=>setFailed(true)} resizeMode="cover" accessibilityLabel={label} style={StyleSheet.absoluteFill}/>:null}
  </View>;
 }
