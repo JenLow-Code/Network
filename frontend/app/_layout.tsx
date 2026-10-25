@@ -5,14 +5,15 @@ import { useFonts } from 'expo-font';
 import { Caveat_700Bold } from '@expo-google-fonts/caveat';
 import { Provider } from '@/context';
 import { DreamProvider } from '@/domain/dreamRepository';
+import { LocaleProvider } from '@/locale';
 
 export default function Layout() {
   const [loaded, error] = useFonts({ Caveat_700Bold });
   if (!loaded && !error) return null;
   return (
-    <Provider><DreamProvider>
+    <LocaleProvider><Provider><DreamProvider>
       <StatusBar style="dark" />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#fff' } }} />
-    </DreamProvider></Provider>
+    </DreamProvider></Provider></LocaleProvider>
   );
 }
