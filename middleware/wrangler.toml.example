@@ -1,0 +1,16 @@
+# Copy to wrangler.toml and enter the actual D1 database UUID (no secrets here).
+name = "jenlow-network-api"
+main = "src/index.ts"
+compatibility_date = "2026-10-25"
+workers_dev = true
+
+[vars]
+ALLOWED_ORIGIN = "https://network.jenlow.net"
+GOOGLE_CLIENT_IDS = "REPLACE_WITH_GOOGLE_WEB_AND_MOBILE_CLIENT_IDS"
+APPLE_CLIENT_IDS = "REPLACE_WITH_APPLE_SERVICE_AND_BUNDLE_IDS"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "jenlow-network"
+database_id = "REPLACE_WITH_DATABASE_UUID"
+migrations_dir = "../database/migrations"
