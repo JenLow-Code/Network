@@ -12,7 +12,7 @@ const choices:{id:Language;label:string}[]=[{id:'fr',label:'Français'},{id:'en'
 export default function Settings(){
  const {language,setLanguage,t,tr}=useLocale();
  const {logout,email}=useApp();const [busy,setBusy]=useState(false);
- const keys=['jenlow.network.demo.dream.workspace.v1','jenlow.network.fire.v1.'+email.toLowerCase(),'jenlow.network.inspirations.v1.'+email.toLowerCase(),...['jenlow.mine.','jenlow.prayer.','jenlow.encouragement.','jenlow.proposals.'].map(s=>s+email)];
+ const keys=['jenlow.network.demo.dream.workspace.v1.'+(email||'guest').toLowerCase(),'jenlow.network.fire.v1.'+email.toLowerCase(),'jenlow.network.inspirations.v1.'+email.toLowerCase(),...['jenlow.mine.','jenlow.prayer.','jenlow.encouragement.','jenlow.proposals.'].map(s=>s+email)];
  const clearDemo=async()=>{setBusy(true);try{await Promise.all(keys.map(k=>AsyncStorage.removeItem(k)));logout();router.replace('/login')}finally{setBusy(false)}};
  function confirmDemo(){
   Alert.alert('Clear demo data?','This clears saved prototype Dreams and lists on this device. It does not delete a server account, since no real account exists yet.',[{text:'Cancel',style:'cancel'},{text:'Clear demo data',style:'destructive',onPress:()=>{void clearDemo()}}]);
