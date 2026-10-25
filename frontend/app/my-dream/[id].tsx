@@ -4,6 +4,7 @@ import {SafeAreaView} from 'react-native-safe-area-context';
 import {Ionicons} from '@expo/vector-icons';
 import {router,useLocalSearchParams} from 'expo-router';
 import {Nav} from '@/components';
+import {OfflineDreamImage} from '@/OfflineDreamImage';
 import {useDreams} from '@/domain/dreamRepository';
 import {canEditField,nextPhase} from '@/domain/dreamWorkspace';
 export default function Workspace(){
@@ -23,7 +24,7 @@ export default function Workspace(){
  <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}><Pressable onPress={()=>router.back()}><Ionicons name="chevron-back" size={25}/></Pressable><Pressable onPress={deleteDream} accessibilityLabel="Supprimer mon rêve"><Ionicons name="trash-outline" color="#a65d63" size={21}/></Pressable></View>
  <Text style={{fontFamily:'Caveat_700Bold',fontSize:28,textAlign:'center',marginVertical:10}}>{dream.title}</Text>
  <Text style={{fontSize:12,color:'#777',textAlign:'center',marginBottom:15}}>{dream.phase} · Titre définitif</Text>
- <Image source={{uri:dream.image}} style={{width:'100%',height:190,borderRadius:11,backgroundColor:'#eee'}}/>
+ <OfflineDreamImage uri={dream.image} height={190}/>
  {field('summary',dream.summary)}
  {field('image',dream.image)}
  {field('needs',dream.needs.join(' · '))}
