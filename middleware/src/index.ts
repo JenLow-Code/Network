@@ -74,7 +74,7 @@ async function refresh(request:Request,env:Env){
  const b=await request.json().catch(()=>null);
  if(!validBody(b)||typeof b.refreshToken!=='string')return bad('refresh_token_required');
  const hash=await sha256(b.refreshToken);
- const row=await env.DB.prepare("SELECT s.id,s.user_id FROM auth_sessions s JOIN users u ON u.id=s.user_id WHERE s.refresh_token_hash=? AND s.revoked_at IS NULL AND s.expires_at>CURRENT_TIMESTAMP AND u.account_status='active'").bind(hash).first<{id:string;user_id:string}>();
+ const row=await env.DB.prepare("SELECT s.id,s.user_id FROM auth_sessions s JOIN users u ON u.id=s.user_id WHERE s.refresh_token_hash=? AND s.revoked_at IS NULL AND datetime(s.expires_at)>datetime('now') AND u.account_status='active'").bind(hash).first<{id:string;user_id:string}>();
  if(!row)return bad('invalid_refresh_token',401);
  const next=randomToken(),nextHash=await sha256(next);
  const result=await env.DB.prepare("UPDATE auth_sessions SET refresh_token_hash=?,last_used_at=CURRENT_TIMESTAMP WHERE id=? AND refresh_token_hash=? AND revoked_at IS NULL").bind(nextHash,row.id,hash).run();
