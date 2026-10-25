@@ -1,0 +1,20 @@
+name: D1 schema validation
+on:
+  push:
+    paths:
+      - 'database/**'
+      - '.github/workflows/d1-schema.yml'
+  pull_request:
+    paths:
+      - 'database/**'
+      - '.github/workflows/d1-schema.yml'
+  workflow_dispatch:
+jobs:
+  sqlite-validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python database/test_schema.py
