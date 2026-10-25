@@ -86,7 +86,7 @@ CREATE TABLE music_collab_proposals (
  status TEXT NOT NULL DEFAULT 'draft' CHECK(status IN ('draft','submitted','accepted','rejected','withdrawn','published')),
  publisher_response TEXT, published_track_id TEXT REFERENCES music_tracks(id),
  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, responded_at TEXT,
- CHECK(audio_asset_id IS NOT NULL OR external_audio_url IS NOT NULL)
+ CHECK(status='draft' OR audio_asset_id IS NOT NULL OR external_audio_url IS NOT NULL)
 );
 CREATE INDEX idx_music_proposals_track ON music_collab_proposals(original_track_id,status);
 CREATE TABLE music_proposal_credits (
