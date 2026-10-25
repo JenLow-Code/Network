@@ -24,6 +24,7 @@ export default function Workspace(){
  <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}><Pressable onPress={()=>router.back()}><Ionicons name="chevron-back" size={25}/></Pressable><Pressable onPress={deleteDream} accessibilityLabel="Supprimer mon rêve"><Ionicons name="trash-outline" color="#a65d63" size={21}/></Pressable></View>
  <Text style={{fontFamily:'Caveat_700Bold',fontSize:28,textAlign:'center',marginVertical:10}}>{dream.title}</Text>
  <Text style={{fontSize:12,color:'#777',textAlign:'center',marginBottom:15}}>{dream.phase} · Titre définitif</Text>
+ <Pressable onPress={()=>router.push({pathname:'/my-dream-participants/[id]',params:{id:dream.id}})} style={{alignSelf:'center',flexDirection:'row',gap:7,alignItems:'center',marginBottom:12,padding:8}}><Ionicons name="people-outline" size={18} color="#666"/><Text style={{fontSize:12,color:'#555'}}>Qui partage mon rêve ?</Text><Ionicons name="chevron-forward" size={16} color="#aaa"/></Pressable>
  <OfflineDreamImage uri={dream.image} height={190}/>
  {field('summary',dream.summary)}
  {field('image',dream.image)}
