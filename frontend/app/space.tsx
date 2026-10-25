@@ -8,6 +8,7 @@ import {ContactSheet} from '@/ContactSheet';
 import {colors as c} from '@/theme';
 import {useApp} from '@/context';
 import {FireHeader} from '@/FireHeader';
+import {useLocale} from '@/locale';
 
 type Kind='All'|'Chats'|'Collabs'|'Lessons';
 type Activity={id:number,kind:Kind,name:string,detail:string,age:string,status:'online'|'busy'|'offline'};
@@ -21,14 +22,14 @@ const initial:Activity[]=[
 ];
 const presence={online:'#24c967',busy:'#ef5c79',offline:'#c8c8c8'};
 export default function Space(){
- const {rejectContact}=useApp();
+ const {rejectContact}=useApp();const {t}=useLocale();
  const [tab,setTab]=useState<Kind>('All');const [activities,setActivities]=useState(initial);
  const [decisions,setDecisions]=useState<Record<number,string>>({});
  function answer(id:number,yes:boolean){if(!yes){const activity=activities.find(a=>a.id===id);if(activity)rejectContact(activity.name);}setDecisions(p=>({...p,[id]:yes?'Accepted':'Declined'}));Alert.alert(yes?'Invitation accepted':'Invitation declined','Demo only — not yet saved to the server.');}
  return <SafeAreaView style={{flex:1,backgroundColor:'#fff'}}>
  <View style={{flex:1}}>
  <ScrollView contentContainerStyle={{paddingTop:15,paddingBottom:148}}>
- <View style={{flexDirection:"row",justifyContent:"space-between",alignItems:"center",paddingHorizontal:20,marginBottom:15}}><Text style={{fontFamily:"Caveat_700Bold",fontSize:34,color:"#101010"}}>Your space</Text><View style={{flexDirection:"row",alignItems:"center",gap:8}}><Pressable onPress={()=>router.push("/circle")} accessibilityLabel="Mon cercle"><Ionicons name="people-outline" size={23} color="#333"/></Pressable><Pressable onPress={()=>router.push("/profile")} accessibilityLabel="Mon profil"><Ionicons name="person-circle-outline" size={26} color="#333"/></Pressable><FireHeader/></View></View>
+ <View style={{flexDirection:"row",justifyContent:"space-between",alignItems:"center",paddingHorizontal:20,marginBottom:15}}><Text style={{fontFamily:"Caveat_700Bold",fontSize:34,color:"#101010"}}>{t("space")}</Text><View style={{flexDirection:"row",alignItems:"center",gap:8}}><Pressable onPress={()=>router.push("/settings")} accessibilityLabel="Paramètres"><Ionicons name="settings-outline" size={22} color="#333"/></Pressable><Pressable onPress={()=>router.push("/circle")} accessibilityLabel="Mon cercle"><Ionicons name="people-outline" size={23} color="#333"/></Pressable><Pressable onPress={()=>router.push("/profile")} accessibilityLabel="Mon profil"><Ionicons name="person-circle-outline" size={26} color="#333"/></Pressable><FireHeader/></View></View>
  <View style={{flexDirection:'row',gap:6,marginHorizontal:15,marginBottom:20}}>
  {(['All','Chats','Collabs','Lessons'] as Kind[]).map(t=><Pill key={t} text={t} active={tab===t} onPress={()=>setTab(t)}/>)}</View>
  {activities.filter(x=>tab==='All'||x.kind===tab).map(item=>
