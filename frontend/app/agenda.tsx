@@ -1,5 +1,6 @@
+import {Text} from '@/i18n/LocalizedText';
 import React,{useMemo,useState} from 'react';
-import {Pressable,ScrollView,Share,Text,View} from 'react-native';
+import {Pressable,ScrollView,Share,View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {router} from 'expo-router';
 import {Ionicons} from '@expo/vector-icons';
