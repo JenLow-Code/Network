@@ -1,5 +1,6 @@
+import {Text} from '@/i18n/LocalizedText';
 import React,{useState} from 'react';
-import {Pressable,Text,View,useWindowDimensions} from 'react-native';
+import {Pressable,View,useWindowDimensions} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {router} from 'expo-router';
 import {Nav} from '@/components';
