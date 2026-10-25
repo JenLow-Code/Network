@@ -2,8 +2,9 @@ import React,{useState} from 'react';
 import {Pressable,Text,View,useWindowDimensions} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {router} from 'expo-router';
-import {Ionicons} from '@expo/vector-icons';
 import {Nav} from '@/components';
+import {FireHeader} from '@/FireHeader';
+import {Ionicons} from '@expo/vector-icons';
 import {DREAM_PHASES,PHASE_COLORS,DreamPhase} from '@/discoveryData';
 
 const descriptions:Record<DreamPhase,string>={
@@ -18,7 +19,7 @@ export default function MyDreams(){
  const w=Math.max(120,(area.width-gap)/2),h=Math.max(125,(area.height-gap)/2);
  return <SafeAreaView style={{flex:1,backgroundColor:'#fff'}}>
    <View style={{flex:1,paddingHorizontal:13,paddingTop:9,paddingBottom:12}}>
-    <View style={{paddingHorizontal:4,paddingBottom:13}}>
+    <View style={{paddingHorizontal:4,paddingBottom:13}}><View style={{position:'absolute',right:5,top:4,zIndex:5}}><FireHeader/></View>
      <Text style={{fontFamily:'Caveat_700Bold',fontSize:36,color:'#171717'}}>Mes rêves</Text>
      <Text style={{fontSize:12,color:'#888'}}>Un espace pour faire grandir tes rêves.</Text>
     </View>
