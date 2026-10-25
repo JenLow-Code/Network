@@ -127,6 +127,6 @@ export default {async fetch(request:Request,env:Env):Promise<Response>{
  else if(request.method==='GET'&&/^\/v1\/dreams\/[a-zA-Z0-9_-]{1,80}\/participants$/.test(path))response=await participants(request,env,path.split('/')[3]);
  else response=bad('not_found',404);
  }catch(err){response=bad('request_failed',500);}
- for(const [key,value] of new Headers(headers).entries())response.headers.set(key,value);
+ new Headers(headers).forEach((value,key)=>response.headers.set(key,value));
  return response;
  }};
