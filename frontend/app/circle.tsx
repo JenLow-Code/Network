@@ -1,4 +1,5 @@
-import React from 'react';import {Pressable,ScrollView,Text,View} from 'react-native';
+import {Text} from '@/i18n/LocalizedText';
+import React from 'react';import {Pressable,ScrollView,View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';import {Ionicons} from '@expo/vector-icons';import {router} from 'expo-router';import {Nav,Avatar} from '@/components';import {myCircle} from '@/domain/demoCircle';
 export default function Circle(){return <SafeAreaView style={{flex:1,backgroundColor:'#fff'}}><ScrollView style={{flex:1}} contentContainerStyle={{padding:18}}>
  <Text style={{fontFamily:'Caveat_700Bold',fontSize:35,marginBottom:6}}>Mon cercle</Text><Text style={{fontSize:12,color:'#888',marginBottom:18}}>Les personnes que je connais personnellement. Les appels vidéo sont réservés à ce cercle.</Text>
