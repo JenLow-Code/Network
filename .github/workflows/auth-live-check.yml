@@ -1,0 +1,20 @@
+name: Production Auth Smoke Test
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'middleware/src/worker-runtime.js'
+      - '.github/workflows/auth-live-check.yml'
+jobs:
+  live:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check live auth endpoint
+        run: |
+          set -eu
+          curl --fail-with-body -L --retry 2 --connect-timeout 10 'https://jenlow-network-auth.jenlow-production.workers.dev/health' | tee /tmp/health.json
+          python3 -c 'import json; data=json.load(open("/tmp/health.json")); assert data["status"]=="ok", data'
+      - name: Check unauthenticated access denied
+        run: |
+          code=$(curl -sS -o /tmp/me.json -w '%{http_code}' 'https://jenlow-network-auth.jenlow-production.workers.dev/v1/auth/me')
+          test "$code" = '401'
