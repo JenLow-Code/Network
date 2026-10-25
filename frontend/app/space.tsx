@@ -7,6 +7,7 @@ import {Avatar,Nav,Pill} from '@/components';
 import {ContactSheet} from '@/ContactSheet';
 import {colors as c} from '@/theme';
 import {useApp} from '@/context';
+import {FireHeader} from '@/FireHeader';
 
 type Kind='All'|'Chats'|'Collabs'|'Lessons';
 type Activity={id:number,kind:Kind,name:string,detail:string,age:string,status:'online'|'busy'|'offline'};
@@ -27,7 +28,7 @@ export default function Space(){
  return <SafeAreaView style={{flex:1,backgroundColor:'#fff'}}>
  <View style={{flex:1}}>
  <ScrollView contentContainerStyle={{paddingTop:15,paddingBottom:148}}>
- <Text style={{fontFamily:'Caveat_700Bold',fontSize:34,marginHorizontal:21,marginBottom:15,color:'#101010'}}>Your space</Text>
+ <View style={{flexDirection:"row",justifyContent:"space-between",alignItems:"center",paddingHorizontal:20,marginBottom:15}}><Text style={{fontFamily:"Caveat_700Bold",fontSize:34,color:"#101010"}}>Your space</Text><View style={{flexDirection:"row",alignItems:"center",gap:8}}><Pressable onPress={()=>router.push("/circle")} accessibilityLabel="Mon cercle"><Ionicons name="people-outline" size={23} color="#333"/></Pressable><Pressable onPress={()=>router.push("/profile")} accessibilityLabel="Mon profil"><Ionicons name="person-circle-outline" size={26} color="#333"/></Pressable><FireHeader/></View></View>
  <View style={{flexDirection:'row',gap:6,marginHorizontal:15,marginBottom:20}}>
  {(['All','Chats','Collabs','Lessons'] as Kind[]).map(t=><Pill key={t} text={t} active={tab===t} onPress={()=>setTab(t)}/>)}</View>
  {activities.filter(x=>tab==='All'||x.kind===tab).map(item=>
