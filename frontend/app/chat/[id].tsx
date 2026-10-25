@@ -1,5 +1,6 @@
+import {Text,TextInput} from '@/i18n/LocalizedText';
 import React,{useState} from 'react';
-import {KeyboardAvoidingView,Linking,Platform,Pressable,ScrollView,StyleSheet,Text,TextInput,View} from 'react-native';
+import {KeyboardAvoidingView,Linking,Platform,Pressable,ScrollView,StyleSheet,View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {Ionicons} from '@expo/vector-icons';
 import {router,useLocalSearchParams} from 'expo-router';
