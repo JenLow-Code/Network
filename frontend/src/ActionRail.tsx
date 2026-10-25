@@ -5,6 +5,7 @@ import {useApp} from './context';
 import {router} from 'expo-router';
 import {dreams,Publication} from './discoveryData';
 import {colors as c} from './theme';
+import {PrayerIcon} from './PrayerIcon';
 export function ActionRail({item}:{item:Publication}){
  const app=useApp();
  const [choosing,setChoosing]=useState(false);
@@ -13,13 +14,13 @@ export function ActionRail({item}:{item:Publication}){
  const seeded=Object.values(app.dreamInspirations).some(ids=>ids.includes(item.id));
  const button=(name:keyof typeof Ionicons.glyphMap,label:string,action:()=>void,active=false)=>
   <Pressable key={label} accessibilityLabel={label} accessibilityRole="button" onPress={action} style={[s.button,active&&s.active]}>
-   <Ionicons name={name} size={24} color={active?c.pink:'#252525'}/>
+   <Ionicons name={name} size={20} color={active?c.pink:'#252525'}/>
   </Pressable>;
  return <View style={s.rail}>
   {button(fire?'flame':'flame-outline','Save to Fire list',()=>app.toggleFire(item.id),fire)}
   {button('chatbubble-outline','Share with someone',()=>router.push({pathname:'/share/[id]',params:{id:item.id}}))}
   {button(seeded?'leaf':'add-circle-outline','Add to one of my Dreams',()=>setChoosing(true),seeded)}
-  {item.type!=='dream'?<Pressable accessibilityLabel="Save to today's prayers" onPress={()=>app.togglePrayer(item.id)} style={[s.button,praying&&s.active]}><Text style={{fontSize:21}}>{praying?'🙏':'🙏'}</Text></Pressable>:null}
+  {item.type!=='dream'?<Pressable accessibilityLabel="Save to today's prayers" onPress={()=>app.togglePrayer(item.id)} style={[s.button,praying&&s.active]}><PrayerIcon size={27}/></Pressable>:null}
   <Modal visible={choosing} transparent animationType="fade" onRequestClose={()=>setChoosing(false)}>
    <View style={s.modalBackdrop}><View style={s.modal}>
     <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
@@ -38,8 +39,8 @@ export function ActionRail({item}:{item:Publication}){
  </View>;
 }
 const s=StyleSheet.create({
- rail:{gap:3,alignItems:'center'},
- button:{width:36,height:36,justifyContent:'center',alignItems:'center',borderRadius:20,backgroundColor:'#fff'},
+ rail:{gap:1,alignItems:'center'},
+ button:{width:32,height:32,justifyContent:'center',alignItems:'center',borderRadius:20,backgroundColor:'#fff'},
  active:{backgroundColor:'#f6e8ef'},
  modalBackdrop:{flex:1,backgroundColor:'rgba(0,0,0,.40)',alignItems:'center',justifyContent:'center',padding:20},
  modal:{backgroundColor:'#fff',width:'100%',maxWidth:390,padding:20,borderRadius:16},
