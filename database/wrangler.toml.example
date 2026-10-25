@@ -1,0 +1,10 @@
+# Copy to database/wrangler.toml after creating your D1 database.
+# Use this only to manage migrations. Your API Worker will receive its own binding.
+name = "jenlow-network-db-migrations"
+compatibility_date = "2026-10-25"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "jenlow-network"
+database_id = "REPLACE_WITH_REAL_D1_DATABASE_UUID"
+migrations_dir = "migrations"
