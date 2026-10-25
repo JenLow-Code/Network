@@ -9,7 +9,7 @@ import {useApp} from '@/context';
 import {useLocale,Language,LANGUAGE_KEY} from '@/locale';
 const choices:{id:Language;label:string}[]=[{id:'fr',label:'Français'},{id:'en',label:'English'},{id:'de',label:'Deutsch'},{id:'pt',label:'Português'}];
 export default function Settings(){
- const {language,setLanguage,t}=useLocale();
+ const {language,setLanguage,t,tr}=useLocale();
  const {logout,email}=useApp();const [busy,setBusy]=useState(false);
  const keys=['jenlow.network.demo.dream.workspace.v1','jenlow.network.fire.v1.'+email.toLowerCase(),'jenlow.network.inspirations.v1.'+email.toLowerCase(),...['jenlow.mine.','jenlow.prayer.','jenlow.encouragement.','jenlow.proposals.'].map(s=>s+email)];
  const clearDemo=async()=>{setBusy(true);try{await Promise.all(keys.map(k=>AsyncStorage.removeItem(k)));logout();router.replace('/login')}finally{setBusy(false)}};
@@ -25,7 +25,7 @@ export default function Settings(){
      <Text style={{fontSize:14,color:'#222'}}>{option.label}</Text><Ionicons name={language===option.id?'radio-button-on':'radio-button-off'} size={20} color={language===option.id?'#D71D77':'#aaa'}/>
     </Pressable>)}
   </View>
-  <Text style={{fontSize:11,lineHeight:17,color:'#888',marginTop:11}}>The selection is saved locally. Navigation and Settings respond to language changes; full-screen translations will be connected in a later frontend pass.</Text>
+  <Text style={{fontSize:11,lineHeight:17,color:'#888',marginTop:11}}>{tr('settingsHelp')}</Text>
   <Text style={{fontSize:16,fontWeight:'700',marginTop:34,marginBottom:12}}>{t('account')}</Text>
   <Pressable accessibilityRole="button" disabled={busy} onPress={confirmDemo} style={{borderWidth:1,borderColor:'#ddd',padding:13,borderRadius:9,flexDirection:'row',gap:8,alignItems:'center'}}>
    <Ionicons name="trash-outline" color="#9e5163" size={20}/><Text style={{color:'#733e4b',fontSize:13}}>{t('demoData')}</Text>
