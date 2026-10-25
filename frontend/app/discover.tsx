@@ -7,10 +7,10 @@ import {useApp} from '@/context';
 import {Nav,Pill} from '@/components';
 import {PublicationGallery} from '@/PublicationGallery';
 import {publications} from '@/discoveryData';
-import {PrayerIcon} from '@/PrayerIcon';
+import {FireHeader} from '@/FireHeader';
 const filters=['Tout','Rêves','Musique','Bible'] as const;
 export default function Discover(){
- const {fireIds,prayerIds}=useApp();
+ 
  const [filter,setFilter]=useState<typeof filters[number]>('Tout');
  const [query,setQuery]=useState('');
  const items=useMemo(()=>publications.filter(p=>
@@ -19,7 +19,7 @@ export default function Discover(){
  ),[filter,query]);
  return <SafeAreaView style={{flex:1,backgroundColor:'#fff'}}>
   <ScrollView contentContainerStyle={{paddingHorizontal:15,paddingBottom:55,maxWidth:920,width:'100%',alignSelf:'center'}}>
-   <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}><Text style={{fontFamily:'Caveat_700Bold',fontSize:39,color:'#151515',marginTop:9,marginBottom:8}}>Découvrir</Text><View style={{flexDirection:"row",alignItems:"center",gap:4}}><Pressable accessibilityLabel="Share music" onPress={()=>router.push("/publish/music")} style={{padding:8}}><Ionicons name="add-circle-outline" size={23} color="#444"/></Pressable><Pressable accessibilityLabel="Open prayer list" onPress={()=>router.push("/prayers")} style={{padding:9,flexDirection:"row",alignItems:"center",gap:4}}><PrayerIcon size={26}/><Text style={{fontSize:12,color:"#555"}}>{prayerIds.length||""}</Text></Pressable><Pressable accessibilityLabel="Open Fire list" onPress={()=>router.push('/fire')} style={{flexDirection:'row',alignItems:'center',gap:4,padding:9}}><Ionicons name="flame" size={22} color="#D71D77"/><Text style={{fontSize:12,color:'#555'}}>{fireIds.length}</Text></Pressable></View></View>
+   <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}><Text style={{fontFamily:'Caveat_700Bold',fontSize:39,color:'#151515',marginTop:9,marginBottom:8}}>Découvrir</Text><View style={{flexDirection:"row",alignItems:"center",gap:4}}><FireHeader/></View></View>
    <View style={{height:42,borderWidth:1,borderColor:'#ececec',borderRadius:10,flexDirection:'row',alignItems:'center',paddingHorizontal:12,gap:9,marginBottom:13}}>
     <Ionicons name="search" size={18} color="#777"/><TextInput style={{flex:1,fontSize:13,color:'#222'}} placeholder="Chercher une inspiration…" value={query} onChangeText={setQuery}/>
    </View>
