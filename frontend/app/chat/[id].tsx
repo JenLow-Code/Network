@@ -13,7 +13,7 @@ function ChatHeader({name,subtitle}:{name:string,subtitle:string}) {
   <Avatar size={35}/>
   <View style={{flex:1}}><Text style={s.headerName}>{name}</Text><Text style={s.headerDetail}>{subtitle}</Text></View>
   <Ionicons name="call-outline" size={20} color="#111"/>
-  <Ionicons name="videocam-outline" size={22} color="#111"/>
+
  </View>;
 }
 function Action({title,subtitle,icon,onPress}:{title:string,subtitle?:string,icon:keyof typeof Ionicons.glyphMap,onPress:()=>void}) {
