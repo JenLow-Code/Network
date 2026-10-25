@@ -36,7 +36,8 @@
       "name": "JenLow Network"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.jenlow.network"
     },
     "android": {
       "package": "com.jenlow.network"
