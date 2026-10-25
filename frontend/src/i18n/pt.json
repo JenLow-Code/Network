@@ -1,0 +1,23 @@
+{
+  "agendaTitle": "A minha agenda",
+  "agendaSubtitle": "As minhas orações e compromissos",
+  "prayersToday": "Orações do dia",
+  "noPrayers": "Não há orações guardadas para esta data.",
+  "appointments": "Compromissos",
+  "accept": "Confirmar",
+  "decline": "Recusar",
+  "confirmed": "Confirmado",
+  "pending": "Pendente",
+  "exportCalendar": "Adicionar ao calendário",
+  "calendarDescription": "Exportar para o calendário do dispositivo, Google ou Outlook",
+  "emptyAgenda": "Sem eventos nesta data",
+  "discoverTitle": "Descobrir",
+  "searchPlaceholder": "Procurar inspiração…",
+  "all": "Tudo",
+  "dreamsFilter": "Sonhos",
+  "bibleFilter": "Bíblia",
+  "musicFilter": "Música",
+  "settingsHelp": "O idioma aplica-se à interface; alguns conteúdos de demonstração mantêm o idioma original.",
+  "participantTitle": "Pessoas que partilham o meu sonho",
+  "participantHint": "Apenas os proprietários do sonho podem ver estes nomes."
+}

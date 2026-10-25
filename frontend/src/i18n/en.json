@@ -1,0 +1,23 @@
+{
+  "agendaTitle": "My agenda",
+  "agendaSubtitle": "My prayers and appointments",
+  "prayersToday": "Today's prayers",
+  "noPrayers": "No prayers saved for this date.",
+  "appointments": "Appointments",
+  "accept": "Confirm",
+  "decline": "Decline",
+  "confirmed": "Confirmed",
+  "pending": "Pending",
+  "exportCalendar": "Add to calendar",
+  "calendarDescription": "Export to your device calendar, Google or Outlook",
+  "emptyAgenda": "No events for this date",
+  "discoverTitle": "Discover",
+  "searchPlaceholder": "Find inspiration…",
+  "all": "All",
+  "dreamsFilter": "Dreams",
+  "bibleFilter": "Bible",
+  "musicFilter": "Music",
+  "settingsHelp": "Language selection applies to the interface; some demo content retains its original language.",
+  "participantTitle": "People who share my dream",
+  "participantHint": "Only Dream owners can view these identities."
+}

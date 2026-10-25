@@ -1,0 +1,23 @@
+{
+  "agendaTitle": "Mein Kalender",
+  "agendaSubtitle": "Meine Gebete und Termine",
+  "prayersToday": "Gebete des Tages",
+  "noPrayers": "Für diesen Tag sind keine Gebete gespeichert.",
+  "appointments": "Termine",
+  "accept": "Bestätigen",
+  "decline": "Ablehnen",
+  "confirmed": "Bestätigt",
+  "pending": "Ausstehend",
+  "exportCalendar": "Zum Kalender hinzufügen",
+  "calendarDescription": "Export in den Gerätekalender, Google oder Outlook",
+  "emptyAgenda": "Keine Termine an diesem Tag",
+  "discoverTitle": "Entdecken",
+  "searchPlaceholder": "Inspiration finden…",
+  "all": "Alle",
+  "dreamsFilter": "Träume",
+  "bibleFilter": "Bibel",
+  "musicFilter": "Musik",
+  "settingsHelp": "Die Sprache wird für die Oberfläche übernommen; einige Demo-Inhalte bleiben in ihrer Originalsprache.",
+  "participantTitle": "Menschen mit demselben Traum",
+  "participantHint": "Nur die Eigentümer des Traums können diese Namen sehen."
+}

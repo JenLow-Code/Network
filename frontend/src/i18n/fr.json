@@ -1,0 +1,23 @@
+{
+  "agendaTitle": "Mon agenda",
+  "agendaSubtitle": "Mes prières et mes rendez-vous",
+  "prayersToday": "Prières du jour",
+  "noPrayers": "Aucune prière enregistrée pour cette date.",
+  "appointments": "Rendez-vous",
+  "accept": "Confirmer",
+  "decline": "Refuser",
+  "confirmed": "Confirmé",
+  "pending": "En attente",
+  "exportCalendar": "Ajouter au calendrier",
+  "calendarDescription": "Export vers le calendrier de votre appareil, Google ou Outlook",
+  "emptyAgenda": "Aucun événement pour cette date",
+  "discoverTitle": "Découvrir",
+  "searchPlaceholder": "Chercher une inspiration…",
+  "all": "Tout",
+  "dreamsFilter": "Rêves",
+  "bibleFilter": "Bible",
+  "musicFilter": "Musique",
+  "settingsHelp": "Le choix de langue s'applique à l'interface; certains textes de démonstration restent dans leur langue originale.",
+  "participantTitle": "Personnes partageant mon rêve",
+  "participantHint": "Cette liste est visible uniquement par les propriétaires du rêve."
+}
