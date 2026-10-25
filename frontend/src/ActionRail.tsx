@@ -24,7 +24,7 @@ export function ActionRail({item}:{item:Publication}){
    case 'introduce':setModal('circle');break;
    case 'encourage':app.encourage(item.id);break;
    case 'same-dream':app.joinDream(item.id);break;
-   case 'audio-collab':app.proposeMusic(item.id);break;
+   case 'audio-collab':router.push({pathname:'/music-proposal/[id]',params:{id:item.id}});break;
    case 'verse-export':router.push({pathname:'/verse-export/[id]',params:{id:item.id}});break;
   }
  };
