@@ -1,20 +1,30 @@
-# JenLow Network authentication Worker
+# JenLow Network — beta authentication Worker
 
-Authentication API starter for Cloudflare D1. Endpoints:
-- POST /v1/auth/exchange {provider:"google"|"apple",idToken,nonce?}: verifies provider-signed OIDC JWT via Google/Apple JWKS, issuer, audience, expiry; creates account on first verified sign-in
-- POST /v1/auth/refresh {refreshToken}: rotates hashed opaque refresh token
-- POST /v1/auth/logout {refreshToken}
-- GET /v1/auth/me with bearer token
-- POST /v1/account/deletion-request with bearer token (deactivates account, revokes sessions; **not complete data erasure**)
-- GET /v1/dreams/:id/participants: only an accepted Dream owner can retrieve identities of members who said "Moi aussi"
-- GET /health
+## What is deployed
+The **Cloudflare Workers Free** beta authentication Worker is implemented by `src/worker-runtime.js`, deployed as `jenlow-network-auth`.
 
-Configuration:
-1. Copy wrangler.toml.example to wrangler.toml and add actual D1 UUID.
-2. Set GOOGLE_CLIENT_IDS and APPLE_CLIENT_IDS to comma-separated *public OAuth client IDs* from provider portals.
-3. Set secret: npx wrangler secret put AUTH_JWT_SECRET (>=32 random chars).
-4. Apply D1 migrations 0001-0007 **before** deploy.
-5. npm install && npm run typecheck && npm run deploy from middleware directory.
-6. Native app must acquire idToken using approved Google/Apple sign-in SDK or AuthSession with correct audience, then exchange through HTTPS and store refresh token in device secure storage, not AsyncStorage.
+Public endpoint: https://jenlow-network-auth.jenlow-production.workers.dev
 
-Security notes: no email-password login; email field in current frontend is demo only. OAuth buttons are placeholders until native provider IDs, mobile redirects, and SDK acquisition are integrated. Do NOT ship a fake login as actual security. D1 auth requires server-side binding, never expose DB/token secrets to browsers. TLS, rate limiting (WAF), privacy notices, user blocking and account erasure workflows remain deployment tasks. Ensure the configured origin is the only web client origin; native clients have no Origin header. Refresh replay beyond single token rotation is not a full device/session risk engine. Account deletion endpoint is a deactivation request, not irreversible data purging.
+- `GET /health`
+- `POST /v1/auth/email/register` with `{displayName,email,password,inviteCode}` (12+ character password)
+- `POST /v1/auth/email/login` with `{email,password}`
+- `POST /v1/auth/refresh` with `{refreshToken}`
+- `GET /v1/auth/me` with `Authorization: Bearer <accessToken>`
+- `POST /v1/auth/logout` with `{refreshToken}`
+
+Passwords are PBKDF2-HMAC-SHA256 salted hashes. Short-lived JWT access tokens and hashed, rotating refresh tokens are backed by D1. Per-IP application throttling protects signup and login. Registration requires a secret **beta invitation code**, provided to test users separately from GitHub.
+
+## Not ready for public launch
+- Email verification and password recovery need a transactional email provider. Arbitrary-recipient sending with Cloudflare Email Service requires Workers Paid as of October 2026. Beta accounts are not verified; do not use them as trusted contact identities yet.
+- Native secure session persistence and token refreshing are not wired to the frontend: after page reload the tester may need to sign in again.
+- Google/Apple OAuth in `src/index.ts` is a **separate incomplete future implementation**, NOT currently served by the deployed beta worker. Their buttons remain disabled.
+- Account erasure, profile synchronization, Dreams, messages, calendar synchronization, server-side app authorization and anti-bot CAPTCHA remain future features.
+- The ten mock accounts are **deactivated** and have **no passwords or related activity**. Their addresses use the reserved example.invalid domain.
+
+## Deploying the same production script
+Copy `wrangler.toml.example` to `wrangler.toml`, then configure the two secrets using `wrangler secret put AUTH_JWT_SECRET` and `wrangler secret put BETA_INVITE_CODE`. Never commit their values. Deploy `src/worker-runtime.js`, not the incomplete `src/index.ts` OAuth prototype.
+
+When setting up real Google/Apple sign-in, merge their verified-token route into the same auth Worker and run an end-to-end security test before enabling buttons.
+
+## Test phones
+The web preview runs on https://network.jenlow-production.workers.dev/ (or network.jenlow.net once verified and routed). Sign up with a personal email, a unique 12+ character password, and the beta invitation code supplied privately by the project owner. Reload may require logging in again until session restoration is implemented.
