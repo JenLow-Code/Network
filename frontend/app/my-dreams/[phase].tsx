@@ -4,6 +4,7 @@ import {SafeAreaView} from 'react-native-safe-area-context';
 import {router,useLocalSearchParams} from 'expo-router';
 import {Ionicons} from '@expo/vector-icons';
 import {Nav} from '@/components';
+import {OfflineDreamImage} from '@/OfflineDreamImage';
 import {DREAM_PHASES,DreamPhase,PHASE_COLORS} from '@/discoveryData';
 import {useDreams} from '@/domain/dreamRepository';
 export default function Stage(){
@@ -18,7 +19,7 @@ export default function Stage(){
    <Pressable onPress={()=>router.push('/my-dream/new')} style={{padding:8}} accessibilityLabel="Créer un rêve"><Ionicons name="add-circle" size={29} color="#D71D77"/></Pressable>
   </View>
   {filtered.map(d=><Pressable key={d.id} onPress={()=>router.push({pathname:'/my-dream/[id]',params:{id:d.id}})} style={{borderWidth:1,borderColor:'#eee',borderRadius:13,marginBottom:12,padding:10,flexDirection:'row',alignItems:'center',gap:12}}>
-   <Image source={{uri:d.image}} style={{width:90,height:88,borderRadius:9,backgroundColor:'#ddd'}}/>
+   <View style={{width:90}}><OfflineDreamImage uri={d.image} height={88} radius={9}/></View>
    <View style={{flex:1}}><Text style={{fontWeight:'700',fontSize:14}}>{d.title}</Text><Text style={{fontSize:11,color:'#777',marginTop:7}}>{d.phase}</Text></View><Ionicons name="chevron-forward" size={20} color="#888"/>
   </Pressable>)}
   {!filtered.length?<Text style={{color:'#888',paddingTop:30,textAlign:'center'}}>Aucun rêve dans cette phase pour l’instant.</Text>:null}
