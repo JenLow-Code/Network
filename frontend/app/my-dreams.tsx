@@ -1,24 +1,42 @@
-import React from 'react';
-import {Pressable,ScrollView,Text,View,useWindowDimensions} from 'react-native';
+import React,{useState} from 'react';
+import {Pressable,Text,View,useWindowDimensions} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {router} from 'expo-router';
 import {Ionicons} from '@expo/vector-icons';
 import {Nav} from '@/components';
-import {DREAM_PHASES,PHASE_COLORS,dreams,DreamPhase} from '@/discoveryData';
+import {DREAM_PHASES,PHASE_COLORS,DreamPhase} from '@/discoveryData';
+
 const descriptions:Record<DreamPhase,string>={
- 'Rêve':'Des idées à faire naître','Initiation':'Rassembler les talents',
- 'Croissance':'Les rêves prennent forme','Témoignage':'Partager les fruits'
+ 'Rêve':'Des idées à faire naître',
+ 'Initiation':'Rassembler les talents',
+ 'Croissance':'Les rêves prennent forme',
+ 'Témoignage':'Partager les fruits',
 };
 export default function MyDreams(){
- const {width}=useWindowDimensions();const tile=Math.max(92,Math.min(230,(width-48)/2));
- return <SafeAreaView style={{flex:1,backgroundColor:'#fff'}}><View style={{flex:1}}>
- <ScrollView contentContainerStyle={{padding:18,paddingBottom:48}}>
-  <Text style={{fontFamily:'Caveat_700Bold',fontSize:38,color:'#181818',marginBottom:8}}>Mes rêves</Text>
-  <Text style={{fontSize:12,color:'#888',marginBottom:21}}>Un espace pour faire grandir tes rêves.</Text>
-  <View style={{flexDirection:'row',flexWrap:'wrap',columnGap:10,rowGap:10,justifyContent:'space-between'}}>
-  {DREAM_PHASES.map((phase,index)=><Pressable key={phase} onPress={()=>router.push({pathname:'/my-dreams/[phase]',params:{phase}})} style={{width:tile,height:tile,minHeight:0,backgroundColor:PHASE_COLORS[phase].background,borderRadius:12,padding:Math.max(9,Math.min(15,tile*.085)),justifyContent:'space-between'}}>
-   <Ionicons name={index===0?'ellipse-outline':index===1?'leaf-outline':index===2?'trending-up-outline':'sunny-outline'} size={25} color={PHASE_COLORS[phase].foreground}/>
-   <View><Text style={{fontSize:17,fontWeight:'700',color:'#222'}}>{phase}</Text><Text style={{fontSize:11,color:'#555',marginTop:5}}>{descriptions[phase]}</Text></View>
-  </Pressable>)}</View>
- </ScrollView></View><Nav/></SafeAreaView>;
+ const [area,setArea]=useState({width:0,height:0});
+ const gap=10;
+ const w=Math.max(120,(area.width-gap)/2),h=Math.max(125,(area.height-gap)/2);
+ return <SafeAreaView style={{flex:1,backgroundColor:'#fff'}}>
+   <View style={{flex:1,paddingHorizontal:13,paddingTop:9,paddingBottom:12}}>
+    <View style={{paddingHorizontal:4,paddingBottom:13}}>
+     <Text style={{fontFamily:'Caveat_700Bold',fontSize:36,color:'#171717'}}>Mes rêves</Text>
+     <Text style={{fontSize:12,color:'#888'}}>Un espace pour faire grandir tes rêves.</Text>
+    </View>
+    <View onLayout={e=>setArea({width:e.nativeEvent.layout.width,height:e.nativeEvent.layout.height})} style={{flex:1}}>
+     {area.width>0&&area.height>0?
+      <View style={{flex:1,gap}}>
+       {[0,1].map(row=><View key={row} style={{flex:1,flexDirection:'row',gap}}>
+        {DREAM_PHASES.slice(row*2,row*2+2).map((phase,i)=>{
+          const index=row*2+i;
+          return <Pressable key={phase} accessibilityRole="button" onPress={()=>router.push({pathname:'/my-dreams/[phase]',params:{phase}})} style={{flex:1,backgroundColor:PHASE_COLORS[phase].background,borderRadius:13,padding:15,justifyContent:'space-between'}}>
+           <Ionicons name={index===0?'ellipse-outline':index===1?'leaf-outline':index===2?'trending-up-outline':'sunny-outline'} size={27} color={PHASE_COLORS[phase].foreground}/>
+           <View><Text style={{fontSize:18,fontWeight:'700',color:'#202020'}}>{phase}</Text><Text style={{fontSize:12,lineHeight:17,color:'#555',marginTop:8}}>{descriptions[phase]}</Text></View>
+          </Pressable>;
+        })}
+       </View>)}
+      </View>:null}
+    </View>
+   </View>
+   <Nav/>
+ </SafeAreaView>;
 }
