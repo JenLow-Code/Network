@@ -34,7 +34,7 @@ export function ActionRail({item}:{item:Publication}){
   'offer-help':'hand-left-outline','introduce':'people-circle-outline',
   'audio-collab':'mic-outline','verse-export':'download-outline'
  };
- const primary=permitted.filter(a=>a!=='prayer'&&(item.type!=='dream'||!['encourage','same-dream','offer-help','introduce'].includes(a)));
+ const primary=permitted.filter(a=>a!=='prayer'&&(item.type!=='dream'||!['encourage','same-dream'].includes(a)));
  return <View style={s.rail}>
   {primary.map(action=><Pressable key={action} accessibilityLabel={action} accessibilityRole="button" onPress={()=>activity(action)} style={s.iconButton}>
    {action==='inspire'&&seeded?<Ionicons name="leaf" color={c.pink} size={20}/>:<Ionicons name={icons[action]||'add'} color={action==='fire'&&app.isOnFire(item.id)?c.pink:'#222'} size={20}/>}
