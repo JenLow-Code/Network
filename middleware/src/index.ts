@@ -1,6 +1,6 @@
 import {createRemoteJWKSet,jwtVerify,SignJWT} from 'jose';
 
-interface Env { DB:D1Database; AUTH_JWT_SECRET:string; ALLOWED_ORIGIN:string; GOOGLE_CLIENT_IDS:string; APPLE_CLIENT_IDS:string }
+interface Env { DB:D1Database; AUTH_JWT_SECRET:string; ALLOWED_ORIGIN:string; GOOGLE_CLIENT_IDS:string; APPLE_CLIENT_IDS:string; BETA_INVITE_CODE?:string }
 type Provider='google'|'apple';
 type IdClaims={sub:string;email?:string;email_verified?:string|boolean;name?:string};
 const googleKeys=createRemoteJWKSet(new URL('https://www.googleapis.com/oauth2/v3/certs'));
@@ -18,7 +18,7 @@ function allowOrigin(request:Request,env:Env):HeadersInit|undefined{
  if(origin!==env.ALLOWED_ORIGIN)return undefined;
  return {'Access-Control-Allow-Origin':origin,'Vary':'Origin','Access-Control-Allow-Headers':'Authorization,Content-Type','Access-Control-Allow-Methods':'GET,POST,DELETE,OPTIONS'};
 }
-function configOk(env:Env):boolean{return Boolean(env.AUTH_JWT_SECRET?.length>=32&&env.DB&&env.GOOGLE_CLIENT_IDS&&!env.GOOGLE_CLIENT_IDS.startsWith('REPLACE')&&env.APPLE_CLIENT_IDS&&!env.APPLE_CLIENT_IDS.startsWith('REPLACE'))}
+function configOk(env:Env):boolean{return Boolean(env.AUTH_JWT_SECRET?.length>=32&&env.DB)}
 async function verifyExternal(provider:Provider,idToken:string,env:Env,nonce?:string):Promise<IdClaims>{
  const ids=(provider==='google'?env.GOOGLE_CLIENT_IDS:env.APPLE_CLIENT_IDS).split(',').map(s=>s.trim()).filter(Boolean);
  if(ids.length===0)throw new Error('provider_not_configured');
@@ -110,6 +110,53 @@ async function requestDeletion(request:Request,env:Env){
  ]);
  return json({accepted:true,message:'Account deactivated and all refresh sessions revoked. Erasure workflow must be completed by backend operators.'},202);
 }
+
+const emailRegex=/^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+const bytesToHex=(a:Uint8Array)=>Array.from(a,x=>x.toString(16).padStart(2,'0')).join('');
+function hexToBytes(s:string){return Uint8Array.from(s.match(/../g)||[],x=>parseInt(x,16))}
+async function derivePassword(password:string,salt:string,iterations=210000){
+ const input=await crypto.subtle.importKey('raw',encoder.encode(password),'PBKDF2',false,['deriveBits']);
+ const bits=await crypto.subtle.deriveBits({name:'PBKDF2',hash:'SHA-256',salt:hexToBytes(salt),iterations},input,256);
+ return hex(bits);
+}
+async function limit(env:Env,ip:string,scope:string,max=8){
+ const key=await sha256(scope+':'+ip);const now=Math.floor(Date.now()/1000),start=now-now%900;
+ await env.DB.prepare("INSERT INTO auth_rate_limits(throttle_key,attempt_count,window_start,expires_at) VALUES(?,1,?,?) ON CONFLICT(throttle_key) DO UPDATE SET attempt_count=CASE WHEN window_start=? THEN attempt_count+1 ELSE 1 END, window_start=?,expires_at=?").bind(key,start,start+900,start,start,start+900).run();
+ const row=await env.DB.prepare("SELECT attempt_count FROM auth_rate_limits WHERE throttle_key=?").bind(key).first<{attempt_count:number}>();
+ return (row?.attempt_count||99)<=max;
+}
+async function emailRegister(request:Request,env:Env){
+ const ip=request.headers.get('CF-Connecting-IP')||'unknown';
+ if(!await limit(env,ip,'register',4))return bad('rate_limited',429);
+ const b=await request.json().catch(()=>null);
+ if(!validBody(b)||typeof b.email!=='string'||typeof b.password!=='string'||typeof b.displayName!=='string')return bad('invalid_registration');
+ if(!emailRegex.test(b.email)||b.email.length>254||b.password.length<12||b.password.length>128||b.displayName.trim().length<2||b.displayName.length>100)return bad('invalid_registration');
+ if(!env.BETA_INVITE_CODE||typeof b.inviteCode!=='string'||b.inviteCode!==env.BETA_INVITE_CODE)return bad('beta_invite_required',403);
+ const email=b.email.toLowerCase().trim();
+ if(await env.DB.prepare('SELECT 1 FROM users WHERE email=?').bind(email).first())return bad('email_unavailable',409);
+ const uid=crypto.randomUUID(),salt=bytesToHex(crypto.getRandomValues(new Uint8Array(16))),hash=await derivePassword(b.password,salt);
+ const handle='jl_'+uid.replace(/-/g,'').slice(0,15);
+ try{
+ await env.DB.batch([
+ env.DB.prepare("INSERT INTO users(id,handle,display_name,email) VALUES(?,?,?,?)").bind(uid,handle,b.displayName.trim(),email),
+ env.DB.prepare("INSERT INTO email_password_credentials(user_id,password_salt,password_hash,password_iterations) VALUES(?,?,?,210000)").bind(uid,salt,hash),
+ env.DB.prepare("INSERT INTO user_preferences(user_id) VALUES(?)").bind(uid)
+ ]);
+ }catch{return bad('registration_failed',409)}
+ return json({user:{id:uid,email,displayName:b.displayName.trim()},session:await sessionFor(uid,env)},201);
+}
+async function emailLogin(request:Request,env:Env){
+ const ip=request.headers.get('CF-Connecting-IP')||'unknown';
+ if(!await limit(env,ip,'login',10))return bad('rate_limited',429);
+ const b=await request.json().catch(()=>null);
+ if(!validBody(b)||typeof b.email!=='string'||typeof b.password!=='string'||b.password.length>128)return bad('invalid_credentials',401);
+ const email=b.email.trim().toLowerCase();
+ const row=await env.DB.prepare("SELECT u.id,u.handle,u.display_name,u.email,u.account_status,c.password_salt,c.password_hash,c.password_iterations FROM users u JOIN email_password_credentials c ON c.user_id=u.id WHERE u.email=?").bind(email).first<{id:string;handle:string;display_name:string;email:string;account_status:string;password_salt:string;password_hash:string;password_iterations:number}>();
+ const candidate=await derivePassword(b.password,row?.password_salt||'00112233445566778899aabbccddeeff',row?.password_iterations||210000);
+ if(!row||row.account_status!=='active'||candidate!==row.password_hash)return bad('invalid_credentials',401);
+ return json({user:{id:row.id,handle:row.handle,displayName:row.display_name,email:row.email},session:await sessionFor(row.id,env)});
+}
+
 export default {async fetch(request:Request,env:Env):Promise<Response>{
  const url=new URL(request.url),path=url.pathname;
  const headers=allowOrigin(request,env);
@@ -119,6 +166,8 @@ export default {async fetch(request:Request,env:Env):Promise<Response>{
  try{
  if(path==='/health'&&request.method==='GET')response=json({status:'ok'});
  else if(!configOk(env))response=bad('authentication_not_configured',503);
+ else if(path==='/v1/auth/email/register'&&request.method==='POST')response=await emailRegister(request,env);
+ else if(path==='/v1/auth/email/login'&&request.method==='POST')response=await emailLogin(request,env);
  else if(path==='/v1/auth/exchange'&&request.method==='POST')response=await exchange(request,env);
  else if(path==='/v1/auth/refresh'&&request.method==='POST')response=await refresh(request,env);
  else if(path==='/v1/auth/logout'&&request.method==='POST')response=await logout(request,env);
