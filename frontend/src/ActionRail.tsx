@@ -7,6 +7,7 @@ import {dreams,Publication} from './discoveryData';
 import {allowedActions,ActionId} from './domain/publicationRules';
 import {myCircle,matchingTalents,myTalents} from './domain/demoCircle';
 import {PrayerIcon} from './PrayerIcon';
+import {FireIcon} from './FireIcon';
 import {colors as c} from './theme';
 
 export function ActionRail({item}:{item:Publication}){
@@ -37,7 +38,7 @@ export function ActionRail({item}:{item:Publication}){
  const primary=permitted.filter(a=>a!=='prayer'&&(item.type!=='dream'||!['encourage','same-dream'].includes(a)));
  return <View style={s.rail}>
   {primary.map(action=><Pressable key={action} accessibilityLabel={action} accessibilityRole="button" onPress={()=>activity(action)} style={s.iconButton}>
-   {action==='inspire'&&seeded?<Ionicons name="leaf" color={c.pink} size={20}/>:<Ionicons name={icons[action]||'add'} color={action==='fire'&&app.isOnFire(item.id)?c.pink:'#222'} size={20}/>}
+   {action==='fire'?<FireIcon size={28}/>:action==='inspire'&&seeded?<Ionicons name="leaf" color={c.pink} size={20}/>:<Ionicons name={icons[action]||'add'} color="#222" size={20}/>}
   </Pressable>)}
   {permitted.includes('prayer')?<Pressable accessibilityLabel="Prayer list" onPress={()=>activity('prayer')} style={[s.iconButton,app.isPraying(item.id)&&{backgroundColor:'#f7e9f0'}]}><PrayerIcon size={27}/></Pressable>:null}
   <Modal visible={modal!==null} transparent animationType="fade" onRequestClose={()=>setModal(null)}><View style={s.overlay}><View style={s.box}>
