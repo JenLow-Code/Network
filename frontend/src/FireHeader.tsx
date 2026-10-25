@@ -1,0 +1,2 @@
+import React from 'react';import {Pressable,Text,View} from 'react-native';import {router} from 'expo-router';import {FireIcon} from './FireIcon';import {useApp} from './context';
+export function FireHeader(){const {fireIds}=useApp();return <Pressable onPress={()=>router.push('/fire')} accessibilityLabel="Ma liste Fire" style={{padding:6,flexDirection:'row',alignItems:'center',gap:2}}><FireIcon size={31}/>{fireIds.length?<Text style={{fontSize:11,color:'#555'}}>{fireIds.length}</Text>:null}</Pressable>}
