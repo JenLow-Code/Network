@@ -12,12 +12,13 @@ import {AgendaEntry,DEMO_AGENDA} from '@/domain/agendaTypes';
 import {publicationPath} from '@/PublicationGallery';
 const isoDay=(d:Date)=>[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
 export default function Agenda(){
- const {language,tr}=useLocale();const {prayerIds,togglePrayer}=useApp();
+ const {language,tr}=useLocale();const {prayersForDate,togglePrayer}=useApp();
  const [day,setDay]=useState(new Date());const [events,setEvents]=useState<AgendaEntry[]>(DEMO_AGENDA);
  const dateKey=isoDay(day),locale={fr:'fr-FR',en:'en-US',de:'de-DE',pt:'pt-PT'}[language];
  // Until backend, current prayer saves are not date-scoped. Show them on today only.
  const today=isoDay(new Date())===dateKey;
- const prayers=today?publications.filter(p=>prayerIds.includes(p.id)):[];
+ const savedPrayers=prayersForDate(dateKey);
+ const prayers=publications.filter(p=>savedPrayers.includes(p.id));
  const dateCaption=day.toLocaleDateString(locale,{weekday:'long',day:'numeric',month:'long',year:'numeric'});
  const shift=(n:number)=>setDay(prev=>new Date(prev.getFullYear(),prev.getMonth(),prev.getDate()+n));
  const shownEvents=events.filter(e=>e.status!=='declined'&&today);
