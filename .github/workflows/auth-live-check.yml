@@ -18,3 +18,8 @@ jobs:
         run: |
           code=$(curl -sS -o /tmp/me.json -w '%{http_code}' 'https://jenlow-network-auth.jenlow-production.workers.dev/v1/auth/me')
           test "$code" = '401'
+
+      - name: Check phone web preview availability
+        run: |
+          curl --fail-with-body -L --retry 2 --connect-timeout 10 --max-time 30 -o /tmp/frontend.html 'https://network.jenlow-production.workers.dev/'
+          test -s /tmp/frontend.html
