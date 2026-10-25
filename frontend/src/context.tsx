@@ -12,7 +12,7 @@ type AppState={
   bio:string;
   city:string;
   church:string;
-  login:(email:string)=>void;
+  login:(email:string,displayName?:string)=>void;
   logout:()=>void;
   edit:(patch:Partial<ProfileChanges>)=>void;
   messages:Message[];
@@ -96,7 +96,7 @@ export function Provider({children}:{children:React.ReactNode}){
  const value=useMemo<AppState>(()=>({
   rejectedContacts,
   rejectContact:(person)=>setRejectedContacts(prev=>prev.includes(person)?prev:[...prev,person]),
-  signedIn:!!email,email,name,bio,city,church,login:setEmail,logout:()=>setEmail(''),
+  signedIn:!!email,email,name,bio,city,church,login:(userEmail,displayName)=>{setEmail(userEmail);if(displayName)setName(displayName);},logout:()=>setEmail(''),
   edit:patch=>{
    if(patch.name!==undefined)setName(patch.name);
    if(patch.bio!==undefined)setBio(patch.bio);
