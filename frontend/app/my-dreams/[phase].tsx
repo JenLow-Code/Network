@@ -4,7 +4,7 @@ import {Image,Pressable,ScrollView,View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {router,useLocalSearchParams} from 'expo-router';
 import {Ionicons} from '@expo/vector-icons';
-import {Nav} from '@/components';
+import {Nav,TopActions} from '@/components';
 import {OfflineDreamImage} from '@/OfflineDreamImage';
 import {DREAM_PHASES,DreamPhase,PHASE_COLORS} from '@/discoveryData';
 import {useDreams} from '@/domain/dreamRepository';
@@ -14,9 +14,9 @@ export default function Stage(){
  const {items}=useDreams();
  const filtered=items.filter(x=>x.phase===current);
  return <SafeAreaView style={{flex:1,backgroundColor:'#fff'}}><ScrollView style={{flex:1}} contentContainerStyle={{padding:18}}>
-  <Pressable onPress={()=>router.back()}><Ionicons name="chevron-back" size={26}/></Pressable>
+  <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}><Pressable onPress={()=>router.back()}><Ionicons name="chevron-back" size={26}/></Pressable><TopActions/></View>
   <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}>
-   <Text style={{fontFamily:'Caveat_700Bold',fontSize:36,marginVertical:10}}>{current||'Mes rêves'}</Text>
+   <Text style={{fontSize:28,fontWeight:'700',marginVertical:10}}>{current||'Mes rêves'}</Text>
    <Pressable onPress={()=>router.push('/my-dream/new')} style={{padding:8}} accessibilityLabel="Créer un rêve"><Ionicons name="add-circle" size={29} color="#D71D77"/></Pressable>
   </View>
   {filtered.map(d=><Pressable key={d.id} onPress={()=>router.push({pathname:'/my-dream/[id]',params:{id:d.id}})} style={{borderWidth:1,borderColor:'#eee',borderRadius:13,marginBottom:12,padding:10,flexDirection:'row',alignItems:'center',gap:12}}>
