@@ -4,6 +4,7 @@ on:
     paths:
       - 'frontend/package.json'
       - 'frontend/app.json'
+      - 'frontend/tsconfig.json'
       - '.github/workflows/eas-dependency-diagnostics.yml'
   workflow_dispatch:
 jobs:
