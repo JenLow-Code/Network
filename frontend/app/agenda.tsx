@@ -14,7 +14,7 @@ import {publicationPath} from '@/PublicationGallery';
 const isoDay=(d:Date)=>[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
 export default function Agenda(){
  const {language,tr}=useLocale();const {prayersForDate,togglePrayer}=useApp();
- const [day,setDay]=useState(new Date());const [events,setEvents]=useState<AgendaEntry[]>(DEMO_AGENDA);
+ const [day,setDay]=useState(new Date());const [calendarOpen,setCalendarOpen]=useState(false);const [events,setEvents]=useState<AgendaEntry[]>(DEMO_AGENDA);
  const dateKey=isoDay(day),locale={fr:'fr-FR',en:'en-US',de:'de-DE',pt:'pt-PT'}[language];
  // Until backend, current prayer saves are not date-scoped. Show them on today only.
  const today=isoDay(new Date())===dateKey;
@@ -34,9 +34,13 @@ export default function Agenda(){
   <Text style={{color:'#888',fontSize:12,marginTop:3}}>{tr('agendaSubtitle')}</Text>
   <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginTop:23,paddingVertical:12,borderTopWidth:1,borderBottomWidth:1,borderColor:'#eee'}}>
    <Pressable onPress={()=>shift(-1)} accessibilityLabel="Previous day" style={{padding:8}}><Ionicons name="chevron-back" size={23}/></Pressable>
-   <View style={{flexDirection:'row',gap:7,alignItems:'center'}}><Ionicons name="calendar-outline" size={20} color="#D71D77"/><Text style={{fontWeight:'700',fontSize:13,textTransform:'capitalize'}}>{dateCaption}</Text></View>
+   <Pressable onPress={()=>setCalendarOpen(x=>!x)} accessibilityLabel="Choisir une date" style={{flexDirection:'row',gap:7,alignItems:'center'}}><Ionicons name="calendar-outline" size={20} color="#D71D77"/><Text style={{fontWeight:'700',fontSize:13,textTransform:'capitalize'}}>{dateCaption}</Text><Ionicons name="chevron-down" size={14} color="#777"/></Pressable>
    <Pressable onPress={()=>shift(1)} accessibilityLabel="Next day" style={{padding:8}}><Ionicons name="chevron-forward" size={23}/></Pressable>
   </View>
+  {calendarOpen?<View style={{padding:12,borderRadius:12,borderWidth:1,borderColor:'#eee',marginTop:8,backgroundColor:'#fff'}}>
+   <Text style={{textAlign:'center',fontWeight:'700',marginBottom:10}}>{day.toLocaleDateString(locale,{month:'long',year:'numeric'})}</Text>
+   <View style={{flexDirection:'row',flexWrap:'wrap'}}>{Array.from({length:new Date(day.getFullYear(),day.getMonth(),1).getDay()===0?6:new Date(day.getFullYear(),day.getMonth(),1).getDay()-1},(_,i)=><View key={'empty'+i} style={{width:'14.285%',height:38}}/>)}{Array.from({length:new Date(day.getFullYear(),day.getMonth()+1,0).getDate()},(_,i)=>i+1).map(n=><Pressable key={n} onPress={()=>{setDay(new Date(day.getFullYear(),day.getMonth(),n));setCalendarOpen(false)}} style={{width:'14.285%',height:38,alignItems:'center',justifyContent:'center',backgroundColor:n===day.getDate()?'#f3dce7':'transparent',borderRadius:6}}><Text style={{fontSize:12}}>{n}</Text></Pressable>)}</View>
+   </View>:null}
   <Pressable onPress={()=>setDay(new Date())} style={{alignSelf:'center',padding:7}}><Text style={{fontSize:11,color:'#888'}}>{language==='fr'?"Aujourd'hui":language==='de'?'Heute':language==='pt'?'Hoje':'Today'}</Text></Pressable>
   <View style={{flexDirection:'row',alignItems:'center',gap:9,marginTop:14,marginBottom:10}}><PrayerIcon size={30}/><Text style={{fontSize:17,fontWeight:'700'}}>{tr('prayersToday')}</Text></View>
   {prayers.length===0?<Text style={{fontSize:12,color:'#888',paddingVertical:14}}>{tr('noPrayers')}</Text>:prayers.map(p=><View key={p.id} style={{flexDirection:'row',alignItems:'center',paddingVertical:11,borderBottomWidth:1,borderColor:'#f0f0f0',gap:11}}>
