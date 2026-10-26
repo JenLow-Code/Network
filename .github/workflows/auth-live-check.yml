@@ -23,3 +23,10 @@ jobs:
         run: |
           curl --fail-with-body -L --retry 2 --connect-timeout 10 --max-time 30 -o /tmp/frontend.html 'https://network.jenlow-production.workers.dev/'
           test -s /tmp/frontend.html
+
+      - name: Check unknown email is rejected gracefully
+        run: |
+          code=$(curl -sS --max-time 40 -o /tmp/login.json -w '%{http_code}' -X POST 'https://jenlow-network-auth.jenlow-production.workers.dev/v1/auth/email/login' -H 'Content-Type: application/json' --data '{"email":"no-account@example.invalid","password":"unusable-test-password"}')
+          echo "Unknown-email login status: $code"
+          python3 -c 'import json; print("Response:", json.load(open("/tmp/login.json")))'
+          test "$code" = '401'
