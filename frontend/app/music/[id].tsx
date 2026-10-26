@@ -15,7 +15,7 @@ export default function MusicDetail(){
  if(!item)return <SafeAreaView><Text>Music not found</Text></SafeAreaView>;
  return <SafeAreaView style={{flex:1,backgroundColor:'#fff'}}><ScrollView style={{flex:1}} contentContainerStyle={{padding:17,paddingBottom:60,maxWidth:840,width:'100%',alignSelf:'center'}}>
   <View style={{flexDirection:"row",alignItems:"center",marginBottom:12}}><Pressable onPress={()=>router.back()}><Ionicons name="chevron-back" size={26}/></Pressable><Avatar size={29}/><View style={{flex:1,alignItems:"center",minWidth:0}}><Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={{fontSize:25,fontFamily:"Caveat_700Bold",textAlign:"center"}}>{item.title}</Text><Text style={{fontSize:11,color:"#888"}}>{item.author} · Musique</Text></View></View>
-  <View style={{flexDirection:'row',alignItems:'flex-end',gap:6}}><ActionRail item={item}/><Image source={{uri:item.image}} style={{flex:1,height:245,borderRadius:12}}/></View>
+  <View style={{flexDirection:'row',alignItems:'center',gap:8}}><Image source={{uri:item.image}} style={{flex:1,height:245,borderRadius:12}}/><View style={{width:48,alignItems:'center'}}><ActionRail item={item}/></View></View>
 
   <Text style={{color:'#444',marginTop:17,fontSize:14}}>{item.description}</Text>
   <View style={{marginTop:21}}><StoneDeck/></View>
