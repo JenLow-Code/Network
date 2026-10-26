@@ -4,7 +4,7 @@ import {Alert,Pressable,ScrollView,View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {Ionicons} from '@expo/vector-icons';
 import {router} from 'expo-router';
-import {Avatar,Nav,Pill} from '@/components';
+import {Avatar,Nav,Pill,TopActions} from '@/components';
 import {ContactSheet} from '@/ContactSheet';
 import {colors as c} from '@/theme';
 import {useApp} from '@/context';
@@ -30,7 +30,7 @@ export default function Space(){
  return <SafeAreaView style={{flex:1,backgroundColor:'#fff'}}>
  <View style={{flex:1}}>
  <ScrollView contentContainerStyle={{paddingTop:15,paddingBottom:148}}>
- <View style={{flexDirection:"row",justifyContent:"space-between",alignItems:"center",paddingHorizontal:20,marginBottom:15}}><Text style={{fontFamily:"Caveat_700Bold",fontSize:34,color:"#101010"}}>{t("space")}</Text><View style={{flexDirection:"row",alignItems:"center",gap:8}}><Pressable onPress={()=>router.push("/settings")} accessibilityLabel="Paramètres"><Ionicons name="settings-outline" size={22} color="#333"/></Pressable><Pressable onPress={()=>router.push("/circle")} accessibilityLabel="Mon cercle"><Ionicons name="people-outline" size={23} color="#333"/></Pressable><Pressable onPress={()=>router.push("/profile")} accessibilityLabel="Mon profil"><Ionicons name="person-outline" size={26} color="#333"/></Pressable><FireHeader/></View></View>
+ <View style={{flexDirection:"row",justifyContent:"space-between",alignItems:"center",paddingHorizontal:20,marginBottom:15}}><Text style={{fontSize:30,fontWeight:'700',color:'#101010'}}>{t('space')}</Text><TopActions/></View>
  <View style={{flexDirection:'row',gap:6,marginHorizontal:15,marginBottom:20}}>
  {(['All','Chats','Collabs','Lessons'] as Kind[]).map(t=><Pill key={t} text={t} active={tab===t} onPress={()=>setTab(t)}/>)}</View>
  {activities.filter(x=>tab==='All'||x.kind===tab).map(item=>
