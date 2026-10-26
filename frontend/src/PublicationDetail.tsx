@@ -18,17 +18,14 @@ export function PublicationDetail({item,children,media}:{item:Publication;childr
     <Pressable onPress={()=>router.back()} accessibilityLabel="Retour" style={{width:44,height:44,alignItems:'center',justifyContent:'center'}}><Ionicons name="chevron-back" size={24} color="#222"/></Pressable>
     <TopActions/>
    </View>
+   <Text style={{fontSize:22,lineHeight:29,fontWeight:'700',color:'#171717',marginBottom:12}}>{item.title}</Text>
    <View style={{borderWidth:1,borderColor:'#E8E8E8',borderRadius:16,padding:13,backgroundColor:'#fff'}}>
-    <View style={{flexDirection:'row',alignItems:'flex-start',justifyContent:'space-between',gap:12,marginBottom:13}}>
-     <Text style={{flex:1,fontSize:22,lineHeight:27,fontWeight:'700',color:'#171717'}}>{item.title}</Text>
-     <View style={{flexDirection:'row',alignItems:'center',gap:6}}><Avatar size={28}/><Text style={{fontSize:12,color:'#555'}}>{item.author}</Text></View>
-    </View>
-    <View style={{flexDirection:'row',alignItems:'center',gap:7}}>
+    <View style={{flexDirection:'row',alignItems:'flex-end',gap:7}}>
      <View style={{flex:1,minWidth:0}}>
       {media??<Image source={{uri:item.image}} resizeMode="cover" style={{width:'100%',height:item.type==='bible'?280:230,borderRadius:10,backgroundColor:'#f3f3f3'}}/>}
       {phase?<View style={{position:'absolute',left:10,top:10,paddingHorizontal:10,paddingVertical:5,borderRadius:8,backgroundColor:PHASE_COLORS[phase].background}}><Text style={{fontSize:11,fontWeight:'700',color:PHASE_COLORS[phase].foreground}}>{PHASE_LABELS[phase]}</Text></View>:null}
      </View>
-     <View style={{width:44,alignItems:'center',justifyContent:'center'}}><ActionRail item={item}/></View>
+     <View style={{width:44,alignItems:'center',justifyContent:'flex-end',gap:10}}><ActionRail item={item}/><View style={{alignItems:'center',gap:4}}><Avatar size={27}/><Text numberOfLines={1} style={{fontSize:10,color:'#555',maxWidth:55}}>{item.author}</Text></View></View>
     </View>
     <View style={{paddingTop:14}}>{children}</View>
    </View>
