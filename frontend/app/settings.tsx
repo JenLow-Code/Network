@@ -5,7 +5,7 @@ import {SafeAreaView} from 'react-native-safe-area-context';
 import {Ionicons} from '@expo/vector-icons';
 import {router} from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {Nav} from '@/components';
+import {Nav,TopActions} from '@/components';
 import {useApp} from '@/context';
 import {useLocale,Language,LANGUAGE_KEY} from '@/locale';
 const choices:{id:Language;label:string}[]=[{id:'fr',label:'Français'},{id:'en',label:'English'},{id:'de',label:'Deutsch'},{id:'pt',label:'Português'}];
@@ -18,8 +18,8 @@ export default function Settings(){
   Alert.alert('Clear demo data?','This clears saved prototype Dreams and lists on this device. It does not delete a server account, since no real account exists yet.',[{text:'Cancel',style:'cancel'},{text:'Clear demo data',style:'destructive',onPress:()=>{void clearDemo()}}]);
  }
  return <SafeAreaView style={{flex:1,backgroundColor:'#fff'}}><ScrollView style={{flex:1}} contentContainerStyle={{padding:20,paddingBottom:42}}>
-  <Pressable onPress={()=>router.back()}><Ionicons name="chevron-back" size={25}/></Pressable>
-  <Text style={{fontFamily:'Caveat_700Bold',fontSize:37,marginTop:14,marginBottom:23}}>{t('settings')}</Text>
+  <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}><Pressable onPress={()=>router.back()}><Ionicons name="chevron-back" size={25}/></Pressable><TopActions/></View>
+  <Text style={{fontSize:30,fontWeight:'700',marginTop:14,marginBottom:23}}>{t('settings')}</Text>
   <Text style={{fontSize:16,fontWeight:'700',marginBottom:12}}>{t('language')}</Text>
   <View style={{borderWidth:1,borderColor:'#e8e8e8',borderRadius:12,overflow:'hidden'}}>
    {choices.map((option,i)=><Pressable key={option.id} onPress={()=>setLanguage(option.id)} accessibilityRole="button" style={{padding:14,flexDirection:'row',alignItems:'center',justifyContent:'space-between',borderBottomWidth:i===choices.length-1?0:1,borderColor:'#eee'}}>
