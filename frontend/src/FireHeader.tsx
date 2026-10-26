@@ -1,2 +1,12 @@
-import React from 'react';import {Pressable,Text,View} from 'react-native';import {router} from 'expo-router';import {FireIcon} from './FireIcon';import {useApp} from './context';
-export function FireHeader(){const {fireIds}=useApp();return <Pressable onPress={()=>router.push('/fire')} accessibilityLabel="Ma liste Fire" style={{padding:6,flexDirection:'row',alignItems:'center',gap:2}}><FireIcon size={31}/>{fireIds.length?<Text style={{fontSize:11,color:'#555'}}>{fireIds.length}</Text>:null}</Pressable>}
+import React from 'react';
+import {Pressable,Text,View} from 'react-native';
+import {router} from 'expo-router';
+import {FireIcon} from './FireIcon';
+import {useApp} from './context';
+export function FireHeader(){
+ const {fireIds}=useApp();
+ return <Pressable onPress={()=>router.push('/fire')} accessibilityLabel="Ma liste Fire" style={{width:44,height:44,alignItems:'center',justifyContent:'center'}}>
+  <FireIcon size={24}/>
+  {fireIds.length>0?<View style={{position:'absolute',top:1,right:0,minWidth:16,height:16,borderRadius:8,backgroundColor:'#CB245C',alignItems:'center',justifyContent:'center'}}><Text style={{fontSize:9,color:'#fff'}}>{fireIds.length}</Text></View>:null}
+ </Pressable>;
+}
