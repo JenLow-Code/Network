@@ -1,14 +1,16 @@
 import React,{useEffect,useState} from 'react';
 import {Redirect} from 'expo-router';
-import {ActivityIndicator,View,Text} from 'react-native';
+import {ActivityIndicator,View,Text,Platform} from 'react-native';
 import {useAuth} from '@/auth/AuthProvider';
 import {supabase} from '@/auth/supabaseClient';
 export default function Index(){
  const {user,initialized}=useAuth();
- const [processing,setProcessing]=useState(()=>typeof window!=='undefined'&&new URLSearchParams(window.location.search).has('code'));
+ const [processing,setProcessing]=useState(()=>Platform.OS==='web'&&typeof window!=='undefined'&&!!window.location&&new URLSearchParams(window.location.search).has('code'));
  const [error,setError]=useState('');
  useEffect(()=>{
-  if(typeof window==='undefined'||!supabase)return;
+  // React Native defines a global window, but it does NOT have browser location/history.
+  // Never inspect web URL state on Android/iOS: it crashes immediately at launch.
+  if(Platform.OS!=='web'||typeof window==='undefined'||!window.location||!supabase)return;
   const params=new URLSearchParams(window.location.search);
   const code=params.get('code'), oauthError=params.get('error_description')||params.get('error');
   if(oauthError){setError(oauthError);return}
