@@ -4,7 +4,7 @@ import {Pressable,ScrollView,View,StyleSheet,useWindowDimensions,Image} from 're
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {Ionicons} from '@expo/vector-icons';
 import {router} from 'expo-router';
-import {Avatar,Nav} from '@/components';
+import {Avatar,Nav,TopActions} from '@/components';
 import {ContactSheet} from '@/ContactSheet';
 import {StoneDeck} from '@/StoneDeck';
 import {useApp} from '@/context';
@@ -56,6 +56,7 @@ export default function Profile(){
  }
  return <SafeAreaView style={s.safe}><View style={{flex:1}}>
    <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
+    <View style={{alignSelf:'flex-end',marginBottom:8}}><TopActions/></View>
     <Pressable onPress={cancel} style={{alignItems:'center'}}><Avatar size={164}/><Text style={s.name}>{app.name}</Text></Pressable>
     <View style={s.bio}>{field('bio')}</View>
     <Pressable onPress={cancel}><Text style={s.label}>Lieu</Text></Pressable>{field('city')}
