@@ -5,15 +5,15 @@ import {SafeAreaView} from 'react-native-safe-area-context';
 import {router} from 'expo-router';
 import {Ionicons} from '@expo/vector-icons';
 import {useDreams} from '@/domain/dreamRepository';
-import {Nav} from '@/components';
+import {Nav,TopActions} from '@/components';
 import {OfflineDreamImage} from '@/OfflineDreamImage';
 export default function NewDream(){
  const {create}=useDreams();
  const [title,setTitle]=useState(''),[summary,setSummary]=useState(''),[image,setImage]=useState('https://images.unsplash.com/photo-1510915361894-db8b60106cb1?w=800&q=80'),[needs,setNeeds]=useState('');
  const valid=title.trim().length>2;
  return <SafeAreaView style={{flex:1,backgroundColor:'#fff'}}><ScrollView style={{flex:1}} contentContainerStyle={{padding:20,paddingBottom:30}}>
-  <Pressable onPress={()=>router.back()}><Ionicons name="chevron-back" size={26}/></Pressable>
-  <Text style={{fontFamily:'Caveat_700Bold',fontSize:34,marginVertical:16}}>Créer un rêve</Text>
+  <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}><Pressable onPress={()=>router.back()}><Ionicons name="chevron-back" size={26}/></Pressable><TopActions/></View>
+  <Text style={{fontSize:30,fontWeight:'700',marginVertical:16}}>Créer un rêve</Text>
   <Text style={{fontSize:12,color:'#666',marginBottom:22}}>Commence simplement. Le titre est définitif une fois créé; tu pourras faire grandir le reste.</Text>
   <Text style={{fontWeight:'600',fontSize:13}}>Nom du rêve *</Text>
   <TextInput value={title} onChangeText={setTitle} placeholder="Un résultat concret…" style={{borderWidth:1,borderColor:'#ddd',borderRadius:8,padding:12,marginTop:7,marginBottom:17}}/>
