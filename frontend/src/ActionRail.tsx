@@ -37,7 +37,7 @@ export function ActionRail({item}:{item:Publication}){
  };
  const primary=permitted.filter(a=>a!=='prayer'&&(item.type!=='dream'||!['encourage','same-dream'].includes(a)));
  return <View style={s.rail}>
-  {primary.map(action=><Pressable key={action} accessibilityLabel={action} accessibilityRole="button" onPress={()=>activity(action)} style={s.iconButton}>
+  {primary.map(action=><Pressable key={action} accessibilityLabel={action} accessibilityRole="button" onPress={()=>activity(action)} style={[s.iconButton,action==='fire'&&app.fireIds.includes(item.id)&&{backgroundColor:'#FBE6ED'}]}>
    {action==='fire'?<FireIcon size={22}/>:action==='inspire'&&seeded?<Ionicons name="leaf" color={c.pink} size={20}/>:<Ionicons name={icons[action]||'add'} color="#222" size={20}/>}
   </Pressable>)}
   {permitted.includes('prayer')?<Pressable accessibilityLabel="Prayer list" onPress={()=>activity('prayer')} style={[s.iconButton,app.isPraying(item.id)&&{backgroundColor:'#f7e9f0'}]}><PrayerIcon size={22}/></Pressable>:null}
@@ -49,4 +49,4 @@ export function ActionRail({item}:{item:Publication}){
   </View></View></Modal>
  </View>;
 }
-const s=StyleSheet.create({rail:{gap:5,alignItems:'center'},iconButton:{width:44,height:44,justifyContent:'center',alignItems:'center',borderRadius:12,backgroundColor:'#fff'},overlay:{flex:1,justifyContent:'center',padding:20,backgroundColor:'rgba(0,0,0,.38)'},box:{padding:18,backgroundColor:'#fff',borderRadius:15},heading:{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginBottom:13},item:{paddingVertical:12,paddingHorizontal:7,borderBottomWidth:1,borderColor:'#eee',flexDirection:'row',alignItems:'center',gap:9}});
+const s=StyleSheet.create({rail:{gap:2,alignItems:'center'},iconButton:{width:44,height:44,justifyContent:'center',alignItems:'center',borderRadius:12,backgroundColor:'#fff'},overlay:{flex:1,justifyContent:'center',padding:20,backgroundColor:'rgba(0,0,0,.38)'},box:{padding:18,backgroundColor:'#fff',borderRadius:15},heading:{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginBottom:13},item:{paddingVertical:12,paddingHorizontal:7,borderBottomWidth:1,borderColor:'#eee',flexDirection:'row',alignItems:'center',gap:9}});
