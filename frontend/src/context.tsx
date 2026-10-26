@@ -1,5 +1,6 @@
 import React,{createContext,useCallback,useContext,useEffect,useMemo,useState} from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import {useAuth} from './auth/AuthProvider';
 
 type Message={id:string;text:string;fromMe:boolean};
 type ProfileChanges={name:string;bio:string;city:string;church:string};
@@ -40,8 +41,10 @@ const FIRE_KEY=(email:string)=>'jenlow.network.fire.v1.'+email.toLowerCase();
 const DREAM_KEY=(email:string)=>'jenlow.network.inspirations.v1.'+email.toLowerCase();
 
 export function Provider({children}:{children:React.ReactNode}){
+ const {user,signOut}=useAuth();
  const [rejectedContacts,setRejectedContacts]=useState<string[]>([]);
  const [email,setEmail]=useState('');
+ useEffect(()=>{setEmail(user?.email||'');if(user?.user_metadata?.display_name)setName(user.user_metadata.display_name)},[user?.id]);
  const [name,setName]=useState('Gustav');
  const [bio,setBio]=useState('Passionné de musique et de louange.');
  const [city,setCity]=useState('Genève');
@@ -96,7 +99,7 @@ export function Provider({children}:{children:React.ReactNode}){
  const value=useMemo<AppState>(()=>({
   rejectedContacts,
   rejectContact:(person)=>setRejectedContacts(prev=>prev.includes(person)?prev:[...prev,person]),
-  signedIn:!!email,email,name,bio,city,church,login:(userEmail,displayName)=>{setEmail(userEmail);if(displayName)setName(displayName);},logout:()=>setEmail(''),
+  signedIn:!!user,email,name,bio,city,church,login:(userEmail,displayName)=>{setEmail(userEmail);if(displayName)setName(displayName);},logout:()=>{void signOut().catch(()=>{});setEmail('')},
   edit:patch=>{
    if(patch.name!==undefined)setName(patch.name);
    if(patch.bio!==undefined)setBio(patch.bio);
@@ -107,7 +110,7 @@ export function Provider({children}:{children:React.ReactNode}){
   encouragementIds,encourage,musicProposalIds,proposeMusic,
   myDreamIds,joinDream,prayerIds,prayerByDate,prayersForDate:(date:string)=>prayerByDate[date]||[],togglePrayer,isPraying:(id:string)=>prayerIds.includes(id),
   fireIds,isOnFire:(id:string)=>fireIds.includes(id),toggleFire,dreamInspirations,addToDream,
- }),[rejectedContacts,email,name,bio,city,church,messages,fireIds,dreamInspirations,toggleFire,addToDream,myDreamIds,prayerByDate,prayerIds,joinDream,togglePrayer,encouragementIds,musicProposalIds,encourage,proposeMusic]);
+ }),[user?.id,signOut,rejectedContacts,email,name,bio,city,church,messages,fireIds,dreamInspirations,toggleFire,addToDream,myDreamIds,prayerByDate,prayerIds,joinDream,togglePrayer,encouragementIds,musicProposalIds,encourage,proposeMusic]);
  return <Context.Provider value={value}>{children}</Context.Provider>;
 }
 export function useApp(){const ctx=useContext(Context);if(!ctx)throw new Error('Provider required');return ctx;}
