@@ -38,9 +38,9 @@ export function ActionRail({item}:{item:Publication}){
  const primary=permitted.filter(a=>a!=='prayer'&&(item.type!=='dream'||!['encourage','same-dream'].includes(a)));
  return <View style={s.rail}>
   {primary.map((action,index)=><Pressable key={action} accessibilityLabel={action} accessibilityRole="button" onPress={()=>activity(action)} style={[s.iconButton,index>0&&s.compactOverlap]}>
-   {action==='fire'?<FireIcon size={23} active={app.fireIds.includes(item.id)}/>:action==='inspire'&&seeded?<Ionicons name="leaf" color={c.pink} size={20}/>:<Ionicons name={icons[action]||'add'} color={action==='inspire'&&seeded?'#CB245C':'#252525'} size={23}/>}
+   {action==='fire'?<FireIcon size={21} active={app.fireIds.includes(item.id)}/>:action==='inspire'&&seeded?<Ionicons name="leaf" color={c.pink} size={19}/>:<Ionicons name={icons[action]||'add'} color={action==='inspire'&&seeded?'#CB245C':'#252525'} size={21}/>}
   </Pressable>)}
-  {permitted.includes('prayer')?<Pressable accessibilityLabel="Prayer list" onPress={()=>activity('prayer')} style={[s.iconButton,primary.length>0&&s.compactOverlap]}><PrayerIcon size={23} active={app.isPraying(item.id)}/></Pressable>:null}
+  {permitted.includes('prayer')?<Pressable accessibilityLabel="Prayer list" onPress={()=>activity('prayer')} style={[s.iconButton,primary.length>0&&s.compactOverlap]}><PrayerIcon size={21} active={app.isPraying(item.id)}/></Pressable>:null}
   <Modal visible={modal!==null} transparent animationType="fade" onRequestClose={()=>setModal(null)}><View style={s.overlay}><View style={s.box}>
    <View style={s.heading}><Text style={{fontWeight:'700',fontSize:16}}>{modal==='circle'?'Présenter quelqu’un':'Ajouter à mon rêve'}</Text><Pressable onPress={()=>setModal(null)}><Ionicons name="close" size={24}/></Pressable></View>
    {modal==='dream'?dreams.map(d=><Pressable key={d.id} style={s.item} onPress={()=>{app.addToDream(d.id,item.id);setModal(null)}}><Text style={{flex:1,fontSize:13}}>{d.title}</Text>{app.dreamInspirations[d.id]?.includes(item.id)?<Ionicons name="checkmark" color={c.pink} size={18}/>:null}</Pressable>):
@@ -49,4 +49,4 @@ export function ActionRail({item}:{item:Publication}){
   </View></View></Modal>
  </View>;
 }
-const s=StyleSheet.create({rail:{gap:0,alignItems:'center'},compactOverlap:{marginTop:-16},iconButton:{width:44,height:44,justifyContent:'center',alignItems:'center',borderRadius:12,backgroundColor:'#fff'},overlay:{flex:1,justifyContent:'center',padding:20,backgroundColor:'rgba(0,0,0,.38)'},box:{padding:18,backgroundColor:'#fff',borderRadius:15},heading:{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginBottom:13},item:{paddingVertical:12,paddingHorizontal:7,borderBottomWidth:1,borderColor:'#eee',flexDirection:'row',alignItems:'center',gap:9}});
+const s=StyleSheet.create({rail:{gap:0,alignItems:'center'},compactOverlap:{marginTop:-20},iconButton:{width:44,height:44,justifyContent:'center',alignItems:'center',borderRadius:12,backgroundColor:'#fff'},overlay:{flex:1,justifyContent:'center',padding:20,backgroundColor:'rgba(0,0,0,.38)'},box:{padding:18,backgroundColor:'#fff',borderRadius:15},heading:{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginBottom:13},item:{paddingVertical:12,paddingHorizontal:7,borderBottomWidth:1,borderColor:'#eee',flexDirection:'row',alignItems:'center',gap:9}});
