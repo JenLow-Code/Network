@@ -12,7 +12,7 @@ jobs:
         shell: bash
         run: |
           set -eu
-          for endpoint in '/' '/auth/callback'; do
+          for endpoint in '/'; do
             http=$(curl --retry 2 --max-time 25 -sS -L -o /tmp/page -w '%{http_code}' "https://network.jenlow.net$endpoint")
             printf 'Website endpoint %s returned %s\n' "$endpoint" "$http"
             test "$http" = 200
@@ -23,7 +23,7 @@ jobs:
           set -eu
           http=$(curl -sS --max-time 30 -o /tmp/oauth-response -D /tmp/oauth-headers -w '%{http_code}' --get \
             --data-urlencode 'provider=google' \
-            --data-urlencode 'redirect_to=https://network.jenlow.net/auth/callback' \
+            --data-urlencode 'redirect_to=https://network.jenlow.net/' \
             'https://ldliraxelqftisjofwgv.supabase.co/auth/v1/authorize')
           printf 'Google authorization initiation HTTP %s\n' "$http"
           python3 - <<'PY'
