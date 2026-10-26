@@ -1,0 +1,32 @@
+name: EAS dependency diagnostics
+on:
+  push:
+    paths:
+      - 'frontend/package.json'
+      - 'frontend/app.json'
+      - '.github/workflows/eas-dependency-diagnostics.yml'
+  workflow_dispatch:
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Inspect package manager setup
+        run: |
+          node -v
+          npm -v
+          ls -la package*.json || true
+      - name: Fresh npm dependency install
+        run: npm install --no-audit --no-fund
+      - name: Expo SDK dependency compatibility
+        run: npx expo install --check
+      - name: Native config plugin evaluation
+        run: npx expo config --type prebuild --json > /tmp/eas-expo-config.json
+      - name: Check TypeScript
+        run: npm run typecheck
