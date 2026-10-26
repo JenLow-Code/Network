@@ -4,7 +4,7 @@ import {KeyboardAvoidingView,Linking,Platform,Pressable,ScrollView,StyleSheet,Vi
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {Ionicons} from '@expo/vector-icons';
 import {router,useLocalSearchParams} from 'expo-router';
-import {Avatar,Nav} from '@/components';
+import {Avatar,Nav,TopActions} from '@/components';
 import {useApp} from '@/context';
 import {colors as c} from '@/theme';
 
@@ -13,7 +13,7 @@ function ChatHeader({name,subtitle}:{name:string,subtitle:string}) {
   <Pressable onPress={()=>router.back()} accessibilityLabel="Back"><Ionicons name="chevron-back" size={24}/></Pressable>
   <Avatar size={35}/>
   <View style={{flex:1}}><Text style={s.headerName}>{name}</Text><Text style={s.headerDetail}>{subtitle}</Text></View>
-  <Ionicons name="call-outline" size={20} color="#111"/>
+  <TopActions/>
 
  </View>;
 }
