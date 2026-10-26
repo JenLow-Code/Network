@@ -37,10 +37,10 @@ export function ActionRail({item}:{item:Publication}){
  };
  const primary=permitted.filter(a=>a!=='prayer'&&(item.type!=='dream'||!['encourage','same-dream'].includes(a)));
  return <View style={s.rail}>
-  {primary.map(action=><Pressable key={action} accessibilityLabel={action} accessibilityRole="button" onPress={()=>activity(action)} style={[s.iconButton,action==='fire'&&app.fireIds.includes(item.id)&&{backgroundColor:'#FBE6ED'}]}>
+  {primary.map(action=><Pressable key={action} accessibilityLabel={action} accessibilityRole="button" onPress={()=>activity(action)} style={s.iconButton}>
    {action==='fire'?<FireIcon size={23} active={app.fireIds.includes(item.id)}/>:action==='inspire'&&seeded?<Ionicons name="leaf" color={c.pink} size={20}/>:<Ionicons name={icons[action]||'add'} color={action==='inspire'&&seeded?'#CB245C':'#252525'} size={23}/>}
   </Pressable>)}
-  {permitted.includes('prayer')?<Pressable accessibilityLabel="Prayer list" onPress={()=>activity('prayer')} style={[s.iconButton,app.isPraying(item.id)&&{backgroundColor:'#f7e9f0'}]}><PrayerIcon size={23} active={app.isPraying(item.id)}/></Pressable>:null}
+  {permitted.includes('prayer')?<Pressable accessibilityLabel="Prayer list" onPress={()=>activity('prayer')} style={s.iconButton}><PrayerIcon size={23} active={app.isPraying(item.id)}/></Pressable>:null}
   <Modal visible={modal!==null} transparent animationType="fade" onRequestClose={()=>setModal(null)}><View style={s.overlay}><View style={s.box}>
    <View style={s.heading}><Text style={{fontWeight:'700',fontSize:16}}>{modal==='circle'?'Présenter quelqu’un':'Ajouter à mon rêve'}</Text><Pressable onPress={()=>setModal(null)}><Ionicons name="close" size={24}/></Pressable></View>
    {modal==='dream'?dreams.map(d=><Pressable key={d.id} style={s.item} onPress={()=>{app.addToDream(d.id,item.id);setModal(null)}}><Text style={{flex:1,fontSize:13}}>{d.title}</Text>{app.dreamInspirations[d.id]?.includes(item.id)?<Ionicons name="checkmark" color={c.pink} size={18}/>:null}</Pressable>):
