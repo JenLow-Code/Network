@@ -1,5 +1,5 @@
 import React from 'react';
-import {Image,View} from 'react-native';
-export function FireIcon({size=27}:{size?:number}){
- return <Image source={require('../assets/icons/fire-reference.png')} resizeMode="contain" accessibilityLabel="Fire list" style={{width:size,height:size,borderRadius:size/2}}/>
+import {Ionicons} from '@expo/vector-icons';
+export function FireIcon({size=24,active=false}:{size?:number;active?:boolean}){
+ return <Ionicons name={active?'flame':'flame-outline'} size={size} color={active?'#CB245C':'#252525'}/>;
 }
