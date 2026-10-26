@@ -21,7 +21,7 @@ export default function MyDreams(){const {t}=useLocale();
  const w=Math.max(120,(area.width-gap)/2),h=Math.max(125,(area.height-gap)/2);
  return <SafeAreaView style={{flex:1,backgroundColor:'#fff'}}>
    <View style={{flex:1,paddingHorizontal:13,paddingTop:9,paddingBottom:12}}>
-    <View style={{paddingHorizontal:4,paddingBottom:13}}><View style={{position:'absolute',right:5,top:4,zIndex:5,flexDirection:'row',alignItems:'center',gap:7}}><Pressable accessibilityLabel="Créer un rêve" onPress={()=>router.push('/my-dream/new')} style={{padding:6}}><Ionicons name="add-circle-outline" color="#D71D77" size={26}/></Pressable><FireHeader/></View>
+    <View style={{paddingHorizontal:4,paddingBottom:13}}><View style={{position:'absolute',right:5,top:4,zIndex:5,flexDirection:'row',alignItems:'center',gap:7}}><Pressable accessibilityLabel="Créer un rêve" onPress={()=>router.push('/my-dream/new')} style={{padding:6}}><Ionicons name="add-circle-outline" color="#D71D77" size={26}/></Pressable><Pressable accessibilityLabel="Messages" onPress={()=>router.push("/space")} style={{padding:6}}><Ionicons name="chatbox-outline" size={24} color="#333"/></Pressable><FireHeader/></View>
      <Text style={{fontFamily:'Caveat_700Bold',fontSize:36,color:'#171717'}}>{t('dreams')}</Text>
      <Text style={{fontSize:12,color:'#888'}}>Un espace pour faire grandir tes rêves.</Text>
     </View>
