@@ -113,7 +113,7 @@ export const musics = publications.filter((p): p is MusicPublication => p.type =
 export const biblePosts = publications.filter((p): p is BiblePublication => p.type === 'bible');
 export const findPublication = (id: string) => publications.find(item => item.id === id);
 export const verseText = 'Que tout ce qui respire loue l’Éternel ! Louez l’Éternel !';
-export const PHASE_LABELS:Record<DreamPhase,string>={'Rêve':'Semence','Initiation':'Germination','Croissance':'Croissance','Témoignage':'Fruit'};
+export const PHASE_LABELS:Record<DreamPhase,string>={'Rêve':'Semence','Initiation':'Germination','Croissance':'Croissance','Témoignage':'Floraison'};
 export const DREAM_PHASES:DreamPhase[]=['Rêve','Initiation','Croissance','Témoignage'];
 export const PHASE_COLORS:Record<DreamPhase,{background:string;foreground:string}>={
  'Rêve':{background:'#E7E7E7',foreground:'#484848'},
