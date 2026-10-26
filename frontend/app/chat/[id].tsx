@@ -13,7 +13,7 @@ function ChatHeader({name,subtitle}:{name:string,subtitle:string}) {
   <Pressable onPress={()=>router.back()} accessibilityLabel="Back"><Ionicons name="chevron-back" size={24}/></Pressable>
   <Avatar size={35}/>
   <View style={{flex:1}}><Text style={s.headerName}>{name}</Text><Text style={s.headerDetail}>{subtitle}</Text></View>
-  <TopActions/>
+  <Ionicons name="videocam-outline" size={21} color="#111"/><TopActions/>
 
  </View>;
 }
