@@ -33,13 +33,13 @@ export default function Bible(){
     <View style={{width:33}}/>
    </View>
    <View style={{flexDirection:'row',gap:8,alignItems:'flex-end'}}>
-    <View style={{width:33,justifyContent:'flex-end'}}><ActionRail item={post}/></View>
+    
     <ScrollView ref={inner} nestedScrollEnabled showsVerticalScrollIndicator persistentScrollbar style={{flex:1,height:READER_HEIGHT,borderRadius:9}} contentContainerStyle={{gap:5,paddingBottom:14}} onContentSizeChange={()=>{if(!ready){centre();setReady(true);}}}>
      {psalm150.map((v,i)=><View key={i} onLayout={e=>{positions.current[i+1]=e.nativeEvent.layout;if(i===psalm150.length-1)requestAnimationFrame(centre);}} style={{flexDirection:'row',gap:9,borderRadius:7,padding:10,backgroundColor:'#FAEAF1'}}>
       <Text style={{fontSize:11,color:i+1===focus?c.pink:'#777'}}>{i+1}</Text>
       <Text style={{flex:1,fontSize:15,lineHeight:21,color:i+1===focus?c.pink:'#333',fontWeight:i+1===focus?'700':'400'}}>{v}</Text>
      </View>)}
-    </ScrollView>
+    </ScrollView><View style={{width:48,justifyContent:'center',alignItems:'center'}}><ActionRail item={post}/></View>
    </View>
    <Text style={{fontFamily:'Caveat_700Bold',fontSize:25,color:'#151515',marginTop:29,marginBottom:12}}>Continuer l’inspiration</Text>
    <PublicationGallery items={publications.filter(p=>p.type!=='bible'||p.highlightedVerse!==focus)}/>
