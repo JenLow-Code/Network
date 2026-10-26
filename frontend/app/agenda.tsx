@@ -4,7 +4,7 @@ import {Pressable,ScrollView,Share,View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {router} from 'expo-router';
 import {Ionicons} from '@expo/vector-icons';
-import {Nav} from '@/components';
+import {Nav,TopActions} from '@/components';
 import {PrayerIcon} from '@/PrayerIcon';
 import {useApp} from '@/context';
 import {useLocale} from '@/locale';
@@ -30,7 +30,7 @@ export default function Agenda(){
   await Share.share({message:e.title+' · '+e.timeLabel+' · '+e.place+'\n'+tr('calendarDescription')});
  }
  return <SafeAreaView style={{flex:1,backgroundColor:'#fff'}}><ScrollView style={{flex:1}} contentContainerStyle={{paddingHorizontal:18,paddingTop:17,paddingBottom:42}}>
-  <Text style={{fontFamily:'Caveat_700Bold',fontSize:36,color:'#171717'}}>{tr('agendaTitle')}</Text>
+  <Text style={{fontSize:30,fontWeight:'700',color:'#171717'}}>{tr('agendaTitle')}</Text>
   <Text style={{color:'#888',fontSize:12,marginTop:3}}>{tr('agendaSubtitle')}</Text>
   <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginTop:23,paddingVertical:12,borderTopWidth:1,borderBottomWidth:1,borderColor:'#eee'}}>
    <Pressable onPress={()=>shift(-1)} accessibilityLabel="Previous day" style={{padding:8}}><Ionicons name="chevron-back" size={23}/></Pressable>
