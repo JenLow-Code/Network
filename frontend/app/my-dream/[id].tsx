@@ -5,7 +5,7 @@ import {SafeAreaView} from 'react-native-safe-area-context';
 import {Ionicons} from '@expo/vector-icons';
 import {router,useLocalSearchParams} from 'expo-router';
 import {Nav} from '@/components';
-import {OfflineDreamImage} from '@/OfflineDreamImage';
+import {PHASE_LABELS} from '@/discoveryData';
 import {useDreams} from '@/domain/dreamRepository';
 import {canEditField,nextPhase} from '@/domain/dreamWorkspace';
 export default function Workspace(){
@@ -24,9 +24,9 @@ export default function Workspace(){
  return <SafeAreaView style={{flex:1,backgroundColor:'#fff'}}><ScrollView style={{flex:1}} contentContainerStyle={{padding:18,paddingBottom:35}}>
  <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}><Pressable onPress={()=>router.back()}><Ionicons name="chevron-back" size={25}/></Pressable><Pressable onPress={deleteDream} accessibilityLabel="Supprimer mon rêve"><Ionicons name="trash-outline" color="#a65d63" size={21}/></Pressable></View>
  <Text style={{fontFamily:'Caveat_700Bold',fontSize:28,textAlign:'center',marginVertical:10}}>{dream!.title}</Text>
- <Text style={{fontSize:12,color:'#777',textAlign:'center',marginBottom:15}}>{dream!.phase} · Titre définitif</Text>
+ <Text style={{fontSize:12,color:'#777',textAlign:'center',marginBottom:15}}>{PHASE_LABELS[dream!.phase]} · Titre définitif</Text>
  <Pressable onPress={()=>router.push({pathname:'/my-dream-participants/[id]',params:{id:dream!.id}})} style={{alignSelf:'center',flexDirection:'row',gap:7,alignItems:'center',marginBottom:12,padding:8}}><Ionicons name="people-outline" size={18} color="#666"/><Text style={{fontSize:12,color:'#555'}}>Qui partage mon rêve ?</Text><Ionicons name="chevron-forward" size={16} color="#aaa"/></Pressable>
- <OfflineDreamImage uri={dream!.image} height={190}/>
+ <View style={{height:220,borderRadius:15,overflow:'hidden',backgroundColor:'#ececec',justifyContent:'flex-end'}}><Image source={{uri:dream!.image}} resizeMode="cover" style={{position:'absolute',width:'100%',height:'100%',opacity:.7}}/><View style={{padding:16,backgroundColor:'rgba(255,255,255,.78)'}}><Text style={{fontFamily:'Caveat_700Bold',fontSize:23,color:'#222'}}>{dream!.title}</Text><Text style={{fontSize:12,color:'#555'}}>{PHASE_LABELS[dream!.phase]}</Text></View></View>
  {field('summary',dream!.summary)}
  {field('image',dream!.image)}
  {field('needs',dream!.needs.join(' · '))}
