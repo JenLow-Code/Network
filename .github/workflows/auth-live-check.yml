@@ -30,3 +30,4 @@ jobs:
           echo "Unknown-email login status: $code"
           python3 -c 'import json; print("Response:", json.load(open("/tmp/login.json")))'
           test "$code" = '401'
+
