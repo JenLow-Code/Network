@@ -16,7 +16,7 @@ export function PublicationDetail({item,children,media}:{item:Publication;childr
   <ScrollView style={{flex:1}} contentContainerStyle={{paddingHorizontal:16,paddingTop:10,paddingBottom:56,maxWidth:840,width:'100%',alignSelf:'center'}}>
    <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',marginBottom:13}}>
     <Pressable onPress={()=>router.back()} accessibilityLabel="Retour" style={{width:44,height:44,alignItems:'center',justifyContent:'center'}}><Ionicons name="chevron-back" size={24} color="#222"/></Pressable>
-    <Text numberOfLines={3} style={{flex:1,fontSize:18,lineHeight:23,fontWeight:'700',color:'#171717',marginHorizontal:6}}>{item.title}</Text>
+    <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.55} style={{flex:1,minWidth:0,fontSize:18,lineHeight:23,fontWeight:'700',color:'#171717',marginHorizontal:6}}>{item.title}</Text>
     <TopActions/>
    </View>
    <View style={{borderWidth:1,borderColor:'#E8E8E8',borderRadius:16,padding:13,backgroundColor:'#fff'}}>
