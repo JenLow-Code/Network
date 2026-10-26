@@ -51,7 +51,7 @@ export function AuthProvider({children}:{children:React.ReactNode}){
    const client=getClient();
    // iOS Apple signing must be enabled in provider dashboard and Apple Developer portal.
    if(provider==='apple'&&Platform.OS!=='ios'&&Platform.OS!=='web')throw new Error('apple_sign_in_requires_ios');
-   const callback=Linking.createURL('auth/callback',{scheme:'jenlownetwork'});
+   const callback=Platform.OS==='web'?Linking.createURL('/',{scheme:'jenlownetwork'}):Linking.createURL('auth/callback',{scheme:'jenlownetwork'});
    const {data,error}=await client.auth.signInWithOAuth({
     provider,options:{redirectTo:callback,skipBrowserRedirect:Platform.OS!=='web'}
    });
