@@ -5,7 +5,7 @@ import {SafeAreaView} from 'react-native-safe-area-context';
 import {Ionicons} from '@expo/vector-icons';
 import {router} from 'expo-router';
 import {useApp} from '@/context';
-import {Nav,Pill} from '@/components';
+import {Nav,Pill,TopActions} from '@/components';
 import {PublicationGallery} from '@/PublicationGallery';
 import {publications} from '@/discoveryData';
 import {FireHeader} from '@/FireHeader';
@@ -21,7 +21,7 @@ export default function Discover(){const {tr}=useLocale();
  ),[filter,query]);
  return <SafeAreaView style={{flex:1,backgroundColor:'#fff'}}>
   <ScrollView contentContainerStyle={{paddingHorizontal:15,paddingBottom:55,maxWidth:920,width:'100%',alignSelf:'center'}}>
-   <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}><Text style={{fontFamily:'Caveat_700Bold',fontSize:39,color:'#151515',marginTop:9,marginBottom:8}}>{tr('discoverTitle')}</Text><View style={{flexDirection:"row",alignItems:"center",gap:4}}><Pressable accessibilityLabel="Messages" onPress={()=>router.push("/space")} style={{padding:6}}><Ionicons name="chatbox-outline" size={24} color="#333"/></Pressable><FireHeader/></View></View>
+   <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}><Text style={{fontSize:30,fontWeight:'700',color:'#151515',marginTop:9,marginBottom:8}}>{tr('discoverTitle')}</Text><TopActions/></View>
    <View style={{height:42,borderWidth:1,borderColor:'#ececec',borderRadius:10,flexDirection:'row',alignItems:'center',paddingHorizontal:12,gap:9,marginBottom:13}}>
     <Ionicons name="search" size={18} color="#777"/><TextInput style={{flex:1,fontSize:13,color:'#222'}} placeholder={tr("searchPlaceholder")} value={query} onChangeText={setQuery}/>
    </View>
