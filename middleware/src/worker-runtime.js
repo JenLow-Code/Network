@@ -1,3 +1,4 @@
+import { pbkdf2Sync } from 'node:crypto';
 const enc=new TextEncoder();
 const asHex=x=>Array.from(x,b=>b.toString(16).padStart(2,'0')).join('');
 const fromHex=s=>Uint8Array.from(s.match(/../g)||[],x=>parseInt(x,16));
