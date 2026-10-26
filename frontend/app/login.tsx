@@ -29,6 +29,7 @@ export default function Login(){
     invalid_registration:'Please enter your name, email and a stronger password.',
     registration_failed:'Registration could not be completed.',
     server_not_configured:'The authentication server is not configured yet.',
+    password_auth_unavailable:'Email sign-in is temporarily unavailable. The server needs an authentication provider.',
     request_failed:'Unable to reach the server. Check your internet connection.'
    };setError(errors[key]||key);
   }finally{setBusy(false)}
