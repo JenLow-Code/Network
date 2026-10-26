@@ -1,0 +1,39 @@
+name: Google OAuth web smoke test
+on:
+  push:
+    paths:
+      - '.github/workflows/google-oauth-web-smoke.yml'
+  workflow_dispatch:
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check JenLow Network website and callback
+        shell: bash
+        run: |
+          set -eu
+          for endpoint in '/' '/auth/callback'; do
+            http=$(curl --retry 2 --max-time 25 -sS -L -o /tmp/page -w '%{http_code}' "https://network.jenlow.net$endpoint")
+            printf 'Website endpoint %s returned %s\n' "$endpoint" "$http"
+            test "$http" = 200
+          done
+      - name: Check Supabase Google OAuth starts and returns Google redirect
+        shell: bash
+        run: |
+          set -eu
+          http=$(curl -sS --max-time 30 -o /tmp/oauth-response -D /tmp/oauth-headers -w '%{http_code}' --get \
+            --data-urlencode 'provider=google' \
+            --data-urlencode 'redirect_to=https://network.jenlow.net/auth/callback' \
+            'https://ldliraxelqftisjofwgv.supabase.co/auth/v1/authorize')
+          printf 'Google authorization initiation HTTP %s\n' "$http"
+          python3 - <<'PY'
+          import re,urllib.parse
+          raw=open('/tmp/oauth-headers').read()
+          match=re.search(r'^location:\s*(\S+)',raw,re.M|re.I)
+          host=urllib.parse.urlparse(match.group(1).strip()).hostname if match else None
+          print('OAuth redirect destination host:',host)
+          if host not in {'accounts.google.com','accounts.google.co.uk','www.google.com'}:
+              print('OAuth error summary:',open('/tmp/oauth-response').read()[:250])
+              raise SystemExit('Unexpected OAuth redirect; Google provider might not yet be enabled')
+          PY
+          test "$http" = 302 -o "$http" = 303
