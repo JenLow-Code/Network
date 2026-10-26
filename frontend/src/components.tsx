@@ -7,7 +7,7 @@ import {FireHeader} from './FireHeader';
 import {MessageIcon} from './MessageIcon';
 export function Avatar({size=42}:{size?:number}){return <View style={{width:size,height:size,borderRadius:size/2,backgroundColor:'#e8e8e8',alignItems:'center',justifyContent:'center'}}><Ionicons name="person" color="#777" size={size*.58}/></View>}
 export function Pill({text,active=false,onPress}:{text:string,active?:boolean,onPress:()=>void}){return <Pressable onPress={onPress} style={{paddingHorizontal:14,paddingVertical:8,borderWidth:1,borderColor:active?'#000':'#e8e8e8',borderRadius:22,backgroundColor:active?'#000':'#fff'}}><Text style={{color:active?'#fff':'#111',fontSize:12}}>{text}</Text></Pressable>}
-export function TopActions(){return <View style={{flexDirection:'row',alignItems:'center',gap:8}}><FireHeader/><Pressable accessibilityLabel="Mon profil et paramètres" onPress={()=>router.push('/profile')} style={{padding:5}}><Avatar size={30}/></Pressable></View>}
+export function TopActions(){return <View style={{flexDirection:'row',alignItems:'center',gap:8}}><FireHeader/><Pressable accessibilityLabel="Mon profil et paramètres" onPress={()=>router.push('/profile')} style={{width:44,height:44,alignItems:'center',justifyContent:'center'}}><Avatar size={30}/></Pressable></View>}
 export function Nav(){const path=usePathname();const {t}=useLocale();const links=[
  {icon:'calendar-outline' as const,title:t('agenda'),path:'/agenda' as const,active:path==='/agenda'||path==='/prayers'},
  {icon:'ellipse' as const,title:t('dreams'),path:'/my-dreams' as const,active:path.startsWith('/my-dreams')||path.startsWith('/my-dream/')},
