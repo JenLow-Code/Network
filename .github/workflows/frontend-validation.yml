@@ -24,3 +24,5 @@ jobs:
       - run: npm run typecheck
       - name: Validate Expo web export
         run: npx expo export --platform web
+      - name: Validate native Android JS export
+        run: npx expo export --platform android
