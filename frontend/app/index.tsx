@@ -5,7 +5,7 @@ import {useAuth} from '@/auth/AuthProvider';
 import {supabase} from '@/auth/supabaseClient';
 export default function Index(){
  const {user,initialized}=useAuth();
- const [processing,setProcessing]=useState(false);
+ const [processing,setProcessing]=useState(()=>typeof window!=='undefined'&&new URLSearchParams(window.location.search).has('code'));
  const [error,setError]=useState('');
  useEffect(()=>{
   if(typeof window==='undefined'||!supabase)return;
