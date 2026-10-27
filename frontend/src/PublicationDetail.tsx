@@ -2,6 +2,7 @@ import React from 'react';
 import {Image,Platform,Pressable,ScrollView,Text,View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {Ionicons} from '@expo/vector-icons';
+import {SeedIcon} from './SeedIcon';
 import Svg,{Defs,RadialGradient,Stop,Rect} from 'react-native-svg';
 import {router} from 'expo-router';
 import {Nav,TopActions,Avatar} from './components';
@@ -26,7 +27,7 @@ export function PublicationDetail({item,children,media}:{item:Publication;childr
     <View style={{flexDirection:'row',alignItems:'stretch',gap:7}}>
      <View style={{flex:1,minWidth:0,position:'relative'}}>
       {media??<Image source={{uri:item.image}} resizeMode="cover" style={{width:'100%',height:item.type==='bible'?280:230,borderRadius:10,backgroundColor:'#f3f3f3'}}/>}
-      {phase?<View pointerEvents="none" style={{position:'absolute',left:0,right:0,top:0,bottom:0,alignItems:'center',justifyContent:'center',borderRadius:10,overflow:'hidden'}}><Svg width="100%" height="100%" style={{position:'absolute'}}><Defs><RadialGradient id="shade" cx="50%" cy="50%" rx="72%" ry="72%"><Stop offset="0%" stopColor="#fff" stopOpacity="0.2"/><Stop offset="100%" stopColor="#000" stopOpacity="0.55"/></RadialGradient></Defs><Rect width="100%" height="100%" fill="url(#shade)"/></Svg><Text style={{fontSize:58}}>{PHASE_SYMBOLS[phase]}</Text></View>:null}
+      {phase?<View pointerEvents="none" style={{position:'absolute',left:0,right:0,top:0,bottom:0,alignItems:'center',justifyContent:'center',borderRadius:10,overflow:'hidden'}}><Svg width="100%" height="100%" style={{position:'absolute'}}><Defs><RadialGradient id="shade" cx="50%" cy="50%" rx="72%" ry="72%"><Stop offset="0%" stopColor="#fff" stopOpacity="0.2"/><Stop offset="100%" stopColor="#000" stopOpacity="0.55"/></RadialGradient></Defs><Rect width="100%" height="100%" fill="url(#shade)"/></Svg>{phase==='Rêve'?<SeedIcon size={75}/>:<Text style={{fontSize:58}}>{PHASE_SYMBOLS[phase]}</Text>}</View>:null}
      </View>
      <View style={{width:48,alignItems:'center',justifyContent:'space-between'}}><Pressable accessibilityLabel={'Voir le profil de '+item.author} onPress={()=>router.push(personPath(item.author))} style={{alignItems:'center',gap:3}}><Avatar size={27}/><Text numberOfLines={1} style={{fontSize:10,color:'#555',maxWidth:48,textAlign:'center'}}>{item.author}</Text></Pressable>{item.type!=='person'?<ActionRail item={item}/>:null}</View>
     </View>
