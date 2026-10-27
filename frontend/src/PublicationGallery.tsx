@@ -3,25 +3,27 @@ import {Image,Pressable,StyleSheet,Text,View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {useAudioPlayer,useAudioPlayerStatus} from 'expo-audio';
 import {router} from 'expo-router';
-import {Publication,PHASE_COLORS,PHASE_LABELS,verseExcerpt} from './discoveryData';
+import {Publication,PHASE_COLORS,PHASE_LABELS,PHASE_SYMBOLS,verseExcerpt} from './discoveryData';
 const audio=[require('../assets/audio/pierre-01-douceur.wav'),require('../assets/audio/pierre-02-esperance.wav'),require('../assets/audio/pierre-03-lumiere.wav')];
-export const publicationPath=(p:Publication)=>p.type==='dream'?({pathname:'/dream/[id]',params:{id:p.id}} as const):p.type==='music'?({pathname:'/music/[id]',params:{id:p.id}} as const):({pathname:'/bible/[reference]',params:{reference:p.referenceId,verse:String(p.highlightedVerse)}} as const);
+export const publicationPath=(p:Publication)=>p.type==='dream'?({pathname:'/dream/[id]',params:{id:p.id}} as const):p.type==='music'?({pathname:'/music/[id]',params:{id:p.id}} as const):p.type==='person'?({pathname:'/person/[name]',params:{name:p.author}} as const):({pathname:'/bible/[reference]',params:{reference:p.referenceId,verse:String(p.highlightedVerse)}} as const);
 function MusicCard({index}:{index:0|1|2}){const player=useAudioPlayer(audio[index]);const status=useAudioPlayerStatus(player);const toggle=()=>{if(status.playing)player.pause();else{if(status.didJustFinish)void player.seekTo(0);player.play()}};return <Pressable onPress={toggle} accessibilityLabel={status.playing?'Pause sample':'Play 8 second sample'} style={s.play}><Ionicons name={status.playing?'pause':'play'} size={23} color="#fff"/></Pressable>}
 export function PublicationTile({item}:{item:Publication}){
  const open=()=>router.push(publicationPath(item) as any);
  const bg=item.type==='dream'?PHASE_COLORS[item.phase].background:'#fff';
  return <Pressable onPress={open} accessibilityLabel={'Open '+item.title} style={{borderRadius:12,overflow:'hidden',borderWidth:1,borderColor:'#e8e8e8',backgroundColor:bg}}>
   <View style={{height:item.type==='bible'?130:156,position:'relative',margin:10,marginBottom:0,borderRadius:9,overflow:'hidden'}}>
-   <Image source={{uri:item.image}} resizeMode="cover" style={{width:'100%',height:'100%'}}/>
+   {item.type==='person'?<View style={{flex:1,alignItems:'center',justifyContent:'center',backgroundColor:'#f1f1f1'}}><Image source={{uri:item.image}} style={{width:92,height:92,borderRadius:46}}/></View>:<Image source={{uri:item.image}} resizeMode="cover" style={{width:'100%',height:'100%'}}/>}
+   {item.type==='bible'?<View style={{position:'absolute',left:0,right:0,top:0,bottom:0,backgroundColor:'rgba(0,0,0,0.58)',padding:11,justifyContent:'center'}}><Text numberOfLines={5} style={{color:'#fff',fontSize:12,lineHeight:18,textAlign:'center'}}>{verseExcerpt(item)}</Text></View>:null}
+   {item.type==='dream'?<View style={{position:'absolute',top:10,right:9,backgroundColor:'rgba(255,255,255,0.86)',borderRadius:20,width:36,height:36,alignItems:'center',justifyContent:'center'}}><Text style={{fontSize:22}}>{PHASE_SYMBOLS[item.phase]}</Text></View>:null}
    {item.type==='music'?<MusicCard index={item.audioIndex}/>:null}
   </View>
   <View style={{padding:11,gap:5,minHeight:77}}>
    <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
-    <Text style={{fontSize:9,color:'#666',fontWeight:'600'}}>{item.type==='dream'?'RÊVE':item.type==='music'?'MUSIQUE':'BIBLE'}</Text>
-    {item.type==='dream'?<Text accessibilityLabel={PHASE_LABELS[item.phase]} style={{fontSize:15,color:PHASE_COLORS[item.phase].foreground}}>{item.phase==='Rêve'?'●':item.phase==='Initiation'?'🌱':item.phase==='Croissance'?'🌿':'🌸'}</Text>:null}
+    {item.type!=='dream'?<Text style={{fontSize:9,color:'#666',fontWeight:'600'}}>{item.type==='music'?'MUSIQUE':item.type==='person'?'PERSONNE':'BIBLE'}</Text>:null}
+    
    </View>
    <Text numberOfLines={3} style={{fontWeight:'700',fontSize:14,color:'#202020'}}>{item.title}</Text>
-   <Text style={{fontSize:11,color:'#777'}}>{item.author}</Text>
+   <Text style={{fontSize:11,color:'#777'}}>{item.type==='person'?item.talents.join(' · '):item.author}</Text>
   </View>
  </Pressable>;
 }
