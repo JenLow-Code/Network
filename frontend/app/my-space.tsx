@@ -20,6 +20,10 @@ export default function MySpace(){
  return <SafeAreaView style={{flex:1,backgroundColor:'#fff'}}>
   <ScrollView style={{flex:1}} contentContainerStyle={{padding:18,paddingBottom:50}}>
    <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}><Text style={{fontSize:29,fontWeight:'700'}}>Mon espace</Text><TopActions/></View>
+   <View style={{marginTop:14,marginBottom:20,paddingBottom:18,borderBottomWidth:1,borderColor:'#eee'}}>
+    <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',marginBottom:12}}><Text style={{fontSize:18,fontWeight:'700'}}>Mes rêves</Text><Pressable onPress={()=>router.push('/my-dream/new')}><Ionicons name="add-circle-outline" size={26} color="#CB245C"/></Pressable></View>
+    <DreamsOverview/>
+   </View>
    <Pressable onPress={()=>router.push('/profile')} style={{flexDirection:'row',gap:14,alignItems:'center',borderWidth:1,borderColor:'#e8e8e8',borderRadius:16,padding:15,marginTop:18,marginBottom:19}}>
     <Avatar size={58}/><View style={{flex:1}}><Text style={{fontWeight:'700',fontSize:18}}>{app.name||'Mon profil'}</Text><Text style={{fontSize:12,color:'#777',marginTop:3}}>Voir mon profil public et mes talents</Text></View><Ionicons name="chevron-forward" size={19} color="#888"/>
    </Pressable>
@@ -27,10 +31,6 @@ export default function MySpace(){
     <View style={{width:39,height:39,borderRadius:20,backgroundColor:'#f5f5f5',alignItems:'center',justifyContent:'center'}}><Ionicons name={s.icon} size={21} color="#252525"/></View>
     <View style={{flex:1}}><Text style={{fontSize:14,fontWeight:'700'}}>{s.title}</Text><Text style={{fontSize:11,color:'#777',marginTop:3}}>{s.detail}</Text></View><Ionicons name="chevron-forward" size={18} color="#999"/>
    </Pressable>)}</View>
-   <View style={{marginTop:20,borderTopWidth:1,borderColor:'#eee',paddingTop:14}}>
-    <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',marginBottom:12}}><Text style={{fontSize:18,fontWeight:'700'}}>Mes rêves</Text><Pressable onPress={()=>router.push('/my-dream/new')}><Ionicons name="add-circle-outline" size={26} color="#CB245C"/></Pressable></View>
-    <DreamsOverview/>
-   </View>
   </ScrollView><Nav/>
  </SafeAreaView>;
 }
