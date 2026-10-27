@@ -1,44 +1,55 @@
-import React,{useRef} from 'react';
-import {Image,Platform,Pressable,ScrollView,Text,View} from 'react-native';
+import React,{useState} from 'react';
+import {Image,Pressable,ScrollView,Text,View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {Ionicons} from '@expo/vector-icons';
-import {DreamPhaseIcon} from './DreamPhaseIcon';
-import Svg,{Defs,RadialGradient,Stop,Rect} from 'react-native-svg';
 import {router} from 'expo-router';
-import {Nav,TopActions,Avatar} from './components';
+import {Nav,TopActions} from './components';
 import {ActionRail} from './ActionRail';
-import {Publication,PHASE_LABELS,PHASE_COLORS,PHASE_SYMBOLS} from './discoveryData';
+import {Publication,PHASE_COLORS} from './discoveryData';
 import {PublicationGallery} from './PublicationGallery';
 import {publications} from './discoveryData';
 import {personPath} from './people';
 import {useAppTheme} from './AppTheme';
 
-/** Single detail-page shell shared by Dream, Music, and Bible posts. */
-export function PublicationDetail({item,children,media,onImageDoubleTap}:{item:Publication;children:React.ReactNode;media?:React.ReactNode;onImageDoubleTap?:()=>void}){
- const lastTap=useRef(0);
- const handleImageTap=()=>{const now=Date.now();if(onImageDoubleTap&&now-lastTap.current<380)onImageDoubleTap();lastTap.current=now};
- const theme=useAppTheme();const phase=item.type==='dream'?item.phase:null;
+export function DetailPanel({title,children,foldable=false,defaultOpen=true}:{title:string;children:React.ReactNode;foldable?:boolean;defaultOpen?:boolean}){
+ const [open,setOpen]=useState(defaultOpen);
+ return <View style={{backgroundColor:'#FFFDF9',borderRadius:11,padding:12,marginBottom:7}}>
+  <Pressable disabled={!foldable} onPress={()=>setOpen(v=>!v)} style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',gap:5}}>
+   <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.65} style={{fontFamily:'Caveat_700Bold',fontSize:21,color:'#262626',flexShrink:1}}>{title}</Text>
+   {foldable?<Ionicons name={open?'chevron-up':'chevron-down'} size={17} color="#333"/>:null}
+  </Pressable>
+  {open?<View style={{marginTop:5}}>{children}</View>:null}
+ </View>;
+}
+/** Shared visual shell for Bible, Music and Talents, matching the Dream layout. */
+export function PublicationDetail({item,children,media}:{item:Publication;children:React.ReactNode;media?:React.ReactNode;onImageDoubleTap?:()=>void}){
+ const theme=useAppTheme();
+ const color=item.type==='bible'?PHASE_COLORS.Témoignage.background:item.type==='talent'?'#EEE9E2':'#E8E3DD';
+ const subtitle=item.type==='bible'?'Louis Segond 1910':item.author;
+ const avatar=item.author==='Sarah'?'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=220&q=80':'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=220&q=80';
  return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
-  <ScrollView style={{flex:1}} contentContainerStyle={{paddingHorizontal:16,paddingTop:15,paddingBottom:56,maxWidth:840,width:'100%',alignSelf:'center'}}>
-   <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',marginBottom:0}}>
-    <Pressable onPress={()=>router.back()} accessibilityLabel="Retour" style={{width:44,height:44,alignItems:'center',justifyContent:'center'}}><Ionicons name="chevron-back" size={24} color="#222"/></Pressable>
-    <View style={{flex:1,minWidth:0,overflow:'hidden',marginHorizontal:6}}><Text numberOfLines={1} ellipsizeMode="tail" adjustsFontSizeToFit minimumFontScale={0.5} style={[{fontSize:17,lineHeight:21,fontWeight:'700',color:theme.foreground,textAlign:'center'},Platform.OS==='web'?({whiteSpace:'nowrap',textOverflow:'ellipsis',overflow:'hidden',display:'block'} as any):null]}>{item.title}</Text></View>
+  <ScrollView contentContainerStyle={{paddingHorizontal:17,paddingTop:11,paddingBottom:54,maxWidth:650,width:'100%',alignSelf:'center'}}>
+   <View style={{flexDirection:'row',alignItems:'center',minHeight:63,borderBottomWidth:1,borderColor:theme.border}}>
+    <Pressable onPress={()=>router.back()} accessibilityLabel="Retour" style={{width:43}}><Ionicons name="chevron-back" size={25} color={theme.foreground}/></Pressable>
+    <View style={{flex:1,alignItems:'center'}}><Text numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.7} style={{fontWeight:'800',fontSize:17,color:theme.foreground,textAlign:'center'}}>{item.title}</Text><Text style={{fontSize:11,color:theme.muted,marginTop:3}}>{subtitle}</Text></View>
     <TopActions/>
    </View>
-   {(phase||item.type==='bible')?<View style={{flexDirection:'row',alignItems:'center',justifyContent:'center',marginTop:-10,marginBottom:14}}><Text style={{fontSize:11,color:phase?PHASE_COLORS[phase].foreground:'#777'}}>{phase?'Rêve en '+PHASE_LABELS[phase].toLowerCase():'Louis Segond 1910'}</Text></View>:null}
-   <View style={{borderWidth:1,borderColor:'#E8E8E8',borderRadius:16,padding:13,backgroundColor:phase?PHASE_COLORS[phase].background:item.type==='bible'?PHASE_COLORS['Témoignage'].background:'#fff'}}>
-    <View style={{flexDirection:'row',alignItems:'stretch',gap:7}}>
-     <View style={{flex:1,minWidth:0,position:'relative'}}>
-      {media??<Pressable onPress={handleImageTap} accessibilityLabel={item.type==='dream'?'Toucher deux fois pour dire Moi aussi':'Image de publication'}><Image source={{uri:item.image}} resizeMode="cover" style={{width:'100%',height:item.type==='bible'?280:230,borderRadius:10,backgroundColor:'#f3f3f3'}}/></Pressable>}
-      {phase?<View pointerEvents="none" style={{position:'absolute',left:0,right:0,top:0,bottom:0,alignItems:'center',justifyContent:'center',borderRadius:10,overflow:'hidden'}}><Svg width="100%" height="100%" style={{position:'absolute'}}><Defs><RadialGradient id="shade" cx="50%" cy="50%" rx="72%" ry="72%"><Stop offset="0%" stopColor="#fff" stopOpacity="0.2"/><Stop offset="100%" stopColor="#000" stopOpacity="0.55"/></RadialGradient></Defs><Rect width="100%" height="100%" fill="url(#shade)"/></Svg><View style={{position:'absolute',right:11,top:11,width:44,height:44,alignItems:'center',justifyContent:'center'}}><DreamPhaseIcon phase={phase} size={34}/></View></View>:null}
+   <View style={{paddingTop:45,paddingBottom:12}}>
+    <View style={{width:'91%',borderRadius:12,backgroundColor:color,paddingTop:16,paddingBottom:12,paddingLeft:15,paddingRight:9}}>
+     <Pressable onPress={()=>router.push(personPath(item.author))} accessibilityLabel={'Profil de '+item.author} style={{position:'absolute',top:-34,right:-24,zIndex:4}}>
+      <Image source={{uri:avatar}} style={{width:95,height:95,borderRadius:48}}/>
+     </Pressable>
+     <View style={{flexDirection:'row',gap:7}}>
+      <View style={{flex:1,minWidth:0}}>
+       {media?<View style={{marginBottom:8,paddingTop:14}}>{media}</View>:null}
+       {children}
+      </View>
+      <View style={{width:39,justifyContent:'flex-end',alignItems:'center',paddingBottom:11}}><ActionRail item={item}/></View>
      </View>
-     <View style={{width:48,alignItems:'center',justifyContent:'space-between'}}><Pressable accessibilityLabel={'Voir le profil de '+item.author} onPress={()=>router.push(personPath(item.author))} style={{alignItems:'center',gap:3}}><Avatar size={27}/><Text numberOfLines={1} style={{fontSize:10,color:'#555',maxWidth:48,textAlign:'center'}}>{item.author}</Text></Pressable><ActionRail item={item}/></View>
     </View>
-    <View style={{paddingTop:14}}>{children}</View>
    </View>
-   <Text style={{fontSize:18,fontWeight:'700',color:'#202020',marginTop:25,marginBottom:13}}>Continuer l’inspiration</Text>
+   <Text style={{fontSize:18,fontWeight:'800',color:theme.foreground,marginTop:22,marginBottom:14}}>Continuer l’inspiration</Text>
    <PublicationGallery items={publications.filter(p=>p.id!==item.id)}/>
-  </ScrollView>
-  <Nav/>
+  </ScrollView><Nav/>
  </SafeAreaView>;
 }
