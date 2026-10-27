@@ -35,7 +35,8 @@ export type BiblePublication = PublicationBase & {
   highlightedVerse: number;
 };
 
-export type Publication = DreamPublication | MusicPublication | BiblePublication;
+export type PersonPublication = PublicationBase & {type:'person';talents:string[]};
+export type Publication = DreamPublication | MusicPublication | BiblePublication | PersonPublication;
 
 /** Stable photo IDs from Unsplash; we will replace these demo images with member uploads. */
 export const publications: Publication[] = [
@@ -108,6 +109,11 @@ export const publications: Publication[] = [
   },
 ];
 
+export const personPublications:PersonPublication[]=[
+ {id:'person-sarah',type:'person',title:'Sarah',author:'Sarah',talents:['Guitare','Louange'],image:'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=900&q=82',imageAlt:'Profile example'},
+ {id:'person-arnaud',type:'person',title:'Arnaud',author:'Arnaud',talents:['Musique','Collaboration'],image:'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=900&q=82',imageAlt:'Profile example'},
+ {id:'person-esther',type:'person',title:'Esther',author:'Esther',talents:['Photographie'],image:'https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=900&q=82',imageAlt:'Profile example'}
+];
 export const dreams = publications.filter((p): p is DreamPublication => p.type === 'dream');
 export const musics = publications.filter((p): p is MusicPublication => p.type === 'music');
 export const biblePosts = publications.filter((p): p is BiblePublication => p.type === 'bible');
