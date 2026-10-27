@@ -14,7 +14,7 @@ import {useAppTheme} from './AppTheme';
 
 function Panel({title,children,initiallyOpen=true,minHeight=0,collapsible=true,transparent=false}:{title:string;children:React.ReactNode;initiallyOpen?:boolean;minHeight?:number;collapsible?:boolean;transparent?:boolean}){
  const [open,setOpen]=useState(initiallyOpen);
- return <View style={{backgroundColor:transparent?'transparent':'#FFFDF9',borderRadius:11,paddingHorizontal:11,paddingVertical:9,marginBottom:5,minHeight:open?minHeight:0}}>
+ return <View style={{backgroundColor:transparent?'transparent':'#FFFDF9',borderRadius:11,position:'relative',paddingHorizontal:11,paddingVertical:9,marginBottom:5,minHeight:open?minHeight:0}}>
   <Pressable disabled={!collapsible} onPress={()=>setOpen(v=>!v)} accessibilityRole="button" accessibilityLabel={title} style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center',minHeight:24}}>
    <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.65} style={{fontFamily:'Caveat_700Bold',fontSize:19,lineHeight:23,color:'#252525',flexShrink:1}}>{title}</Text>
    {collapsible?<Ionicons name={open?'chevron-up':'chevron-down'} size={16} color="#333"/>:null}
@@ -38,13 +38,13 @@ export function DreamReferenceLayout({item}:{item:DreamPublication}){
     <TopActions/>
    </View>
    <View style={{paddingTop:46,paddingBottom:13}}>
-    <View style={{backgroundColor:phase.background,borderRadius:12,paddingTop:30,paddingBottom:13,paddingLeft:15,paddingRight:10,width:'91%',alignSelf:'flex-start',position:'relative'}}>
+    <View style={{backgroundColor:phase.background,borderRadius:12,paddingTop:12,paddingBottom:13,paddingLeft:15,paddingRight:10,width:'91%',alignSelf:'flex-start',position:'relative'}}>
      <Pressable onPress={()=>router.push(personPath(item.author))} accessibilityLabel={'Profil de '+item.author} style={{position:'absolute',top:-35,right:-23,width:96,height:96,borderRadius:48,borderWidth:0,backgroundColor:'transparent',zIndex:3,alignItems:'center',justifyContent:'center'}}>
       <Image source={{uri:item.author==='Gustav'?'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=240&q=80':'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=240&q=80'}} style={{width:96,height:96,borderRadius:48}} resizeMode="cover"/>
      </Pressable>
      <View style={{flexDirection:'row',alignItems:'stretch',gap:8}}>
       <View style={{flex:1,paddingTop:0}}>
-       <Panel title="Mon but" transparent collapsible={false} minHeight={0}><Text style={{fontSize:13,lineHeight:19,color:'#333'}}>{item.summary}</Text><View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',marginTop:7}}>{item.phase==='Rêve'?<Pressable onPress={sameDream} accessibilityLabel="Moi aussi" accessibilityRole="button" style={{flexDirection:'row',alignItems:'center',gap:5,paddingVertical:4,paddingHorizontal:7,borderRadius:10,backgroundColor:app.myDreamIds.includes(item.id)?'#F5E0EA':'#F2F2F2'}}><Ionicons name={app.myDreamIds.includes(item.id)?'checkmark-circle':'add-circle-outline'} size={15} color={app.myDreamIds.includes(item.id)?'#CB245C':'#555'}/><Text style={{fontSize:11,color:app.myDreamIds.includes(item.id)?'#CB245C':'#555'}}>{app.myDreamIds.includes(item.id)?'Moi aussi ✓':'Moi aussi'}</Text></Pressable>:<View/>}<View style={{marginRight:-7,marginTop:-4}}><DreamPhaseIcon phase={item.phase} size={26}/></View></View></Panel>
+       <Panel title="Mon but" transparent collapsible={false} minHeight={0}><Text style={{fontSize:13,lineHeight:19,color:'#333'}}>{item.summary}</Text><View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',marginTop:2}}>{item.phase==='Rêve'?<Pressable onPress={sameDream} accessibilityLabel="Moi aussi" accessibilityRole="button" style={{flexDirection:'row',alignItems:'center',gap:5,paddingVertical:4,paddingHorizontal:7,borderRadius:10,backgroundColor:app.myDreamIds.includes(item.id)?'#F5E0EA':'#F2F2F2'}}><Ionicons name={app.myDreamIds.includes(item.id)?'checkmark-circle':'add-circle-outline'} size={15} color={app.myDreamIds.includes(item.id)?'#CB245C':'#555'}/><Text style={{fontSize:11,color:app.myDreamIds.includes(item.id)?'#CB245C':'#555'}}>{app.myDreamIds.includes(item.id)?'Moi aussi ✓':'Moi aussi'}</Text></Pressable>:<View/>}<View pointerEvents="none" style={{position:'absolute',right:-19,bottom:-8,opacity:0.65,zIndex:-1}}><DreamPhaseIcon phase={item.phase} size={53}/></View></View></Panel>
        
        <Panel title="Ma motivation" initiallyOpen={false} minHeight={0}><Text style={{fontSize:13,lineHeight:20,color:'#333'}}>{item.motivation||'Ce rêve me tient à cœur.'}</Text></Panel>
        <Panel title="Les talents nécessaires" initiallyOpen={false} minHeight={0}>
