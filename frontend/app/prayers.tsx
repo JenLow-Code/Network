@@ -8,12 +8,13 @@ import {Nav,TopActions} from '@/components';
 import {publications} from '@/discoveryData';
 import {useApp} from '@/context';
 import {publicationPath} from '@/PublicationGallery';
-export default function Prayers(){
+import {useAppTheme} from '@/AppTheme';
+export default function Prayers(){const theme=useAppTheme();
  const {prayerIds,togglePrayer,prayerRepetitions,setPrayerRepetition}=useApp();
  const items=publications.filter(p=>prayerIds.includes(p.id));
- return <SafeAreaView style={{flex:1,backgroundColor:'#fff'}}>
+ return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
   <ScrollView style={{flex:1}} contentContainerStyle={{padding:17,paddingBottom:55}}>
-   <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginBottom:5}}><Text style={{fontSize:26,fontWeight:'700'}}>Mes prières</Text><TopActions/></View>
+   <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginBottom:5}}><Text style={{fontSize:26,fontWeight:'700',color:theme.foreground}}>Mes prières</Text><TopActions/></View>
    <Text style={{fontSize:12,color:'#888',marginBottom:19}}>Toutes mes prières, avec leur rythme de répétition.</Text>
    {!items.length?<Text style={{color:'#888',textAlign:'center',marginTop:60}}>Aucun sujet de prière enregistré.</Text>:items.map(p=><View key={p.id} style={{flexDirection:'row',gap:11,alignItems:'center',padding:10,borderWidth:1,borderColor:'#ededed',borderRadius:12,marginBottom:11}}>
      <Pressable onPress={()=>router.push(publicationPath(p) as any)}><Image source={{uri:p.image}} style={{width:67,height:67,borderRadius:8}}/></Pressable>
