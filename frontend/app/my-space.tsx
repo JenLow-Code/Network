@@ -7,18 +7,19 @@ import {Avatar,Nav,TopActions} from '@/components';
 import {useApp} from '@/context';
 import {DREAM_PHASES,PHASE_COLORS,PHASE_LABELS,PHASE_SYMBOLS} from '@/discoveryData';
 import {useDreams} from '@/domain/dreamRepository';
+import {useAppTheme} from '@/AppTheme';
 
 function DreamsOverview(){const {items}=useDreams();return <View style={{flexDirection:'row',flexWrap:'wrap',gap:9}}>{DREAM_PHASES.map(phase=><Pressable key={phase} onPress={()=>router.push({pathname:'/my-dreams/[phase]',params:{phase}})} style={{width:'48%',borderRadius:13,padding:15,minHeight:113,justifyContent:'space-between',backgroundColor:PHASE_COLORS[phase].background}}><View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}><Text style={{fontWeight:'700',color:PHASE_COLORS[phase].foreground}}>{PHASE_LABELS[phase]}</Text><Ionicons name={phase==='Rêve'?'ellipse':phase==='Initiation'?'leaf-outline':phase==='Croissance'?'leaf':'flower-outline'} size={21} color={PHASE_COLORS[phase].foreground}/></View><Text style={{fontSize:12,color:'#444'}}>{items.filter(d=>d.phase===phase).length} rêve(s)</Text></Pressable>)}</View>}
 export default function MySpace(){
- const app=useApp();
+ const app=useApp();const theme=useAppTheme();
  const sections=[
   {title:'Mon profil',detail:'Mes informations et talents',icon:'person-outline' as const,path:'/profile' as const},
   {title:'Mes prières',detail:'Toutes mes prières et leur répétition',icon:'heart-outline' as const,path:'/prayers' as const},
   {title:'Paramètres',detail:'Compte et préférences',icon:'settings-outline' as const,path:'/settings' as const}
  ];
- return <SafeAreaView style={{flex:1,backgroundColor:'#fff'}}>
+ return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
   <ScrollView style={{flex:1}} contentContainerStyle={{padding:18,paddingBottom:50}}>
-   <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}><Text style={{fontSize:29,fontWeight:'700'}}>Mon espace</Text><TopActions/></View>
+   <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}><Text style={{fontSize:29,fontWeight:'700',color:theme.foreground}}>Mon espace</Text><TopActions/></View>
    <View style={{marginTop:14,marginBottom:20,paddingBottom:18,borderBottomWidth:1,borderColor:'#eee'}}>
     <Text style={{fontSize:18,fontWeight:'700',marginBottom:12}}>Mes rêves</Text>
     <DreamsOverview/>
