@@ -3,16 +3,17 @@ import type {Publication,DreamPhase} from '../discoveryData';
 /** Stable permission identifiers; backend can enforce the same policy. */
 export type ActionId='share-internal'|'share-external'|'fire'|'prayer'|'inspire'|'verse-export'|'encourage'|'same-dream'|'offer-help'|'introduce'|'audio-collab';
 export const dreamPermissions:Record<DreamPhase,readonly ActionId[]>={
-  'Rêve':['share-internal','encourage','same-dream','fire','prayer'],
+  'Rêve':['encourage','fire','prayer'],
   'Initiation':['share-internal','prayer','offer-help','introduce'],
-  'Croissance':['prayer'],
+  'Croissance':['prayer','encourage'],
   'Témoignage':['share-internal','share-external','prayer','fire','inspire'],
 };
 export function allowedActions(item:Publication):readonly ActionId[]{
   switch(item.type){
    case 'dream':return dreamPermissions[item.phase];
    case 'bible':return ['share-internal','fire','prayer','inspire','verse-export'];
-   case 'music':return ['share-internal','fire','audio-collab'];
+   case 'music':return ['share-internal','fire','audio-collab','inspire'];
+   case 'talent':return ['encourage','prayer'];
   }
 }
 export function can(item:Publication,action:ActionId):boolean{return allowedActions(item).includes(action);}
