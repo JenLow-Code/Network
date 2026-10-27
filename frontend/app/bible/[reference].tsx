@@ -1,5 +1,5 @@
 import React,{useRef,useState} from 'react';
-import {ScrollView,Text,View} from 'react-native';
+import {ScrollView,Text,View,type ScrollViewInstance} from 'react-native';
 import {useLocalSearchParams} from 'expo-router';
 import {psalm150,biblePosts} from '@/discoveryData';
 import {PublicationDetail} from '@/PublicationDetail';
@@ -8,7 +8,7 @@ export default function Bible(){
  const {verse}=useLocalSearchParams<{reference:string;verse?:string}>();
  const focus=Math.max(1,Math.min(psalm150.length,Number(verse||6)||6));
  const post=biblePosts.find(p=>p.highlightedVerse===focus)||biblePosts[0];
- const inner=useRef<ScrollView>(null);
+ const inner=useRef<ScrollViewInstance>(null);
  const positions=useRef<Record<number,{y:number;height:number}>>({});
  const [ready,setReady]=useState(false);
  const centre=()=>{const pos=positions.current[focus];if(pos)inner.current?.scrollTo({y:Math.max(0,pos.y+pos.height/2-READER_HEIGHT/2),animated:false})};
