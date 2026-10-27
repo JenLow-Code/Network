@@ -62,8 +62,7 @@ export default function Profile(){
     <Pressable onPress={cancel}><Text style={s.label}>Lieu</Text></Pressable>{field('city')}
     <Pressable onPress={cancel} style={{marginTop:14}}><Text style={s.label}>Eglise</Text></Pressable>{field('church')}
     <View style={s.galleries}><Gallery kind="talent"/></View>
-    <Pressable onPress={cancel}><Text style={[s.title,{marginTop:14,marginBottom:9}]}>Mes pierres</Text></Pressable>
-    <StoneDeck/>
+
     <Pressable onPress={()=>{cancel();app.logout();router.replace('/login')}} style={{marginTop:18}}><Text style={{color:'#999',fontSize:11}}>Se déconnecter</Text></Pressable>
    </ScrollView>
    <ContactSheet/>
