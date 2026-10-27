@@ -93,7 +93,7 @@ export function Provider({children}:{children:React.ReactNode}){
  const encourage=useCallback((id:string)=>setEncouragementIds(p=>p.includes(id)?p:[...p,id]),[]);
  const proposeMusic=useCallback((id:string)=>setMusicProposalIds(p=>p.includes(id)?p:[...p,id]),[]);
  const togglePrayer=useCallback((id:string)=>setPrayerByDate(prev=>{const exists=Object.values(prev).some(ids=>ids.includes(id));if(exists)return Object.fromEntries(Object.entries(prev).map(([day,ids])=>[day,ids.filter(x=>x!==id)]));const key=todayKey();return {...prev,[key]:[...(prev[key]||[]),id]}}),[]);
- const joinDream=useCallback((id:string)=>setMyDreamIds(prev=>prev.includes(id)?prev:[...prev,id]),[]);
+ const joinDream=useCallback((id:string)=>setMyDreamIds(prev=>prev.includes(id)?prev.filter(x=>x!==id):[...prev,id]),[]);
  const toggleFire=useCallback((id:string)=>setFireIds(ids=>ids.includes(id)?ids.filter(x=>x!==id):[...ids,id]),[]);
  const addToDream=useCallback((dreamId:string,publicationId:string)=>{
   setDreamInspirations(current=>{
