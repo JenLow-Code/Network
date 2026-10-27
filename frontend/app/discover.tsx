@@ -7,7 +7,7 @@ import {router} from 'expo-router';
 import {useApp} from '@/context';
 import {Nav,Pill,TopActions} from '@/components';
 import {PublicationGallery} from '@/PublicationGallery';
-import {publications} from '@/discoveryData';
+import {publications,personPublications} from '@/discoveryData';
 import {people,personPath} from '@/people';
 import {Avatar} from '@/components';
 import {FireHeader} from '@/FireHeader';
@@ -30,7 +30,7 @@ export default function Discover(){const {tr}=useLocale();
    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{gap:7,paddingBottom:17}}>
     {filters.map(f=><Pill key={f} text={f==='Tout'?tr('all'):f==='Rêves'?tr('dreamsFilter'):f==='Musique'?tr('musicFilter'):f==='Bible'?tr('bibleFilter'):'Personnes'} active={filter===f} onPress={()=>setFilter(f)}/>)}
    </ScrollView>
-   {filter==='Personnes'?<View style={{gap:9}}>{people.filter(p=>[p.name,...p.talents].join(' ').toLowerCase().includes(query.trim().toLowerCase())).map(p=><Pressable key={p.name} onPress={()=>router.push(personPath(p.name))} style={{flexDirection:'row',gap:12,alignItems:'center',padding:14,borderWidth:1,borderColor:'#e8e8e8',borderRadius:12}}><Avatar size={44}/><View style={{flex:1}}><Text style={{fontSize:14,fontWeight:'700'}}>{p.name}</Text><Text style={{fontSize:12,color:'#777',marginTop:4}}>{p.talents.join(' · ')||'Profil public'}</Text></View><Ionicons name="chevron-forward" size={18} color="#777"/></Pressable>)}</View>:<PublicationGallery items={items}/>}
+   <PublicationGallery items={filter==='Personnes'?personPublications:filter==='Tout'?[...publications,...personPublications]:items}/>
    {filter!=='Personnes'&&items.length===0&&<Text style={{textAlign:'center',marginTop:25,color:'#999'}}>Aucune publication trouvée.</Text>}
   </ScrollView><Nav/>
  </SafeAreaView>;
