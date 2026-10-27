@@ -42,14 +42,10 @@ export default function Workspace(){
  </>:null}
  {editable?button('Planter cette semence',()=>advance(dream!.id)):null}
  {initiated?button('Chercher des talents',()=>router.push('/discover')):null}
- {(editable||initiated)&&nextPhase(dream!.phase)?button('Passer à '+nextPhase(dream!.phase),()=>advance(dream!.id)):null}
+ {initiated?button('Faire grandir cette plante',()=>advance(dream!.id)):null}
  {growing?<View style={{borderTopWidth:1,borderColor:'#eee',marginTop:27,paddingTop:17}}>
   <Text style={{fontWeight:'700'}}>Mon journal de croissance</Text>
-  <View style={{flexDirection:'row',gap:7,marginTop:11,flexWrap:'wrap'}}>{(['text','photo','audio','video'] as const).map(type=><Pressable key={type} onPress={()=>setMediaType(type)} style={{padding:9,borderRadius:9,backgroundColor:mediaType===type?'#f2e0e9':'#eee'}}><Text>{type}</Text></Pressable>)}</View>
-  {mediaType!=='text'?<TextInput value={finishUrl} onChangeText={setFinishUrl} placeholder="Lien vers le média (démo)" style={{borderBottomWidth:1,borderColor:'#ddd',padding:11,marginTop:9}}/>:null}
-  <TextInput multiline value={finishText} onChangeText={setFinishText} placeholder="Raconte ce qui a été accompli…" style={{borderWidth:1,borderColor:'#ddd',borderRadius:9,minHeight:90,padding:11,marginTop:13}}/>
   {button('Admirer les fleurs de cette plante',()=>router.push({pathname:'/my-dream/flower/[id]',params:{id:dream!.id}}))}
-  {button('Publier mon témoignage',()=>{if(finishText.trim()&&(mediaType==='text'||finishUrl.trim()))complete(dream!.id,finishText.trim(),mediaType,finishUrl.trim())})}
  </View>:null}
  <Text style={{marginTop:24,fontSize:10,color:'#aaa'}}>Fonctions locales de démonstration. Les droits des co-propriétaires et les médias réels seront validés côté serveur.</Text>
  </ScrollView><Nav/></SafeAreaView>;
