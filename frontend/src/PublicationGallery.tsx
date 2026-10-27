@@ -1,6 +1,7 @@
 import React,{useState} from 'react';
 import {Image,Pressable,StyleSheet,Text,View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
+import {SeedIcon} from './SeedIcon';
 import {useAudioPlayer,useAudioPlayerStatus} from 'expo-audio';
 import {router} from 'expo-router';
 import {Publication,PHASE_COLORS,PHASE_LABELS,PHASE_SYMBOLS,verseExcerpt} from './discoveryData';
@@ -14,7 +15,7 @@ export function PublicationTile({item}:{item:Publication}){
   <View style={{height:item.type==='bible'?230:156,position:'relative',margin:10,marginBottom:0,borderRadius:9,overflow:'hidden'}}>
    {item.type==='person'?<View style={{flex:1,alignItems:'center',justifyContent:'center',backgroundColor:'#f1f1f1'}}><Image source={{uri:item.image}} style={{width:92,height:92,borderRadius:46}}/></View>:<Image source={{uri:item.image}} resizeMode="cover" style={{width:'100%',height:'100%'}}/>}
    {item.type==='bible'?<View style={{position:'absolute',left:0,right:0,top:0,bottom:0,backgroundColor:'rgba(0,0,0,0.58)',padding:13,justifyContent:'center'}}><Text adjustsFontSizeToFit minimumFontScale={0.65} style={{color:'#fff',fontSize:14,lineHeight:21,textAlign:'center',fontWeight:'500'}}>{verseExcerpt(item)}</Text></View>:null}
-   {item.type==='dream'?<View style={{position:'absolute',top:10,right:9,backgroundColor:'rgba(255,255,255,0.86)',borderRadius:20,width:36,height:36,alignItems:'center',justifyContent:'center',padding:0}}><Text style={{fontSize:19,lineHeight:26,textAlign:'center',includeFontPadding:false}}>{PHASE_SYMBOLS[item.phase]}</Text></View>:null}
+   {item.type==='dream'?<View style={{position:'absolute',top:10,right:9,backgroundColor:'rgba(255,255,255,0.86)',borderRadius:20,width:36,height:36,alignItems:'center',justifyContent:'center',padding:0}}>{item.phase==='Rêve'?<SeedIcon size={27}/>:<Text style={{fontSize:19,lineHeight:26,textAlign:'center',includeFontPadding:false}}>{PHASE_SYMBOLS[item.phase]}</Text>}</View>:null}
    {item.type==='music'?<MusicCard index={item.audioIndex}/>:null}
   </View>
   <View style={{padding:11,gap:5,minHeight:77}}>
