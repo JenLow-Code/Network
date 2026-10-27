@@ -7,6 +7,7 @@ import {router} from 'expo-router';
 import {Avatar,Nav,TopActions} from '@/components';
 import {ContactSheet} from '@/ContactSheet';
 import {StoneDeck} from '@/StoneDeck';
+import {useAppTheme} from '@/AppTheme';
 import {useApp} from '@/context';
 import {colors as c} from '@/theme';
 import {dreams} from '@/discoveryData';
@@ -40,7 +41,7 @@ function Gallery({kind}:{kind:'talent'|'dream'}){
  </View>;
 }
 export default function Profile(){
- const app=useApp();
+ const theme=useAppTheme();const app=useApp();
  const [active,setActive]=useState<Field|null>(null);
  const [draft,setDraft]=useState('');
  const value=(k:Field)=>k==='bio'?app.bio:k==='city'?app.city:app.church;
@@ -54,9 +55,9 @@ export default function Profile(){
    <><Text style={[s.value,{fontStyle:k==='bio'?'italic':'normal',flexShrink:1}]}>{value(k)}</Text><Pressable accessibilityLabel={'Edit '+k} onPress={()=>start(k)} style={{paddingLeft:6,paddingVertical:5}}><Ionicons name="pencil" color={c.pink} size={12}/></Pressable></>}
   </View>;
  }
- return <SafeAreaView style={s.safe}><View style={{flex:1}}>
+ return <SafeAreaView style={[s.safe,{backgroundColor:theme.background}]}><View style={{flex:1}}>
    <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
-    <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',marginBottom:12}}><Text style={{fontSize:29,fontWeight:'700'}}>Mon profil</Text><TopActions/></View>
+    <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',marginBottom:12}}><Text style={{fontSize:29,fontWeight:'700',color:theme.foreground}}>Mon profil</Text><TopActions/></View>
     <Pressable onPress={cancel} style={{alignItems:'center'}}><Avatar size={164}/><Text style={s.name}>{app.name}</Text></Pressable>
     <View style={s.bio}>{field('bio')}</View>
     <Pressable onPress={cancel}><Text style={s.label}>Lieu</Text></Pressable>{field('city')}
