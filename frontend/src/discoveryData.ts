@@ -35,7 +35,7 @@ export type BiblePublication = PublicationBase & {
   highlightedVerse: number;
 };
 
-export type PersonPublication = PublicationBase & {type:'person';talents:string[];description:string};
+export type PersonPublication = PublicationBase & {type:'talent';talents:string[];description:string};
 export type Publication = DreamPublication | MusicPublication | BiblePublication | PersonPublication;
 
 /** Stable photo IDs from Unsplash; we will replace these demo images with member uploads. */
@@ -110,9 +110,9 @@ export const publications: Publication[] = [
 ];
 
 export const personPublications:PersonPublication[]=[
- {id:'person-sarah',type:'person',title:'Sarah',author:'Sarah',talents:['Guitare','Louange'],description:'Passionnée de guitare et de louange, Sarah souhaite partager la musique et progresser avec d’autres.',image:'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=900&q=82',imageAlt:'Profile example'},
- {id:'person-arnaud',type:'person',title:'Arnaud',author:'Arnaud',talents:['Musique','Collaboration'],description:'Arnaud aime réunir des musiciens autour de projets communs et collaborer avec des talents variés.',image:'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=900&q=82',imageAlt:'Profile example'},
- {id:'person-esther',type:'person',title:'Esther',author:'Esther',talents:['Photographie'],description:'Esther partage son regard sur la création à travers la photographie et de nouvelles rencontres.',image:'https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=900&q=82',imageAlt:'Profile example'}
+ {id:'person-sarah',type:'talent',title:'Sarah',author:'Sarah',talents:['Guitare','Louange'],description:'Passionnée de guitare et de louange, Sarah souhaite partager la musique et progresser avec d’autres.',image:'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=900&q=82',imageAlt:'Profile example'},
+ {id:'person-arnaud',type:'talent',title:'Arnaud',author:'Arnaud',talents:['Musique','Collaboration'],description:'Arnaud aime réunir des musiciens autour de projets communs et collaborer avec des talents variés.',image:'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=900&q=82',imageAlt:'Profile example'},
+ {id:'person-esther',type:'talent',title:'Esther',author:'Esther',talents:['Photographie'],description:'Esther partage son regard sur la création à travers la photographie et de nouvelles rencontres.',image:'https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=900&q=82',imageAlt:'Profile example'}
 ];
 export const dreams = publications.filter((p): p is DreamPublication => p.type === 'dream');
 export const musics = publications.filter((p): p is MusicPublication => p.type === 'music');
