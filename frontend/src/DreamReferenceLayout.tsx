@@ -14,7 +14,7 @@ import {useAppTheme} from './AppTheme';
 
 function Panel({title,children,initiallyOpen=true,minHeight=0,collapsible=true}:{title:string;children:React.ReactNode;initiallyOpen?:boolean;minHeight?:number;collapsible?:boolean}){
  const [open,setOpen]=useState(initiallyOpen);
- return <View style={{backgroundColor:'#FFFDF9',borderRadius:11,paddingHorizontal:11,paddingVertical:10,marginBottom:10,minHeight:open?minHeight:0}}>
+ return <View style={{backgroundColor:'#FFFDF9',borderRadius:11,paddingHorizontal:11,paddingVertical:9,marginBottom:5,minHeight:open?minHeight:0}}>
   <Pressable disabled={!collapsible} onPress={()=>setOpen(v=>!v)} accessibilityRole="button" accessibilityLabel={title} style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center',minHeight:24}}>
    <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.65} style={{fontFamily:'Caveat_700Bold',fontSize:19,lineHeight:23,color:'#252525',flexShrink:1}}>{title}</Text>
    {collapsible?<Ionicons name={open?'chevron-up':'chevron-down'} size={16} color="#333"/>:null}
@@ -44,10 +44,10 @@ export function DreamReferenceLayout({item}:{item:DreamPublication}){
      </Pressable>
      <View style={{flexDirection:'row',alignItems:'stretch',gap:8}}>
       <View style={{flex:1,paddingTop:0}}>
-       <Panel title="Mon but" collapsible={false} minHeight={96}><Text style={{fontSize:13,lineHeight:19,color:'#333'}}>{item.summary}</Text><View pointerEvents="none" style={{alignSelf:'flex-end',marginTop:4,marginRight:4}}><DreamPhaseIcon phase={item.phase} size={17}/></View></Panel>
+       <Panel title="Mon but" collapsible={false} minHeight={0}><Text style={{fontSize:13,lineHeight:19,color:'#333'}}>{item.summary}</Text><View pointerEvents="none" style={{alignSelf:'flex-end',marginTop:4,marginRight:4}}><DreamPhaseIcon phase={item.phase} size={17}/></View></Panel>
        
-       <Panel title="Ma motivation" minHeight={134}><Text style={{fontSize:13,lineHeight:20,color:'#333'}}>{item.motivation||'Ce rêve me tient à cœur.'}</Text></Panel>
-       <Panel title="Les talents nécessaires" minHeight={155}>
+       <Panel title="Ma motivation" minHeight={0}><Text style={{fontSize:13,lineHeight:20,color:'#333'}}>{item.motivation||'Ce rêve me tient à cœur.'}</Text></Panel>
+       <Panel title="Les talents nécessaires" minHeight={0}>
         <View style={{flexDirection:'row',flexWrap:'wrap',gap:7,marginTop:6,marginBottom:8}}>
          {item.needs.map((n,i)=><View key={n} style={{alignItems:'center',gap:4}}><View style={{width:31,height:31,borderRadius:16,backgroundColor:'#D71D77'}}/><Text style={{fontSize:9,color:'#666',maxWidth:65,textAlign:'center'}}>{n}</Text></View>)}
         </View>
