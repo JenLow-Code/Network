@@ -2,7 +2,6 @@ import React,{useState} from 'react';
 import {Image,Pressable,ScrollView,Text,View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {Ionicons} from '@expo/vector-icons';
-import {Caveat_700Bold,useFonts} from '@expo-google-fonts/caveat';
 import {router} from 'expo-router';
 import {DreamPublication,PHASE_COLORS,PHASE_LABELS,publications} from './discoveryData';
 import {Avatar,Nav,TopActions} from './components';
@@ -26,7 +25,6 @@ function Panel({title,children,initiallyOpen=true,minHeight=0,collapsible=true}:
 
 export function DreamReferenceLayout({item}:{item:DreamPublication}){
  const theme=useAppTheme();const app=useApp();
- useFonts({Caveat_700Bold});
  const phase=PHASE_COLORS[item.phase];
  const sameDream=()=>app.joinDream(item.id);
  return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
