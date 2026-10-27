@@ -38,7 +38,7 @@ export type BiblePublication = PublicationBase & {
   highlightedVerse: number;
 };
 
-export type PersonPublication = PublicationBase & {type:'talent';talents:string[];description:string;skill:string;level:string;instrument:'drums'|'guitar'|'camera'};
+export type PersonPublication = PublicationBase & {type:'talent';talents:string[];description:string;skill:string;level:string;instrument:'drums'|'guitar'|'camera';seeking:string[]};
 export type Publication = DreamPublication | MusicPublication | BiblePublication | PersonPublication;
 
 /** Stable photo IDs from Unsplash; we will replace these demo images with member uploads. */
@@ -115,9 +115,9 @@ export const publications: Publication[] = [
 ];
 
 export const personPublications:PersonPublication[]=[
- {id:'person-sarah',type:'talent',title:'Guitariste | Débutant',author:'Sarah',talents:['Guitare','Louange'],skill:'Guitariste',level:'Débutant',instrument:'guitar',description:'Passionnée de guitare et de louange, Sarah souhaite partager la musique et progresser avec d’autres.',image:'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=900&q=82',imageAlt:'Profile example'},
- {id:'person-arnaud',type:'talent',title:'Batteur | Intermédiaire',author:'Arnaud',talents:['Musique','Collaboration'],skill:'Batteur',level:'Intermédiaire',instrument:'drums',description:'Arnaud aime réunir des musiciens autour de projets communs et collaborer avec des talents variés.',image:'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=900&q=82',imageAlt:'Profile example'},
- {id:'person-esther',type:'talent',title:'Photographe | Confirmée',author:'Esther',talents:['Photographie'],skill:'Photographe',level:'Confirmée',instrument:'camera',description:'Esther partage son regard sur la création à travers la photographie et de nouvelles rencontres.',image:'https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=900&q=82',imageAlt:'Profile example'}
+ {id:'person-sarah',type:'talent',title:'Guitariste | Débutant',author:'Sarah',talents:['Guitare','Louange'],skill:'Guitariste',level:'Débutant',instrument:'guitar',seeking:['Tandem','Professeur'],description:'Passionnée de guitare et de louange, Sarah souhaite partager la musique et progresser avec d’autres.',image:'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=900&q=82',imageAlt:'Profile example'},
+ {id:'person-arnaud',type:'talent',title:'Batteur | Intermédiaire',author:'Arnaud',talents:['Musique','Collaboration'],skill:'Batteur',level:'Intermédiaire',instrument:'drums',seeking:['Tandem','Élèves'],description:'Arnaud aime réunir des musiciens autour de projets communs et collaborer avec des talents variés.',image:'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=900&q=82',imageAlt:'Profile example'},
+ {id:'person-esther',type:'talent',title:'Photographe | Confirmée',author:'Esther',talents:['Photographie'],skill:'Photographe',level:'Confirmée',instrument:'camera',seeking:['Élèves'],description:'Esther partage son regard sur la création à travers la photographie et de nouvelles rencontres.',image:'https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=900&q=82',imageAlt:'Profile example'}
 ];
 export const dreams = publications.filter((p): p is DreamPublication => p.type === 'dream');
 export const musics = publications.filter((p): p is MusicPublication => p.type === 'music');
