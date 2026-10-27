@@ -1,5 +1,5 @@
 import {Text} from '@/i18n/LocalizedText';
-import React,{useState} from 'react';
+import React,{useEffect,useState} from 'react';
 import {Alert,Pressable,ScrollView,View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {Ionicons} from '@expo/vector-icons';
@@ -11,7 +11,9 @@ import {useLocale,Language,LANGUAGE_KEY} from '@/locale';
 const choices:{id:Language;label:string}[]=[{id:'fr',label:'Français'},{id:'en',label:'English'},{id:'de',label:'Deutsch'},{id:'pt',label:'Português'}];
 export default function Settings(){
  const {language,setLanguage,t,tr}=useLocale();
- const {logout,email}=useApp();const [busy,setBusy]=useState(false);
+ const {logout,email}=useApp();const [busy,setBusy]=useState(false);const [appearance,setAppearance]=useState<'light'|'dark'|'system'>('system');
+ React.useEffect(()=>{void AsyncStorage.getItem('jenlow.appearance').then(v=>{if(v==='light'||v==='dark'||v==='system')setAppearance(v)})},[]);
+ const chooseAppearance=(v:'light'|'dark'|'system')=>{setAppearance(v);void AsyncStorage.setItem('jenlow.appearance',v)};
  const keys=['jenlow.network.demo.dream.workspace.v1.'+(email||'guest').toLowerCase(),'jenlow.network.fire.v1.'+email.toLowerCase(),'jenlow.network.inspirations.v1.'+email.toLowerCase(),...['jenlow.mine.','jenlow.prayer.','jenlow.encouragement.','jenlow.proposals.'].map(s=>s+email)];
  const clearDemo=async()=>{setBusy(true);try{await Promise.all(keys.map(k=>AsyncStorage.removeItem(k)));logout();router.replace('/login')}finally{setBusy(false)}};
  function confirmDemo(){
@@ -27,6 +29,9 @@ export default function Settings(){
     </Pressable>)}
   </View>
   <Text style={{fontSize:11,lineHeight:17,color:'#888',marginTop:11}}>{tr('settingsHelp')}</Text>
+  <Text style={{fontSize:16,fontWeight:'700',marginTop:28,marginBottom:12}}>Apparence</Text>
+  <View style={{flexDirection:'row',gap:8}}>{([{id:'light' as const,label:'Clair'},{id:'dark' as const,label:'Sombre'},{id:'system' as const,label:'Système'}]).map(o=><Pressable key={o.id} onPress={()=>chooseAppearance(o.id)} style={{flex:1,borderWidth:1,borderColor:appearance===o.id?'#CB245C':'#ddd',backgroundColor:appearance===o.id?'#FAEAF0':'#fff',borderRadius:9,padding:12,alignItems:'center'}}><Text style={{color:'#222',fontSize:12}}>{o.label}</Text></Pressable>)}</View>
+  <Text style={{fontSize:11,color:'#888',marginTop:8}}>Préférence enregistrée localement. Le thème global sera activé lorsque les styles de toutes les pages seront unifiés.</Text>
   <Text style={{fontSize:16,fontWeight:'700',marginTop:34,marginBottom:12}}>{t('account')}</Text>
   <Pressable accessibilityRole="button" disabled={busy} onPress={confirmDemo} style={{borderWidth:1,borderColor:'#ddd',padding:13,borderRadius:9,flexDirection:'row',gap:8,alignItems:'center'}}>
    <Ionicons name="trash-outline" color="#9e5163" size={20}/><Text style={{color:'#733e4b',fontSize:13}}>{t('demoData')}</Text>
