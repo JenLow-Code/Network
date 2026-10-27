@@ -1,4 +1,4 @@
-import React from 'react';
+import React,{useRef} from 'react';
 import {Image,Platform,Pressable,ScrollView,Text,View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {Ionicons} from '@expo/vector-icons';
@@ -13,7 +13,9 @@ import {publications} from './discoveryData';
 import {personPath} from './people';
 
 /** Single detail-page shell shared by Dream, Music, and Bible posts. */
-export function PublicationDetail({item,children,media}:{item:Publication;children:React.ReactNode;media?:React.ReactNode}){
+export function PublicationDetail({item,children,media,onImageDoubleTap}:{item:Publication;children:React.ReactNode;media?:React.ReactNode;onImageDoubleTap?:()=>void}){
+ const lastTap=useRef(0);
+ const handleImageTap=()=>{const now=Date.now();if(onImageDoubleTap&&now-lastTap.current<380)onImageDoubleTap();lastTap.current=now};
  const phase=item.type==='dream'?item.phase:null;
  return <SafeAreaView style={{flex:1,backgroundColor:'#fff'}}>
   <ScrollView style={{flex:1}} contentContainerStyle={{paddingHorizontal:16,paddingTop:15,paddingBottom:56,maxWidth:840,width:'100%',alignSelf:'center'}}>
@@ -26,7 +28,7 @@ export function PublicationDetail({item,children,media}:{item:Publication;childr
    <View style={{borderWidth:1,borderColor:'#E8E8E8',borderRadius:16,padding:13,backgroundColor:phase?PHASE_COLORS[phase].background:item.type==='bible'?PHASE_COLORS['Témoignage'].background:'#fff'}}>
     <View style={{flexDirection:'row',alignItems:'stretch',gap:7}}>
      <View style={{flex:1,minWidth:0,position:'relative'}}>
-      {media??<Image source={{uri:item.image}} resizeMode="cover" style={{width:'100%',height:item.type==='bible'?280:230,borderRadius:10,backgroundColor:'#f3f3f3'}}/>}
+      {media??<Pressable onPress={handleImageTap} accessibilityLabel={item.type==='dream'?'Toucher deux fois pour dire Moi aussi':'Image de publication'}><Image source={{uri:item.image}} resizeMode="cover" style={{width:'100%',height:item.type==='bible'?280:230,borderRadius:10,backgroundColor:'#f3f3f3'}}/></Pressable>}
       {phase?<View pointerEvents="none" style={{position:'absolute',left:0,right:0,top:0,bottom:0,alignItems:'center',justifyContent:'center',borderRadius:10,overflow:'hidden'}}><Svg width="100%" height="100%" style={{position:'absolute'}}><Defs><RadialGradient id="shade" cx="50%" cy="50%" rx="72%" ry="72%"><Stop offset="0%" stopColor="#fff" stopOpacity="0.2"/><Stop offset="100%" stopColor="#000" stopOpacity="0.55"/></RadialGradient></Defs><Rect width="100%" height="100%" fill="url(#shade)"/></Svg><View style={{position:'absolute',right:11,top:11,width:44,height:44,alignItems:'center',justifyContent:'center'}}>{phase==='Rêve'?<View style={{width:17,height:17,borderRadius:9,backgroundColor:'#444'}}/>:phase==='Initiation'?<SeedIcon size={34}/>:<Text style={{fontSize:26,lineHeight:34,textAlign:'center'}}>{PHASE_SYMBOLS[phase]}</Text>}</View></View>:null}
      </View>
      <View style={{width:48,alignItems:'center',justifyContent:'space-between'}}><Pressable accessibilityLabel={'Voir le profil de '+item.author} onPress={()=>router.push(personPath(item.author))} style={{alignItems:'center',gap:3}}><Avatar size={27}/><Text numberOfLines={1} style={{fontSize:10,color:'#555',maxWidth:48,textAlign:'center'}}>{item.author}</Text></Pressable><ActionRail item={item}/></View>
