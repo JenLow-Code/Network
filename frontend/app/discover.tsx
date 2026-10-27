@@ -12,8 +12,9 @@ import {people,personPath} from '@/people';
 import {Avatar} from '@/components';
 import {FireHeader} from '@/FireHeader';
 import {useLocale} from '@/locale';
+import {useAppTheme} from '@/AppTheme';
 const filters=['Tout','Rêves','Musique','Bible','Talents'] as const;
-export default function Discover(){const {tr}=useLocale();const params=useLocalSearchParams<{filter?:string}>();
+export default function Discover(){const {tr}=useLocale();const theme=useAppTheme();const params=useLocalSearchParams<{filter?:string}>();
  
  const [filter,setFilter]=useState<typeof filters[number]>(params.filter==='Talents'?'Talents':'Tout');
  const [query,setQuery]=useState('');
@@ -21,9 +22,9 @@ export default function Discover(){const {tr}=useLocale();const params=useLocalS
  (filter==='Tout'||(filter==='Rêves'&&p.type==='dream')||(filter==='Musique'&&p.type==='music')||(filter==='Bible'&&p.type==='bible'))&&
  [p.title,p.author,p.type,p.type==='dream'?p.phase:''].join(' ').toLowerCase().includes(query.trim().toLowerCase())
  ),[filter,query]);
- return <SafeAreaView style={{flex:1,backgroundColor:'#fff'}}>
+ return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
   <ScrollView contentContainerStyle={{paddingHorizontal:15,paddingBottom:55,maxWidth:920,width:'100%',alignSelf:'center'}}>
-   <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}><Text style={{fontSize:29,fontWeight:'900',letterSpacing:-1,color:'#151515',marginTop:9,marginBottom:8}}>{tr('discoverTitle')}</Text><TopActions/></View>
+   <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}><Text style={{fontSize:29,fontWeight:'900',letterSpacing:-1,color:theme.foreground,marginTop:9,marginBottom:8}}>{tr('discoverTitle')}</Text><TopActions/></View>
    <View style={{height:42,borderWidth:1,borderColor:'#ececec',borderRadius:10,flexDirection:'row',alignItems:'center',paddingHorizontal:12,gap:9,marginBottom:13}}>
     <Ionicons name="search" size={18} color="#777"/><TextInput style={{flex:1,fontSize:13,color:'#222'}} placeholder={tr("searchPlaceholder")} value={query} onChangeText={setQuery}/>
    </View>
