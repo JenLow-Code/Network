@@ -5,10 +5,10 @@ import {router} from 'expo-router';
 import {Ionicons} from '@expo/vector-icons';
 import {Avatar,Nav,TopActions} from '@/components';
 import {useApp} from '@/context';
-import {DREAM_PHASES,PHASE_COLORS,PHASE_LABELS} from '@/discoveryData';
+import {DREAM_PHASES,PHASE_COLORS,PHASE_LABELS,PHASE_SYMBOLS} from '@/discoveryData';
 import {useDreams} from '@/domain/dreamRepository';
 
-function DreamsOverview(){const {items}=useDreams();return <View style={{flexDirection:'row',flexWrap:'wrap',gap:9}}>{DREAM_PHASES.map(phase=><Pressable key={phase} onPress={()=>router.push({pathname:'/my-dreams/[phase]',params:{phase}})} style={{width:'48%',borderRadius:13,padding:15,minHeight:113,justifyContent:'space-between',backgroundColor:PHASE_COLORS[phase].background}}><Text style={{fontWeight:'700',color:PHASE_COLORS[phase].foreground}}>{PHASE_LABELS[phase]}</Text><Text style={{fontSize:12,color:'#444'}}>{items.filter(d=>d.phase===phase).length} rêve(s)</Text></Pressable>)}</View>}
+function DreamsOverview(){const {items}=useDreams();return <View style={{flexDirection:'row',flexWrap:'wrap',gap:9}}>{DREAM_PHASES.map(phase=><Pressable key={phase} onPress={()=>router.push({pathname:'/my-dreams/[phase]',params:{phase}})} style={{width:'48%',borderRadius:13,padding:15,minHeight:113,justifyContent:'space-between',backgroundColor:PHASE_COLORS[phase].background}}><View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}><Text style={{fontWeight:'700',color:PHASE_COLORS[phase].foreground}}>{PHASE_LABELS[phase]}</Text><Ionicons name={phase==='Rêve'?'ellipse':phase==='Initiation'?'leaf-outline':phase==='Croissance'?'leaf':'flower-outline'} size={21} color={PHASE_COLORS[phase].foreground}/></View><Text style={{fontSize:12,color:'#444'}}>{items.filter(d=>d.phase===phase).length} rêve(s)</Text></Pressable>)}</View>}
 export default function MySpace(){
  const app=useApp();
  const sections=[
@@ -20,7 +20,7 @@ export default function MySpace(){
    <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}><Text style={{fontSize:29,fontWeight:'700'}}>Mon espace</Text><TopActions/></View>
    <View style={{marginTop:14,marginBottom:20,paddingBottom:18,borderBottomWidth:1,borderColor:'#eee'}}>
     <Text style={{fontSize:18,fontWeight:'700',marginBottom:12}}>Mes rêves</Text>
-    <View style={{position:'relative'}}><DreamsOverview/><Pressable accessibilityLabel="Créer un rêve" onPress={()=>router.push('/my-dream/new')} style={{position:'absolute',left:'50%',top:'50%',width:54,height:54,marginLeft:-27,marginTop:-27,borderRadius:27,backgroundColor:'#fff',borderWidth:1,borderColor:'#eee',alignItems:'center',justifyContent:'center',elevation:3,zIndex:4}}><Ionicons name="add" size={31} color="#CB245C"/></Pressable></View>
+    <DreamsOverview/>
    </View>
    <View style={{gap:9}}>{sections.map(s=><Pressable key={s.title} onPress={()=>router.push(s.path)} style={{flexDirection:'row',alignItems:'center',gap:13,padding:14,borderWidth:1,borderColor:'#ececec',borderRadius:13}}>
     <View style={{width:39,height:39,borderRadius:20,backgroundColor:'#f5f5f5',alignItems:'center',justifyContent:'center'}}><Ionicons name={s.icon} size={21} color="#252525"/></View>
