@@ -21,6 +21,6 @@ export function AppThemeProvider({children}:{children:React.ReactNode}){
  useEffect(()=>{if(Platform.OS!=='web'&&typeof Appearance.setColorScheme==='function')Appearance.setColorScheme(preference==='system'?'auto':preference)},[preference]);
  const change=(next:AppearancePreference)=>{setPreference(next);void AsyncStorage.setItem(STORAGE,next).catch(()=>{})};
  const dark=(preference==='system'?system:preference)==='dark';
- return <ThemeContext.Provider value={{preference,setPreference:change,dark,background:dark?'#111317':'#fff',surface:dark?'#202227':'#fff',foreground:dark?'#F3F3F3':'#171717',muted:dark?'#B2B2B2':'#777',border:dark?'#393B40':'#e8e8e8'}}>{children}</ThemeContext.Provider>;
+ return <ThemeContext.Provider value={{preference,setPreference:change,dark,background:dark?'#111317':'#FFFCF5',surface:dark?'#202227':'#fff',foreground:dark?'#F3F3F3':'#171717',muted:dark?'#B2B2B2':'#777',border:dark?'#393B40':'#e8e8e8'}}>{children}</ThemeContext.Provider>;
 }
 export function useAppTheme(){const value=useContext(ThemeContext);if(!value)throw new Error('AppThemeProvider missing');return value}
