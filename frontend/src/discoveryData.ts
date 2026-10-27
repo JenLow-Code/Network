@@ -117,7 +117,7 @@ export const PHASE_LABELS:Record<DreamPhase,string>={'Rêve':'Semence','Initiati
 export const DREAM_PHASES:DreamPhase[]=['Rêve','Initiation','Croissance','Témoignage'];
 export const PHASE_COLORS:Record<DreamPhase,{background:string;foreground:string}>={
  'Rêve':{background:'#E7E7E7',foreground:'#484848'},
- 'Initiation':{background:'#EEE0CF',foreground:'#80654B'},
+ 'Initiation':{background:'#DED2C3',foreground:'#665040'},
  'Croissance':{background:'#DEF1DF',foreground:'#397250'},
  'Témoignage':{background:'#F2E0E9',foreground:'#963E67'}
 };
@@ -130,3 +130,5 @@ export const psalm150 = [
   'Louez-le avec les cymbales sonores ! Louez-le avec les cymbales retentissantes !',
   verseText,
 ];
+
+export const PHASE_SYMBOLS:Record<DreamPhase,string>={'Rêve':'●','Initiation':'🌱','Croissance':'🌿','Témoignage':'🌸'};
