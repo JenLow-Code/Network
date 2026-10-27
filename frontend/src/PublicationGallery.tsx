@@ -2,6 +2,7 @@ import React,{useState} from 'react';
 import {Image,Pressable,StyleSheet,Text,View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {SeedIcon} from './SeedIcon';
+import {TalentArt} from './TalentArt';
 import {useAudioPlayer,useAudioPlayerStatus} from 'expo-audio';
 import {router} from 'expo-router';
 import {Publication,PHASE_COLORS,PHASE_LABELS,PHASE_SYMBOLS,verseExcerpt} from './discoveryData';
@@ -13,7 +14,7 @@ export function PublicationTile({item}:{item:Publication}){
  const bg=item.type==='dream'?PHASE_COLORS[item.phase].background:'#fff';
  return <Pressable onPress={open} accessibilityLabel={'Open '+item.title} style={{borderRadius:12,overflow:'hidden',borderWidth:1,borderColor:'#e8e8e8',backgroundColor:bg}}>
   <View style={{height:item.type==='bible'?230:156,position:'relative',margin:10,marginBottom:0,borderRadius:9,overflow:'hidden'}}>
-   {item.type==='talent'?<View style={{flex:1,alignItems:'center',justifyContent:'center',backgroundColor:'#f1f1f1'}}><Image source={{uri:item.image}} style={{width:92,height:92,borderRadius:46}}/></View>:<Image source={{uri:item.image}} resizeMode="cover" style={{width:'100%',height:'100%'}}/>}
+   {item.type==='talent'?<View style={{flex:1,alignItems:'center',justifyContent:'center'}}><TalentArt kind={item.instrument} size={110}/></View>:<Image source={{uri:item.image}} resizeMode="cover" style={{width:'100%',height:'100%'}}/>}
    {item.type==='bible'?<View style={{position:'absolute',left:0,right:0,top:0,bottom:0,backgroundColor:'rgba(0,0,0,0.58)',padding:13,justifyContent:'center'}}><Text adjustsFontSizeToFit minimumFontScale={0.65} style={{color:'#fff',fontSize:14,lineHeight:21,textAlign:'center',fontWeight:'500'}}>{verseExcerpt(item)}</Text></View>:null}
    {item.type==='dream'?<View style={{position:'absolute',top:10,right:9,backgroundColor:({Rêve:'#F5F5F5',Initiation:'#F4EDE3',Croissance:'#EFF8EF',Témoignage:'#FAEDF4'} as const)[item.phase],borderRadius:20,width:36,height:36,alignItems:'center',justifyContent:'center',padding:0}}>{item.phase==='Rêve'?<SeedIcon size={27}/>:<View style={{width:28,height:28,alignItems:'center',justifyContent:'center'}}><Text style={{fontSize:18,lineHeight:25,textAlign:'center',includeFontPadding:false,transform:[{translateY:-1}]}}>{PHASE_SYMBOLS[item.phase]}</Text></View>}</View>:null}
    {item.type==='music'?<MusicCard index={item.audioIndex}/>:null}
@@ -24,7 +25,7 @@ export function PublicationTile({item}:{item:Publication}){
     
    </View>
    <Text numberOfLines={3} style={{fontWeight:'700',fontSize:14,color:'#202020'}}>{item.title}</Text>
-   <Text style={{fontSize:11,color:'#777'}}>{item.type==='talent'?item.talents.join(' · '):item.author}</Text>
+   <Text style={{fontSize:11,color:'#777'}}>{item.type==='talent'?item.description:item.author}</Text>
   </View>
  </Pressable>;
 }
