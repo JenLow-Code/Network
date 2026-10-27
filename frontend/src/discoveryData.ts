@@ -20,6 +20,9 @@ export type DreamPublication = PublicationBase & {
   phase: DreamPhase;
   summary: string;
   needs: string[];
+  motivation?: string;
+  goalDate?: string;
+  logs?: string[];
 };
 
 export type MusicPublication = PublicationBase & {
@@ -44,6 +47,7 @@ export const publications: Publication[] = [
     id: 'louange', type: 'dream', title: 'Jouer dans une équipe de louange',
     author: 'Sarah', phase: 'Initiation',
     summary: 'Apprendre à accompagner les chants à la guitare et rejoindre une équipe de louange.',
+    motivation: 'Partager la musique et servir ensemble.',
     needs: ['Guitare', 'Tandem'],
     image: 'https://images.unsplash.com/photo-1510915361894-db8b60106cb1?w=900&q=82',
     imageAlt: 'Acoustic guitar',
@@ -81,6 +85,7 @@ export const publications: Publication[] = [
     id: 'ensemble', type: 'dream', title: 'Créer une équipe de musique',
     author: 'Arnaud', phase: 'Croissance',
     summary: 'Former une petite équipe pour faire de la musique et servir ensemble.',
+    motivation: 'Créer de vraies rencontres grâce à la musique.',logs:['Première rencontre de musiciens','Choix des premiers morceaux'],
     needs: ['Batterie', 'Piano', 'Chant'],
     image: 'https://images.unsplash.com/photo-1516280440614-37939bbacd81?w=900&q=82',
     imageAlt: 'Live music performance',
