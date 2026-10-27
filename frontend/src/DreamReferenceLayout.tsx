@@ -2,6 +2,7 @@ import React,{useState} from 'react';
 import {Image,Pressable,ScrollView,Text,View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {Ionicons} from '@expo/vector-icons';
+import {Caveat_700Bold,useFonts} from '@expo-google-fonts/caveat';
 import {router} from 'expo-router';
 import {DreamPublication,PHASE_COLORS,PHASE_LABELS,publications} from './discoveryData';
 import {Avatar,Nav,TopActions} from './components';
@@ -14,9 +15,9 @@ import {useAppTheme} from './AppTheme';
 
 function Panel({title,children,initiallyOpen=true,minHeight=0,collapsible=true}:{title:string;children:React.ReactNode;initiallyOpen?:boolean;minHeight?:number;collapsible?:boolean}){
  const [open,setOpen]=useState(initiallyOpen);
- return <View style={{backgroundColor:'#FFFDF9',borderRadius:11,paddingHorizontal:11,paddingVertical:10,marginBottom:11,minHeight:open?minHeight:0}}>
+ return <View style={{backgroundColor:'#FFFDF9',borderRadius:11,paddingHorizontal:11,paddingVertical:10,marginBottom:20,minHeight:open?minHeight:0}}>
   <Pressable disabled={!collapsible} onPress={()=>setOpen(v=>!v)} accessibilityRole="button" accessibilityLabel={title} style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center',minHeight:24}}>
-   <Text style={{fontWeight:'700',fontSize:15,letterSpacing:-0.3,color:'#262626'}}>{title}</Text>
+   <Text style={{fontFamily:'Caveat_700Bold',fontSize:23,lineHeight:27,color:'#252525'}}>{title}</Text>
    {collapsible?<Ionicons name={open?'chevron-up':'chevron-down'} size={16} color="#333"/>:null}
   </Pressable>
   {open?<View style={{marginTop:3}}>{children}</View>:null}
@@ -25,6 +26,7 @@ function Panel({title,children,initiallyOpen=true,minHeight=0,collapsible=true}:
 
 export function DreamReferenceLayout({item}:{item:DreamPublication}){
  const theme=useAppTheme();const app=useApp();
+ useFonts({Caveat_700Bold});
  const phase=PHASE_COLORS[item.phase];
  const sameDream=()=>app.joinDream(item.id);
  return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
@@ -39,8 +41,8 @@ export function DreamReferenceLayout({item}:{item:DreamPublication}){
    </View>
    <View style={{paddingTop:46,paddingBottom:13}}>
     <View style={{backgroundColor:phase.background,borderRadius:12,paddingTop:30,paddingBottom:13,paddingLeft:15,paddingRight:10,width:'91%',alignSelf:'flex-start',position:'relative'}}>
-     <Pressable onPress={()=>router.push(personPath(item.author))} accessibilityLabel={'Profil de '+item.author} style={{position:'absolute',top:-35,right:-23,width:96,height:96,borderRadius:48,borderWidth:4,borderColor:theme.background,backgroundColor:theme.background,zIndex:3,alignItems:'center',justifyContent:'center'}}>
-      <Image source={{uri:item.author==='Gustav'?'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=240&q=80':'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=240&q=80'}} style={{width:87,height:87,borderRadius:44}} resizeMode="cover"/>
+     <Pressable onPress={()=>router.push(personPath(item.author))} accessibilityLabel={'Profil de '+item.author} style={{position:'absolute',top:-35,right:-23,width:96,height:96,borderRadius:48,borderWidth:5,borderColor:'#FFFFFF',backgroundColor:'#FFFFFF',zIndex:3,alignItems:'center',justifyContent:'center'}}>
+      <Image source={{uri:item.author==='Gustav'?'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=240&q=80':'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=240&q=80'}} style={{width:86,height:86,borderRadius:43}} resizeMode="cover"/>
      </Pressable>
      <View style={{flexDirection:'row',alignItems:'stretch',gap:8}}>
       <View style={{flex:1,paddingTop:0}}>
