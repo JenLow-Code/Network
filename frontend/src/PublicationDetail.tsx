@@ -22,7 +22,7 @@ export function PublicationDetail({item,children,media}:{item:Publication;childr
     <View style={{flex:1,minWidth:0,overflow:'hidden',marginHorizontal:6}}><Text numberOfLines={1} ellipsizeMode="tail" adjustsFontSizeToFit minimumFontScale={0.5} style={[{fontSize:17,lineHeight:21,fontWeight:'700',color:'#171717'},Platform.OS==='web'?({whiteSpace:'nowrap',textOverflow:'ellipsis',overflow:'hidden',display:'block'} as any):null]}>{item.title}</Text></View>
     <TopActions/>
    </View>
-   {phase?<View style={{flexDirection:'row',alignItems:'center',gap:6,marginTop:-9,marginBottom:3,paddingLeft:50,justifyContent:'flex-start'}}><Text style={{fontSize:11,color:PHASE_COLORS[phase].foreground}}>{'Rêve en '+PHASE_LABELS[phase].toLowerCase()}</Text></View>:null}
+   {(phase||item.type==='bible')?<View style={{flexDirection:'row',alignItems:'center',justifyContent:'center',marginTop:-12,marginBottom:5}}><Text style={{fontSize:11,color:phase?PHASE_COLORS[phase].foreground:'#777'}}>{phase?'Rêve en '+PHASE_LABELS[phase].toLowerCase():'Louis Segond 1910'}</Text></View>:null}
    <View style={{borderWidth:1,borderColor:'#E8E8E8',borderRadius:16,padding:13,backgroundColor:'#fff'}}>
     <View style={{flexDirection:'row',alignItems:'stretch',gap:7}}>
      <View style={{flex:1,minWidth:0,position:'relative'}}>
