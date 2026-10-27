@@ -2,14 +2,15 @@ import {Text,TextInput} from '@/i18n/LocalizedText';
 import React,{useState} from 'react';
 import {Alert,Image,Pressable,ScrollView,View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
-import {router} from 'expo-router';
+import {router,useLocalSearchParams} from 'expo-router';
 import {Ionicons} from '@expo/vector-icons';
 import {useDreams} from '@/domain/dreamRepository';
 import {Nav,TopActions} from '@/components';
 import {pickDreamImage} from '@/pickDreamImage';
 export default function NewDream(){
+ const {inspiration}=useLocalSearchParams<{inspiration?:string}>();
  const {create}=useDreams();
- const [title,setTitle]=useState(''),[summary,setSummary]=useState(''),[image,setImage]=useState('https://images.unsplash.com/photo-1510915361894-db8b60106cb1?w=800&q=80'),[needs,setNeeds]=useState('');
+ const [title,setTitle]=useState(inspiration?'Autour de '+inspiration:''),[summary,setSummary]=useState(inspiration?'Ce morceau m’inspire à créer quelque chose de nouveau.':''),[image,setImage]=useState('https://images.unsplash.com/photo-1510915361894-db8b60106cb1?w=800&q=80'),[needs,setNeeds]=useState('');
  const valid=title.trim().length>2;
  return <SafeAreaView style={{flex:1,backgroundColor:'#fff'}}><ScrollView style={{flex:1}} contentContainerStyle={{padding:20,paddingBottom:30}}>
   <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}><Pressable onPress={()=>router.back()}><Ionicons name="chevron-back" size={26}/></Pressable><TopActions/></View>
