@@ -5,6 +5,7 @@ import Svg,{Ellipse,Path} from 'react-native-svg';
 export function SeedIcon({size=28}:{size?:number}){
  return <Svg width={size} height={size} viewBox="0 0 64 64">
   <Ellipse cx="32" cy="43" rx="23" ry="15" fill="#F8AF80" transform="rotate(-21 32 43)"/>
+  <Path d="M27 47C21 51 18 54 15 59M30 47C31 53 32 56 37 61M26 46C20 46 16 48 12 51" stroke="#FFF9E9" strokeWidth="2.8" fill="none" strokeLinecap="round"/>
   <Path d="M26 38C32 29 36 22 36 10" fill="none" stroke="#70BD11" strokeWidth="3.8" strokeLinecap="round"/>
   <Path d="M36 23C19 22 20 10 30 5C34 4 36 12 36 23Z" fill="#4DB900"/>
   <Path d="M35 27C42 15 54 14 57 17C54 28 43 33 35 27Z" fill="#7EE323"/>
