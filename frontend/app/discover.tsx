@@ -31,7 +31,7 @@ export default function Discover(){const {tr}=useLocale();const theme=useAppThem
    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{gap:7,paddingBottom:17}}>
     {filters.map(f=><Pill key={f} text={f==='Tout'?tr('all'):f==='Rêves'?tr('dreamsFilter'):f==='Musique'?tr('musicFilter'):f==='Bible'?tr('bibleFilter'):'Talents'} active={filter===f} onPress={()=>setFilter(f)}/>)}
    </ScrollView>
-   <PublicationGallery items={filter==='Talents'?personPublications:filter==='Tout'?[...publications,...personPublications]:items}/>
+   <PublicationGallery items={(filter==='Talents'?personPublications:filter==='Tout'?[...publications,...personPublications]:items).filter(p=>[p.title,p.author,p.type,...(p.type==='talent'?[p.skill,p.level,...p.seeking]:[])].join(' ').toLowerCase().includes(query.trim().toLowerCase()))}/>
    {filter!=='Talents'&&items.length===0&&<Text style={{textAlign:'center',marginTop:25,color:'#999'}}>Aucune publication trouvée.</Text>}
   </ScrollView><Nav/>
  </SafeAreaView>;
