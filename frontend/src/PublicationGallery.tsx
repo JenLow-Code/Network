@@ -11,7 +11,7 @@ export function PublicationTile({item}:{item:Publication}){
  const open=()=>router.push(publicationPath(item) as any);
  const bg=item.type==='dream'?PHASE_COLORS[item.phase].background:'#fff';
  return <Pressable onPress={open} accessibilityLabel={'Open '+item.title} style={{borderRadius:12,overflow:'hidden',borderWidth:1,borderColor:'#e8e8e8',backgroundColor:bg}}>
-  <View style={{height:item.type==='bible'?130:156,position:'relative'}}>
+  <View style={{height:item.type==='bible'?130:156,position:'relative',margin:10,marginBottom:0,borderRadius:9,overflow:'hidden'}}>
    <Image source={{uri:item.image}} resizeMode="cover" style={{width:'100%',height:'100%'}}/>
    {item.type==='music'?<MusicCard index={item.audioIndex}/>:null}
   </View>
