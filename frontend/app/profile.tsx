@@ -1,95 +1,82 @@
 import {Text,TextInput} from '@/i18n/LocalizedText';
-import React,{useState} from 'react';
-import {Pressable,ScrollView,View,StyleSheet,useWindowDimensions,Image} from 'react-native';
+import React,{useEffect,useState} from 'react';
+import {Image,Pressable,ScrollView,View,useWindowDimensions} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {Ionicons} from '@expo/vector-icons';
 import {router} from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {Avatar,Nav,TopActions} from '@/components';
-import {ContactSheet} from '@/ContactSheet';
-import {StoneDeck} from '@/StoneDeck';
-import {useAppTheme} from '@/AppTheme';
 import {useApp} from '@/context';
-import {colors as c} from '@/theme';
-import {dreams} from '@/discoveryData';
-type Field='bio'|'city'|'church';
-const levels=[{name:'Absolute beginner',color:'#12663c'},{name:'Curious beginner',color:'#45b96f'},{name:'Intermediate',color:'#efc448'},{name:'Used to',color:'#df6660'},{name:'Professional',color:'#cb1e66'}];
-const talents=[{title:'Batterie',icon:'musical-notes' as const,level:2,detail:'Tandem | Professeur'},{title:'Chant',icon:'mic' as const,level:1,detail:'Tandem | Apprentissage'},{title:'Piano',icon:'musical-note' as const,level:3,detail:'Tandem | Professeur'}];
-function Gallery({kind}:{kind:'talent'|'dream'}){
- const {width}=useWindowDimensions();
- const data=kind==='talent'?talents:dreams.slice(0,3);
- const [current,setCurrent]=useState(0),[expanded,setExpanded]=useState(false);
- const item=data[current] as any,desktop=width>=740;
- const next=(direction:number)=>setCurrent(i=>(i+direction+data.length)%data.length);
- const preview=(i:number)=>{
-  const selected=data[i] as any;
-  return <Pressable key={i} onPress={()=>{setCurrent(i);setExpanded(true)}} style={s.card}>
-   {kind==='talent'?<><Text style={{fontWeight:'700',fontSize:16,color:'#111'}}>{selected.title}</Text><View style={s.talentCircle}><Ionicons name={selected.icon} color="#111" size={28}/></View><View style={{flexDirection:'row',gap:5}}>{levels.map((l,n)=><View key={n} style={{width:6,height:6,borderRadius:3,backgroundColor:n===selected.level?l.color:'#e9e9e9'}}/>)}</View><Text numberOfLines={1} style={s.cardCaption}>{selected.detail}</Text></>:
-   <Image source={{uri:selected.image}} style={{width:'100%',height:'100%',borderRadius:6}} resizeMode="cover"/>}
-  </Pressable>;
- };
- return <View style={{flex:1,minWidth:0,alignItems:'center'}}>
-   <Text style={s.title}>{kind==='talent'?'Mes talents':'Mes rêves'}</Text>
-   {desktop?<ScrollView horizontal showsHorizontalScrollIndicator={false} style={{maxWidth:'100%'}}><View style={{flexDirection:'row',gap:8}}>{data.map((_,i)=>preview(i))}</View></ScrollView>:<View style={{width:147,alignItems:'center'}}>{preview(current)}</View>}
-   {expanded&&<View style={s.overlay}><View style={s.detail}>
-     <Pressable onPress={()=>setExpanded(false)} style={{alignSelf:'flex-end',padding:7}}><Ionicons name="close" size={22}/></Pressable>
-     {kind==='dream'?<Image source={{uri:item.image}} style={s.detailImage}/>:<View style={[s.talentCircle,{width:94,height:94,borderRadius:47}]}><Ionicons name={item.icon} size={47}/></View>}
-     <Text style={s.detailTitle}>{item.title}</Text>
-     <Text style={s.detailDescription}>{kind==='talent'?item.detail:item.summary}</Text>
-     {kind==='talent'?<Text style={{marginTop:11,color:levels[item.level].color}}>{levels[item.level].name}</Text>:<Pressable onPress={()=>{setExpanded(false);router.push({pathname:'/dream/[id]',params:{id:item.id}})}}><Text style={{color:c.pink,marginTop:12}}>Découvrir ce rêve</Text></Pressable>}
-     <View style={s.detailNav}><Pressable onPress={()=>next(-1)}><Ionicons name="chevron-back" size={25}/></Pressable><Text>{current+1} / {data.length}</Text><Pressable onPress={()=>next(1)}><Ionicons name="chevron-forward" size={25}/></Pressable></View>
-   </View></View>}
- </View>;
-}
+import {useAuth} from '@/auth/AuthProvider';
+import {useAppTheme} from '@/AppTheme';
+type Talent={name:string;level:number;interests:string[]};
+const initial:Talent[]=[
+ {name:'Batterie',level:2,interests:['Tandem','Enseigner']},
+ {name:'Chant',level:1,interests:['Tandem','Apprendre']},
+ {name:'Piano',level:3,interests:['Tandem','Enseigner']}
+];
+const levels=[
+ {name:'Grand débutant',color:'#287D58'},
+ {name:'Quelques notions',color:'#2ECA65'},
+ {name:'Intermédiaire',color:'#EAC000'},
+ {name:'Avancé',color:'#F38A24'},
+ {name:'Professionnel',color:'#CB245C'}
+];
+const interests=['Tandem','Enseigner','Apprendre'];
+const iconFor=(name:string):keyof typeof Ionicons.glyphMap=>{
+ const s=name.toLowerCase();
+ return s.includes('batt')?'disc-outline':s.includes('chant')||s.includes('voix')?'mic-outline':s.includes('photo')?'camera-outline':s.includes('guit')?'musical-note-outline':'musical-notes-outline';
+};
 export default function Profile(){
- const theme=useAppTheme();const app=useApp();
- const [active,setActive]=useState<Field|null>(null);
+ const app=useApp(),auth=useAuth(),theme=useAppTheme();
+ const {width}=useWindowDimensions();
+ const [edit,setEdit]=useState<'bio'|'city'|'church'|null>(null);
  const [draft,setDraft]=useState('');
- const value=(k:Field)=>k==='bio'?app.bio:k==='city'?app.city:app.church;
- const cancel=()=>{setActive(null);setDraft('')};
- const start=(k:Field)=>{if(active===k){cancel();return;}setActive(k);setDraft(value(k))};
- const save=()=>{if(active)app.edit({[active]:draft});cancel()};
- function field(k:Field){
-  const editing=active===k;
-  return <View style={[s.fieldRow,{width:k==='bio'?'100%':'auto',minWidth:k==='bio'?0:155,justifyContent:k==='bio'?'flex-start':'center'}]}>
-   {editing?<View style={s.editInside}><TextInput value={draft} onChangeText={setDraft} autoFocus selectTextOnFocus multiline={k==='bio'} style={[s.editInput,{fontStyle:k==='bio'?'italic':'normal',textAlign:k==='bio'?'left':'center'}]}/><Pressable accessibilityLabel="Save changes" onPress={save} style={s.check}><Ionicons name="checkmark" color="#999" size={15}/></Pressable></View>:
-   <><Text style={[s.value,{fontStyle:k==='bio'?'italic':'normal',flexShrink:1}]}>{value(k)}</Text><Pressable accessibilityLabel={'Edit '+k} onPress={()=>start(k)} style={{paddingLeft:6,paddingVertical:5}}><Ionicons name="pencil" color={c.pink} size={12}/></Pressable></>}
-  </View>;
- }
- return <SafeAreaView style={[s.safe,{backgroundColor:theme.background}]}><View style={{flex:1}}>
-   <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
-    <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',marginBottom:12}}><Text style={{fontSize:29,fontWeight:'700',color:theme.foreground}}>Mon profil</Text><TopActions/></View>
-    <Pressable onPress={cancel} style={{alignItems:'center'}}><Avatar size={164}/><Text style={s.name}>{app.name}</Text></Pressable>
-    <View style={s.bio}>{field('bio')}</View>
-    <Pressable onPress={cancel}><Text style={s.label}>Lieu</Text></Pressable>{field('city')}
-    <Pressable onPress={cancel} style={{marginTop:14}}><Text style={s.label}>Eglise</Text></Pressable>{field('church')}
-    <View style={s.galleries}><Gallery kind="talent"/></View>
-
-    <Pressable onPress={()=>{cancel();app.logout();router.replace('/login')}} style={{marginTop:18}}><Text style={{color:'#999',fontSize:11}}>Se déconnecter</Text></Pressable>
-   </ScrollView>
-   <ContactSheet/>
- </View><Nav/></SafeAreaView>;
+ const [talents,setTalents]=useState<Talent[]>(initial);
+ const [loaded,setLoaded]=useState(false);
+ const [newTalent,setNewTalent]=useState('');
+ const storage='jenlow.profile.talents.'+(app.email||'guest').toLowerCase();
+ useEffect(()=>{let active=true;setLoaded(false);void AsyncStorage.getItem(storage).then(raw=>{if(!active)return;if(raw){try{const list=JSON.parse(raw);if(Array.isArray(list))setTalents(list)}catch{setTalents(initial)}}else setTalents(initial)}).finally(()=>{if(active)setLoaded(true)});return()=>{active=false}},[storage]);
+ useEffect(()=>{if(loaded)void AsyncStorage.setItem(storage,JSON.stringify(talents)).catch(()=>{})},[storage,loaded,talents]);
+ const start=(key:'bio'|'city'|'church')=>{setEdit(key);setDraft(app[key]||'')};
+ const save=()=>{if(edit)app.edit({[edit]:draft});setEdit(null)};
+ const field=(key:'bio'|'city'|'church',label:string)=> <View style={{marginTop:16,width:'100%'}}>
+  <Text style={{fontSize:12,color:theme.muted,marginBottom:5}}>{label}</Text>
+  <View style={{flexDirection:'row',alignItems:'center',gap:9}}>
+   {edit===key?<TextInput value={draft} onChangeText={setDraft} multiline={key==='bio'} style={{flex:1,borderWidth:1,borderColor:theme.border,borderRadius:9,padding:10,color:theme.foreground,minHeight:key==='bio'?70:40}}/>:<Text style={{flex:1,color:theme.foreground,fontSize:14,lineHeight:21}}>{app[key]||'À compléter'}</Text>}
+   <Pressable onPress={edit===key?save:()=>start(key)} style={{width:36,height:36,alignItems:'center',justifyContent:'center'}}><Ionicons name={edit===key?'checkmark':'pencil-outline'} size={19} color={theme.foreground}/></Pressable>
+  </View>
+ </View>;
+ const updateTalent=(index:number,patch:Partial<Talent>)=>setTalents(items=>items.map((t,i)=>i===index?{...t,...patch}:t));
+ const avatar=typeof auth.user?.user_metadata?.avatar_url==='string'?auth.user.user_metadata.avatar_url:undefined;
+ const cardWidth=width>=750?'31%':'48%';
+ return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}><ScrollView contentContainerStyle={{paddingHorizontal:18,paddingTop:12,paddingBottom:55,maxWidth:900,width:'100%',alignSelf:'center'}}>
+  <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}><Text style={{fontSize:29,fontWeight:'800',color:theme.foreground}}>Mon profil</Text><TopActions/></View>
+  <View style={{alignItems:'center',marginTop:23}}>
+   {avatar?<Image source={{uri:avatar}} style={{width:94,height:94,borderRadius:47,borderWidth:2,borderColor:theme.border}}/>:<Avatar size={94}/>}
+   <Text style={{fontSize:22,fontWeight:'700',color:theme.foreground,marginTop:12}}>{app.name}</Text>
+  </View>
+  <View style={{backgroundColor:theme.surface,borderRadius:14,borderWidth:1,borderColor:theme.border,padding:15,marginTop:20}}>
+   {field('bio','Ma description')}
+   {field('city','Ma ville')}
+   {field('church','Ma communauté')}
+  </View>
+  <Text style={{fontSize:19,fontWeight:'800',color:theme.foreground,marginTop:24,marginBottom:7}}>Mes talents</Text>
+  <Text style={{fontSize:12,color:theme.muted,lineHeight:18}}>Choisis ton niveau et ce que tu souhaites partager. Les talents seront visibles dans Découvrir lorsque les profils seront publiés.</Text>
+  <View style={{flexDirection:'row',flexWrap:'wrap',gap:10,marginTop:16}}>
+   {talents.map((t,index)=><View key={index} style={{width:cardWidth,borderWidth:1,borderColor:theme.border,borderRadius:14,padding:11,alignItems:'center',gap:9,backgroundColor:theme.surface}}>
+    <Pressable onPress={()=>setTalents(list=>list.filter((_,i)=>index!==i))} accessibilityLabel={'Retirer '+t.name} style={{alignSelf:'flex-end'}}><Ionicons name="close-outline" size={18} color={theme.muted}/></Pressable>
+    <View style={{width:74,height:74,borderRadius:37,backgroundColor:'#F32F60',alignItems:'center',justifyContent:'center'}}><Ionicons name={iconFor(t.name)} size={35} color="#191919"/></View>
+    <Text numberOfLines={1} style={{fontSize:14,fontWeight:'700',color:theme.foreground}}>{t.name}</Text>
+    <View style={{flexDirection:'row',gap:6}}>{levels.map((level,i)=><Pressable key={level.name} onPress={()=>updateTalent(index,{level:i})} accessibilityLabel={level.name} style={{width:13,height:13,borderRadius:7,backgroundColor:i===t.level?level.color:theme.border,borderWidth:i===t.level?1:0,borderColor:'#777'}}/>)}</View>
+    <Text style={{fontSize:10,color:theme.muted,textAlign:'center'}}>{levels[t.level]?.name||'À définir'}</Text>
+    <View style={{flexDirection:'row',flexWrap:'wrap',gap:5,justifyContent:'center'}}>{interests.map(interest=><Pressable key={interest} onPress={()=>updateTalent(index,{interests:t.interests.includes(interest)?t.interests.filter(x=>x!==interest):[...t.interests,interest]})} style={{paddingHorizontal:7,paddingVertical:5,borderRadius:15,borderWidth:1,borderColor:t.interests.includes(interest)?'#CB245C':theme.border}}><Text style={{fontSize:9,color:theme.foreground}}>{interest}</Text></Pressable>)}</View>
+   </View>)}
+  </View>
+  <View style={{flexDirection:'row',gap:8,marginTop:18}}>
+   <TextInput value={newTalent} onChangeText={setNewTalent} placeholder="Ajouter un talent" style={{flex:1,borderWidth:1,borderColor:theme.border,borderRadius:9,padding:11,color:theme.foreground}}/>
+   <Pressable onPress={()=>{if(newTalent.trim()){setTalents(x=>[...x,{name:newTalent.trim(),level:0,interests:[]}]);setNewTalent('')}}} style={{backgroundColor:'#222',borderRadius:9,paddingHorizontal:17,justifyContent:'center'}}><Ionicons name="add" size={23} color="#fff"/></Pressable>
+  </View>
+  <Pressable onPress={()=>router.push('/settings')} style={{marginTop:28,alignSelf:'center',padding:11}}><Text style={{color:theme.muted,fontSize:12}}>Paramètres du compte</Text></Pressable>
+ </ScrollView><Nav/></SafeAreaView>;
 }
-const s=StyleSheet.create({
- safe:{flex:1,backgroundColor:'#fff'},content:{paddingTop:22,paddingBottom:120,alignItems:'center'},
- name:{fontSize:25,fontWeight:'700',color:c.pink,marginTop:9},bio:{marginHorizontal:36,alignSelf:'stretch',marginTop:7,marginBottom:22},
- label:{fontSize:14,fontWeight:'600',color:'#161616',textAlign:'center'},value:{fontSize:13,color:'#777',lineHeight:17},
- fieldRow:{flexDirection:'row',alignItems:'center',minHeight:26},
- editInside:{flexDirection:'row',alignItems:'center',flex:1,minHeight:30,borderBottomWidth:StyleSheet.hairlineWidth,borderColor:'#c6c6c6',position:'relative'},
- editInput:{flex:1,paddingVertical:3,paddingHorizontal:5,paddingRight:28,color:'#333',fontSize:13,minWidth:95},
- check:{position:'absolute',right:1,bottom:3,width:24,height:24,alignItems:'center',justifyContent:'center'},
- galleries:{width:'100%',paddingHorizontal:19,marginTop:25,flexDirection:'row',gap:12},
- title:{fontSize:15,fontWeight:'700',color:'#111'},
- card:{width:145,height:130,borderWidth:1,borderColor:'#e1e1e1',borderRadius:10,padding:7,alignItems:'center',justifyContent:'space-between',backgroundColor:'#fff'},
- talentCircle:{width:59,height:59,borderRadius:30,backgroundColor:c.pink,alignItems:'center',justifyContent:'center'},
- levelLine:{height:3,width:40,borderRadius:4},
- cardCaption:{fontSize:10,color:'#888'},
- dreamPhoto:{height:'100%',width:'100%',borderRadius:7},
- arrows:{flexDirection:'row',justifyContent:'space-between',alignItems:'center',width:145,marginTop:5},
- pager:{color:'#aaa',fontSize:10},
- overlay:{position:'absolute',left:0,right:0,top:0,bottom:-230,zIndex:20,justifyContent:'center',alignItems:'center',backgroundColor:'rgba(255,255,255,.96)',borderRadius:16},
- detail:{borderWidth:1,borderColor:'#eee',borderRadius:15,backgroundColor:'#fff',padding:12,width:260,minHeight:320,alignItems:'center'},
- detailImage:{width:205,height:150,borderRadius:8},
- detailTitle:{fontSize:19,fontWeight:'700',textAlign:'center',marginTop:15},
- detailDescription:{fontSize:13,lineHeight:20,color:'#666',textAlign:'center',marginTop:10},
- detailNav:{width:'95%',flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginTop:20}
-});
