@@ -12,6 +12,7 @@ export default function Workspace(){
  const {id}=useLocalSearchParams<{id:string}>();
  const {items,update,add,advance,complete,remove}=useDreams();
  const dream=items.find(x=>x.id===id);
+ const [participantsOpen,setParticipantsOpen]=useState(false),[motivation,setMotivation]=useState(''),[goalDate,setGoalDate]=useState(''),[frozen,setFrozen]=useState(false);
  const [summary,setSummary]=useState(''),[image,setImage]=useState(''),[needs,setNeeds]=useState(''),[entry,setEntry]=useState(''),[finishText,setFinishText]=useState(''),[finishUrl,setFinishUrl]=useState(''),[mediaType,setMediaType]=useState<'audio'|'photo'|'video'|'text'>('text'),[mode,setMode]=useState<'summary'|'image'|'needs'|null>(null);
  if(!dream)return <SafeAreaView style={{flex:1}}><Text>Rêve introuvable</Text><Nav/></SafeAreaView>;
  const editable=dream!.phase==='Rêve',initiated=dream!.phase==='Initiation',growing=dream!.phase==='Croissance';
@@ -23,12 +24,14 @@ export default function Workspace(){
  function deleteDream(){Alert.alert('Supprimer ce rêve','Cette action supprimera ce rêve de cette démo.',[{text:'Annuler',style:'cancel'},{text:'Supprimer',style:'destructive',onPress:()=>{remove(dream!.id);router.replace('/my-dreams')}}])}
  return <SafeAreaView style={{flex:1,backgroundColor:'#fff'}}><ScrollView style={{flex:1}} contentContainerStyle={{padding:18,paddingBottom:35}}>
  <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}><Pressable onPress={()=>router.back()}><Ionicons name="chevron-back" size={25}/></Pressable><Pressable onPress={deleteDream} accessibilityLabel="Supprimer mon rêve"><Ionicons name="trash-outline" color="#a65d63" size={21}/></Pressable></View>
- <Text style={{fontFamily:'Caveat_700Bold',fontSize:28,textAlign:'center',marginVertical:10}}>{dream!.title}</Text>
+ <Text style={{fontWeight:'700',fontSize:23,textAlign:'center',marginVertical:10}}>{dream!.title}</Text>
  <Text style={{fontSize:12,color:'#777',textAlign:'center',marginBottom:15}}>{PHASE_LABELS[dream!.phase]} · Titre définitif</Text>
- <Pressable onPress={()=>router.push({pathname:'/my-dream-participants/[id]',params:{id:dream!.id}})} style={{alignSelf:'center',flexDirection:'row',gap:7,alignItems:'center',marginBottom:12,padding:8}}><Ionicons name="people-outline" size={18} color="#666"/><Text style={{fontSize:12,color:'#555'}}>Qui partage mon rêve ?</Text><Ionicons name="chevron-forward" size={16} color="#aaa"/></Pressable>
+ <Pressable onPress={()=>setParticipantsOpen(v=>!v)} style={{alignSelf:'center',flexDirection:'row',gap:7,alignItems:'center',marginBottom:12,padding:8}}><Ionicons name="people-outline" size={18} color="#666"/><Text style={{fontSize:12,color:'#555'}}>Qui partage mon rêve ?</Text><Ionicons name={participantsOpen?'chevron-up':'chevron-down'} size={16} color="#aaa"/></Pressable>{participantsOpen?<View style={{padding:12,backgroundColor:'#f7f7f7',borderRadius:9}}><Text style={{fontSize:12}}>Participants : {dream!.ownerIds.join(', ')}</Text><Text style={{fontSize:11,color:'#888',marginTop:5}}>Invitations à connecter ultérieurement</Text></View>:null}
  <View style={{height:220,borderRadius:15,overflow:'hidden',backgroundColor:'#ececec',justifyContent:'flex-end'}}><Image source={{uri:dream!.image}} resizeMode="cover" style={{position:'absolute',width:'100%',height:'100%',opacity:.7}}/><View style={{padding:16,backgroundColor:'rgba(255,255,255,.78)'}}><Text style={{fontFamily:'Caveat_700Bold',fontSize:23,color:'#222'}}>{dream!.title}</Text><Text style={{fontSize:12,color:'#555'}}>{PHASE_LABELS[dream!.phase]}</Text></View></View>
  {field('summary',dream!.summary)}
- {field('image',dream!.image)}
+ <Text style={{fontWeight:'700',fontSize:15,marginTop:18}}>Ma motivation</Text><TextInput multiline value={motivation} onChangeText={setMotivation} placeholder="Pourquoi ce rêve compte pour moi…" style={{borderWidth:1,borderColor:'#ddd',borderRadius:9,padding:11,marginTop:8,minHeight:65}}/>
+ {initiated?<><Text style={{fontWeight:'700',fontSize:15,marginTop:17}}>Date objectif</Text><TextInput value={goalDate} onChangeText={setGoalDate} placeholder="AAAA-MM-JJ" style={{borderWidth:1,borderColor:'#ddd',borderRadius:9,padding:11,marginTop:8}}/></>:null}
+
  {field('needs',dream!.needs.join(' · '))}
  <Text style={{fontWeight:'700',fontSize:15,marginTop:24}}>{editable?'Mes inspirations et notes':initiated?'Ajouter au projet':growing?'Journal de croissance':'Mon témoignage'}</Text>
  {[...dream!.additions,...dream!.notes].map((n,i)=><Text key={i} style={{padding:10,backgroundColor:'#f5f5f5',borderRadius:7,marginTop:7,fontSize:12}}>{n}</Text>)}
@@ -37,12 +40,15 @@ export default function Workspace(){
   <TextInput multiline value={entry} onChangeText={setEntry} placeholder={growing?'Commentaire sur la progression…':initiated?'Ajouter un détail, un besoin ou une idée…':'Note ou idée à garder…'} style={{borderWidth:1,borderColor:'#ddd',borderRadius:9,padding:11,minHeight:72,marginTop:10}}/>
   {button('Ajouter',()=>{if(entry.trim()){add(dream!.id,entry.trim(),growing?'notes':'additions');setEntry('')}})}
  </>:null}
+ {editable?button('Planter cette semence',()=>advance(dream!.id)):null}
+ {initiated?button('Chercher des talents',()=>router.push('/discover')):null}
  {(editable||initiated)&&nextPhase(dream!.phase)?button('Passer à '+nextPhase(dream!.phase),()=>advance(dream!.id)):null}
  {growing?<View style={{borderTopWidth:1,borderColor:'#eee',marginTop:27,paddingTop:17}}>
-  <Text style={{fontWeight:'700'}}>Clore ce rêve avec un témoignage</Text>
+  <Text style={{fontWeight:'700'}}>Mon journal de croissance</Text>
   <View style={{flexDirection:'row',gap:7,marginTop:11,flexWrap:'wrap'}}>{(['text','photo','audio','video'] as const).map(type=><Pressable key={type} onPress={()=>setMediaType(type)} style={{padding:9,borderRadius:9,backgroundColor:mediaType===type?'#f2e0e9':'#eee'}}><Text>{type}</Text></Pressable>)}</View>
   {mediaType!=='text'?<TextInput value={finishUrl} onChangeText={setFinishUrl} placeholder="Lien vers le média (démo)" style={{borderBottomWidth:1,borderColor:'#ddd',padding:11,marginTop:9}}/>:null}
   <TextInput multiline value={finishText} onChangeText={setFinishText} placeholder="Raconte ce qui a été accompli…" style={{borderWidth:1,borderColor:'#ddd',borderRadius:9,minHeight:90,padding:11,marginTop:13}}/>
+  {button('Admirer les fleurs de cette plante',()=>router.push({pathname:'/my-dream/flower/[id]',params:{id:dream!.id}}))}
   {button('Publier mon témoignage',()=>{if(finishText.trim()&&(mediaType==='text'||finishUrl.trim()))complete(dream!.id,finishText.trim(),mediaType,finishUrl.trim())})}
  </View>:null}
  <Text style={{marginTop:24,fontSize:10,color:'#aaa'}}>Fonctions locales de démonstration. Les droits des co-propriétaires et les médias réels seront validés côté serveur.</Text>
