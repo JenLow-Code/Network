@@ -11,17 +11,18 @@ import {Publication,PHASE_LABELS,PHASE_COLORS,PHASE_SYMBOLS} from './discoveryDa
 import {PublicationGallery} from './PublicationGallery';
 import {publications} from './discoveryData';
 import {personPath} from './people';
+import {useAppTheme} from './AppTheme';
 
 /** Single detail-page shell shared by Dream, Music, and Bible posts. */
 export function PublicationDetail({item,children,media,onImageDoubleTap}:{item:Publication;children:React.ReactNode;media?:React.ReactNode;onImageDoubleTap?:()=>void}){
  const lastTap=useRef(0);
  const handleImageTap=()=>{const now=Date.now();if(onImageDoubleTap&&now-lastTap.current<380)onImageDoubleTap();lastTap.current=now};
- const phase=item.type==='dream'?item.phase:null;
- return <SafeAreaView style={{flex:1,backgroundColor:'#fff'}}>
+ const theme=useAppTheme();const phase=item.type==='dream'?item.phase:null;
+ return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
   <ScrollView style={{flex:1}} contentContainerStyle={{paddingHorizontal:16,paddingTop:15,paddingBottom:56,maxWidth:840,width:'100%',alignSelf:'center'}}>
    <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',marginBottom:0}}>
     <Pressable onPress={()=>router.back()} accessibilityLabel="Retour" style={{width:44,height:44,alignItems:'center',justifyContent:'center'}}><Ionicons name="chevron-back" size={24} color="#222"/></Pressable>
-    <View style={{flex:1,minWidth:0,overflow:'hidden',marginHorizontal:6}}><Text numberOfLines={1} ellipsizeMode="tail" adjustsFontSizeToFit minimumFontScale={0.5} style={[{fontSize:17,lineHeight:21,fontWeight:'700',color:'#171717'},Platform.OS==='web'?({whiteSpace:'nowrap',textOverflow:'ellipsis',overflow:'hidden',display:'block'} as any):null]}>{item.title}</Text></View>
+    <View style={{flex:1,minWidth:0,overflow:'hidden',marginHorizontal:6}}><Text numberOfLines={1} ellipsizeMode="tail" adjustsFontSizeToFit minimumFontScale={0.5} style={[{fontSize:17,lineHeight:21,fontWeight:'700',color:theme.foreground},Platform.OS==='web'?({whiteSpace:'nowrap',textOverflow:'ellipsis',overflow:'hidden',display:'block'} as any):null]}>{item.title}</Text></View>
     <TopActions/>
    </View>
    {(phase||item.type==='bible')?<View style={{flexDirection:'row',alignItems:'center',justifyContent:'center',marginTop:-10,marginBottom:14}}><Text style={{fontSize:11,color:phase?PHASE_COLORS[phase].foreground:'#777'}}>{phase?'Rêve en '+PHASE_LABELS[phase].toLowerCase():'Louis Segond 1910'}</Text></View>:null}
