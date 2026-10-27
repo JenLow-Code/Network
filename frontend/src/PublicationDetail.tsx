@@ -23,7 +23,7 @@ export function PublicationDetail({item,children,media}:{item:Publication;childr
     <TopActions/>
    </View>
    {(phase||item.type==='bible')?<View style={{flexDirection:'row',alignItems:'center',justifyContent:'center',marginTop:-12,marginBottom:5}}><Text style={{fontSize:11,color:phase?PHASE_COLORS[phase].foreground:'#777'}}>{phase?'Rêve en '+PHASE_LABELS[phase].toLowerCase():'Louis Segond 1910'}</Text></View>:null}
-   <View style={{borderWidth:1,borderColor:'#E8E8E8',borderRadius:16,padding:13,backgroundColor:'#fff'}}>
+   <View style={{borderWidth:1,borderColor:'#E8E8E8',borderRadius:16,padding:13,backgroundColor:phase?PHASE_COLORS[phase].background:'#fff'}}>
     <View style={{flexDirection:'row',alignItems:'stretch',gap:7}}>
      <View style={{flex:1,minWidth:0,position:'relative'}}>
       {media??<Image source={{uri:item.image}} resizeMode="cover" style={{width:'100%',height:item.type==='bible'?280:230,borderRadius:10,backgroundColor:'#f3f3f3'}}/>}
