@@ -9,12 +9,13 @@ import {PrayerIcon} from '@/PrayerIcon';
 import {useApp} from '@/context';
 import {useLocale} from '@/locale';
 import {publications} from '@/discoveryData';
+import {useAppTheme} from '@/AppTheme';
 import {AgendaEntry,DEMO_AGENDA} from '@/domain/agendaTypes';
 import {publicationPath} from '@/PublicationGallery';
 import {useDreams} from '@/domain/dreamRepository';
 const isoDay=(d:Date)=>[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
 export default function Agenda(){
- const {items:trackedDreams}=useDreams();
+ const theme=useAppTheme();const {items:trackedDreams}=useDreams();
  const {language,tr}=useLocale();const {prayersForDate,togglePrayer}=useApp();
  // Future: show a weekly overview of scheduled service / volunteer duty, separately from personal events.
  const [day,setDay]=useState(new Date());const [calendarOpen,setCalendarOpen]=useState(false);const [events,setEvents]=useState<AgendaEntry[]>(DEMO_AGENDA);
@@ -32,8 +33,8 @@ export default function Agenda(){
   // Example event only: no real date exists in demo AgendaEntry, so never fabricate one.
   await Share.share({message:e.title+' · '+e.timeLabel+' · '+e.place+'\n'+tr('calendarDescription')});
  }
- return <SafeAreaView style={{flex:1,backgroundColor:'#fff'}}><ScrollView style={{flex:1}} contentContainerStyle={{paddingHorizontal:18,paddingTop:17,paddingBottom:42}}>
-  <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}><Text style={{fontSize:30,fontWeight:'700',color:'#171717'}}>{tr('agendaTitle')}</Text><TopActions/></View>
+ return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}><ScrollView style={{flex:1}} contentContainerStyle={{paddingHorizontal:18,paddingTop:17,paddingBottom:42}}>
+  <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}><Text style={{fontSize:30,fontWeight:'700',color:theme.foreground}}>{tr('agendaTitle')}</Text><TopActions/></View>
   <Text style={{color:'#888',fontSize:12,marginTop:3}}>{tr('agendaSubtitle')}</Text>
   <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginTop:23,paddingVertical:12,borderTopWidth:1,borderBottomWidth:1,borderColor:'#eee'}}>
    <Pressable onPress={()=>shift(-1)} accessibilityLabel="Previous day" style={{padding:8}}><Ionicons name="chevron-back" size={23}/></Pressable>
