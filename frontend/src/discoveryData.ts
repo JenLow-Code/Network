@@ -122,9 +122,9 @@ export const verseText = 'Que tout ce qui respire loue l’Éternel ! Louez l’
 export const PHASE_LABELS:Record<DreamPhase,string>={'Rêve':'Semence','Initiation':'Germination','Croissance':'Croissance','Témoignage':'Floraison'};
 export const DREAM_PHASES:DreamPhase[]=['Rêve','Initiation','Croissance','Témoignage'];
 export const PHASE_COLORS:Record<DreamPhase,{background:string;foreground:string}>={
- 'Rêve':{background:'#E7E7E7',foreground:'#484848'},
- 'Initiation':{background:'#DED2C3',foreground:'#665040'},
- 'Croissance':{background:'#DEF1DF',foreground:'#397250'},
+ 'Rêve':{background:'#DCDCDC',foreground:'#484848'},
+ 'Initiation':{background:'#E7DCCE',foreground:'#665040'},
+ 'Croissance':{background:'#D5F3E9',foreground:'#27775F'},
  'Témoignage':{background:'#F2E0E9',foreground:'#963E67'}
 };
 export const verseExcerpt=(p:BiblePublication)=>p.highlightedVerse===1?psalm150[0]:psalm150[5];
