@@ -12,7 +12,7 @@ import {people,personPath} from '@/people';
 import {Avatar} from '@/components';
 import {FireHeader} from '@/FireHeader';
 import {useLocale} from '@/locale';
-const filters=['Tout','Rêves','Musique','Bible','Personnes'] as const;
+const filters=['Tout','Rêves','Musique','Bible','Talents'] as const;
 export default function Discover(){const {tr}=useLocale();
  
  const [filter,setFilter]=useState<typeof filters[number]>('Tout');
@@ -28,10 +28,10 @@ export default function Discover(){const {tr}=useLocale();
     <Ionicons name="search" size={18} color="#777"/><TextInput style={{flex:1,fontSize:13,color:'#222'}} placeholder={tr("searchPlaceholder")} value={query} onChangeText={setQuery}/>
    </View>
    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{gap:7,paddingBottom:17}}>
-    {filters.map(f=><Pill key={f} text={f==='Tout'?tr('all'):f==='Rêves'?tr('dreamsFilter'):f==='Musique'?tr('musicFilter'):f==='Bible'?tr('bibleFilter'):'Personnes'} active={filter===f} onPress={()=>setFilter(f)}/>)}
+    {filters.map(f=><Pill key={f} text={f==='Tout'?tr('all'):f==='Rêves'?tr('dreamsFilter'):f==='Musique'?tr('musicFilter'):f==='Bible'?tr('bibleFilter'):'Talents'} active={filter===f} onPress={()=>setFilter(f)}/>)}
    </ScrollView>
-   <PublicationGallery items={filter==='Personnes'?personPublications:filter==='Tout'?[...publications,...personPublications]:items}/>
-   {filter!=='Personnes'&&items.length===0&&<Text style={{textAlign:'center',marginTop:25,color:'#999'}}>Aucune publication trouvée.</Text>}
+   <PublicationGallery items={filter==='Talents'?personPublications:filter==='Tout'?[...publications,...personPublications]:items}/>
+   {filter!=='Talents'&&items.length===0&&<Text style={{textAlign:'center',marginTop:25,color:'#999'}}>Aucune publication trouvée.</Text>}
   </ScrollView><Nav/>
  </SafeAreaView>;
 }
