@@ -8,6 +8,7 @@ import {ActionRail} from './ActionRail';
 import {Publication,PHASE_LABELS,PHASE_COLORS,PHASE_SYMBOLS} from './discoveryData';
 import {PublicationGallery} from './PublicationGallery';
 import {publications} from './discoveryData';
+import {personPath} from './people';
 
 /** Single detail-page shell shared by Dream, Music, and Bible posts. */
 export function PublicationDetail({item,children,media}:{item:Publication;children:React.ReactNode;media?:React.ReactNode}){
@@ -26,7 +27,7 @@ export function PublicationDetail({item,children,media}:{item:Publication;childr
       {media??<Image source={{uri:item.image}} resizeMode="cover" style={{width:'100%',height:item.type==='bible'?280:230,borderRadius:10,backgroundColor:'#f3f3f3'}}/>}
       {phase?<View style={{position:'absolute',left:10,top:10,paddingHorizontal:10,paddingVertical:5,borderRadius:8,backgroundColor:PHASE_COLORS[phase].background}}><Text style={{fontSize:11,fontWeight:'700',color:PHASE_COLORS[phase].foreground}}>{PHASE_LABELS[phase]} {PHASE_SYMBOLS[phase]}</Text></View>:null}
      </View>
-     <View style={{width:48,alignItems:'center',justifyContent:'space-between'}}><View style={{alignItems:'center',gap:3}}><Avatar size={27}/><Text numberOfLines={1} style={{fontSize:10,color:'#555',maxWidth:48,textAlign:'center'}}>{item.author}</Text></View><ActionRail item={item}/></View>
+     <View style={{width:48,alignItems:'center',justifyContent:'space-between'}}><Pressable accessibilityLabel={'Voir le profil de '+item.author} onPress={()=>router.push(personPath(item.author))} style={{alignItems:'center',gap:3}}><Avatar size={27}/><Text numberOfLines={1} style={{fontSize:10,color:'#555',maxWidth:48,textAlign:'center'}}>{item.author}</Text></Pressable><ActionRail item={item}/></View>
     </View>
     <View style={{paddingTop:14}}>{children}</View>
    </View>
