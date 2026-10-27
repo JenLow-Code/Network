@@ -8,8 +8,9 @@ import {useApp} from '@/context';
 import {DREAM_PHASES,PHASE_COLORS,PHASE_LABELS,PHASE_SYMBOLS} from '@/discoveryData';
 import {useDreams} from '@/domain/dreamRepository';
 import {useAppTheme} from '@/AppTheme';
+import {DreamPhaseIcon} from '@/DreamPhaseIcon';
 
-function DreamsOverview(){const {items}=useDreams();return <View style={{flexDirection:'row',flexWrap:'wrap',gap:9}}>{DREAM_PHASES.map(phase=><Pressable key={phase} onPress={()=>router.push({pathname:'/my-dreams/[phase]',params:{phase}})} style={{width:'48%',borderRadius:13,padding:15,minHeight:113,justifyContent:'space-between',backgroundColor:PHASE_COLORS[phase].background}}><View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}><Text style={{fontWeight:'700',color:PHASE_COLORS[phase].foreground}}>{PHASE_LABELS[phase]}</Text><Ionicons name={phase==='Rêve'?'ellipse':phase==='Initiation'?'leaf-outline':phase==='Croissance'?'leaf':'flower-outline'} size={21} color={PHASE_COLORS[phase].foreground}/></View><Text style={{fontSize:12,color:'#444'}}>{items.filter(d=>d.phase===phase).length} rêve(s)</Text></Pressable>)}</View>}
+function DreamsOverview(){const {items}=useDreams();return <View style={{flexDirection:'row',flexWrap:'wrap',gap:9}}>{DREAM_PHASES.map(phase=><Pressable key={phase} onPress={()=>router.push({pathname:'/my-dreams/[phase]',params:{phase}})} style={{width:'48%',borderRadius:13,padding:15,minHeight:113,justifyContent:'space-between',backgroundColor:PHASE_COLORS[phase].background}}><View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}><Text style={{fontWeight:'700',color:PHASE_COLORS[phase].foreground}}>{PHASE_LABELS[phase]}</Text><DreamPhaseIcon phase={phase} size={22}/></View><Text style={{fontSize:12,color:'#444'}}>{items.filter(d=>d.phase===phase).length} rêve(s)</Text></Pressable>)}</View>}
 export default function MySpace(){
  const app=useApp();const theme=useAppTheme();
  const sections=[
