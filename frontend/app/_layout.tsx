@@ -7,14 +7,15 @@ import { Provider } from '@/context';
 import { DreamProvider } from '@/domain/dreamRepository';
 import { LocaleProvider } from '@/locale';
 import { AuthProvider } from '@/auth/AuthProvider';
+import {AppThemeProvider,useAppTheme} from '@/AppTheme';
 
+function ThemedStack(){const theme=useAppTheme();return <><StatusBar style={theme.dark?'light':'dark'} /><Stack screenOptions={{headerShown:false,contentStyle:{backgroundColor:theme.background}}}/></>}
 export default function Layout() {
   const [loaded, error] = useFonts({ Caveat_700Bold });
   if (!loaded && !error) return null;
   return (
-    <LocaleProvider><AuthProvider><Provider><DreamProvider>
-      <StatusBar style="dark" />
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#fff' } }} />
-    </DreamProvider></Provider></AuthProvider></LocaleProvider>
+    <AppThemeProvider><LocaleProvider><AuthProvider><Provider><DreamProvider>
+      <ThemedStack/>
+    </DreamProvider></Provider></AuthProvider></LocaleProvider></AppThemeProvider>
   );
 }
