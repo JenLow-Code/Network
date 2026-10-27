@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {dreams,DreamPhase} from '../discoveryData';
 import {DreamEntry,fromDemo,canEditField,nextPhase} from './dreamWorkspace';
 import {useApp} from '../context';
-type Repo={items:DreamEntry[];create:(data:{title:string;summary:string;image:string;needs:string[]})=>string;update:(id:string,field:'summary'|'image'|'needs',value:string|string[])=>void;add:(id:string,text:string,kind:'notes'|'additions')=>void;advance:(id:string)=>void;complete:(id:string,comment:string,mediaType:'audio'|'photo'|'video'|'text',mediaUrl?:string)=>void;remove:(id:string)=>void};
+type Repo={items:DreamEntry[];create:(data:{title:string;summary:string;image:string;needs:string[]})=>string;update:(id:string,field:'summary'|'image'|'needs'|'motivation'|'goalDate'|'resolvedNeeds'|'paused',value:string|string[]|boolean)=>void;add:(id:string,text:string,kind:'notes'|'additions')=>void;advance:(id:string)=>void;complete:(id:string,comment:string,mediaType:'audio'|'photo'|'video'|'text',mediaUrl?:string)=>void;remove:(id:string)=>void};
 const Context=createContext<Repo|null>(null);
 const initial=dreams.map(fromDemo);
 const KEY_BASE='jenlow.network.demo.dream.workspace.v1.';
