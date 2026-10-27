@@ -13,6 +13,7 @@ export default function MySpace(){
  const app=useApp();
  const sections=[
   {title:'Mon profil',detail:'Mes informations et talents',icon:'person-outline' as const,path:'/profile' as const},
+  {title:'Mes prières',detail:'Toutes mes prières et leur répétition',icon:'heart-outline' as const,path:'/prayers' as const},
   {title:'Paramètres',detail:'Compte et préférences',icon:'settings-outline' as const,path:'/settings' as const}
  ];
  return <SafeAreaView style={{flex:1,backgroundColor:'#fff'}}>
