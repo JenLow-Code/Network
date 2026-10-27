@@ -11,7 +11,7 @@ export function TopActions(){return <Pressable accessibilityLabel="Messages" onP
 export function Nav(){const path=usePathname();const {t}=useLocale();const links=[
  {icon:'calendar-outline' as const,title:t('agenda'),path:'/agenda' as const,active:path==='/agenda'||path==='/prayers'},
  {icon:'musical-note-outline' as const,title:t('music'),path:'/music-hub' as const,active:path.startsWith('/music')||path.startsWith('/publish/')},
- {icon:'radio-button-off' as const,title:t('discover'),path:'/discover' as const,active:path==='/discover'||path.startsWith('/dream/')||path.startsWith('/bible/')||path.startsWith('/person/')},
+ {icon:'ellipse-outline' as const,title:t('discover'),path:'/discover' as const,active:path==='/discover'||path.startsWith('/dream/')||path.startsWith('/bible/')||path.startsWith('/person/')},
  {icon:'flame-outline' as const,title:'Fire',path:'/fire' as const,active:path==='/fire'},
  {icon:'person-circle-outline' as const,title:'Mon espace',path:'/my-space' as const,active:path==='/my-space'||path.startsWith('/my-dream')||path==='/profile'||path==='/settings'||path==='/space'||path.startsWith('/chat/')}
  ];return <View style={{flexDirection:'row',borderTopWidth:1,borderColor:'#eee',backgroundColor:'#fff',justifyContent:'space-around',paddingTop:9,paddingBottom:9}}>{links.map((x,i)=><Pressable key={i} accessibilityLabel={x.title} onPress={()=>router.replace(x.path)} style={{minWidth:48,minHeight:35,alignItems:'center',justifyContent:'center'}}>{x.path==='/fire'?<Ionicons name="flame-outline" size={24} color="#252525"/>:x.path==='/my-space'?<Avatar size={27}/>:<Ionicons name={x.icon} size={24} color="#252525"/>}</Pressable>)}</View>}
