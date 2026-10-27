@@ -4,7 +4,7 @@ import {SafeAreaView} from 'react-native-safe-area-context';
 import {Ionicons} from '@expo/vector-icons';
 import {router} from 'expo-router';
 import {DreamPublication,PHASE_COLORS,PHASE_LABELS,publications} from './discoveryData';
-import {Avatar,Nav} from './components';
+import {Avatar,Nav,TopActions} from './components';
 import {ActionRail} from './ActionRail';
 import {DreamPhaseIcon} from './DreamPhaseIcon';
 import {PublicationGallery} from './PublicationGallery';
@@ -16,7 +16,7 @@ function Panel({title,children,initiallyOpen=true,minHeight=0,collapsible=true}:
  const [open,setOpen]=useState(initiallyOpen);
  return <View style={{backgroundColor:'#FFFDF9',borderRadius:11,paddingHorizontal:11,paddingVertical:10,marginBottom:11,minHeight:open?minHeight:0}}>
   <Pressable disabled={!collapsible} onPress={()=>setOpen(v=>!v)} accessibilityRole="button" accessibilityLabel={title} style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center',minHeight:24}}>
-   <Text style={{fontWeight:'800',fontSize:14,color:'#171717'}}>{title}</Text>
+   <Text style={{fontWeight:'700',fontSize:15,letterSpacing:-0.3,color:'#262626'}}>{title}</Text>
    {collapsible?<Ionicons name={open?'chevron-up':'chevron-down'} size={16} color="#333"/>:null}
   </Pressable>
   {open?<View style={{marginTop:3}}>{children}</View>:null}
@@ -31,10 +31,11 @@ export function DreamReferenceLayout({item}:{item:DreamPublication}){
   <ScrollView style={{flex:1}} contentContainerStyle={{paddingHorizontal:17,paddingTop:11,paddingBottom:50,maxWidth:650,width:'100%',alignSelf:'center'}}>
    <View style={{flexDirection:'row',alignItems:'center',minHeight:63,borderBottomWidth:1,borderColor:theme.border}}>
     <Pressable onPress={()=>router.back()} accessibilityLabel="Retour" style={{width:43,alignItems:'flex-start',justifyContent:'center'}}><Ionicons name="chevron-back" size={25} color={theme.foreground}/></Pressable>
-    <View style={{flex:1,alignItems:'center',paddingRight:43}}>
+    <View style={{flex:1,alignItems:'center',paddingRight:0}}>
      <Text numberOfLines={2} style={{fontWeight:'800',fontSize:17,textAlign:'center',color:theme.foreground}}>{item.title}</Text>
      <Pressable onPress={()=>router.push(personPath(item.author))}><Text style={{fontSize:11,color:theme.muted,textAlign:'center',marginTop:3}}>{item.author} · {PHASE_LABELS[item.phase]}</Text></Pressable>
     </View>
+    <TopActions/>
    </View>
    <View style={{paddingTop:46,paddingBottom:13}}>
     <View style={{backgroundColor:phase.background,borderRadius:12,paddingTop:30,paddingBottom:13,paddingLeft:15,paddingRight:10,width:'91%',alignSelf:'flex-start',position:'relative'}}>
@@ -44,7 +45,7 @@ export function DreamReferenceLayout({item}:{item:DreamPublication}){
      <View style={{flexDirection:'row',alignItems:'stretch',gap:8}}>
       <View style={{flex:1,paddingTop:0}}>
        <Panel title="Mon but" collapsible={false} minHeight={96}><Text style={{fontSize:13,lineHeight:19,color:'#333'}}>{item.summary}</Text></Panel>
-       <View style={{alignItems:'flex-end',marginTop:-19,marginRight:11,marginBottom:6,zIndex:2}} pointerEvents="none"><DreamPhaseIcon phase={item.phase} size={25}/></View>
+       <View style={{position:'absolute',top:110,right:20,zIndex:2}} pointerEvents="none"><DreamPhaseIcon phase={item.phase} size={19}/></View>
        <Panel title="Ma motivation" minHeight={134}><Text style={{fontSize:13,lineHeight:20,color:'#333'}}>{item.motivation||'Ce rêve me tient à cœur.'}</Text></Panel>
        <Panel title="Les talents nécessaires" minHeight={155}>
         <View style={{flexDirection:'row',flexWrap:'wrap',gap:7,marginTop:6,marginBottom:8}}>
