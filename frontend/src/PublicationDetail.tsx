@@ -27,7 +27,7 @@ export function PublicationDetail({item,children,media}:{item:Publication;childr
       {media??<Image source={{uri:item.image}} resizeMode="cover" style={{width:'100%',height:item.type==='bible'?280:230,borderRadius:10,backgroundColor:'#f3f3f3'}}/>}
       {phase?<View pointerEvents="none" style={{position:'absolute',left:0,right:0,top:0,bottom:0,alignItems:'center',justifyContent:'center',borderRadius:10,backgroundColor:'rgba(255,255,255,0.18)'}}><Text style={{fontSize:58}}>{PHASE_SYMBOLS[phase]}</Text></View>:null}
      </View>
-     <View style={{width:48,alignItems:'center',justifyContent:'space-between'}}><Pressable accessibilityLabel={'Voir le profil de '+item.author} onPress={()=>router.push(personPath(item.author))} style={{alignItems:'center',gap:3}}><Avatar size={27}/><Text numberOfLines={1} style={{fontSize:10,color:'#555',maxWidth:48,textAlign:'center'}}>{item.author}</Text></Pressable><ActionRail item={item}/></View>
+     <View style={{width:48,alignItems:'center',justifyContent:'space-between'}}><Pressable accessibilityLabel={'Voir le profil de '+item.author} onPress={()=>router.push(personPath(item.author))} style={{alignItems:'center',gap:3}}><Avatar size={27}/><Text numberOfLines={1} style={{fontSize:10,color:'#555',maxWidth:48,textAlign:'center'}}>{item.author}</Text></Pressable>{item.type!=='person'?<ActionRail item={item}/>:null}</View>
     </View>
     <View style={{paddingTop:14}}>{children}</View>
    </View>
