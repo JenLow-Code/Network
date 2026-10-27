@@ -44,21 +44,20 @@ export function DreamReferenceLayout({item}:{item:DreamPublication}){
      </Pressable>
      <View style={{flexDirection:'row',alignItems:'stretch',gap:8}}>
       <View style={{flex:1,paddingTop:0}}>
-       <Panel title="Mon but" collapsible={false} minHeight={0}><Text style={{fontSize:13,lineHeight:19,color:'#333'}}>{item.summary}</Text><View pointerEvents="none" style={{alignSelf:'flex-end',marginTop:4,marginRight:4}}><DreamPhaseIcon phase={item.phase} size={17}/></View></Panel>
+       <Panel title="Mon but" collapsible={false} minHeight={0}><Text style={{fontSize:13,lineHeight:19,color:'#333'}}>{item.summary}</Text><View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',marginTop:7}}>{item.phase==='Rêve'?<Pressable onPress={sameDream} accessibilityLabel="Moi aussi" accessibilityRole="button" style={{flexDirection:'row',alignItems:'center',gap:5,paddingVertical:4,paddingHorizontal:7,borderRadius:10,backgroundColor:app.myDreamIds.includes(item.id)?'#F5E0EA':'#F2F2F2'}}><Ionicons name={app.myDreamIds.includes(item.id)?'checkmark-circle':'add-circle-outline'} size={15} color={app.myDreamIds.includes(item.id)?'#CB245C':'#555'}/><Text style={{fontSize:11,color:app.myDreamIds.includes(item.id)?'#CB245C':'#555'}}>{app.myDreamIds.includes(item.id)?'Moi aussi ✓':'Moi aussi'}</Text></Pressable>:<View/>}<DreamPhaseIcon phase={item.phase} size={17}/></View></Panel>
        
-       <Panel title="Ma motivation" minHeight={0}><Text style={{fontSize:13,lineHeight:20,color:'#333'}}>{item.motivation||'Ce rêve me tient à cœur.'}</Text></Panel>
-       <Panel title="Les talents nécessaires" minHeight={0}>
+       <Panel title="Ma motivation" initiallyOpen={false} minHeight={0}><Text style={{fontSize:13,lineHeight:20,color:'#333'}}>{item.motivation||'Ce rêve me tient à cœur.'}</Text></Panel>
+       <Panel title="Les talents nécessaires" initiallyOpen={false} minHeight={0}>
         <View style={{flexDirection:'row',flexWrap:'wrap',gap:7,marginTop:6,marginBottom:8}}>
          {item.needs.map((n,i)=><View key={n} style={{alignItems:'center',gap:4}}><View style={{width:31,height:31,borderRadius:16,backgroundColor:'#D71D77'}}/><Text style={{fontSize:9,color:'#666',maxWidth:65,textAlign:'center'}}>{n}</Text></View>)}
         </View>
         <Text style={{fontSize:12,color:'#555'}}>Propose ton aide pour faire grandir ce rêve.</Text>
        </Panel>
-       {item.phase==='Initiation'&&<Panel title="Date objectif"><Text style={{fontSize:12,color:'#444'}}>{item.goalDate||'À définir'}</Text></Panel>}
-       {item.phase==='Croissance'&&<Panel title="Journal de croissance">{(item.logs||[]).map((log,i)=><View key={i} style={{flexDirection:'row',gap:7,marginTop:7}}><Ionicons name="leaf-outline" size={17} color="#378968"/><Text style={{fontSize:12,color:'#444',flex:1}}>{log}</Text></View>)}</Panel>}
+       {item.phase==='Initiation'&&<Panel title="Date objectif" initiallyOpen={false}><Text style={{fontSize:12,color:'#444'}}>{item.goalDate||'À définir'}</Text></Panel>}
+       {item.phase==='Croissance'&&<Panel title="Journal de croissance" initiallyOpen={false}>{(item.logs||[]).map((log,i)=><View key={i} style={{flexDirection:'row',gap:7,marginTop:7}}><Ionicons name="leaf-outline" size={17} color="#378968"/><Text style={{fontSize:12,color:'#444',flex:1}}>{log}</Text></View>)}</Panel>}
       </View>
       <View style={{width:39,justifyContent:'flex-end',alignItems:'center',paddingBottom:12}}><ActionRail item={item}/></View>
      </View>
-     {item.phase==='Rêve'?<Pressable onPress={sameDream} style={{alignSelf:'center',borderRadius:18,borderWidth:1,borderColor:'#fff',backgroundColor:'#FFFDF9',paddingHorizontal:18,paddingVertical:8,marginTop:10}}><Text style={{fontSize:12,color:'#252525'}}>{app.myDreamIds.includes(item.id)?'Moi aussi ✓':'Moi aussi'}</Text></Pressable>:null}
     </View>
    </View>
    <Text style={{fontSize:18,fontWeight:'800',color:theme.foreground,marginTop:24,marginBottom:14}}>Continuer l’inspiration</Text>
