@@ -18,7 +18,7 @@ export function ActionRail({item}:{item:Publication}){
   switch(id){
    case 'fire': app.toggleFire(item.id);break;
    case 'prayer': app.togglePrayer(item.id);break;
-   case 'inspire':setModal('dream');break;
+   case 'inspire':if(item.type==='music')router.push({pathname:'/my-dream/new',params:{inspiration:item.title,from:item.id}});else setModal('dream');break;
    case 'share-internal':router.push({pathname:'/share/[id]',params:{id:item.id}});break;
    case 'share-external':void Share.share({message:item.title+' — JenLow Network'});break;
    case 'offer-help':router.push({pathname:'/chat/[id]',params:{id:'teacher'}});break;
