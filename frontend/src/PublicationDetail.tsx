@@ -1,5 +1,5 @@
 import React from 'react';
-import {Image,Pressable,ScrollView,Text,View} from 'react-native';
+import {Image,Platform,Pressable,ScrollView,Text,View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {Ionicons} from '@expo/vector-icons';
 import {router} from 'expo-router';
@@ -16,7 +16,7 @@ export function PublicationDetail({item,children,media}:{item:Publication;childr
   <ScrollView style={{flex:1}} contentContainerStyle={{paddingHorizontal:16,paddingTop:10,paddingBottom:56,maxWidth:840,width:'100%',alignSelf:'center'}}>
    <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',marginBottom:13}}>
     <Pressable onPress={()=>router.back()} accessibilityLabel="Retour" style={{width:44,height:44,alignItems:'center',justifyContent:'center'}}><Ionicons name="chevron-back" size={24} color="#222"/></Pressable>
-    <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.55} style={{flex:1,minWidth:0,fontSize:18,lineHeight:23,fontWeight:'700',color:'#171717',marginHorizontal:6}}>{item.title}</Text>
+    <View style={{flex:1,minWidth:0,overflow:'hidden',marginHorizontal:6}}><Text numberOfLines={1} ellipsizeMode="tail" adjustsFontSizeToFit minimumFontScale={0.5} style={[{fontSize:17,lineHeight:21,fontWeight:'700',color:'#171717'},Platform.OS==='web'?({whiteSpace:'nowrap',textOverflow:'ellipsis',overflow:'hidden',display:'block'} as any):null]}>{item.title}</Text></View>
     <TopActions/>
    </View>
    <View style={{borderWidth:1,borderColor:'#E8E8E8',borderRadius:16,padding:13,backgroundColor:'#fff'}}>
