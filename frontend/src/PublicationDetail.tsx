@@ -20,12 +20,12 @@ export function PublicationDetail({item,children,media}:{item:Publication;childr
     <View style={{flex:1,minWidth:0,overflow:'hidden',marginHorizontal:6}}><Text numberOfLines={1} ellipsizeMode="tail" adjustsFontSizeToFit minimumFontScale={0.5} style={[{fontSize:17,lineHeight:21,fontWeight:'700',color:'#171717'},Platform.OS==='web'?({whiteSpace:'nowrap',textOverflow:'ellipsis',overflow:'hidden',display:'block'} as any):null]}>{item.title}</Text></View>
     <TopActions/>
    </View>
-   {phase?<View style={{flexDirection:'row',alignItems:'center',gap:6,marginBottom:11,marginLeft:50}}><Text style={{fontSize:14}}>{PHASE_SYMBOLS[phase]}</Text><Text style={{fontSize:11,color:PHASE_COLORS[phase].foreground}}>{PHASE_LABELS[phase]} · Rêve en croissance</Text></View>:null}
+   {phase?<View style={{flexDirection:'row',alignItems:'center',gap:6,marginBottom:11,marginLeft:50}}><Text style={{fontSize:11,color:PHASE_COLORS[phase].foreground}}>{'Rêve en '+PHASE_LABELS[phase].toLowerCase()}</Text></View>:null}
    <View style={{borderWidth:1,borderColor:'#E8E8E8',borderRadius:16,padding:13,backgroundColor:'#fff'}}>
     <View style={{flexDirection:'row',alignItems:'stretch',gap:7}}>
      <View style={{flex:1,minWidth:0}}>
       {media??<Image source={{uri:item.image}} resizeMode="cover" style={{width:'100%',height:item.type==='bible'?280:230,borderRadius:10,backgroundColor:'#f3f3f3'}}/>}
-      {phase?<View style={{position:'absolute',left:10,top:10,paddingHorizontal:10,paddingVertical:5,borderRadius:8,backgroundColor:PHASE_COLORS[phase].background}}><Text style={{fontSize:11,fontWeight:'700',color:PHASE_COLORS[phase].foreground}}>{PHASE_LABELS[phase]} {PHASE_SYMBOLS[phase]}</Text></View>:null}
+      {phase?<View style={{position:'absolute',left:10,top:10,paddingHorizontal:10,paddingVertical:5,borderRadius:8,backgroundColor:PHASE_COLORS[phase].background}}><Text style={{fontSize:11,fontWeight:'700',color:PHASE_COLORS[phase].foreground}}>{PHASE_SYMBOLS[phase]}</Text></View>:null}
      </View>
      <View style={{width:48,alignItems:'center',justifyContent:'space-between'}}><Pressable accessibilityLabel={'Voir le profil de '+item.author} onPress={()=>router.push(personPath(item.author))} style={{alignItems:'center',gap:3}}><Avatar size={27}/><Text numberOfLines={1} style={{fontSize:10,color:'#555',maxWidth:48,textAlign:'center'}}>{item.author}</Text></Pressable><ActionRail item={item}/></View>
     </View>
