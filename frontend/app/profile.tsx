@@ -22,7 +22,7 @@ function Gallery({kind}:{kind:'talent'|'dream'}){
  const preview=(i:number)=>{
   const selected=data[i] as any;
   return <Pressable key={i} onPress={()=>{setCurrent(i);setExpanded(true)}} style={s.card}>
-   {kind==='talent'?<><Text style={{fontFamily:'Caveat_700Bold',fontSize:16,color:'#111'}}>{selected.title}</Text><View style={s.talentCircle}><Ionicons name={selected.icon} color="#111" size={28}/></View><View style={{flexDirection:'row',gap:5}}>{levels.map((l,n)=><View key={n} style={{width:6,height:6,borderRadius:3,backgroundColor:n===selected.level?l.color:'#e9e9e9'}}/>)}</View><Text numberOfLines={1} style={s.cardCaption}>{selected.detail}</Text></>:
+   {kind==='talent'?<><Text style={{fontWeight:'700',fontSize:16,color:'#111'}}>{selected.title}</Text><View style={s.talentCircle}><Ionicons name={selected.icon} color="#111" size={28}/></View><View style={{flexDirection:'row',gap:5}}>{levels.map((l,n)=><View key={n} style={{width:6,height:6,borderRadius:3,backgroundColor:n===selected.level?l.color:'#e9e9e9'}}/>)}</View><Text numberOfLines={1} style={s.cardCaption}>{selected.detail}</Text></>:
    <Image source={{uri:selected.image}} style={{width:'100%',height:'100%',borderRadius:6}} resizeMode="cover"/>}
   </Pressable>;
  };
@@ -56,12 +56,12 @@ export default function Profile(){
  }
  return <SafeAreaView style={s.safe}><View style={{flex:1}}>
    <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
-    <View style={{alignSelf:'flex-end',marginBottom:8}}><TopActions/></View>
+    <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',marginBottom:12}}><Text style={{fontSize:29,fontWeight:'700'}}>Mon profil</Text><TopActions/></View>
     <Pressable onPress={cancel} style={{alignItems:'center'}}><Avatar size={164}/><Text style={s.name}>{app.name}</Text></Pressable>
     <View style={s.bio}>{field('bio')}</View>
     <Pressable onPress={cancel}><Text style={s.label}>Lieu</Text></Pressable>{field('city')}
     <Pressable onPress={cancel} style={{marginTop:14}}><Text style={s.label}>Eglise</Text></Pressable>{field('church')}
-    <View style={s.galleries}><Gallery kind="talent"/><Gallery kind="dream"/></View>
+    <View style={s.galleries}><Gallery kind="talent"/></View>
     <Pressable onPress={cancel}><Text style={[s.title,{marginTop:14,marginBottom:9}]}>Mes pierres</Text></Pressable>
     <StoneDeck/>
     <Pressable onPress={()=>{cancel();app.logout();router.replace('/login')}} style={{marginTop:18}}><Text style={{color:'#999',fontSize:11}}>Se déconnecter</Text></Pressable>
