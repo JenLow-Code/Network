@@ -2,7 +2,7 @@ import React,{useRef} from 'react';
 import {Image,Platform,Pressable,ScrollView,Text,View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {Ionicons} from '@expo/vector-icons';
-import {SeedIcon} from './SeedIcon';
+import {DreamPhaseIcon} from './DreamPhaseIcon';
 import Svg,{Defs,RadialGradient,Stop,Rect} from 'react-native-svg';
 import {router} from 'expo-router';
 import {Nav,TopActions,Avatar} from './components';
@@ -22,7 +22,7 @@ export function PublicationDetail({item,children,media,onImageDoubleTap}:{item:P
   <ScrollView style={{flex:1}} contentContainerStyle={{paddingHorizontal:16,paddingTop:15,paddingBottom:56,maxWidth:840,width:'100%',alignSelf:'center'}}>
    <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',marginBottom:0}}>
     <Pressable onPress={()=>router.back()} accessibilityLabel="Retour" style={{width:44,height:44,alignItems:'center',justifyContent:'center'}}><Ionicons name="chevron-back" size={24} color="#222"/></Pressable>
-    <View style={{flex:1,minWidth:0,overflow:'hidden',marginHorizontal:6}}><Text numberOfLines={1} ellipsizeMode="tail" adjustsFontSizeToFit minimumFontScale={0.5} style={[{fontSize:17,lineHeight:21,fontWeight:'700',color:theme.foreground},Platform.OS==='web'?({whiteSpace:'nowrap',textOverflow:'ellipsis',overflow:'hidden',display:'block'} as any):null]}>{item.title}</Text></View>
+    <View style={{flex:1,minWidth:0,overflow:'hidden',marginHorizontal:6}}><Text numberOfLines={1} ellipsizeMode="tail" adjustsFontSizeToFit minimumFontScale={0.5} style={[{fontSize:17,lineHeight:21,fontWeight:'700',color:theme.foreground,textAlign:'center'},Platform.OS==='web'?({whiteSpace:'nowrap',textOverflow:'ellipsis',overflow:'hidden',display:'block'} as any):null]}>{item.title}</Text></View>
     <TopActions/>
    </View>
    {(phase||item.type==='bible')?<View style={{flexDirection:'row',alignItems:'center',justifyContent:'center',marginTop:-10,marginBottom:14}}><Text style={{fontSize:11,color:phase?PHASE_COLORS[phase].foreground:'#777'}}>{phase?'Rêve en '+PHASE_LABELS[phase].toLowerCase():'Louis Segond 1910'}</Text></View>:null}
@@ -30,7 +30,7 @@ export function PublicationDetail({item,children,media,onImageDoubleTap}:{item:P
     <View style={{flexDirection:'row',alignItems:'stretch',gap:7}}>
      <View style={{flex:1,minWidth:0,position:'relative'}}>
       {media??<Pressable onPress={handleImageTap} accessibilityLabel={item.type==='dream'?'Toucher deux fois pour dire Moi aussi':'Image de publication'}><Image source={{uri:item.image}} resizeMode="cover" style={{width:'100%',height:item.type==='bible'?280:230,borderRadius:10,backgroundColor:'#f3f3f3'}}/></Pressable>}
-      {phase?<View pointerEvents="none" style={{position:'absolute',left:0,right:0,top:0,bottom:0,alignItems:'center',justifyContent:'center',borderRadius:10,overflow:'hidden'}}><Svg width="100%" height="100%" style={{position:'absolute'}}><Defs><RadialGradient id="shade" cx="50%" cy="50%" rx="72%" ry="72%"><Stop offset="0%" stopColor="#fff" stopOpacity="0.2"/><Stop offset="100%" stopColor="#000" stopOpacity="0.55"/></RadialGradient></Defs><Rect width="100%" height="100%" fill="url(#shade)"/></Svg><View style={{position:'absolute',right:11,top:11,width:44,height:44,alignItems:'center',justifyContent:'center'}}>{phase==='Rêve'?<View style={{width:17,height:17,borderRadius:9,backgroundColor:'#444'}}/>:phase==='Initiation'?<SeedIcon size={34}/>:<Text style={{fontSize:26,lineHeight:34,textAlign:'center'}}>{PHASE_SYMBOLS[phase]}</Text>}</View></View>:null}
+      {phase?<View pointerEvents="none" style={{position:'absolute',left:0,right:0,top:0,bottom:0,alignItems:'center',justifyContent:'center',borderRadius:10,overflow:'hidden'}}><Svg width="100%" height="100%" style={{position:'absolute'}}><Defs><RadialGradient id="shade" cx="50%" cy="50%" rx="72%" ry="72%"><Stop offset="0%" stopColor="#fff" stopOpacity="0.2"/><Stop offset="100%" stopColor="#000" stopOpacity="0.55"/></RadialGradient></Defs><Rect width="100%" height="100%" fill="url(#shade)"/></Svg><View style={{position:'absolute',right:11,top:11,width:44,height:44,alignItems:'center',justifyContent:'center'}}><DreamPhaseIcon phase={phase} size={34}/></View></View>:null}
      </View>
      <View style={{width:48,alignItems:'center',justifyContent:'space-between'}}><Pressable accessibilityLabel={'Voir le profil de '+item.author} onPress={()=>router.push(personPath(item.author))} style={{alignItems:'center',gap:3}}><Avatar size={27}/><Text numberOfLines={1} style={{fontSize:10,color:'#555',maxWidth:48,textAlign:'center'}}>{item.author}</Text></Pressable><ActionRail item={item}/></View>
     </View>
