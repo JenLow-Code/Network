@@ -13,8 +13,6 @@ export default function MySpace(){
  const app=useApp();
  const sections=[
   {title:'Mon profil',detail:'Mes informations et talents',icon:'person-outline' as const,path:'/profile' as const},
-  {title:'Ma liste de prières',detail:'Consulter et gérer les sujets, sans les lier aux dates',icon:'heart-outline' as const,path:'/prayers' as const},
-  {title:'Messages et notifications',detail:'Mes échanges',icon:'chatbubbles-outline' as const,path:'/space' as const},
   {title:'Paramètres',detail:'Compte et préférences',icon:'settings-outline' as const,path:'/settings' as const}
  ];
  return <SafeAreaView style={{flex:1,backgroundColor:'#fff'}}>
