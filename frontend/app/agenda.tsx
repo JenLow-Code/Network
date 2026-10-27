@@ -11,8 +11,10 @@ import {useLocale} from '@/locale';
 import {publications} from '@/discoveryData';
 import {AgendaEntry,DEMO_AGENDA} from '@/domain/agendaTypes';
 import {publicationPath} from '@/PublicationGallery';
+import {useDreams} from '@/domain/dreamRepository';
 const isoDay=(d:Date)=>[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
 export default function Agenda(){
+ const {items:trackedDreams}=useDreams();
  const {language,tr}=useLocale();const {prayersForDate,togglePrayer}=useApp();
  // Future: show a weekly overview of scheduled service / volunteer duty, separately from personal events.
  const [day,setDay]=useState(new Date());const [calendarOpen,setCalendarOpen]=useState(false);const [events,setEvents]=useState<AgendaEntry[]>(DEMO_AGENDA);
@@ -40,7 +42,7 @@ export default function Agenda(){
   </View>
   {calendarOpen?<View style={{padding:12,borderRadius:12,borderWidth:1,borderColor:'#eee',marginTop:8,backgroundColor:'#fff'}}>
    <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginBottom:10}}><Pressable onPress={()=>setDay(d=>new Date(d.getFullYear(),d.getMonth()-1,Math.min(d.getDate(),28)))}><Ionicons name="chevron-back" size={21} color="#777"/></Pressable><Text style={{fontWeight:'700'}}>{day.toLocaleDateString(locale,{month:'long',year:'numeric'})}</Text><Pressable onPress={()=>setDay(d=>new Date(d.getFullYear(),d.getMonth()+1,Math.min(d.getDate(),28)))}><Ionicons name="chevron-forward" size={21} color="#777"/></Pressable></View>
-   <View style={{flexDirection:'row',flexWrap:'wrap'}}>{Array.from({length:new Date(day.getFullYear(),day.getMonth(),1).getDay()===0?6:new Date(day.getFullYear(),day.getMonth(),1).getDay()-1},(_,i)=><View key={'empty'+i} style={{width:'14.285%',height:38}}/>)}{Array.from({length:new Date(day.getFullYear(),day.getMonth()+1,0).getDate()},(_,i)=>i+1).map(n=><Pressable key={n} onPress={()=>{setDay(new Date(day.getFullYear(),day.getMonth(),n));setCalendarOpen(false)}} style={{width:'14.285%',height:38,alignItems:'center',justifyContent:'center',backgroundColor:n===day.getDate()?'#f3dce7':'transparent',borderRadius:6}}><Text style={{fontSize:12}}>{n}</Text>{events.some(e=>('date' in e)&&e.date===isoDay(new Date(day.getFullYear(),day.getMonth(),n))&&e.status!=='declined')?<View style={{width:3,height:3,borderRadius:2,backgroundColor:'#CB245C',marginTop:2}}/>:null}</Pressable>)}</View>
+   <View style={{flexDirection:'row',flexWrap:'wrap'}}>{Array.from({length:new Date(day.getFullYear(),day.getMonth(),1).getDay()===0?6:new Date(day.getFullYear(),day.getMonth(),1).getDay()-1},(_,i)=><View key={'empty'+i} style={{width:'14.285%',height:38}}/>)}{Array.from({length:new Date(day.getFullYear(),day.getMonth()+1,0).getDate()},(_,i)=>i+1).map(n=><Pressable key={n} onPress={()=>{setDay(new Date(day.getFullYear(),day.getMonth(),n));setCalendarOpen(false)}} style={{width:'14.285%',height:38,alignItems:'center',justifyContent:'center',backgroundColor:n===day.getDate()?'#f3dce7':'transparent',borderRadius:6}}><Text style={{fontSize:12}}>{n}</Text>{(events.some(e=>('date' in e)&&e.date===isoDay(new Date(day.getFullYear(),day.getMonth(),n))&&e.status!=='declined')||trackedDreams.some(d=>d.goalDate===isoDay(new Date(day.getFullYear(),day.getMonth(),n))))?<View style={{width:3,height:3,borderRadius:2,backgroundColor:'#CB245C',marginTop:2}}/>:null}</Pressable>)}</View>
    </View>:null}
   <Pressable onPress={()=>setDay(new Date())} style={{alignSelf:'center',padding:7}}><Text style={{fontSize:11,color:'#888'}}>{language==='fr'?"Aujourd'hui":language==='de'?'Heute':language==='pt'?'Hoje':'Today'}</Text></Pressable>
   <View style={{flexDirection:'row',alignItems:'center',gap:9,marginTop:14,marginBottom:10}}><PrayerIcon size={30}/><Text style={{fontSize:17,fontWeight:'700'}}>{tr('prayersToday')}</Text></View>
