@@ -6,7 +6,7 @@ import {router} from 'expo-router';
 import Svg,{Defs,LinearGradient as SvgGradient,Stop,Rect} from 'react-native-svg';
 import {Publication,PHASE_COLORS,PHASE_LABELS,publications,personPublications,publicationColor} from './discoveryData';
 import {ActionRail} from './ActionRail';
-import {PublicationImageFade} from './PublicationImageFade';
+import {PublicationImageFade,DETAIL_FADE_HEIGHT} from './PublicationImageFade';
 import {DreamPhaseIcon} from './DreamPhaseIcon';
 import {TalentArt} from './TalentArt';
 import {TalentLevelDots} from './TalentLevelDots';
@@ -49,8 +49,9 @@ export function DetailLayout({item,children,featured,headerIcon}:{item:Publicati
     </View>
     <TopActions/>
    </View>
-   <View style={{position:'relative',paddingTop:item.type==='bible'?20:item.type==='music'?24:46,paddingBottom:14}}>
-    <View pointerEvents="none" style={{position:'absolute',top:0,bottom:0,left:0,right:0}}>
+   <View style={{position:'relative',minHeight:DETAIL_FADE_HEIGHT,paddingTop:item.type==='bible'?20:item.type==='music'?24:46,paddingBottom:14}}>
+    {/* Fixed-height fade: expanding panels must not stretch the gradient. */}
+    <View pointerEvents="none" style={{position:'absolute',top:0,height:DETAIL_FADE_HEIGHT,left:0,right:0}}>
      <Svg width="100%" height="100%">
       <Defs><SvgGradient id={gradientId} x1="0%" y1="0%" x2="0%" y2="100%">
        <Stop offset="0%" stopColor={base}/><Stop offset="100%" stopColor={theme.background}/>
