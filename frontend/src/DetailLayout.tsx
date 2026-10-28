@@ -7,8 +7,7 @@ import Svg,{Defs,LinearGradient as SvgGradient,Stop,Rect} from 'react-native-svg
 import {Publication,PHASE_COLORS,PHASE_LABELS,publications,personPublications,publicationColor} from './discoveryData';
 import {ActionRail} from './ActionRail';
 import {PublicationImageFade,DETAIL_FADE_HEIGHT} from './PublicationImageFade';
-import {Nav} from './components';
-import {MessageIcon} from './MessageIcon';
+import {Nav,TopActions} from './components';
 import {personPath} from './people';
 import {PublicationGallery} from './PublicationGallery';
 import {useAppTheme} from './AppTheme';
@@ -31,21 +30,21 @@ export function DetailLayout({item,children,featured,headerIcon}:{item:Publicati
  const subtitle=item.type==='dream'?PHASE_LABELS[item.phase]:item.type==='music'?item.songAuthor:item.type==='talent'?item.level:'Louis Segond 1910';
  // Public community affiliation is not yet available in the demo dataset.
  const byline=`${item.author} · ${item.location?.trim() || 'Ville non renseignée'}`;
- const subtitleColor=item.type==='dream'?'#F0E0B6':'#DADADA';
+ const subtitleColor=item.type==='dream'?PHASE_COLORS[item.phase].foreground:theme.muted;
  return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
   <ScrollView contentContainerStyle={{maxWidth:680,width:'100%',alignSelf:'center',paddingBottom:50}}>
-   <View style={{flexDirection:'row',alignItems:'center',minHeight:74,paddingHorizontal:17,paddingTop:11,backgroundColor:'#171717',borderBottomWidth:0}}>
+   <View style={{flexDirection:'row',alignItems:'center',minHeight:74,paddingHorizontal:17,paddingTop:11,borderBottomWidth:1,borderColor:theme.border}}>
     <Pressable onPress={()=>router.back()} accessibilityLabel="Retour" style={{width:43,alignItems:'flex-start',justifyContent:'center'}}>
-     <Ionicons name="chevron-back" size={25} color="#FFFFFF"/>
+     <Ionicons name="chevron-back" size={25} color={theme.foreground}/>
     </Pressable>
     <View onLayout={e=>{const w=Math.round(e.nativeEvent.layout.width);if(w>0&&w!==headerWidth)setHeaderWidth(w)}} style={{flex:1,alignItems:'center',minWidth:0,paddingHorizontal:3}}>
-     <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.4} style={{width:'100%',fontSize:titleSize,fontWeight:'800',textAlign:'center',color:'#FFFFFF',letterSpacing:-0.2}}>{item.title}</Text>
+     <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.4} style={{width:'100%',fontSize:titleSize,fontWeight:'800',textAlign:'center',color:theme.foreground,letterSpacing:-0.2}}>{item.title}</Text>
      <Text numberOfLines={1} style={{fontSize:11,color:subtitleColor,textAlign:'center',marginTop:3,fontWeight:item.type==='dream'?'700':'400'}}>{subtitle}</Text>
      <Pressable onPress={()=>router.push(personPath(item.author))} accessibilityLabel={'Voir le profil de '+item.author}>
-      <Text numberOfLines={1} style={{fontSize:11,color:'#EAEAEA',textAlign:'center',marginTop:2}}>{byline}</Text>
+      <Text numberOfLines={1} style={{fontSize:11,color:theme.foreground,textAlign:'center',marginTop:2}}>{byline}</Text>
      </Pressable>
     </View>
-    <Pressable accessibilityLabel="Messages" onPress={()=>router.push('/space')} style={{width:44,height:44,alignItems:'center',justifyContent:'center'}}><MessageIcon size={25} color="#FFFFFF"/></Pressable>
+    <TopActions/>
    </View>
    <View style={{position:'relative',minHeight:DETAIL_FADE_HEIGHT,paddingTop:item.type==='bible'?0:8,paddingBottom:14}}>
     {/* Fixed-height fade: expanding panels must not stretch the gradient. */}
@@ -58,14 +57,6 @@ export function DetailLayout({item,children,featured,headerIcon}:{item:Publicati
      </Svg>
     </View>
     {(item.type==='dream'||item.type==='music')&&item.image?.trim()?<PublicationImageFade key={item.id} uri={item.image} background={theme.background}/>:null}
-    {/* Black fades from the header into the existing phase/photographic background. */}
-    <View pointerEvents="none" style={{position:'absolute',top:0,left:0,right:0,height:125}}>
-     <Svg width="100%" height="100%"><Defs><SvgGradient id={gradientId+'Dark'} x1="0%" y1="0%" x2="0%" y2="100%">
-      <Stop offset="0%" stopColor="#171717" stopOpacity={0.8}/>
-      <Stop offset="45%" stopColor="#171717" stopOpacity={0.3}/>
-      <Stop offset="100%" stopColor="#171717" stopOpacity={0}/>
-     </SvgGradient></Defs><Rect width="100%" height="100%" fill={`url(#${gradientId}Dark)`}/></Svg>
-    </View>
     <View style={{width:'100%',paddingTop:12,paddingBottom:13,paddingLeft:19,paddingRight:19,position:'relative'}}> 
      <View style={{flexDirection:'row',alignItems:'stretch',gap:8}}>
       <View style={{flex:1,minWidth:0}}>{featured}{children}</View>
