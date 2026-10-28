@@ -7,7 +7,7 @@ import {Nav,TopActions} from './components';
 import {ActionRail} from './ActionRail';
 import {Publication,PHASE_COLORS} from './discoveryData';
 import {PublicationGallery} from './PublicationGallery';
-import {publications} from './discoveryData';
+import {publications,personPublications} from './discoveryData';
 import {personPath} from './people';
 import {useAppTheme} from './AppTheme';
 
@@ -25,7 +25,7 @@ export function DetailPanel({title,children,foldable=false,defaultOpen=true}:{ti
 export function PublicationDetail({item,children,media}:{item:Publication;children:React.ReactNode;media?:React.ReactNode;onImageDoubleTap?:()=>void}){
  const theme=useAppTheme();
  const color='#F1F1EF';
- const subtitle=item.type==='bible'?'Louis Segond 1910':item.author;
+ const subtitle=item.type==='bible'?'Louis Segond 1910':item.type==='music'?item.songAuthor:item.author;
  const avatar=item.author==='Sarah'?'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=220&q=80':'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=220&q=80';
  return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
   <ScrollView contentContainerStyle={{paddingHorizontal:17,paddingTop:11,paddingBottom:54,maxWidth:650,width:'100%',alignSelf:'center'}}>
@@ -36,8 +36,8 @@ export function PublicationDetail({item,children,media}:{item:Publication;childr
    </View>
    <View style={{paddingTop:45,paddingBottom:12}}>
     <View style={{width:'91%',borderRadius:12,backgroundColor:color,paddingTop:16,paddingBottom:12,paddingLeft:15,paddingRight:9}}>
-     <Pressable onPress={()=>router.push(personPath(item.author))} accessibilityLabel={'Profil de '+item.author} style={{position:'absolute',top:-34,right:-24,zIndex:4}}>
-      <Image source={{uri:avatar}} style={{width:95,height:95,borderRadius:48}}/>
+     <Pressable onPress={()=>router.push(personPath(item.author))} accessibilityLabel={'Profil de '+item.author} style={{position:'absolute',top:-34,right:-24,zIndex:4,alignItems:'center',maxWidth:110}}>
+      <Image source={{uri:avatar}} style={{width:95,height:95,borderRadius:48}}/><Text numberOfLines={1} style={{fontSize:11,color:theme.foreground,textAlign:"center",marginTop:4}}>{item.author}</Text>
      </Pressable>
      <View style={{flexDirection:'row',gap:7}}>
       <View style={{flex:1,minWidth:0}}>
@@ -49,7 +49,7 @@ export function PublicationDetail({item,children,media}:{item:Publication;childr
     </View>
    </View>
    <Text style={{fontSize:18,fontWeight:'800',color:theme.foreground,marginTop:22,marginBottom:14}}>Continuer l’inspiration</Text>
-   <PublicationGallery items={publications.filter(p=>p.id!==item.id)}/>
+   <PublicationGallery items={[...publications,...personPublications].filter(p=>p.id!==item.id)}/>
   </ScrollView><Nav/>
  </SafeAreaView>;
 }
