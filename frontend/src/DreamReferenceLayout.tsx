@@ -3,7 +3,7 @@ import {Image,Pressable,ScrollView,Text,View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {Ionicons} from '@expo/vector-icons';
 import {router} from 'expo-router';
-import {DreamPublication,PHASE_COLORS,PHASE_LABELS,publications} from './discoveryData';
+import {DreamPublication,PHASE_COLORS,PHASE_LABELS,publications,personPublications} from './discoveryData';
 import {Avatar,Nav,TopActions} from './components';
 import {ActionRail} from './ActionRail';
 import {PublicationGallery} from './PublicationGallery';
@@ -60,7 +60,7 @@ export function DreamReferenceLayout({item}:{item:DreamPublication}){
     </View>
    </View>
    <Text style={{fontSize:18,fontWeight:'800',color:theme.foreground,marginTop:24,marginBottom:14}}>Continuer l’inspiration</Text>
-   <PublicationGallery items={publications.filter(p=>p.id!==item.id)}/>
+   <PublicationGallery items={[...publications,...personPublications].filter(p=>p.id!==item.id)}/>
   </ScrollView>
   <Nav/>
  </SafeAreaView>;
