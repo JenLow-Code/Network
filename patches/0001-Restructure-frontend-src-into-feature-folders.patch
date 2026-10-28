@@ -1,0 +1,1528 @@
+From b4929072b63d307e958193c2ea77ded9f05b8e77 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Wed, 28 Oct 2026 16:48:06 +0100
+Subject: [PATCH 1/2] Restructure frontend/src into feature folders
+
+- components/ (ui, navigation, detail, publication, music, talent, fire, brand)
+- icons/, theme/, context/, lib/, mocks/
+- split components.tsx, brand.tsx and discoveryData.ts into single-purpose files
+- domain types moved to domain/publication.ts, demo data to mocks/
+- all imports rewritten to the @/ alias; docs updated
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_012ecnqmVocXPjnaz8xNBVvP
+---
+ frontend/README.md                            | 19 ++++--
+ frontend/app/_layout.tsx                      |  8 +--
+ frontend/app/agenda.tsx                       | 14 ++---
+ frontend/app/auth/callback.tsx                |  4 +-
+ frontend/app/bible/[reference].tsx            |  4 +-
+ frontend/app/chat/[id].tsx                    |  6 +-
+ frontend/app/circle-call/[id].tsx             |  2 +-
+ frontend/app/circle.tsx                       |  2 +-
+ frontend/app/discover.tsx                     | 20 +++---
+ frontend/app/dream/[id].tsx                   |  4 +-
+ frontend/app/fire.tsx                         | 10 +--
+ frontend/app/import-verse.tsx                 |  2 +-
+ frontend/app/index.tsx                        |  4 +-
+ frontend/app/introduce/[id].tsx               |  6 +-
+ frontend/app/login.tsx                        |  6 +-
+ frontend/app/member/[name].tsx                | 10 +--
+ frontend/app/music-hub.tsx                    |  6 +-
+ frontend/app/music-proposal/[id].tsx          |  4 +-
+ frontend/app/music/[id].tsx                   | 10 +--
+ frontend/app/my-dream-participants/[id].tsx   |  4 +-
+ frontend/app/my-dream/[id].tsx                |  8 +--
+ frontend/app/my-dream/flower/[id].tsx         |  4 +-
+ frontend/app/my-dream/new.tsx                 |  4 +-
+ frontend/app/my-dreams.tsx                    |  8 +--
+ frontend/app/my-dreams/[phase].tsx            |  6 +-
+ frontend/app/my-space.tsx                     | 10 +--
+ frontend/app/person/[name].tsx                | 10 +--
+ frontend/app/prayers.tsx                      | 10 +--
+ frontend/app/profile.tsx                      |  8 +--
+ frontend/app/publish/music.tsx                |  2 +-
+ frontend/app/settings.tsx                     |  8 +--
+ frontend/app/share/[id].tsx                   |  4 +-
+ frontend/app/space.tsx                        | 12 ++--
+ frontend/app/verse-export/[id].tsx            |  4 +-
+ frontend/assets/icons/README.md               |  4 +-
+ frontend/docs/BACKEND-BOUNDARY.md             |  6 +-
+ frontend/src/components/brand/NetworkLogo.tsx | 14 +++++
+ .../{ => components/brand}/NetworkMark.tsx    |  0
+ .../{ => components/detail}/ActionRail.tsx    | 14 ++---
+ .../{ => components/detail}/DetailIntro.tsx   |  0
+ .../{ => components/detail}/DetailLayout.tsx  | 12 ++--
+ .../detail}/DreamReferenceLayout.tsx          |  8 +--
+ .../detail}/DreamStageAction.tsx              |  8 +--
+ .../src/{ => components/fire}/FireHeader.tsx  |  4 +-
+ .../{ => components/music}/MusicLyrics.tsx    |  0
+ .../{ => components/music}/MusicWaveform.tsx  |  6 +-
+ .../src/{ => components/music}/StoneDeck.tsx  |  8 +--
+ .../navigation/Nav.tsx}                       | 14 ++---
+ .../src/components/navigation/TopActions.tsx  |  7 +++
+ .../publication}/OfflineDreamImage.tsx        |  0
+ .../publication}/PublicationDetail.tsx        |  4 +-
+ .../publication}/PublicationGallery.tsx       |  8 +--
+ .../publication}/PublicationImageFade.tsx     |  0
+ .../src/{ => components/talent}/TalentArt.tsx | 24 ++++----
+ .../talent}/TalentLevelDots.tsx               |  0
+ frontend/src/components/ui/Avatar.tsx         |  5 ++
+ .../src/{ => components/ui}/ContactSheet.tsx  |  4 +-
+ frontend/src/components/ui/Pill.tsx           |  4 ++
+ .../{context.tsx => context/AppContext.tsx}   |  2 +-
+ .../src/{auth => context}/AuthProvider.tsx    |  2 +-
+ frontend/src/domain/dreamRepository.tsx       |  4 +-
+ frontend/src/domain/dreamWorkspace.ts         |  2 +-
+ frontend/src/domain/publication.ts            | 61 +++++++++++++++++++
+ frontend/src/domain/publicationRules.ts       |  2 +-
+ frontend/src/i18n/LocalizedText.tsx           |  2 +-
+ frontend/src/{ => i18n}/locale.tsx            |  2 +-
+ frontend/src/i18n/uiCopy.ts                   |  2 +-
+ frontend/src/{ => icons}/DreamPhaseIcon.tsx   |  4 +-
+ frontend/src/{ => icons}/FireIcon.tsx         |  0
+ .../src/{brand.tsx => icons/GoogleMark.tsx}   | 13 ----
+ frontend/src/{ => icons}/MessageIcon.tsx      |  0
+ frontend/src/{ => icons}/PrayerIcon.tsx       |  0
+ frontend/src/{ => icons}/SeedIcon.tsx         |  0
+ frontend/src/{ => lib}/authApi.ts             |  0
+ frontend/src/{ => lib}/pickDreamImage.ts      |  0
+ frontend/src/{ => lib}/pickFlowerMedia.ts     |  2 +-
+ frontend/src/{auth => lib}/supabaseClient.ts  |  0
+ frontend/src/{domain => mocks}/demoCircle.ts  |  0
+ frontend/src/{ => mocks}/people.ts            |  2 +-
+ .../publications.ts}                          | 56 +----------------
+ frontend/src/{ => theme}/AppTheme.tsx         |  0
+ frontend/src/{theme.ts => theme/colors.ts}    |  0
+ 82 files changed, 293 insertions(+), 260 deletions(-)
+ create mode 100644 frontend/src/components/brand/NetworkLogo.tsx
+ rename frontend/src/{ => components/brand}/NetworkMark.tsx (100%)
+ rename frontend/src/{ => components/detail}/ActionRail.tsx (91%)
+ rename frontend/src/{ => components/detail}/DetailIntro.tsx (100%)
+ rename frontend/src/{ => components/detail}/DetailLayout.tsx (89%)
+ rename frontend/src/{ => components/detail}/DreamReferenceLayout.tsx (88%)
+ rename frontend/src/{ => components/detail}/DreamStageAction.tsx (92%)
+ rename frontend/src/{ => components/fire}/FireHeader.tsx (87%)
+ rename frontend/src/{ => components/music}/MusicLyrics.tsx (100%)
+ rename frontend/src/{ => components/music}/MusicWaveform.tsx (92%)
+ rename frontend/src/{ => components/music}/StoneDeck.tsx (94%)
+ rename frontend/src/{components.tsx => components/navigation/Nav.tsx} (64%)
+ create mode 100644 frontend/src/components/navigation/TopActions.tsx
+ rename frontend/src/{ => components/publication}/OfflineDreamImage.tsx (100%)
+ rename frontend/src/{ => components/publication}/PublicationDetail.tsx (91%)
+ rename frontend/src/{ => components/publication}/PublicationGallery.tsx (92%)
+ rename frontend/src/{ => components/publication}/PublicationImageFade.tsx (100%)
+ rename frontend/src/{ => components/talent}/TalentArt.tsx (58%)
+ rename frontend/src/{ => components/talent}/TalentLevelDots.tsx (100%)
+ create mode 100644 frontend/src/components/ui/Avatar.tsx
+ rename frontend/src/{ => components/ui}/ContactSheet.tsx (97%)
+ create mode 100644 frontend/src/components/ui/Pill.tsx
+ rename frontend/src/{context.tsx => context/AppContext.tsx} (99%)
+ rename frontend/src/{auth => context}/AuthProvider.tsx (98%)
+ create mode 100644 frontend/src/domain/publication.ts
+ rename frontend/src/{ => i18n}/locale.tsx (97%)
+ rename frontend/src/{ => icons}/DreamPhaseIcon.tsx (80%)
+ rename frontend/src/{ => icons}/FireIcon.tsx (100%)
+ rename frontend/src/{brand.tsx => icons/GoogleMark.tsx} (64%)
+ rename frontend/src/{ => icons}/MessageIcon.tsx (100%)
+ rename frontend/src/{ => icons}/PrayerIcon.tsx (100%)
+ rename frontend/src/{ => icons}/SeedIcon.tsx (100%)
+ rename frontend/src/{ => lib}/authApi.ts (100%)
+ rename frontend/src/{ => lib}/pickDreamImage.ts (100%)
+ rename frontend/src/{ => lib}/pickFlowerMedia.ts (95%)
+ rename frontend/src/{auth => lib}/supabaseClient.ts (100%)
+ rename frontend/src/{domain => mocks}/demoCircle.ts (100%)
+ rename frontend/src/{ => mocks}/people.ts (89%)
+ rename frontend/src/{discoveryData.ts => mocks/publications.ts} (72%)
+ rename frontend/src/{ => theme}/AppTheme.tsx (100%)
+ rename frontend/src/{theme.ts => theme/colors.ts} (100%)
+
+diff --git a/frontend/README.md b/frontend/README.md
+index 7774625..271c52b 100644
+--- a/frontend/README.md
++++ b/frontend/README.md
+@@ -27,10 +27,21 @@ The app has login, profile, My Space and chat screens with **local demo data onl
+ 
+ ## Architecture
+ 
+-- `app/`: routes for login, profile, My Space and chat
+-- `src/components.tsx`: reusable avatar, navigation and filters
+-- `src/context.tsx`: local state, to be replaced with secure backend integration
+-- `src/theme.ts`: shared colors
++- `app/`: screens. Expo Router turns every file here into a route (`app/chat/[id].tsx` → `/chat/123`), so this folder plays the role of `pages/`.
++- `src/components/`: reusable UI, grouped by feature
++  - `ui/` generic building blocks (`Avatar`, `Pill`, `ContactSheet`)
++  - `navigation/` bottom tab bar (`Nav`) and header actions (`TopActions`)
++  - `detail/`, `publication/`, `music/`, `talent/`, `fire/`, `brand/` feature components
++- `src/icons/`: custom SVG / image icons
++- `src/theme/`: colors (`colors.ts`) and light/dark theme provider (`AppTheme.tsx`)
++- `src/i18n/`: language provider (`locale.tsx`), translations and localized `Text`
++- `src/context/`: app-wide React providers (`AppContext`, `AuthProvider`); local state, to be replaced with secure backend integration
++- `src/domain/`: types and business rules (publications, permissions, dream workflow)
++- `src/lib/`: API clients and helpers (Supabase, auth API, media pickers)
++- `src/mocks/`: demo data that will be replaced by backend data
++- `assets/`: images, icons and audio
++
++Import from `src/` with the `@/` alias, e.g. `import {Nav} from '@/components/navigation/Nav'`.
+ 
+ ## Limitations
+ 
+diff --git a/frontend/app/_layout.tsx b/frontend/app/_layout.tsx
+index 9c6412b..38b28da 100644
+--- a/frontend/app/_layout.tsx
++++ b/frontend/app/_layout.tsx
+@@ -3,11 +3,11 @@ import { Stack } from 'expo-router';
+ import { StatusBar } from 'expo-status-bar';
+ import { useFonts } from 'expo-font';
+ import { Caveat_700Bold } from '@expo-google-fonts/caveat';
+-import { Provider } from '@/context';
++import { Provider } from '@/context/AppContext';
+ import { DreamProvider } from '@/domain/dreamRepository';
+-import { LocaleProvider } from '@/locale';
+-import { AuthProvider } from '@/auth/AuthProvider';
+-import {AppThemeProvider,useAppTheme} from '@/AppTheme';
++import { LocaleProvider } from '@/i18n/locale';
++import { AuthProvider } from '@/context/AuthProvider';
++import {AppThemeProvider,useAppTheme} from '@/theme/AppTheme';
+ 
+ function ThemedStack(){const theme=useAppTheme();return <><StatusBar style={theme.dark?'light':'dark'} /><Stack screenOptions={{headerShown:false,contentStyle:{backgroundColor:theme.background}}}/></>}
+ export default function Layout() {
+diff --git a/frontend/app/agenda.tsx b/frontend/app/agenda.tsx
+index 7aae8ff..6088394 100644
+--- a/frontend/app/agenda.tsx
++++ b/frontend/app/agenda.tsx
+@@ -4,14 +4,14 @@ import {Pressable,ScrollView,Share,View} from 'react-native';
+ import {SafeAreaView} from 'react-native-safe-area-context';
+ import {router} from 'expo-router';
+ import {Ionicons} from '@expo/vector-icons';
+-import {Nav,TopActions} from '@/components';
+-import {PrayerIcon} from '@/PrayerIcon';
+-import {useApp} from '@/context';
+-import {useLocale} from '@/locale';
+-import {publications} from '@/discoveryData';
+-import {useAppTheme} from '@/AppTheme';
++import {Nav} from '@/components/navigation/Nav';import {TopActions} from '@/components/navigation/TopActions';
++import {PrayerIcon} from '@/icons/PrayerIcon';
++import {useApp} from '@/context/AppContext';
++import {useLocale} from '@/i18n/locale';
++import {publications} from '@/mocks/publications';
++import {useAppTheme} from '@/theme/AppTheme';
+ import {AgendaEntry,DEMO_AGENDA} from '@/domain/agendaTypes';
+-import {publicationPath} from '@/PublicationGallery';
++import {publicationPath} from '@/components/publication/PublicationGallery';
+ import {useDreams} from '@/domain/dreamRepository';
+ const isoDay=(d:Date)=>[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
+ export default function Agenda(){
+diff --git a/frontend/app/auth/callback.tsx b/frontend/app/auth/callback.tsx
+index 0b5fd9b..574fcbf 100644
+--- a/frontend/app/auth/callback.tsx
++++ b/frontend/app/auth/callback.tsx
+@@ -1,8 +1,8 @@
+ import React,{useEffect,useState} from 'react';
+ import {ActivityIndicator,Pressable,Text,View} from 'react-native';
+ import {router,useLocalSearchParams} from 'expo-router';
+-import {supabase} from '@/auth/supabaseClient';
+-import {useAuth} from '@/auth/AuthProvider';
++import {supabase} from '@/lib/supabaseClient';
++import {useAuth} from '@/context/AuthProvider';
+ 
+ /** Supports web auth callback URLs and native PKCE redirects. */
+ export default function AuthCallback(){
+diff --git a/frontend/app/bible/[reference].tsx b/frontend/app/bible/[reference].tsx
+index ec6c867..f8b9aa9 100644
+--- a/frontend/app/bible/[reference].tsx
++++ b/frontend/app/bible/[reference].tsx
+@@ -2,8 +2,8 @@ import React,{useId,useRef,useState} from 'react';
+ import Svg,{Defs,LinearGradient,Rect,Stop} from 'react-native-svg';
+ import {ScrollView,Text,View,type ScrollViewInstance} from 'react-native';
+ import {useLocalSearchParams} from 'expo-router';
+-import {psalm150,biblePosts} from '@/discoveryData';
+-import {PublicationDetail} from '@/PublicationDetail';
++import {psalm150,biblePosts} from '@/mocks/publications';
++import {PublicationDetail} from '@/components/publication/PublicationDetail';
+ const READER_HEIGHT=340;
+ const TOP_FADE_HEIGHT=94;
+ const VERSE_ZERO_SPACER=TOP_FADE_HEIGHT+8; // Empty, unnumbered space above verse 1 so its text stays readable beneath the fixed fade.
+diff --git a/frontend/app/chat/[id].tsx b/frontend/app/chat/[id].tsx
+index 8a4f4a1..51944ad 100644
+--- a/frontend/app/chat/[id].tsx
++++ b/frontend/app/chat/[id].tsx
+@@ -4,9 +4,9 @@ import {KeyboardAvoidingView,Linking,Platform,Pressable,ScrollView,StyleSheet,Vi
+ import {SafeAreaView} from 'react-native-safe-area-context';
+ import {Ionicons} from '@expo/vector-icons';
+ import {router,useLocalSearchParams} from 'expo-router';
+-import {Avatar,Nav,TopActions} from '@/components';
+-import {useApp} from '@/context';
+-import {colors as c} from '@/theme';
++import {Avatar} from '@/components/ui/Avatar';import {Nav} from '@/components/navigation/Nav';import {TopActions} from '@/components/navigation/TopActions';
++import {useApp} from '@/context/AppContext';
++import {colors as c} from '@/theme/colors';
+ 
+ function ChatHeader({name,subtitle}:{name:string,subtitle:string}) {
+  return <View style={s.header}>
+diff --git a/frontend/app/circle-call/[id].tsx b/frontend/app/circle-call/[id].tsx
+index b2ec9cf..38da5ca 100644
+--- a/frontend/app/circle-call/[id].tsx
++++ b/frontend/app/circle-call/[id].tsx
+@@ -1,4 +1,4 @@
+ import {Text} from '@/i18n/LocalizedText';
+-import React from 'react';import {Pressable,View} from 'react-native';import {SafeAreaView} from 'react-native-safe-area-context';import {router,useLocalSearchParams} from 'expo-router';import {Ionicons} from '@expo/vector-icons';import {Nav} from '@/components';import {myCircle} from '@/domain/demoCircle';
++import React from 'react';import {Pressable,View} from 'react-native';import {SafeAreaView} from 'react-native-safe-area-context';import {router,useLocalSearchParams} from 'expo-router';import {Ionicons} from '@expo/vector-icons';import {Nav} from '@/components/navigation/Nav';import {myCircle} from '@/mocks/demoCircle';
+ export default function CircleCall(){const {id}=useLocalSearchParams<{id:string}>();const friend=myCircle.find(c=>c.id===id);
+ return <SafeAreaView style={{flex:1,backgroundColor:'#fff'}}><View style={{flex:1,padding:23}}><Pressable onPress={()=>router.back()}><Ionicons name="chevron-back" size={27}/></Pressable><View style={{flex:1,alignItems:'center',justifyContent:'center'}}><Ionicons name="videocam-outline" size={53} color="#D71D77"/><Text style={{fontSize:20,fontWeight:'700',marginTop:14}}>Appel avec {friend?.name||'Mon cercle'}</Text><Text style={{textAlign:'center',color:'#888',marginTop:12}}>Les appels vidéo seront activés uniquement pour les relations Mon cercle, après autorisation et connexion du backend.</Text></View></View><Nav/></SafeAreaView>}
+diff --git a/frontend/app/circle.tsx b/frontend/app/circle.tsx
+index c9c5ad7..5b0ce5b 100644
+--- a/frontend/app/circle.tsx
++++ b/frontend/app/circle.tsx
+@@ -1,6 +1,6 @@
+ import {Text} from '@/i18n/LocalizedText';
+ import React from 'react';import {Pressable,ScrollView,View} from 'react-native';
+-import {SafeAreaView} from 'react-native-safe-area-context';import {Ionicons} from '@expo/vector-icons';import {router} from 'expo-router';import {Nav,Avatar} from '@/components';import {myCircle} from '@/domain/demoCircle';
++import {SafeAreaView} from 'react-native-safe-area-context';import {Ionicons} from '@expo/vector-icons';import {router} from 'expo-router';import {Nav} from '@/components/navigation/Nav';import {Avatar} from '@/components/ui/Avatar';import {myCircle} from '@/mocks/demoCircle';
+ export default function Circle(){return <SafeAreaView style={{flex:1,backgroundColor:'#fff'}}><ScrollView style={{flex:1}} contentContainerStyle={{padding:18}}>
+  <Text style={{fontFamily:'Caveat_700Bold',fontSize:35,marginBottom:6}}>Mon cercle</Text><Text style={{fontSize:12,color:'#888',marginBottom:18}}>Les personnes que je connais personnellement. Les appels vidéo sont réservés à ce cercle.</Text>
+  {myCircle.map(person=><View key={person.id} style={{paddingVertical:14,flexDirection:'row',alignItems:'center',gap:11,borderBottomWidth:1,borderColor:'#eee'}}><Avatar size={36}/><View style={{flex:1}}><Text style={{fontWeight:'700'}}>{person.name}</Text><Text style={{fontSize:11,color:'#888'}}>{person.connection} · {person.talents.join(', ')}</Text></View><Pressable accessibilityLabel="Appel vidéo du cercle" onPress={()=>router.push({pathname:'/circle-call/[id]',params:{id:person.id}})}><Ionicons name="videocam-outline" color="#444" size={24}/></Pressable></View>)}
+diff --git a/frontend/app/discover.tsx b/frontend/app/discover.tsx
+index 19da420..744f736 100644
+--- a/frontend/app/discover.tsx
++++ b/frontend/app/discover.tsx
+@@ -1,19 +1,19 @@
+ import {Text,TextInput} from '@/i18n/LocalizedText';
+ import React,{useMemo,useState} from 'react';
+ import {Pressable,ScrollView,View} from 'react-native';
+-import {NetworkMark} from '@/NetworkMark';
++import {NetworkMark} from '@/components/brand/NetworkMark';
+ import {SafeAreaView} from 'react-native-safe-area-context';
+ import {Ionicons} from '@expo/vector-icons';
+ import {router,useLocalSearchParams} from 'expo-router';
+-import {useApp} from '@/context';
+-import {Nav,Pill,TopActions} from '@/components';
+-import {PublicationGallery} from '@/PublicationGallery';
+-import {publications,personPublications} from '@/discoveryData';
+-import {people,personPath} from '@/people';
+-import {Avatar} from '@/components';
+-import {FireHeader} from '@/FireHeader';
+-import {useLocale} from '@/locale';
+-import {useAppTheme} from '@/AppTheme';
++import {useApp} from '@/context/AppContext';
++import {Nav} from '@/components/navigation/Nav';import {Pill} from '@/components/ui/Pill';import {TopActions} from '@/components/navigation/TopActions';
++import {PublicationGallery} from '@/components/publication/PublicationGallery';
++import {publications,personPublications} from '@/mocks/publications';
++import {people,personPath} from '@/mocks/people';
++import {Avatar} from '@/components/ui/Avatar';
++import {FireHeader} from '@/components/fire/FireHeader';
++import {useLocale} from '@/i18n/locale';
++import {useAppTheme} from '@/theme/AppTheme';
+ const filters=['Tout','Rêves','Musique','Bible','Talents'] as const;
+ export default function Discover(){const {tr}=useLocale();const theme=useAppTheme();const params=useLocalSearchParams<{filter?:string}>();
+  
+diff --git a/frontend/app/dream/[id].tsx b/frontend/app/dream/[id].tsx
+index af78feb..7bcde37 100644
+--- a/frontend/app/dream/[id].tsx
++++ b/frontend/app/dream/[id].tsx
+@@ -1,8 +1,8 @@
+ import React from 'react';
+ import {Text,View} from 'react-native';
+ import {useLocalSearchParams} from 'expo-router';
+-import {dreams} from '@/discoveryData';
+-import {DreamReferenceLayout} from '@/DreamReferenceLayout';
++import {dreams} from '@/mocks/publications';
++import {DreamReferenceLayout} from '@/components/detail/DreamReferenceLayout';
+ export default function DreamDetail(){
+  const {id}=useLocalSearchParams<{id:string}>();
+  const item=dreams.find(d=>d.id===id);
+diff --git a/frontend/app/fire.tsx b/frontend/app/fire.tsx
+index 4afa8b5..d787228 100644
+--- a/frontend/app/fire.tsx
++++ b/frontend/app/fire.tsx
+@@ -3,11 +3,11 @@ import {Pressable,ScrollView,Text,TextInput,View} from 'react-native';
+ import {SafeAreaView} from 'react-native-safe-area-context';
+ import {Ionicons} from '@expo/vector-icons';
+ import {router} from 'expo-router';
+-import {useApp} from '@/context';
+-import {Nav,TopActions} from '@/components';
+-import {publications} from '@/discoveryData';
+-import {PublicationGallery} from '@/PublicationGallery';
+-import {useAppTheme} from '@/AppTheme';
++import {useApp} from '@/context/AppContext';
++import {Nav} from '@/components/navigation/Nav';import {TopActions} from '@/components/navigation/TopActions';
++import {publications} from '@/mocks/publications';
++import {PublicationGallery} from '@/components/publication/PublicationGallery';
++import {useAppTheme} from '@/theme/AppTheme';
+ export default function FireList(){const theme=useAppTheme();
+  const {fireIds}=useApp();const [query,setQuery]=useState('');const items=publications.filter(p=>fireIds.includes(p.id)&&[p.title,p.author].join(' ').toLowerCase().includes(query.trim().toLowerCase()));
+  return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}><ScrollView style={{flex:1}} contentContainerStyle={{paddingHorizontal:15,paddingBottom:35}}>
+diff --git a/frontend/app/import-verse.tsx b/frontend/app/import-verse.tsx
+index 71e44ce..95da2cb 100644
+--- a/frontend/app/import-verse.tsx
++++ b/frontend/app/import-verse.tsx
+@@ -4,7 +4,7 @@ import {SafeAreaView} from 'react-native-safe-area-context';
+ import {Ionicons} from '@expo/vector-icons';
+ import {router} from 'expo-router';
+ import {useIncomingShare} from 'expo-sharing';
+-import {Nav} from '@/components';
++import {Nav} from '@/components/navigation/Nav';
+ const parseRef=(raw:string)=>{
+  const match=raw.match(/(?:psaumes?|psalms?|psalm|salmos?|salmo)\s*(\d{1,3})\s*(?:[:.,]\s*(\d{1,3}))?/i);
+  return match?{chapter:Number(match[1]),verse:Number(match[2]||1)}:null;
+diff --git a/frontend/app/index.tsx b/frontend/app/index.tsx
+index c149167..c41cd3f 100644
+--- a/frontend/app/index.tsx
++++ b/frontend/app/index.tsx
+@@ -1,8 +1,8 @@
+ import React,{useEffect,useState} from 'react';
+ import {Redirect} from 'expo-router';
+ import {ActivityIndicator,View,Text,Platform} from 'react-native';
+-import {useAuth} from '@/auth/AuthProvider';
+-import {supabase} from '@/auth/supabaseClient';
++import {useAuth} from '@/context/AuthProvider';
++import {supabase} from '@/lib/supabaseClient';
+ export default function Index(){
+  const {user,initialized}=useAuth();
+  const [processing,setProcessing]=useState(()=>Platform.OS==='web'&&typeof window!=='undefined'&&!!window.location&&new URLSearchParams(window.location.search).has('code'));
+diff --git a/frontend/app/introduce/[id].tsx b/frontend/app/introduce/[id].tsx
+index 36ec69a..a06f636 100644
+--- a/frontend/app/introduce/[id].tsx
++++ b/frontend/app/introduce/[id].tsx
+@@ -3,9 +3,9 @@ import {Pressable,ScrollView,Text,View} from 'react-native';
+ import {SafeAreaView} from 'react-native-safe-area-context';
+ import {Ionicons} from '@expo/vector-icons';
+ import {router,useLocalSearchParams} from 'expo-router';
+-import {dreams} from '@/discoveryData';
+-import {myCircle} from '@/domain/demoCircle';
+-import {Nav} from '@/components';
++import {dreams} from '@/mocks/publications';
++import {myCircle} from '@/mocks/demoCircle';
++import {Nav} from '@/components/navigation/Nav';
+ export default function Introduction(){
+  const {id,person}=useLocalSearchParams<{id:string;person?:string}>();
+  const d=dreams.find(x=>x.id===id),friend=myCircle.find(p=>p.id===person);
+diff --git a/frontend/app/login.tsx b/frontend/app/login.tsx
+index a0d86e0..002d319 100644
+--- a/frontend/app/login.tsx
++++ b/frontend/app/login.tsx
+@@ -3,9 +3,9 @@ import {KeyboardAvoidingView,Platform,Pressable,ScrollView,StyleSheet,Text,TextI
+ import {SafeAreaView} from 'react-native-safe-area-context';
+ import {Ionicons} from '@expo/vector-icons';
+ import {router} from 'expo-router';
+-import {useApp} from '@/context';
+-import {NetworkLogo,GoogleMark} from '@/brand';
+-import {useAuth} from '@/auth/AuthProvider';
++import {useApp} from '@/context/AppContext';
++import {NetworkLogo} from '@/components/brand/NetworkLogo';import {GoogleMark} from '@/icons/GoogleMark';
++import {useAuth} from '@/context/AuthProvider';
+ 
+ export default function Login(){
+  const [register,setRegister]=useState(false),[email,setEmail]=useState(''),[password,setPassword]=useState(''),[name,setName]=useState(''),[code,setCode]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState('');
+diff --git a/frontend/app/member/[name].tsx b/frontend/app/member/[name].tsx
+index 9883034..1d009f1 100644
+--- a/frontend/app/member/[name].tsx
++++ b/frontend/app/member/[name].tsx
+@@ -3,11 +3,11 @@ import {Image,Pressable,ScrollView,Text,View} from 'react-native';
+ import {SafeAreaView} from 'react-native-safe-area-context';
+ import {router,useLocalSearchParams} from 'expo-router';
+ import {Ionicons} from '@expo/vector-icons';
+-import {Nav,TopActions} from '@/components';
+-import {people} from '@/people';
+-import {PublicationGallery} from '@/PublicationGallery';
+-import {TalentArt} from '@/TalentArt';
+-import {useAppTheme} from '@/AppTheme';
++import {Nav} from '@/components/navigation/Nav';import {TopActions} from '@/components/navigation/TopActions';
++import {people} from '@/mocks/people';
++import {PublicationGallery} from '@/components/publication/PublicationGallery';
++import {TalentArt} from '@/components/talent/TalentArt';
++import {useAppTheme} from '@/theme/AppTheme';
+ export default function PublicMemberProfile(){
+  const {name}=useLocalSearchParams<{name:string}>();
+  const person=people.find(p=>p.name===name);
+diff --git a/frontend/app/music-hub.tsx b/frontend/app/music-hub.tsx
+index d0eeea0..428a440 100644
+--- a/frontend/app/music-hub.tsx
++++ b/frontend/app/music-hub.tsx
+@@ -4,9 +4,9 @@ import {Image,Pressable,ScrollView,View} from 'react-native';
+ import {SafeAreaView} from 'react-native-safe-area-context';
+ import {Ionicons} from '@expo/vector-icons';
+ import {router} from 'expo-router';
+-import {Nav,TopActions} from '@/components';
+-import {musics} from '@/discoveryData';
+-import {useLocale} from '@/locale';
++import {Nav} from '@/components/navigation/Nav';import {TopActions} from '@/components/navigation/TopActions';
++import {musics} from '@/mocks/publications';
++import {useLocale} from '@/i18n/locale';
+ export default function MusicHub(){const {t}=useLocale();return <SafeAreaView style={{flex:1,backgroundColor:'#fff'}}><ScrollView style={{flex:1}} contentContainerStyle={{padding:18,paddingBottom:40}}>
+  <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',marginBottom:8}}><Text style={{fontSize:30,fontWeight:'700'}}>{t('music')}</Text><TopActions/></View><Text style={{color:'#777',fontSize:12,marginBottom:20}}>Écouter, partager et proposer une collaboration.</Text>
+  <Pressable onPress={()=>router.push('/publish/music')} style={{backgroundColor:'#111',padding:14,borderRadius:9,flexDirection:'row',alignItems:'center',gap:9,marginBottom:24}}><Ionicons name="add-circle-outline" color="#fff" size={23}/><Text style={{color:'#fff'}}>Partager une musique avec les crédits</Text></Pressable>
+diff --git a/frontend/app/music-proposal/[id].tsx b/frontend/app/music-proposal/[id].tsx
+index 4aecfb6..ec9a643 100644
+--- a/frontend/app/music-proposal/[id].tsx
++++ b/frontend/app/music-proposal/[id].tsx
+@@ -4,8 +4,8 @@ import {Pressable,View} from 'react-native';
+ import {SafeAreaView} from 'react-native-safe-area-context';
+ import {Ionicons} from '@expo/vector-icons';
+ import {router,useLocalSearchParams} from 'expo-router';
+-import {musics} from '@/discoveryData';
+-import {Nav} from '@/components';
++import {musics} from '@/mocks/publications';
++import {Nav} from '@/components/navigation/Nav';
+ export default function MusicProposal(){
+  const {id}=useLocalSearchParams<{id:string}>();const music=musics.find(m=>m.id===id);
+  const [note,setNote]=useState(''),[recording,setRecording]=useState(''),[submitted,setSubmitted]=useState(false);
+diff --git a/frontend/app/music/[id].tsx b/frontend/app/music/[id].tsx
+index 148202f..115f5c2 100644
+--- a/frontend/app/music/[id].tsx
++++ b/frontend/app/music/[id].tsx
+@@ -1,11 +1,11 @@
+ import React from 'react';
+ import {Text,View} from 'react-native';
+ import {useLocalSearchParams} from 'expo-router';
+-import {musics} from '@/discoveryData';
+-import {PublicationDetail,DetailPanel} from '@/PublicationDetail';
+-import {DetailIntro} from '@/DetailIntro';
+-import {MusicWaveform} from '@/MusicWaveform';
+-import {MusicLyrics,FullMusicLyrics} from '@/MusicLyrics';
++import {musics} from '@/mocks/publications';
++import {PublicationDetail,DetailPanel} from '@/components/publication/PublicationDetail';
++import {DetailIntro} from '@/components/detail/DetailIntro';
++import {MusicWaveform} from '@/components/music/MusicWaveform';
++import {MusicLyrics,FullMusicLyrics} from '@/components/music/MusicLyrics';
+ export default function MusicDetail(){
+  const {id}=useLocalSearchParams<{id:string}>();
+  const item=musics.find(x=>x.id===id);
+diff --git a/frontend/app/my-dream-participants/[id].tsx b/frontend/app/my-dream-participants/[id].tsx
+index 14c28b1..0726686 100644
+--- a/frontend/app/my-dream-participants/[id].tsx
++++ b/frontend/app/my-dream-participants/[id].tsx
+@@ -4,9 +4,9 @@ import {Pressable,ScrollView,View} from 'react-native';
+ import {SafeAreaView} from 'react-native-safe-area-context';
+ import {Ionicons} from '@expo/vector-icons';
+ import {router,useLocalSearchParams} from 'expo-router';
+-import {Nav} from '@/components';
++import {Nav} from '@/components/navigation/Nav';
+ import {useDreams} from '@/domain/dreamRepository';
+-import {useLocale} from '@/locale';
++import {useLocale} from '@/i18n/locale';
+ export default function Participants(){
+  const {id}=useLocalSearchParams<{id:string}>();
+  const {items}=useDreams(),{tr}=useLocale();
+diff --git a/frontend/app/my-dream/[id].tsx b/frontend/app/my-dream/[id].tsx
+index 522dc74..70bafc8 100644
+--- a/frontend/app/my-dream/[id].tsx
++++ b/frontend/app/my-dream/[id].tsx
+@@ -4,11 +4,11 @@ import {Alert,Image,Platform,Pressable,ScrollView,View} from 'react-native';
+ import {SafeAreaView} from 'react-native-safe-area-context';
+ import {Ionicons} from '@expo/vector-icons';
+ import {router,useLocalSearchParams} from 'expo-router';
+-import {Nav,TopActions} from '@/components';
+-import {PHASE_COLORS,PHASE_LABELS} from '@/discoveryData';
++import {Nav} from '@/components/navigation/Nav';import {TopActions} from '@/components/navigation/TopActions';
++import {PHASE_COLORS,PHASE_LABELS} from '@/domain/publication';
+ import {useDreams} from '@/domain/dreamRepository';
+-import {pickDreamImage} from '@/pickDreamImage';
+-import {useAppTheme} from '@/AppTheme';
++import {pickDreamImage} from '@/lib/pickDreamImage';
++import {useAppTheme} from '@/theme/AppTheme';
+ 
+ const defaults=[
+  'https://images.unsplash.com/photo-1510915361894-db8b60106cb1?w=800',
+diff --git a/frontend/app/my-dream/flower/[id].tsx b/frontend/app/my-dream/flower/[id].tsx
+index a9c070d..8b46253 100644
+--- a/frontend/app/my-dream/flower/[id].tsx
++++ b/frontend/app/my-dream/flower/[id].tsx
+@@ -3,9 +3,9 @@ import {Alert,Image,Pressable,ScrollView,Text,TextInput,View} from 'react-native
+ import {SafeAreaView} from 'react-native-safe-area-context';
+ import {router,useLocalSearchParams} from 'expo-router';
+ import {Ionicons} from '@expo/vector-icons';
+-import {Nav,TopActions} from '@/components';
++import {Nav} from '@/components/navigation/Nav';import {TopActions} from '@/components/navigation/TopActions';
+ import {useDreams} from '@/domain/dreamRepository';
+-import {pickFlowerMedia} from '@/pickFlowerMedia';
++import {pickFlowerMedia} from '@/lib/pickFlowerMedia';
+ export default function FlowerPreparation(){
+  const {id}=useLocalSearchParams<{id:string}>();
+  const {items,complete,setFlowerDraft}=useDreams();
+diff --git a/frontend/app/my-dream/new.tsx b/frontend/app/my-dream/new.tsx
+index 12331c2..01dc04e 100644
+--- a/frontend/app/my-dream/new.tsx
++++ b/frontend/app/my-dream/new.tsx
+@@ -5,8 +5,8 @@ import {SafeAreaView} from 'react-native-safe-area-context';
+ import {router,useLocalSearchParams} from 'expo-router';
+ import {Ionicons} from '@expo/vector-icons';
+ import {useDreams} from '@/domain/dreamRepository';
+-import {Nav,TopActions} from '@/components';
+-import {pickDreamImage} from '@/pickDreamImage';
++import {Nav} from '@/components/navigation/Nav';import {TopActions} from '@/components/navigation/TopActions';
++import {pickDreamImage} from '@/lib/pickDreamImage';
+ export default function NewDream(){
+  const {inspiration}=useLocalSearchParams<{inspiration?:string}>();
+  const {create}=useDreams();
+diff --git a/frontend/app/my-dreams.tsx b/frontend/app/my-dreams.tsx
+index a943925..91ae44e 100644
+--- a/frontend/app/my-dreams.tsx
++++ b/frontend/app/my-dreams.tsx
+@@ -3,11 +3,11 @@ import React,{useState} from 'react';
+ import {Pressable,View,useWindowDimensions} from 'react-native';
+ import {SafeAreaView} from 'react-native-safe-area-context';
+ import {router} from 'expo-router';
+-import {Nav,TopActions} from '@/components';
+-import {FireHeader} from '@/FireHeader';
++import {Nav} from '@/components/navigation/Nav';import {TopActions} from '@/components/navigation/TopActions';
++import {FireHeader} from '@/components/fire/FireHeader';
+ import {Ionicons} from '@expo/vector-icons';
+-import {useLocale} from '@/locale';
+-import {DREAM_PHASES,PHASE_COLORS,PHASE_LABELS,DreamPhase} from '@/discoveryData';
++import {useLocale} from '@/i18n/locale';
++import {DREAM_PHASES,PHASE_COLORS,PHASE_LABELS,DreamPhase} from '@/domain/publication';
+ 
+ const descriptions:Record<DreamPhase,string>={
+  'Rêve':'Planter une intention',
+diff --git a/frontend/app/my-dreams/[phase].tsx b/frontend/app/my-dreams/[phase].tsx
+index 87b7086..f281d2e 100644
+--- a/frontend/app/my-dreams/[phase].tsx
++++ b/frontend/app/my-dreams/[phase].tsx
+@@ -4,9 +4,9 @@ import {Image,Pressable,ScrollView,View} from 'react-native';
+ import {SafeAreaView} from 'react-native-safe-area-context';
+ import {router,useLocalSearchParams} from 'expo-router';
+ import {Ionicons} from '@expo/vector-icons';
+-import {Nav,TopActions} from '@/components';
+-import {OfflineDreamImage} from '@/OfflineDreamImage';
+-import {DREAM_PHASES,DreamPhase,PHASE_COLORS} from '@/discoveryData';
++import {Nav} from '@/components/navigation/Nav';import {TopActions} from '@/components/navigation/TopActions';
++import {OfflineDreamImage} from '@/components/publication/OfflineDreamImage';
++import {DREAM_PHASES,DreamPhase,PHASE_COLORS} from '@/domain/publication';
+ import {useDreams} from '@/domain/dreamRepository';
+ export default function Stage(){
+  const {phase}=useLocalSearchParams<{phase:string}>();
+diff --git a/frontend/app/my-space.tsx b/frontend/app/my-space.tsx
+index 4fb1e52..596b9d7 100644
+--- a/frontend/app/my-space.tsx
++++ b/frontend/app/my-space.tsx
+@@ -3,12 +3,12 @@ import {Pressable,ScrollView,Text,View} from 'react-native';
+ import {SafeAreaView} from 'react-native-safe-area-context';
+ import {router} from 'expo-router';
+ import {Ionicons} from '@expo/vector-icons';
+-import {Avatar,Nav,TopActions} from '@/components';
+-import {useApp} from '@/context';
+-import {DREAM_PHASES,PHASE_COLORS,PHASE_LABELS,PHASE_SYMBOLS} from '@/discoveryData';
++import {Avatar} from '@/components/ui/Avatar';import {Nav} from '@/components/navigation/Nav';import {TopActions} from '@/components/navigation/TopActions';
++import {useApp} from '@/context/AppContext';
++import {DREAM_PHASES,PHASE_COLORS,PHASE_LABELS,PHASE_SYMBOLS} from '@/domain/publication';
+ import {useDreams} from '@/domain/dreamRepository';
+-import {useAppTheme} from '@/AppTheme';
+-import {DreamPhaseIcon} from '@/DreamPhaseIcon';
++import {useAppTheme} from '@/theme/AppTheme';
++import {DreamPhaseIcon} from '@/icons/DreamPhaseIcon';
+ 
+ function DreamsOverview(){
+  const {items}=useDreams();
+diff --git a/frontend/app/person/[name].tsx b/frontend/app/person/[name].tsx
+index f348cab..1b6e133 100644
+--- a/frontend/app/person/[name].tsx
++++ b/frontend/app/person/[name].tsx
+@@ -1,11 +1,11 @@
+ import React from 'react';
+ import {Text,View} from 'react-native';
+ import {useLocalSearchParams} from 'expo-router';
+-import {personPublications} from '@/discoveryData';
+-import {PublicationDetail,DetailPanel} from '@/PublicationDetail';
+-import {DetailIntro} from '@/DetailIntro';
+-import {TalentArt} from '@/TalentArt';
+-import {TalentLevelDots} from '@/TalentLevelDots';
++import {personPublications} from '@/mocks/publications';
++import {PublicationDetail,DetailPanel} from '@/components/publication/PublicationDetail';
++import {DetailIntro} from '@/components/detail/DetailIntro';
++import {TalentArt} from '@/components/talent/TalentArt';
++import {TalentLevelDots} from '@/components/talent/TalentLevelDots';
+ export default function PublicPerson(){
+  const {name}=useLocalSearchParams<{name:string}>();
+  const person=personPublications.find(p=>p.author===name);
+diff --git a/frontend/app/prayers.tsx b/frontend/app/prayers.tsx
+index 6dac47a..bc5b689 100644
+--- a/frontend/app/prayers.tsx
++++ b/frontend/app/prayers.tsx
+@@ -4,11 +4,11 @@ import {Image,Pressable,ScrollView,View} from 'react-native';
+ import {SafeAreaView} from 'react-native-safe-area-context';
+ import {Ionicons} from '@expo/vector-icons';
+ import {router} from 'expo-router';
+-import {Nav,TopActions} from '@/components';
+-import {publications} from '@/discoveryData';
+-import {useApp} from '@/context';
+-import {publicationPath} from '@/PublicationGallery';
+-import {useAppTheme} from '@/AppTheme';
++import {Nav} from '@/components/navigation/Nav';import {TopActions} from '@/components/navigation/TopActions';
++import {publications} from '@/mocks/publications';
++import {useApp} from '@/context/AppContext';
++import {publicationPath} from '@/components/publication/PublicationGallery';
++import {useAppTheme} from '@/theme/AppTheme';
+ export default function Prayers(){const theme=useAppTheme();
+  const {prayerIds,togglePrayer,prayerRepetitions,setPrayerRepetition}=useApp();
+  const items=publications.filter(p=>prayerIds.includes(p.id));
+diff --git a/frontend/app/profile.tsx b/frontend/app/profile.tsx
+index db60403..db9087e 100644
+--- a/frontend/app/profile.tsx
++++ b/frontend/app/profile.tsx
+@@ -5,10 +5,10 @@ import {SafeAreaView} from 'react-native-safe-area-context';
+ import {Ionicons} from '@expo/vector-icons';
+ import {router} from 'expo-router';
+ import AsyncStorage from '@react-native-async-storage/async-storage';
+-import {Avatar,Nav,TopActions} from '@/components';
+-import {useApp} from '@/context';
+-import {useAuth} from '@/auth/AuthProvider';
+-import {useAppTheme} from '@/AppTheme';
++import {Avatar} from '@/components/ui/Avatar';import {Nav} from '@/components/navigation/Nav';import {TopActions} from '@/components/navigation/TopActions';
++import {useApp} from '@/context/AppContext';
++import {useAuth} from '@/context/AuthProvider';
++import {useAppTheme} from '@/theme/AppTheme';
+ type Talent={name:string;level:number;interests:string[]};
+ const initial:Talent[]=[
+  {name:'Batterie',level:2,interests:['Tandem','Enseigner']},
+diff --git a/frontend/app/publish/music.tsx b/frontend/app/publish/music.tsx
+index 6496da0..656018b 100644
+--- a/frontend/app/publish/music.tsx
++++ b/frontend/app/publish/music.tsx
+@@ -4,7 +4,7 @@ import {Pressable,ScrollView,View} from 'react-native';
+ import {SafeAreaView} from 'react-native-safe-area-context';
+ import {Ionicons} from '@expo/vector-icons';
+ import {router} from 'expo-router';
+-import {Nav} from '@/components';
++import {Nav} from '@/components/navigation/Nav';
+ export default function MusicSubmission(){
+  const [title,setTitle]=useState(''),[creator,setCreator]=useState(''),[source,setSource]=useState(''),[rights,setRights]=useState(''),[credit,setCredit]=useState('');
+  const [done,setDone]=useState(false);
+diff --git a/frontend/app/settings.tsx b/frontend/app/settings.tsx
+index 56bf08c..1080904 100644
+--- a/frontend/app/settings.tsx
++++ b/frontend/app/settings.tsx
+@@ -5,10 +5,10 @@ import {SafeAreaView} from 'react-native-safe-area-context';
+ import {Ionicons} from '@expo/vector-icons';
+ import {router} from 'expo-router';
+ import AsyncStorage from '@react-native-async-storage/async-storage';
+-import {Nav,TopActions} from '@/components';
+-import {useApp} from '@/context';
+-import {useAppTheme} from '@/AppTheme';
+-import {useLocale,Language,LANGUAGE_KEY} from '@/locale';
++import {Nav} from '@/components/navigation/Nav';import {TopActions} from '@/components/navigation/TopActions';
++import {useApp} from '@/context/AppContext';
++import {useAppTheme} from '@/theme/AppTheme';
++import {useLocale,Language,LANGUAGE_KEY} from '@/i18n/locale';
+ const choices:{id:Language;label:string}[]=[{id:'fr',label:'Français'},{id:'en',label:'English'},{id:'de',label:'Deutsch'},{id:'pt',label:'Português'}];
+ export default function Settings(){
+  const {language,setLanguage,t,tr}=useLocale();
+diff --git a/frontend/app/share/[id].tsx b/frontend/app/share/[id].tsx
+index 3372c40..2a8847e 100644
+--- a/frontend/app/share/[id].tsx
++++ b/frontend/app/share/[id].tsx
+@@ -4,8 +4,8 @@ import {Pressable,ScrollView,View} from 'react-native';
+ import {SafeAreaView} from 'react-native-safe-area-context';
+ import {Ionicons} from '@expo/vector-icons';
+ import {router,useLocalSearchParams} from 'expo-router';
+-import {Nav} from '@/components';
+-import {findPublication} from '@/discoveryData';
++import {Nav} from '@/components/navigation/Nav';
++import {findPublication} from '@/mocks/publications';
+ export default function ShareInside(){
+  const {id}=useLocalSearchParams<{id:string}>();
+  const item=findPublication(id||''); const [chosen,setChosen]=useState('');
+diff --git a/frontend/app/space.tsx b/frontend/app/space.tsx
+index 41007df..cb98e5a 100644
+--- a/frontend/app/space.tsx
++++ b/frontend/app/space.tsx
+@@ -4,12 +4,12 @@ import {Alert,Pressable,ScrollView,View} from 'react-native';
+ import {SafeAreaView} from 'react-native-safe-area-context';
+ import {Ionicons} from '@expo/vector-icons';
+ import {router} from 'expo-router';
+-import {Avatar,Nav,Pill,TopActions} from '@/components';
+-import {ContactSheet} from '@/ContactSheet';
+-import {colors as c} from '@/theme';
+-import {useApp} from '@/context';
+-import {FireHeader} from '@/FireHeader';
+-import {useLocale} from '@/locale';
++import {Avatar} from '@/components/ui/Avatar';import {Nav} from '@/components/navigation/Nav';import {Pill} from '@/components/ui/Pill';import {TopActions} from '@/components/navigation/TopActions';
++import {ContactSheet} from '@/components/ui/ContactSheet';
++import {colors as c} from '@/theme/colors';
++import {useApp} from '@/context/AppContext';
++import {FireHeader} from '@/components/fire/FireHeader';
++import {useLocale} from '@/i18n/locale';
+ 
+ type Kind='All'|'Chats'|'Collabs'|'Lessons';
+ type Activity={id:number,kind:Kind,name:string,detail:string,age:string,status:'online'|'busy'|'offline'};
+diff --git a/frontend/app/verse-export/[id].tsx b/frontend/app/verse-export/[id].tsx
+index b957316..577260e 100644
+--- a/frontend/app/verse-export/[id].tsx
++++ b/frontend/app/verse-export/[id].tsx
+@@ -4,8 +4,8 @@ import {Pressable,Share,View} from 'react-native';
+ import {SafeAreaView} from 'react-native-safe-area-context';
+ import {Ionicons} from '@expo/vector-icons';
+ import {router,useLocalSearchParams} from 'expo-router';
+-import {biblePosts,psalm150} from '@/discoveryData';
+-import {Nav} from '@/components';
++import {biblePosts,psalm150} from '@/mocks/publications';
++import {Nav} from '@/components/navigation/Nav';
+ export default function VerseExport(){
+  const {id}=useLocalSearchParams<{id:string}>();
+  const item=biblePosts.find(p=>p.id===id);
+diff --git a/frontend/assets/icons/README.md b/frontend/assets/icons/README.md
+index e5cfae7..b7df6d6 100644
+--- a/frontend/assets/icons/README.md
++++ b/frontend/assets/icons/README.md
+@@ -1,7 +1,7 @@
+ # JenLow Network icon collection
+ - fire-reference.png — user-provided reference for the preferred rounded magenta Fire icon.
+-- PrayerIcon.tsx at src/PrayerIcon.tsx — editable custom SVG prayer symbol.
+-- FireIcon.tsx at src/FireIcon.tsx — image component using the Fire reference.
++- PrayerIcon.tsx at src/icons/PrayerIcon.tsx — editable custom SVG prayer symbol.
++- FireIcon.tsx at src/icons/FireIcon.tsx — image component using the Fire reference.
+ - Remaining simple navigation pictograms currently use Ionicons via @expo/vector-icons.
+ 
+ Review icons here before adjusting visual design. Do not replace approved icons with generic emoji.
+diff --git a/frontend/docs/BACKEND-BOUNDARY.md b/frontend/docs/BACKEND-BOUNDARY.md
+index befa7c9..219044b 100644
+--- a/frontend/docs/BACKEND-BOUNDARY.md
++++ b/frontend/docs/BACKEND-BOUNDARY.md
+@@ -2,9 +2,9 @@
+ 
+ Frontend modules:
+ - src/domain/publicationRules.ts: pure V1 permission policy to implement again on the server.
+-- src/domain/demoCircle.ts: demo contact / matching vocabulary.
+-- src/context.tsx: demo client-side state and persistence. Replace with HTTP API clients when backend is available.
+-- src/ActionRail.tsx + src/DreamStageAction.tsx: permission-driven actions.
++- src/mocks/demoCircle.ts: demo contact / matching vocabulary.
++- src/context/AppContext.tsx: demo client-side state and persistence. Replace with HTTP API clients when backend is available.
++- src/components/detail/ActionRail.tsx + src/components/detail/DreamStageAction.tsx: permission-driven actions.
+ - screens under app/: public gallery/detail vs personal Dream workspace.
+ 
+ Backend may be **Java (Spring Boot)** or Python; the frontend doesn't depend on either. We will select database schema first and define REST/JSON contracts. Critical server entities:
+diff --git a/frontend/src/components/brand/NetworkLogo.tsx b/frontend/src/components/brand/NetworkLogo.tsx
+new file mode 100644
+index 0000000..c9fdcd3
+--- /dev/null
++++ b/frontend/src/components/brand/NetworkLogo.tsx
+@@ -0,0 +1,14 @@
++import React from 'react';
++import { Text, View } from 'react-native';
++import { colors } from '@/theme/colors';
++
++export function NetworkLogo() {
++  return (
++    <View accessibilityLabel="JenLow Network" style={{ width: 150, alignItems: 'center', height: 57 }}>
++      <Text style={{ color: '#080808', fontSize: 20, fontWeight: '700', lineHeight: 25 }}>JenLow</Text>
++      <Text style={{ fontFamily: 'Caveat_700Bold', color: colors.pink, fontSize: 33, lineHeight: 34, marginTop: -14, transform: [{ rotate: '-4deg' }] }}>
++        Network
++      </Text>
++    </View>
++  );
++}
+diff --git a/frontend/src/NetworkMark.tsx b/frontend/src/components/brand/NetworkMark.tsx
+similarity index 100%
+rename from frontend/src/NetworkMark.tsx
+rename to frontend/src/components/brand/NetworkMark.tsx
+diff --git a/frontend/src/ActionRail.tsx b/frontend/src/components/detail/ActionRail.tsx
+similarity index 91%
+rename from frontend/src/ActionRail.tsx
+rename to frontend/src/components/detail/ActionRail.tsx
+index ba6751b..366ce92 100644
+--- a/frontend/src/ActionRail.tsx
++++ b/frontend/src/components/detail/ActionRail.tsx
+@@ -2,13 +2,13 @@ import React,{useState} from 'react';
+ import {Modal,Pressable,Share,StyleSheet,Text,View} from 'react-native';
+ import {Ionicons} from '@expo/vector-icons';
+ import {router} from 'expo-router';
+-import {useApp} from './context';
+-import {dreams,Publication} from './discoveryData';
+-import {allowedActions,ActionId} from './domain/publicationRules';
+-import {myCircle,matchingTalents,myTalents} from './domain/demoCircle';
+-import {PrayerIcon} from './PrayerIcon';
+-import {FireIcon} from './FireIcon';
+-import {colors as c} from './theme';
++import {useApp} from '@/context/AppContext';
++import {dreams} from '@/mocks/publications';import {Publication} from '@/domain/publication';
++import {allowedActions,ActionId} from '@/domain/publicationRules';
++import {myCircle,matchingTalents,myTalents} from '@/mocks/demoCircle';
++import {PrayerIcon} from '@/icons/PrayerIcon';
++import {FireIcon} from '@/icons/FireIcon';
++import {colors as c} from '@/theme/colors';
+ 
+ export function ActionRail({item}:{item:Publication}){
+  const app=useApp(),[modal,setModal]=useState<'dream'|'circle'|null>(null);
+diff --git a/frontend/src/DetailIntro.tsx b/frontend/src/components/detail/DetailIntro.tsx
+similarity index 100%
+rename from frontend/src/DetailIntro.tsx
+rename to frontend/src/components/detail/DetailIntro.tsx
+diff --git a/frontend/src/DetailLayout.tsx b/frontend/src/components/detail/DetailLayout.tsx
+similarity index 89%
+rename from frontend/src/DetailLayout.tsx
+rename to frontend/src/components/detail/DetailLayout.tsx
+index 10bfd09..7920dc1 100644
+--- a/frontend/src/DetailLayout.tsx
++++ b/frontend/src/components/detail/DetailLayout.tsx
+@@ -4,13 +4,13 @@ import {SafeAreaView} from 'react-native-safe-area-context';
+ import {Ionicons} from '@expo/vector-icons';
+ import {router} from 'expo-router';
+ import Svg,{Defs,LinearGradient as SvgGradient,Stop,Rect} from 'react-native-svg';
+-import {Publication,PHASE_COLORS,PHASE_LABELS,publications,personPublications,publicationColor} from './discoveryData';
++import {Publication,PHASE_COLORS,PHASE_LABELS,publicationColor} from '@/domain/publication';import {publications,personPublications} from '@/mocks/publications';
+ import {ActionRail} from './ActionRail';
+-import {PublicationImageFade,DETAIL_FADE_HEIGHT} from './PublicationImageFade';
+-import {Nav,TopActions} from './components';
+-import {personPath} from './people';
+-import {PublicationGallery} from './PublicationGallery';
+-import {useAppTheme} from './AppTheme';
++import {PublicationImageFade,DETAIL_FADE_HEIGHT} from '@/components/publication/PublicationImageFade';
++import {Nav} from '@/components/navigation/Nav';import {TopActions} from '@/components/navigation/TopActions';
++import {personPath} from '@/mocks/people';
++import {PublicationGallery} from '@/components/publication/PublicationGallery';
++import {useAppTheme} from '@/theme/AppTheme';
+ 
+ 
+ /**
+diff --git a/frontend/src/DreamReferenceLayout.tsx b/frontend/src/components/detail/DreamReferenceLayout.tsx
+similarity index 88%
+rename from frontend/src/DreamReferenceLayout.tsx
+rename to frontend/src/components/detail/DreamReferenceLayout.tsx
+index 52bc73c..bd1416e 100644
+--- a/frontend/src/DreamReferenceLayout.tsx
++++ b/frontend/src/components/detail/DreamReferenceLayout.tsx
+@@ -1,12 +1,12 @@
+ import React from 'react';
+ import {Pressable,Text,View} from 'react-native';
+ import {Ionicons} from '@expo/vector-icons';
+-import {DreamPublication} from './discoveryData';
++import {DreamPublication} from '@/domain/publication';
+ import {DetailLayout} from './DetailLayout';
+ import {DetailIntro} from './DetailIntro';
+-import {DreamPhaseIcon} from './DreamPhaseIcon';
+-import {DetailPanel} from './PublicationDetail';
+-import {useApp} from './context';
++import {DreamPhaseIcon} from '@/icons/DreamPhaseIcon';
++import {DetailPanel} from '@/components/publication/PublicationDetail';
++import {useApp} from '@/context/AppContext';
+ export function DreamReferenceLayout({item}:{item:DreamPublication}){
+  const app=useApp();
+  const sameDream=()=>app.joinDream(item.id);
+diff --git a/frontend/src/DreamStageAction.tsx b/frontend/src/components/detail/DreamStageAction.tsx
+similarity index 92%
+rename from frontend/src/DreamStageAction.tsx
+rename to frontend/src/components/detail/DreamStageAction.tsx
+index 84b52e2..d640a0b 100644
+--- a/frontend/src/DreamStageAction.tsx
++++ b/frontend/src/components/detail/DreamStageAction.tsx
+@@ -2,10 +2,10 @@ import React from 'react';
+ import {Pressable,Share,StyleSheet,Text,View} from 'react-native';
+ import {Ionicons} from '@expo/vector-icons';
+ import {router} from 'expo-router';
+-import {DreamPublication} from './discoveryData';
+-import {useApp} from './context';
+-import {PrayerIcon} from './PrayerIcon';
+-import {colors as c} from './theme';
++import {DreamPublication} from '@/domain/publication';
++import {useApp} from '@/context/AppContext';
++import {PrayerIcon} from '@/icons/PrayerIcon';
++import {colors as c} from '@/theme/colors';
+ 
+ /** Phase-driven public interaction. Local demo state is not a public counter. */
+ export function DreamStageAction({dream}:{dream:DreamPublication}){
+diff --git a/frontend/src/FireHeader.tsx b/frontend/src/components/fire/FireHeader.tsx
+similarity index 87%
+rename from frontend/src/FireHeader.tsx
+rename to frontend/src/components/fire/FireHeader.tsx
+index 074ed70..89a3eb8 100644
+--- a/frontend/src/FireHeader.tsx
++++ b/frontend/src/components/fire/FireHeader.tsx
+@@ -1,8 +1,8 @@
+ import React from 'react';
+ import {Pressable,Text,View} from 'react-native';
+ import {router} from 'expo-router';
+-import {FireIcon} from './FireIcon';
+-import {useApp} from './context';
++import {FireIcon} from '@/icons/FireIcon';
++import {useApp} from '@/context/AppContext';
+ export function FireHeader(){
+  const {fireIds}=useApp();
+  return <Pressable onPress={()=>router.push('/fire')} accessibilityLabel="Ma liste Fire" style={{width:44,height:44,alignItems:'center',justifyContent:'center'}}>
+diff --git a/frontend/src/MusicLyrics.tsx b/frontend/src/components/music/MusicLyrics.tsx
+similarity index 100%
+rename from frontend/src/MusicLyrics.tsx
+rename to frontend/src/components/music/MusicLyrics.tsx
+diff --git a/frontend/src/MusicWaveform.tsx b/frontend/src/components/music/MusicWaveform.tsx
+similarity index 92%
+rename from frontend/src/MusicWaveform.tsx
+rename to frontend/src/components/music/MusicWaveform.tsx
+index f5422fa..654459a 100644
+--- a/frontend/src/MusicWaveform.tsx
++++ b/frontend/src/components/music/MusicWaveform.tsx
+@@ -4,9 +4,9 @@ import {Ionicons} from '@expo/vector-icons';
+ import {useAudioPlayer,useAudioPlayerStatus} from 'expo-audio';
+ 
+ const files=[
+- require('../assets/audio/pierre-01-douceur.wav'),
+- require('../assets/audio/pierre-02-esperance.wav'),
+- require('../assets/audio/pierre-03-lumiere.wav')
++ require('../../../assets/audio/pierre-01-douceur.wav'),
++ require('../../../assets/audio/pierre-02-esperance.wav'),
++ require('../../../assets/audio/pierre-03-lumiere.wav')
+ ] as const;
+ const heights=[12,26,42,20,55,70,35,19,48,28,61,43,17,31,57,24,15,44,34,21,48,64,27,19,47,34,58,25,18,39,30,13];
+ export function MusicWaveform({index,renderLayout}:{index:0|1|2;renderLayout?:(button:React.ReactNode,wave:React.ReactNode,time:number,seek:(seconds:number)=>void)=>React.ReactNode}){
+diff --git a/frontend/src/StoneDeck.tsx b/frontend/src/components/music/StoneDeck.tsx
+similarity index 94%
+rename from frontend/src/StoneDeck.tsx
+rename to frontend/src/components/music/StoneDeck.tsx
+index 024b4bd..64663d3 100644
+--- a/frontend/src/StoneDeck.tsx
++++ b/frontend/src/components/music/StoneDeck.tsx
+@@ -2,12 +2,12 @@ import React,{useEffect,useState} from 'react';
+ import {Pressable,StyleSheet,Text,View,useWindowDimensions} from 'react-native';
+ import {Ionicons} from '@expo/vector-icons';
+ import {useAudioPlayer,useAudioPlayerStatus} from 'expo-audio';
+-import {colors as c} from './theme';
++import {colors as c} from '@/theme/colors';
+ 
+ const sources=[
+-  require('../assets/audio/pierre-01-douceur.wav'),
+-  require('../assets/audio/pierre-02-esperance.wav'),
+-  require('../assets/audio/pierre-03-lumiere.wav')
++  require('../../../assets/audio/pierre-01-douceur.wav'),
++  require('../../../assets/audio/pierre-02-esperance.wav'),
++  require('../../../assets/audio/pierre-03-lumiere.wav')
+ ];
+ const names=['Douceur','Espérance','Lumière'];
+ const BARS=Array.from({length:38},(_,i)=> 8+Math.round(20*Math.abs(Math.sin(i*1.74)*.7 +Math.cos(i*.37)*.3)));
+diff --git a/frontend/src/components.tsx b/frontend/src/components/navigation/Nav.tsx
+similarity index 64%
+rename from frontend/src/components.tsx
+rename to frontend/src/components/navigation/Nav.tsx
+index 7b91bc5..b0a7fb6 100644
+--- a/frontend/src/components.tsx
++++ b/frontend/src/components/navigation/Nav.tsx
+@@ -1,15 +1,11 @@
+ import React from 'react';
+-import {Image,Pressable,Text,View} from 'react-native';
++import {Image,Pressable,View} from 'react-native';
+ import {Ionicons} from '@expo/vector-icons';
+ import {router,usePathname} from 'expo-router';
+-import {useLocale} from './locale';
+-import {FireIcon} from './FireIcon';
+-import {MessageIcon} from './MessageIcon';
+-import {useAuth} from './auth/AuthProvider';
+-import {useAppTheme} from './AppTheme';
+-export function Avatar({size=42}:{size?:number}){return <View style={{width:size,height:size,borderRadius:size/2,backgroundColor:'#e8e8e8',alignItems:'center',justifyContent:'center'}}><Ionicons name="person" color="#777" size={size*.58}/></View>}
+-export function Pill({text,active=false,onPress}:{text:string,active?:boolean,onPress:()=>void}){return <Pressable onPress={onPress} style={{paddingHorizontal:14,paddingVertical:8,borderWidth:1,borderColor:active?'#000':'#e8e8e8',borderRadius:22,backgroundColor:active?'#000':'#fff'}}><Text style={{color:active?'#fff':'#111',fontSize:12}}>{text}</Text></Pressable>}
+-export function TopActions(){const theme=useAppTheme();return <Pressable accessibilityLabel="Messages" onPress={()=>router.push('/space')} style={{width:44,height:44,alignItems:'center',justifyContent:'center'}}><MessageIcon size={25} color={theme.foreground}/></Pressable>}
++import {useLocale} from '@/i18n/locale';
++import {useAppTheme} from '@/theme/AppTheme';
++
++/** Bottom tab bar shown on the main screens. */
+ export function Nav(){const theme=useAppTheme();const path=usePathname();const {t}=useLocale();const links=[
+  {icon:'calendar-outline' as const,title:t('agenda'),path:'/agenda' as const,active:path==='/agenda'||path==='/prayers'},
+  {icon:'musical-note-outline' as const,title:t('music'),path:'/music-hub' as const,active:path.startsWith('/music')||path.startsWith('/publish/')},
+diff --git a/frontend/src/components/navigation/TopActions.tsx b/frontend/src/components/navigation/TopActions.tsx
+new file mode 100644
+index 0000000..d24d13d
+--- /dev/null
++++ b/frontend/src/components/navigation/TopActions.tsx
+@@ -0,0 +1,7 @@
++import React from 'react';
++import {Pressable} from 'react-native';
++import {router} from 'expo-router';
++import {MessageIcon} from '@/icons/MessageIcon';
++import {useAppTheme} from '@/theme/AppTheme';
++
++export function TopActions(){const theme=useAppTheme();return <Pressable accessibilityLabel="Messages" onPress={()=>router.push('/space')} style={{width:44,height:44,alignItems:'center',justifyContent:'center'}}><MessageIcon size={25} color={theme.foreground}/></Pressable>}
+diff --git a/frontend/src/OfflineDreamImage.tsx b/frontend/src/components/publication/OfflineDreamImage.tsx
+similarity index 100%
+rename from frontend/src/OfflineDreamImage.tsx
+rename to frontend/src/components/publication/OfflineDreamImage.tsx
+diff --git a/frontend/src/PublicationDetail.tsx b/frontend/src/components/publication/PublicationDetail.tsx
+similarity index 91%
+rename from frontend/src/PublicationDetail.tsx
+rename to frontend/src/components/publication/PublicationDetail.tsx
+index 3842446..94a7385 100644
+--- a/frontend/src/PublicationDetail.tsx
++++ b/frontend/src/components/publication/PublicationDetail.tsx
+@@ -1,8 +1,8 @@
+ import React,{useState} from 'react';
+ import {Pressable,Text,View} from 'react-native';
+ import {Ionicons} from '@expo/vector-icons';
+-import {DetailLayout} from './DetailLayout';
+-import type {Publication} from './discoveryData';
++import {DetailLayout} from '@/components/detail/DetailLayout';
++import type {Publication} from '@/domain/publication';
+ export function DetailPanel({title,children,foldable=false,defaultOpen=true}:{title:string;children:React.ReactNode;foldable?:boolean;defaultOpen?:boolean}){
+  const [open,setOpen]=useState(defaultOpen);
+  return <View style={{borderTopWidth:1,borderColor:'rgba(60,60,60,0.13)',paddingVertical:10,paddingLeft:7}}>
+diff --git a/frontend/src/PublicationGallery.tsx b/frontend/src/components/publication/PublicationGallery.tsx
+similarity index 92%
+rename from frontend/src/PublicationGallery.tsx
+rename to frontend/src/components/publication/PublicationGallery.tsx
+index 5b6c120..667fc3e 100644
+--- a/frontend/src/PublicationGallery.tsx
++++ b/frontend/src/components/publication/PublicationGallery.tsx
+@@ -2,12 +2,12 @@ import React,{useId} from 'react';
+ import {Image,Pressable,StyleSheet,Text,View} from 'react-native';
+ import {Ionicons} from '@expo/vector-icons';
+ import Svg,{Defs,LinearGradient as SvgGradient,Rect,Stop} from 'react-native-svg';
+-import {DreamPhaseIcon} from './DreamPhaseIcon';
+-import {TalentArt} from './TalentArt';
++import {DreamPhaseIcon} from '@/icons/DreamPhaseIcon';
++import {TalentArt} from '@/components/talent/TalentArt';
+ import {useAudioPlayer,useAudioPlayerStatus} from 'expo-audio';
+ import {router} from 'expo-router';
+-import {Publication,PHASE_COLORS,PHASE_LABELS,PHASE_SYMBOLS,verseExcerpt,publicationColor} from './discoveryData';
+-const audio=[require('../assets/audio/pierre-01-douceur.wav'),require('../assets/audio/pierre-02-esperance.wav'),require('../assets/audio/pierre-03-lumiere.wav')];
++import {Publication,PHASE_COLORS,PHASE_LABELS,PHASE_SYMBOLS,publicationColor} from '@/domain/publication';import {verseExcerpt} from '@/mocks/publications';
++const audio=[require('../../../assets/audio/pierre-01-douceur.wav'),require('../../../assets/audio/pierre-02-esperance.wav'),require('../../../assets/audio/pierre-03-lumiere.wav')];
+ export const publicationPath=(p:Publication)=>p.type==='dream'?({pathname:'/dream/[id]',params:{id:p.id}} as const):p.type==='music'?({pathname:'/music/[id]',params:{id:p.id}} as const):p.type==='talent'?({pathname:'/person/[name]',params:{name:p.author}} as const):({pathname:'/bible/[reference]',params:{reference:p.referenceId,verse:String(p.highlightedVerse)}} as const);
+ function MusicCard({index}:{index:0|1|2}){const player=useAudioPlayer(audio[index]);const status=useAudioPlayerStatus(player);const toggle=()=>{if(status.playing)player.pause();else{if(status.didJustFinish)void player.seekTo(0);player.play()}};return <Pressable onPress={toggle} accessibilityLabel={status.playing?'Pause sample':'Play 8 second sample'} style={s.play}><Ionicons name={status.playing?'pause':'play'} size={23} color="#fff"/></Pressable>}
+ export function PublicationTile({item}:{item:Publication}){
+diff --git a/frontend/src/PublicationImageFade.tsx b/frontend/src/components/publication/PublicationImageFade.tsx
+similarity index 100%
+rename from frontend/src/PublicationImageFade.tsx
+rename to frontend/src/components/publication/PublicationImageFade.tsx
+diff --git a/frontend/src/TalentArt.tsx b/frontend/src/components/talent/TalentArt.tsx
+similarity index 58%
+rename from frontend/src/TalentArt.tsx
+rename to frontend/src/components/talent/TalentArt.tsx
+index 7e6f233..7ac1a86 100644
+--- a/frontend/src/TalentArt.tsx
++++ b/frontend/src/components/talent/TalentArt.tsx
+@@ -4,18 +4,18 @@ import {Ionicons} from '@expo/vector-icons';
+ 
+ /** Original JenLow talent drawings, stored directly in frontend/assets. */
+ const drawings = {
+-  drums: require('../assets/drums.png'),
+-  cello: require('../assets/cello.png'),
+-  trumpet: require('../assets/trumpet.png'),
+-  'acoustic-guitar': require('../assets/acoustic-guitar.png'),
+-  singing: require('../assets/singing.png'),
+-  bass: require('../assets/bass.png'),
+-  violin: require('../assets/violin.png'),
+-  saxophone: require('../assets/saxophone.png'),
+-  piano: require('../assets/piano.png'),
+-  'double-bass': require('../assets/double-bass.png'),
+-  ukulele: require('../assets/ukulele.png'),
+-  'electric-guitar': require('../assets/electric-guitar.png'),
++  drums: require('../../../assets/drums.png'),
++  cello: require('../../../assets/cello.png'),
++  trumpet: require('../../../assets/trumpet.png'),
++  'acoustic-guitar': require('../../../assets/acoustic-guitar.png'),
++  singing: require('../../../assets/singing.png'),
++  bass: require('../../../assets/bass.png'),
++  violin: require('../../../assets/violin.png'),
++  saxophone: require('../../../assets/saxophone.png'),
++  piano: require('../../../assets/piano.png'),
++  'double-bass': require('../../../assets/double-bass.png'),
++  ukulele: require('../../../assets/ukulele.png'),
++  'electric-guitar': require('../../../assets/electric-guitar.png'),
+ } as const;
+ 
+ export type TalentIllustration = keyof typeof drawings | 'guitar' | 'cavaquinho' | 'viola' | 'camera';
+diff --git a/frontend/src/TalentLevelDots.tsx b/frontend/src/components/talent/TalentLevelDots.tsx
+similarity index 100%
+rename from frontend/src/TalentLevelDots.tsx
+rename to frontend/src/components/talent/TalentLevelDots.tsx
+diff --git a/frontend/src/components/ui/Avatar.tsx b/frontend/src/components/ui/Avatar.tsx
+new file mode 100644
+index 0000000..b425fb2
+--- /dev/null
++++ b/frontend/src/components/ui/Avatar.tsx
+@@ -0,0 +1,5 @@
++import React from 'react';
++import {View} from 'react-native';
++import {Ionicons} from '@expo/vector-icons';
++
++export function Avatar({size=42}:{size?:number}){return <View style={{width:size,height:size,borderRadius:size/2,backgroundColor:'#e8e8e8',alignItems:'center',justifyContent:'center'}}><Ionicons name="person" color="#777" size={size*.58}/></View>}
+diff --git a/frontend/src/ContactSheet.tsx b/frontend/src/components/ui/ContactSheet.tsx
+similarity index 97%
+rename from frontend/src/ContactSheet.tsx
+rename to frontend/src/components/ui/ContactSheet.tsx
+index 6bb4616..ecef8b5 100644
+--- a/frontend/src/ContactSheet.tsx
++++ b/frontend/src/components/ui/ContactSheet.tsx
+@@ -2,8 +2,8 @@ import React,{useRef,useState} from 'react';
+ import {Animated,Dimensions,PanResponder,Pressable,StyleSheet,Text,View} from 'react-native';
+ import {Ionicons} from '@expo/vector-icons';
+ import {router} from 'expo-router';
+-import {Avatar} from './components';
+-import {useApp} from './context';
++import {Avatar} from './Avatar';
++import {useApp} from '@/context/AppContext';
+ type Status='online'|'busy'|'offline';
+ const contacts:{id:string;name:string;subtitle:string;status:Status}[]=[
+  {id:'starryskies23',name:'starryskies23',subtitle:'Collaboration request',status:'busy'},
+diff --git a/frontend/src/components/ui/Pill.tsx b/frontend/src/components/ui/Pill.tsx
+new file mode 100644
+index 0000000..1614e77
+--- /dev/null
++++ b/frontend/src/components/ui/Pill.tsx
+@@ -0,0 +1,4 @@
++import React from 'react';
++import {Pressable,Text} from 'react-native';
++
++export function Pill({text,active=false,onPress}:{text:string,active?:boolean,onPress:()=>void}){return <Pressable onPress={onPress} style={{paddingHorizontal:14,paddingVertical:8,borderWidth:1,borderColor:active?'#000':'#e8e8e8',borderRadius:22,backgroundColor:active?'#000':'#fff'}}><Text style={{color:active?'#fff':'#111',fontSize:12}}>{text}</Text></Pressable>}
+diff --git a/frontend/src/context.tsx b/frontend/src/context/AppContext.tsx
+similarity index 99%
+rename from frontend/src/context.tsx
+rename to frontend/src/context/AppContext.tsx
+index aa646a2..bf8da85 100644
+--- a/frontend/src/context.tsx
++++ b/frontend/src/context/AppContext.tsx
+@@ -1,6 +1,6 @@
+ import React,{createContext,useCallback,useContext,useEffect,useMemo,useState} from 'react';
+ import AsyncStorage from '@react-native-async-storage/async-storage';
+-import {useAuth} from './auth/AuthProvider';
++import {useAuth} from './AuthProvider';
+ 
+ type Message={id:string;text:string;fromMe:boolean};
+ type ProfileChanges={name:string;bio:string;city:string;church:string};
+diff --git a/frontend/src/auth/AuthProvider.tsx b/frontend/src/context/AuthProvider.tsx
+similarity index 98%
+rename from frontend/src/auth/AuthProvider.tsx
+rename to frontend/src/context/AuthProvider.tsx
+index f623c7d..8b310aa 100644
+--- a/frontend/src/auth/AuthProvider.tsx
++++ b/frontend/src/context/AuthProvider.tsx
+@@ -3,7 +3,7 @@ import {Platform} from 'react-native';
+ import type {User,Session} from '@supabase/supabase-js';
+ import * as Linking from 'expo-linking';
+ import * as WebBrowser from 'expo-web-browser';
+-import {authConfigured,supabase} from './supabaseClient';
++import {authConfigured,supabase} from '@/lib/supabaseClient';
+ 
+ WebBrowser.maybeCompleteAuthSession();
+ 
+diff --git a/frontend/src/domain/dreamRepository.tsx b/frontend/src/domain/dreamRepository.tsx
+index 95c3809..0e6212a 100644
+--- a/frontend/src/domain/dreamRepository.tsx
++++ b/frontend/src/domain/dreamRepository.tsx
+@@ -1,8 +1,8 @@
+ import React,{createContext,useContext,useEffect,useState} from 'react';
+ import AsyncStorage from '@react-native-async-storage/async-storage';
+-import {dreams,DreamPhase} from '../discoveryData';
++import {dreams} from '@/mocks/publications';import {DreamPhase} from './publication';
+ import {DreamEntry,FlowerDraft,fromDemo,canEditField,nextPhase} from './dreamWorkspace';
+-import {useApp} from '../context';
++import {useApp} from '@/context/AppContext';
+ type Repo={items:DreamEntry[];create:(data:{title:string;summary:string;image:string;needs:string[]})=>string;update:(id:string,field:'summary'|'image'|'needs'|'motivation'|'goalDate'|'resolvedNeeds'|'paused',value:string|string[]|boolean)=>void;add:(id:string,text:string,kind:'notes'|'additions')=>void;setFlowerDraft:(id:string,draft:FlowerDraft)=>void;advance:(id:string)=>void;complete:(id:string,comment:string,mediaType:'audio'|'photo'|'video'|'text',mediaUrl?:string)=>void;remove:(id:string)=>void};
+ const Context=createContext<Repo|null>(null);
+ const initial=dreams.map(fromDemo);
+diff --git a/frontend/src/domain/dreamWorkspace.ts b/frontend/src/domain/dreamWorkspace.ts
+index dd3b24c..aaa8819 100644
+--- a/frontend/src/domain/dreamWorkspace.ts
++++ b/frontend/src/domain/dreamWorkspace.ts
+@@ -1,4 +1,4 @@
+-import type {DreamPhase,DreamPublication} from '../discoveryData';
++import type {DreamPhase,DreamPublication} from './publication';
+ export type DreamMedia={name:string;uri:string;kind:'photo'|'video'|'audio'|'document'};
+ export type FlowerDraft={story:string;attachments:DreamMedia[];reminderDate?:string};
+ export type DreamEntry={id:string;title:string;phase:DreamPhase;summary:string;image:string;needs:string[];notes:string[];additions:string[];motivation?:string;goalDate?:string;paused?:boolean;resolvedNeeds?:string[];flowerDraft?:FlowerDraft;testimony?:{comment:string;mediaType:'audio'|'photo'|'video'|'text';mediaUrl?:string;mediaItems?:DreamMedia[];date:string};createdAt:string;ownerIds:string[]};
+diff --git a/frontend/src/domain/publication.ts b/frontend/src/domain/publication.ts
+new file mode 100644
+index 0000000..cf55a78
+--- /dev/null
++++ b/frontend/src/domain/publication.ts
+@@ -0,0 +1,61 @@
++/**
++ * Publication domain types and dream-phase constants.
++ *
++ * A publication has exactly one content type: a Dream, a Music recording,
++ * or a Bible image/reference.
++ */
++export type DreamPhase = 'Rêve' | 'Initiation' | 'Croissance' | 'Témoignage';
++
++type PublicationBase = {
++  id: string;
++  title: string;
++  author: string;
++  /** Public member church/community, if supplied and verified. */
++  church?: string;
++  /** Public city, provided by the member (demo entries below use sample cities). */
++  location?: string;
++  image: string;
++  imageAlt: string;
++};
++
++export type DreamPublication = PublicationBase & {
++  type: 'dream';
++  phase: DreamPhase;
++  summary: string;
++  needs: string[];
++  motivation?: string;
++  goalDate?: string;
++  logs?: string[];
++};
++
++export type MusicPublication = PublicationBase & {
++  type: 'music';
++  audioIndex: 0 | 1 | 2;
++  songAuthor: string;
++  lyrics?: {time:number;text:string}[];
++  description: string;
++};
++
++export type BiblePublication = PublicationBase & {
++  type: 'bible';
++  reference: string;
++  referenceId: 'psalm-150';
++  highlightedVerse: number;
++};
++
++export type PersonPublication = PublicationBase & {type:'talent';talents:string[];description:string;experience?:string;skill:string;level:string;instrument:'drums'|'guitar'|'camera';seeking:string[]};
++export type Publication = DreamPublication | MusicPublication | BiblePublication | PersonPublication;
++
++export const PHASE_LABELS:Record<DreamPhase,string>={'Rêve':'Semence','Initiation':'Germination','Croissance':'Croissance','Témoignage':'Floraison'};
++export const DREAM_PHASES:DreamPhase[]=['Rêve','Initiation','Croissance','Témoignage'];
++export const PHASE_COLORS:Record<DreamPhase,{background:string;foreground:string}>={
++ 'Rêve':{background:'#EADDD1',foreground:'#654B3B'},
++ 'Initiation':{background:'#F4F6D9',foreground:'#526333'},
++ 'Croissance':{background:'#DDEFD7',foreground:'#275C3A'},
++ 'Témoignage':{background:'#F2E0E9',foreground:'#963E67'}
++};
++/** Shared publication background: identical in Discovery tiles and detail gradients. */
++export const NEUTRAL_PUBLICATION_COLOR='#D0D0CE';
++export const publicationColor=(publication:Publication):string=>publication.type==='dream'?PHASE_COLORS[publication.phase].background:NEUTRAL_PUBLICATION_COLOR;
++
++export const PHASE_SYMBOLS:Record<DreamPhase,string>={'Rêve':'●','Initiation':'🌱','Croissance':'🌿','Témoignage':'🌸'};
+diff --git a/frontend/src/domain/publicationRules.ts b/frontend/src/domain/publicationRules.ts
+index e927481..0ceeb6b 100644
+--- a/frontend/src/domain/publicationRules.ts
++++ b/frontend/src/domain/publicationRules.ts
+@@ -1,4 +1,4 @@
+-import type {Publication,DreamPhase} from '../discoveryData';
++import type {Publication,DreamPhase} from './publication';
+ 
+ /** Stable permission identifiers; backend can enforce the same policy. */
+ export type ActionId='share-internal'|'share-external'|'fire'|'prayer'|'inspire'|'verse-export'|'encourage'|'same-dream'|'offer-help'|'introduce'|'audio-collab';
+diff --git a/frontend/src/i18n/LocalizedText.tsx b/frontend/src/i18n/LocalizedText.tsx
+index 20f7975..1065619 100644
+--- a/frontend/src/i18n/LocalizedText.tsx
++++ b/frontend/src/i18n/LocalizedText.tsx
+@@ -1,6 +1,6 @@
+ import React from 'react';
+ import {Text as NativeText,TextInput as NativeTextInput,type TextProps,type TextInputProps} from 'react-native';
+-import {useLocale} from '../locale';
++import {useLocale} from './locale';
+ import {translateStatic} from './uiCopy';
+ 
+ /** Localizes only explicit UI strings. Member-written content is never translated. */
+diff --git a/frontend/src/locale.tsx b/frontend/src/i18n/locale.tsx
+similarity index 97%
+rename from frontend/src/locale.tsx
+rename to frontend/src/i18n/locale.tsx
+index 8d5532a..f808203 100644
+--- a/frontend/src/locale.tsx
++++ b/frontend/src/i18n/locale.tsx
+@@ -1,6 +1,6 @@
+ import React,{createContext,useContext,useEffect,useState} from 'react';
+ import AsyncStorage from '@react-native-async-storage/async-storage';
+-import {screenTranslations,ScreenTranslationKey} from './i18n';
++import {screenTranslations,ScreenTranslationKey} from '@/i18n';
+ export type Language='fr'|'en'|'de'|'pt';
+ export const LANGUAGE_KEY='jenlow.network.settings.language.v1';
+ const translations={
+diff --git a/frontend/src/i18n/uiCopy.ts b/frontend/src/i18n/uiCopy.ts
+index afbcbf5..392b378 100644
+--- a/frontend/src/i18n/uiCopy.ts
++++ b/frontend/src/i18n/uiCopy.ts
+@@ -1,4 +1,4 @@
+-import type {Language} from '../locale';
++import type {Language} from './locale';
+ export const copy:Record<string,[string,string,string,string]> = {
+   "Continuer l’inspiration": [
+     "Continuer l’inspiration",
+diff --git a/frontend/src/DreamPhaseIcon.tsx b/frontend/src/icons/DreamPhaseIcon.tsx
+similarity index 80%
+rename from frontend/src/DreamPhaseIcon.tsx
+rename to frontend/src/icons/DreamPhaseIcon.tsx
+index af8eed1..a5a4690 100644
+--- a/frontend/src/DreamPhaseIcon.tsx
++++ b/frontend/src/icons/DreamPhaseIcon.tsx
+@@ -1,7 +1,7 @@
+ import React from 'react';
+ import {Image,View} from 'react-native';
+-import type {DreamPhase} from './discoveryData';
+-import {dreamPhaseImageUris} from '../assets/dreamPhaseImages';
++import type {DreamPhase} from '@/domain/publication';
++import {dreamPhaseImageUris} from '../../assets/dreamPhaseImages';
+ 
+ /** User-supplied phase artwork. The same illustration appears in Discovery and detail views. */
+ export function DreamPhaseIcon({phase,size=26}:{phase:DreamPhase;size?:number}){
+diff --git a/frontend/src/FireIcon.tsx b/frontend/src/icons/FireIcon.tsx
+similarity index 100%
+rename from frontend/src/FireIcon.tsx
+rename to frontend/src/icons/FireIcon.tsx
+diff --git a/frontend/src/brand.tsx b/frontend/src/icons/GoogleMark.tsx
+similarity index 64%
+rename from frontend/src/brand.tsx
+rename to frontend/src/icons/GoogleMark.tsx
+index cd74ff9..35afa56 100644
+--- a/frontend/src/brand.tsx
++++ b/frontend/src/icons/GoogleMark.tsx
+@@ -1,18 +1,5 @@
+ import React from 'react';
+-import { Text, View } from 'react-native';
+ import Svg, { Path } from 'react-native-svg';
+-import { colors } from './theme';
+-
+-export function NetworkLogo() {
+-  return (
+-    <View accessibilityLabel="JenLow Network" style={{ width: 150, alignItems: 'center', height: 57 }}>
+-      <Text style={{ color: '#080808', fontSize: 20, fontWeight: '700', lineHeight: 25 }}>JenLow</Text>
+-      <Text style={{ fontFamily: 'Caveat_700Bold', color: colors.pink, fontSize: 33, lineHeight: 34, marginTop: -14, transform: [{ rotate: '-4deg' }] }}>
+-        Network
+-      </Text>
+-    </View>
+-  );
+-}
+ 
+ // Multicolour Google G (not a globe or a generic letter).
+ export function GoogleMark({ size = 18 }: { size?: number }) {
+diff --git a/frontend/src/MessageIcon.tsx b/frontend/src/icons/MessageIcon.tsx
+similarity index 100%
+rename from frontend/src/MessageIcon.tsx
+rename to frontend/src/icons/MessageIcon.tsx
+diff --git a/frontend/src/PrayerIcon.tsx b/frontend/src/icons/PrayerIcon.tsx
+similarity index 100%
+rename from frontend/src/PrayerIcon.tsx
+rename to frontend/src/icons/PrayerIcon.tsx
+diff --git a/frontend/src/SeedIcon.tsx b/frontend/src/icons/SeedIcon.tsx
+similarity index 100%
+rename from frontend/src/SeedIcon.tsx
+rename to frontend/src/icons/SeedIcon.tsx
+diff --git a/frontend/src/authApi.ts b/frontend/src/lib/authApi.ts
+similarity index 100%
+rename from frontend/src/authApi.ts
+rename to frontend/src/lib/authApi.ts
+diff --git a/frontend/src/pickDreamImage.ts b/frontend/src/lib/pickDreamImage.ts
+similarity index 100%
+rename from frontend/src/pickDreamImage.ts
+rename to frontend/src/lib/pickDreamImage.ts
+diff --git a/frontend/src/pickFlowerMedia.ts b/frontend/src/lib/pickFlowerMedia.ts
+similarity index 95%
+rename from frontend/src/pickFlowerMedia.ts
+rename to frontend/src/lib/pickFlowerMedia.ts
+index 45235d0..043ebac 100644
+--- a/frontend/src/pickFlowerMedia.ts
++++ b/frontend/src/lib/pickFlowerMedia.ts
+@@ -1,5 +1,5 @@
+ import {Platform} from 'react-native';
+-import type {DreamMedia} from './domain/dreamWorkspace';
++import type {DreamMedia} from '@/domain/dreamWorkspace';
+ 
+ export function pickFlowerMedia(onSelected:(files:DreamMedia[])=>void,onError:(message:string)=>void){
+  if(Platform.OS!=='web'){
+diff --git a/frontend/src/auth/supabaseClient.ts b/frontend/src/lib/supabaseClient.ts
+similarity index 100%
+rename from frontend/src/auth/supabaseClient.ts
+rename to frontend/src/lib/supabaseClient.ts
+diff --git a/frontend/src/domain/demoCircle.ts b/frontend/src/mocks/demoCircle.ts
+similarity index 100%
+rename from frontend/src/domain/demoCircle.ts
+rename to frontend/src/mocks/demoCircle.ts
+diff --git a/frontend/src/people.ts b/frontend/src/mocks/people.ts
+similarity index 89%
+rename from frontend/src/people.ts
+rename to frontend/src/mocks/people.ts
+index b77c639..33062e5 100644
+--- a/frontend/src/people.ts
++++ b/frontend/src/mocks/people.ts
+@@ -1,4 +1,4 @@
+-import {publications,personPublications} from './discoveryData';
++import {publications,personPublications} from './publications';
+ const known:Record<string,string[]>={Sarah:['Guitare','Louange'],Arnaud:['Musique','Collaboration'],Gustav:['Jardinage'],Esther:['Photographie'],David:['Piano'],Helena:['Musique'],Mila:['Guitare'],Léa:[],Noah:[]};
+ export const people=Array.from(new Set([...publications,...personPublications].map(p=>p.author))).map(name=>({name,talents:known[name]||[],posts:publications.filter(p=>p.author===name),skills:personPublications.filter(p=>p.author===name)}));
+ export const personPath=(name:string)=>({pathname:'/member/[name]' as const,params:{name}});
+diff --git a/frontend/src/discoveryData.ts b/frontend/src/mocks/publications.ts
+similarity index 72%
+rename from frontend/src/discoveryData.ts
+rename to frontend/src/mocks/publications.ts
+index 33c57d9..b1a7b75 100644
+--- a/frontend/src/discoveryData.ts
++++ b/frontend/src/mocks/publications.ts
+@@ -1,51 +1,12 @@
+ /**
+- * JenLow Network demo publications.
++ * JenLow Network demo publications (mock data).
+  *
+  * A publication has exactly one content type: a Dream, a Music recording,
+  * or a Bible image/reference. Photos are illustrative Unsplash images.
+  * A shared Bible image can later be populated by the native share-in extension.
+  */
+-export type DreamPhase = 'Rêve' | 'Initiation' | 'Croissance' | 'Témoignage';
++import type {Publication,PersonPublication,DreamPublication,MusicPublication,BiblePublication} from '@/domain/publication';
+ 
+-type PublicationBase = {
+-  id: string;
+-  title: string;
+-  author: string;
+-  /** Public member church/community, if supplied and verified. */
+-  church?: string;
+-  /** Public city, provided by the member (demo entries below use sample cities). */
+-  location?: string;
+-  image: string;
+-  imageAlt: string;
+-};
+-
+-export type DreamPublication = PublicationBase & {
+-  type: 'dream';
+-  phase: DreamPhase;
+-  summary: string;
+-  needs: string[];
+-  motivation?: string;
+-  goalDate?: string;
+-  logs?: string[];
+-};
+-
+-export type MusicPublication = PublicationBase & {
+-  type: 'music';
+-  audioIndex: 0 | 1 | 2;
+-  songAuthor: string;
+-  lyrics?: {time:number;text:string}[];
+-  description: string;
+-};
+-
+-export type BiblePublication = PublicationBase & {
+-  type: 'bible';
+-  reference: string;
+-  referenceId: 'psalm-150';
+-  highlightedVerse: number;
+-};
+-
+-export type PersonPublication = PublicationBase & {type:'talent';talents:string[];description:string;experience?:string;skill:string;level:string;instrument:'drums'|'guitar'|'camera';seeking:string[]};
+-export type Publication = DreamPublication | MusicPublication | BiblePublication | PersonPublication;
+ 
+ /** Stable photo IDs from Unsplash; we will replace these demo images with member uploads. */
+ export const publications: Publication[] = [
+@@ -130,17 +91,6 @@ export const musics = publications.filter((p): p is MusicPublication => p.type =
+ export const biblePosts = publications.filter((p): p is BiblePublication => p.type === 'bible');
+ export const findPublication = (id: string) => publications.find(item => item.id === id);
+ export const verseText = 'Que tout ce qui respire loue l’Éternel ! Louez l’Éternel !';
+-export const PHASE_LABELS:Record<DreamPhase,string>={'Rêve':'Semence','Initiation':'Germination','Croissance':'Croissance','Témoignage':'Floraison'};
+-export const DREAM_PHASES:DreamPhase[]=['Rêve','Initiation','Croissance','Témoignage'];
+-export const PHASE_COLORS:Record<DreamPhase,{background:string;foreground:string}>={
+- 'Rêve':{background:'#EADDD1',foreground:'#654B3B'},
+- 'Initiation':{background:'#F4F6D9',foreground:'#526333'},
+- 'Croissance':{background:'#DDEFD7',foreground:'#275C3A'},
+- 'Témoignage':{background:'#F2E0E9',foreground:'#963E67'}
+-};
+-/** Shared publication background: identical in Discovery tiles and detail gradients. */
+-export const NEUTRAL_PUBLICATION_COLOR='#D0D0CE';
+-export const publicationColor=(publication:Publication):string=>publication.type==='dream'?PHASE_COLORS[publication.phase].background:NEUTRAL_PUBLICATION_COLOR;
+ export const verseExcerpt=(p:BiblePublication)=>p.highlightedVerse===1?psalm150[0]:psalm150[5];
+ export const psalm150 = [
+   'Louez l’Éternel ! Louez Dieu dans son sanctuaire ! Louez-le dans l’étendue, où éclate sa puissance !',
+@@ -150,5 +100,3 @@ export const psalm150 = [
+   'Louez-le avec les cymbales sonores ! Louez-le avec les cymbales retentissantes !',
+   verseText,
+ ];
+-
+-export const PHASE_SYMBOLS:Record<DreamPhase,string>={'Rêve':'●','Initiation':'🌱','Croissance':'🌿','Témoignage':'🌸'};
+diff --git a/frontend/src/AppTheme.tsx b/frontend/src/theme/AppTheme.tsx
+similarity index 100%
+rename from frontend/src/AppTheme.tsx
+rename to frontend/src/theme/AppTheme.tsx
+diff --git a/frontend/src/theme.ts b/frontend/src/theme/colors.ts
+similarity index 100%
+rename from frontend/src/theme.ts
+rename to frontend/src/theme/colors.ts
+-- 
+2.43.0
+
