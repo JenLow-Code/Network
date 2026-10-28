@@ -29,7 +29,7 @@ export function DetailLayout({item,children,featured,headerIcon}:{item:Publicati
  const titleSize=Math.min(17,Math.max(7,Math.floor((headerWidth-8)/(Math.max(1,textUnits)*1.09))));
  const subtitle=item.type==='dream'?PHASE_LABELS[item.phase]:item.type==='music'?item.songAuthor:item.type==='talent'?item.level:'Louis Segond 1910';
  // Public community affiliation is not yet available in the demo dataset.
- const byline=item.church?`${item.author} · ${item.church}`:item.author;
+ const byline=`${item.author} · ${item.location?.trim() || 'Ville non renseignée'}`;
  const subtitleColor=item.type==='dream'?PHASE_COLORS[item.phase].foreground:theme.muted;
  return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
   <ScrollView contentContainerStyle={{maxWidth:680,width:'100%',alignSelf:'center',paddingBottom:50}}>
