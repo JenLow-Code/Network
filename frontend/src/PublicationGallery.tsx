@@ -33,7 +33,7 @@ export function PublicationTile({item}:{item:Publication}){
    {item.type==='music'?<MusicCard index={item.audioIndex}/>:null}
   </View>
   <View style={{padding:11,gap:5,minHeight:66}}>
-   <Text numberOfLines={3} style={{fontWeight:'700',fontSize:14,color:'#202020',letterSpacing:0.2}}>{item.title.toLocaleUpperCase('fr-FR')}</Text>
+   <Text numberOfLines={3} style={{fontWeight:'700',fontSize:14,color:'#202020',letterSpacing:0.2}}>{item.title}</Text>
    {/* Replace Caveat with Biro Script Plus after the licensed font is supplied and registered in app/_layout. */}
    <Text style={{fontFamily:'Caveat_700Bold',fontSize:17,lineHeight:22,color:'#565656'}}>{item.type==='music'?item.songAuthor:item.author}</Text>{item.type==='talent'?<View style={{flexDirection:'row',gap:5,marginTop:4}}>{['#287D58','#2ECA65','#EAC000','#F38A24','#CB245C'].map((color,i)=><View key={i} style={{width:9,height:9,borderRadius:5,backgroundColor:i<=({Débutant:1,Intermédiaire:2,Confirmée:3} as Record<string,number>)[item.level]?color:'#E6E6E6'}}/>)}</View>:null}
   </View>
