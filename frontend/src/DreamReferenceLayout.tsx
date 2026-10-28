@@ -6,7 +6,6 @@ import {router} from 'expo-router';
 import {DreamPublication,PHASE_COLORS,PHASE_LABELS,publications} from './discoveryData';
 import {Avatar,Nav,TopActions} from './components';
 import {ActionRail} from './ActionRail';
-import {DreamPhaseIcon} from './DreamPhaseIcon';
 import {PublicationGallery} from './PublicationGallery';
 import {personPath} from './people';
 import {useApp} from './context';
@@ -44,7 +43,7 @@ export function DreamReferenceLayout({item}:{item:DreamPublication}){
      </Pressable>
      <View style={{flexDirection:'row',alignItems:'stretch',gap:8}}>
       <View style={{flex:1,paddingTop:0}}>
-       <Panel title="Mon but" transparent collapsible={false} minHeight={0}><Text style={{fontSize:13,lineHeight:19,color:'#333'}}>{item.summary}</Text><View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',marginTop:2}}>{item.phase==='Rêve'?<Pressable onPress={sameDream} accessibilityLabel="Moi aussi" accessibilityRole="button" style={{flexDirection:'row',alignItems:'center',gap:5,paddingVertical:4,paddingHorizontal:7,borderRadius:10,backgroundColor:app.myDreamIds.includes(item.id)?'#F5E0EA':'#F2F2F2'}}><Ionicons name={app.myDreamIds.includes(item.id)?'checkmark-circle':'add-circle-outline'} size={15} color={app.myDreamIds.includes(item.id)?'#CB245C':'#555'}/><Text style={{fontSize:11,color:app.myDreamIds.includes(item.id)?'#CB245C':'#555'}}>{app.myDreamIds.includes(item.id)?'Moi aussi ✓':'Moi aussi'}</Text></Pressable>:<View/>}<View pointerEvents="none" style={{position:'absolute',right:-19,bottom:-8,opacity:0.65,zIndex:-1}}><DreamPhaseIcon phase={item.phase} size={53}/></View></View></Panel>
+       <Panel title="Mon but" transparent collapsible={false} minHeight={0}><Text style={{fontSize:13,lineHeight:19,color:'#333'}}>{item.summary}</Text><View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',marginTop:2}}>{item.phase==='Rêve'?<Pressable onPress={sameDream} accessibilityLabel="Moi aussi" accessibilityRole="button" style={{flexDirection:'row',alignItems:'center',gap:5,paddingVertical:4,paddingHorizontal:7,borderRadius:10,backgroundColor:app.myDreamIds.includes(item.id)?'#F5E0EA':'#F2F2F2'}}><Ionicons name={app.myDreamIds.includes(item.id)?'checkmark-circle':'add-circle-outline'} size={15} color={app.myDreamIds.includes(item.id)?'#CB245C':'#555'}/><Text style={{fontSize:11,color:app.myDreamIds.includes(item.id)?'#CB245C':'#555'}}>{app.myDreamIds.includes(item.id)?'Moi aussi ✓':'Moi aussi'}</Text></Pressable>:<View/>}</View></Panel>
        
        <Panel title="Ma motivation" initiallyOpen={false} minHeight={0}><Text style={{fontSize:13,lineHeight:20,color:'#333'}}>{item.motivation||'Ce rêve me tient à cœur.'}</Text></Panel>
        <Panel title="Les talents nécessaires" initiallyOpen={false} minHeight={0}>
