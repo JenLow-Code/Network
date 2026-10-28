@@ -9,7 +9,7 @@ const files=[
  require('../assets/audio/pierre-03-lumiere.wav')
 ] as const;
 const heights=[12,26,42,20,55,70,35,19,48,28,61,43,17,31,57,24,15,44,34,21,48,64,27,19,47,34,58,25,18,39,30,13];
-export function MusicWaveform({index}:{index:0|1|2}){
+export function MusicWaveform({index,renderLayout}:{index:0|1|2;renderLayout?:(button:React.ReactNode,wave:React.ReactNode)=>React.ReactNode}){
  const player=useAudioPlayer(files[index]);
  const status=useAudioPlayerStatus(player);
  const play=()=>{
@@ -19,11 +19,10 @@ export function MusicWaveform({index}:{index:0|1|2}){
  };
  const progress=status.duration>0?Math.min(1,status.currentTime/status.duration):0;
  const time=(n:number)=>Math.floor(n/60)+':'+String(Math.floor(n%60)).padStart(2,'0');
- return <View style={{marginTop:4,marginBottom:8,gap:6}}>
+ const button=<Pressable onPress={play} accessibilityLabel={status.playing?'Pause':'Écouter'} style={{width:56,height:56,borderRadius:28,backgroundColor:'#CB245C',alignItems:'center',justifyContent:'center'}}><Ionicons name={status.playing?'pause':'play'} size={26} color="#fff"/></Pressable>;
+ const waveform=
   <View style={{flexDirection:'row',alignItems:'center',gap:9}}>
-   <Pressable onPress={play} accessibilityLabel={status.playing?'Pause':'Écouter'} style={{width:46,height:46,borderRadius:23,backgroundColor:'#CB245C',alignItems:'center',justifyContent:'center'}}>
-    <Ionicons name={status.playing?'pause':'play'} size={22} color="#fff"/>
-   </Pressable>
+   {!renderLayout?button:null}
    <View style={{flex:1}}>
     <View style={{height:46,flexDirection:'row',alignItems:'center',justifyContent:'space-between',gap:2}}>
      {heights.map((h,i)=><Pressable key={i} onPress={()=>{if(status.duration>0)void player.seekTo(status.duration*i/heights.length)}} style={{flex:1,alignItems:'center',justifyContent:'center',height:34}}><View style={{width:'100%',maxWidth:3,height:Math.max(4,h*.46),borderRadius:5,backgroundColor:i/heights.length<=progress?'#CB245C':'#B8B3B5'}}/></Pressable>)}
@@ -35,4 +34,5 @@ export function MusicWaveform({index}:{index:0|1|2}){
    </View>
   </View>
  </View>;
+ return renderLayout? <>{renderLayout(button,waveform)}</>:waveform;
 }
