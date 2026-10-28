@@ -10,7 +10,7 @@ import {useApp} from './context';
 export function DreamReferenceLayout({item}:{item:DreamPublication}){
  const app=useApp();
  const sameDream=()=>app.joinDream(item.id);
- return <DetailLayout item={item} featured={<DetailIntro title="Mon but" compact artwork={<DreamPhaseIcon phase={item.phase} size={46}/>}>
+ return <DetailLayout item={item} featured={<DetailIntro title="MON BUT" compact artwork={<DreamPhaseIcon phase={item.phase} size={46}/>}>
   <Text style={{fontSize:14,lineHeight:21,color:'#333',marginTop:4}}>{item.summary}</Text>
   {item.phase==='Rêve'?<Pressable onPress={sameDream} accessibilityLabel="Moi aussi" style={{flexDirection:'row',gap:6,alignItems:'center',marginTop:9,alignSelf:'flex-start'}}><Ionicons name={app.myDreamIds.includes(item.id)?'checkmark-circle':'add-circle-outline'} size={18} color={app.myDreamIds.includes(item.id)?'#CB245C':'#444'}/><Text style={{fontSize:12,color:app.myDreamIds.includes(item.id)?'#CB245C':'#444'}}>Moi aussi</Text></Pressable>:null}
  </DetailIntro>}>
