@@ -38,7 +38,7 @@ export function ActionRail({item}:{item:Publication}){
  const primary=permitted.filter(a=>a!=='share-internal'&&a!=='prayer'&&a!=='same-dream');
  return <View style={s.rail}>
   {primary.map(action=><Pressable key={action} accessibilityLabel={action==='encourage'?'Encourager':action} accessibilityRole="button" onPress={()=>activity(action)} hitSlop={{top:6,bottom:6,left:0,right:0}} style={s.iconButton}>
-   {action==='fire'?<FireIcon size={21} active={app.fireIds.includes(item.id)}/>:action==='inspire'&&seeded?<Ionicons name="leaf" color={c.pink} size={19}/>:<Ionicons name={icons[action]||'add'} color={action==='inspire'&&seeded?'#CB245C':'#252525'} size={21}/>}
+   {action==='fire'?<FireIcon size={21} active={app.fireIds.includes(item.id)}/>:action==='inspire'&&seeded?<Ionicons name="leaf" color={c.pink} size={19}/>:<Ionicons name={action==='encourage'&&app.encouragementIds.includes(item.id)?'heart':icons[action]||'add'} color={action==='encourage'&&app.encouragementIds.includes(item.id)?'#CB245C':action==='inspire'&&seeded?'#CB245C':'#252525'} size={21}/>}
   </Pressable>)}
   {permitted.includes('prayer')?<Pressable accessibilityLabel="Prayer list" onPress={()=>activity('prayer')} hitSlop={{top:6,bottom:6,left:0,right:0}} style={s.iconButton}><PrayerIcon size={21} active={app.isPraying(item.id)}/></Pressable>:null}
   <Modal visible={modal!==null} transparent animationType="fade" onRequestClose={()=>setModal(null)}><View style={s.overlay}><View style={s.box}>
