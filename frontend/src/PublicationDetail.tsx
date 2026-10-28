@@ -5,7 +5,7 @@ import {DetailLayout} from './DetailLayout';
 import type {Publication} from './discoveryData';
 export function DetailPanel({title,children,foldable=false,defaultOpen=true}:{title:string;children:React.ReactNode;foldable?:boolean;defaultOpen?:boolean}){
  const [open,setOpen]=useState(defaultOpen);
- return <View style={{borderTopWidth:1,borderColor:'rgba(60,60,60,0.13)',paddingVertical:10}}>
+ return <View style={{borderTopWidth:1,borderColor:'rgba(60,60,60,0.13)',paddingVertical:10,paddingLeft:7}}>
   <Pressable disabled={!foldable} onPress={()=>setOpen(v=>!v)} style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',gap:5}}>
    <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.65} style={{fontFamily:'Caveat_700Bold',fontSize:21,color:'#262626',flexShrink:1}}>{title}</Text>
    {foldable?<Ionicons name={open?'chevron-up':'chevron-down'} size={17} color="#333"/>:null}
