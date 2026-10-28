@@ -17,8 +17,8 @@ export function PublicationImageFade({uri,background}:{uri:string;background:str
  if(!uri.trim())return null;
  return <View pointerEvents="none" style={styles.layer}>
   <Image source={{uri}} resizeMode="cover" onLoad={()=>setLoaded(true)} onError={()=>setLoaded(false)}
-   style={[StyleSheet.absoluteFillObject,{opacity:loaded?0.65:0}]}/>
-  {loaded?<Svg width="100%" height="100%" style={StyleSheet.absoluteFillObject}>
+   style={[StyleSheet.absoluteFill,{opacity:loaded?0.65:0}]}/>
+  {loaded?<Svg width="100%" height="100%" style={StyleSheet.absoluteFill}>
    <Defs><LinearGradient id={gradientId} x1="0%" y1="0%" x2="0%" y2="100%">
     <Stop offset="0%" stopColor={background} stopOpacity={0.23}/>
     <Stop offset="26%" stopColor={background} stopOpacity={0.50}/>
