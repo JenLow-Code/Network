@@ -11,7 +11,7 @@ export const publicationPath=(p:Publication)=>p.type==='dream'?({pathname:'/drea
 function MusicCard({index}:{index:0|1|2}){const player=useAudioPlayer(audio[index]);const status=useAudioPlayerStatus(player);const toggle=()=>{if(status.playing)player.pause();else{if(status.didJustFinish)void player.seekTo(0);player.play()}};return <Pressable onPress={toggle} accessibilityLabel={status.playing?'Pause sample':'Play 8 second sample'} style={s.play}><Ionicons name={status.playing?'pause':'play'} size={23} color="#fff"/></Pressable>}
 export function PublicationTile({item}:{item:Publication}){
  const open=()=>router.push(publicationPath(item) as any);
- const bg=item.type==='dream'?PHASE_COLORS[item.phase].background:item.type==='bible'?PHASE_COLORS['Témoignage'].background:'#fff';
+ const bg=item.type==='dream'?PHASE_COLORS[item.phase].background:'#F1F1EF';
  return <Pressable onPress={open} accessibilityLabel={'Open '+item.title} style={{borderRadius:12,overflow:'hidden',borderWidth:1,borderColor:'#e8e8e8',backgroundColor:bg}}>
   <View style={{height:item.type==='bible'?230:156,position:'relative',margin:10,marginBottom:0,borderRadius:9,overflow:'hidden'}}>
    {item.type==='talent'?<View style={{flex:1,alignItems:'center',justifyContent:'center'}}><TalentArt kind={item.instrument} size={110}/></View>:<Image source={{uri:item.image}} resizeMode="cover" style={{width:'100%',height:'100%'}}/>}
