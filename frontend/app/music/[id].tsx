@@ -9,6 +9,7 @@ export default function MusicDetail(){
  const item=musics.find(x=>x.id===id);
  if(!item)return <View style={{padding:24}}><Text>Music not found</Text></View>;
  return <PublicationDetail item={item}>
-  <DetailPanel title="Description"><Text style={{fontSize:14,lineHeight:22,color:'#444'}}>{item.description}</Text></DetailPanel><DetailPanel title="Écouter"><MusicWaveform index={item.audioIndex}/></DetailPanel>
+  <View style={{paddingTop:38,paddingBottom:14}}><MusicWaveform index={item.audioIndex}/></View>
+  <DetailPanel title="Description" foldable defaultOpen={false}><Text style={{fontSize:14,lineHeight:22,color:'#444'}}>{item.description}</Text></DetailPanel>
  </PublicationDetail>;
 }
