@@ -2,6 +2,9 @@ import React,{useEffect,useId,useState} from 'react';
 import {Image,StyleSheet,View} from 'react-native';
 import Svg,{Defs,LinearGradient,Rect,Stop} from 'react-native-svg';
 
+/** The photo fade and the fallback color fade must end at the same fixed height. */
+export const DETAIL_FADE_HEIGHT=300;
+
 /**
  * Soft photographic fade used only by Dreams and Music.
  * The surrounding detail layout always draws its original phase/neutral gradient,
@@ -28,5 +31,5 @@ export function PublicationImageFade({uri,background}:{uri:string;background:str
  </View>;
 }
 const styles=StyleSheet.create({
- layer:{position:'absolute',top:0,left:0,right:0,height:300,overflow:'hidden'}
+ layer:{position:'absolute',top:0,left:0,right:0,height:DETAIL_FADE_HEIGHT,overflow:'hidden'}
 });
