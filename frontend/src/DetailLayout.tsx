@@ -46,7 +46,7 @@ export function DetailLayout({item,children,featured,headerIcon}:{item:Publicati
     </View>
     <TopActions/>
    </View>
-   <View style={{position:'relative',minHeight:DETAIL_FADE_HEIGHT,paddingTop:item.type==='dream'||item.type==='talent'?8:item.type==='bible'?20:24,paddingBottom:14}}>
+   <View style={{position:'relative',minHeight:DETAIL_FADE_HEIGHT,paddingTop:item.type==='dream'||item.type==='talent'?8:item.type==='bible'?0:24,paddingBottom:14}}>
     {/* Fixed-height fade: expanding panels must not stretch the gradient. */}
     <View pointerEvents="none" style={{position:'absolute',top:0,height:DETAIL_FADE_HEIGHT,left:0,right:0}}>
      <Svg width="100%" height="100%">
