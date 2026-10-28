@@ -49,7 +49,7 @@ export function DetailLayout({item,children,featured,headerIcon}:{item:Publicati
     </View>
     <TopActions/>
    </View>
-   <View style={{position:'relative',paddingTop:item.type==='music'?24:46,paddingBottom:14}}>
+   <View style={{position:'relative',paddingTop:item.type==='bible'?20:item.type==='music'?24:46,paddingBottom:14}}>
     <View pointerEvents="none" style={{position:'absolute',top:0,bottom:0,left:0,right:0}}>
      <Svg width="100%" height="100%">
       <Defs><SvgGradient id={gradientId} x1="0%" y1="0%" x2="0%" y2="100%">
@@ -59,14 +59,14 @@ export function DetailLayout({item,children,featured,headerIcon}:{item:Publicati
      </Svg>
     </View>
     {(item.type==='dream'||item.type==='music')&&item.image?.trim()?<PublicationImageFade key={item.id} uri={item.image} background={theme.background}/>:null}
-    {/* A single, shared upper-right anchor for all publication symbols.
+    {/* A single, shared upper-left anchor for all publication symbols.
          Music supplies its real Play/Pause control; Bible has no symbol. */}
-    {item.type!=='bible'?<View pointerEvents={item.type==='music'?'box-none':'none'} style={{position:'absolute',top:0,right:10,width:104,minHeight:96,alignItems:'center',justifyContent:'center',zIndex:3}}>
+    {item.type!=='bible'?<View pointerEvents={item.type==='music'?'box-none':'none'} style={{position:'absolute',top:0,left:19,width:104,minHeight:96,alignItems:'center',justifyContent:'center',zIndex:3}}>
      {item.type==='dream'?<DreamPhaseIcon phase={item.phase} size={72}/>:
       item.type==='talent'?<><TalentArt kind={item.instrument} size={98}/><TalentLevelDots level={item.level}/></>:
       headerIcon}
     </View>:null}
-    <View style={{width:'100%',paddingTop:12,paddingBottom:13,paddingLeft:19,paddingRight:19,position:'relative'}}> 
+    <View style={{width:'100%',paddingTop:item.type==='dream'||item.type==='talent'?92:12,paddingBottom:13,paddingLeft:19,paddingRight:19,position:'relative'}}> 
      <View style={{flexDirection:'row',alignItems:'stretch',gap:8}}>
       <View style={{flex:1,minWidth:0}}>{featured}{children}</View>
       <View style={{width:48,justifyContent:'flex-end',alignItems:'center',paddingBottom:5}}>
