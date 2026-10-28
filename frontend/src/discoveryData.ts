@@ -28,6 +28,7 @@ export type DreamPublication = PublicationBase & {
 export type MusicPublication = PublicationBase & {
   type: 'music';
   audioIndex: 0 | 1 | 2;
+  songAuthor: string;
   description: string;
 };
 
@@ -61,7 +62,7 @@ export const publications: Publication[] = [
   },
   {
     id: 'premier-chant', type: 'music', title: 'Mon premier morceau',
-    author: 'David', audioIndex: 0,
+    author: 'David', songAuthor: 'Auteur non renseigné', audioIndex: 0,
     description: 'Un premier essai partagé pour encourager les autres à se lancer.',
     image: 'https://images.unsplash.com/photo-1520523839897-bd0b52f945a0?w=900&q=82',
     imageAlt: 'Piano keyboard',
@@ -76,7 +77,7 @@ export const publications: Publication[] = [
   },
   {
     id: 'espoir', type: 'music', title: 'Espérance',
-    author: 'Helena', audioIndex: 1,
+    author: 'Helena', songAuthor: 'Auteur non renseigné', audioIndex: 1,
     description: 'Une mélodie instrumentale en cours de création.',
     image: 'https://images.unsplash.com/photo-1516280440614-37939bbacd81?w=900&q=82',
     imageAlt: 'Musician performing',
@@ -99,7 +100,7 @@ export const publications: Publication[] = [
   },
   {
     id: 'lumiere', type: 'music', title: 'Lumière',
-    author: 'Mila', audioIndex: 2,
+    author: 'Mila', songAuthor: 'Auteur non renseigné', audioIndex: 2,
     description: 'Une petite idée musicale, encore imparfaite mais partagée.',
     image: 'https://images.unsplash.com/photo-1510915361894-db8b60106cb1?w=900&q=82',
     imageAlt: 'Acoustic guitar detail',
@@ -127,9 +128,9 @@ export const verseText = 'Que tout ce qui respire loue l’Éternel ! Louez l’
 export const PHASE_LABELS:Record<DreamPhase,string>={'Rêve':'Semence','Initiation':'Germination','Croissance':'Croissance','Témoignage':'Floraison'};
 export const DREAM_PHASES:DreamPhase[]=['Rêve','Initiation','Croissance','Témoignage'];
 export const PHASE_COLORS:Record<DreamPhase,{background:string;foreground:string}>={
- 'Rêve':{background:'#C8B29B',foreground:'#5B4031'},
- 'Initiation':{background:'#E2EAAE',foreground:'#526333'},
- 'Croissance':{background:'#A9D5A6',foreground:'#275C3A'},
+ 'Rêve':{background:'#D8C6B4',foreground:'#5B4031'},
+ 'Initiation':{background:'#EEF1C9',foreground:'#526333'},
+ 'Croissance':{background:'#C5E2C0',foreground:'#275C3A'},
  'Témoignage':{background:'#F2E0E9',foreground:'#963E67'}
 };
 export const verseExcerpt=(p:BiblePublication)=>p.highlightedVerse===1?psalm150[0]:psalm150[5];
