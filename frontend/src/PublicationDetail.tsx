@@ -13,6 +13,6 @@ export function DetailPanel({title,children,foldable=false,defaultOpen=true}:{ti
   {open?<View style={{marginTop:5}}>{children}</View>:null}
  </View>;
 }
-export function PublicationDetail({item,children,media}:{item:Publication;children:React.ReactNode;media?:React.ReactNode;onImageDoubleTap?:()=>void}){
- return <DetailLayout item={item} featured={media}>{children}</DetailLayout>;
+export function PublicationDetail({item,children,media,headerIcon}:{item:Publication;children:React.ReactNode;media?:React.ReactNode;headerIcon?:React.ReactNode;onImageDoubleTap?:()=>void}){
+ return <DetailLayout item={item} featured={media} headerIcon={headerIcon}>{children}</DetailLayout>;
 }
