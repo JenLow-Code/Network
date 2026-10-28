@@ -21,12 +21,12 @@ export function MusicWaveform({index}:{index:0|1|2}){
  const time=(n:number)=>Math.floor(n/60)+':'+String(Math.floor(n%60)).padStart(2,'0');
  return <View style={{marginTop:4,marginBottom:8,gap:6}}>
   <View style={{flexDirection:'row',alignItems:'center',gap:9}}>
-   <Pressable onPress={play} accessibilityLabel={status.playing?'Pause':'Écouter'} style={{width:32,height:32,borderRadius:16,backgroundColor:'#CB245C',alignItems:'center',justifyContent:'center'}}>
-    <Ionicons name={status.playing?'pause':'play'} size={16} color="#fff"/>
+   <Pressable onPress={play} accessibilityLabel={status.playing?'Pause':'Écouter'} style={{width:46,height:46,borderRadius:23,backgroundColor:'#CB245C',alignItems:'center',justifyContent:'center'}}>
+    <Ionicons name={status.playing?'pause':'play'} size={22} color="#fff"/>
    </Pressable>
    <View style={{flex:1}}>
-    <View style={{height:34,flexDirection:'row',alignItems:'center',justifyContent:'space-between',gap:2}}>
-     {heights.map((h,i)=><Pressable key={i} onPress={()=>{if(status.duration>0)void player.seekTo(status.duration*i/heights.length)}} style={{flex:1,alignItems:'center',justifyContent:'center',height:34}}><View style={{width:'100%',maxWidth:3,height:Math.max(3,h*.4),borderRadius:5,backgroundColor:i/heights.length<=progress?'#CB245C':'#B8B3B5'}}/></Pressable>)}
+    <View style={{height:46,flexDirection:'row',alignItems:'center',justifyContent:'space-between',gap:2}}>
+     {heights.map((h,i)=><Pressable key={i} onPress={()=>{if(status.duration>0)void player.seekTo(status.duration*i/heights.length)}} style={{flex:1,alignItems:'center',justifyContent:'center',height:34}}><View style={{width:'100%',maxWidth:3,height:Math.max(4,h*.46),borderRadius:5,backgroundColor:i/heights.length<=progress?'#CB245C':'#B8B3B5'}}/></Pressable>)}
     </View>
     <View style={{flexDirection:'row',justifyContent:'space-between',marginTop:1}}>
      <Text style={{fontSize:11,color:'#666'}}>{time(status.currentTime)}</Text>
