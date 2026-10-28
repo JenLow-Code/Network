@@ -21,7 +21,7 @@ export function PublicationTile({item}:{item:Publication}){
   </View>
   <View style={{padding:11,gap:5,minHeight:66}}>
    <Text numberOfLines={3} style={{fontWeight:'700',fontSize:14,color:'#202020'}}>{item.title}</Text>
-   <Text style={{fontSize:11,color:'#777'}}>{item.author}</Text>{item.type==='talent'?<View style={{flexDirection:'row',gap:5,marginTop:4}}>{['#287D58','#2ECA65','#EAC000','#F38A24','#CB245C'].map((color,i)=><View key={i} style={{width:9,height:9,borderRadius:5,backgroundColor:i<=({Débutant:1,Intermédiaire:2,Confirmée:3} as Record<string,number>)[item.level]?color:'#E6E6E6'}}/>)}</View>:null}
+   <Text style={{fontSize:11,color:'#777'}}>{item.type==='music'?item.songAuthor:item.author}</Text>{item.type==='talent'?<View style={{flexDirection:'row',gap:5,marginTop:4}}>{['#287D58','#2ECA65','#EAC000','#F38A24','#CB245C'].map((color,i)=><View key={i} style={{width:9,height:9,borderRadius:5,backgroundColor:i<=({Débutant:1,Intermédiaire:2,Confirmée:3} as Record<string,number>)[item.level]?color:'#E6E6E6'}}/>)}</View>:null}
   </View>
  </Pressable>;
 }
