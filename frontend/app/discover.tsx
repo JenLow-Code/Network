@@ -28,7 +28,7 @@ export default function Discover(){const {tr}=useLocale();const theme=useAppThem
    <View style={{paddingTop:9,paddingBottom:8}}>
     <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',minHeight:34,marginBottom:10}}>
      <Text accessibilityLabel="JenLow" style={{fontSize:19,fontWeight:'900',letterSpacing:2.1,fontStyle:'italic',color:theme.foreground,transform:[{scaleX:1.12}],marginLeft:5}}>JENLOW</Text>
-     <NetworkMark size={26} color={theme.foreground}/>
+     <View style={{flexDirection:'row',alignItems:'center',gap:4}}><NetworkMark size={26} color={theme.foreground}/><TopActions/></View>
     </View>
     <View style={{alignSelf:'flex-start',maxWidth:'100%',paddingBottom:4}}>
      <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.65} style={{fontFamily:'serif',fontWeight:'400',fontSize:40,letterSpacing:-1.4,lineHeight:46,color:theme.foreground}}>DÉCOUVRIR</Text>
