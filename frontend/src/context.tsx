@@ -90,7 +90,7 @@ export function Provider({children}:{children:React.ReactNode}){
  useEffect(()=>{if(email&&readyFor===email)void AsyncStorage.setItem('jenlow.proposals.'+email,JSON.stringify(musicProposalIds)).catch(()=>{});},[email,readyFor,musicProposalIds]);
  useEffect(()=>{if(email&&readyFor===email)void AsyncStorage.setItem('jenlow.prayer.repeats.'+email,JSON.stringify(prayerRepetitions)).catch(()=>{})},[email,readyFor,prayerRepetitions]);
  const setPrayerRepetition=useCallback((id:string,repeat:'once'|'daily'|'weekly')=>setPrayerRepetitions(p=>({...p,[id]:repeat})),[]);
- const encourage=useCallback((id:string)=>setEncouragementIds(p=>p.includes(id)?p:[...p,id]),[]);
+ const encourage=useCallback((id:string)=>setEncouragementIds(p=>p.includes(id)?p.filter(x=>x!==id):[...p,id]),[]);
  const proposeMusic=useCallback((id:string)=>setMusicProposalIds(p=>p.includes(id)?p:[...p,id]),[]);
  const togglePrayer=useCallback((id:string)=>setPrayerByDate(prev=>{const exists=Object.values(prev).some(ids=>ids.includes(id));if(exists)return Object.fromEntries(Object.entries(prev).map(([day,ids])=>[day,ids.filter(x=>x!==id)]));const key=todayKey();return {...prev,[key]:[...(prev[key]||[]),id]}}),[]);
  const joinDream=useCallback((id:string)=>setMyDreamIds(prev=>prev.includes(id)?prev.filter(x=>x!==id):[...prev,id]),[]);
