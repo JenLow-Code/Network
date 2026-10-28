@@ -7,9 +7,6 @@ import Svg,{Defs,LinearGradient as SvgGradient,Stop,Rect} from 'react-native-svg
 import {Publication,PHASE_COLORS,PHASE_LABELS,publications,personPublications,publicationColor} from './discoveryData';
 import {ActionRail} from './ActionRail';
 import {PublicationImageFade,DETAIL_FADE_HEIGHT} from './PublicationImageFade';
-import {DreamPhaseIcon} from './DreamPhaseIcon';
-import {TalentArt} from './TalentArt';
-import {TalentLevelDots} from './TalentLevelDots';
 import {Nav,TopActions} from './components';
 import {personPath} from './people';
 import {PublicationGallery} from './PublicationGallery';
@@ -49,7 +46,7 @@ export function DetailLayout({item,children,featured,headerIcon}:{item:Publicati
     </View>
     <TopActions/>
    </View>
-   <View style={{position:'relative',minHeight:DETAIL_FADE_HEIGHT,paddingTop:item.type==='bible'?20:item.type==='music'?24:46,paddingBottom:14}}>
+   <View style={{position:'relative',minHeight:DETAIL_FADE_HEIGHT,paddingTop:item.type==='dream'||item.type==='talent'?8:item.type==='bible'?20:24,paddingBottom:14}}>
     {/* Fixed-height fade: expanding panels must not stretch the gradient. */}
     <View pointerEvents="none" style={{position:'absolute',top:0,height:DETAIL_FADE_HEIGHT,left:0,right:0}}>
      <Svg width="100%" height="100%">
@@ -60,14 +57,13 @@ export function DetailLayout({item,children,featured,headerIcon}:{item:Publicati
      </Svg>
     </View>
     {(item.type==='dream'||item.type==='music')&&item.image?.trim()?<PublicationImageFade key={item.id} uri={item.image} background={theme.background}/>:null}
-    {/* A single, shared upper-left anchor for all publication symbols.
-         Music supplies its real Play/Pause control; Bible has no symbol. */}
-    {item.type!=='bible'?<View pointerEvents={item.type==='music'?'box-none':'none'} style={{position:'absolute',top:0,left:19,width:104,minHeight:96,alignItems:'center',justifyContent:'center',zIndex:3}}>
-     {item.type==='dream'?<DreamPhaseIcon phase={item.phase} size={72}/>:
-      item.type==='talent'?<><TalentArt kind={item.instrument} size={98}/><TalentLevelDots level={item.level}/></>:
-      headerIcon}
+    {/* Music alone keeps the interactive Play/Pause control in its upper-left slot.
+         Dream and Talent artwork now sits beside the featured heading below. */}
+    {item.type==='music'&&headerIcon?<View pointerEvents="box-none"
+      style={{position:'absolute',top:0,left:19,width:104,minHeight:96,alignItems:'center',justifyContent:'center',zIndex:3}}>
+      {headerIcon}
     </View>:null}
-    <View style={{width:'100%',paddingTop:item.type==='dream'||item.type==='talent'?92:12,paddingBottom:13,paddingLeft:19,paddingRight:19,position:'relative'}}> 
+    <View style={{width:'100%',paddingTop:12,paddingBottom:13,paddingLeft:19,paddingRight:19,position:'relative'}}> 
      <View style={{flexDirection:'row',alignItems:'stretch',gap:8}}>
       <View style={{flex:1,minWidth:0}}>{featured}{children}</View>
       <View style={{width:48,justifyContent:'flex-end',alignItems:'center',paddingBottom:5}}>
