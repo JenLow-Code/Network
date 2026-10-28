@@ -9,7 +9,7 @@ const files=[
  require('../assets/audio/pierre-03-lumiere.wav')
 ] as const;
 const heights=[12,26,42,20,55,70,35,19,48,28,61,43,17,31,57,24,15,44,34,21,48,64,27,19,47,34,58,25,18,39,30,13];
-export function MusicWaveform({index,renderLayout}:{index:0|1|2;renderLayout?:(button:React.ReactNode,wave:React.ReactNode)=>React.ReactNode}){
+export function MusicWaveform({index,renderLayout}:{index:0|1|2;renderLayout?:(button:React.ReactNode,wave:React.ReactNode,time:number,seek:(seconds:number)=>void)=>React.ReactNode}){
  const player=useAudioPlayer(files[index]);
  const status=useAudioPlayerStatus(player);
  const play=()=>{
@@ -33,5 +33,5 @@ export function MusicWaveform({index,renderLayout}:{index:0|1|2;renderLayout?:(b
     </View>
    </View>
   </View>;
- return renderLayout? <>{renderLayout(button,waveform)}</>:waveform;
+ return renderLayout? <>{renderLayout(button,waveform,status.currentTime,(seconds:number)=>{void player.seekTo(seconds)})}</>:waveform;
 }
