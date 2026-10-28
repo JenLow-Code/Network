@@ -17,24 +17,18 @@ export function PublicationTile({item}:{item:Publication}){
  return <Pressable onPress={open} accessibilityLabel={'Open '+item.title} style={{borderRadius:12,overflow:'hidden',borderWidth:1,borderColor:'#e8e8e8',backgroundColor:bg}}>
   <View style={{height:item.type==='bible'?230:item.type==='dream'?190:156,position:'relative',margin:10,marginBottom:0,borderRadius:9,overflow:'hidden'}}>
    {item.type==='talent'?<View style={{flex:1,alignItems:'center',justifyContent:'center'}}><TalentArt kind={item.instrument} size={110}/></View>:<Image source={{uri:item.image}} resizeMode="cover" style={{width:'100%',height:'100%'}}/>}
-   {item.type==='dream'?<>
-    <Svg pointerEvents="none" width="100%" height="100%" style={StyleSheet.absoluteFill}>
-     <Defs><SvgGradient id={shadeId} x1="0%" y1="0%" x2="0%" y2="100%">
-      <Stop offset="0%" stopColor="#050505" stopOpacity={0.82}/>
-      <Stop offset="52%" stopColor="#050505" stopOpacity={0.73}/>
-      <Stop offset="80%" stopColor="#050505" stopOpacity={0.42}/>
-      <Stop offset="100%" stopColor="#050505" stopOpacity={0}/>
-     </SvgGradient></Defs>
-     <Rect width="100%" height="100%" fill={`url(#${shadeId})`}/>
-    </Svg>
-    <View pointerEvents="none" style={{position:'absolute',top:53,left:10,right:10}}>
-     <Text numberOfLines={7} adjustsFontSizeToFit minimumFontScale={0.76}
-      style={{fontSize:13,lineHeight:18,fontWeight:'600',color:'#fff',textShadowColor:'rgba(0,0,0,0.35)',textShadowRadius:2}}>
-      {item.summary}
-     </Text>
-    </View>
-   </>:null}
-   {item.type==='bible'?<View style={{position:'absolute',left:0,right:0,top:0,bottom:0,backgroundColor:'rgba(0,0,0,0.58)',padding:13,justifyContent:'center'}}><Text adjustsFontSizeToFit minimumFontScale={0.65} style={{color:'#fff',fontSize:14,lineHeight:21,textAlign:'center',fontWeight:'500'}}>{verseExcerpt(item)}</Text></View>:null}
+   {/* Consistent, top-down image shading on every publication tile.
+        Talent illustrations receive a softer tint so the fine line-art remains visible. */}
+   <Svg pointerEvents="none" width="100%" height="100%" style={StyleSheet.absoluteFill}>
+    <Defs><SvgGradient id={shadeId} x1="0%" y1="0%" x2="0%" y2="100%">
+     <Stop offset="0%" stopColor="#050505" stopOpacity={item.type==='talent'?0.23:0.76}/>
+     <Stop offset="47%" stopColor="#050505" stopOpacity={item.type==='talent'?0.14:0.48}/>
+     <Stop offset="85%" stopColor="#050505" stopOpacity={0.06}/>
+     <Stop offset="100%" stopColor="#050505" stopOpacity={0}/>
+    </SvgGradient></Defs>
+    <Rect width="100%" height="100%" fill={`url(#${shadeId})`}/>
+   </Svg>
+   {item.type==='bible'?<View style={{position:'absolute',left:0,right:0,top:0,bottom:0,backgroundColor:'rgba(0,0,0,0.45)',padding:13,justifyContent:'center'}}><Text adjustsFontSizeToFit minimumFontScale={0.65} style={{color:'#fff',fontSize:14,lineHeight:21,textAlign:'center',fontWeight:'500'}}>{verseExcerpt(item)}</Text></View>:null}
    {item.type==='dream'?<View style={{position:'absolute',top:10,right:9,backgroundColor:PHASE_COLORS[item.phase].background,borderRadius:20,width:36,height:36,alignItems:'center',justifyContent:'center',padding:0}}><DreamPhaseIcon phase={item.phase} size={25}/></View>:null}
    {item.type==='music'?<MusicCard index={item.audioIndex}/>:null}
   </View>
