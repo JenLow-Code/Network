@@ -5,7 +5,7 @@ import {musics} from '@/discoveryData';
 import {PublicationDetail,DetailPanel} from '@/PublicationDetail';
 import {DetailIntro} from '@/DetailIntro';
 import {MusicWaveform} from '@/MusicWaveform';
-import {MusicLyrics} from '@/MusicLyrics';
+import {MusicLyrics,FullMusicLyrics} from '@/MusicLyrics';
 export default function MusicDetail(){
  const {id}=useLocalSearchParams<{id:string}>();
  const item=musics.find(x=>x.id===id);
@@ -14,6 +14,7 @@ export default function MusicDetail(){
   <DetailIntro artwork={button} rightContent={wave}>
    <MusicLyrics lines={item.lyrics||[]} currentTime={time} onSeek={seek}/>
   </DetailIntro>
+  <DetailPanel title="Paroles complètes" foldable defaultOpen={false}><FullMusicLyrics lines={item.lyrics||[]}/></DetailPanel>
   <DetailPanel title="Partitions" foldable defaultOpen={false}><Text style={{fontSize:13,color:'#666'}}>Aucune partition jointe.</Text></DetailPanel>
   <DetailPanel title="Description" foldable defaultOpen={false}><Text style={{fontSize:14,lineHeight:22,color:'#444'}}>{item.description}</Text></DetailPanel>
  </PublicationDetail>}/>;
