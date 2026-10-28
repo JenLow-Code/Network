@@ -6,6 +6,9 @@ import {router} from 'expo-router';
 import Svg,{Defs,LinearGradient as SvgGradient,Stop,Rect} from 'react-native-svg';
 import {Publication,PHASE_COLORS,PHASE_LABELS,publications,personPublications,publicationColor} from './discoveryData';
 import {ActionRail} from './ActionRail';
+import {DreamPhaseIcon} from './DreamPhaseIcon';
+import {TalentArt} from './TalentArt';
+import {TalentLevelDots} from './TalentLevelDots';
 import {Nav,TopActions} from './components';
 import {personPath} from './people';
 import {PublicationGallery} from './PublicationGallery';
@@ -45,7 +48,7 @@ export function DetailLayout({item,children,featured}:{item:Publication;children
     </View>
     <TopActions/>
    </View>
-   <View style={{position:'relative',paddingTop:46,paddingBottom:14}}>
+   <View style={{position:'relative',paddingTop:item.type==='music'?24:46,paddingBottom:14}}>
     <View pointerEvents="none" style={{position:'absolute',top:0,bottom:0,left:0,right:0}}>
      <Svg width="100%" height="100%">
       <Defs><SvgGradient id={gradientId} x1="0%" y1="0%" x2="0%" y2="100%">
@@ -54,7 +57,12 @@ export function DetailLayout({item,children,featured}:{item:Publication;children
       <Rect width="100%" height="100%" fill={`url(#${gradientId})`}/>
      </Svg>
     </View>
-    <View style={{width:'100%',paddingTop:item.type==='music'?12:12,paddingBottom:13,paddingLeft:19,paddingRight:19,position:'relative'}}>
+    {item.type==='dream'?<View pointerEvents="none" style={{position:'absolute',top:14,right:25,width:92,height:92,justifyContent:'center',alignItems:'center',zIndex:2}}>
+     <DreamPhaseIcon phase={item.phase} size={72}/>
+    </View>:item.type==='talent'?<View pointerEvents="none" style={{position:'absolute',top:14,right:19,width:118,alignItems:'center',zIndex:2}}>
+     <TalentArt kind={item.instrument} size={98}/><TalentLevelDots level={item.level}/>
+    </View>:null}
+    <View style={{width:'100%',paddingTop:12,paddingBottom:13,paddingLeft:19,paddingRight:19,position:'relative'}}> 
      <View style={{flexDirection:'row',alignItems:'stretch',gap:8}}>
       <View style={{flex:1,minWidth:0}}>{featured}{children}</View>
       <View style={{width:48,justifyContent:'flex-end',alignItems:'center',paddingBottom:5}}>
