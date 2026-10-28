@@ -5,9 +5,6 @@ import {Ionicons} from '@expo/vector-icons';
 import {router} from 'expo-router';
 import Svg,{Defs,LinearGradient as SvgGradient,Stop,Rect} from 'react-native-svg';
 import {Publication,PHASE_COLORS,PHASE_LABELS,publications,personPublications,publicationColor} from './discoveryData';
-import {DreamPhaseIcon} from './DreamPhaseIcon';
-import {TalentArt} from './TalentArt';
-import {TalentLevelDots} from './TalentLevelDots';
 import {ActionRail} from './ActionRail';
 import {Nav,TopActions} from './components';
 import {personPath} from './people';
@@ -57,12 +54,7 @@ export function DetailLayout({item,children,featured}:{item:Publication;children
       <Rect width="100%" height="100%" fill={`url(#${gradientId})`}/>
      </Svg>
     </View>
-    <View style={{width:'100%',paddingTop:item.type==='music'?96:item.type==='talent'?36:12,paddingBottom:13,paddingLeft:19,paddingRight:19,position:'relative'}}>
-     <View pointerEvents="none" style={{position:'absolute',top:-47,right:item.type==='music'?undefined:-1,left:item.type==='music'?24:undefined,width:100,alignItems:'center',justifyContent:'center',zIndex:2}}>
-      {item.type==='dream'?<View style={{height:96,justifyContent:'center',alignItems:'center'}}><DreamPhaseIcon phase={item.phase} size={70}/></View>:
-       item.type==='talent'?<><TalentArt kind={item.instrument} size={94}/><TalentLevelDots level={item.level}/></>:
-       <View style={{height:96,justifyContent:'center',alignItems:'center'}}><Ionicons name={item.type==='music'?'musical-note-outline':'book-outline'} size={66} color="#3F3F3F"/></View>}
-     </View>
+    <View style={{width:'100%',paddingTop:item.type==='music'?12:12,paddingBottom:13,paddingLeft:19,paddingRight:19,position:'relative'}}>
      <View style={{flexDirection:'row',alignItems:'stretch',gap:8}}>
       <View style={{flex:1,minWidth:0}}>{featured}{children}</View>
       <View style={{width:48,justifyContent:'flex-end',alignItems:'center',paddingBottom:5}}>
