@@ -15,8 +15,8 @@ export default function Bible(){
  return <PublicationDetail item={post}>
   <ScrollView ref={inner} nestedScrollEnabled showsVerticalScrollIndicator style={{height:READER_HEIGHT,backgroundColor:'#FAFAFA',borderRadius:10}} contentContainerStyle={{gap:5,padding:8,paddingBottom:16}} onContentSizeChange={()=>{if(!ready){centre();setReady(true)}}}>
    {psalm150.map((v,i)=><View key={i} onLayout={e=>{positions.current[i+1]=e.nativeEvent.layout;if(i===psalm150.length-1)requestAnimationFrame(centre)}} style={{flexDirection:'row',gap:9,borderRadius:7,padding:10,backgroundColor:i+1===focus?'#F7E9F0':'#fff'}}>
-    <Text style={{fontSize:11,color:i+1===focus?'#CB245C':'#777'}}>{i+1}</Text>
-    <Text style={{flex:1,fontSize:15,lineHeight:21,color:'#333',fontWeight:i+1===focus?'700':'400'}}>{v}</Text>
+    <Text style={{fontSize:11,color:'#CB245C'}}>{i+1}</Text>
+    <Text style={{flex:1,fontSize:15,lineHeight:21,color:'#CB245C',fontWeight:i+1===focus?'700':'400'}}>{v}</Text>
    </View>)}
   </ScrollView>
  </PublicationDetail>;
