@@ -133,6 +133,9 @@ export const PHASE_COLORS:Record<DreamPhase,{background:string;foreground:string
  'Croissance':{background:'#DDEFD7',foreground:'#275C3A'},
  'Témoignage':{background:'#F2E0E9',foreground:'#963E67'}
 };
+/** Shared publication background: identical in Discovery tiles and detail gradients. */
+export const NEUTRAL_PUBLICATION_COLOR='#D0D0CE';
+export const publicationColor=(publication:Publication):string=>publication.type==='dream'?PHASE_COLORS[publication.phase].background:NEUTRAL_PUBLICATION_COLOR;
 export const verseExcerpt=(p:BiblePublication)=>p.highlightedVerse===1?psalm150[0]:psalm150[5];
 export const psalm150 = [
   'Louez l’Éternel ! Louez Dieu dans son sanctuaire ! Louez-le dans l’étendue, où éclate sa puissance !',
