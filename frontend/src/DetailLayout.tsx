@@ -1,10 +1,10 @@
-import React,{useId} from 'react';
+import React,{useId,useState} from 'react';
 import {Pressable,ScrollView,Text,View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {Ionicons} from '@expo/vector-icons';
 import {router} from 'expo-router';
 import Svg,{Defs,LinearGradient as SvgGradient,Stop,Rect} from 'react-native-svg';
-import {Publication,PHASE_LABELS,publications,personPublications,publicationColor} from './discoveryData';
+import {Publication,PHASE_COLORS,PHASE_LABELS,publications,personPublications,publicationColor} from './discoveryData';
 import {DreamPhaseIcon} from './DreamPhaseIcon';
 import {TalentArt} from './TalentArt';
 import {TalentLevelDots} from './TalentLevelDots';
@@ -24,18 +24,24 @@ export function DetailLayout({item,children,featured}:{item:Publication;children
  const theme=useAppTheme();
  const base=publicationColor(item);
  const gradientId=useId().replace(/[^a-zA-Z0-9_-]/g,'');
+ const [headerWidth,setHeaderWidth]=useState(250);
+ // React Native Web does not consistently implement adjustsFontSizeToFit.
+ // Estimate glyph widths against the measured header space to keep the full title on one line.
+ const textUnits=Array.from(item.title).reduce((sum,char)=>sum+(/[mwMW@#]/.test(char)?0.84:/[ilI!.,'’]/.test(char)?0.31:/\s/.test(char)?0.34:/[A-Z]/.test(char)?0.68:0.57),0);
+ const titleSize=Math.min(17,Math.max(7,Math.floor((headerWidth-8)/(Math.max(1,textUnits)*1.09))));
  const subtitle=item.type==='dream'?PHASE_LABELS[item.phase]:item.type==='music'?item.songAuthor:item.type==='talent'?item.level:'Louis Segond 1910';
  // Public community affiliation is not yet available in the demo dataset.
  const byline=item.author;
+ const subtitleColor=item.type==='dream'?PHASE_COLORS[item.phase].foreground:theme.muted;
  return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
   <ScrollView contentContainerStyle={{maxWidth:680,width:'100%',alignSelf:'center',paddingBottom:50}}>
    <View style={{flexDirection:'row',alignItems:'center',minHeight:74,paddingHorizontal:17,paddingTop:11,borderBottomWidth:1,borderColor:theme.border}}>
     <Pressable onPress={()=>router.back()} accessibilityLabel="Retour" style={{width:43,alignItems:'flex-start',justifyContent:'center'}}>
      <Ionicons name="chevron-back" size={25} color={theme.foreground}/>
     </Pressable>
-    <View style={{flex:1,alignItems:'center',minWidth:0,paddingHorizontal:3}}>
-     <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.55} style={{fontSize:17,fontWeight:'800',textAlign:'center',color:theme.foreground}}>{item.title}</Text>
-     <Text numberOfLines={1} style={{fontSize:11,color:theme.muted,textAlign:'center',marginTop:3}}>{subtitle}</Text>
+    <View onLayout={e=>{const w=Math.round(e.nativeEvent.layout.width);if(w>0&&w!==headerWidth)setHeaderWidth(w)}} style={{flex:1,alignItems:'center',minWidth:0,paddingHorizontal:3}}>
+     <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.4} style={{width:'100%',fontSize:titleSize,fontWeight:'800',textAlign:'center',color:theme.foreground,letterSpacing:-0.2}}>{item.title}</Text>
+     <Text numberOfLines={1} style={{fontSize:11,color:subtitleColor,textAlign:'center',marginTop:3,fontWeight:item.type==='dream'?'700':'400'}}>{subtitle}</Text>
      <Pressable onPress={()=>router.push(personPath(item.author))} accessibilityLabel={'Voir le profil de '+item.author}>
       <Text numberOfLines={1} style={{fontSize:11,color:theme.foreground,textAlign:'center',marginTop:2}}>{byline}</Text>
      </Pressable>
@@ -52,14 +58,14 @@ export function DetailLayout({item,children,featured}:{item:Publication;children
      </Svg>
     </View>
     <View style={{width:'100%',paddingTop:item.type==='talent'?36:12,paddingBottom:13,paddingLeft:19,paddingRight:19,position:'relative'}}>
-     <View pointerEvents="none" style={{position:'absolute',top:-35,right:5,width:100,alignItems:'center',justifyContent:'center',zIndex:2}}>
+     <View pointerEvents="none" style={{position:'absolute',top:-47,right:-1,width:100,alignItems:'center',justifyContent:'center',zIndex:2}}>
       {item.type==='dream'?<View style={{height:96,justifyContent:'center',alignItems:'center'}}><DreamPhaseIcon phase={item.phase} size={70}/></View>:
        item.type==='talent'?<><TalentArt kind={item.instrument} size={94}/><TalentLevelDots level={item.level}/></>:
        <View style={{height:96,justifyContent:'center',alignItems:'center'}}><Ionicons name={item.type==='music'?'musical-notes-outline':'book-outline'} size={66} color="#3F3F3F"/></View>}
      </View>
      <View style={{flexDirection:'row',alignItems:'stretch',gap:8}}>
       <View style={{flex:1,minWidth:0}}>{featured}{children}</View>
-      <View style={{width:39,justifyContent:'flex-end',alignItems:'center',paddingBottom:12}}>
+      <View style={{width:48,justifyContent:'flex-end',alignItems:'center',paddingBottom:5}}>
        <ActionRail item={item}/>
       </View>
      </View>
