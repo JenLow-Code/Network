@@ -3,9 +3,9 @@ import {KeyboardAvoidingView,Platform,Pressable,ScrollView,StyleSheet,Text,TextI
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {Ionicons} from '@expo/vector-icons';
 import {router} from 'expo-router';
-import {useApp} from '@/context';
-import {NetworkLogo,GoogleMark} from '@/brand';
-import {useAuth} from '@/auth/AuthProvider';
+import {useApp} from '@/context/AppContext';
+import {NetworkLogo} from '@/components/brand/NetworkLogo';import {GoogleMark} from '@/icons/GoogleMark';
+import {useAuth} from '@/context/AuthProvider';
 
 export default function Login(){
  const [register,setRegister]=useState(false),[email,setEmail]=useState(''),[password,setPassword]=useState(''),[name,setName]=useState(''),[code,setCode]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState('');

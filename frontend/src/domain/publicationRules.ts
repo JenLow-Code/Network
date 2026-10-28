@@ -1,4 +1,4 @@
-import type {Publication,DreamPhase} from '../discoveryData';
+import type {Publication,DreamPhase} from './publication';
 
 /** Stable permission identifiers; backend can enforce the same policy. */
 export type ActionId='share-internal'|'share-external'|'fire'|'prayer'|'inspire'|'verse-export'|'encourage'|'same-dream'|'offer-help'|'introduce'|'audio-collab';

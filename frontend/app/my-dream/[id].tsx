@@ -4,11 +4,11 @@ import {Alert,Image,Platform,Pressable,ScrollView,View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {Ionicons} from '@expo/vector-icons';
 import {router,useLocalSearchParams} from 'expo-router';
-import {Nav,TopActions} from '@/components';
-import {PHASE_COLORS,PHASE_LABELS} from '@/discoveryData';
+import {Nav} from '@/components/navigation/Nav';import {TopActions} from '@/components/navigation/TopActions';
+import {PHASE_COLORS,PHASE_LABELS} from '@/domain/publication';
 import {useDreams} from '@/domain/dreamRepository';
-import {pickDreamImage} from '@/pickDreamImage';
-import {useAppTheme} from '@/AppTheme';
+import {pickDreamImage} from '@/lib/pickDreamImage';
+import {useAppTheme} from '@/theme/AppTheme';
 
 const defaults=[
  'https://images.unsplash.com/photo-1510915361894-db8b60106cb1?w=800',

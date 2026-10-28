@@ -4,9 +4,9 @@ import {KeyboardAvoidingView,Linking,Platform,Pressable,ScrollView,StyleSheet,Vi
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {Ionicons} from '@expo/vector-icons';
 import {router,useLocalSearchParams} from 'expo-router';
-import {Avatar,Nav,TopActions} from '@/components';
-import {useApp} from '@/context';
-import {colors as c} from '@/theme';
+import {Avatar} from '@/components/ui/Avatar';import {Nav} from '@/components/navigation/Nav';import {TopActions} from '@/components/navigation/TopActions';
+import {useApp} from '@/context/AppContext';
+import {colors as c} from '@/theme/colors';
 
 function ChatHeader({name,subtitle}:{name:string,subtitle:string}) {
  return <View style={s.header}>

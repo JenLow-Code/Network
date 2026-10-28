@@ -3,9 +3,9 @@ import {Pressable,ScrollView,Text,View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {Ionicons} from '@expo/vector-icons';
 import {router,useLocalSearchParams} from 'expo-router';
-import {dreams} from '@/discoveryData';
-import {myCircle} from '@/domain/demoCircle';
-import {Nav} from '@/components';
+import {dreams} from '@/mocks/publications';
+import {myCircle} from '@/mocks/demoCircle';
+import {Nav} from '@/components/navigation/Nav';
 export default function Introduction(){
  const {id,person}=useLocalSearchParams<{id:string;person?:string}>();
  const d=dreams.find(x=>x.id===id),friend=myCircle.find(p=>p.id===person);

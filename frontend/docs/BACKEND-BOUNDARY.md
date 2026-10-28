@@ -2,9 +2,9 @@
 
 Frontend modules:
 - src/domain/publicationRules.ts: pure V1 permission policy to implement again on the server.
-- src/domain/demoCircle.ts: demo contact / matching vocabulary.
-- src/context.tsx: demo client-side state and persistence. Replace with HTTP API clients when backend is available.
-- src/ActionRail.tsx + src/DreamStageAction.tsx: permission-driven actions.
+- src/mocks/demoCircle.ts: demo contact / matching vocabulary.
+- src/context/AppContext.tsx: demo client-side state and persistence. Replace with HTTP API clients when backend is available.
+- src/components/detail/ActionRail.tsx + src/components/detail/DreamStageAction.tsx: permission-driven actions.
 - screens under app/: public gallery/detail vs personal Dream workspace.
 
 Backend may be **Java (Spring Boot)** or Python; the frontend doesn't depend on either. We will select database schema first and define REST/JSON contracts. Critical server entities:

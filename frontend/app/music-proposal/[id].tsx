@@ -4,8 +4,8 @@ import {Pressable,View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {Ionicons} from '@expo/vector-icons';
 import {router,useLocalSearchParams} from 'expo-router';
-import {musics} from '@/discoveryData';
-import {Nav} from '@/components';
+import {musics} from '@/mocks/publications';
+import {Nav} from '@/components/navigation/Nav';
 export default function MusicProposal(){
  const {id}=useLocalSearchParams<{id:string}>();const music=musics.find(m=>m.id===id);
  const [note,setNote]=useState(''),[recording,setRecording]=useState(''),[submitted,setSubmitted]=useState(false);

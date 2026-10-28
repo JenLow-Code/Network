@@ -3,11 +3,11 @@ import React,{useState} from 'react';
 import {Pressable,View,useWindowDimensions} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {router} from 'expo-router';
-import {Nav,TopActions} from '@/components';
-import {FireHeader} from '@/FireHeader';
+import {Nav} from '@/components/navigation/Nav';import {TopActions} from '@/components/navigation/TopActions';
+import {FireHeader} from '@/components/fire/FireHeader';
 import {Ionicons} from '@expo/vector-icons';
-import {useLocale} from '@/locale';
-import {DREAM_PHASES,PHASE_COLORS,PHASE_LABELS,DreamPhase} from '@/discoveryData';
+import {useLocale} from '@/i18n/locale';
+import {DREAM_PHASES,PHASE_COLORS,PHASE_LABELS,DreamPhase} from '@/domain/publication';
 
 const descriptions:Record<DreamPhase,string>={
  'Rêve':'Planter une intention',

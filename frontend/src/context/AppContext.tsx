@@ -1,6 +1,6 @@
 import React,{createContext,useCallback,useContext,useEffect,useMemo,useState} from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {useAuth} from './auth/AuthProvider';
+import {useAuth} from './AuthProvider';
 
 type Message={id:string;text:string;fromMe:boolean};
 type ProfileChanges={name:string;bio:string;city:string;church:string};

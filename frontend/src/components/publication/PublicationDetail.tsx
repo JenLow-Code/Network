@@ -1,8 +1,8 @@
 import React,{useState} from 'react';
 import {Pressable,Text,View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
-import {DetailLayout} from './DetailLayout';
-import type {Publication} from './discoveryData';
+import {DetailLayout} from '@/components/detail/DetailLayout';
+import type {Publication} from '@/domain/publication';
 export function DetailPanel({title,children,foldable=false,defaultOpen=true}:{title:string;children:React.ReactNode;foldable?:boolean;defaultOpen?:boolean}){
  const [open,setOpen]=useState(defaultOpen);
  return <View style={{borderTopWidth:1,borderColor:'rgba(60,60,60,0.13)',paddingVertical:10,paddingLeft:7}}>

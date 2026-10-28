@@ -5,8 +5,8 @@ import {SafeAreaView} from 'react-native-safe-area-context';
 import {router,useLocalSearchParams} from 'expo-router';
 import {Ionicons} from '@expo/vector-icons';
 import {useDreams} from '@/domain/dreamRepository';
-import {Nav,TopActions} from '@/components';
-import {pickDreamImage} from '@/pickDreamImage';
+import {Nav} from '@/components/navigation/Nav';import {TopActions} from '@/components/navigation/TopActions';
+import {pickDreamImage} from '@/lib/pickDreamImage';
 export default function NewDream(){
  const {inspiration}=useLocalSearchParams<{inspiration?:string}>();
  const {create}=useDreams();

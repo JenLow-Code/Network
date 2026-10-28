@@ -1,11 +1,11 @@
 import React from 'react';
 import {Text,View} from 'react-native';
 import {useLocalSearchParams} from 'expo-router';
-import {musics} from '@/discoveryData';
-import {PublicationDetail,DetailPanel} from '@/PublicationDetail';
-import {DetailIntro} from '@/DetailIntro';
-import {MusicWaveform} from '@/MusicWaveform';
-import {MusicLyrics,FullMusicLyrics} from '@/MusicLyrics';
+import {musics} from '@/mocks/publications';
+import {PublicationDetail,DetailPanel} from '@/components/publication/PublicationDetail';
+import {DetailIntro} from '@/components/detail/DetailIntro';
+import {MusicWaveform} from '@/components/music/MusicWaveform';
+import {MusicLyrics,FullMusicLyrics} from '@/components/music/MusicLyrics';
 export default function MusicDetail(){
  const {id}=useLocalSearchParams<{id:string}>();
  const item=musics.find(x=>x.id===id);

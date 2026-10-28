@@ -5,10 +5,10 @@ import {SafeAreaView} from 'react-native-safe-area-context';
 import {Ionicons} from '@expo/vector-icons';
 import {router} from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {Avatar,Nav,TopActions} from '@/components';
-import {useApp} from '@/context';
-import {useAuth} from '@/auth/AuthProvider';
-import {useAppTheme} from '@/AppTheme';
+import {Avatar} from '@/components/ui/Avatar';import {Nav} from '@/components/navigation/Nav';import {TopActions} from '@/components/navigation/TopActions';
+import {useApp} from '@/context/AppContext';
+import {useAuth} from '@/context/AuthProvider';
+import {useAppTheme} from '@/theme/AppTheme';
 type Talent={name:string;level:number;interests:string[]};
 const initial:Talent[]=[
  {name:'Batterie',level:2,interests:['Tandem','Enseigner']},

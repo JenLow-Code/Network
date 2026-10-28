@@ -1,5 +1,5 @@
 import {Platform} from 'react-native';
-import type {DreamMedia} from './domain/dreamWorkspace';
+import type {DreamMedia} from '@/domain/dreamWorkspace';
 
 export function pickFlowerMedia(onSelected:(files:DreamMedia[])=>void,onError:(message:string)=>void){
  if(Platform.OS!=='web'){

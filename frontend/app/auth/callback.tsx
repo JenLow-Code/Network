@@ -1,8 +1,8 @@
 import React,{useEffect,useState} from 'react';
 import {ActivityIndicator,Pressable,Text,View} from 'react-native';
 import {router,useLocalSearchParams} from 'expo-router';
-import {supabase} from '@/auth/supabaseClient';
-import {useAuth} from '@/auth/AuthProvider';
+import {supabase} from '@/lib/supabaseClient';
+import {useAuth} from '@/context/AuthProvider';
 
 /** Supports web auth callback URLs and native PKCE redirects. */
 export default function AuthCallback(){

@@ -4,18 +4,18 @@ import {Ionicons} from '@expo/vector-icons';
 
 /** Original JenLow talent drawings, stored directly in frontend/assets. */
 const drawings = {
-  drums: require('../assets/drums.png'),
-  cello: require('../assets/cello.png'),
-  trumpet: require('../assets/trumpet.png'),
-  'acoustic-guitar': require('../assets/acoustic-guitar.png'),
-  singing: require('../assets/singing.png'),
-  bass: require('../assets/bass.png'),
-  violin: require('../assets/violin.png'),
-  saxophone: require('../assets/saxophone.png'),
-  piano: require('../assets/piano.png'),
-  'double-bass': require('../assets/double-bass.png'),
-  ukulele: require('../assets/ukulele.png'),
-  'electric-guitar': require('../assets/electric-guitar.png'),
+  drums: require('../../../assets/drums.png'),
+  cello: require('../../../assets/cello.png'),
+  trumpet: require('../../../assets/trumpet.png'),
+  'acoustic-guitar': require('../../../assets/acoustic-guitar.png'),
+  singing: require('../../../assets/singing.png'),
+  bass: require('../../../assets/bass.png'),
+  violin: require('../../../assets/violin.png'),
+  saxophone: require('../../../assets/saxophone.png'),
+  piano: require('../../../assets/piano.png'),
+  'double-bass': require('../../../assets/double-bass.png'),
+  ukulele: require('../../../assets/ukulele.png'),
+  'electric-guitar': require('../../../assets/electric-guitar.png'),
 } as const;
 
 export type TalentIllustration = keyof typeof drawings | 'guitar' | 'cavaquinho' | 'viola' | 'camera';

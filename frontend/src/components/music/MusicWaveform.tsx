@@ -4,9 +4,9 @@ import {Ionicons} from '@expo/vector-icons';
 import {useAudioPlayer,useAudioPlayerStatus} from 'expo-audio';
 
 const files=[
- require('../assets/audio/pierre-01-douceur.wav'),
- require('../assets/audio/pierre-02-esperance.wav'),
- require('../assets/audio/pierre-03-lumiere.wav')
+ require('../../../assets/audio/pierre-01-douceur.wav'),
+ require('../../../assets/audio/pierre-02-esperance.wav'),
+ require('../../../assets/audio/pierre-03-lumiere.wav')
 ] as const;
 const heights=[12,26,42,20,55,70,35,19,48,28,61,43,17,31,57,24,15,44,34,21,48,64,27,19,47,34,58,25,18,39,30,13];
 export function MusicWaveform({index,renderLayout}:{index:0|1|2;renderLayout?:(button:React.ReactNode,wave:React.ReactNode,time:number,seek:(seconds:number)=>void)=>React.ReactNode}){

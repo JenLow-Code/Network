@@ -1,12 +1,12 @@
 import React from 'react';
 import {Pressable,Text,View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
-import {DreamPublication} from './discoveryData';
+import {DreamPublication} from '@/domain/publication';
 import {DetailLayout} from './DetailLayout';
 import {DetailIntro} from './DetailIntro';
-import {DreamPhaseIcon} from './DreamPhaseIcon';
-import {DetailPanel} from './PublicationDetail';
-import {useApp} from './context';
+import {DreamPhaseIcon} from '@/icons/DreamPhaseIcon';
+import {DetailPanel} from '@/components/publication/PublicationDetail';
+import {useApp} from '@/context/AppContext';
 export function DreamReferenceLayout({item}:{item:DreamPublication}){
  const app=useApp();
  const sameDream=()=>app.joinDream(item.id);

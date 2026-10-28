@@ -2,13 +2,13 @@ import React,{useState} from 'react';
 import {Modal,Pressable,Share,StyleSheet,Text,View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {router} from 'expo-router';
-import {useApp} from './context';
-import {dreams,Publication} from './discoveryData';
-import {allowedActions,ActionId} from './domain/publicationRules';
-import {myCircle,matchingTalents,myTalents} from './domain/demoCircle';
-import {PrayerIcon} from './PrayerIcon';
-import {FireIcon} from './FireIcon';
-import {colors as c} from './theme';
+import {useApp} from '@/context/AppContext';
+import {dreams} from '@/mocks/publications';import {Publication} from '@/domain/publication';
+import {allowedActions,ActionId} from '@/domain/publicationRules';
+import {myCircle,matchingTalents,myTalents} from '@/mocks/demoCircle';
+import {PrayerIcon} from '@/icons/PrayerIcon';
+import {FireIcon} from '@/icons/FireIcon';
+import {colors as c} from '@/theme/colors';
 
 export function ActionRail({item}:{item:Publication}){
  const app=useApp(),[modal,setModal]=useState<'dream'|'circle'|null>(null);

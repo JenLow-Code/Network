@@ -3,7 +3,7 @@ import {Platform} from 'react-native';
 import type {User,Session} from '@supabase/supabase-js';
 import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
-import {authConfigured,supabase} from './supabaseClient';
+import {authConfigured,supabase} from '@/lib/supabaseClient';
 
 WebBrowser.maybeCompleteAuthSession();
 

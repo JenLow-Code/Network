@@ -4,8 +4,8 @@ import {Pressable,Share,View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {Ionicons} from '@expo/vector-icons';
 import {router,useLocalSearchParams} from 'expo-router';
-import {biblePosts,psalm150} from '@/discoveryData';
-import {Nav} from '@/components';
+import {biblePosts,psalm150} from '@/mocks/publications';
+import {Nav} from '@/components/navigation/Nav';
 export default function VerseExport(){
  const {id}=useLocalSearchParams<{id:string}>();
  const item=biblePosts.find(p=>p.id===id);

@@ -3,9 +3,9 @@ import {Alert,Image,Pressable,ScrollView,Text,TextInput,View} from 'react-native
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {router,useLocalSearchParams} from 'expo-router';
 import {Ionicons} from '@expo/vector-icons';
-import {Nav,TopActions} from '@/components';
+import {Nav} from '@/components/navigation/Nav';import {TopActions} from '@/components/navigation/TopActions';
 import {useDreams} from '@/domain/dreamRepository';
-import {pickFlowerMedia} from '@/pickFlowerMedia';
+import {pickFlowerMedia} from '@/lib/pickFlowerMedia';
 export default function FlowerPreparation(){
  const {id}=useLocalSearchParams<{id:string}>();
  const {items,complete,setFlowerDraft}=useDreams();

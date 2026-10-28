@@ -1,8 +1,8 @@
 import React,{useEffect,useState} from 'react';
 import {Redirect} from 'expo-router';
 import {ActivityIndicator,View,Text,Platform} from 'react-native';
-import {useAuth} from '@/auth/AuthProvider';
-import {supabase} from '@/auth/supabaseClient';
+import {useAuth} from '@/context/AuthProvider';
+import {supabase} from '@/lib/supabaseClient';
 export default function Index(){
  const {user,initialized}=useAuth();
  const [processing,setProcessing]=useState(()=>Platform.OS==='web'&&typeof window!=='undefined'&&!!window.location&&new URLSearchParams(window.location.search).has('code'));

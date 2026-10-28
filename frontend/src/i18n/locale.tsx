@@ -1,6 +1,6 @@
 import React,{createContext,useContext,useEffect,useState} from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {screenTranslations,ScreenTranslationKey} from './i18n';
+import {screenTranslations,ScreenTranslationKey} from '@/i18n';
 export type Language='fr'|'en'|'de'|'pt';
 export const LANGUAGE_KEY='jenlow.network.settings.language.v1';
 const translations={

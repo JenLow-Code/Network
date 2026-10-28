@@ -4,8 +4,8 @@ import {Pressable,ScrollView,View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {Ionicons} from '@expo/vector-icons';
 import {router,useLocalSearchParams} from 'expo-router';
-import {Nav} from '@/components';
-import {findPublication} from '@/discoveryData';
+import {Nav} from '@/components/navigation/Nav';
+import {findPublication} from '@/mocks/publications';
 export default function ShareInside(){
  const {id}=useLocalSearchParams<{id:string}>();
  const item=findPublication(id||''); const [chosen,setChosen]=useState('');

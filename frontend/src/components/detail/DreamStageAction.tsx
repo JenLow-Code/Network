@@ -2,10 +2,10 @@ import React from 'react';
 import {Pressable,Share,StyleSheet,Text,View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {router} from 'expo-router';
-import {DreamPublication} from './discoveryData';
-import {useApp} from './context';
-import {PrayerIcon} from './PrayerIcon';
-import {colors as c} from './theme';
+import {DreamPublication} from '@/domain/publication';
+import {useApp} from '@/context/AppContext';
+import {PrayerIcon} from '@/icons/PrayerIcon';
+import {colors as c} from '@/theme/colors';
 
 /** Phase-driven public interaction. Local demo state is not a public counter. */
 export function DreamStageAction({dream}:{dream:DreamPublication}){

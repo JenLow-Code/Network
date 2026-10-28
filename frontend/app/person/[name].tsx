@@ -1,11 +1,11 @@
 import React from 'react';
 import {Text,View} from 'react-native';
 import {useLocalSearchParams} from 'expo-router';
-import {personPublications} from '@/discoveryData';
-import {PublicationDetail,DetailPanel} from '@/PublicationDetail';
-import {DetailIntro} from '@/DetailIntro';
-import {TalentArt} from '@/TalentArt';
-import {TalentLevelDots} from '@/TalentLevelDots';
+import {personPublications} from '@/mocks/publications';
+import {PublicationDetail,DetailPanel} from '@/components/publication/PublicationDetail';
+import {DetailIntro} from '@/components/detail/DetailIntro';
+import {TalentArt} from '@/components/talent/TalentArt';
+import {TalentLevelDots} from '@/components/talent/TalentLevelDots';
 export default function PublicPerson(){
  const {name}=useLocalSearchParams<{name:string}>();
  const person=personPublications.find(p=>p.author===name);

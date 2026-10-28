@@ -1,18 +1,5 @@
 import React from 'react';
-import { Text, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
-import { colors } from './theme';
-
-export function NetworkLogo() {
-  return (
-    <View accessibilityLabel="JenLow Network" style={{ width: 150, alignItems: 'center', height: 57 }}>
-      <Text style={{ color: '#080808', fontSize: 20, fontWeight: '700', lineHeight: 25 }}>JenLow</Text>
-      <Text style={{ fontFamily: 'Caveat_700Bold', color: colors.pink, fontSize: 33, lineHeight: 34, marginTop: -14, transform: [{ rotate: '-4deg' }] }}>
-        Network
-      </Text>
-    </View>
-  );
-}
 
 // Multicolour Google G (not a globe or a generic letter).
 export function GoogleMark({ size = 18 }: { size?: number }) {

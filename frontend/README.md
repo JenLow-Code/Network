@@ -27,10 +27,21 @@ The app has login, profile, My Space and chat screens with **local demo data onl
 
 ## Architecture
 
-- `app/`: routes for login, profile, My Space and chat
-- `src/components.tsx`: reusable avatar, navigation and filters
-- `src/context.tsx`: local state, to be replaced with secure backend integration
-- `src/theme.ts`: shared colors
+- `app/`: screens. Expo Router turns every file here into a route (`app/chat/[id].tsx` → `/chat/123`), so this folder plays the role of `pages/`.
+- `src/components/`: reusable UI, grouped by feature
+  - `ui/` generic building blocks (`Avatar`, `Pill`, `ContactSheet`)
+  - `navigation/` bottom tab bar (`Nav`) and header actions (`TopActions`)
+  - `detail/`, `publication/`, `music/`, `talent/`, `fire/`, `brand/` feature components
+- `src/icons/`: custom SVG / image icons
+- `src/theme/`: colors (`colors.ts`) and light/dark theme provider (`AppTheme.tsx`)
+- `src/i18n/`: language provider (`locale.tsx`), translations and localized `Text`
+- `src/context/`: app-wide React providers (`AppContext`, `AuthProvider`); local state, to be replaced with secure backend integration
+- `src/domain/`: types and business rules (publications, permissions, dream workflow)
+- `src/lib/`: API clients and helpers (Supabase, auth API, media pickers)
+- `src/mocks/`: demo data that will be replaced by backend data
+- `assets/`: images, icons and audio
+
+Import from `src/` with the `@/` alias, e.g. `import {Nav} from '@/components/navigation/Nav'`.
 
 ## Limitations
 

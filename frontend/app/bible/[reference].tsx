@@ -2,8 +2,8 @@ import React,{useId,useRef,useState} from 'react';
 import Svg,{Defs,LinearGradient,Rect,Stop} from 'react-native-svg';
 import {ScrollView,Text,View,type ScrollViewInstance} from 'react-native';
 import {useLocalSearchParams} from 'expo-router';
-import {psalm150,biblePosts} from '@/discoveryData';
-import {PublicationDetail} from '@/PublicationDetail';
+import {psalm150,biblePosts} from '@/mocks/publications';
+import {PublicationDetail} from '@/components/publication/PublicationDetail';
 const READER_HEIGHT=340;
 const TOP_FADE_HEIGHT=94;
 const VERSE_ZERO_SPACER=TOP_FADE_HEIGHT+8; // Empty, unnumbered space above verse 1 so its text stays readable beneath the fixed fade.

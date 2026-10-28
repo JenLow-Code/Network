@@ -2,8 +2,8 @@ import React,{useRef,useState} from 'react';
 import {Animated,Dimensions,PanResponder,Pressable,StyleSheet,Text,View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {router} from 'expo-router';
-import {Avatar} from './components';
-import {useApp} from './context';
+import {Avatar} from './Avatar';
+import {useApp} from '@/context/AppContext';
 type Status='online'|'busy'|'offline';
 const contacts:{id:string;name:string;subtitle:string;status:Status}[]=[
  {id:'starryskies23',name:'starryskies23',subtitle:'Collaboration request',status:'busy'},

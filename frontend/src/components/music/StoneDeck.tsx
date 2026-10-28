@@ -2,12 +2,12 @@ import React,{useEffect,useState} from 'react';
 import {Pressable,StyleSheet,Text,View,useWindowDimensions} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {useAudioPlayer,useAudioPlayerStatus} from 'expo-audio';
-import {colors as c} from './theme';
+import {colors as c} from '@/theme/colors';
 
 const sources=[
-  require('../assets/audio/pierre-01-douceur.wav'),
-  require('../assets/audio/pierre-02-esperance.wav'),
-  require('../assets/audio/pierre-03-lumiere.wav')
+  require('../../../assets/audio/pierre-01-douceur.wav'),
+  require('../../../assets/audio/pierre-02-esperance.wav'),
+  require('../../../assets/audio/pierre-03-lumiere.wav')
 ];
 const names=['Douceur','Espérance','Lumière'];
 const BARS=Array.from({length:38},(_,i)=> 8+Math.round(20*Math.abs(Math.sin(i*1.74)*.7 +Math.cos(i*.37)*.3)));

@@ -4,7 +4,7 @@ import {Pressable,ScrollView,View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {Ionicons} from '@expo/vector-icons';
 import {router} from 'expo-router';
-import {Nav} from '@/components';
+import {Nav} from '@/components/navigation/Nav';
 export default function MusicSubmission(){
  const [title,setTitle]=useState(''),[creator,setCreator]=useState(''),[source,setSource]=useState(''),[rights,setRights]=useState(''),[credit,setCredit]=useState('');
  const [done,setDone]=useState(false);

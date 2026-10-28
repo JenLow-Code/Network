@@ -4,7 +4,7 @@ import {SafeAreaView} from 'react-native-safe-area-context';
 import {Ionicons} from '@expo/vector-icons';
 import {router} from 'expo-router';
 import {useIncomingShare} from 'expo-sharing';
-import {Nav} from '@/components';
+import {Nav} from '@/components/navigation/Nav';
 const parseRef=(raw:string)=>{
  const match=raw.match(/(?:psaumes?|psalms?|psalm|salmos?|salmo)\s*(\d{1,3})\s*(?:[:.,]\s*(\d{1,3}))?/i);
  return match?{chapter:Number(match[1]),verse:Number(match[2]||1)}:null;

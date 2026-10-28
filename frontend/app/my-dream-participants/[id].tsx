@@ -4,9 +4,9 @@ import {Pressable,ScrollView,View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {Ionicons} from '@expo/vector-icons';
 import {router,useLocalSearchParams} from 'expo-router';
-import {Nav} from '@/components';
+import {Nav} from '@/components/navigation/Nav';
 import {useDreams} from '@/domain/dreamRepository';
-import {useLocale} from '@/locale';
+import {useLocale} from '@/i18n/locale';
 export default function Participants(){
  const {id}=useLocalSearchParams<{id:string}>();
  const {items}=useDreams(),{tr}=useLocale();

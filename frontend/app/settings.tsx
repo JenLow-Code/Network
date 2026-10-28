@@ -5,10 +5,10 @@ import {SafeAreaView} from 'react-native-safe-area-context';
 import {Ionicons} from '@expo/vector-icons';
 import {router} from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {Nav,TopActions} from '@/components';
-import {useApp} from '@/context';
-import {useAppTheme} from '@/AppTheme';
-import {useLocale,Language,LANGUAGE_KEY} from '@/locale';
+import {Nav} from '@/components/navigation/Nav';import {TopActions} from '@/components/navigation/TopActions';
+import {useApp} from '@/context/AppContext';
+import {useAppTheme} from '@/theme/AppTheme';
+import {useLocale,Language,LANGUAGE_KEY} from '@/i18n/locale';
 const choices:{id:Language;label:string}[]=[{id:'fr',label:'Français'},{id:'en',label:'English'},{id:'de',label:'Deutsch'},{id:'pt',label:'Português'}];
 export default function Settings(){
  const {language,setLanguage,t,tr}=useLocale();

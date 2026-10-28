@@ -1,4 +1,4 @@
-import type {DreamPhase,DreamPublication} from '../discoveryData';
+import type {DreamPhase,DreamPublication} from './publication';
 export type DreamMedia={name:string;uri:string;kind:'photo'|'video'|'audio'|'document'};
 export type FlowerDraft={story:string;attachments:DreamMedia[];reminderDate?:string};
 export type DreamEntry={id:string;title:string;phase:DreamPhase;summary:string;image:string;needs:string[];notes:string[];additions:string[];motivation?:string;goalDate?:string;paused?:boolean;resolvedNeeds?:string[];flowerDraft?:FlowerDraft;testimony?:{comment:string;mediaType:'audio'|'photo'|'video'|'text';mediaUrl?:string;mediaItems?:DreamMedia[];date:string};createdAt:string;ownerIds:string[]};

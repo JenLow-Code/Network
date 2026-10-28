@@ -1,4 +1,4 @@
-import type {Language} from '../locale';
+import type {Language} from './locale';
 export const copy:Record<string,[string,string,string,string]> = {
   "Continuer l’inspiration": [
     "Continuer l’inspiration",

@@ -4,13 +4,13 @@ import {SafeAreaView} from 'react-native-safe-area-context';
 import {Ionicons} from '@expo/vector-icons';
 import {router} from 'expo-router';
 import Svg,{Defs,LinearGradient as SvgGradient,Stop,Rect} from 'react-native-svg';
-import {Publication,PHASE_COLORS,PHASE_LABELS,publications,personPublications,publicationColor} from './discoveryData';
+import {Publication,PHASE_COLORS,PHASE_LABELS,publicationColor} from '@/domain/publication';import {publications,personPublications} from '@/mocks/publications';
 import {ActionRail} from './ActionRail';
-import {PublicationImageFade,DETAIL_FADE_HEIGHT} from './PublicationImageFade';
-import {Nav,TopActions} from './components';
-import {personPath} from './people';
-import {PublicationGallery} from './PublicationGallery';
-import {useAppTheme} from './AppTheme';
+import {PublicationImageFade,DETAIL_FADE_HEIGHT} from '@/components/publication/PublicationImageFade';
+import {Nav} from '@/components/navigation/Nav';import {TopActions} from '@/components/navigation/TopActions';
+import {personPath} from '@/mocks/people';
+import {PublicationGallery} from '@/components/publication/PublicationGallery';
+import {useAppTheme} from '@/theme/AppTheme';
 
 
 /**

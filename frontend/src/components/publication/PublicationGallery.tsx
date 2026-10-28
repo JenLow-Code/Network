@@ -2,12 +2,12 @@ import React,{useId} from 'react';
 import {Image,Pressable,StyleSheet,Text,View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import Svg,{Defs,LinearGradient as SvgGradient,Rect,Stop} from 'react-native-svg';
-import {DreamPhaseIcon} from './DreamPhaseIcon';
-import {TalentArt} from './TalentArt';
+import {DreamPhaseIcon} from '@/icons/DreamPhaseIcon';
+import {TalentArt} from '@/components/talent/TalentArt';
 import {useAudioPlayer,useAudioPlayerStatus} from 'expo-audio';
 import {router} from 'expo-router';
-import {Publication,PHASE_COLORS,PHASE_LABELS,PHASE_SYMBOLS,verseExcerpt,publicationColor} from './discoveryData';
-const audio=[require('../assets/audio/pierre-01-douceur.wav'),require('../assets/audio/pierre-02-esperance.wav'),require('../assets/audio/pierre-03-lumiere.wav')];
+import {Publication,PHASE_COLORS,PHASE_LABELS,PHASE_SYMBOLS,publicationColor} from '@/domain/publication';import {verseExcerpt} from '@/mocks/publications';
+const audio=[require('../../../assets/audio/pierre-01-douceur.wav'),require('../../../assets/audio/pierre-02-esperance.wav'),require('../../../assets/audio/pierre-03-lumiere.wav')];
 export const publicationPath=(p:Publication)=>p.type==='dream'?({pathname:'/dream/[id]',params:{id:p.id}} as const):p.type==='music'?({pathname:'/music/[id]',params:{id:p.id}} as const):p.type==='talent'?({pathname:'/person/[name]',params:{name:p.author}} as const):({pathname:'/bible/[reference]',params:{reference:p.referenceId,verse:String(p.highlightedVerse)}} as const);
 function MusicCard({index}:{index:0|1|2}){const player=useAudioPlayer(audio[index]);const status=useAudioPlayerStatus(player);const toggle=()=>{if(status.playing)player.pause();else{if(status.didJustFinish)void player.seekTo(0);player.play()}};return <Pressable onPress={toggle} accessibilityLabel={status.playing?'Pause sample':'Play 8 second sample'} style={s.play}><Ionicons name={status.playing?'pause':'play'} size={23} color="#fff"/></Pressable>}
 export function PublicationTile({item}:{item:Publication}){

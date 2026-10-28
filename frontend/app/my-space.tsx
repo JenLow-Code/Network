@@ -3,12 +3,12 @@ import {Pressable,ScrollView,Text,View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {router} from 'expo-router';
 import {Ionicons} from '@expo/vector-icons';
-import {Avatar,Nav,TopActions} from '@/components';
-import {useApp} from '@/context';
-import {DREAM_PHASES,PHASE_COLORS,PHASE_LABELS,PHASE_SYMBOLS} from '@/discoveryData';
+import {Avatar} from '@/components/ui/Avatar';import {Nav} from '@/components/navigation/Nav';import {TopActions} from '@/components/navigation/TopActions';
+import {useApp} from '@/context/AppContext';
+import {DREAM_PHASES,PHASE_COLORS,PHASE_LABELS,PHASE_SYMBOLS} from '@/domain/publication';
 import {useDreams} from '@/domain/dreamRepository';
-import {useAppTheme} from '@/AppTheme';
-import {DreamPhaseIcon} from '@/DreamPhaseIcon';
+import {useAppTheme} from '@/theme/AppTheme';
+import {DreamPhaseIcon} from '@/icons/DreamPhaseIcon';
 
 function DreamsOverview(){
  const {items}=useDreams();

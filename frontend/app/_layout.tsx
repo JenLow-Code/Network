@@ -3,11 +3,11 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
 import { Caveat_700Bold } from '@expo-google-fonts/caveat';
-import { Provider } from '@/context';
+import { Provider } from '@/context/AppContext';
 import { DreamProvider } from '@/domain/dreamRepository';
-import { LocaleProvider } from '@/locale';
-import { AuthProvider } from '@/auth/AuthProvider';
-import {AppThemeProvider,useAppTheme} from '@/AppTheme';
+import { LocaleProvider } from '@/i18n/locale';
+import { AuthProvider } from '@/context/AuthProvider';
+import {AppThemeProvider,useAppTheme} from '@/theme/AppTheme';
 
 function ThemedStack(){const theme=useAppTheme();return <><StatusBar style={theme.dark?'light':'dark'} /><Stack screenOptions={{headerShown:false,contentStyle:{backgroundColor:theme.background}}}/></>}
 export default function Layout() {

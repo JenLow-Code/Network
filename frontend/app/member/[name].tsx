@@ -3,11 +3,11 @@ import {Image,Pressable,ScrollView,Text,View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {router,useLocalSearchParams} from 'expo-router';
 import {Ionicons} from '@expo/vector-icons';
-import {Nav,TopActions} from '@/components';
-import {people} from '@/people';
-import {PublicationGallery} from '@/PublicationGallery';
-import {TalentArt} from '@/TalentArt';
-import {useAppTheme} from '@/AppTheme';
+import {Nav} from '@/components/navigation/Nav';import {TopActions} from '@/components/navigation/TopActions';
+import {people} from '@/mocks/people';
+import {PublicationGallery} from '@/components/publication/PublicationGallery';
+import {TalentArt} from '@/components/talent/TalentArt';
+import {useAppTheme} from '@/theme/AppTheme';
 export default function PublicMemberProfile(){
  const {name}=useLocalSearchParams<{name:string}>();
  const person=people.find(p=>p.name===name);

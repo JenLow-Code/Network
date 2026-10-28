@@ -3,11 +3,11 @@ import {Pressable,ScrollView,Text,TextInput,View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {Ionicons} from '@expo/vector-icons';
 import {router} from 'expo-router';
-import {useApp} from '@/context';
-import {Nav,TopActions} from '@/components';
-import {publications} from '@/discoveryData';
-import {PublicationGallery} from '@/PublicationGallery';
-import {useAppTheme} from '@/AppTheme';
+import {useApp} from '@/context/AppContext';
+import {Nav} from '@/components/navigation/Nav';import {TopActions} from '@/components/navigation/TopActions';
+import {publications} from '@/mocks/publications';
+import {PublicationGallery} from '@/components/publication/PublicationGallery';
+import {useAppTheme} from '@/theme/AppTheme';
 export default function FireList(){const theme=useAppTheme();
  const {fireIds}=useApp();const [query,setQuery]=useState('');const items=publications.filter(p=>fireIds.includes(p.id)&&[p.title,p.author].join(' ').toLowerCase().includes(query.trim().toLowerCase()));
  return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}><ScrollView style={{flex:1}} contentContainerStyle={{paddingHorizontal:15,paddingBottom:35}}>

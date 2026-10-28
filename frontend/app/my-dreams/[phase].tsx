@@ -4,9 +4,9 @@ import {Image,Pressable,ScrollView,View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {router,useLocalSearchParams} from 'expo-router';
 import {Ionicons} from '@expo/vector-icons';
-import {Nav,TopActions} from '@/components';
-import {OfflineDreamImage} from '@/OfflineDreamImage';
-import {DREAM_PHASES,DreamPhase,PHASE_COLORS} from '@/discoveryData';
+import {Nav} from '@/components/navigation/Nav';import {TopActions} from '@/components/navigation/TopActions';
+import {OfflineDreamImage} from '@/components/publication/OfflineDreamImage';
+import {DREAM_PHASES,DreamPhase,PHASE_COLORS} from '@/domain/publication';
 import {useDreams} from '@/domain/dreamRepository';
 export default function Stage(){
  const {phase}=useLocalSearchParams<{phase:string}>();

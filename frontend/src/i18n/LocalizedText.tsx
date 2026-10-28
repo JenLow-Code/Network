@@ -1,6 +1,6 @@
 import React from 'react';
 import {Text as NativeText,TextInput as NativeTextInput,type TextProps,type TextInputProps} from 'react-native';
-import {useLocale} from '../locale';
+import {useLocale} from './locale';
 import {translateStatic} from './uiCopy';
 
 /** Localizes only explicit UI strings. Member-written content is never translated. */

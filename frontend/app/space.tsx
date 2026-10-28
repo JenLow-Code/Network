@@ -4,12 +4,12 @@ import {Alert,Pressable,ScrollView,View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {Ionicons} from '@expo/vector-icons';
 import {router} from 'expo-router';
-import {Avatar,Nav,Pill,TopActions} from '@/components';
-import {ContactSheet} from '@/ContactSheet';
-import {colors as c} from '@/theme';
-import {useApp} from '@/context';
-import {FireHeader} from '@/FireHeader';
-import {useLocale} from '@/locale';
+import {Avatar} from '@/components/ui/Avatar';import {Nav} from '@/components/navigation/Nav';import {Pill} from '@/components/ui/Pill';import {TopActions} from '@/components/navigation/TopActions';
+import {ContactSheet} from '@/components/ui/ContactSheet';
+import {colors as c} from '@/theme/colors';
+import {useApp} from '@/context/AppContext';
+import {FireHeader} from '@/components/fire/FireHeader';
+import {useLocale} from '@/i18n/locale';
 
 type Kind='All'|'Chats'|'Collabs'|'Lessons';
 type Activity={id:number,kind:Kind,name:string,detail:string,age:string,status:'online'|'busy'|'offline'};
