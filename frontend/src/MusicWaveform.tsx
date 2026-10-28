@@ -32,7 +32,6 @@ export function MusicWaveform({index,renderLayout}:{index:0|1|2;renderLayout?:(b
      <Text style={{fontSize:11,color:'#666'}}>{time(status.duration)}</Text>
     </View>
    </View>
-  </View>
- </View>;
+  </View>;
  return renderLayout? <>{renderLayout(button,waveform)}</>:waveform;
 }
