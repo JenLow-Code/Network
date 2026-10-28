@@ -24,7 +24,7 @@ export function DetailPanel({title,children,foldable=false,defaultOpen=true}:{ti
 /** Shared visual shell for Bible, Music and Talents, matching the Dream layout. */
 export function PublicationDetail({item,children,media}:{item:Publication;children:React.ReactNode;media?:React.ReactNode;onImageDoubleTap?:()=>void}){
  const theme=useAppTheme();
- const color=item.type==='bible'?PHASE_COLORS.Témoignage.background:item.type==='talent'?'#EEE9E2':'#E8E3DD';
+ const color='#F1F1EF';
  const subtitle=item.type==='bible'?'Louis Segond 1910':item.author;
  const avatar=item.author==='Sarah'?'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=220&q=80':'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=220&q=80';
  return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
