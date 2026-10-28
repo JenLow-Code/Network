@@ -1,6 +1,11 @@
 import React,{useEffect,useMemo,useRef} from 'react';
 import {Pressable,ScrollView,Text,View} from 'react-native';
 export type TimedLyric={time:number;text:string};
+/** Copyable, all-at-once lyrics; independent of the synchronized preview. */
+export function FullMusicLyrics({lines=[]}:{lines?:TimedLyric[]}){
+ const ordered=[...lines].sort((a,b)=>a.time-b.time);
+ return <View style={{paddingVertical:12,paddingHorizontal:7}}><Text selectable style={{fontSize:15,lineHeight:25,color:'#333'}}>{ordered.length?ordered.map(x=>x.text).join('\n'):'Paroles non disponibles pour cet enregistrement.'}</Text></View>;
+}
 export function MusicLyrics({lines=[],currentTime,onSeek}:{lines?:TimedLyric[];currentTime:number;onSeek:(seconds:number)=>void}){
  const scroll=useRef<ScrollView>(null);
  const positions=useRef<Record<number,number>>({});
