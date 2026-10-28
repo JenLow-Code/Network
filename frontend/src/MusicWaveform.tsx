@@ -24,12 +24,12 @@ export function MusicWaveform({index,renderLayout}:{index:0|1|2;renderLayout?:(b
   <View style={{flexDirection:'row',alignItems:'center',gap:9}}>
    {!renderLayout?button:null}
    <View style={{flex:1}}>
-    <View style={{height:46,flexDirection:'row',alignItems:'center',justifyContent:'space-between',gap:2}}>
-     {heights.map((h,i)=><Pressable key={i} onPress={()=>{if(status.duration>0)void player.seekTo(status.duration*i/heights.length)}} style={{flex:1,alignItems:'center',justifyContent:'center',height:34}}><View style={{width:'100%',maxWidth:3,height:Math.max(4,h*.46),borderRadius:5,backgroundColor:i/heights.length<=progress?'#CB245C':'#B8B3B5'}}/></Pressable>)}
-    </View>
-    <View style={{flexDirection:'row',justifyContent:'space-between',marginTop:1}}>
+    <View style={{flexDirection:'row',justifyContent:'space-between',marginBottom:3}}>
      <Text style={{fontSize:11,color:'#666'}}>{time(status.currentTime)}</Text>
      <Text style={{fontSize:11,color:'#666'}}>{time(status.duration)}</Text>
+    </View>
+    <View style={{height:46,flexDirection:'row',alignItems:'center',justifyContent:'space-between',gap:2}}>
+     {heights.map((h,i)=><Pressable key={i} onPress={()=>{if(status.duration>0)void player.seekTo(status.duration*i/heights.length)}} style={{flex:1,alignItems:'center',justifyContent:'center',height:34}}><View style={{width:'100%',maxWidth:3,height:Math.max(4,h*.46),borderRadius:5,backgroundColor:i/heights.length<=progress?'#CB245C':'#B8B3B5'}}/></Pressable>)}
     </View>
    </View>
   </View>;
