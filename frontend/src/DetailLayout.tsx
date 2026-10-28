@@ -31,7 +31,7 @@ export function DetailLayout({item,children,featured}:{item:Publication;children
  const titleSize=Math.min(17,Math.max(7,Math.floor((headerWidth-8)/(Math.max(1,textUnits)*1.09))));
  const subtitle=item.type==='dream'?PHASE_LABELS[item.phase]:item.type==='music'?item.songAuthor:item.type==='talent'?item.level:'Louis Segond 1910';
  // Public community affiliation is not yet available in the demo dataset.
- const byline=item.author;
+ const byline=item.church?`${item.author} · ${item.church}`:item.author;
  const subtitleColor=item.type==='dream'?PHASE_COLORS[item.phase].foreground:theme.muted;
  return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
   <ScrollView contentContainerStyle={{maxWidth:680,width:'100%',alignSelf:'center',paddingBottom:50}}>
@@ -57,11 +57,11 @@ export function DetailLayout({item,children,featured}:{item:Publication;children
       <Rect width="100%" height="100%" fill={`url(#${gradientId})`}/>
      </Svg>
     </View>
-    <View style={{width:'100%',paddingTop:item.type==='talent'?36:12,paddingBottom:13,paddingLeft:19,paddingRight:19,position:'relative'}}>
-     <View pointerEvents="none" style={{position:'absolute',top:-47,right:-1,width:100,alignItems:'center',justifyContent:'center',zIndex:2}}>
+    <View style={{width:'100%',paddingTop:item.type==='music'?96:item.type==='talent'?36:12,paddingBottom:13,paddingLeft:19,paddingRight:19,position:'relative'}}>
+     <View pointerEvents="none" style={{position:'absolute',top:-47,right:item.type==='music'?undefined:-1,left:item.type==='music'?24:undefined,width:100,alignItems:'center',justifyContent:'center',zIndex:2}}>
       {item.type==='dream'?<View style={{height:96,justifyContent:'center',alignItems:'center'}}><DreamPhaseIcon phase={item.phase} size={70}/></View>:
        item.type==='talent'?<><TalentArt kind={item.instrument} size={94}/><TalentLevelDots level={item.level}/></>:
-       <View style={{height:96,justifyContent:'center',alignItems:'center'}}><Ionicons name={item.type==='music'?'musical-notes-outline':'book-outline'} size={66} color="#3F3F3F"/></View>}
+       <View style={{height:96,justifyContent:'center',alignItems:'center'}}><Ionicons name={item.type==='music'?'musical-note-outline':'book-outline'} size={66} color="#3F3F3F"/></View>}
      </View>
      <View style={{flexDirection:'row',alignItems:'stretch',gap:8}}>
       <View style={{flex:1,minWidth:0}}>{featured}{children}</View>
