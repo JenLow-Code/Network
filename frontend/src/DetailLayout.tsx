@@ -3,7 +3,7 @@ import {Pressable,ScrollView,Text,View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {Ionicons} from '@expo/vector-icons';
 import {router} from 'expo-router';
-import {LinearGradient} from 'expo-linear-gradient';
+import Svg,{Defs,LinearGradient as SvgGradient,Stop,Rect} from 'react-native-svg';
 import {Publication,PHASE_COLORS,PHASE_LABELS,publications,personPublications} from './discoveryData';
 import {DreamPhaseIcon} from './DreamPhaseIcon';
 import {TalentArt} from './TalentArt';
@@ -28,7 +28,7 @@ export function DetailLayout({item,children,featured}:{item:Publication;children
     <View style={{flex:1}}/>
     <TopActions/>
    </View>
-   <LinearGradient colors={[base,theme.background]} locations={[0,1]} style={{paddingHorizontal:19,paddingTop:12,paddingBottom:36,minHeight:330}}>
+   <View style={{paddingHorizontal:19,paddingTop:12,paddingBottom:36,minHeight:330,position:'relative'}}><View pointerEvents="none" style={{position:'absolute',top:0,bottom:0,left:0,right:0}}><Svg width="100%" height="100%"><Defs><SvgGradient id="detailGradient" x1="0" y1="0" x2="0" y2="1"><Stop offset="0%" stopColor={base}/><Stop offset="100%" stopColor={theme.background}/></SvgGradient></Defs><Rect width="100%" height="100%" fill="url(#detailGradient)"/></Svg></View>
     <View style={{alignItems:'center',gap:4,paddingHorizontal:14}}>
      <Text style={{fontSize:21,fontWeight:'800',textAlign:'center',color:theme.foreground}}>{item.title}</Text>
      <Text style={{fontSize:12,color:theme.muted}}>{subtitle}</Text>
@@ -41,7 +41,7 @@ export function DetailLayout({item,children,featured}:{item:Publication;children
      <View style={{flex:1,minWidth:0}}>{featured}{children}</View>
      <View style={{width:42,alignItems:'center',justifyContent:'flex-end',paddingTop:6}}><ActionRail item={item}/></View>
     </View>
-   </LinearGradient>
+   </View>
    <View style={{paddingHorizontal:19}}>
     <Text style={{fontSize:18,fontWeight:'700',color:theme.foreground,marginTop:18,marginBottom:14}}>Continuer l’inspiration</Text>
     <PublicationGallery items={[...publications,...personPublications].filter(p=>p.id!==item.id)}/>
