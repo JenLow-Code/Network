@@ -1,4 +1,4 @@
-import React, { useId } from 'react';
+import React, { useId, useMemo } from 'react';
 import { Image, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
@@ -9,7 +9,6 @@ import { TalentArt } from '@/components/talent/TalentArt';
 import type { Publication } from '@/domain/publication';
 import { PHASE_LABELS } from '@/domain/publication';
 import { verseExcerpt } from '@/mocks/publications';
-import { useAppTheme } from '@/theme/AppTheme';
 
 const audio = [
   require('../../../assets/audio/pierre-01-douceur.wav'),
@@ -29,13 +28,14 @@ export const publicationPath = (p: Publication) =>
             params: { reference: p.referenceId, verse: String(p.highlightedVerse) },
           } as const);
 
-function MusicCard({ index }: { index: 0 | 1 | 2 }) {
+function MusicPlayback({ index }: { index: 0 | 1 | 2 }) {
   const player = useAudioPlayer(audio[index]);
   const status = useAudioPlayerStatus(player);
 
   const toggle = () => {
-    if (status.playing) player.pause();
-    else {
+    if (status.playing) {
+      player.pause();
+    } else {
       if (status.didJustFinish) void player.seekTo(0);
       player.play();
     }
@@ -43,20 +43,17 @@ function MusicCard({ index }: { index: 0 | 1 | 2 }) {
 
   return (
     <Pressable
-      onPress={event => {
-        event.stopPropagation();
-        toggle();
-      }}
+      onPress={toggle}
       accessibilityRole="button"
       accessibilityLabel={status.playing ? 'Pause sample' : 'Play 8 second sample'}
       style={styles.play}
     >
-      <Ionicons name={status.playing ? 'pause' : 'play'} size={21} color="#fff" />
+      <Ionicons name={status.playing ? 'pause' : 'play'} size={20} color="#FFFFFF" />
     </Pressable>
   );
 }
 
-function eyebrow(item: Publication) {
+function category(item: Publication) {
   switch (item.type) {
     case 'dream':
       return PHASE_LABELS[item.phase];
@@ -69,336 +66,256 @@ function eyebrow(item: Publication) {
   }
 }
 
-function story(item: Publication) {
+function excerpt(item: Publication) {
   switch (item.type) {
     case 'dream':
       return item.summary;
     case 'music':
       return item.description;
-    case 'talent':
-      return item.description;
     case 'bible':
       return verseExcerpt(item);
+    case 'talent':
+      return item.description;
   }
 }
 
-function Artwork({
-  item,
-  imageHeight,
-  fullBleed = false,
-}: {
+type TileSize = 1 | 2 | 4;
+
+type PositionedTile = {
   item: Publication;
-  imageHeight: number;
-  fullBleed?: boolean;
-}) {
-  const theme = useAppTheme();
-  return (
-    <View
-      style={[
-        styles.artwork,
-        {
-          height: imageHeight,
-          backgroundColor:
-            item.type === 'talent' ? 'transparent' : theme.dark ? '#262626' : '#E6E2DA',
-        },
-      ]}
-    >
-      {item.type === 'talent' ? (
-        <View style={styles.talentArtwork}>
-          <TalentArt kind={item.instrument} size={Math.min(imageHeight * 0.7, 118)} />
-        </View>
-      ) : (
-        <Image
-          source={{ uri: item.image }}
-          accessibilityLabel={item.imageAlt}
-          resizeMode="cover"
-          style={styles.image}
-        />
-      )}
-      {item.type === 'bible' && !fullBleed ? (
-        <View style={styles.verseOverlay}>
-          <Text numberOfLines={7} style={styles.verse}>
-            {verseExcerpt(item)}
-          </Text>
-        </View>
-      ) : null}
-      {item.type === 'dream' && (
-        <View style={styles.phase}>
-          <DreamPhaseIcon phase={item.phase} size={25} />
-        </View>
-      )}
-      {item.type === 'music' && <MusicCard index={item.audioIndex} />}
-    </View>
-  );
-}
-
-/** Unframed type and an actual member signature, never a filled "card". */
-function Byline({ item, light = false }: { item: Publication; light?: boolean }) {
-  const theme = useAppTheme();
-  return (
-    <View style={styles.byline}>
-      <Text
-        numberOfLines={1}
-        style={[
-          styles.author,
-          { color: light ? '#FFFFFF' : theme.foreground },
-        ]}
-      >
-        {item.author}
-      </Text>
-      {item.type === 'talent' ? (
-        <View style={styles.dots} accessibilityLabel={item.level}>
-          {['#287D58', '#2ECA65', '#EAC000', '#F38A24', '#CB245C'].map((color, i) => (
-            <View
-              key={i}
-              style={{
-                width: 7,
-                height: 7,
-                borderRadius: 4,
-                backgroundColor:
-                  i <=
-                  ({ Débutant: 1, Intermédiaire: 2, Confirmée: 3 } as Record<string, number>)[
-                    item.level
-                  ]
-                    ? color
-                    : theme.dark
-                      ? '#505050'
-                      : '#DEDCD8',
-              }}
-            />
-          ))}
-        </View>
-      ) : null}
-    </View>
-  );
-}
+  col: number;
+  row: number;
+  spanX: number;
+  spanY: number;
+  size: TileSize;
+};
 
 /**
- * ROWSE-inspired editorial cover: a photo as the canvas, not a rounded card.
- * The headline and handwritten member name share the same uninterrupted image.
+ * Every story occupies a whole, non-overlapping rectangle:
+ * 1 = one grid cell, 2 = two adjacent cells, 4 = a 2x2 feature.
+ * Pack items in data order so the layout still works after filtering.
  */
-function LeadStory({ item, width }: { item: Publication; width: number }) {
-  const gradientId = useId().replace(/[^a-zA-Z0-9_-]/g, '');
-  const height = width >= 600 ? 370 : Math.max(290, Math.min(375, width * 0.84));
-  return (
-    <Pressable
-      onPress={() => router.push(publicationPath(item) as any)}
-      accessibilityRole="button"
-      accessibilityLabel={'Open ' + item.title}
-      style={{ width: '100%', marginBottom: 29 }}
-    >
-      <View style={{ height, backgroundColor: '#171717', overflow: 'hidden' }}>
-        <Artwork item={item} imageHeight={height} fullBleed />
-        <Svg pointerEvents="none" width="100%" height="100%" style={StyleSheet.absoluteFill}>
-          <Defs>
-            <LinearGradient id={gradientId} x1="0%" y1="0%" x2="0%" y2="100%">
-              <Stop offset="0%" stopColor="#000" stopOpacity={0.06} />
-              <Stop offset="35%" stopColor="#000" stopOpacity={0.04} />
-              <Stop offset="68%" stopColor="#000" stopOpacity={0.50} />
-              <Stop offset="100%" stopColor="#000" stopOpacity={0.89} />
-            </LinearGradient>
-          </Defs>
-          <Rect width="100%" height="100%" fill={'url(#' + gradientId + ')'} />
-        </Svg>
-        <View pointerEvents="box-none" style={styles.leadCopy}>
-          <Text style={styles.leadCategory}>{eyebrow(item).toUpperCase()}</Text>
-          <Text
-            numberOfLines={3}
-            style={[styles.leadHeadline, { fontSize: width >= 600 ? 43 : 34 }]}
-          >
-            {item.title}
-          </Text>
-          <View style={styles.leadFooter}>
-            <Byline item={item} light />
-            <Ionicons name="arrow-forward" size={23} color="#fff" />
-          </View>
-        </View>
-      </View>
-    </Pressable>
-  );
+function arrange(items: Publication[], columns: number): PositionedTile[] {
+  const occupied: boolean[][] = [];
+  const output: PositionedTile[] = [];
+
+  items.forEach((item, index) => {
+    const pattern: TileSize[] = [4, 1, 1, 2, 1, 1, 2, 4, 1, 1, 2, 1];
+    const size: TileSize =
+      items.length <= 3 ? (index === 0 ? 2 : 1) : pattern[index % pattern.length];
+    const spanX = size === 1 ? 1 : 2;
+    const spanY = size === 4 ? 2 : 1;
+
+    let placed = false;
+    for (let row = 0; !placed; row++) {
+      for (let col = 0; col <= columns - spanX; col++) {
+        let free = true;
+        for (let y = row; y < row + spanY; y++) {
+          for (let x = col; x < col + spanX; x++) {
+            if (occupied[y]?.[x]) free = false;
+          }
+        }
+        if (!free) continue;
+
+        for (let y = row; y < row + spanY; y++) {
+          if (!occupied[y]) occupied[y] = [];
+          for (let x = col; x < col + spanX; x++) occupied[y][x] = true;
+        }
+        output.push({ item, col, row, spanX, spanY, size });
+        placed = true;
+        break;
+      }
+    }
+  });
+
+  return output;
 }
 
 /**
- * A magazine story, not a UI tile: no border, box shadow, rounded shell or
- * tinted background. Some stories lead with words rather than photographs.
+ * All words belonging to one publication stay on its own image. No floating
+ * captions, text-first article beside an unrelated image, borders or shadows.
  */
 export function PublicationTile({
   item,
-  imageHeight = 170,
-  textFirst = false,
+  width,
+  height,
+  size,
 }: {
   item: Publication;
-  imageHeight?: number;
-  textFirst?: boolean;
+  width: number;
+  height: number;
+  size: TileSize;
 }) {
-  const theme = useAppTheme();
-  const secondary = theme.dark ? '#C2C0BC' : '#5D5B56';
-  const storyText = story(item);
+  const shadeId = useId().replace(/[^a-zA-Z0-9_-]/g, '');
+  const isTalent = item.type === 'talent';
+  const large = size === 4;
+  const double = size === 2;
+  const bigText = large || double;
+  const caption = excerpt(item);
+  const ink = isTalent ? '#24231F' : '#FFFFFF';
+  const side = large ? 23 : double ? 18 : 12;
 
   return (
-    <Pressable
-      onPress={() => router.push(publicationPath(item) as any)}
-      accessibilityRole="button"
-      accessibilityLabel={'Open ' + item.title}
-      style={styles.article}
-    >
-      {!textFirst && <Artwork item={item} imageHeight={imageHeight} />}
-      <View style={[styles.copy, textFirst && styles.textLead]}>
-        <Text numberOfLines={1} style={[styles.eyebrow, { color: secondary }]}>
-          {eyebrow(item).toUpperCase()}
-        </Text>
-        <Text
-          numberOfLines={textFirst ? 4 : 3}
-          style={[
-            styles.headline,
-            {
-              color: theme.foreground,
-              fontSize: textFirst ? 25 : 19,
-              lineHeight: textFirst ? 29 : 24,
-            },
-          ]}
-        >
-          {item.title}
-        </Text>
-        {item.type !== 'bible' && (
-          <Text
-            numberOfLines={textFirst ? 5 : 3}
-            style={[styles.excerpt, { color: secondary }]}
-          >
-            {storyText}
-          </Text>
+    <View style={[styles.tile, { width, height }]}>
+      <Pressable
+        onPress={() => router.push(publicationPath(item) as any)}
+        accessibilityRole="button"
+        accessibilityLabel={'Open ' + item.title}
+        style={[styles.cover, { backgroundColor: isTalent ? '#EAE5DB' : '#262626' }]}
+      >
+        {isTalent ? (
+          <View style={styles.talentArt}>
+            <TalentArt
+              kind={item.instrument}
+              size={Math.min(width * 0.62, height * 0.52, 180)}
+            />
+          </View>
+        ) : (
+          <Image
+            source={{ uri: item.image }}
+            resizeMode="cover"
+            accessibilityLabel={item.imageAlt}
+            style={styles.photo}
+          />
         )}
-        <View style={styles.articleFooter}>
-          <Byline item={item} />
-          <Ionicons name="arrow-forward" size={17} color={theme.foreground} />
+
+        {!isTalent && (
+          <Svg
+            pointerEvents="none"
+            width="100%"
+            height="100%"
+            style={StyleSheet.absoluteFill}
+          >
+            <Defs>
+              <LinearGradient id={shadeId} x1="0%" y1="0%" x2="0%" y2="100%">
+                <Stop offset="0%" stopColor="#000000" stopOpacity={0.08} />
+                <Stop offset="35%" stopColor="#000000" stopOpacity={0.08} />
+                <Stop offset="60%" stopColor="#000000" stopOpacity={0.36} />
+                <Stop offset="80%" stopColor="#000000" stopOpacity={0.70} />
+                <Stop offset="100%" stopColor="#000000" stopOpacity={0.91} />
+              </LinearGradient>
+            </Defs>
+            <Rect width="100%" height="100%" fill={'url(#' + shadeId + ')'} />
+          </Svg>
+        )}
+
+        <View pointerEvents="none" style={[styles.caption, { left: side, right: side, bottom: side }]}>
+          <Text numberOfLines={1} style={[styles.eyebrow, { color: ink }]}>
+            {category(item).toUpperCase()}
+          </Text>
+          <Text
+            numberOfLines={large ? 3 : double ? 2 : 3}
+            style={[
+              styles.headline,
+              {
+                color: ink,
+                fontSize: large ? Math.min(36, Math.max(29, width * 0.075)) : double ? 25 : 17,
+                lineHeight: large ? 42 : double ? 30 : 21,
+              },
+            ]}
+          >
+            {item.title}
+          </Text>
+          {large && !isTalent ? (
+            <Text numberOfLines={3} style={[styles.description, { color: ink }]}>
+              {caption}
+            </Text>
+          ) : null}
+          <View style={styles.signature}>
+            <Text numberOfLines={1} style={[styles.author, { color: ink, fontSize: bigText ? 26 : 22 }]}>
+              {item.author}
+            </Text>
+            {isTalent && large ? (
+              <Text style={styles.talentLevel}>{item.level}</Text>
+            ) : null}
+          </View>
         </View>
-      </View>
-      {textFirst && <Artwork item={item} imageHeight={Math.round(imageHeight * 0.65)} />}
-    </Pressable>
+
+        {item.type === 'dream' ? (
+          <View pointerEvents="none" style={styles.phase}>
+            <DreamPhaseIcon phase={item.phase} size={26} />
+          </View>
+        ) : null}
+      </Pressable>
+
+      {/* A SIBLING of the story Pressable, never a nested <button> on web. */}
+      {item.type === 'music' ? <MusicPlayback index={item.audioIndex} /> : null}
+    </View>
   );
 }
 
 /**
- * A lead feature + airy asymmetric magazine columns.
- * No colored blocks or visible card boundaries. Narrow phones keep two columns;
- * larger screens have three. Search and filtering remain controlled by Discovery.
+ * Native + web editorial mosaic. Whitespace is the separator; picture, title
+ * and handwritten author form one complete, unmistakable publication.
  */
 export function PublicationGallery({ items }: { items: Publication[] }) {
-  const { width } = useWindowDimensions();
-  const columns = width >= 760 ? 3 : 2;
-  const gutter = width < 390 ? 14 : 22;
-  const contentWidth = Math.max(0, Math.min(width, 920) - 30);
-  const columnWidth = Math.max(0, (contentWidth - gutter * (columns - 1)) / columns);
-  const lead = items.length >= 4 ? items[0] : null;
-  const entries = lead ? items.slice(1) : items;
-  const ratios = [1.08, 1.35, 1.2, 1.52, 0.95, 1.28];
+  const { width: windowWidth } = useWindowDimensions();
+  const columns = windowWidth >= 790 ? 4 : windowWidth >= 600 ? 3 : 2;
+  const gutter = windowWidth < 410 ? 15 : 21;
+  const contentWidth = Math.max(0, Math.min(windowWidth, 920) - 30);
+  const cellWidth = (contentWidth - (columns - 1) * gutter) / columns;
+  const cellHeight = Math.round(Math.max(178, Math.min(260, cellWidth * 1.16)));
+
+  const layout = useMemo(() => arrange(items, columns), [items, columns]);
+  const rows = layout.reduce((max, tile) => Math.max(max, tile.row + tile.spanY), 0);
+  const totalHeight = rows * cellHeight + Math.max(0, rows - 1) * gutter;
 
   return (
-    <View style={styles.gallery}>
-      {lead && <LeadStory item={lead} width={contentWidth} />}
-      <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: gutter }}>
-        {Array.from({ length: columns }, (_, col) => (
-          <View key={col} style={{ flex: 1, minWidth: 0, gap: 31 }}>
-            {entries
-              .filter((_, i) => i % columns === col)
-              .map((item, index) => {
-                const position = index * columns + col;
-                const imageHeight = Math.round(
-                  Math.min(285, Math.max(115, columnWidth / ratios[position % ratios.length])),
-                );
-                return (
-                  <PublicationTile
-                    key={item.id}
-                    item={item}
-                    imageHeight={imageHeight}
-                    textFirst={position % 5 === 2 && item.type !== 'bible'}
-                  />
-                );
-              })}
-          </View>
-        ))}
-      </View>
+    <View style={{ width: '100%', height: totalHeight }}>
+      {layout.map(tile => (
+        <View
+          key={tile.item.id}
+          style={{
+            position: 'absolute',
+            left: tile.col * (cellWidth + gutter),
+            top: tile.row * (cellHeight + gutter),
+          }}
+        >
+          <PublicationTile
+            item={tile.item}
+            size={tile.size}
+            width={tile.spanX * cellWidth + (tile.spanX - 1) * gutter}
+            height={tile.spanY * cellHeight + (tile.spanY - 1) * gutter}
+          />
+        </View>
+      ))}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  gallery: { width: '100%' },
-  article: { backgroundColor: 'transparent', minWidth: 0 },
-  artwork: { position: 'relative', width: '100%', overflow: 'hidden' },
-  image: { width: '100%', height: '100%' },
-  talentArtwork: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  verseOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.50)',
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    justifyContent: 'center',
-  },
-  verse: { fontFamily: 'serif', fontSize: 15, lineHeight: 21, color: '#fff', textAlign: 'center' },
+  tile: { position: 'relative', borderWidth: 0, borderRadius: 0, backgroundColor: 'transparent' },
+  cover: { width: '100%', height: '100%', position: 'relative', borderWidth: 0, borderRadius: 0, overflow: 'hidden' },
+  photo: { width: '100%', height: '100%' },
+  talentArt: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: 65 },
+  caption: { position: 'absolute', gap: 5 },
+  eyebrow: { fontSize: 10, fontWeight: '600', letterSpacing: 1.1, opacity: 0.91 },
+  headline: { fontFamily: 'serif', fontWeight: '400', letterSpacing: -0.5 },
+  description: { fontSize: 12, lineHeight: 17, opacity: 0.91, maxWidth: 490, marginTop: 3 },
+  signature: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 3 },
+  author: { fontFamily: 'Caveat_700Bold', fontWeight: '400', lineHeight: 30 },
+  talentLevel: { fontSize: 11, color: '#69665E' },
   phase: {
-    position: 'absolute',
-    top: 9,
-    right: 9,
-    width: 35,
-    height: 35,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255,252,245,0.91)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  play: {
     position: 'absolute',
     top: 9,
     right: 9,
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: 'rgba(0,0,0,0.68)',
+    backgroundColor: 'rgba(255,252,245,0.92)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  play: {
+    position: 'absolute',
+    top: 9,
+    right: 9,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(0,0,0,0.65)',
     alignItems: 'center',
     justifyContent: 'center',
+    zIndex: 2,
   },
-  leadCopy: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: 'flex-end',
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-    paddingTop: 20,
-  },
-  leadCategory: {
-    color: 'rgba(255,255,255,0.87)',
-    fontSize: 10,
-    letterSpacing: 1.5,
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  leadHeadline: {
-    fontFamily: 'serif',
-    color: '#fff',
-    fontWeight: '400',
-    letterSpacing: -0.9,
-    lineHeight: 47,
-    maxWidth: 570,
-  },
-  leadFooter: {
-    marginTop: 11,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  copy: { paddingTop: 11, gap: 7, backgroundColor: 'transparent' },
-  textLead: { paddingTop: 3, paddingBottom: 17 },
-  eyebrow: { fontSize: 9, lineHeight: 13, letterSpacing: 1.4, fontWeight: '600' },
-  headline: { fontFamily: 'serif', letterSpacing: -0.35, fontWeight: '400' },
-  excerpt: { fontSize: 12, lineHeight: 17, fontWeight: '400' },
-  articleFooter: {
-    marginTop: 3,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 4,
-  },
-  byline: { flexDirection: 'row', gap: 7, alignItems: 'center', flexShrink: 1 },
-  author: { fontFamily: 'Caveat_700Bold', fontSize: 23, lineHeight: 27 },
-  dots: { flexDirection: 'row', gap: 3, alignItems: 'center' },
 });
