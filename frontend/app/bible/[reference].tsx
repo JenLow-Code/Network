@@ -13,8 +13,8 @@ export default function Bible(){
  const [ready,setReady]=useState(false);
  const centre=()=>{const pos=positions.current[focus];if(pos)inner.current?.scrollTo({y:Math.max(0,pos.y+pos.height/2-READER_HEIGHT/2),animated:false})};
  return <PublicationDetail item={post}>
-  <ScrollView ref={inner} nestedScrollEnabled showsVerticalScrollIndicator style={{height:READER_HEIGHT,backgroundColor:'#FAFAFA',borderRadius:10}} contentContainerStyle={{gap:5,padding:8,paddingBottom:16}} onContentSizeChange={()=>{if(!ready){centre();setReady(true)}}}>
-   {psalm150.map((v,i)=><View key={i} onLayout={e=>{positions.current[i+1]=e.nativeEvent.layout;if(i===psalm150.length-1)requestAnimationFrame(centre)}} style={{flexDirection:'row',gap:9,borderRadius:7,padding:10,backgroundColor:i+1===focus?'#F7E9F0':'#fff'}}>
+  <ScrollView ref={inner} nestedScrollEnabled showsVerticalScrollIndicator style={{height:READER_HEIGHT}} contentContainerStyle={{gap:6,paddingRight:6,paddingBottom:16}} onContentSizeChange={()=>{if(!ready){centre();setReady(true)}}}>
+   {psalm150.map((v,i)=><View key={i} onLayout={e=>{positions.current[i+1]=e.nativeEvent.layout;if(i===psalm150.length-1)requestAnimationFrame(centre)}} style={{flexDirection:'row',gap:9,borderRadius:7,padding:10,backgroundColor:i+1===focus?'#F7E9F0':'rgba(255,252,245,0.68)'}}>
     <Text style={{fontSize:11,color:i+1===focus?'#CB245C':'#777'}}>{i+1}</Text>
     <Text style={{flex:1,fontSize:15,lineHeight:21,color:i+1===focus?'#CB245C':'#333',fontWeight:i+1===focus?'700':'400'}}>{v}</Text>
    </View>)}
