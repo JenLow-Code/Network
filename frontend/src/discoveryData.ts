@@ -33,6 +33,7 @@ export type MusicPublication = PublicationBase & {
   type: 'music';
   audioIndex: 0 | 1 | 2;
   songAuthor: string;
+  lyrics?: {time:number;text:string}[];
   description: string;
 };
 
