@@ -20,7 +20,7 @@ import {useAppTheme} from './AppTheme';
  * Header stays above the gradient. The publication artwork occupies the
  * former overlapping avatar position; reactions sit beside the last panel.
  */
-export function DetailLayout({item,children,featured}:{item:Publication;children:React.ReactNode;featured?:React.ReactNode}){
+export function DetailLayout({item,children,featured,headerIcon}:{item:Publication;children:React.ReactNode;featured?:React.ReactNode;headerIcon?:React.ReactNode}){
  const theme=useAppTheme();
  const base=publicationColor(item);
  const gradientId=useId().replace(/[^a-zA-Z0-9_-]/g,'');
@@ -57,10 +57,12 @@ export function DetailLayout({item,children,featured}:{item:Publication;children
       <Rect width="100%" height="100%" fill={`url(#${gradientId})`}/>
      </Svg>
     </View>
-    {item.type==='dream'?<View pointerEvents="none" style={{position:'absolute',top:14,right:25,width:92,height:92,justifyContent:'center',alignItems:'center',zIndex:2}}>
-     <DreamPhaseIcon phase={item.phase} size={72}/>
-    </View>:item.type==='talent'?<View pointerEvents="none" style={{position:'absolute',top:14,right:19,width:118,alignItems:'center',zIndex:2}}>
-     <TalentArt kind={item.instrument} size={98}/><TalentLevelDots level={item.level}/>
+    {/* A single, shared upper-right anchor for all publication symbols.
+         Music supplies its real Play/Pause control; Bible has no symbol. */}
+    {item.type!=='bible'?<View pointerEvents={item.type==='music'?'box-none':'none'} style={{position:'absolute',top:14,right:19,width:118,minHeight:96,alignItems:'center',justifyContent:'center',zIndex:3}}>
+     {item.type==='dream'?<DreamPhaseIcon phase={item.phase} size={72}/>:
+      item.type==='talent'?<><TalentArt kind={item.instrument} size={98}/><TalentLevelDots level={item.level}/></>:
+      headerIcon}
     </View>:null}
     <View style={{width:'100%',paddingTop:12,paddingBottom:13,paddingLeft:19,paddingRight:19,position:'relative'}}> 
      <View style={{flexDirection:'row',alignItems:'stretch',gap:8}}>
