@@ -6,6 +6,7 @@ import {router} from 'expo-router';
 import Svg,{Defs,LinearGradient as SvgGradient,Stop,Rect} from 'react-native-svg';
 import {Publication,PHASE_COLORS,PHASE_LABELS,publications,personPublications,publicationColor} from './discoveryData';
 import {ActionRail} from './ActionRail';
+import {PublicationImageFade} from './PublicationImageFade';
 import {DreamPhaseIcon} from './DreamPhaseIcon';
 import {TalentArt} from './TalentArt';
 import {TalentLevelDots} from './TalentLevelDots';
@@ -57,6 +58,7 @@ export function DetailLayout({item,children,featured,headerIcon}:{item:Publicati
       <Rect width="100%" height="100%" fill={`url(#${gradientId})`}/>
      </Svg>
     </View>
+    {(item.type==='dream'||item.type==='music')&&item.image?.trim()?<PublicationImageFade key={item.id} uri={item.image} background={theme.background}/>:null}
     {/* A single, shared upper-right anchor for all publication symbols.
          Music supplies its real Play/Pause control; Bible has no symbol. */}
     {item.type!=='bible'?<View pointerEvents={item.type==='music'?'box-none':'none'} style={{position:'absolute',top:14,right:19,width:118,minHeight:96,alignItems:'center',justifyContent:'center',zIndex:3}}>
