@@ -46,7 +46,7 @@ export function DetailLayout({item,children,featured,headerIcon}:{item:Publicati
     </View>
     <TopActions/>
    </View>
-   <View style={{position:'relative',minHeight:DETAIL_FADE_HEIGHT,paddingTop:item.type==='dream'||item.type==='talent'?8:item.type==='bible'?0:24,paddingBottom:14}}>
+   <View style={{position:'relative',minHeight:DETAIL_FADE_HEIGHT,paddingTop:item.type==='bible'?0:8,paddingBottom:14}}>
     {/* Fixed-height fade: expanding panels must not stretch the gradient. */}
     <View pointerEvents="none" style={{position:'absolute',top:0,height:DETAIL_FADE_HEIGHT,left:0,right:0}}>
      <Svg width="100%" height="100%">
@@ -57,12 +57,6 @@ export function DetailLayout({item,children,featured,headerIcon}:{item:Publicati
      </Svg>
     </View>
     {(item.type==='dream'||item.type==='music')&&item.image?.trim()?<PublicationImageFade key={item.id} uri={item.image} background={theme.background}/>:null}
-    {/* Music alone keeps the interactive Play/Pause control in its upper-left slot.
-         Dream and Talent artwork now sits beside the featured heading below. */}
-    {item.type==='music'&&headerIcon?<View pointerEvents="box-none"
-      style={{position:'absolute',top:0,left:19,width:104,minHeight:96,alignItems:'center',justifyContent:'center',zIndex:3}}>
-      {headerIcon}
-    </View>:null}
     <View style={{width:'100%',paddingTop:12,paddingBottom:13,paddingLeft:19,paddingRight:19,position:'relative'}}> 
      <View style={{flexDirection:'row',alignItems:'stretch',gap:8}}>
       <View style={{flex:1,minWidth:0}}>{featured}{children}</View>
