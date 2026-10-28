@@ -61,7 +61,7 @@ export function DetailLayout({item,children,featured,headerIcon}:{item:Publicati
     {(item.type==='dream'||item.type==='music')&&item.image?.trim()?<PublicationImageFade key={item.id} uri={item.image} background={theme.background}/>:null}
     {/* A single, shared upper-right anchor for all publication symbols.
          Music supplies its real Play/Pause control; Bible has no symbol. */}
-    {item.type!=='bible'?<View pointerEvents={item.type==='music'?'box-none':'none'} style={{position:'absolute',top:14,right:19,width:118,minHeight:96,alignItems:'center',justifyContent:'center',zIndex:3}}>
+    {item.type!=='bible'?<View pointerEvents={item.type==='music'?'box-none':'none'} style={{position:'absolute',top:0,right:10,width:104,minHeight:96,alignItems:'center',justifyContent:'center',zIndex:3}}>
      {item.type==='dream'?<DreamPhaseIcon phase={item.phase} size={72}/>:
       item.type==='talent'?<><TalentArt kind={item.instrument} size={98}/><TalentLevelDots level={item.level}/></>:
       headerIcon}
