@@ -5,13 +5,13 @@ import {DreamPhaseIcon} from './DreamPhaseIcon';
 import {TalentArt} from './TalentArt';
 import {useAudioPlayer,useAudioPlayerStatus} from 'expo-audio';
 import {router} from 'expo-router';
-import {Publication,PHASE_COLORS,PHASE_LABELS,PHASE_SYMBOLS,verseExcerpt} from './discoveryData';
+import {Publication,PHASE_COLORS,PHASE_LABELS,PHASE_SYMBOLS,verseExcerpt,publicationColor} from './discoveryData';
 const audio=[require('../assets/audio/pierre-01-douceur.wav'),require('../assets/audio/pierre-02-esperance.wav'),require('../assets/audio/pierre-03-lumiere.wav')];
 export const publicationPath=(p:Publication)=>p.type==='dream'?({pathname:'/dream/[id]',params:{id:p.id}} as const):p.type==='music'?({pathname:'/music/[id]',params:{id:p.id}} as const):p.type==='talent'?({pathname:'/person/[name]',params:{name:p.author}} as const):({pathname:'/bible/[reference]',params:{reference:p.referenceId,verse:String(p.highlightedVerse)}} as const);
 function MusicCard({index}:{index:0|1|2}){const player=useAudioPlayer(audio[index]);const status=useAudioPlayerStatus(player);const toggle=()=>{if(status.playing)player.pause();else{if(status.didJustFinish)void player.seekTo(0);player.play()}};return <Pressable onPress={toggle} accessibilityLabel={status.playing?'Pause sample':'Play 8 second sample'} style={s.play}><Ionicons name={status.playing?'pause':'play'} size={23} color="#fff"/></Pressable>}
 export function PublicationTile({item}:{item:Publication}){
  const open=()=>router.push(publicationPath(item) as any);
- const bg=item.type==='dream'?PHASE_COLORS[item.phase].background:'#F1F1EF';
+ const bg=publicationColor(item);
  return <Pressable onPress={open} accessibilityLabel={'Open '+item.title} style={{borderRadius:12,overflow:'hidden',borderWidth:1,borderColor:'#e8e8e8',backgroundColor:bg}}>
   <View style={{height:item.type==='bible'?230:156,position:'relative',margin:10,marginBottom:0,borderRadius:9,overflow:'hidden'}}>
    {item.type==='talent'?<View style={{flex:1,alignItems:'center',justifyContent:'center'}}><TalentArt kind={item.instrument} size={110}/></View>:<Image source={{uri:item.image}} resizeMode="cover" style={{width:'100%',height:'100%'}}/>}
