@@ -15,8 +15,8 @@ export function DetailIntro({title,artwork,children,rightContent,compact=false}:
  compact?:boolean;
 }){
  return <View style={{paddingBottom:compact?5:8}}>
-  <View style={{flexDirection:'row',alignItems:'flex-end',minHeight:compact?64:90,gap:4}}>
-   <View style={{width:compact?66:92,marginLeft:compact?-12:-15,alignItems:'center',justifyContent:'center'}}>{artwork}</View>
+  <View style={{flexDirection:'row',alignItems:'flex-end',minHeight:compact?56:90,gap:compact?1:4}}>
+   <View style={{width:compact?58:92,marginLeft:compact?-8:-15,alignItems:'center',justifyContent:'center',transform:compact?[{translateY:-8}]:[]}}>{artwork}</View>
    {rightContent?
     <View style={{flex:1,minWidth:0,justifyContent:'flex-end',paddingBottom:2}}>{rightContent}</View>:
     <Text numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.75}
