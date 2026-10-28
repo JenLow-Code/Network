@@ -20,7 +20,7 @@ export function DetailIntro({title,artwork,children,rightContent,compact=false}:
    {rightContent?
     <View style={{flex:1,minWidth:0,justifyContent:'flex-end',paddingBottom:2}}>{rightContent}</View>:
     <Text numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.75}
-     style={{fontFamily:'Caveat_700Bold',fontSize:27,lineHeight:32,color:'#262626',flex:1,marginBottom:0}}>{title}</Text>}
+     style={{fontFamily:'Caveat_700Bold',fontSize:27,lineHeight:32,color:compact?'#CB245C':'#262626',flex:1,marginBottom:0}}>{title}</Text>}
   </View>
   {children?<View style={{paddingLeft:7,marginTop:compact?1:3}}>{children}</View>:null}
  </View>;
