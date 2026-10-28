@@ -8,7 +8,8 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "format": "npx prettier --write \"app/**/*.{ts,tsx}\" \"src/**/*.{ts,tsx}\" \"assets/**/*.ts\""
   },
   "dependencies": {
     "expo": "~58.0.17",

@@ -1,28 +1,76 @@
-import {Text} from '@/i18n/LocalizedText';
+import { Text } from '@/i18n/LocalizedText';
 import React from 'react';
-import {Image,Pressable,ScrollView,View} from 'react-native';
-import {SafeAreaView} from 'react-native-safe-area-context';
-import {router,useLocalSearchParams} from 'expo-router';
-import {Ionicons} from '@expo/vector-icons';
-import {Nav} from '@/components/navigation/Nav';import {TopActions} from '@/components/navigation/TopActions';
-import {OfflineDreamImage} from '@/components/publication/OfflineDreamImage';
-import {DREAM_PHASES,DreamPhase,PHASE_COLORS} from '@/domain/publication';
-import {useDreams} from '@/domain/dreamRepository';
-export default function Stage(){
- const {phase}=useLocalSearchParams<{phase:string}>();
- const current=DREAM_PHASES.find(x=>x===phase) as DreamPhase|undefined;
- const {items}=useDreams();
- const filtered=items.filter(x=>x.phase===current);
- return <SafeAreaView style={{flex:1,backgroundColor:'#fff'}}><ScrollView style={{flex:1}} contentContainerStyle={{padding:18}}>
-  <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}><Pressable onPress={()=>router.back()}><Ionicons name="chevron-back" size={26}/></Pressable><TopActions/></View>
-  <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}>
-   <Text style={{fontSize:28,fontWeight:'700',marginVertical:10}}>{current||'Mes rêves'}</Text>
-   <Pressable onPress={()=>router.push('/my-dream/new')} style={{padding:8}} accessibilityLabel="Créer un rêve"><Ionicons name="add-circle" size={29} color="#D71D77"/></Pressable>
-  </View>
-  {filtered.map(d=><Pressable key={d.id} onPress={()=>router.push({pathname:'/my-dream/[id]',params:{id:d.id}})} style={{borderWidth:1,borderColor:'#eee',borderRadius:13,marginBottom:12,padding:10,flexDirection:'row',alignItems:'center',gap:12}}>
-   <View style={{width:90}}><OfflineDreamImage uri={d.image} height={88} radius={9}/></View>
-   <View style={{flex:1}}><Text style={{fontWeight:'700',fontSize:14}}>{d.title}</Text><Text style={{fontSize:11,color:'#777',marginTop:7}}>{d.phase}</Text></View><Ionicons name="chevron-forward" size={20} color="#888"/>
-  </Pressable>)}
-  {!filtered.length?<Text style={{color:'#888',paddingTop:30,textAlign:'center'}}>Aucun rêve dans cette phase pour l’instant.</Text>:null}
- </ScrollView><Nav/></SafeAreaView>;
+import { Image, Pressable, ScrollView, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { router, useLocalSearchParams } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { Nav } from '@/components/navigation/Nav';
+import { TopActions } from '@/components/navigation/TopActions';
+import { OfflineDreamImage } from '@/components/publication/OfflineDreamImage';
+import { DREAM_PHASES, DreamPhase, PHASE_COLORS } from '@/domain/publication';
+import { useDreams } from '@/domain/dreamRepository';
+export default function Stage() {
+  const { phase } = useLocalSearchParams<{ phase: string }>();
+  const current = DREAM_PHASES.find(x => x === phase) as DreamPhase | undefined;
+  const { items } = useDreams();
+  const filtered = items.filter(x => x.phase === current);
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 18 }}>
+        <View
+          style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
+        >
+          <Pressable onPress={() => router.back()}>
+            <Ionicons name="chevron-back" size={26} />
+          </Pressable>
+          <TopActions />
+        </View>
+        <View
+          style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
+        >
+          <Text style={{ fontSize: 28, fontWeight: '700', marginVertical: 10 }}>
+            {current || 'Mes rêves'}
+          </Text>
+          <Pressable
+            onPress={() => router.push('/my-dream/new')}
+            style={{ padding: 8 }}
+            accessibilityLabel="Créer un rêve"
+          >
+            <Ionicons name="add-circle" size={29} color="#D71D77" />
+          </Pressable>
+        </View>
+        {filtered.map(d => (
+          <Pressable
+            key={d.id}
+            onPress={() => router.push({ pathname: '/my-dream/[id]', params: { id: d.id } })}
+            style={{
+              borderWidth: 1,
+              borderColor: '#eee',
+              borderRadius: 13,
+              marginBottom: 12,
+              padding: 10,
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 12,
+            }}
+          >
+            <View style={{ width: 90 }}>
+              <OfflineDreamImage uri={d.image} height={88} radius={9} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontWeight: '700', fontSize: 14 }}>{d.title}</Text>
+              <Text style={{ fontSize: 11, color: '#777', marginTop: 7 }}>{d.phase}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#888" />
+          </Pressable>
+        ))}
+        {!filtered.length ? (
+          <Text style={{ color: '#888', paddingTop: 30, textAlign: 'center' }}>
+            Aucun rêve dans cette phase pour l’instant.
+          </Text>
+        ) : null}
+      </ScrollView>
+      <Nav />
+    </SafeAreaView>
+  );
 }

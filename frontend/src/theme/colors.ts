@@ -1,1 +1,9 @@
-export const colors={pink:'#D71D77',ink:'#080808',muted:'#868686',border:'#E6E6E6',background:'#FFFFFF',pale:'#FCEAF2',green:'#ECF6E8'};
+export const colors = {
+  pink: '#D71D77',
+  ink: '#080808',
+  muted: '#868686',
+  border: '#E6E6E6',
+  background: '#FFFFFF',
+  pale: '#FCEAF2',
+  green: '#ECF6E8',
+};

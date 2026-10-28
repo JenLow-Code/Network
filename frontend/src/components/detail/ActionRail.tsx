@@ -1,52 +1,218 @@
-import React,{useState} from 'react';
-import {Modal,Pressable,Share,StyleSheet,Text,View} from 'react-native';
-import {Ionicons} from '@expo/vector-icons';
-import {router} from 'expo-router';
-import {useApp} from '@/context/AppContext';
-import {dreams} from '@/mocks/publications';import {Publication} from '@/domain/publication';
-import {allowedActions,ActionId} from '@/domain/publicationRules';
-import {myCircle,matchingTalents,myTalents} from '@/mocks/demoCircle';
-import {PrayerIcon} from '@/icons/PrayerIcon';
-import {FireIcon} from '@/icons/FireIcon';
-import {colors as c} from '@/theme/colors';
+import React, { useState } from 'react';
+import { Modal, Pressable, Share, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
+import { useApp } from '@/context/AppContext';
+import { dreams } from '@/mocks/publications';
+import { Publication } from '@/domain/publication';
+import { allowedActions, ActionId } from '@/domain/publicationRules';
+import { myCircle, matchingTalents, myTalents } from '@/mocks/demoCircle';
+import { PrayerIcon } from '@/icons/PrayerIcon';
+import { FireIcon } from '@/icons/FireIcon';
+import { colors as c } from '@/theme/colors';
 
-export function ActionRail({item}:{item:Publication}){
- const app=useApp(),[modal,setModal]=useState<'dream'|'circle'|null>(null);
- const permitted=allowedActions(item);
- const seeded=Object.values(app.dreamInspirations).some(ids=>ids.includes(item.id));
- const activity=(id:ActionId)=>{
-  switch(id){
-   case 'fire': app.toggleFire(item.id);break;
-   case 'prayer': app.togglePrayer(item.id);break;
-   case 'inspire':if(item.type==='music')router.push({pathname:'/my-dream/new',params:{inspiration:item.title,from:item.id}});else setModal('dream');break;
-   case 'share-internal':router.push({pathname:'/share/[id]',params:{id:item.id}});break;
-   case 'share-external':void Share.share({message:item.title+' — JenLow Network'});break;
-   case 'offer-help':router.push({pathname:'/chat/[id]',params:{id:'teacher'}});break;
-   case 'introduce':setModal('circle');break;
-   case 'encourage':app.encourage(item.id);break;
-   case 'same-dream':app.joinDream(item.id);break;
-   case 'audio-collab':router.push({pathname:'/music-proposal/[id]',params:{id:item.id}});break;
-   case 'verse-export':router.push({pathname:'/verse-export/[id]',params:{id:item.id}});break;
-  }
- };
- const icons:Partial<Record<ActionId,keyof typeof Ionicons.glyphMap>>={
-  'fire':'flame-outline','share-internal':'chatbubble-outline','share-external':'share-outline',
-  'inspire':'add-circle-outline','encourage':'heart-outline','same-dream':'people-outline',
-  'offer-help':'hand-left-outline','introduce':'people-circle-outline',
-  'audio-collab':'mic-outline','verse-export':'download-outline'
- };
- const primary=permitted.filter(a=>a!=='share-internal'&&a!=='prayer'&&a!=='same-dream');
- return <View style={s.rail}>
-  {primary.map(action=><Pressable key={action} accessibilityLabel={action==='encourage'?'Encourager':action} accessibilityRole="button" onPress={()=>activity(action)} hitSlop={{top:6,bottom:6,left:0,right:0}} style={s.iconButton}>
-   {action==='fire'?<FireIcon size={23} active={app.fireIds.includes(item.id)}/>:action==='inspire'&&seeded?<Ionicons name="leaf" color={c.pink} size={22}/>:<Ionicons name={action==='encourage'&&app.encouragementIds.includes(item.id)?'heart':icons[action]||'add'} color={action==='encourage'&&app.encouragementIds.includes(item.id)?'#CB245C':action==='inspire'&&seeded?'#CB245C':'#252525'} size={23}/>}
-  </Pressable>)}
-  {permitted.includes('prayer')?<Pressable accessibilityLabel="Prayer list" onPress={()=>activity('prayer')} hitSlop={{top:6,bottom:6,left:0,right:0}} style={s.iconButton}><PrayerIcon size={23} active={app.isPraying(item.id)}/></Pressable>:null}
-  <Modal visible={modal!==null} transparent animationType="fade" onRequestClose={()=>setModal(null)}><View style={s.overlay}><View style={s.box}>
-   <View style={s.heading}><Text style={{fontWeight:'700',fontSize:16}}>{modal==='circle'?'Présenter quelqu’un':'Ajouter à mon rêve'}</Text><Pressable onPress={()=>setModal(null)}><Ionicons name="close" size={24}/></Pressable></View>
-   {modal==='dream'?dreams.map(d=><Pressable key={d.id} style={s.item} onPress={()=>{app.addToDream(d.id,item.id);setModal(null)}}><Text style={{flex:1,fontSize:13}}>{d.title}</Text>{app.dreamInspirations[d.id]?.includes(item.id)?<Ionicons name="checkmark" color={c.pink} size={18}/>:null}</Pressable>):
-   myCircle.filter(person=>item.type==='dream'&&matchingTalents(item.needs,person.talents).length>0).map(person=><Pressable key={person.id} style={s.item} onPress={()=>{setModal(null);router.push({pathname:'/introduce/[id]',params:{id:item.id,person:person.id}})}}><Text style={{flex:1}}>{person.name} · {person.talents.join(', ')}</Text><Ionicons name="chevron-forward" size={19}/></Pressable>)}
-   <Text style={{color:'#888',fontSize:11,marginTop:12}}>Démo : les invitations et introductions réelles nécessitent le backend.</Text>
-  </View></View></Modal>
- </View>;
+export function ActionRail({ item }: { item: Publication }) {
+  const app = useApp(),
+    [modal, setModal] = useState<'dream' | 'circle' | null>(null);
+  const permitted = allowedActions(item);
+  const seeded = Object.values(app.dreamInspirations).some(ids => ids.includes(item.id));
+  const activity = (id: ActionId) => {
+    switch (id) {
+      case 'fire':
+        app.toggleFire(item.id);
+        break;
+      case 'prayer':
+        app.togglePrayer(item.id);
+        break;
+      case 'inspire':
+        if (item.type === 'music')
+          router.push({
+            pathname: '/my-dream/new',
+            params: { inspiration: item.title, from: item.id },
+          });
+        else setModal('dream');
+        break;
+      case 'share-internal':
+        router.push({ pathname: '/share/[id]', params: { id: item.id } });
+        break;
+      case 'share-external':
+        void Share.share({ message: item.title + ' — JenLow Network' });
+        break;
+      case 'offer-help':
+        router.push({ pathname: '/chat/[id]', params: { id: 'teacher' } });
+        break;
+      case 'introduce':
+        setModal('circle');
+        break;
+      case 'encourage':
+        app.encourage(item.id);
+        break;
+      case 'same-dream':
+        app.joinDream(item.id);
+        break;
+      case 'audio-collab':
+        router.push({ pathname: '/music-proposal/[id]', params: { id: item.id } });
+        break;
+      case 'verse-export':
+        router.push({ pathname: '/verse-export/[id]', params: { id: item.id } });
+        break;
+    }
+  };
+  const icons: Partial<Record<ActionId, keyof typeof Ionicons.glyphMap>> = {
+    fire: 'flame-outline',
+    'share-internal': 'chatbubble-outline',
+    'share-external': 'share-outline',
+    inspire: 'add-circle-outline',
+    encourage: 'heart-outline',
+    'same-dream': 'people-outline',
+    'offer-help': 'hand-left-outline',
+    introduce: 'people-circle-outline',
+    'audio-collab': 'mic-outline',
+    'verse-export': 'download-outline',
+  };
+  const primary = permitted.filter(
+    a => a !== 'share-internal' && a !== 'prayer' && a !== 'same-dream',
+  );
+  return (
+    <View style={s.rail}>
+      {primary.map(action => (
+        <Pressable
+          key={action}
+          accessibilityLabel={action === 'encourage' ? 'Encourager' : action}
+          accessibilityRole="button"
+          onPress={() => activity(action)}
+          hitSlop={{ top: 6, bottom: 6, left: 0, right: 0 }}
+          style={s.iconButton}
+        >
+          {action === 'fire' ? (
+            <FireIcon size={23} active={app.fireIds.includes(item.id)} />
+          ) : action === 'inspire' && seeded ? (
+            <Ionicons name="leaf" color={c.pink} size={22} />
+          ) : (
+            <Ionicons
+              name={
+                action === 'encourage' && app.encouragementIds.includes(item.id)
+                  ? 'heart'
+                  : icons[action] || 'add'
+              }
+              color={
+                action === 'encourage' && app.encouragementIds.includes(item.id)
+                  ? '#CB245C'
+                  : action === 'inspire' && seeded
+                    ? '#CB245C'
+                    : '#252525'
+              }
+              size={23}
+            />
+          )}
+        </Pressable>
+      ))}
+      {permitted.includes('prayer') ? (
+        <Pressable
+          accessibilityLabel="Prayer list"
+          onPress={() => activity('prayer')}
+          hitSlop={{ top: 6, bottom: 6, left: 0, right: 0 }}
+          style={s.iconButton}
+        >
+          <PrayerIcon size={23} active={app.isPraying(item.id)} />
+        </Pressable>
+      ) : null}
+      <Modal
+        visible={modal !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setModal(null)}
+      >
+        <View style={s.overlay}>
+          <View style={s.box}>
+            <View style={s.heading}>
+              <Text style={{ fontWeight: '700', fontSize: 16 }}>
+                {modal === 'circle' ? 'Présenter quelqu’un' : 'Ajouter à mon rêve'}
+              </Text>
+              <Pressable onPress={() => setModal(null)}>
+                <Ionicons name="close" size={24} />
+              </Pressable>
+            </View>
+            {modal === 'dream'
+              ? dreams.map(d => (
+                  <Pressable
+                    key={d.id}
+                    style={s.item}
+                    onPress={() => {
+                      app.addToDream(d.id, item.id);
+                      setModal(null);
+                    }}
+                  >
+                    <Text style={{ flex: 1, fontSize: 13 }}>{d.title}</Text>
+                    {app.dreamInspirations[d.id]?.includes(item.id) ? (
+                      <Ionicons name="checkmark" color={c.pink} size={18} />
+                    ) : null}
+                  </Pressable>
+                ))
+              : myCircle
+                  .filter(
+                    person =>
+                      item.type === 'dream' &&
+                      matchingTalents(item.needs, person.talents).length > 0,
+                  )
+                  .map(person => (
+                    <Pressable
+                      key={person.id}
+                      style={s.item}
+                      onPress={() => {
+                        setModal(null);
+                        router.push({
+                          pathname: '/introduce/[id]',
+                          params: { id: item.id, person: person.id },
+                        });
+                      }}
+                    >
+                      <Text style={{ flex: 1 }}>
+                        {person.name} · {person.talents.join(', ')}
+                      </Text>
+                      <Ionicons name="chevron-forward" size={19} />
+                    </Pressable>
+                  ))}
+            <Text style={{ color: '#888', fontSize: 11, marginTop: 12 }}>
+              Démo : les invitations et introductions réelles nécessitent le backend.
+            </Text>
+          </View>
+        </View>
+      </Modal>
+    </View>
+  );
 }
-const s=StyleSheet.create({rail:{gap:3,alignItems:'center',paddingVertical:5,borderRadius:22,backgroundColor:'rgba(255,252,245,0.68)'},iconButton:{width:44,height:44,justifyContent:'center',alignItems:'center',borderRadius:12,backgroundColor:'transparent'},overlay:{flex:1,justifyContent:'center',padding:20,backgroundColor:'rgba(0,0,0,.38)'},box:{padding:18,backgroundColor:'#fff',borderRadius:15},heading:{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginBottom:13},item:{paddingVertical:12,paddingHorizontal:7,borderBottomWidth:1,borderColor:'#eee',flexDirection:'row',alignItems:'center',gap:9}});
+const s = StyleSheet.create({
+  rail: {
+    gap: 3,
+    alignItems: 'center',
+    paddingVertical: 5,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,252,245,0.68)',
+  },
+  iconButton: {
+    width: 44,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 12,
+    backgroundColor: 'transparent',
+  },
+  overlay: { flex: 1, justifyContent: 'center', padding: 20, backgroundColor: 'rgba(0,0,0,.38)' },
+  box: { padding: 18, backgroundColor: '#fff', borderRadius: 15 },
+  heading: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 13,
+  },
+  item: {
+    paddingVertical: 12,
+    paddingHorizontal: 7,
+    borderBottomWidth: 1,
+    borderColor: '#eee',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 9,
+  },
+});
