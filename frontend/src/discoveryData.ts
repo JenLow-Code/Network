@@ -11,6 +11,8 @@ type PublicationBase = {
   id: string;
   title: string;
   author: string;
+  /** Public member church/community, if supplied and verified. */
+  church?: string;
   image: string;
   imageAlt: string;
 };
