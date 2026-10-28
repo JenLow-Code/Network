@@ -44,7 +44,7 @@ export type BiblePublication = PublicationBase & {
   highlightedVerse: number;
 };
 
-export type PersonPublication = PublicationBase & {type:'talent';talents:string[];description:string;skill:string;level:string;instrument:'drums'|'guitar'|'camera';seeking:string[]};
+export type PersonPublication = PublicationBase & {type:'talent';talents:string[];description:string;experience?:string;skill:string;level:string;instrument:'drums'|'guitar'|'camera';seeking:string[]};
 export type Publication = DreamPublication | MusicPublication | BiblePublication | PersonPublication;
 
 /** Stable photo IDs from Unsplash; we will replace these demo images with member uploads. */
