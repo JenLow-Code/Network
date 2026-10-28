@@ -32,6 +32,14 @@ export function PublicationImageFade({uri,background}:{uri:string;background:str
    </LinearGradient></Defs>
    <Rect width="100%" height="100%" fill={`url(#${gradientId})`}/>
   </Svg>:null}
+  {loaded?<Svg pointerEvents="none" width="100%" height="100%" style={StyleSheet.absoluteFill}>
+   <Defs><LinearGradient id={gradientId+'dark'} x1="0%" y1="0%" x2="0%" y2="100%">
+    <Stop offset="0%" stopColor="#080808" stopOpacity={0.53}/>
+    <Stop offset="38%" stopColor="#080808" stopOpacity={0.25}/>
+    <Stop offset="100%" stopColor="#080808" stopOpacity={0}/>
+   </LinearGradient></Defs>
+   <Rect width="100%" height="100%" fill={`url(#${gradientId}dark)`}/>
+  </Svg>:null}
  </View>;
 }
 const styles=StyleSheet.create({
