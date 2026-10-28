@@ -20,10 +20,14 @@ export function PublicationImageFade({uri,background}:{uri:string;background:str
    style={[StyleSheet.absoluteFill,{opacity:loaded?0.65:0}]}/>
   {loaded?<Svg width="100%" height="100%" style={StyleSheet.absoluteFill}>
    <Defs><LinearGradient id={gradientId} x1="0%" y1="0%" x2="0%" y2="100%">
-    <Stop offset="0%" stopColor={background} stopOpacity={0.23}/>
-    <Stop offset="26%" stopColor={background} stopOpacity={0.50}/>
-    <Stop offset="55%" stopColor={background} stopOpacity={0.82}/>
-    <Stop offset="85%" stopColor={background} stopOpacity={0.98}/>
+    {/* Reverse fade: ivory at the top, photograph emerging toward the lower area.
+        The very last edge returns softly to ivory so it never ends abruptly. */}
+    <Stop offset="0%" stopColor={background} stopOpacity={1}/>
+    <Stop offset="24%" stopColor={background} stopOpacity={0.96}/>
+    <Stop offset="48%" stopColor={background} stopOpacity={0.69}/>
+    <Stop offset="72%" stopColor={background} stopOpacity={0.27}/>
+    <Stop offset="88%" stopColor={background} stopOpacity={0.14}/>
+    <Stop offset="97%" stopColor={background} stopOpacity={0.82}/>
     <Stop offset="100%" stopColor={background} stopOpacity={1}/>
    </LinearGradient></Defs>
    <Rect width="100%" height="100%" fill={`url(#${gradientId})`}/>
