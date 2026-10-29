@@ -34,7 +34,7 @@ export function DetailLayout({
       ? Math.min(540, Math.max(305, heroWidth * 0.80))
       : item.type === 'bible'
         ? Math.min(420, Math.max(275, heroWidth * 0.62))
-        : Math.min(400, Math.max(250, heroWidth * 0.57));
+        : Math.min(330, Math.max(210, heroWidth * 0.50));
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
@@ -52,7 +52,7 @@ export function DetailLayout({
         <View style={{ paddingHorizontal: 16 }}>
           <DetailHero item={item} width={heroWidth} height={heroHeight} />
 
-          <View style={{ paddingTop: 26, paddingRight: heroWidth < 410 ? 48 : 58 }}>
+          <View style={{ paddingTop: item.type === 'music' ? 4 : 22, paddingRight: 0 }}>
             {featured}
             {children}
             <View style={{ alignItems: 'flex-end', paddingTop: 12, paddingBottom: 8 }}>
