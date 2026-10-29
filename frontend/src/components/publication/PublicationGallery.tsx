@@ -218,7 +218,7 @@ export function BibleVerseCard({
             fontFamily: 'serif',
             fontSize: compact ? 17 : Math.min(32, width * 0.06),
             lineHeight: compact ? 23 : Math.min(42, width * 0.082),
-            color: '#29231E',
+            color: '#CB245C',
           }}
         >
           {verseExcerpt(item)}
