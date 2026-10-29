@@ -7,6 +7,7 @@ import { PHASE_LABELS } from '@/domain/publication';
 import { DreamPhaseIcon } from '@/icons/DreamPhaseIcon';
 import { TalentArt } from '@/components/talent/TalentArt';
 import { TalentLevelDots } from '@/components/talent/TalentLevelDots';
+import { useAppTheme } from '@/theme/AppTheme';
 import { BibleVerseCard, CassetteArtwork } from '@/components/publication/PublicationGallery';
 
 /**
@@ -18,18 +19,21 @@ export function DetailHero({
   width,
   height,
   onMusicPress,
+  musicPlaying = false,
 }: {
   item: Publication;
   width: number;
   height: number;
   onMusicPress?: () => void;
+  musicPlaying?: boolean;
 }) {
   const id = useId().replace(/[^a-zA-Z0-9_-]/g, '');
   const isDream = item.type === 'dream';
   const darkInk = '#26211D';
   const inset = width < 420 ? 20 : 31;
   const titleSize = width < 420 ? 32 : width < 610 ? 39 : 46;
-  const pageColor = '#FCF9F3';
+  const theme = useAppTheme();
+  const pageColor = theme.background;
 
   return (
     <View style={[styles.hero, { width, height, backgroundColor: item.type === 'music' ? 'transparent' : item.type === 'talent' ? '#F0EAE0' : '#F0EAE0' }]}>
@@ -55,8 +59,9 @@ export function DetailHero({
           <Svg pointerEvents="none" width="100%" height="100%" style={StyleSheet.absoluteFill}>
             <Defs>
               <LinearGradient id={id + '-fade'} x1="0%" y1="0%" x2="0%" y2="100%">
-                <Stop offset="58%" stopColor={pageColor} stopOpacity={0} />
-                <Stop offset="82%" stopColor={pageColor} stopOpacity={0.2} />
+                <Stop offset="64%" stopColor={pageColor} stopOpacity={0} />
+                <Stop offset="77%" stopColor={pageColor} stopOpacity={0.42} />
+                <Stop offset="93%" stopColor={pageColor} stopOpacity={1} />
                 <Stop offset="100%" stopColor={pageColor} stopOpacity={1} />
               </LinearGradient>
             </Defs>
@@ -68,7 +73,7 @@ export function DetailHero({
           <Text style={[styles.heroKicker, { color: '#FFFFFF', top: inset + 11, right: inset + 50 }]}>
             {PHASE_LABELS[item.phase].toUpperCase()}
           </Text>
-          <View style={[styles.dreamText, { left: inset, right: inset, bottom: inset + 64 }]}>
+          <View style={[styles.dreamText, { left: inset, right: inset, bottom: 160 }]}>
             <Text
               numberOfLines={3}
               adjustsFontSizeToFit
@@ -89,6 +94,10 @@ export function DetailHero({
               {item.title}
             </Text>
           </View>
+          <View style={{ position: 'absolute', bottom: 14, left: inset, right: inset, gap: 7 }}>
+            <Text style={{ fontSize: 10, fontWeight: '700', letterSpacing: 1.4, color: theme.dark ? '#E2A4B8' : '#8C676A' }}>MON BUT</Text>
+            <Text numberOfLines={3} style={{ fontSize: width < 420 ? 15 : 17, lineHeight: width < 420 ? 22 : 26, color: theme.foreground }}>{item.summary}</Text>
+          </View>
         </>
       ) : item.type === 'bible' ? (
         <BibleVerseCard item={item} width={width} height={height} />
@@ -102,7 +111,7 @@ export function DetailHero({
         >
           <CassetteArtwork width={width} height={height} title={item.title} artwork={item.coverArt || item.image} transparent />
           <View pointerEvents="none" style={styles.cassettePlay}>
-            <Ionicons name="play" size={19} color="#FFFFFF" />
+            <Ionicons name={musicPlaying ? "pause" : "play"} size={21} color="#FFFFFF" />
           </View>
         </Pressable>
       ) : (
@@ -111,6 +120,7 @@ export function DetailHero({
             <TalentArt kind={item.instrument} size={Math.min(220, width * 0.45, height * 0.56)} />
             <Text style={styles.talentLabel}>{item.skill.toUpperCase()}</Text>
             <TalentLevelDots level={item.level} />
+            <Text style={styles.levelLabel}>{item.level.toLocaleUpperCase('fr')}</Text>
           </View>
         </>
       )}
@@ -147,6 +157,7 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
   talentArtwork: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10, paddingBottom: 18 },
+  levelLabel: { fontSize: 9, letterSpacing: 1.4, color: '#8A8076' },
   talentLabel: { fontSize: 10, letterSpacing: 1.3, fontWeight: '700', color: '#26211D', marginTop: 5 },
-  cassettePlay: { position: 'absolute', top: '50%', left: '50%', transform: [{ translateX: -17 }, { translateY: -17 }], width: 34, height: 34, borderRadius: 17, backgroundColor: 'rgba(24,20,20,0.34)', alignItems: 'center', justifyContent: 'center' },
+  cassettePlay: { position: 'absolute', top: '50%', left: '50%', transform: [{ translateX: -19 }, { translateY: -19 }], width: 38, height: 38, borderRadius: 19, backgroundColor: 'rgba(24,20,20,0.34)', alignItems: 'center', justifyContent: 'center' },
 });
