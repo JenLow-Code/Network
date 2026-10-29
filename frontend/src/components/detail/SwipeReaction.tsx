@@ -82,6 +82,9 @@ export function SwipeReaction({ label, icon, onConfirm, active = false }: SwipeR
     }
   };
 
+  const colorProgress = translate.interpolate({
+    inputRange: [-TRAVEL, 0], outputRange: [1, 0], extrapolate: 'clamp',
+  });
   const labelOpacity = translate.interpolate({
     inputRange: [-TRAVEL, -65, -12, 0],
     outputRange: [1, 0.9, 0.05, 0],
@@ -108,7 +111,8 @@ export function SwipeReaction({ label, icon, onConfirm, active = false }: SwipeR
           }}
           style={[styles.circle, active && styles.active]}
         >
-          {icon}
+          <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFillObject, { borderRadius: SIZE / 2, backgroundColor: '#CB245C', opacity: colorProgress }]} />
+          <View style={{ zIndex: 1 }}>{icon}</View>
         </Pressable>
       </Animated.View>
     </View>
@@ -116,10 +120,10 @@ export function SwipeReaction({ label, icon, onConfirm, active = false }: SwipeR
 }
 
 const styles = StyleSheet.create({
-  track: { width: TRAVEL + SIZE, height: 44, position: 'relative' },
+  track: { width: SIZE, height: 44, position: 'relative', overflow: 'visible' },
   labelArea: {
     position: 'absolute',
-    right: 0,
+    right: SIZE,
     top: 0,
     width: TRAVEL,
     height: 44,
