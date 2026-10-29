@@ -16,6 +16,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { FireHeader } from '@/components/fire/FireHeader';
 import { useLocale } from '@/i18n/locale';
 import { useAppTheme } from '@/theme/AppTheme';
+import { HANDWRITING_FAMILY } from '@/theme/handwriting';
 const filters = ['Tout', 'Rêves', 'Musique', 'Bible', 'Talents'] as const;
 export default function Discover() {
   const { tr } = useLocale();
@@ -99,7 +100,7 @@ export default function Discover() {
             </Text>
             <Text
               style={{
-                fontFamily: 'Caveat_700Bold',
+                fontFamily: HANDWRITING_FAMILY,
                 fontSize: 32,
                 fontWeight: '400',
                 lineHeight: 32,

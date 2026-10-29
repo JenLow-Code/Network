@@ -7,3 +7,7 @@ web-build/
 *.jks
 *.keystore
 .DS_Store
+
+# Biro Script reduced is a demo; never distribute proprietary font files in this public repo.
+assets/fonts/Biro_Script_reduced.ttf
+assets/fonts/Biro_Script_reduced.otf

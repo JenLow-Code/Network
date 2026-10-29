@@ -14,6 +14,7 @@ import {
   publicationColor,
 } from '@/domain/publication';
 import { verseExcerpt } from '@/mocks/publications';
+import { HANDWRITING_FAMILY } from '@/theme/handwriting';
 const audio = [
   require('../../../assets/audio/pierre-01-douceur.wav'),
   require('../../../assets/audio/pierre-02-esperance.wav'),
@@ -163,9 +164,8 @@ export function PublicationTile({ item }: { item: Publication }) {
         >
           {item.title}
         </Text>
-        {/* Replace Caveat with Biro Script Plus after the licensed font is supplied and registered in app/_layout. */}
         <Text
-          style={{ fontFamily: 'Caveat_700Bold', fontSize: 17, lineHeight: 22, color: '#565656' }}
+          style={{ fontFamily: HANDWRITING_FAMILY, fontSize: 17, lineHeight: 22, color: '#565656' }}
         >
           {item.type === 'music' ? item.songAuthor : item.author}
         </Text>
