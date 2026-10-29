@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from './AuthProvider';
 
 type Message = { id: string; text: string; fromMe: boolean };
+export type FireFolder = { id: string; name: string; publicationIds: string[] };
 type ProfileChanges = { name: string; bio: string; city: string; church: string };
 type AppState = {
   rejectedContacts: string[];
@@ -19,6 +20,11 @@ type AppState = {
   messages: Message[];
   send: (text: string) => void;
   fireIds: string[];
+  fireFolders: FireFolder[];
+  createFireFolder: (name: string) => void;
+  renameFireFolder: (folderId: string, name: string) => void;
+  deleteFireFolder: (folderId: string) => void;
+  toggleFireFolderItem: (folderId: string, publicationId: string) => void;
   isOnFire: (id: string) => boolean;
   toggleFire: (id: string) => void;
   dreamInspirations: Record<string, string[]>;
@@ -47,6 +53,7 @@ const todayKey = () => {
   ].join('-');
 };
 const FIRE_KEY = (email: string) => 'jenlow.network.fire.v1.' + email.toLowerCase();
+const FIRE_FOLDERS_KEY = (email: string) => 'jenlow.network.fire.folders.v1.' + email.toLowerCase();
 const DREAM_KEY = (email: string) => 'jenlow.network.inspirations.v1.' + email.toLowerCase();
 
 export function Provider({ children }: { children: React.ReactNode }) {
@@ -68,6 +75,7 @@ export function Provider({ children }: { children: React.ReactNode }) {
     { id: '4', text: 'Bienvenue sur JenLow Network !', fromMe: true },
   ]);
   const [fireIds, setFireIds] = useState<string[]>([]);
+  const [fireFolders, setFireFolders] = useState<FireFolder[]>([]);
   const [dreamInspirations, setDreamInspirations] = useState<Record<string, string[]>>({});
   const [myDreamIds, setMyDreamIds] = useState<string[]>([]);
   const [encouragementIds, setEncouragementIds] = useState<string[]>([]);
@@ -83,6 +91,7 @@ export function Provider({ children }: { children: React.ReactNode }) {
     let canceled = false;
     if (!email) {
       setFireIds([]);
+      setFireFolders([]);
       setDreamInspirations({});
       setEncouragementIds([]);
       setMusicProposalIds([]);
@@ -95,6 +104,7 @@ export function Provider({ children }: { children: React.ReactNode }) {
     setReadyFor('');
     Promise.all([
       AsyncStorage.getItem(FIRE_KEY(email)),
+      AsyncStorage.getItem(FIRE_FOLDERS_KEY(email)),
       AsyncStorage.getItem(DREAM_KEY(email)),
       AsyncStorage.getItem('jenlow.mine.' + email),
       AsyncStorage.getItem('jenlow.prayer.' + email),
@@ -102,7 +112,7 @@ export function Provider({ children }: { children: React.ReactNode }) {
       AsyncStorage.getItem('jenlow.proposals.' + email),
       AsyncStorage.getItem('jenlow.prayer.repeats.' + email),
     ])
-      .then(([fire, dreams, mine, prayers, encouragement, proposals, repeats]) => {
+      .then(([fire, folders, dreams, mine, prayers, encouragement, proposals, repeats]) => {
         if (canceled) return;
         let ids: string[] = [];
         let links: Record<string, string[]> = {};
@@ -119,6 +129,10 @@ export function Provider({ children }: { children: React.ReactNode }) {
           }
         } catch {}
         setFireIds(ids);
+        try {
+          const parsed = folders ? JSON.parse(folders) : [];
+          setFireFolders(Array.isArray(parsed) ? parsed.filter((x: any) => x && typeof x.id === 'string' && typeof x.name === 'string' && Array.isArray(x.publicationIds)).map((x: any) => ({ id: x.id, name: x.name, publicationIds: x.publicationIds.filter((v: any) => typeof v === 'string') })) : []);
+        } catch { setFireFolders([]); }
         setDreamInspirations(links);
         try {
           setMyDreamIds(mine ? JSON.parse(mine) : []);
@@ -209,6 +223,31 @@ export function Provider({ children }: { children: React.ReactNode }) {
         JSON.stringify(prayerRepetitions),
       ).catch(() => {});
   }, [email, readyFor, prayerRepetitions]);
+  useEffect(() => {
+    if (email && readyFor === email) {
+      void AsyncStorage.setItem(FIRE_FOLDERS_KEY(email), JSON.stringify(fireFolders)).catch(() => {});
+    }
+  }, [fireFolders, email, readyFor]);
+  const createFireFolder = useCallback((name: string) => {
+    const clean = name.trim().slice(0, 60);
+    if (!clean) return;
+    setFireFolders(prev => [...prev, { id: 'folder-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7), name: clean, publicationIds: [] }]);
+  }, []);
+  const renameFireFolder = useCallback((id: string, name: string) => {
+    const clean = name.trim().slice(0, 60);
+    if (clean) setFireFolders(prev => prev.map(f => f.id === id ? { ...f, name: clean } : f));
+  }, []);
+  const deleteFireFolder = useCallback((id: string) => {
+    setFireFolders(prev => prev.filter(f => f.id !== id));
+  }, []);
+  const toggleFireFolderItem = useCallback((id: string, publicationId: string) => {
+    setFireFolders(prev => prev.map(folder => folder.id !== id ? folder : {
+      ...folder,
+      publicationIds: folder.publicationIds.includes(publicationId)
+        ? folder.publicationIds.filter(x => x !== publicationId)
+        : [...folder.publicationIds, publicationId],
+    }));
+  }, []);
   const setPrayerRepetition = useCallback(
     (id: string, repeat: 'once' | 'daily' | 'weekly') =>
       setPrayerRepetitions(p => ({ ...p, [id]: repeat })),
@@ -316,6 +355,11 @@ export function Provider({ children }: { children: React.ReactNode }) {
       togglePrayer,
       isPraying: (id: string) => prayerIds.includes(id),
       fireIds,
+      fireFolders,
+      createFireFolder,
+      renameFireFolder,
+      deleteFireFolder,
+      toggleFireFolderItem,
       isOnFire: (id: string) => fireIds.includes(id),
       toggleFire,
       dreamInspirations,
@@ -332,6 +376,11 @@ export function Provider({ children }: { children: React.ReactNode }) {
       church,
       messages,
       fireIds,
+      fireFolders,
+      createFireFolder,
+      renameFireFolder,
+      deleteFireFolder,
+      toggleFireFolderItem,
       dreamInspirations,
       toggleFire,
       addToDream,
