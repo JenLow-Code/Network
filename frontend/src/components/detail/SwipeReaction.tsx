@@ -111,7 +111,7 @@ export function SwipeReaction({ label, icon, onConfirm, active = false }: SwipeR
           }}
           style={[styles.circle, active && styles.active]}
         >
-          <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFillObject, { borderRadius: SIZE / 2, backgroundColor: '#CB245C', opacity: colorProgress }]} />
+          <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { borderRadius: SIZE / 2, backgroundColor: '#CB245C', opacity: colorProgress }]} />
           <View style={{ zIndex: 1 }}>{icon}</View>
         </Pressable>
       </Animated.View>
