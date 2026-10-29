@@ -21,7 +21,7 @@ export function Nav() {
       icon: 'musical-note-outline' as const,
       title: t('music'),
       path: '/music-hub' as const,
-      active: path.startsWith('/music') || path.startsWith('/publish/'),
+      active: path === '/music-hub' || path.startsWith('/publish/'),
     },
     {
       icon: 'ellipse-outline' as const,
@@ -31,7 +31,8 @@ export function Nav() {
         path === '/discover' ||
         path.startsWith('/dream/') ||
         path.startsWith('/bible/') ||
-        path.startsWith('/person/'),
+        path.startsWith('/person/') ||
+        path.startsWith('/music/'),
     },
     {
       icon: 'flame-outline' as const,
