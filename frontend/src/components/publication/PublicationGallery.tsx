@@ -88,7 +88,7 @@ function AudioCorner({ item }: { item: Publication }) {
  *
  * Title, artist and cover artwork all come from the publication data.
  */
-function CassetteArtwork({
+export function CassetteArtwork({
   width,
   height,
   title,
@@ -103,7 +103,7 @@ function CassetteArtwork({
   const clipId = 'cassette-' + cassetteId;
   const reelId = 'reels-' + cassetteId;
   const tiny = width < 225;
-  const cassetteWidth = Math.min(width * (tiny ? 0.86 : 0.74), height * 1.30);
+  const cassetteWidth = Math.min(width * (tiny ? 0.86 : 0.74), height * 1.30, 340);
   const cassetteHeight = cassetteWidth * (255 / 420);
 
   return (
@@ -176,7 +176,7 @@ function CassetteArtwork({
   );
 }
 
-function BibleVerseCard({
+export function BibleVerseCard({
   item,
   width,
   height,
