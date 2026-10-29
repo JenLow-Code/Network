@@ -59,9 +59,9 @@ export function DetailHero({
           <Svg pointerEvents="none" width="100%" height="100%" style={StyleSheet.absoluteFill}>
             <Defs>
               <LinearGradient id={id + '-fade'} x1="0%" y1="0%" x2="0%" y2="100%">
-                <Stop offset="64%" stopColor={pageColor} stopOpacity={0} />
-                <Stop offset="77%" stopColor={pageColor} stopOpacity={0.42} />
-                <Stop offset="93%" stopColor={pageColor} stopOpacity={1} />
+                <Stop offset="35%" stopColor={pageColor} stopOpacity={0} />
+                <Stop offset="43%" stopColor={pageColor} stopOpacity={0.78} />
+                <Stop offset="52%" stopColor={pageColor} stopOpacity={1} />
                 <Stop offset="100%" stopColor={pageColor} stopOpacity={1} />
               </LinearGradient>
             </Defs>
@@ -73,30 +73,58 @@ export function DetailHero({
           <Text style={[styles.heroKicker, { color: '#FFFFFF', top: inset + 11, right: inset + 50 }]}>
             {PHASE_LABELS[item.phase].toUpperCase()}
           </Text>
-          <View style={[styles.dreamText, { left: inset, right: inset, bottom: 160 }]}>
+          {/* One editorial group: heading in the upper third, goal immediately below. */}
+          <View
+            pointerEvents="none"
+            style={{
+              position: 'absolute',
+              top: height * (width < 610 ? 0.19 : 0.25),
+              left: inset,
+              right: inset,
+            }}
+          >
             <Text
-              numberOfLines={3}
+              numberOfLines={2}
               adjustsFontSizeToFit
-              minimumFontScale={0.75}
+              minimumFontScale={0.7}
               style={[
                 styles.headline,
                 {
-                  fontSize: titleSize,
-                  lineHeight: titleSize + 7,
+                  fontSize: width < 420 ? 30 : width < 610 ? 35 : 43,
+                  lineHeight: width < 420 ? 36 : width < 610 ? 42 : 51,
                   fontFamily: Platform.select({
                     web: 'Georgia, "Times New Roman", serif',
                     ios: 'Georgia',
                     default: 'serif',
                   }),
+                  textShadowColor: 'rgba(0,0,0,0.4)',
+                  textShadowOffset: { width: 0, height: 1 },
+                  textShadowRadius: 3,
                 },
               ]}
             >
               {item.title}
             </Text>
-          </View>
-          <View style={{ position: 'absolute', bottom: 14, left: inset, right: inset, gap: 7 }}>
-            <Text style={{ fontSize: 10, fontWeight: '700', letterSpacing: 1.4, color: theme.dark ? '#E2A4B8' : '#8C676A' }}>MON BUT</Text>
-            <Text numberOfLines={3} style={{ fontSize: width < 420 ? 15 : 17, lineHeight: width < 420 ? 22 : 26, color: theme.foreground }}>{item.summary}</Text>
+            <View style={{ marginTop: width < 610 ? 17 : 20, paddingLeft: 9, gap: 6 }}>
+              <Text style={{
+                fontSize: 10,
+                fontWeight: '700',
+                letterSpacing: 1.4,
+                color: theme.dark ? '#E2A4B8' : '#8C676A',
+              }}>MON BUT</Text>
+              <Text
+                numberOfLines={4}
+                adjustsFontSizeToFit
+                minimumFontScale={0.8}
+                style={{
+                  fontSize: width < 420 ? 15 : 17,
+                  lineHeight: width < 420 ? 22 : 25,
+                  color: theme.foreground,
+                }}
+              >
+                {item.summary}
+              </Text>
+            </View>
           </View>
         </>
       ) : item.type === 'bible' ? (
