@@ -60,6 +60,9 @@ export default function Discover() {
               justifyContent: 'space-between',
               minHeight: 34,
               marginBottom: 10,
+              paddingBottom: 12,
+              borderBottomWidth: 0.5,
+              borderBottomColor: theme.dark ? 'rgba(255,255,255,0.32)' : 'rgba(23,23,23,0.30)',
             }}
           >
             <Text
@@ -158,6 +161,7 @@ export default function Discover() {
             />
           ))}
         </ScrollView>
+        <View style={{ marginHorizontal: -15 }}>
         <PublicationGallery
           items={(filter === 'Talents'
             ? personPublications
@@ -176,6 +180,7 @@ export default function Discover() {
               .includes(query.trim().toLowerCase()),
           )}
         />
+        </View>
         {filter !== 'Talents' && items.length === 0 && (
           <Text style={{ textAlign: 'center', marginTop: 25, color: '#999' }}>
             Aucune publication trouvée.
