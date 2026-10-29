@@ -28,7 +28,7 @@ export function DetailHero({
   const titleSize = width < 420 ? 32 : width < 610 ? 39 : 46;
 
   return (
-    <View style={[styles.hero, { width, height, backgroundColor: '#F0EAE0' }]}>
+    <View style={[styles.hero, { width, height, backgroundColor: item.type === 'music' ? 'transparent' : '#F0EAE0' }]}>
       {isDream ? (
         <>
           <Image
@@ -80,7 +80,7 @@ export function DetailHero({
         <BibleVerseCard item={item} width={width} height={height} />
       ) : item.type === 'music' ? (
         <>
-          <CassetteArtwork width={width} height={height} title={item.title} artwork={item.coverArt || item.image} />
+          <CassetteArtwork width={width} height={height} title={item.title} artwork={item.coverArt || item.image} transparent />
           <Text style={[styles.heroKicker, { right: inset, top: inset, color: darkInk }]}>MUSIQUE</Text>
         </>
       ) : (
@@ -94,6 +94,7 @@ export function DetailHero({
           </Text>
         </>
       )}
+      {item.type !== 'music' && (
       <Text
         pointerEvents="none"
         numberOfLines={1}
@@ -108,6 +109,7 @@ export function DetailHero({
       >
         {item.author}
       </Text>
+      )}
     </View>
   );
 }
