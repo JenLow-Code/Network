@@ -226,6 +226,22 @@ export function BibleVerseCard({
   );
 }
 
+/** A talent card communicates the member's intention; identity stays in the detail. */
+function talentIntent(item: Extract<Publication, { type: 'talent' }>): string[] {
+  const intentions: string[] = [];
+  if (item.seeking.includes('Professeur')) intentions.push('Cherche un professeur');
+  if (item.seeking.includes('Élèves')) intentions.push('Cherche des élèves');
+  if (item.seeking.includes('Tandem')) {
+    const partner = item.instrument === 'guitar'
+      ? 'un guitariste'
+      : item.instrument === 'drums'
+        ? 'un batteur'
+        : 'un photographe';
+    intentions.push('Tandem avec ' + partner);
+  }
+  return intentions.slice(0, 2);
+}
+
 type StoryScale = 'small' | 'featured' | 'wide';
 
 /** One story, one cover: only category, title and handwritten member name. */
@@ -379,6 +395,26 @@ function StoryCover({
             </Text>
           </View>
         )}
+        {isTalent ? (
+          <View pointerEvents="none" style={{ position: 'absolute', left: inset, right: inset, bottom: inset, gap: 3 }}>
+            {talentIntent(item).map((line, i) => (
+              <Text
+                key={line}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.73}
+                style={{
+                  fontSize: small && width < 220 ? 11 : 13,
+                  lineHeight: 18,
+                  color: i === 0 ? '#26211D' : '#776E64',
+                  fontWeight: i === 0 ? '600' : '400',
+                }}
+              >
+                {line}
+              </Text>
+            ))}
+          </View>
+        ) : (
         <Text
           pointerEvents="none"
           numberOfLines={1}
@@ -394,6 +430,7 @@ function StoryCover({
         >
           {item.author}
         </Text>
+        )}
         {item.type === 'dream' && (
           <View pointerEvents="none" style={styles.phase}>
             <DreamPhaseIcon phase={item.phase} size={25} />
