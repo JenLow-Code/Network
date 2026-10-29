@@ -583,7 +583,7 @@ const styles = StyleSheet.create({
   musicKicker: { position: 'absolute', fontWeight: '600', letterSpacing: 1.1, color: '#34302B' },
   bibleReference: { fontWeight: '600', letterSpacing: 1.2, color: '#6B625B' },
   storyLink: { width: '100%', height: '100%', overflow: 'hidden', position: 'relative' },
-  photoFrame: { ...StyleSheet.absoluteFillObject, overflow: 'hidden' },
+  photoFrame: { ...StyleSheet.absoluteFill, overflow: 'hidden' },
   photo: { width: '100%', height: '100%' },
   talentImage: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   topMeta: { position: 'absolute', zIndex: 3, alignItems: 'flex-end' },
