@@ -200,7 +200,7 @@ export function BibleVerseCard({
       }}
     >
       {/* Reference and verse are one typographic unit: no floating heading. */}
-      <View style={{ paddingBottom: compact ? 18 : 26 }}>
+      <View>
         <Text
           numberOfLines={1}
           style={[styles.bibleReference, {
@@ -246,7 +246,7 @@ function talentIntent(item: Extract<Publication, { type: 'talent' }>): string[] 
 
 type StoryScale = 'small' | 'featured' | 'wide';
 
-/** One story, one cover: only category, title and handwritten member name. */
+/** Editorial Discovery cover: visual, category and content, with authors shown in the detail header. */
 function StoryCover({
   item,
   width,
@@ -371,7 +371,7 @@ function StoryCover({
             pointerEvents="none"
             style={[
               styles.bottomTitle,
-              { left: inset, right: inset, bottom: inset + (small ? 34 : 43) },
+              { left: inset, right: inset, bottom: inset },
             ]}
           >
             <Text
@@ -397,7 +397,7 @@ function StoryCover({
             </Text>
           </View>
         )}
-        {isTalent ? (
+        {isTalent && (
           <View pointerEvents="none" style={{ position: 'absolute', left: inset, right: inset, bottom: inset, gap: 3 }}>
             {talentIntent(item).map((line, i) => (
               <Text
@@ -416,22 +416,6 @@ function StoryCover({
               </Text>
             ))}
           </View>
-        ) : (
-        <Text
-          pointerEvents="none"
-          numberOfLines={1}
-          style={[
-            styles.bottomAuthor,
-            {
-              right: inset,
-              bottom: inset,
-              color: ink,
-              fontSize: small ? 22 : 27,
-            },
-          ]}
-        >
-          {item.author}
-        </Text>
         )}
         {item.type === 'dream' && (
           <View pointerEvents="none" style={styles.phase}>
@@ -603,7 +587,6 @@ const styles = StyleSheet.create({
   talentImage: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   topMeta: { position: 'absolute', zIndex: 3, alignItems: 'flex-end' },
   bottomTitle: { position: 'absolute', zIndex: 2 },
-  bottomAuthor: { position: 'absolute', zIndex: 3, fontFamily: 'Caveat_700Bold', lineHeight: 30, textAlign: 'right' },
   talentLevels: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 10 },
   kicker: { fontWeight: '600', letterSpacing: 1.2, lineHeight: 14 },
   storyTitle: { fontFamily: 'serif', fontWeight: '400', letterSpacing: -0.5 },
