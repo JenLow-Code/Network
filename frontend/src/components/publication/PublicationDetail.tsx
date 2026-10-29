@@ -60,6 +60,7 @@ export function PublicationDetail({
   media,
   headerIcon,
   onCoverPress,
+  musicPlaying = false,
 }: {
   item: Publication;
   children: React.ReactNode;
@@ -67,9 +68,10 @@ export function PublicationDetail({
   headerIcon?: React.ReactNode;
   onImageDoubleTap?: () => void;
   onCoverPress?: () => void;
+  musicPlaying?: boolean;
 }) {
   return (
-    <DetailLayout item={item} featured={media} headerIcon={headerIcon} onCoverPress={onCoverPress}>
+    <DetailLayout item={item} featured={media} headerIcon={headerIcon} onCoverPress={onCoverPress} musicPlaying={musicPlaying}>
       {children}
     </DetailLayout>
   );
