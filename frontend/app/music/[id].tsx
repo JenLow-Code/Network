@@ -19,8 +19,8 @@ export default function MusicDetail() {
       index={item.audioIndex}
       renderLayout={(button, wave, time, seek) => (
         <PublicationDetail item={item}>
-          <View style={{ paddingVertical: 18, gap: 15 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
+          <View style={{ paddingTop: 0, paddingBottom: 12, gap: 9 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
               {button}
               <View style={{ flex: 1 }}>{wave}</View>
             </View>
