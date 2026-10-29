@@ -9,7 +9,6 @@ import { ActionRail } from './ActionRail';
 import { DetailHero } from './DetailHero';
 import { Nav } from '@/components/navigation/Nav';
 import { TopActions } from '@/components/navigation/TopActions';
-import { personPath } from '@/mocks/people';
 import { PublicationGallery } from '@/components/publication/PublicationGallery';
 import { useAppTheme } from '@/theme/AppTheme';
 
@@ -85,37 +84,27 @@ export function DetailLayout({
 
         <View style={{ paddingHorizontal: 16 }}>
           <DetailHero item={item} width={heroWidth} height={heroHeight} />
+
+          {/*
+            No repeated author bar: the member signature is already on the
+            cover. Restore the original vertical reaction placement alongside
+            the article rather than displaying social actions under the image.
+          */}
           <View
             style={{
-              paddingTop: 17,
-              paddingBottom: 16,
               flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: 12,
-              borderBottomWidth: 0.5,
-              borderBottomColor: theme.dark ? '#55575B' : '#D8D2CA',
+              alignItems: 'flex-start',
+              gap: heroWidth < 410 ? 8 : 17,
+              paddingTop: 26,
             }}
           >
-            <Pressable
-              onPress={() => router.push(personPath(item.author))}
-              accessibilityRole="button"
-              accessibilityLabel={'Voir le profil de ' + item.author}
-              style={{ flex: 1, minWidth: 0 }}
-            >
-              <Text style={{ color: theme.foreground, fontFamily: 'Caveat_700Bold', fontSize: 23 }}>
-                {item.author}
-              </Text>
-              {item.location ? (
-                <Text style={{ color: theme.muted, fontSize: 11 }}>{item.location}</Text>
-              ) : null}
-            </Pressable>
-            <ActionRail item={item} />
-          </View>
-
-          <View style={{ paddingTop: 20 }}>
-            {featured}
-            {children}
+            <View style={{ flex: 1, minWidth: 0 }}>
+              {featured}
+              {children}
+            </View>
+            <View style={{ width: 45, alignItems: 'center' }}>
+              <ActionRail item={item} />
+            </View>
           </View>
           <View style={{ marginTop: 42, borderTopWidth: 0.5, borderTopColor: theme.border, paddingTop: 21 }}>
             <Text
