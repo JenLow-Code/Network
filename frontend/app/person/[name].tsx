@@ -3,6 +3,7 @@ import { Text, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { personPublications } from '@/mocks/publications';
 import { PublicationDetail, DetailPanel } from '@/components/publication/PublicationDetail';
+import { EditorialInline } from '@/components/detail/EditorialInline';
 export default function PublicPerson() {
   const { name } = useLocalSearchParams<{ name: string }>();
   const person = personPublications.find(p => p.author === name);
@@ -14,7 +15,7 @@ export default function PublicPerson() {
     );
   return (
     <PublicationDetail item={person}>
-      <View style={{ paddingBottom: 22 }}>
+      <EditorialInline bottomSpace={22}>
         <Text style={{ fontSize: 10, fontWeight: '700', letterSpacing: 1.4, color: '#746C64', marginBottom: 10 }}>
           QUI JE SUIS
         </Text>
@@ -34,7 +35,7 @@ export default function PublicPerson() {
             </View>
           ))}
         </View>
-      </View>
+      </EditorialInline>
       <DetailPanel title="Expérience" foldable defaultOpen={false} hideTopBorder>
         <Text style={{ fontSize: 14, lineHeight: 22, color: '#444' }}>
           {person.experience?.trim() || 'Expérience non renseignée.'}
