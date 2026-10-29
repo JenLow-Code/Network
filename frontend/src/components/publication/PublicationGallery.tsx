@@ -10,6 +10,7 @@ import { DreamPhaseIcon } from '@/icons/DreamPhaseIcon';
 import { TalentArt } from '@/components/talent/TalentArt';
 import { useAppTheme } from '@/theme/AppTheme';
 import { verseExcerpt } from '@/mocks/publications';
+import { approvedCassetteImage } from '@/assets/approvedCassette';
 
 const audio = [
   require('../../../assets/audio/pierre-01-douceur.wav'),
@@ -98,6 +99,20 @@ function CassetteArtwork({
   author: string;
   artwork?: string;
 }) {
+  // The approved David cassette is a supplied artwork, not a reconstructed label.
+  if (title === 'Mon premier morceau' && author === 'David') {
+    return (
+      <View style={[styles.musicCanvas, { width, height }]}>
+        <Image
+          source={{ uri: approvedCassetteImage }}
+          accessibilityLabel="Approved photorealistic transparent cassette with floral cover, handwritten title and artist"
+          resizeMode="contain"
+          style={{ width: '100%', height: '100%' }}
+        />
+      </View>
+    );
+  }
+
   const cassetteWidth = Math.min(width * 0.91, height * 1.47);
   const cassetteHeight = cassetteWidth * (890 / 1296);
   const tiny = cassetteWidth < 200;
