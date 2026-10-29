@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useAppTheme } from '@/theme/AppTheme';
 import { DetailLayout } from '@/components/detail/DetailLayout';
 import type { Publication } from '@/domain/publication';
 export function DetailPanel({
@@ -15,13 +16,14 @@ export function DetailPanel({
   defaultOpen?: boolean;
 }) {
   const [open, setOpen] = useState(defaultOpen);
+  const theme = useAppTheme();
   return (
     <View
       style={{
         borderTopWidth: 1,
-        borderColor: 'rgba(60,60,60,0.13)',
-        paddingVertical: 10,
-        paddingLeft: 7,
+        borderColor: theme.dark ? '#55575B' : '#D9D2C8',
+        paddingVertical: 17,
+        paddingLeft: 0,
       }}
     >
       <Pressable
@@ -38,12 +40,12 @@ export function DetailPanel({
           numberOfLines={1}
           adjustsFontSizeToFit
           minimumFontScale={0.65}
-          style={{ fontWeight: '600', fontSize: 15, color: '#262626', flexShrink: 1 }}
+          style={{ fontFamily: 'serif', fontSize: 20, lineHeight: 27, color: theme.foreground, flexShrink: 1 }}
         >
           {title}
         </Text>
         {foldable ? (
-          <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={17} color="#333" />
+          <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={17} color={theme.foreground} />
         ) : null}
       </Pressable>
       {open ? <View style={{ marginTop: 5 }}>{children}</View> : null}
