@@ -10,6 +10,8 @@ type PublicationBase = {
   id: string;
   title: string;
   author: string;
+  /** Optional member-supplied avatar (no synthetic stock replacements). */
+  avatar?: string;
   /** Public member church/community, if supplied and verified. */
   church?: string;
   /** Public city, provided by the member (demo entries below use sample cities). */
