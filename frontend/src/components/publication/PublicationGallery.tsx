@@ -9,6 +9,7 @@ import { PHASE_LABELS } from '@/domain/publication';
 import { DreamPhaseIcon } from '@/icons/DreamPhaseIcon';
 import { TalentArt } from '@/components/talent/TalentArt';
 import { useAppTheme } from '@/theme/AppTheme';
+import { verseExcerpt } from '@/mocks/publications';
 
 const audio = [
   require('../../../assets/audio/pierre-01-douceur.wav'),
@@ -76,88 +77,145 @@ function AudioCorner({ item }: { item: Publication }) {
 
 
 
-/** Quiet line illustration, in the same family as the JenLow talent artwork. */
-function BibleArtwork({ size }: { size: number }) {
-  return (
-    <Svg viewBox="0 0 200 150" width={size} height={size * 0.75} fill="none">
-      <Path d="M100 36 C82 27 56 26 29 34 L29 114 C55 107 79 110 100 121 C121 110 145 107 171 114 L171 34 C144 26 118 27 100 36 Z" stroke="#302C28" strokeWidth="2.3" strokeLinejoin="round"/>
-      <Path d="M100 36 V121 M38 46 C59 41 79 43 91 49 M38 58 C58 54 78 56 91 62 M38 70 C58 67 77 68 91 74 M109 49 C124 43 145 42 162 46 M109 62 C125 56 144 54 162 58 M109 74 C124 69 145 67 162 70" stroke="#302C28" strokeWidth="1.4" strokeLinecap="round"/>
-      <Path d="M100 25 V15 M90 22 L86 12 M110 22 L114 12" stroke="#9E876B" strokeWidth="1.6" strokeLinecap="round"/>
-    </Svg>
-  );
-}
+/**
+ * Genuine photographic cassette asset, CC0 by Ubcule (Wikimedia Commons).
+ * Only the paper-label overlay is drawn so that each song can have editable
+ * handwriting and its actual cover artwork. This is NOT a drawn cassette.
+ */
+const CASSETTE_PHOTO =
+  'https://upload.wikimedia.org/wikipedia/commons/9/9c/Unlabelled_audio_cassette.jpg';
 
-/** A cassette with a real optional cover artwork, not a random photograph posing as album art. */
 function CassetteArtwork({
   width,
+  height,
+  title,
+  author,
   artwork,
 }: {
   width: number;
+  height: number;
+  title: string;
+  author: string;
   artwork?: string;
 }) {
-  const cassetteWidth = Math.min(width * 0.84, 320);
-  const cassetteHeight = cassetteWidth * 0.61;
+  const cassetteWidth = Math.min(width * 0.91, height * 1.47);
+  const cassetteHeight = cassetteWidth * (890 / 1296);
+  const tiny = cassetteWidth < 200;
+  const labelWidth = cassetteWidth * 0.78;
+  const artSize = cassetteWidth * 0.175;
+
+  return (
+    <View style={[styles.musicCanvas, { width, height }]}>
+      <Text style={[styles.musicKicker, { top: tiny ? 9 : 15, left: tiny ? 11 : 18 }]}>
+        MUSIQUE
+      </Text>
+      <View style={{ width: cassetteWidth, height: cassetteHeight, position: 'relative' }}>
+        <Image
+          source={{ uri: CASSETTE_PHOTO }}
+          resizeMode="cover"
+          accessibilityLabel="Photograph of a real compact audio cassette"
+          style={StyleSheet.absoluteFill}
+        />
+        {/* Custom paper label laid over the photographed shell. */}
+        <View
+          pointerEvents="none"
+          style={{
+            position: 'absolute',
+            left: '11%',
+            top: '21%',
+            width: labelWidth,
+            height: cassetteHeight * 0.34,
+            backgroundColor: '#F3E8D8',
+            borderBottomWidth: 3,
+            borderBottomColor: '#C67E70',
+            flexDirection: 'row',
+            alignItems: 'center',
+            paddingHorizontal: tiny ? 4 : 8,
+            gap: tiny ? 4 : 9,
+          }}
+        >
+          {artwork ? (
+            <Image
+              source={{ uri: artwork }}
+              resizeMode="cover"
+              accessibilityLabel="Song cover artwork"
+              style={{ width: artSize, height: artSize, flexShrink: 0 }}
+            />
+          ) : (
+            <View style={{ width: artSize, height: artSize, borderWidth: 1, borderColor: '#B8A99C' }} />
+          )}
+          <View style={{ flex: 1, minWidth: 0, justifyContent: 'space-between' }}>
+            <Text
+              numberOfLines={2}
+              adjustsFontSizeToFit
+              minimumFontScale={0.7}
+              style={{
+                fontFamily: 'Caveat_700Bold',
+                fontSize: tiny ? 15 : 23,
+                lineHeight: tiny ? 17 : 24,
+                color: '#2A2521',
+              }}
+            >
+              {title}
+            </Text>
+            <Text
+              numberOfLines={1}
+              style={{
+                fontFamily: 'Caveat_700Bold',
+                fontSize: tiny ? 12 : 18,
+                color: '#2A2521',
+                textAlign: 'right',
+              }}
+            >
+              {author}
+            </Text>
+          </View>
+        </View>
+      </View>
+    </View>
+  );
+}
+
+function BibleVerseCard({
+  item,
+  width,
+  height,
+}: {
+  item: Extract<Publication, { type: 'bible' }>;
+  width: number;
+  height: number;
+}) {
+  const compact = width < 230;
   return (
     <View
       style={{
-        width: cassetteWidth,
-        height: cassetteHeight,
-        backgroundColor: '#393631',
-        borderRadius: 9,
-        borderWidth: 1,
-        borderColor: '#272622',
-        padding: cassetteWidth * 0.055,
-        justifyContent: 'center',
+        width,
+        height,
+        backgroundColor: '#F0EAE0',
+        paddingHorizontal: compact ? 14 : 26,
+        paddingVertical: compact ? 18 : 27,
+        justifyContent: 'space-between',
       }}
     >
-      <View
+      <Text style={[styles.bibleReference, { fontSize: compact ? 9 : 11 }]}>
+        {item.reference.toUpperCase()}
+      </Text>
+      <Text
+        numberOfLines={compact ? 6 : 9}
+        adjustsFontSizeToFit
+        minimumFontScale={0.7}
         style={{
-          flex: 1,
-          backgroundColor: artwork ? '#EEE9DF' : '#D6CCBE',
-          borderRadius: 3,
-          overflow: 'hidden',
-          justifyContent: 'flex-end',
+          fontFamily: 'serif',
+          fontSize: compact ? 17 : Math.min(32, width * 0.06),
+          lineHeight: compact ? 23 : Math.min(42, width * 0.082),
+          color: '#29231E',
         }}
       >
-        {artwork ? (
-          <Image source={{ uri: artwork }} style={StyleSheet.absoluteFill} resizeMode="cover" />
-        ) : (
-          <View style={{ position: 'absolute', top: '15%', left: '10%', right: '10%', borderTopWidth: 1, borderTopColor: '#ADA18F' }} />
-        )}
-        <View
-          style={{
-            flexDirection: 'row',
-            height: '43%',
-            backgroundColor: 'rgba(31,29,27,0.90)',
-            alignItems: 'center',
-            justifyContent: 'space-evenly',
-            borderRadius: 24,
-            marginHorizontal: '9%',
-            marginBottom: '7%',
-          }}
-        >
-          {[0, 1].map(i => (
-            <View
-              key={i}
-              style={{
-                height: cassetteWidth * 0.17,
-                width: cassetteWidth * 0.17,
-                borderRadius: cassetteWidth * 0.085,
-                borderWidth: 8,
-                borderColor: '#BDB6A9',
-                backgroundColor: '#686258',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#D9D1C5' }} />
-            </View>
-          ))}
-        </View>
-      </View>
-      <View style={{ height: '13%', alignItems: 'center', justifyContent: 'center' }}>
-        <View style={{ height: 3, width: '30%', borderRadius: 2, backgroundColor: '#6F695F' }} />
-      </View>
+        {verseExcerpt(item)}
+      </Text>
+      <Text style={[styles.handwritten, { color: '#29231E', fontSize: compact ? 23 : 28 }]}>
+        {item.author}
+      </Text>
     </View>
   );
 }
@@ -216,13 +274,15 @@ function StoryCover({
               <TalentArt kind={item.instrument} size={Math.min(170, width * 0.60, height * 0.65)} />
             </View>
           ) : isBible ? (
-            <View style={[styles.talentImage, { paddingBottom: small ? 58 : 85 }]}>
-              <BibleArtwork size={Math.min(200, width * 0.70, height * 0.68)} />
-            </View>
+            <BibleVerseCard item={item} width={width} height={height} />
           ) : isMusic ? (
-            <View style={[styles.talentImage, { paddingBottom: small ? 60 : 95 }]}>
-              <CassetteArtwork width={width} artwork={item.coverArt} />
-            </View>
+            <CassetteArtwork
+              width={width}
+              height={height}
+              title={item.title}
+              author={item.author}
+              artwork={item.coverArt || item.image}
+            />
           ) : (
             <Image source={{ uri: item.image }} resizeMode="cover" accessibilityLabel={item.imageAlt} style={styles.photo} />
           )}
@@ -240,6 +300,7 @@ function StoryCover({
             <Rect width="100%" height="100%" fill={'url(#' + shadeId + ')'} />
           </Svg>
         )}
+        {!isBible && !isMusic && (
         <View
           pointerEvents="none"
           style={[styles.storyCopy, { left: inset, right: inset, bottom: inset }]}
@@ -263,6 +324,7 @@ function StoryCover({
             {item.author}
           </Text>
         </View>
+        )}
         {item.type === 'dream' && (
           <View pointerEvents="none" style={styles.phase}>
             <DreamPhaseIcon phase={item.phase} size={25} />
@@ -424,6 +486,9 @@ export function PublicationGallery({ items }: { items: Publication[] }) {
 }
 
 const styles = StyleSheet.create({
+  musicCanvas: { backgroundColor: '#F3EEE6', alignItems: 'center', justifyContent: 'center' },
+  musicKicker: { position: 'absolute', fontSize: 10, fontWeight: '600', letterSpacing: 1.1, color: '#34302B' },
+  bibleReference: { fontWeight: '600', letterSpacing: 1.2, color: '#6B625B' },
   storyLink: { width: '100%', height: '100%', overflow: 'hidden', position: 'relative' },
   photoFrame: { ...StyleSheet.absoluteFillObject, overflow: 'hidden' },
   photo: { width: '100%', height: '100%' },
