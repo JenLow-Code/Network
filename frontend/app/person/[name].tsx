@@ -35,7 +35,7 @@ export default function PublicPerson() {
           ))}
         </View>
       </View>
-      <DetailPanel title="Expérience" foldable defaultOpen={false}>
+      <DetailPanel title="Expérience" foldable defaultOpen={false} hideTopBorder>
         <Text style={{ fontSize: 14, lineHeight: 22, color: '#444' }}>
           {person.experience?.trim() || 'Expérience non renseignée.'}
         </Text>
