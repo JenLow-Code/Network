@@ -1,7 +1,7 @@
 import React, { useId } from 'react';
 import { Image, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import Svg, { Defs, LinearGradient, Rect, Stop, Path, Circle } from 'react-native-svg';
+import Svg, { ClipPath, Defs, G, Image as SvgImage, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import { router } from 'expo-router';
 import type { Publication } from '@/domain/publication';
@@ -79,13 +79,15 @@ function AudioCorner({ item }: { item: Publication }) {
 
 
 /**
- * Genuine photographic cassette asset, CC0 by Ubcule (Wikimedia Commons).
- * Only the paper-label overlay is drawn so that each song can have editable
- * handwriting and its actual cover artwork. This is NOT a drawn cassette.
+ * One reusable photographed cassette, not a screenshot of an entire card.
+ *
+ * Crop the approved image down to its REAL cassette housing: this excludes
+ * both the baked-in MUSIQUE heading and the fake play icon. A blank paper
+ * label is laid over the original printed one, with the mechanism restored
+ * above the user's album image so it stays visibly a cassette.
+ *
+ * Title, artist and cover artwork all come from the publication data.
  */
-const CASSETTE_PHOTO =
-  'https://upload.wikimedia.org/wikipedia/commons/9/9c/Unlabelled_audio_cassette.jpg';
-
 function CassetteArtwork({
   width,
   height,
@@ -99,93 +101,101 @@ function CassetteArtwork({
   author: string;
   artwork?: string;
 }) {
-  // The approved David cassette is a supplied artwork, not a reconstructed label.
-  if (title === 'Mon premier morceau' && author === 'David') {
-    return (
-      <View style={[styles.musicCanvas, { width, height }]}>
-        <Image
-          source={{ uri: approvedCassetteImage }}
-          accessibilityLabel="Approved photorealistic transparent cassette with floral cover, handwritten title and artist"
-          resizeMode="contain"
-          style={{ width: '100%', height: '100%' }}
-        />
-      </View>
-    );
-  }
-
-  const cassetteWidth = Math.min(width * 0.91, height * 1.47);
-  const cassetteHeight = cassetteWidth * (890 / 1296);
-  const tiny = cassetteWidth < 200;
-  const labelWidth = cassetteWidth * 0.78;
-  const artSize = cassetteWidth * 0.175;
+  const cassetteId = useId().replace(/[^A-Za-z0-9_-]/g, '');
+  const clipId = 'cassette-' + cassetteId;
+  const reelId = 'reels-' + cassetteId;
+  const tiny = width < 225;
+  const cassetteWidth = Math.min(width * (tiny ? 0.86 : 0.74), height * 1.30);
+  const cassetteHeight = cassetteWidth * (255 / 420);
 
   return (
     <View style={[styles.musicCanvas, { width, height }]}>
-      <Text style={[styles.musicKicker, { top: tiny ? 9 : 15, left: tiny ? 11 : 18 }]}>
+      {/* The ONLY category heading; the image has been cropped below its printed heading. */}
+      <Text
+        pointerEvents="none"
+        style={[styles.musicKicker, { top: tiny ? 19 : 21, right: 60, fontSize: tiny ? 8 : 10 }]}
+      >
         MUSIQUE
       </Text>
+
       <View style={{ width: cassetteWidth, height: cassetteHeight, position: 'relative' }}>
-        <Image
-          source={{ uri: CASSETTE_PHOTO }}
-          resizeMode="cover"
-          accessibilityLabel="Photograph of a real compact audio cassette"
-          style={StyleSheet.absoluteFill}
-        />
-        {/* Custom paper label laid over the photographed shell. */}
+        <Svg width="100%" height="100%" viewBox="0 0 420 255">
+          <Defs>
+            <ClipPath id={clipId}>
+              <Rect x={2} y={2} width={415} height={250} rx={11} />
+            </ClipPath>
+            <ClipPath id={reelId}>
+              <Rect x={91} y={91} width={242} height={84} rx={22} />
+            </ClipPath>
+          </Defs>
+          <G clipPath={'url(#' + clipId + ')'}>
+            {/* 480x331 original: the actual shell starts around x=33, y=69. */}
+            <SvgImage href={approvedCassetteImage} x={-33} y={-69} width={480} height={331} />
+            {/* Neutral, reusable cassette label. No fixed title, author or album art. */}
+            <Rect x={29} y={31} width={359} height={120} fill="#F2E7D8" />
+            <Rect x={29} y={145} width={359} height={21} fill="#C9847C" />
+            {artwork && (
+              <SvgImage
+                href={artwork}
+                x={45}
+                y={51}
+                width={72}
+                height={94}
+                preserveAspectRatio="xMidYMid slice"
+              />
+            )}
+            {/* The photographed tape mechanism sits in front of the label. */}
+            <SvgImage
+              href={approvedCassetteImage}
+              x={-33}
+              y={-69}
+              width={480}
+              height={331}
+              clipPath={'url(#' + reelId + ')'}
+            />
+          </G>
+        </Svg>
         <View
           pointerEvents="none"
           style={{
             position: 'absolute',
-            left: '11%',
-            top: '21%',
-            width: labelWidth,
-            height: cassetteHeight * 0.34,
-            backgroundColor: '#F3E8D8',
-            borderBottomWidth: 3,
-            borderBottomColor: '#C67E70',
-            flexDirection: 'row',
-            alignItems: 'center',
-            paddingHorizontal: tiny ? 4 : 8,
-            gap: tiny ? 4 : 9,
+            left: '34%',
+            top: '15%',
+            right: '9%',
+            height: '25%',
+            justifyContent: 'center',
           }}
         >
-          {artwork ? (
-            <Image
-              source={{ uri: artwork }}
-              resizeMode="cover"
-              accessibilityLabel="Song cover artwork"
-              style={{ width: artSize, height: artSize, flexShrink: 0 }}
-            />
-          ) : (
-            <View style={{ width: artSize, height: artSize, borderWidth: 1, borderColor: '#B8A99C' }} />
-          )}
-          <View style={{ flex: 1, minWidth: 0, justifyContent: 'space-between' }}>
-            <Text
-              numberOfLines={2}
-              adjustsFontSizeToFit
-              minimumFontScale={0.7}
-              style={{
-                fontFamily: 'Caveat_700Bold',
-                fontSize: tiny ? 15 : 23,
-                lineHeight: tiny ? 17 : 24,
-                color: '#2A2521',
-              }}
-            >
-              {title}
-            </Text>
-            <Text
-              numberOfLines={1}
-              style={{
-                fontFamily: 'Caveat_700Bold',
-                fontSize: tiny ? 12 : 18,
-                color: '#2A2521',
-                textAlign: 'right',
-              }}
-            >
-              {author}
-            </Text>
-          </View>
+          <Text
+            adjustsFontSizeToFit
+            minimumFontScale={0.65}
+            numberOfLines={2}
+            style={{
+              fontFamily: 'Caveat_700Bold',
+              color: '#28231F',
+              fontSize: tiny ? 13 : cassetteWidth < 280 ? 17 : 21,
+              lineHeight: tiny ? 14 : cassetteWidth < 280 ? 18 : 22,
+            }}
+          >
+            {title}
+          </Text>
         </View>
+        <Text
+          pointerEvents="none"
+          numberOfLines={1}
+          style={{
+            position: 'absolute',
+            right: '8%',
+            top: '36%',
+            maxWidth: '20%',
+            fontFamily: 'Caveat_700Bold',
+            fontSize: tiny ? 10 : 15,
+            lineHeight: tiny ? 12 : 17,
+            color: '#28231F',
+          }}
+        >
+          {author}
+        </Text>
       </View>
     </View>
   );
@@ -276,9 +286,7 @@ function StoryCover({
           style={[
             styles.photoFrame,
             {
-              backgroundColor: isMusic
-                ? '#E8E0D5'
-                : illustrated
+              backgroundColor: illustrated
                   ? '#F0EAE0'
                   : theme.dark ? '#2B2B2B' : '#E8E2DA',
             },
@@ -501,8 +509,8 @@ export function PublicationGallery({ items }: { items: Publication[] }) {
 }
 
 const styles = StyleSheet.create({
-  musicCanvas: { backgroundColor: '#F3EEE6', alignItems: 'center', justifyContent: 'center' },
-  musicKicker: { position: 'absolute', fontSize: 10, fontWeight: '600', letterSpacing: 1.1, color: '#34302B' },
+  musicCanvas: { backgroundColor: '#F0EAE0', alignItems: 'center', justifyContent: 'center' },
+  musicKicker: { position: 'absolute', fontWeight: '600', letterSpacing: 1.1, color: '#34302B' },
   bibleReference: { fontWeight: '600', letterSpacing: 1.2, color: '#6B625B' },
   storyLink: { width: '100%', height: '100%', overflow: 'hidden', position: 'relative' },
   photoFrame: { ...StyleSheet.absoluteFillObject, overflow: 'hidden' },
