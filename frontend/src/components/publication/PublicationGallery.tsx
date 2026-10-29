@@ -245,20 +245,20 @@ export function PublicationTile({
 }
 
 /**
- * Native + web editorial mosaic. Whitespace is the separator; picture, title
- * and handwritten author form one complete, unmistakable publication.
+ * Edge-to-edge editorial mosaic. The image plus its embedded title and handwritten
+ * author form one complete publication; no gutters, borders or outer inset.
  */
 export function PublicationGallery({ items }: { items: Publication[] }) {
   const { width: windowWidth } = useWindowDimensions();
   const columns = windowWidth >= 790 ? 4 : windowWidth >= 600 ? 3 : 2;
-  const gutter = windowWidth < 410 ? 15 : 21;
-  const contentWidth = Math.max(0, Math.min(windowWidth, 920) - 30);
-  const cellWidth = (contentWidth - (columns - 1) * gutter) / columns;
+  // Flush image edges: the gallery expands through Discovery's page padding.
+  const contentWidth = Math.max(0, Math.min(windowWidth, 920));
+  const cellWidth = contentWidth / columns;
   const cellHeight = Math.round(Math.max(178, Math.min(260, cellWidth * 1.16)));
 
   const layout = useMemo(() => arrange(items, columns), [items, columns]);
   const rows = layout.reduce((max, tile) => Math.max(max, tile.row + tile.spanY), 0);
-  const totalHeight = rows * cellHeight + Math.max(0, rows - 1) * gutter;
+  const totalHeight = rows * cellHeight;
 
   return (
     <View style={{ width: '100%', height: totalHeight }}>
@@ -267,15 +267,15 @@ export function PublicationGallery({ items }: { items: Publication[] }) {
           key={tile.item.id}
           style={{
             position: 'absolute',
-            left: tile.col * (cellWidth + gutter),
-            top: tile.row * (cellHeight + gutter),
+            left: tile.col * cellWidth,
+            top: tile.row * cellHeight,
           }}
         >
           <PublicationTile
             item={tile.item}
             size={tile.size}
-            width={tile.spanX * cellWidth + (tile.spanX - 1) * gutter}
-            height={tile.spanY * cellHeight + (tile.spanY - 1) * gutter}
+            width={tile.spanX * cellWidth}
+            height={tile.spanY * cellHeight}
           />
         </View>
       ))}
