@@ -93,11 +93,13 @@ export function CassetteArtwork({
   height,
   title,
   artwork,
+  transparent = false,
 }: {
   width: number;
   height: number;
   title: string;
   artwork?: string;
+  transparent?: boolean;
 }) {
   const cassetteId = useId().replace(/[^A-Za-z0-9_-]/g, '');
   const clipId = 'cassette-' + cassetteId;
@@ -107,7 +109,7 @@ export function CassetteArtwork({
   const cassetteHeight = cassetteWidth * (255 / 420);
 
   return (
-    <View style={[styles.musicCanvas, { width, height }]}>
+    <View style={[styles.musicCanvas, { width, height, backgroundColor: transparent ? 'transparent' : '#F0EAE0' }]}>
       <View style={{ width: cassetteWidth, height: cassetteHeight, position: 'relative', transform: [{ translateY: tiny ? 7 : 11 }] }}>
         <Svg width="100%" height="100%" viewBox="0 0 420 255">
           <Defs>
