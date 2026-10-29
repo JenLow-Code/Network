@@ -30,6 +30,8 @@ export type DreamPublication = PublicationBase & {
 
 export type MusicPublication = PublicationBase & {
   type: 'music';
+  /** Optional artwork for the cassette sleeve; omit for a plain, typographic label. */
+  coverArt?: string;
   audioIndex: 0 | 1 | 2;
   songAuthor: string;
   lyrics?: { time: number; text: string }[];
