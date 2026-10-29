@@ -37,7 +37,7 @@ function category(item: Publication): string {
     case 'music':
       return 'Musique';
     case 'bible':
-      return item.reference;
+      return 'Bible';
     case 'talent':
       return item.skill;
   }
@@ -92,13 +92,11 @@ function CassetteArtwork({
   width,
   height,
   title,
-  author,
   artwork,
 }: {
   width: number;
   height: number;
   title: string;
-  author: string;
   artwork?: string;
 }) {
   const cassetteId = useId().replace(/[^A-Za-z0-9_-]/g, '');
@@ -110,14 +108,6 @@ function CassetteArtwork({
 
   return (
     <View style={[styles.musicCanvas, { width, height }]}>
-      {/* The ONLY category heading; the image has been cropped below its printed heading. */}
-      <Text
-        pointerEvents="none"
-        style={[styles.musicKicker, { top: tiny ? 19 : 21, right: 60, fontSize: tiny ? 8 : 10 }]}
-      >
-        MUSIQUE
-      </Text>
-
       <View style={{ width: cassetteWidth, height: cassetteHeight, position: 'relative' }}>
         <Svg width="100%" height="100%" viewBox="0 0 420 255">
           <Defs>
@@ -180,22 +170,6 @@ function CassetteArtwork({
             {title}
           </Text>
         </View>
-        <Text
-          pointerEvents="none"
-          numberOfLines={1}
-          style={{
-            position: 'absolute',
-            right: '8%',
-            top: '36%',
-            maxWidth: '20%',
-            fontFamily: 'Caveat_700Bold',
-            fontSize: tiny ? 10 : 15,
-            lineHeight: tiny ? 12 : 17,
-            color: '#28231F',
-          }}
-        >
-          {author}
-        </Text>
       </View>
     </View>
   );
@@ -238,9 +212,8 @@ function BibleVerseCard({
       >
         {verseExcerpt(item)}
       </Text>
-      <Text style={[styles.handwritten, { color: '#29231E', fontSize: compact ? 23 : 28 }]}>
-        {item.author}
-      </Text>
+      {/* Leave the bottom-right free for the shared handwritten byline. */}
+      <View style={{ height: compact ? 27 : 37 }} />
     </View>
   );
 }
@@ -293,8 +266,30 @@ function StoryCover({
           ]}
         >
           {isTalent ? (
-            <View style={[styles.talentImage, { paddingBottom: small ? 53 : 80 }]}>
-              <TalentArt kind={item.instrument} size={Math.min(170, width * 0.60, height * 0.65)} />
+            <View style={[styles.talentImage, { paddingBottom: small ? 55 : 80 }]}>
+              <TalentArt
+                kind={item.instrument}
+                size={Math.min(155, width * 0.54, height * 0.52)}
+              />
+              <View
+                style={styles.talentLevels}
+                accessibilityLabel={'Niveau : ' + item.level}
+              >
+                {['#268B60', '#38C975', '#E8BD11', '#F18A2B', '#CB245C'].map((color, i) => {
+                  const level = item.level === 'Débutant' ? 2 : item.level === 'Intermédiaire' ? 3 : 4;
+                  return (
+                    <View
+                      key={i}
+                      style={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: 4,
+                        backgroundColor: i < level ? color : '#D5D4D1',
+                      }}
+                    />
+                  );
+                })}
+              </View>
             </View>
           ) : isBible ? (
             <BibleVerseCard item={item} width={width} height={height} />
@@ -303,7 +298,6 @@ function StoryCover({
               width={width}
               height={height}
               title={item.title}
-              author={item.author}
               artwork={item.coverArt || item.image}
             />
           ) : (
@@ -316,38 +310,70 @@ function StoryCover({
               <LinearGradient id={shadeId} x1="0%" y1="0%" x2="0%" y2="100%">
                 <Stop offset="0%" stopColor="#000" stopOpacity={0.02} />
                 <Stop offset="45%" stopColor="#000" stopOpacity={0.03} />
-                <Stop offset="72%" stopColor="#000" stopOpacity={0.35} />
-                <Stop offset="100%" stopColor="#000" stopOpacity={0.78} />
+                <Stop offset="72%" stopColor="#000" stopOpacity={0.39} />
+                <Stop offset="100%" stopColor="#000" stopOpacity={0.84} />
               </LinearGradient>
             </Defs>
             <Rect width="100%" height="100%" fill={'url(#' + shadeId + ')'} />
           </Svg>
         )}
-        {!isBible && !isMusic && (
+        {/* Consistent taxonomy in the top-right, next to the phase or play control. */}
         <View
           pointerEvents="none"
-          style={[styles.storyCopy, { left: inset, right: inset, bottom: inset }]}
+          style={[
+            styles.topMeta,
+            {
+              top: small ? 19 : 21,
+              right: item.type === 'dream' || isMusic ? 58 : inset,
+              left: inset,
+            },
+          ]}
         >
-          <Text numberOfLines={1} style={[styles.kicker, { color: ink, fontSize: small ? 9 : 10 }]}>
-            {category(item).toUpperCase()}
-          </Text>
-          <Text
-            numberOfLines={3}
-            style={[
-              styles.storyTitle,
-              { color: ink, fontSize: titleSize, lineHeight: titleSize + (small ? 4 : 5) },
-            ]}
-          >
-            {item.title}
-          </Text>
           <Text
             numberOfLines={1}
-            style={[styles.handwritten, { color: ink, fontSize: small ? 22 : 27 }]}
+            adjustsFontSizeToFit
+            minimumFontScale={0.75}
+            style={[styles.kicker, { color: ink, textAlign: 'right', fontSize: small ? 9 : 10 }]}
           >
-            {item.author}
+            {category(item).toUpperCase()}
           </Text>
         </View>
+        {!isBible && !isMusic && (
+          <View
+            pointerEvents="none"
+            style={[
+              styles.bottomTitle,
+              { left: inset, right: inset, bottom: inset + (small ? 34 : 43) },
+            ]}
+          >
+            <Text
+              numberOfLines={3}
+              adjustsFontSizeToFit
+              minimumFontScale={0.8}
+              style={[
+                styles.storyTitle,
+                { color: ink, fontSize: titleSize, lineHeight: titleSize + (small ? 4 : 5) },
+              ]}
+            >
+              {item.title}
+            </Text>
+          </View>
         )}
+        <Text
+          pointerEvents="none"
+          numberOfLines={1}
+          style={[
+            styles.bottomAuthor,
+            {
+              right: inset,
+              bottom: inset,
+              color: ink,
+              fontSize: small ? 22 : 27,
+            },
+          ]}
+        >
+          {item.author}
+        </Text>
         {item.type === 'dream' && (
           <View pointerEvents="none" style={styles.phase}>
             <DreamPhaseIcon phase={item.phase} size={25} />
@@ -516,7 +542,10 @@ const styles = StyleSheet.create({
   photoFrame: { ...StyleSheet.absoluteFillObject, overflow: 'hidden' },
   photo: { width: '100%', height: '100%' },
   talentImage: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  storyCopy: { position: 'absolute', gap: 5 },
+  topMeta: { position: 'absolute', zIndex: 3, alignItems: 'flex-end' },
+  bottomTitle: { position: 'absolute', zIndex: 2 },
+  bottomAuthor: { position: 'absolute', zIndex: 3, fontFamily: 'Caveat_700Bold', lineHeight: 30, textAlign: 'right' },
+  talentLevels: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 10 },
   kicker: { fontWeight: '600', letterSpacing: 1.2, lineHeight: 14 },
   storyTitle: { fontFamily: 'serif', fontWeight: '400', letterSpacing: -0.5 },
   handwritten: { fontFamily: 'Caveat_700Bold', lineHeight: 30 },
