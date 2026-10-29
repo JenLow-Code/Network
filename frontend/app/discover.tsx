@@ -65,6 +65,8 @@ export default function Discover() {
               borderBottomColor: theme.dark ? 'rgba(255,255,255,0.32)' : 'rgba(23,23,23,0.30)',
             }}
           >
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}>
+              <NetworkMark size={24} color={theme.foreground} />
             <Text
               accessibilityLabel="JenLow"
               style={{
@@ -79,10 +81,8 @@ export default function Discover() {
             >
               JENLOW
             </Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-              <NetworkMark size={26} color={theme.foreground} />
-              <TopActions />
             </View>
+            <TopActions />
           </View>
           <View style={{ alignSelf: 'flex-start', maxWidth: '100%', paddingBottom: 4 }}>
             <Text
