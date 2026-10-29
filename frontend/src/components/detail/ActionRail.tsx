@@ -10,6 +10,8 @@ import { myCircle, matchingTalents, myTalents } from '@/mocks/demoCircle';
 import { PrayerIcon } from '@/icons/PrayerIcon';
 import { FireIcon } from '@/icons/FireIcon';
 import { colors as c } from '@/theme/colors';
+import { SwipeReaction } from './SwipeReaction';
+import { labels } from '@/domain/publicationRules';
 
 export function ActionRail({ item }: { item: Publication }) {
   const app = useApp(),
@@ -75,48 +77,29 @@ export function ActionRail({ item }: { item: Publication }) {
   );
   return (
     <View style={s.rail}>
-      {primary.map(action => (
-        <Pressable
+      {[...primary, ...(permitted.includes('prayer') ? ['prayer' as ActionId] : [])].map(action => (
+        <SwipeReaction
           key={action}
-          accessibilityLabel={action === 'encourage' ? 'Encourager' : action}
-          accessibilityRole="button"
-          onPress={() => activity(action)}
-          hitSlop={{ top: 6, bottom: 6, left: 0, right: 0 }}
-          style={s.iconButton}
-        >
-          {action === 'fire' ? (
-            <FireIcon size={23} active={app.fireIds.includes(item.id)} />
-          ) : action === 'inspire' && seeded ? (
-            <Ionicons name="leaf" color={c.pink} size={22} />
-          ) : (
-            <Ionicons
-              name={
-                action === 'encourage' && app.encouragementIds.includes(item.id)
-                  ? 'heart'
-                  : icons[action] || 'add'
-              }
-              color={
-                action === 'encourage' && app.encouragementIds.includes(item.id)
-                  ? '#CB245C'
-                  : action === 'inspire' && seeded
-                    ? '#CB245C'
-                    : '#252525'
-              }
-              size={23}
-            />
-          )}
-        </Pressable>
+          label={labels[action]}
+          onConfirm={() => activity(action)}
+          active={
+            (action === 'fire' && app.fireIds.includes(item.id)) ||
+            (action === 'prayer' && app.isPraying(item.id)) ||
+            (action === 'inspire' && seeded) ||
+            (action === 'encourage' && app.encouragementIds.includes(item.id))
+          }
+          icon={action === 'prayer'
+            ? <PrayerIcon size={22} active={app.isPraying(item.id)} />
+            : action === 'fire'
+              ? <FireIcon size={22} active={app.fireIds.includes(item.id)} />
+              : <Ionicons
+                  name={action === 'inspire' && seeded ? 'leaf' : action === 'encourage' && app.encouragementIds.includes(item.id) ? 'heart' : icons[action] || 'add'}
+                  size={22}
+                  color={action === 'inspire' && seeded || action === 'encourage' && app.encouragementIds.includes(item.id) ? c.pink : '#252525'}
+                />
+          }
+        />
       ))}
-      {permitted.includes('prayer') ? (
-        <Pressable
-          accessibilityLabel="Prayer list"
-          onPress={() => activity('prayer')}
-          hitSlop={{ top: 6, bottom: 6, left: 0, right: 0 }}
-          style={s.iconButton}
-        >
-          <PrayerIcon size={23} active={app.isPraying(item.id)} />
-        </Pressable>
-      ) : null}
       <Modal
         visible={modal !== null}
         transparent
@@ -191,7 +174,7 @@ const s = StyleSheet.create({
     paddingVertical: 7,
     paddingHorizontal: 2,
     borderRadius: 24,
-    backgroundColor: 'rgba(240,234,224,0.75)',
+    backgroundColor: 'transparent',
   },
   iconButton: {
     width: 39,
