@@ -18,6 +18,7 @@ export function MusicWaveform({
     wave: React.ReactNode,
     time: number,
     seek: (seconds: number) => void,
+    togglePlayback: () => void,
   ) => React.ReactNode;
 }) {
   const trackWidth = useRef(0);
@@ -92,7 +93,7 @@ export function MusicWaveform({
     <>
       {renderLayout(button, waveform, status.currentTime, (seconds: number) => {
         void player.seekTo(seconds);
-      })}
+      }, play)}
     </>
   ) : (
     waveform
