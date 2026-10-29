@@ -55,6 +55,9 @@ export function DetailLayout({
           <View style={{ paddingTop: 26, paddingRight: heroWidth < 410 ? 48 : 58 }}>
             {featured}
             {children}
+            <View style={{ alignItems: 'flex-end', paddingTop: 12, paddingBottom: 8 }}>
+              <ActionRail item={item} />
+            </View>
           </View>
           <View style={{ marginTop: 42, borderTopWidth: 0.5, borderTopColor: theme.border, paddingTop: 21 }}>
             <Text
@@ -72,13 +75,6 @@ export function DetailLayout({
           </View>
         </View>
       </ScrollView>
-      {/* Anchored to the bottom of the reading area, not to scroll content. */}
-      <View
-        pointerEvents="box-none"
-        style={{ position: 'absolute', right: 12, bottom: 14 }}
-      >
-        <ActionRail item={item} />
-      </View>
       </View>
       <Nav />
     </SafeAreaView>
