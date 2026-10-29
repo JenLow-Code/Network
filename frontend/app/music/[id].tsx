@@ -3,7 +3,6 @@ import { Text, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { musics } from '@/mocks/publications';
 import { PublicationDetail, DetailPanel } from '@/components/publication/PublicationDetail';
-import { DetailIntro } from '@/components/detail/DetailIntro';
 import { MusicWaveform } from '@/components/music/MusicWaveform';
 import { MusicLyrics, FullMusicLyrics } from '@/components/music/MusicLyrics';
 export default function MusicDetail() {
@@ -20,9 +19,13 @@ export default function MusicDetail() {
       index={item.audioIndex}
       renderLayout={(button, wave, time, seek) => (
         <PublicationDetail item={item}>
-          <DetailIntro artwork={button} rightContent={wave}>
+          <View style={{ paddingVertical: 18, gap: 15 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
+              {button}
+              <View style={{ flex: 1 }}>{wave}</View>
+            </View>
             <MusicLyrics lines={item.lyrics || []} currentTime={time} onSeek={seek} />
-          </DetailIntro>
+          </View>
           <DetailPanel title="Paroles complètes" foldable defaultOpen={false}>
             <FullMusicLyrics lines={item.lyrics || []} />
           </DetailPanel>
