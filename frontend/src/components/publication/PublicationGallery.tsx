@@ -11,6 +11,7 @@ import { TalentArt } from '@/components/talent/TalentArt';
 import { useAppTheme } from '@/theme/AppTheme';
 import { verseExcerpt } from '@/mocks/publications';
 import { approvedCassetteImage } from '@/assets/approvedCassette';
+import { HANDWRITING_FAMILY } from '@/theme/handwriting';
 
 const audio = [
   require('../../../assets/audio/pierre-01-douceur.wav'),
@@ -163,7 +164,7 @@ export function CassetteArtwork({
             minimumFontScale={0.65}
             numberOfLines={2}
             style={{
-              fontFamily: 'Caveat_700Bold',
+              fontFamily: HANDWRITING_FAMILY,
               color: '#28231F',
               fontSize: tiny ? 13 : cassetteWidth < 280 ? 17 : 21,
               lineHeight: tiny ? 14 : cassetteWidth < 280 ? 18 : 22,
@@ -590,7 +591,7 @@ const styles = StyleSheet.create({
   talentLevels: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 10 },
   kicker: { fontWeight: '600', letterSpacing: 1.2, lineHeight: 14 },
   storyTitle: { fontFamily: 'serif', fontWeight: '400', letterSpacing: -0.5 },
-  handwritten: { fontFamily: 'Caveat_700Bold', lineHeight: 30 },
+  handwritten: { fontFamily: HANDWRITING_FAMILY, lineHeight: 30 },
   phase: {
     position: 'absolute',
     right: 9,

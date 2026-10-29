@@ -1,6 +1,7 @@
 import React from 'react';
 import { Text, View } from 'react-native';
 import { colors } from '@/theme/colors';
+import { HANDWRITING_FAMILY } from '@/theme/handwriting';
 
 export function NetworkLogo() {
   return (
@@ -13,7 +14,7 @@ export function NetworkLogo() {
       </Text>
       <Text
         style={{
-          fontFamily: 'Caveat_700Bold',
+          fontFamily: HANDWRITING_FAMILY,
           color: colors.pink,
           fontSize: 33,
           lineHeight: 34,

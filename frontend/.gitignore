@@ -7,3 +7,7 @@ web-build/
 *.jks
 *.keystore
 .DS_Store
+
+assets/fonts/Biro_Script_reduced.ttf
+assets/fonts/Biro_Script_reduced.otf
+assets/fonts/biro_script.zip
