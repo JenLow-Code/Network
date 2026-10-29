@@ -20,12 +20,14 @@ export function DetailLayout({
   featured,
   headerIcon,
   onCoverPress,
+  musicPlaying = false,
 }: {
   item: Publication;
   children: React.ReactNode;
   featured?: React.ReactNode;
   headerIcon?: React.ReactNode;
   onCoverPress?: () => void;
+  musicPlaying?: boolean;
 }) {
   const theme = useAppTheme();
   const { width: screenWidth } = useWindowDimensions();
@@ -33,7 +35,7 @@ export function DetailLayout({
   const heroWidth = Math.max(0, width - 32);
   const heroHeight =
     item.type === 'dream'
-      ? Math.min(540, Math.max(305, heroWidth * 0.80))
+      ? Math.min(580, Math.max(420, heroWidth * 0.88))
       : item.type === 'bible'
         ? Math.min(420, Math.max(275, heroWidth * 0.62))
         : Math.min(330, Math.max(210, heroWidth * 0.50));
@@ -52,11 +54,11 @@ export function DetailLayout({
         <DetailAuthorHeader item={item} />
 
         <View style={{ paddingHorizontal: 16 }}>
-          <DetailHero item={item} width={heroWidth} height={heroHeight} onMusicPress={onCoverPress} />
+          <DetailHero item={item} width={heroWidth} height={heroHeight} onMusicPress={onCoverPress} musicPlaying={musicPlaying} />
 
           <View style={{ paddingTop: item.type === 'music' ? 4 : item.type === 'dream' ? 0 : 22, paddingRight: 0 }}>
             {featured}
-            <View style={{ flexDirection: 'row', gap: 18, alignItems: 'flex-end' }}>
+            <View style={{ flexDirection: 'row', gap: 36, alignItems: 'flex-end' }}>
               <View style={{ flex: 1, minWidth: 0 }}>{children}</View>
               <View style={{ width: 42, alignSelf: 'flex-end', paddingBottom: 10 }}>
                 <ActionRail item={item} />
