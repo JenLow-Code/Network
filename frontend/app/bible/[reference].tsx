@@ -2,10 +2,11 @@ import React, { useEffect, useRef, useState } from 'react';
 import { ScrollView, Text, View, type NativeSyntheticEvent, type NativeScrollEvent } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
-import { biblePosts, psalm150 } from '@/mocks/publications';
+import { biblePosts, psalm150, publications, personPublications } from '@/mocks/publications';
 import { DetailAuthorHeader } from '@/components/detail/DetailAuthorHeader';
 import { ActionRail } from '@/components/detail/ActionRail';
 import { Nav } from '@/components/navigation/Nav';
+import { PublicationGallery } from '@/components/publication/PublicationGallery';
 import { useAppTheme } from '@/theme/AppTheme';
 
 const SLOT = 156;
@@ -36,7 +37,16 @@ export default function Bible() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
-      <View style={{ flex: 1, maxWidth: 760, width: '100%', alignSelf: 'center' }}>
+      <ScrollView
+        style={{ flex: 1 }}
+        nestedScrollEnabled
+        contentContainerStyle={{
+          maxWidth: 760,
+          width: '100%',
+          alignSelf: 'center',
+          paddingBottom: 36,
+        }}
+      >
         <DetailAuthorHeader item={post} />
         <View style={{ paddingHorizontal: 24, paddingTop: 8, paddingBottom: 13 }}>
           <Text accessibilityRole="header" style={{ fontFamily: 'serif', fontSize: 31, lineHeight: 40, color: theme.foreground }}>
@@ -44,10 +54,11 @@ export default function Bible() {
           </Text>
           <Text style={{ color: theme.muted, fontSize: 10, letterSpacing: 1.4 }}>LOUIS SEGOND 1910</Text>
         </View>
-        <View style={{ flex: 1, justifyContent: 'flex-start' }}>
+        <View style={{ height: WINDOW * SLOT, position: 'relative' }}>
           <ScrollView
             ref={scroller}
-            style={{ flexGrow: 0, height: WINDOW * SLOT }}
+            nestedScrollEnabled
+            style={{ height: WINDOW * SLOT }}
             contentContainerStyle={{ paddingHorizontal: 19, paddingRight: 73 }}
             showsVerticalScrollIndicator={false}
             snapToInterval={SLOT}
@@ -81,7 +92,26 @@ export default function Bible() {
         <View pointerEvents="box-none" style={{ position: 'absolute', right: 12, bottom: 12 }}>
           <ActionRail item={post} />
         </View>
-      </View>
+        <View
+          style={{
+            marginTop: 34,
+            marginHorizontal: 19,
+            paddingTop: 22,
+            borderTopWidth: 0.5,
+            borderTopColor: theme.border,
+          }}
+        >
+          <Text
+            accessibilityRole="header"
+            style={{ fontFamily: 'serif', fontSize: 25, lineHeight: 32, color: theme.foreground, marginBottom: 20 }}
+          >
+            Continuer l’inspiration
+          </Text>
+          <PublicationGallery
+            items={[...publications, ...personPublications].filter(p => p.id !== post.id)}
+          />
+        </View>
+      </ScrollView>
       <Nav />
     </SafeAreaView>
   );
