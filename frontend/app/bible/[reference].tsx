@@ -1,95 +1,87 @@
-import React, { useId, useRef, useState } from 'react';
-import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
-import { ScrollView, Text, View, type ScrollViewInstance } from 'react-native';
+import React from 'react';
+import { Text, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { psalm150, biblePosts } from '@/mocks/publications';
 import { PublicationDetail } from '@/components/publication/PublicationDetail';
-const READER_HEIGHT = 340;
-const TOP_FADE_HEIGHT = 94;
-const VERSE_ZERO_SPACER = TOP_FADE_HEIGHT + 8; // Empty, unnumbered space above verse 1 so its text stays readable beneath the fixed fade.
+import { useAppTheme } from '@/theme/AppTheme';
+
+/**
+ * Read the whole chapter in the page's ONE scroll area.
+ *
+ * Previously a second fixed-height scroll view, an opaque top fade and automatic
+ * centering hid the opening verses. The detail cover already highlights the
+ * shared verse; below it, the complete chapter should be readable from verse 1.
+ */
 export default function Bible() {
   const { verse } = useLocalSearchParams<{ reference: string; verse?: string }>();
   const focus = Math.max(1, Math.min(psalm150.length, Number(verse || 6) || 6));
   const post = biblePosts.find(p => p.highlightedVerse === focus) || biblePosts[0];
-  const inner = useRef<ScrollViewInstance>(null);
-  const positions = useRef<Record<number, { y: number; height: number }>>({});
-  const [ready, setReady] = useState(false);
-  const fadeId = useId().replace(/[^a-zA-Z0-9_-]/g, '');
-  const centre = () => {
-    const pos = positions.current[focus];
-    if (pos)
-      inner.current?.scrollTo({
-        y: Math.max(0, pos.y + pos.height / 2 - READER_HEIGHT / 2),
-        animated: false,
-      });
-  };
+  const theme = useAppTheme();
+
   return (
     <PublicationDetail item={post}>
-      <View style={{ height: READER_HEIGHT, position: 'relative' }}>
-        <ScrollView
-          ref={inner}
-          nestedScrollEnabled
-          showsVerticalScrollIndicator
-          style={{ height: READER_HEIGHT }}
-          contentContainerStyle={{ gap: 6, paddingRight: 6, paddingBottom: 16 }}
-          onContentSizeChange={() => {
-            if (!ready) {
-              centre();
-              setReady(true);
-            }
-          }}
-        >
-          <View
-            accessibilityElementsHidden
-            importantForAccessibility="no-hide-descendants"
-            style={{ height: VERSE_ZERO_SPACER }}
-          />
-          {psalm150.map((v, i) => (
-            <View
-              key={i}
-              onLayout={e => {
-                positions.current[i + 1] = e.nativeEvent.layout;
-                if (i === psalm150.length - 1) requestAnimationFrame(centre);
-              }}
-              style={{
-                flexDirection: 'row',
-                gap: 9,
-                borderRadius: 7,
-                padding: 10,
-                backgroundColor: i + 1 === focus ? '#F7E9F0' : 'rgba(255,252,245,0.68)',
-              }}
-            >
-              <Text style={{ fontSize: 11, color: i + 1 === focus ? '#CB245C' : '#777' }}>
-                {i + 1}
-              </Text>
-              <Text
+      <View>
+        <View style={{ paddingBottom: 19 }}>
+          <Text
+            accessibilityRole="header"
+            style={{ fontFamily: 'serif', fontSize: 28, lineHeight: 34, color: theme.foreground }}
+          >
+            Psaume 150
+          </Text>
+          <Text
+            style={{
+              fontSize: 11,
+              letterSpacing: 1.2,
+              marginTop: 4,
+              color: theme.muted,
+            }}
+          >
+            LOUIS SEGOND 1910 · CHAPITRE COMPLET
+          </Text>
+        </View>
+        <View style={{ gap: 5 }}>
+          {psalm150.map((v, i) => {
+            const selected = i + 1 === focus;
+            return (
+              <View
+                key={i}
+                accessibilityLabel={'Verset ' + (i + 1) + (selected ? ', sélectionné' : '')}
                 style={{
-                  flex: 1,
-                  fontSize: 15,
-                  lineHeight: 21,
-                  color: i + 1 === focus ? '#CB245C' : '#333',
-                  fontWeight: i + 1 === focus ? '700' : '400',
+                  flexDirection: 'row',
+                  alignItems: 'flex-start',
+                  gap: 11,
+                  paddingVertical: 12,
+                  paddingHorizontal: 11,
+                  backgroundColor: selected ? (theme.dark ? '#3A2733' : '#F7E7EE') : 'transparent',
+                  borderRadius: selected ? 7 : 0,
                 }}
               >
-                {v}
-              </Text>
-            </View>
-          ))}
-        </ScrollView>
-        <View
-          pointerEvents="none"
-          style={{ position: 'absolute', top: 0, left: 0, right: 6, height: TOP_FADE_HEIGHT }}
-        >
-          <Svg width="100%" height="100%">
-            <Defs>
-              <LinearGradient id={fadeId} x1="0%" y1="0%" x2="0%" y2="100%">
-                <Stop offset="0%" stopColor="#D0D0CE" stopOpacity={0.97} />
-                <Stop offset="55%" stopColor="#D0D0CE" stopOpacity={0.62} />
-                <Stop offset="100%" stopColor="#D0D0CE" stopOpacity={0} />
-              </LinearGradient>
-            </Defs>
-            <Rect width="100%" height="100%" fill={`url(#${fadeId})`} />
-          </Svg>
+                <Text
+                  style={{
+                    minWidth: 16,
+                    fontSize: 12,
+                    lineHeight: 24,
+                    color: selected ? '#CB245C' : theme.muted,
+                  }}
+                >
+                  {i + 1}
+                </Text>
+                <Text
+                  selectable
+                  style={{
+                    flex: 1,
+                    fontFamily: 'serif',
+                    fontSize: 17,
+                    lineHeight: 26,
+                    fontWeight: selected ? '600' : '400',
+                    color: selected ? (theme.dark ? '#FF86AE' : '#B71D53') : theme.foreground,
+                  }}
+                >
+                  {v}
+                </Text>
+              </View>
+            );
+          })}
         </View>
       </View>
     </PublicationDetail>
