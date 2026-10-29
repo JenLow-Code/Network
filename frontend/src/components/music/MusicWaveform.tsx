@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
@@ -8,10 +8,6 @@ const files = [
   require('../../../assets/audio/pierre-02-esperance.wav'),
   require('../../../assets/audio/pierre-03-lumiere.wav'),
 ] as const;
-const heights = [
-  12, 26, 42, 20, 55, 70, 35, 19, 48, 28, 61, 43, 17, 31, 57, 24, 15, 44, 34, 21, 48, 64, 27, 19,
-  47, 34, 58, 25, 18, 39, 30, 13,
-];
 export function MusicWaveform({
   index,
   renderLayout,
@@ -24,6 +20,7 @@ export function MusicWaveform({
     seek: (seconds: number) => void,
   ) => React.ReactNode;
 }) {
+  const trackWidth = useRef(0);
   const player = useAudioPlayer(files[index]);
   const status = useAudioPlayerStatus(player);
   const play = () => {
@@ -42,54 +39,52 @@ export function MusicWaveform({
       onPress={play}
       accessibilityLabel={status.playing ? 'Pause' : 'Écouter'}
       style={{
-        width: 56,
-        height: 56,
-        borderRadius: 28,
+        width: 40,
+        height: 40,
+        borderRadius: 20,
         backgroundColor: '#CB245C',
         alignItems: 'center',
         justifyContent: 'center',
       }}
     >
-      <Ionicons name={status.playing ? 'pause' : 'play'} size={26} color="#fff" />
+      <Ionicons name={status.playing ? 'pause' : 'play'} size={19} color="#fff" />
     </Pressable>
   );
   const waveform = (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}>
       {!renderLayout ? button : null}
       <View style={{ flex: 1 }}>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 3 }}>
-          <Text style={{ fontSize: 11, color: '#666' }}>{time(status.currentTime)}</Text>
-          <Text style={{ fontSize: 11, color: '#666' }}>{time(status.duration)}</Text>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
+          <Text style={{ fontSize: 10, color: '#777' }}>{time(status.currentTime)}</Text>
+          <Text style={{ fontSize: 10, color: '#777' }}>{time(status.duration)}</Text>
         </View>
-        <View
-          style={{
-            height: 46,
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 2,
+        <Pressable
+          accessibilityRole="adjustable"
+          accessibilityLabel="Position de lecture"
+          accessibilityValue={{ min: 0, max: 100, now: Math.round(progress * 100) }}
+          onPress={event => {
+            if (status.duration <= 0) return;
+            const locationX = event.nativeEvent.locationX;
+            const width = trackWidth.current;
+            if (width > 0) void player.seekTo(status.duration * Math.min(1, Math.max(0, locationX / width)));
           }}
+          onLayout={e => { trackWidth.current = e.nativeEvent.layout.width; }}
+          style={{ height: 24, justifyContent: 'center' }}
         >
-          {heights.map((h, i) => (
-            <Pressable
-              key={i}
-              onPress={() => {
-                if (status.duration > 0) void player.seekTo((status.duration * i) / heights.length);
+          <View style={{ height: 2, borderRadius: 2, backgroundColor: '#C6BFC0' }}>
+            <View style={{ width: (progress * 100) + '%', height: 2, backgroundColor: '#CB245C', borderRadius: 2 }} />
+            <View
+              style={{
+                position: 'absolute',
+                left: (progress * 100) + '%',
+                top: -3,
+                width: 8, height: 8, borderRadius: 4,
+                backgroundColor: '#CB245C',
+                marginLeft: -4,
               }}
-              style={{ flex: 1, alignItems: 'center', justifyContent: 'center', height: 34 }}
-            >
-              <View
-                style={{
-                  width: '100%',
-                  maxWidth: 3,
-                  height: Math.max(4, h * 0.46),
-                  borderRadius: 5,
-                  backgroundColor: i / heights.length <= progress ? '#CB245C' : '#B8B3B5',
-                }}
-              />
-            </Pressable>
-          ))}
-        </View>
+            />
+          </View>
+        </Pressable>
       </View>
     </View>
   );
