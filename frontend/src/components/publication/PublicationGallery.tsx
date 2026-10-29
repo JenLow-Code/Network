@@ -1,14 +1,15 @@
-import React, { useId, useMemo } from 'react';
+import React, { useId } from 'react';
 import { Image, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import { router } from 'expo-router';
-import { DreamPhaseIcon } from '@/icons/DreamPhaseIcon';
-import { TalentArt } from '@/components/talent/TalentArt';
 import type { Publication } from '@/domain/publication';
 import { PHASE_LABELS } from '@/domain/publication';
+import { DreamPhaseIcon } from '@/icons/DreamPhaseIcon';
+import { TalentArt } from '@/components/talent/TalentArt';
 import { verseExcerpt } from '@/mocks/publications';
+import { useAppTheme } from '@/theme/AppTheme';
 
 const audio = [
   require('../../../assets/audio/pierre-01-douceur.wav'),
@@ -28,32 +29,7 @@ export const publicationPath = (p: Publication) =>
             params: { reference: p.referenceId, verse: String(p.highlightedVerse) },
           } as const);
 
-function MusicPlayback({ index }: { index: 0 | 1 | 2 }) {
-  const player = useAudioPlayer(audio[index]);
-  const status = useAudioPlayerStatus(player);
-
-  const toggle = () => {
-    if (status.playing) {
-      player.pause();
-    } else {
-      if (status.didJustFinish) void player.seekTo(0);
-      player.play();
-    }
-  };
-
-  return (
-    <Pressable
-      onPress={toggle}
-      accessibilityRole="button"
-      accessibilityLabel={status.playing ? 'Pause sample' : 'Play 8 second sample'}
-      style={styles.play}
-    >
-      <Ionicons name={status.playing ? 'pause' : 'play'} size={20} color="#FFFFFF" />
-    </Pressable>
-  );
-}
-
-function category(item: Publication) {
+function category(item: Publication): string {
   switch (item.type) {
     case 'dream':
       return PHASE_LABELS[item.phase];
@@ -66,7 +42,7 @@ function category(item: Publication) {
   }
 }
 
-function excerpt(item: Publication) {
+function description(item: Publication): string {
   switch (item.type) {
     case 'dream':
       return item.summary;
@@ -79,243 +55,429 @@ function excerpt(item: Publication) {
   }
 }
 
-type TileSize = 1 | 2 | 4;
-
-type PositionedTile = {
-  item: Publication;
-  col: number;
-  row: number;
-  spanX: number;
-  spanY: number;
-  size: TileSize;
-};
-
-/**
- * Every story occupies a whole, non-overlapping rectangle:
- * 1 = one grid cell, 2 = two adjacent cells, 4 = a 2x2 feature.
- * Pack items in data order so the layout still works after filtering.
- */
-function arrange(items: Publication[], columns: number): PositionedTile[] {
-  const occupied: boolean[][] = [];
-  const output: PositionedTile[] = [];
-
-  items.forEach((item, index) => {
-    const pattern: TileSize[] = [4, 1, 1, 2, 1, 1, 2, 4, 1, 1, 2, 1];
-    const size: TileSize =
-      items.length <= 3 ? (index === 0 ? 2 : 1) : pattern[index % pattern.length];
-    const spanX = size === 1 ? 1 : 2;
-    const spanY = size === 4 ? 2 : 1;
-
-    let placed = false;
-    for (let row = 0; !placed; row++) {
-      for (let col = 0; col <= columns - spanX; col++) {
-        let free = true;
-        for (let y = row; y < row + spanY; y++) {
-          for (let x = col; x < col + spanX; x++) {
-            if (occupied[y]?.[x]) free = false;
-          }
-        }
-        if (!free) continue;
-
-        for (let y = row; y < row + spanY; y++) {
-          if (!occupied[y]) occupied[y] = [];
-          for (let x = col; x < col + spanX; x++) occupied[y][x] = true;
-        }
-        output.push({ item, col, row, spanX, spanY, size });
-        placed = true;
-        break;
-      }
+function MusicPlayback({ index }: { index: 0 | 1 | 2 }) {
+  const player = useAudioPlayer(audio[index]);
+  const status = useAudioPlayerStatus(player);
+  const toggle = () => {
+    if (status.playing) player.pause();
+    else {
+      if (status.didJustFinish) void player.seekTo(0);
+      player.play();
     }
-  });
+  };
 
-  return output;
+  return (
+    <Pressable
+      onPress={toggle}
+      accessibilityRole="button"
+      accessibilityLabel={status.playing ? 'Pause sample' : 'Play 8 second sample'}
+      style={styles.playButton}
+    >
+      <Ionicons name={status.playing ? 'pause' : 'play'} size={21} color="#FFFFFF" />
+    </Pressable>
+  );
 }
 
-/**
- * All words belonging to one publication stay on its own image. No floating
- * captions, text-first article beside an unrelated image, borders or shadows.
- */
+/** Sibling audio control: never nest a button inside the story's Pressable on web. */
+function AudioCorner({ item }: { item: Publication }) {
+  if (item.type !== 'music') return null;
+  return (
+    <View style={styles.audioCorner}>
+      <MusicPlayback index={item.audioIndex} />
+    </View>
+  );
+}
+
+function Photo({
+  item,
+  height,
+  cover = false,
+}: {
+  item: Publication;
+  height: number;
+  cover?: boolean;
+}) {
+  const theme = useAppTheme();
+  return (
+    <View
+      style={[
+        styles.photoFrame,
+        {
+          height,
+          backgroundColor:
+            item.type === 'talent'
+              ? theme.dark
+                ? '#D2CABE'
+                : '#F0EAE0'
+              : theme.dark
+                ? '#2B2B2B'
+                : '#E8E2DA',
+        },
+      ]}
+    >
+      {item.type === 'talent' ? (
+        <View style={styles.talentImage}>
+          <TalentArt kind={item.instrument} size={Math.min(130, height * 0.66)} />
+        </View>
+      ) : (
+        <Image
+          source={{ uri: item.image }}
+          resizeMode="cover"
+          accessibilityLabel={item.imageAlt}
+          style={styles.photo}
+        />
+      )}
+
+      {item.type === 'dream' ? (
+        <View pointerEvents="none" style={styles.phase}>
+          <DreamPhaseIcon phase={item.phase} size={25} />
+        </View>
+      ) : null}
+
+      {/* Only the feature cover has text on photography; ordinary photos stay light. */}
+      {cover ? null : null}
+    </View>
+  );
+}
+
+function Byline({ item, inverse = false }: { item: Publication; inverse?: boolean }) {
+  const theme = useAppTheme();
+  return (
+    <Text
+      numberOfLines={1}
+      style={[styles.handwritten, { color: inverse ? '#FFFFFF' : theme.foreground }]}
+    >
+      {item.author}
+    </Text>
+  );
+}
+
+function ArticleCopy({
+  item,
+  prominent = false,
+}: {
+  item: Publication;
+  prominent?: boolean;
+}) {
+  const theme = useAppTheme();
+  return (
+    <View style={[styles.articleCopy, prominent && styles.prominentCopy]}>
+      <Text
+        numberOfLines={1}
+        style={[styles.kicker, { color: theme.dark ? '#BFB6B3' : '#716B65' }]}
+      >
+        {category(item).toUpperCase()}
+      </Text>
+      <Text
+        numberOfLines={prominent ? 3 : 3}
+        style={[
+          styles.articleTitle,
+          {
+            fontSize: prominent ? 29 : 19,
+            lineHeight: prominent ? 34 : 24,
+            color: theme.foreground,
+          },
+        ]}
+      >
+        {item.title}
+      </Text>
+      <Text
+        numberOfLines={prominent ? 4 : 2}
+        style={[styles.excerpt, { color: theme.dark ? '#BDBAB6' : '#65615C' }]}
+      >
+        {description(item)}
+      </Text>
+      <View style={styles.bylineRow}>
+        <Byline item={item} />
+        {prominent ? <Ionicons name="arrow-forward" size={19} color={theme.foreground} /> : null}
+      </View>
+    </View>
+  );
+}
+
+/** Classic unboxed magazine article: photo above, type below, intact as one unit. */
 export function PublicationTile({
   item,
   width,
-  height,
-  size,
+  imageHeight,
 }: {
   item: Publication;
   width: number;
-  height: number;
-  size: TileSize;
+  imageHeight: number;
 }) {
-  const shadeId = useId().replace(/[^a-zA-Z0-9_-]/g, '');
-  const isTalent = item.type === 'talent';
-  const large = size === 4;
-  const double = size === 2;
-  const bigText = large || double;
-  const caption = excerpt(item);
-  const ink = isTalent ? '#24231F' : '#FFFFFF';
-  const side = large ? 23 : double ? 18 : 12;
-
   return (
-    <View style={[styles.tile, { width, height }]}>
+    <View style={{ width, minWidth: 0 }}>
       <Pressable
-        onPress={() => router.push(publicationPath(item) as any)}
         accessibilityRole="button"
         accessibilityLabel={'Open ' + item.title}
-        style={[styles.cover, { backgroundColor: isTalent ? '#EAE5DB' : '#262626' }]}
+        onPress={() => router.push(publicationPath(item) as any)}
       >
-        {isTalent ? (
-          <View style={styles.talentArt}>
-            <TalentArt
-              kind={item.instrument}
-              size={Math.min(width * 0.62, height * 0.52, 180)}
-            />
-          </View>
-        ) : (
-          <Image
-            source={{ uri: item.image }}
-            resizeMode="cover"
-            accessibilityLabel={item.imageAlt}
-            style={styles.photo}
-          />
-        )}
+        <Photo item={item} height={imageHeight} />
+        <ArticleCopy item={item} />
+      </Pressable>
+      <AudioCorner item={item} />
+    </View>
+  );
+}
 
-        {!isTalent && (
-          <Svg
-            pointerEvents="none"
-            width="100%"
-            height="100%"
-            style={StyleSheet.absoluteFill}
-          >
+/**
+ * One intentional cover, not a feed of identical dark overlays.
+ * The bottom gradient is gentle enough to retain the photography.
+ */
+function CoverStory({ item, width, height }: { item: Publication; width: number; height: number }) {
+  const theme = useAppTheme();
+  const shadeId = useId().replace(/[^a-zA-Z0-9_-]/g, '');
+  const isTalent = item.type === 'talent';
+  const foreground = isTalent ? '#26211D' : '#FFFFFF';
+
+  return (
+    <View style={{ width, height }}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={'Open ' + item.title}
+        onPress={() => router.push(publicationPath(item) as any)}
+        style={{ flex: 1 }}
+      >
+        <Photo item={item} height={height} cover />
+        {!isTalent ? (
+          <Svg pointerEvents="none" width="100%" height="100%" style={StyleSheet.absoluteFill}>
             <Defs>
               <LinearGradient id={shadeId} x1="0%" y1="0%" x2="0%" y2="100%">
-                <Stop offset="0%" stopColor="#000000" stopOpacity={0.08} />
-                <Stop offset="35%" stopColor="#000000" stopOpacity={0.08} />
-                <Stop offset="60%" stopColor="#000000" stopOpacity={0.36} />
-                <Stop offset="80%" stopColor="#000000" stopOpacity={0.70} />
-                <Stop offset="100%" stopColor="#000000" stopOpacity={0.91} />
+                <Stop offset="0%" stopColor="#000" stopOpacity={0.04} />
+                <Stop offset="49%" stopColor="#000" stopOpacity={0.02} />
+                <Stop offset="72%" stopColor="#000" stopOpacity={0.32} />
+                <Stop offset="100%" stopColor="#000" stopOpacity={0.79} />
               </LinearGradient>
             </Defs>
             <Rect width="100%" height="100%" fill={'url(#' + shadeId + ')'} />
           </Svg>
-        )}
-
-        <View pointerEvents="none" style={[styles.caption, { left: side, right: side, bottom: side }]}>
-          <Text numberOfLines={1} style={[styles.eyebrow, { color: ink }]}>
+        ) : null}
+        <View pointerEvents="none" style={styles.coverCopy}>
+          <Text style={[styles.coverKicker, { color: foreground }]}>
             {category(item).toUpperCase()}
           </Text>
           <Text
-            numberOfLines={large ? 3 : double ? 2 : 3}
+            numberOfLines={3}
             style={[
-              styles.headline,
+              styles.coverTitle,
               {
-                color: ink,
-                fontSize: large ? Math.min(36, Math.max(29, width * 0.075)) : double ? 25 : 17,
-                lineHeight: large ? 42 : double ? 30 : 21,
+                color: foreground,
+                fontSize: width < 430 ? 31 : 39,
+                lineHeight: width < 430 ? 36 : 44,
               },
             ]}
           >
             {item.title}
           </Text>
-          {large && !isTalent ? (
-            <Text numberOfLines={3} style={[styles.description, { color: ink }]}>
-              {caption}
-            </Text>
-          ) : null}
-          <View style={styles.signature}>
-            <Text numberOfLines={1} style={[styles.author, { color: ink, fontSize: bigText ? 26 : 22 }]}>
-              {item.author}
-            </Text>
-            {isTalent && large ? (
-              <Text style={styles.talentLevel}>{item.level}</Text>
-            ) : null}
+          <View style={styles.coverByline}>
+            <Byline item={item} inverse={!isTalent} />
+            <Ionicons name="arrow-forward" color={foreground} size={22} />
           </View>
         </View>
-
-        {item.type === 'dream' ? (
-          <View pointerEvents="none" style={styles.phase}>
-            <DreamPhaseIcon phase={item.phase} size={26} />
-          </View>
-        ) : null}
       </Pressable>
+      <AudioCorner item={item} />
+    </View>
+  );
+}
 
-      {/* A SIBLING of the story Pressable, never a nested <button> on web. */}
-      {item.type === 'music' ? <MusicPlayback index={item.audioIndex} /> : null}
+/** A two-page-spread feeling without an actual frame. */
+function WideStory({
+  item,
+  width,
+  compact,
+}: {
+  item: Publication;
+  width: number;
+  compact: boolean;
+}) {
+  const mediaWidth = compact ? width : width * 0.53;
+  const mediaHeight = compact ? Math.min(240, width * 0.57) : Math.min(300, width * 0.31);
+  return (
+    <View style={{ width }}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={'Open ' + item.title}
+        onPress={() => router.push(publicationPath(item) as any)}
+        style={{ flexDirection: compact ? 'column' : 'row', alignItems: 'flex-start', gap: compact ? 0 : 22 }}
+      >
+        <View style={{ width: mediaWidth }}>
+          <Photo item={item} height={mediaHeight} />
+        </View>
+        <View style={{ flex: compact ? undefined : 1, width: compact ? '100%' : undefined, justifyContent: 'center' }}>
+          <ArticleCopy item={item} prominent />
+        </View>
+      </Pressable>
+      <AudioCorner item={item} />
+    </View>
+  );
+}
+
+function ArticleRow({
+  items,
+  width,
+  compact,
+  offset,
+}: {
+  items: Publication[];
+  width: number;
+  compact: boolean;
+  offset: number;
+}) {
+  const gap = compact ? 12 : 18;
+  const count = compact ? 2 : Math.min(3, items.length);
+  const colWidth = (width - gap * (count - 1)) / count;
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap }}>
+      {items.map((item, i) => {
+        const ratio = [1.12, 0.86, 1.0, 0.96, 1.18][(offset + i) % 5];
+        const height = Math.round(colWidth * ratio);
+        return (
+          <PublicationTile
+            key={item.id}
+            item={item}
+            width={colWidth}
+            imageHeight={Math.max(130, Math.min(310, height))}
+          />
+        );
+      })}
     </View>
   );
 }
 
 /**
- * Edge-to-edge editorial mosaic. The image plus its embedded title and handwritten
- * author form one complete publication; no gutters, borders or outer inset.
+ * Deliberate reading rhythm:
+ *   magazine cover + 2 secondary articles;
+ *   an occasional wide story;
+ *   otherwise clear, unframed article pairs/triples.
+ *
+ * Filtering works at every length without empty cells or anonymous image blocks.
  */
 export function PublicationGallery({ items }: { items: Publication[] }) {
   const { width: windowWidth } = useWindowDimensions();
-  const columns = windowWidth >= 790 ? 4 : windowWidth >= 600 ? 3 : 2;
-  // Flush image edges: the gallery expands through Discovery's page padding.
-  const contentWidth = Math.max(0, Math.min(windowWidth, 920));
-  const cellWidth = contentWidth / columns;
-  const cellHeight = Math.round(Math.max(178, Math.min(260, cellWidth * 1.16)));
+  const compact = windowWidth < 700;
+  const contentWidth = Math.max(0, Math.min(920, windowWidth) - 30);
+  const gap = compact ? 24 : 30;
 
-  const layout = useMemo(() => arrange(items, columns), [items, columns]);
-  const rows = layout.reduce((max, tile) => Math.max(max, tile.row + tile.spanY), 0);
-  const totalHeight = rows * cellHeight;
+  if (!items.length) return null;
 
-  return (
-    <View style={{ width: '100%', height: totalHeight }}>
-      {layout.map(tile => (
+  const sections: React.ReactNode[] = [];
+  let index = 0;
+
+  if (items.length >= 4) {
+    const featured = items[0];
+    const companions = items.slice(1, 3);
+    sections.push(
+      <View
+        key="opening"
+        style={{
+          flexDirection: compact ? 'column' : 'row',
+          gap: compact ? 23 : 22,
+          alignItems: 'flex-start',
+        }}
+      >
+        <CoverStory
+          item={featured}
+          width={compact ? contentWidth : contentWidth * 0.56}
+          height={compact ? Math.min(350, contentWidth * 0.88) : 488}
+        />
         <View
-          key={tile.item.id}
           style={{
-            position: 'absolute',
-            left: tile.col * cellWidth,
-            top: tile.row * cellHeight,
+            width: compact ? contentWidth : contentWidth * 0.44 - 22,
+            flexDirection: compact ? 'row' : 'column',
+            alignItems: 'flex-start',
+            gap: compact ? 12 : 19,
           }}
         >
-          <PublicationTile
-            item={tile.item}
-            size={tile.size}
-            width={tile.spanX * cellWidth}
-            height={tile.spanY * cellHeight}
-          />
+          {companions.map((item, i) => (
+            <PublicationTile
+              key={item.id}
+              item={item}
+              width={compact ? (contentWidth - 12) / 2 : contentWidth * 0.44 - 22}
+              imageHeight={compact ? Math.round((contentWidth - 12) / 2 * (i ? 0.85 : 1.05)) : 122}
+            />
+          ))}
         </View>
-      ))}
+      </View>,
+    );
+    index = 3;
+  }
+
+  let rowNo = 0;
+  while (index < items.length) {
+    const remaining = items.length - index;
+    const featuredRow = remaining >= 2 && (index === 3 || rowNo === 2);
+    if (featuredRow) {
+      sections.push(
+        <WideStory
+          key={'wide-' + items[index].id}
+          item={items[index]}
+          width={contentWidth}
+          compact={compact}
+        />,
+      );
+      index++;
+    } else {
+      const count = Math.min(compact ? 2 : 3, remaining);
+      sections.push(
+        <ArticleRow
+          key={'row-' + items[index].id}
+          items={items.slice(index, index + count)}
+          width={contentWidth}
+          compact={compact}
+          offset={index}
+        />,
+      );
+      index += count;
+      rowNo++;
+    }
+  }
+
+  return (
+    <View style={{ width: '100%', gap, paddingBottom: 18 }}>
+      {sections}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  tile: { position: 'relative', borderWidth: 0, borderRadius: 0, backgroundColor: 'transparent' },
-  cover: { width: '100%', height: '100%', position: 'relative', borderWidth: 0, borderRadius: 0, overflow: 'hidden' },
+  photoFrame: { width: '100%', overflow: 'hidden', position: 'relative' },
   photo: { width: '100%', height: '100%' },
-  talentArt: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: 65 },
-  caption: { position: 'absolute', gap: 5 },
-  eyebrow: { fontSize: 10, fontWeight: '600', letterSpacing: 1.1, opacity: 0.91 },
-  headline: { fontFamily: 'serif', fontWeight: '400', letterSpacing: -0.5 },
-  description: { fontSize: 12, lineHeight: 17, opacity: 0.91, maxWidth: 490, marginTop: 3 },
-  signature: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 3 },
-  author: { fontFamily: 'Caveat_700Bold', fontWeight: '400', lineHeight: 30 },
-  talentLevel: { fontSize: 11, color: '#69665E' },
+  talentImage: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   phase: {
     position: 'absolute',
-    top: 9,
     right: 9,
-    width: 36,
-    height: 36,
+    top: 9,
+    width: 33,
+    height: 33,
     borderRadius: 18,
-    backgroundColor: 'rgba(255,252,245,0.92)',
+    backgroundColor: 'rgba(255,252,245,0.93)',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  play: {
+  articleCopy: { paddingTop: 11, paddingHorizontal: 1, gap: 5 },
+  prominentCopy: { paddingTop: 14, gap: 11 },
+  kicker: { fontSize: 10, lineHeight: 14, letterSpacing: 1.2, fontWeight: '600' },
+  articleTitle: { fontFamily: 'serif', fontWeight: '400', letterSpacing: -0.45 },
+  excerpt: { fontSize: 12, lineHeight: 17 },
+  bylineRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  handwritten: { fontFamily: 'Caveat_700Bold', fontSize: 23, lineHeight: 28 },
+  coverCopy: {
     position: 'absolute',
-    top: 9,
-    right: 9,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(0,0,0,0.65)',
+    left: 21,
+    right: 21,
+    bottom: 22,
+    gap: 9,
+  },
+  coverKicker: { fontSize: 10, lineHeight: 14, fontWeight: '600', letterSpacing: 1.3 },
+  coverTitle: { fontFamily: 'serif', fontWeight: '400', letterSpacing: -0.7 },
+  coverByline: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  audioCorner: { position: 'absolute', top: 9, right: 9, zIndex: 4 },
+  playButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: 'rgba(0,0,0,0.63)',
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 2,
   },
 });
