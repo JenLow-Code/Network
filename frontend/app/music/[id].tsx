@@ -5,6 +5,7 @@ import { musics } from '@/mocks/publications';
 import { PublicationDetail, DetailPanel } from '@/components/publication/PublicationDetail';
 import { MusicWaveform } from '@/components/music/MusicWaveform';
 import { MusicLyrics, FullMusicLyrics } from '@/components/music/MusicLyrics';
+import { EditorialInline } from '@/components/detail/EditorialInline';
 export default function MusicDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const item = musics.find(x => x.id === id);
@@ -19,10 +20,12 @@ export default function MusicDetail() {
       index={item.audioIndex}
       renderLayout={(_button, wave, time, seek, togglePlayback, isPlaying) => (
         <PublicationDetail item={item} onCoverPress={togglePlayback} musicPlaying={isPlaying}>
-          <View style={{ paddingTop: 0, paddingBottom: 12, gap: 9 }}>
-            <View>{wave}</View>
-            <MusicLyrics lines={item.lyrics || []} currentTime={time} onSeek={seek} />
-          </View>
+          <EditorialInline bottomSpace={12}>
+            <View style={{ gap: 9 }}>
+              <View>{wave}</View>
+              <MusicLyrics lines={item.lyrics || []} currentTime={time} onSeek={seek} />
+            </View>
+          </EditorialInline>
           <DetailPanel title="Paroles complètes" foldable defaultOpen={false} hideTopBorder>
             <FullMusicLyrics lines={item.lyrics || []} />
           </DetailPanel>
