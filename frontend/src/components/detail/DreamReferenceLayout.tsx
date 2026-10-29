@@ -32,7 +32,7 @@ export function DreamReferenceLayout({ item }: { item: DreamPublication }) {
           </Pressable>
         ) : null}
       </View>
-      <DetailPanel title="Ma motivation" foldable defaultOpen={false}>
+      <DetailPanel title="Ma motivation" foldable defaultOpen={false} hideTopBorder>
         <Text style={{ fontSize: 13, lineHeight: 20, color: '#333' }}>
           {item.motivation || 'Ce rêve me tient à cœur.'}
         </Text>
