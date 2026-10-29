@@ -1,97 +1,160 @@
-import React, { useId, useRef, useState } from 'react';
-import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
-import { ScrollView, Text, View, type ScrollViewInstance } from 'react-native';
+import React, { useRef, useState } from 'react';
+import {
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+  useWindowDimensions,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
-import { psalm150, biblePosts } from '@/mocks/publications';
-import { PublicationDetail } from '@/components/publication/PublicationDetail';
-const READER_HEIGHT = 340;
-const TOP_FADE_HEIGHT = 94;
-const VERSE_ZERO_SPACER = TOP_FADE_HEIGHT + 8; // Empty, unnumbered space above verse 1 so its text stays readable beneath the fixed fade.
+import { biblePosts, psalm150, publications, personPublications } from '@/mocks/publications';
+import { DetailAuthorHeader } from '@/components/detail/DetailAuthorHeader';
+import { ActionRail } from '@/components/detail/ActionRail';
+import { Nav } from '@/components/navigation/Nav';
+import { PublicationGallery } from '@/components/publication/PublicationGallery';
+import { useAppTheme } from '@/theme/AppTheme';
+
+type VersePosition = { y: number; height: number };
+
+/**
+ * Read Psalm 150 in one natural flow. All six verses are rendered, with no
+ * fixed-height slides, fake verse zero, nested scrolling or blank lead padding.
+ * The shared verse stays pink; the verse being read is black; the rest are grey.
+ */
 export default function Bible() {
   const { verse } = useLocalSearchParams<{ reference: string; verse?: string }>();
-  const focus = Math.max(1, Math.min(psalm150.length, Number(verse || 6) || 6));
-  const post = biblePosts.find(p => p.highlightedVerse === focus) || biblePosts[0];
-  const inner = useRef<ScrollViewInstance>(null);
-  const positions = useRef<Record<number, { y: number; height: number }>>({});
-  const [ready, setReady] = useState(false);
-  const fadeId = useId().replace(/[^a-zA-Z0-9_-]/g, '');
-  const centre = () => {
-    const pos = positions.current[focus];
-    if (pos)
-      inner.current?.scrollTo({
-        y: Math.max(0, pos.y + pos.height / 2 - READER_HEIGHT / 2),
-        animated: false,
-      });
+  const shared = Math.max(1, Math.min(psalm150.length, Number(verse || 6) || 6));
+  const [reading, setReading] = useState(1);
+  const positions = useRef<Record<number, VersePosition>>({});
+  const chapterStart = useRef(0);
+  const theme = useAppTheme();
+  const { width: viewportWidth } = useWindowDimensions();
+  const compact = viewportWidth < 500;
+  const post = biblePosts.find(p => p.highlightedVerse === shared) || biblePosts[0];
+
+  const focusOnScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    // A reading line near the top, not a huge centered blank region.
+    const probe = event.nativeEvent.contentOffset.y + (compact ? 185 : 205) - chapterStart.current;
+    let nearest = 1;
+    let distance = Infinity;
+
+    for (let n = 1; n <= psalm150.length; n++) {
+      const location = positions.current[n];
+      if (!location) continue;
+      const centre = location.y + location.height / 2;
+      const d = Math.abs(centre - probe);
+      if (d < distance) {
+        nearest = n;
+        distance = d;
+      }
+    }
+    setReading(previous => previous === nearest ? previous : nearest);
   };
+
+  const verseColor = (n: number) =>
+    n === shared
+      ? (theme.dark ? '#FF86AE' : '#CB245C')
+      : n === reading
+        ? theme.foreground
+        : (theme.dark ? '#A39B93' : '#96908A');
+
   return (
-    <PublicationDetail item={post}>
-      <View style={{ height: READER_HEIGHT, position: 'relative' }}>
-        <ScrollView
-          ref={inner}
-          nestedScrollEnabled
-          showsVerticalScrollIndicator
-          style={{ height: READER_HEIGHT }}
-          contentContainerStyle={{ gap: 6, paddingRight: 6, paddingBottom: 16 }}
-          onContentSizeChange={() => {
-            if (!ready) {
-              centre();
-              setReady(true);
-            }
-          }}
-        >
-          <View
-            accessibilityElementsHidden
-            importantForAccessibility="no-hide-descendants"
-            style={{ height: VERSE_ZERO_SPACER }}
-          />
-          {psalm150.map((v, i) => (
-            <View
-              key={i}
-              onLayout={e => {
-                positions.current[i + 1] = e.nativeEvent.layout;
-                if (i === psalm150.length - 1) requestAnimationFrame(centre);
-              }}
-              style={{
-                flexDirection: 'row',
-                gap: 9,
-                borderRadius: 7,
-                padding: 10,
-                backgroundColor: i + 1 === focus ? '#F7E9F0' : 'rgba(255,252,245,0.68)',
-              }}
-            >
-              <Text style={{ fontSize: 11, color: i + 1 === focus ? '#CB245C' : '#777' }}>
-                {i + 1}
-              </Text>
-              <Text
-                style={{
-                  flex: 1,
-                  fontSize: 15,
-                  lineHeight: 21,
-                  color: i + 1 === focus ? '#CB245C' : '#333',
-                  fontWeight: i + 1 === focus ? '700' : '400',
-                }}
-              >
-                {v}
-              </Text>
-            </View>
-          ))}
-        </ScrollView>
-        <View
-          pointerEvents="none"
-          style={{ position: 'absolute', top: 0, left: 0, right: 6, height: TOP_FADE_HEIGHT }}
-        >
-          <Svg width="100%" height="100%">
-            <Defs>
-              <LinearGradient id={fadeId} x1="0%" y1="0%" x2="0%" y2="100%">
-                <Stop offset="0%" stopColor="#D0D0CE" stopOpacity={0.97} />
-                <Stop offset="55%" stopColor="#D0D0CE" stopOpacity={0.62} />
-                <Stop offset="100%" stopColor="#D0D0CE" stopOpacity={0} />
-              </LinearGradient>
-            </Defs>
-            <Rect width="100%" height="100%" fill={`url(#${fadeId})`} />
-          </Svg>
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
+      <ScrollView
+        style={{ flex: 1 }}
+        scrollEventThrottle={32}
+        onScroll={focusOnScroll}
+        contentContainerStyle={{
+          width: '100%',
+          maxWidth: 760,
+          alignSelf: 'center',
+          paddingBottom: 42,
+        }}
+      >
+        <DetailAuthorHeader item={post} />
+
+        <View style={{ paddingHorizontal: compact ? 23 : 30, paddingTop: 5, paddingBottom: 8 }}>
+          <Text
+            accessibilityRole="header"
+            style={{ fontFamily: 'serif', fontSize: compact ? 29 : 32, lineHeight: 40, color: theme.foreground }}
+          >
+            Psaume 150
+          </Text>
+          <Text style={{ fontSize: 10, letterSpacing: 1.4, color: theme.muted }}>
+            LOUIS SEGOND 1910
+          </Text>
         </View>
-      </View>
-    </PublicationDetail>
+
+        {/* One complete chapter, closely spaced, not three 156px slots. */}
+        <View
+          onLayout={event => { chapterStart.current = event.nativeEvent.layout.y; }}
+          style={{ flexDirection: 'row', alignItems: 'flex-end', paddingHorizontal: compact ? 18 : 30, paddingTop: 5 }}
+        >
+          <View style={{ flex: 1, minWidth: 0 }}>
+            {psalm150.map((text, index) => {
+              const n = index + 1;
+              const current = n === reading;
+              return (
+                <Pressable
+                  key={n}
+                  onPress={() => setReading(n)}
+                  accessibilityRole="button"
+                  accessibilityLabel={'Lire le verset ' + n + (n === shared ? ', partagé' : '')}
+                  onLayout={event => { positions.current[n] = event.nativeEvent.layout; }}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'flex-start',
+                    paddingVertical: compact ? 9 : 12,
+                    gap: compact ? 10 : 15,
+                  }}
+                >
+                  <Text style={{ width: 15, fontSize: 11, lineHeight: 24, color: verseColor(n) }}>
+                    {n}
+                  </Text>
+                  <Text
+                    selectable
+                    style={{
+                      flex: 1,
+                      fontFamily: 'serif',
+                      fontSize: compact ? 16 : 19,
+                      lineHeight: compact ? 23 : 28,
+                      fontWeight: current ? '500' : '400',
+                      color: verseColor(n),
+                    }}
+                  >
+                    {text}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+          <View style={{ width: 43, marginLeft: compact ? 5 : 12, paddingBottom: 12, alignItems: 'center' }}>
+            <ActionRail item={post} />
+          </View>
+        </View>
+
+        <View style={{ marginTop: 30, paddingHorizontal: compact ? 18 : 30 }}>
+          <Text
+            accessibilityRole="header"
+            style={{
+              fontFamily: 'serif',
+              fontSize: 25,
+              lineHeight: 32,
+              color: theme.foreground,
+              marginBottom: 18,
+            }}
+          >
+            Continuer l’inspiration
+          </Text>
+          <PublicationGallery
+            items={[...publications, ...personPublications].filter(p => p.id !== post.id)}
+          />
+        </View>
+      </ScrollView>
+      <Nav />
+    </SafeAreaView>
   );
 }

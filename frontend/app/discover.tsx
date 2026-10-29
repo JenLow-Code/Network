@@ -16,6 +16,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { FireHeader } from '@/components/fire/FireHeader';
 import { useLocale } from '@/i18n/locale';
 import { useAppTheme } from '@/theme/AppTheme';
+import { HANDWRITING_FAMILY } from '@/theme/handwriting';
 const filters = ['Tout', 'Rêves', 'Musique', 'Bible', 'Talents'] as const;
 export default function Discover() {
   const { tr } = useLocale();
@@ -60,8 +61,13 @@ export default function Discover() {
               justifyContent: 'space-between',
               minHeight: 34,
               marginBottom: 10,
+              paddingBottom: 12,
+              borderBottomWidth: 0.5,
+              borderBottomColor: theme.dark ? 'rgba(255,255,255,0.32)' : 'rgba(23,23,23,0.30)',
             }}
           >
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}>
+              <NetworkMark size={24} color={theme.foreground} />
             <Text
               accessibilityLabel="JenLow"
               style={{
@@ -76,10 +82,8 @@ export default function Discover() {
             >
               JENLOW
             </Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-              <NetworkMark size={26} color={theme.foreground} />
-              <TopActions />
             </View>
+            <TopActions />
           </View>
           <View style={{ alignSelf: 'flex-start', maxWidth: '100%', paddingBottom: 4 }}>
             <Text
@@ -99,7 +103,7 @@ export default function Discover() {
             </Text>
             <Text
               style={{
-                fontFamily: 'Caveat_700Bold',
+                fontFamily: HANDWRITING_FAMILY,
                 fontSize: 32,
                 fontWeight: '400',
                 lineHeight: 32,
@@ -158,6 +162,7 @@ export default function Discover() {
             />
           ))}
         </ScrollView>
+        <View style={{ marginHorizontal: -15 }}>
         <PublicationGallery
           items={(filter === 'Talents'
             ? personPublications
@@ -176,6 +181,7 @@ export default function Discover() {
               .includes(query.trim().toLowerCase()),
           )}
         />
+        </View>
         {filter !== 'Talents' && items.length === 0 && (
           <Text style={{ textAlign: 'center', marginTop: 25, color: '#999' }}>
             Aucune publication trouvée.

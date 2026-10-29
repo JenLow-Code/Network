@@ -3,9 +3,9 @@ import { Text, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { musics } from '@/mocks/publications';
 import { PublicationDetail, DetailPanel } from '@/components/publication/PublicationDetail';
-import { DetailIntro } from '@/components/detail/DetailIntro';
 import { MusicWaveform } from '@/components/music/MusicWaveform';
 import { MusicLyrics, FullMusicLyrics } from '@/components/music/MusicLyrics';
+import { EditorialInline } from '@/components/detail/EditorialInline';
 export default function MusicDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const item = musics.find(x => x.id === id);
@@ -18,12 +18,15 @@ export default function MusicDetail() {
   return (
     <MusicWaveform
       index={item.audioIndex}
-      renderLayout={(button, wave, time, seek) => (
-        <PublicationDetail item={item}>
-          <DetailIntro artwork={button} rightContent={wave}>
-            <MusicLyrics lines={item.lyrics || []} currentTime={time} onSeek={seek} />
-          </DetailIntro>
-          <DetailPanel title="Paroles complètes" foldable defaultOpen={false}>
+      renderLayout={(_button, wave, time, seek, togglePlayback, isPlaying) => (
+        <PublicationDetail item={item} onCoverPress={togglePlayback} musicPlaying={isPlaying}>
+          <EditorialInline bottomSpace={12}>
+            <View style={{ gap: 9 }}>
+              <View>{wave}</View>
+              <MusicLyrics lines={item.lyrics || []} currentTime={time} onSeek={seek} />
+            </View>
+          </EditorialInline>
+          <DetailPanel title="Paroles complètes" foldable defaultOpen={false} hideTopBorder>
             <FullMusicLyrics lines={item.lyrics || []} />
           </DetailPanel>
           <DetailPanel title="Partitions" foldable defaultOpen={false}>

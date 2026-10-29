@@ -81,7 +81,7 @@ export const publications: Publication[] = [
     motivation: 'Créer de vraies rencontres grâce à la musique.',
     logs: ['Première rencontre de musiciens', 'Choix des premiers morceaux'],
     needs: ['Batterie', 'Piano', 'Chant'],
-    image: 'https://images.unsplash.com/photo-1516280440614-37939bbacd81?w=900&q=82',
+    image: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=900&q=82',
     imageAlt: 'Live music performance',
   },
   {
@@ -103,8 +103,8 @@ export const publications: Publication[] = [
     songAuthor: 'Auteur non renseigné',
     audioIndex: 2,
     description: 'Une petite idée musicale, encore imparfaite mais partagée.',
-    image: 'https://images.unsplash.com/photo-1510915361894-db8b60106cb1?w=900&q=82',
-    imageAlt: 'Acoustic guitar detail',
+    image: 'https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=900&q=82',
+    imageAlt: 'Music recording studio',
   },
   {
     id: 'photos',
@@ -114,8 +114,8 @@ export const publications: Publication[] = [
     phase: 'Témoignage',
     summary: 'Une série de photographies réalisées et partagées avec la communauté.',
     needs: ['Photographie'],
-    image: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=900&q=82',
-    imageAlt: 'Sunlit forest',
+    image: 'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=900&q=82',
+    imageAlt: 'Mountain landscape',
   },
 ];
 

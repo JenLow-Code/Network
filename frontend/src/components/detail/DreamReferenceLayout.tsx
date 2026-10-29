@@ -3,56 +3,45 @@ import { Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { DreamPublication } from '@/domain/publication';
 import { DetailLayout } from './DetailLayout';
-import { DetailIntro } from './DetailIntro';
-import { DreamPhaseIcon } from '@/icons/DreamPhaseIcon';
 import { DetailPanel } from '@/components/publication/PublicationDetail';
 import { useApp } from '@/context/AppContext';
+import { useAppTheme } from '@/theme/AppTheme';
 export function DreamReferenceLayout({ item }: { item: DreamPublication }) {
   const app = useApp();
+  const theme = useAppTheme();
   const sameDream = () => app.joinDream(item.id);
   return (
     <DetailLayout
       item={item}
-      featured={
-        <DetailIntro
-          title="MON BUT"
-          compact
-          artwork={<DreamPhaseIcon phase={item.phase} size={46} />}
-        >
-          <Text style={{ fontSize: 14, lineHeight: 21, color: '#333', marginTop: 4 }}>
-            {item.summary}
-          </Text>
-          {item.phase === 'Rêve' ? (
-            <Pressable
-              onPress={sameDream}
-              accessibilityLabel="Moi aussi"
-              style={{
-                flexDirection: 'row',
-                gap: 6,
-                alignItems: 'center',
-                marginTop: 9,
-                alignSelf: 'flex-start',
-              }}
-            >
-              <Ionicons
-                name={app.myDreamIds.includes(item.id) ? 'checkmark-circle' : 'add-circle-outline'}
-                size={18}
-                color={app.myDreamIds.includes(item.id) ? '#CB245C' : '#444'}
-              />
-              <Text
-                style={{
-                  fontSize: 12,
-                  color: app.myDreamIds.includes(item.id) ? '#CB245C' : '#444',
-                }}
-              >
-                Moi aussi
-              </Text>
-            </Pressable>
-          ) : null}
-        </DetailIntro>
-      }
     >
-      <DetailPanel title="Ma motivation" foldable defaultOpen={false}>
+      {item.phase === 'Rêve' ? (
+        <Pressable
+          onPress={sameDream}
+          accessibilityRole="button"
+          accessibilityLabel="Moi aussi"
+          style={{
+            alignSelf: 'center',
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 8,
+            borderWidth: 1,
+            borderColor: theme.dark ? '#777' : '#C7BFB4',
+            borderRadius: 22,
+            paddingHorizontal: 18,
+            paddingVertical: 9,
+            marginTop: 12,
+            marginBottom: 14,
+          }}
+        >
+          <Ionicons
+            name={app.myDreamIds.includes(item.id) ? 'checkmark-circle' : 'add-circle-outline'}
+            size={18}
+            color={app.myDreamIds.includes(item.id) ? '#CB245C' : theme.foreground}
+          />
+          <Text style={{ fontSize: 13, color: theme.foreground }}>Moi aussi</Text>
+        </Pressable>
+      ) : null}
+      <DetailPanel title="Ma motivation" foldable defaultOpen={false} hideTopBorder>
         <Text style={{ fontSize: 13, lineHeight: 20, color: '#333' }}>
           {item.motivation || 'Ce rêve me tient à cœur.'}
         </Text>

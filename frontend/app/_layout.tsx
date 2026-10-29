@@ -2,7 +2,7 @@ import React from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
-import { Caveat_700Bold } from '@expo-google-fonts/caveat';
+import { handwritingFontMap } from '@/theme/handwriting';
 import { Provider } from '@/context/AppContext';
 import { DreamProvider } from '@/domain/dreamRepository';
 import { LocaleProvider } from '@/i18n/locale';
@@ -21,7 +21,7 @@ function ThemedStack() {
   );
 }
 export default function Layout() {
-  const [loaded, error] = useFonts({ Caveat_700Bold });
+  const [loaded, error] = useFonts(handwritingFontMap);
   if (!loaded && !error) return null;
   return (
     <AppThemeProvider>
