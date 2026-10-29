@@ -9,18 +9,20 @@ export function DetailPanel({
   children,
   foldable = false,
   defaultOpen = true,
+  hideTopBorder = false,
 }: {
   title: string;
   children: React.ReactNode;
   foldable?: boolean;
   defaultOpen?: boolean;
+  hideTopBorder?: boolean;
 }) {
   const [open, setOpen] = useState(defaultOpen);
   const theme = useAppTheme();
   return (
     <View
       style={{
-        borderTopWidth: 1,
+        borderTopWidth: hideTopBorder ? 0 : 1,
         borderColor: theme.dark ? '#55575B' : '#D9D2C8',
         paddingVertical: 17,
         paddingLeft: 0,
@@ -57,15 +59,17 @@ export function PublicationDetail({
   children,
   media,
   headerIcon,
+  onCoverPress,
 }: {
   item: Publication;
   children: React.ReactNode;
   media?: React.ReactNode;
   headerIcon?: React.ReactNode;
   onImageDoubleTap?: () => void;
+  onCoverPress?: () => void;
 }) {
   return (
-    <DetailLayout item={item} featured={media} headerIcon={headerIcon}>
+    <DetailLayout item={item} featured={media} headerIcon={headerIcon} onCoverPress={onCoverPress}>
       {children}
     </DetailLayout>
   );
