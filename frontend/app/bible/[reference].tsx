@@ -88,6 +88,9 @@ export default function Bible() {
               );
             })}
           </ScrollView>
+          <View pointerEvents="box-none" style={{ position: 'absolute', right: 12, bottom: 12 }}>
+            <ActionRail item={post} />
+          </View>
         </View>
         <View
           style={{
