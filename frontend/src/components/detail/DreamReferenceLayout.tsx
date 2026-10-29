@@ -12,6 +12,12 @@ export function DreamReferenceLayout({ item }: { item: DreamPublication }) {
     <DetailLayout
       item={item}
     >
+      {item.phase === 'Rêve' ? (
+        <Pressable onPress={sameDream} accessibilityLabel="Moi aussi" style={{ flexDirection: 'row', gap: 7, alignItems: 'center', marginVertical: 12, alignSelf: 'flex-start' }}>
+          <Ionicons name={app.myDreamIds.includes(item.id) ? 'checkmark-circle' : 'add-circle-outline'} size={19} color={app.myDreamIds.includes(item.id) ? '#CB245C' : '#444'} />
+          <Text style={{ fontSize: 13, color: '#444' }}>Moi aussi</Text>
+        </Pressable>
+      ) : null}
       <DetailPanel title="Ma motivation" foldable defaultOpen={false} hideTopBorder>
         <Text style={{ fontSize: 13, lineHeight: 20, color: '#333' }}>
           {item.motivation || 'Ce rêve me tient à cœur.'}
