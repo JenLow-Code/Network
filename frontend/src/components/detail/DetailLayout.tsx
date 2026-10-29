@@ -19,11 +19,13 @@ export function DetailLayout({
   children,
   featured,
   headerIcon,
+  onCoverPress,
 }: {
   item: Publication;
   children: React.ReactNode;
   featured?: React.ReactNode;
   headerIcon?: React.ReactNode;
+  onCoverPress?: () => void;
 }) {
   const theme = useAppTheme();
   const { width: screenWidth } = useWindowDimensions();
@@ -50,13 +52,15 @@ export function DetailLayout({
         <DetailAuthorHeader item={item} />
 
         <View style={{ paddingHorizontal: 16 }}>
-          <DetailHero item={item} width={heroWidth} height={heroHeight} />
+          <DetailHero item={item} width={heroWidth} height={heroHeight} onMusicPress={onCoverPress} />
 
           <View style={{ paddingTop: item.type === 'music' ? 4 : 22, paddingRight: 0 }}>
             {featured}
-            {children}
-            <View style={{ alignItems: 'flex-end', paddingTop: 12, paddingBottom: 8 }}>
-              <ActionRail item={item} />
+            <View style={{ flexDirection: 'row', gap: 5, alignItems: 'flex-end' }}>
+              <View style={{ flex: 1, minWidth: 0 }}>{children}</View>
+              <View style={{ width: 42, alignSelf: 'flex-end', paddingBottom: 10 }}>
+                <ActionRail item={item} />
+              </View>
             </View>
           </View>
           <View style={{ marginTop: 42, borderTopWidth: 0.5, borderTopColor: theme.border, paddingTop: 21 }}>
