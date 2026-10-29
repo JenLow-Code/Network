@@ -3,9 +3,6 @@ import { Text, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { personPublications } from '@/mocks/publications';
 import { PublicationDetail, DetailPanel } from '@/components/publication/PublicationDetail';
-import { DetailIntro } from '@/components/detail/DetailIntro';
-import { TalentArt } from '@/components/talent/TalentArt';
-import { TalentLevelDots } from '@/components/talent/TalentLevelDots';
 export default function PublicPerson() {
   const { name } = useLocalSearchParams<{ name: string }>();
   const person = personPublications.find(p => p.author === name);
@@ -17,15 +14,10 @@ export default function PublicPerson() {
     );
   return (
     <PublicationDetail item={person}>
-      <DetailIntro
-        title="Qui je suis"
-        artwork={
-          <View style={{ alignItems: 'center', gap: 5, transform: [{ translateX: 18 }] }}>
-            <TalentArt kind={person.instrument} size={76} />
-            <TalentLevelDots level={person.level} />
-          </View>
-        }
-      >
+      <View style={{ paddingBottom: 22 }}>
+        <Text style={{ fontSize: 10, fontWeight: '700', letterSpacing: 1.4, color: '#746C64', marginBottom: 10 }}>
+          QUI JE SUIS
+        </Text>
         <Text style={{ fontSize: 14, lineHeight: 21, color: '#333' }}>{person.description}</Text>
         <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
           {person.seeking.map(t => (
@@ -43,6 +35,7 @@ export default function PublicPerson() {
           ))}
         </View>
       </DetailIntro>
+      </View>
       <DetailPanel title="Expérience" foldable defaultOpen={false}>
         <Text style={{ fontSize: 14, lineHeight: 22, color: '#444' }}>
           {person.experience?.trim() || 'Expérience non renseignée.'}
