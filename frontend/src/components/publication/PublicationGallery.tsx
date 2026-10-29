@@ -1,7 +1,7 @@
 import React, { useId } from 'react';
 import { Image, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
+import Svg, { Defs, LinearGradient, Rect, Stop, Path, Circle } from 'react-native-svg';
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import { router } from 'expo-router';
 import type { Publication } from '@/domain/publication';
@@ -75,6 +75,93 @@ function AudioCorner({ item }: { item: Publication }) {
 }
 
 
+
+/** Quiet line illustration, in the same family as the JenLow talent artwork. */
+function BibleArtwork({ size }: { size: number }) {
+  return (
+    <Svg viewBox="0 0 200 150" width={size} height={size * 0.75} fill="none">
+      <Path d="M100 36 C82 27 56 26 29 34 L29 114 C55 107 79 110 100 121 C121 110 145 107 171 114 L171 34 C144 26 118 27 100 36 Z" stroke="#302C28" strokeWidth="2.3" strokeLinejoin="round"/>
+      <Path d="M100 36 V121 M38 46 C59 41 79 43 91 49 M38 58 C58 54 78 56 91 62 M38 70 C58 67 77 68 91 74 M109 49 C124 43 145 42 162 46 M109 62 C125 56 144 54 162 58 M109 74 C124 69 145 67 162 70" stroke="#302C28" strokeWidth="1.4" strokeLinecap="round"/>
+      <Path d="M100 25 V15 M90 22 L86 12 M110 22 L114 12" stroke="#9E876B" strokeWidth="1.6" strokeLinecap="round"/>
+    </Svg>
+  );
+}
+
+/** A cassette with a real optional cover artwork, not a random photograph posing as album art. */
+function CassetteArtwork({
+  width,
+  artwork,
+}: {
+  width: number;
+  artwork?: string;
+}) {
+  const cassetteWidth = Math.min(width * 0.84, 320);
+  const cassetteHeight = cassetteWidth * 0.61;
+  return (
+    <View
+      style={{
+        width: cassetteWidth,
+        height: cassetteHeight,
+        backgroundColor: '#393631',
+        borderRadius: 9,
+        borderWidth: 1,
+        borderColor: '#272622',
+        padding: cassetteWidth * 0.055,
+        justifyContent: 'center',
+      }}
+    >
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: artwork ? '#EEE9DF' : '#D6CCBE',
+          borderRadius: 3,
+          overflow: 'hidden',
+          justifyContent: 'flex-end',
+        }}
+      >
+        {artwork ? (
+          <Image source={{ uri: artwork }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+        ) : (
+          <View style={{ position: 'absolute', top: '15%', left: '10%', right: '10%', borderTopWidth: 1, borderTopColor: '#ADA18F' }} />
+        )}
+        <View
+          style={{
+            flexDirection: 'row',
+            height: '43%',
+            backgroundColor: 'rgba(31,29,27,0.90)',
+            alignItems: 'center',
+            justifyContent: 'space-evenly',
+            borderRadius: 24,
+            marginHorizontal: '9%',
+            marginBottom: '7%',
+          }}
+        >
+          {[0, 1].map(i => (
+            <View
+              key={i}
+              style={{
+                height: cassetteWidth * 0.17,
+                width: cassetteWidth * 0.17,
+                borderRadius: cassetteWidth * 0.085,
+                borderWidth: 8,
+                borderColor: '#BDB6A9',
+                backgroundColor: '#686258',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#D9D1C5' }} />
+            </View>
+          ))}
+        </View>
+      </View>
+      <View style={{ height: '13%', alignItems: 'center', justifyContent: 'center' }}>
+        <View style={{ height: 3, width: '30%', borderRadius: 2, backgroundColor: '#6F695F' }} />
+      </View>
+    </View>
+  );
+}
+
 type StoryScale = 'small' | 'featured' | 'wide';
 
 /** One story, one cover: only category, title and handwritten member name. */
@@ -92,7 +179,10 @@ function StoryCover({
   const shadeId = useId().replace(/[^a-zA-Z0-9_-]/g, '');
   const theme = useAppTheme();
   const isTalent = item.type === 'talent';
-  const ink = isTalent ? '#26211D' : '#FFFFFF';
+  const isBible = item.type === 'bible';
+  const isMusic = item.type === 'music';
+  const illustrated = isTalent || isBible || isMusic;
+  const ink = illustrated ? '#26211D' : '#FFFFFF';
   const small = scale === 'small';
   const inset = small ? (width < 220 ? 11 : 14) : scale === 'wide' ? 24 : 21;
   const titleSize = small
@@ -113,29 +203,31 @@ function StoryCover({
           style={[
             styles.photoFrame,
             {
-              backgroundColor: isTalent
-                ? theme.dark ? '#D2CABE' : '#F0EAE0'
-                : theme.dark ? '#2B2B2B' : '#E8E2DA',
+              backgroundColor: isMusic
+                ? '#E8E0D5'
+                : illustrated
+                  ? '#F0EAE0'
+                  : theme.dark ? '#2B2B2B' : '#E8E2DA',
             },
           ]}
         >
           {isTalent ? (
             <View style={[styles.talentImage, { paddingBottom: small ? 53 : 80 }]}>
-              <TalentArt
-                kind={item.instrument}
-                size={Math.min(170, width * 0.60, height * 0.65)}
-              />
+              <TalentArt kind={item.instrument} size={Math.min(170, width * 0.60, height * 0.65)} />
+            </View>
+          ) : isBible ? (
+            <View style={[styles.talentImage, { paddingBottom: small ? 58 : 85 }]}>
+              <BibleArtwork size={Math.min(200, width * 0.70, height * 0.68)} />
+            </View>
+          ) : isMusic ? (
+            <View style={[styles.talentImage, { paddingBottom: small ? 60 : 95 }]}>
+              <CassetteArtwork width={width} artwork={item.coverArt} />
             </View>
           ) : (
-            <Image
-              source={{ uri: item.image }}
-              resizeMode="cover"
-              accessibilityLabel={item.imageAlt}
-              style={styles.photo}
-            />
+            <Image source={{ uri: item.image }} resizeMode="cover" accessibilityLabel={item.imageAlt} style={styles.photo} />
           )}
         </View>
-        {!isTalent && (
+        {!illustrated && (
           <Svg pointerEvents="none" width="100%" height="100%" style={StyleSheet.absoluteFill}>
             <Defs>
               <LinearGradient id={shadeId} x1="0%" y1="0%" x2="0%" y2="100%">
