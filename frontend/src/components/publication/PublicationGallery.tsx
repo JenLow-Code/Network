@@ -91,11 +91,9 @@ function AudioCorner({ item }: { item: Publication }) {
 function Photo({
   item,
   height,
-  cover = false,
 }: {
   item: Publication;
   height: number;
-  cover?: boolean;
 }) {
   const theme = useAppTheme();
   return (
@@ -134,8 +132,6 @@ function Photo({
         </View>
       ) : null}
 
-      {/* Only the feature cover has text on photography; ordinary photos stay light. */}
-      {cover ? null : null}
     </View>
   );
 }
@@ -169,7 +165,7 @@ function ArticleCopy({
         {category(item).toUpperCase()}
       </Text>
       <Text
-        numberOfLines={prominent ? 3 : 3}
+        numberOfLines={3}
         style={[
           styles.articleTitle,
           {
@@ -238,7 +234,7 @@ function CoverStory({ item, width, height }: { item: Publication; width: number;
         onPress={() => router.push(publicationPath(item) as any)}
         style={{ flex: 1 }}
       >
-        <Photo item={item} height={height} cover />
+        <Photo item={item} height={height} />
         {!isTalent ? (
           <Svg pointerEvents="none" width="100%" height="100%" style={StyleSheet.absoluteFill}>
             <Defs>
