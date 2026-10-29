@@ -17,8 +17,8 @@ export default function MusicDetail() {
   return (
     <MusicWaveform
       index={item.audioIndex}
-      renderLayout={(_button, wave, time, seek, togglePlayback) => (
-        <PublicationDetail item={item} onCoverPress={togglePlayback}>
+      renderLayout={(_button, wave, time, seek, togglePlayback, isPlaying) => (
+        <PublicationDetail item={item} onCoverPress={togglePlayback} musicPlaying={isPlaying}>
           <View style={{ paddingTop: 0, paddingBottom: 12, gap: 9 }}>
             <View>{wave}</View>
             <MusicLyrics lines={item.lyrics || []} currentTime={time} onSeek={seek} />
