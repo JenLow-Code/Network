@@ -276,7 +276,11 @@ function CoverStory({ item, width, height }: { item: Publication; width: number;
   );
 }
 
-/** A two-page-spread feeling without an actual frame. */
+/**
+ * Full-width feature. Keep the image and its typography in the same reading
+ * column: the previous horizontal split made it unclear which photo owned
+ * the adjacent words.
+ */
 function WideStory({
   item,
   width,
@@ -286,20 +290,19 @@ function WideStory({
   width: number;
   compact: boolean;
 }) {
-  const mediaWidth = compact ? width : width * 0.53;
-  const mediaHeight = compact ? Math.min(240, width * 0.57) : Math.min(300, width * 0.31);
+  const mediaHeight = compact
+    ? Math.min(260, Math.round(width * 0.64))
+    : Math.min(340, Math.round(width * 0.37));
+
   return (
     <View style={{ width }}>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={'Open ' + item.title}
         onPress={() => router.push(publicationPath(item) as any)}
-        style={{ flexDirection: compact ? 'column' : 'row', alignItems: 'flex-start', gap: compact ? 0 : 22 }}
       >
-        <View style={{ width: mediaWidth }}>
-          <Photo item={item} height={mediaHeight} />
-        </View>
-        <View style={{ flex: compact ? undefined : 1, width: compact ? '100%' : undefined, justifyContent: 'center' }}>
+        <Photo item={item} height={mediaHeight} />
+        <View style={{ maxWidth: compact ? width : 680 }}>
           <ArticleCopy item={item} prominent />
         </View>
       </Pressable>
@@ -312,39 +315,33 @@ function ArticleRow({
   items,
   width,
   compact,
-  offset,
 }: {
   items: Publication[];
   width: number;
   compact: boolean;
-  offset: number;
 }) {
-  const gap = compact ? 12 : 18;
-  const count = compact ? 2 : Math.min(3, items.length);
+  const gap = compact ? 14 : 22;
+  const count = Math.min(compact ? 2 : 3, items.length);
   const colWidth = (width - gap * (count - 1)) / count;
   return (
     <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap }}>
-      {items.map((item, i) => {
-        const ratio = [1.12, 0.86, 1.0, 0.96, 1.18][(offset + i) % 5];
-        const height = Math.round(colWidth * ratio);
-        return (
-          <PublicationTile
-            key={item.id}
-            item={item}
-            width={colWidth}
-            imageHeight={Math.max(130, Math.min(310, height))}
-          />
-        );
-      })}
+      {items.map(item => (
+        <PublicationTile
+          key={item.id}
+          item={item}
+          width={colWidth}
+          imageHeight={Math.max(140, Math.min(300, Math.round(colWidth * (compact ? 0.92 : 0.80))))}
+        />
+      ))}
     </View>
   );
 }
 
 /**
  * Deliberate reading rhythm:
- *   magazine cover + 2 secondary articles;
- *   an occasional wide story;
- *   otherwise clear, unframed article pairs/triples.
+ *   featured cover + two separately grouped editorial articles;
+ *   occasional full-width story with its caption directly below the image;
+ *   otherwise orderly, unframed article pairs/triples.
  *
  * Filtering works at every length without empty cells or anonymous image blocks.
  */
@@ -352,7 +349,8 @@ export function PublicationGallery({ items }: { items: Publication[] }) {
   const { width: windowWidth } = useWindowDimensions();
   const compact = windowWidth < 700;
   const contentWidth = Math.max(0, Math.min(920, windowWidth) - 30);
-  const gap = compact ? 24 : 30;
+  // Larger gaps between complete stories, small gaps inside each story.
+  const gap = compact ? 38 : 54;
 
   if (!items.length) return null;
 
@@ -367,7 +365,7 @@ export function PublicationGallery({ items }: { items: Publication[] }) {
         key="opening"
         style={{
           flexDirection: compact ? 'column' : 'row',
-          gap: compact ? 23 : 22,
+          gap: compact ? 31 : 27,
           alignItems: 'flex-start',
         }}
       >
@@ -378,18 +376,18 @@ export function PublicationGallery({ items }: { items: Publication[] }) {
         />
         <View
           style={{
-            width: compact ? contentWidth : contentWidth * 0.44 - 22,
+            width: compact ? contentWidth : contentWidth * 0.44 - 27,
             flexDirection: compact ? 'row' : 'column',
             alignItems: 'flex-start',
-            gap: compact ? 12 : 19,
+            gap: compact ? 14 : 37,
           }}
         >
           {companions.map((item, i) => (
             <PublicationTile
               key={item.id}
               item={item}
-              width={compact ? (contentWidth - 12) / 2 : contentWidth * 0.44 - 22}
-              imageHeight={compact ? Math.round((contentWidth - 12) / 2 * (i ? 0.85 : 1.05)) : 122}
+              width={compact ? (contentWidth - 14) / 2 : contentWidth * 0.44 - 27}
+              imageHeight={compact ? Math.round((contentWidth - 14) / 2 * 0.96) : 146}
             />
           ))}
         </View>
@@ -420,8 +418,7 @@ export function PublicationGallery({ items }: { items: Publication[] }) {
           items={items.slice(index, index + count)}
           width={contentWidth}
           compact={compact}
-          offset={index}
-        />,
+         />,
       );
       index += count;
       rowNo++;
