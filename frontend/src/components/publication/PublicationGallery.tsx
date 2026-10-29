@@ -8,7 +8,6 @@ import type { Publication } from '@/domain/publication';
 import { PHASE_LABELS } from '@/domain/publication';
 import { DreamPhaseIcon } from '@/icons/DreamPhaseIcon';
 import { TalentArt } from '@/components/talent/TalentArt';
-import { verseExcerpt } from '@/mocks/publications';
 import { useAppTheme } from '@/theme/AppTheme';
 
 const audio = [
@@ -39,19 +38,6 @@ function category(item: Publication): string {
       return item.reference;
     case 'talent':
       return item.skill;
-  }
-}
-
-function description(item: Publication): string {
-  switch (item.type) {
-    case 'dream':
-      return item.summary;
-    case 'music':
-      return item.description;
-    case 'bible':
-      return verseExcerpt(item);
-    case 'talent':
-      return item.description;
   }
 }
 
@@ -88,110 +74,115 @@ function AudioCorner({ item }: { item: Publication }) {
   );
 }
 
-function Photo({
+
+type StoryScale = 'small' | 'featured' | 'wide';
+
+/** One story, one cover: only category, title and handwritten member name. */
+function StoryCover({
   item,
+  width,
   height,
+  scale,
 }: {
   item: Publication;
+  width: number;
   height: number;
+  scale: StoryScale;
 }) {
+  const shadeId = useId().replace(/[^a-zA-Z0-9_-]/g, '');
   const theme = useAppTheme();
+  const isTalent = item.type === 'talent';
+  const ink = isTalent ? '#26211D' : '#FFFFFF';
+  const small = scale === 'small';
+  const inset = small ? (width < 220 ? 11 : 14) : scale === 'wide' ? 24 : 21;
+  const titleSize = small
+    ? width < 195 ? 17 : 20
+    : scale === 'wide'
+      ? width < 480 ? 29 : 37
+      : width < 430 ? 30 : 39;
+
   return (
-    <View
-      style={[
-        styles.photoFrame,
-        {
-          height,
-          backgroundColor:
-            item.type === 'talent'
-              ? theme.dark
-                ? '#D2CABE'
-                : '#F0EAE0'
-              : theme.dark
-                ? '#2B2B2B'
-                : '#E8E2DA',
-        },
-      ]}
-    >
-      {item.type === 'talent' ? (
-        <View style={styles.talentImage}>
-          <TalentArt kind={item.instrument} size={Math.min(130, height * 0.66)} />
+    <View style={{ width, height, position: 'relative' }}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={'Open ' + item.title}
+        onPress={() => router.push(publicationPath(item) as any)}
+        style={styles.storyLink}
+      >
+        <View
+          style={[
+            styles.photoFrame,
+            {
+              backgroundColor: isTalent
+                ? theme.dark ? '#D2CABE' : '#F0EAE0'
+                : theme.dark ? '#2B2B2B' : '#E8E2DA',
+            },
+          ]}
+        >
+          {isTalent ? (
+            <View style={[styles.talentImage, { paddingBottom: small ? 53 : 80 }]}>
+              <TalentArt
+                kind={item.instrument}
+                size={Math.min(170, width * 0.60, height * 0.65)}
+              />
+            </View>
+          ) : (
+            <Image
+              source={{ uri: item.image }}
+              resizeMode="cover"
+              accessibilityLabel={item.imageAlt}
+              style={styles.photo}
+            />
+          )}
         </View>
-      ) : (
-        <Image
-          source={{ uri: item.image }}
-          resizeMode="cover"
-          accessibilityLabel={item.imageAlt}
-          style={styles.photo}
-        />
-      )}
-
-      {item.type === 'dream' ? (
-        <View pointerEvents="none" style={styles.phase}>
-          <DreamPhaseIcon phase={item.phase} size={25} />
+        {!isTalent && (
+          <Svg pointerEvents="none" width="100%" height="100%" style={StyleSheet.absoluteFill}>
+            <Defs>
+              <LinearGradient id={shadeId} x1="0%" y1="0%" x2="0%" y2="100%">
+                <Stop offset="0%" stopColor="#000" stopOpacity={0.02} />
+                <Stop offset="45%" stopColor="#000" stopOpacity={0.03} />
+                <Stop offset="72%" stopColor="#000" stopOpacity={0.35} />
+                <Stop offset="100%" stopColor="#000" stopOpacity={0.78} />
+              </LinearGradient>
+            </Defs>
+            <Rect width="100%" height="100%" fill={'url(#' + shadeId + ')'} />
+          </Svg>
+        )}
+        <View
+          pointerEvents="none"
+          style={[styles.storyCopy, { left: inset, right: inset, bottom: inset }]}
+        >
+          <Text numberOfLines={1} style={[styles.kicker, { color: ink, fontSize: small ? 9 : 10 }]}>
+            {category(item).toUpperCase()}
+          </Text>
+          <Text
+            numberOfLines={3}
+            style={[
+              styles.storyTitle,
+              { color: ink, fontSize: titleSize, lineHeight: titleSize + (small ? 4 : 5) },
+            ]}
+          >
+            {item.title}
+          </Text>
+          <Text
+            numberOfLines={1}
+            style={[styles.handwritten, { color: ink, fontSize: small ? 22 : 27 }]}
+          >
+            {item.author}
+          </Text>
         </View>
-      ) : null}
-
+        {item.type === 'dream' && (
+          <View pointerEvents="none" style={styles.phase}>
+            <DreamPhaseIcon phase={item.phase} size={25} />
+          </View>
+        )}
+      </Pressable>
+      {/* Audio control remains an independent sibling, never a nested button. */}
+      <AudioCorner item={item} />
     </View>
   );
 }
 
-function Byline({ item, inverse = false }: { item: Publication; inverse?: boolean }) {
-  const theme = useAppTheme();
-  return (
-    <Text
-      numberOfLines={1}
-      style={[styles.handwritten, { color: inverse ? '#FFFFFF' : theme.foreground }]}
-    >
-      {item.author}
-    </Text>
-  );
-}
-
-function ArticleCopy({
-  item,
-  prominent = false,
-}: {
-  item: Publication;
-  prominent?: boolean;
-}) {
-  const theme = useAppTheme();
-  return (
-    <View style={[styles.articleCopy, prominent && styles.prominentCopy]}>
-      <Text
-        numberOfLines={1}
-        style={[styles.kicker, { color: theme.dark ? '#BFB6B3' : '#716B65' }]}
-      >
-        {category(item).toUpperCase()}
-      </Text>
-      <Text
-        numberOfLines={3}
-        style={[
-          styles.articleTitle,
-          {
-            fontSize: prominent ? 29 : 19,
-            lineHeight: prominent ? 34 : 24,
-            color: theme.foreground,
-          },
-        ]}
-      >
-        {item.title}
-      </Text>
-      <Text
-        numberOfLines={prominent ? 4 : 2}
-        style={[styles.excerpt, { color: theme.dark ? '#BDBAB6' : '#65615C' }]}
-      >
-        {description(item)}
-      </Text>
-      <View style={styles.bylineRow}>
-        <Byline item={item} />
-        {prominent ? <Ionicons name="arrow-forward" size={19} color={theme.foreground} /> : null}
-      </View>
-    </View>
-  );
-}
-
-/** Classic unboxed magazine article: photo above, type below, intact as one unit. */
 export function PublicationTile({
   item,
   width,
@@ -201,86 +192,13 @@ export function PublicationTile({
   width: number;
   imageHeight: number;
 }) {
-  return (
-    <View style={{ width, minWidth: 0 }}>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={'Open ' + item.title}
-        onPress={() => router.push(publicationPath(item) as any)}
-      >
-        <Photo item={item} height={imageHeight} />
-        <ArticleCopy item={item} />
-      </Pressable>
-      <AudioCorner item={item} />
-    </View>
-  );
+  return <StoryCover item={item} width={width} height={imageHeight} scale="small" />;
 }
 
-/**
- * One intentional cover, not a feed of identical dark overlays.
- * The bottom gradient is gentle enough to retain the photography.
- */
 function CoverStory({ item, width, height }: { item: Publication; width: number; height: number }) {
-  const theme = useAppTheme();
-  const shadeId = useId().replace(/[^a-zA-Z0-9_-]/g, '');
-  const isTalent = item.type === 'talent';
-  const foreground = isTalent ? '#26211D' : '#FFFFFF';
-
-  return (
-    <View style={{ width, height }}>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={'Open ' + item.title}
-        onPress={() => router.push(publicationPath(item) as any)}
-        style={{ flex: 1 }}
-      >
-        <Photo item={item} height={height} />
-        {!isTalent ? (
-          <Svg pointerEvents="none" width="100%" height="100%" style={StyleSheet.absoluteFill}>
-            <Defs>
-              <LinearGradient id={shadeId} x1="0%" y1="0%" x2="0%" y2="100%">
-                <Stop offset="0%" stopColor="#000" stopOpacity={0.04} />
-                <Stop offset="49%" stopColor="#000" stopOpacity={0.02} />
-                <Stop offset="72%" stopColor="#000" stopOpacity={0.32} />
-                <Stop offset="100%" stopColor="#000" stopOpacity={0.79} />
-              </LinearGradient>
-            </Defs>
-            <Rect width="100%" height="100%" fill={'url(#' + shadeId + ')'} />
-          </Svg>
-        ) : null}
-        <View pointerEvents="none" style={styles.coverCopy}>
-          <Text style={[styles.coverKicker, { color: foreground }]}>
-            {category(item).toUpperCase()}
-          </Text>
-          <Text
-            numberOfLines={3}
-            style={[
-              styles.coverTitle,
-              {
-                color: foreground,
-                fontSize: width < 430 ? 31 : 39,
-                lineHeight: width < 430 ? 36 : 44,
-              },
-            ]}
-          >
-            {item.title}
-          </Text>
-          <View style={styles.coverByline}>
-            <Byline item={item} inverse={!isTalent} />
-            <Ionicons name="arrow-forward" color={foreground} size={22} />
-          </View>
-        </View>
-      </Pressable>
-      <AudioCorner item={item} />
-    </View>
-  );
+  return <StoryCover item={item} width={width} height={height} scale="featured" />;
 }
 
-/**
- * Full-width feature. Keep the image and its typography in the same reading
- * column: the previous horizontal split made it unclear which photo owned
- * the adjacent words.
- */
 function WideStory({
   item,
   width,
@@ -290,25 +208,10 @@ function WideStory({
   width: number;
   compact: boolean;
 }) {
-  const mediaHeight = compact
-    ? Math.min(260, Math.round(width * 0.64))
-    : Math.min(340, Math.round(width * 0.37));
-
-  return (
-    <View style={{ width }}>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={'Open ' + item.title}
-        onPress={() => router.push(publicationPath(item) as any)}
-      >
-        <Photo item={item} height={mediaHeight} />
-        <View style={{ maxWidth: compact ? width : 680 }}>
-          <ArticleCopy item={item} prominent />
-        </View>
-      </Pressable>
-      <AudioCorner item={item} />
-    </View>
-  );
+  const height = compact
+    ? Math.max(245, Math.min(320, Math.round(width * 0.76)))
+    : Math.min(405, Math.round(width * 0.43));
+  return <StoryCover item={item} width={width} height={height} scale="wide" />;
 }
 
 function ArticleRow({
@@ -323,15 +226,11 @@ function ArticleRow({
   const gap = compact ? 14 : 22;
   const count = Math.min(compact ? 2 : 3, items.length);
   const colWidth = (width - gap * (count - 1)) / count;
+  const height = Math.max(200, Math.min(320, Math.round(colWidth * (compact ? 1.2 : 1.0))));
   return (
     <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap }}>
       {items.map(item => (
-        <PublicationTile
-          key={item.id}
-          item={item}
-          width={colWidth}
-          imageHeight={Math.max(140, Math.min(300, Math.round(colWidth * (compact ? 0.92 : 0.80))))}
-        />
+        <PublicationTile key={item.id} item={item} width={colWidth} imageHeight={height} />
       ))}
     </View>
   );
@@ -339,9 +238,9 @@ function ArticleRow({
 
 /**
  * Deliberate reading rhythm:
- *   featured cover + two separately grouped editorial articles;
- *   occasional full-width story with its caption directly below the image;
- *   otherwise orderly, unframed article pairs/triples.
+ *   featured cover + two smaller image covers;
+ *   occasional full-width feature with integrated typography;
+ *   otherwise orderly, borderless image-cover pairs/triples.
  *
  * Filtering works at every length without empty cells or anonymous image blocks.
  */
@@ -350,7 +249,7 @@ export function PublicationGallery({ items }: { items: Publication[] }) {
   const compact = windowWidth < 700;
   const contentWidth = Math.max(0, Math.min(920, windowWidth) - 30);
   // Larger gaps between complete stories, small gaps inside each story.
-  const gap = compact ? 38 : 54;
+  const gap = compact ? 28 : 36;
 
   if (!items.length) return null;
 
@@ -365,29 +264,29 @@ export function PublicationGallery({ items }: { items: Publication[] }) {
         key="opening"
         style={{
           flexDirection: compact ? 'column' : 'row',
-          gap: compact ? 31 : 27,
+          gap: compact ? 20 : 22,
           alignItems: 'flex-start',
         }}
       >
         <CoverStory
           item={featured}
           width={compact ? contentWidth : contentWidth * 0.56}
-          height={compact ? Math.min(350, contentWidth * 0.88) : 488}
+          height={compact ? Math.min(390, Math.round(contentWidth * 1.04)) : 488}
         />
         <View
           style={{
-            width: compact ? contentWidth : contentWidth * 0.44 - 27,
+            width: compact ? contentWidth : contentWidth * 0.44 - 22,
             flexDirection: compact ? 'row' : 'column',
             alignItems: 'flex-start',
-            gap: compact ? 14 : 37,
+            gap: compact ? 14 : 18,
           }}
         >
-          {companions.map((item, i) => (
+          {companions.map(item => (
             <PublicationTile
               key={item.id}
               item={item}
-              width={compact ? (contentWidth - 14) / 2 : contentWidth * 0.44 - 27}
-              imageHeight={compact ? Math.round((contentWidth - 14) / 2 * 0.96) : 146}
+              width={compact ? (contentWidth - 14) / 2 : contentWidth * 0.44 - 22}
+              imageHeight={compact ? Math.max(200, Math.round(((contentWidth - 14) / 2) * 1.2)) : 235}
             />
           ))}
         </View>
@@ -433,9 +332,14 @@ export function PublicationGallery({ items }: { items: Publication[] }) {
 }
 
 const styles = StyleSheet.create({
-  photoFrame: { width: '100%', overflow: 'hidden', position: 'relative' },
+  storyLink: { width: '100%', height: '100%', overflow: 'hidden', position: 'relative' },
+  photoFrame: { ...StyleSheet.absoluteFillObject, overflow: 'hidden' },
   photo: { width: '100%', height: '100%' },
   talentImage: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  storyCopy: { position: 'absolute', gap: 5 },
+  kicker: { fontWeight: '600', letterSpacing: 1.2, lineHeight: 14 },
+  storyTitle: { fontFamily: 'serif', fontWeight: '400', letterSpacing: -0.5 },
+  handwritten: { fontFamily: 'Caveat_700Bold', lineHeight: 30 },
   phase: {
     position: 'absolute',
     right: 9,
@@ -447,23 +351,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  articleCopy: { paddingTop: 11, paddingHorizontal: 1, gap: 5 },
-  prominentCopy: { paddingTop: 14, gap: 11 },
-  kicker: { fontSize: 10, lineHeight: 14, letterSpacing: 1.2, fontWeight: '600' },
-  articleTitle: { fontFamily: 'serif', fontWeight: '400', letterSpacing: -0.45 },
-  excerpt: { fontSize: 12, lineHeight: 17 },
-  bylineRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  handwritten: { fontFamily: 'Caveat_700Bold', fontSize: 23, lineHeight: 28 },
-  coverCopy: {
-    position: 'absolute',
-    left: 21,
-    right: 21,
-    bottom: 22,
-    gap: 9,
-  },
-  coverKicker: { fontSize: 10, lineHeight: 14, fontWeight: '600', letterSpacing: 1.3 },
-  coverTitle: { fontFamily: 'serif', fontWeight: '400', letterSpacing: -0.7 },
-  coverByline: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   audioCorner: { position: 'absolute', top: 9, right: 9, zIndex: 4 },
   playButton: {
     width: 42,
