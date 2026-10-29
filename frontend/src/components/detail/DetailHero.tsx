@@ -1,5 +1,6 @@
 import React, { useId } from 'react';
 import { Image, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import type { Publication } from '@/domain/publication';
 import { PHASE_LABELS } from '@/domain/publication';
@@ -28,9 +29,10 @@ export function DetailHero({
   const darkInk = '#26211D';
   const inset = width < 420 ? 20 : 31;
   const titleSize = width < 420 ? 32 : width < 610 ? 39 : 46;
+  const pageColor = '#FCF9F3';
 
   return (
-    <View style={[styles.hero, { width, height, backgroundColor: item.type === 'music' || item.type === 'talent' ? 'transparent' : '#F0EAE0' }]}>
+    <View style={[styles.hero, { width, height, backgroundColor: item.type === 'music' ? 'transparent' : item.type === 'talent' ? '#F0EAE0' : '#F0EAE0' }]}>
       {isDream ? (
         <>
           <Image
@@ -50,13 +52,23 @@ export function DetailHero({
             </Defs>
             <Rect width="100%" height="100%" fill={'url(#' + id + ')'} />
           </Svg>
+          <Svg pointerEvents="none" width="100%" height="100%" style={StyleSheet.absoluteFill}>
+            <Defs>
+              <LinearGradient id={id + '-fade'} x1="0%" y1="0%" x2="0%" y2="100%">
+                <Stop offset="58%" stopColor={pageColor} stopOpacity={0} />
+                <Stop offset="82%" stopColor={pageColor} stopOpacity={0.2} />
+                <Stop offset="100%" stopColor={pageColor} stopOpacity={1} />
+              </LinearGradient>
+            </Defs>
+            <Rect width="100%" height="100%" fill={'url(#' + id + '-fade)'} />
+          </Svg>
           <View pointerEvents="none" style={[styles.phaseIcon, { right: inset, top: inset }]}>
             <DreamPhaseIcon phase={item.phase} size={30} />
           </View>
           <Text style={[styles.heroKicker, { color: '#FFFFFF', top: inset + 11, right: inset + 50 }]}>
             {PHASE_LABELS[item.phase].toUpperCase()}
           </Text>
-          <View style={[styles.dreamText, { left: inset, right: inset, bottom: inset + 42 }]}>
+          <View style={[styles.dreamText, { left: inset, right: inset, bottom: inset + 64 }]}>
             <Text
               numberOfLines={3}
               adjustsFontSizeToFit
@@ -89,16 +101,17 @@ export function DetailHero({
           style={{ width, height }}
         >
           <CassetteArtwork width={width} height={height} title={item.title} artwork={item.coverArt || item.image} transparent />
+          <View pointerEvents="none" style={styles.cassettePlay}>
+            <Ionicons name="play" size={19} color="#FFFFFF" />
+          </View>
         </Pressable>
       ) : (
         <>
           <View style={styles.talentArtwork}>
             <TalentArt kind={item.instrument} size={Math.min(220, width * 0.45, height * 0.56)} />
+            <Text style={styles.talentLabel}>{item.skill.toUpperCase()}</Text>
             <TalentLevelDots level={item.level} />
           </View>
-          <Text style={[styles.heroKicker, { right: inset, top: inset, color: darkInk }]}>
-            {item.skill.toUpperCase()}
-          </Text>
         </>
       )}
 
@@ -133,5 +146,7 @@ const styles = StyleSheet.create({
     lineHeight: 33,
     textAlign: 'right',
   },
-  talentArtwork: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 13, paddingBottom: 40 },
+  talentArtwork: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10, paddingBottom: 18 },
+  talentLabel: { fontSize: 10, letterSpacing: 1.3, fontWeight: '700', color: '#26211D', marginTop: 5 },
+  cassettePlay: { position: 'absolute', top: '50%', left: '50%', transform: [{ translateX: -17 }, { translateY: -17 }], width: 34, height: 34, borderRadius: 17, backgroundColor: 'rgba(24,20,20,0.34)', alignItems: 'center', justifyContent: 'center' },
 });
