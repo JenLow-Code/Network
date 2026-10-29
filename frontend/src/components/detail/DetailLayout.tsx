@@ -40,6 +40,7 @@ export function DetailLayout({
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
+      <View style={{ flex: 1, position: 'relative' }}>
       <ScrollView
         contentContainerStyle={{
           maxWidth: 760,
@@ -85,26 +86,9 @@ export function DetailLayout({
         <View style={{ paddingHorizontal: 16 }}>
           <DetailHero item={item} width={heroWidth} height={heroHeight} />
 
-          {/*
-            No repeated author bar: the member signature is already on the
-            cover. Restore the original vertical reaction placement alongside
-            the article rather than displaying social actions under the image.
-          */}
-          <View
-            style={{
-              flexDirection: 'row',
-              alignItems: 'flex-start',
-              gap: heroWidth < 410 ? 8 : 17,
-              paddingTop: 26,
-            }}
-          >
-            <View style={{ flex: 1, minWidth: 0 }}>
-              {featured}
-              {children}
-            </View>
-            <View style={{ width: 45, alignItems: 'center' }}>
-              <ActionRail item={item} />
-            </View>
+          <View style={{ paddingTop: 26, paddingRight: heroWidth < 410 ? 48 : 58 }}>
+            {featured}
+            {children}
           </View>
           <View style={{ marginTop: 42, borderTopWidth: 0.5, borderTopColor: theme.border, paddingTop: 21 }}>
             <Text
@@ -122,6 +106,14 @@ export function DetailLayout({
           </View>
         </View>
       </ScrollView>
+      {/* Anchored to the bottom of the reading area, not to scroll content. */}
+      <View
+        pointerEvents="box-none"
+        style={{ position: 'absolute', right: 12, bottom: 14 }}
+      >
+        <ActionRail item={item} />
+      </View>
+      </View>
       <Nav />
     </SafeAreaView>
   );
