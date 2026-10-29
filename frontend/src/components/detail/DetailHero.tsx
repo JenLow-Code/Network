@@ -81,7 +81,6 @@ export function DetailHero({
       ) : item.type === 'music' ? (
         <>
           <CassetteArtwork width={width} height={height} title={item.title} artwork={item.coverArt || item.image} transparent />
-          <Text style={[styles.heroKicker, { right: inset, top: inset, color: darkInk }]}>MUSIQUE</Text>
         </>
       ) : (
         <>
