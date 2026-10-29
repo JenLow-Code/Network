@@ -54,9 +54,9 @@ export function DetailLayout({
         <View style={{ paddingHorizontal: 16 }}>
           <DetailHero item={item} width={heroWidth} height={heroHeight} onMusicPress={onCoverPress} />
 
-          <View style={{ paddingTop: item.type === 'music' ? 4 : 22, paddingRight: 0 }}>
+          <View style={{ paddingTop: item.type === 'music' ? 4 : item.type === 'dream' ? 0 : 22, paddingRight: 0 }}>
             {featured}
-            <View style={{ flexDirection: 'row', gap: 5, alignItems: 'flex-end' }}>
+            <View style={{ flexDirection: 'row', gap: 18, alignItems: 'flex-end' }}>
               <View style={{ flex: 1, minWidth: 0 }}>{children}</View>
               <View style={{ width: 42, alignSelf: 'flex-end', paddingBottom: 10 }}>
                 <ActionRail item={item} />
