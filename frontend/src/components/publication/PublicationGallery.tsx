@@ -1,5 +1,5 @@
 import React, { useId } from 'react';
-import { Image, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Image, Platform, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { ClipPath, Defs, G, Image as SvgImage, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
@@ -108,14 +108,14 @@ function CassetteArtwork({
 
   return (
     <View style={[styles.musicCanvas, { width, height }]}>
-      <View style={{ width: cassetteWidth, height: cassetteHeight, position: 'relative' }}>
+      <View style={{ width: cassetteWidth, height: cassetteHeight, position: 'relative', transform: [{ translateY: tiny ? 7 : 11 }] }}>
         <Svg width="100%" height="100%" viewBox="0 0 420 255">
           <Defs>
             <ClipPath id={clipId}>
               <Rect x={2} y={2} width={415} height={250} rx={11} />
             </ClipPath>
             <ClipPath id={reelId}>
-              <Rect x={91} y={91} width={242} height={84} rx={22} />
+              <Rect x={94} y={90} width={227} height={68} rx={12} />
             </ClipPath>
           </Defs>
           <G clipPath={'url(#' + clipId + ')'}>
@@ -150,9 +150,9 @@ function CassetteArtwork({
           style={{
             position: 'absolute',
             left: '34%',
-            top: '15%',
+            top: '13%',
             right: '9%',
-            height: '25%',
+            height: '24%',
             justifyContent: 'center',
           }}
         >
@@ -169,6 +169,7 @@ function CassetteArtwork({
           >
             {title}
           </Text>
+          <View style={{ height: 1, backgroundColor: '#8F8276', opacity: 0.75, marginTop: 2 }} />
         </View>
       </View>
     </View>
@@ -193,27 +194,34 @@ function BibleVerseCard({
         backgroundColor: '#F0EAE0',
         paddingHorizontal: compact ? 14 : 26,
         paddingVertical: compact ? 18 : 27,
-        justifyContent: 'space-between',
+        justifyContent: 'center',
       }}
     >
-      <Text style={[styles.bibleReference, { fontSize: compact ? 9 : 11 }]}>
-        {item.reference.toUpperCase()}
-      </Text>
-      <Text
-        numberOfLines={compact ? 6 : 9}
-        adjustsFontSizeToFit
-        minimumFontScale={0.7}
-        style={{
-          fontFamily: 'serif',
-          fontSize: compact ? 17 : Math.min(32, width * 0.06),
-          lineHeight: compact ? 23 : Math.min(42, width * 0.082),
-          color: '#29231E',
-        }}
-      >
-        {verseExcerpt(item)}
-      </Text>
-      {/* Leave the bottom-right free for the shared handwritten byline. */}
-      <View style={{ height: compact ? 27 : 37 }} />
+      {/* Reference and verse are one typographic unit: no floating heading. */}
+      <View style={{ paddingBottom: compact ? 18 : 26 }}>
+        <Text
+          numberOfLines={1}
+          style={[styles.bibleReference, {
+            fontSize: compact ? 9 : 11,
+            marginBottom: compact ? 8 : 10,
+          }]}
+        >
+          {item.reference.toUpperCase()}
+        </Text>
+        <Text
+          numberOfLines={compact ? 7 : 9}
+          adjustsFontSizeToFit
+          minimumFontScale={0.7}
+          style={{
+            fontFamily: 'serif',
+            fontSize: compact ? 17 : Math.min(32, width * 0.06),
+            lineHeight: compact ? 23 : Math.min(42, width * 0.082),
+            color: '#29231E',
+          }}
+        >
+          {verseExcerpt(item)}
+        </Text>
+      </View>
     </View>
   );
 }
@@ -309,15 +317,16 @@ function StoryCover({
             <Defs>
               <LinearGradient id={shadeId} x1="0%" y1="0%" x2="0%" y2="100%">
                 <Stop offset="0%" stopColor="#000" stopOpacity={0.02} />
-                <Stop offset="45%" stopColor="#000" stopOpacity={0.03} />
-                <Stop offset="72%" stopColor="#000" stopOpacity={0.39} />
-                <Stop offset="100%" stopColor="#000" stopOpacity={0.84} />
+                <Stop offset="45%" stopColor="#000" stopOpacity={0.06} />
+                <Stop offset="72%" stopColor="#000" stopOpacity={0.46} />
+                <Stop offset="100%" stopColor="#000" stopOpacity={0.92} />
               </LinearGradient>
             </Defs>
             <Rect width="100%" height="100%" fill={'url(#' + shadeId + ')'} />
           </Svg>
         )}
         {/* Consistent taxonomy in the top-right, next to the phase or play control. */}
+        {!isBible && (
         <View
           pointerEvents="none"
           style={[
@@ -338,7 +347,8 @@ function StoryCover({
             {category(item).toUpperCase()}
           </Text>
         </View>
-        {!isBible && !isMusic && (
+        )}
+        {item.type === 'dream' && (
           <View
             pointerEvents="none"
             style={[
@@ -352,7 +362,17 @@ function StoryCover({
               minimumFontScale={0.8}
               style={[
                 styles.storyTitle,
-                { color: ink, fontSize: titleSize, lineHeight: titleSize + (small ? 4 : 5) },
+                {
+                  color: ink,
+                  fontFamily: Platform.select({
+                    web: 'Georgia, "Times New Roman", serif',
+                    ios: 'Georgia',
+                    default: 'serif',
+                  }),
+                  fontSize: titleSize,
+                  lineHeight: titleSize + (small ? 5 : 7),
+                  letterSpacing: -0.8,
+                },
               ]}
             >
               {item.title}
