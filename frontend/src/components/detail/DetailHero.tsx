@@ -101,22 +101,7 @@ export function DetailHero({
           </Text>
         </>
       )}
-      {isDream && (
-      <Text
-        pointerEvents="none"
-        numberOfLines={1}
-        style={[
-          styles.signature,
-          {
-            right: inset,
-            bottom: inset,
-            color: isDream ? '#FFFFFF' : darkInk,
-          },
-        ]}
-      >
-        {item.author}
-      </Text>
-      )}
+
     </View>
   );
 }
