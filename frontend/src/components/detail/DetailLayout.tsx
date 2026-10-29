@@ -1,14 +1,12 @@
 import React from 'react';
-import { Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
+import { ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
 import type { Publication } from '@/domain/publication';
 import { publications, personPublications } from '@/mocks/publications';
 import { ActionRail } from './ActionRail';
 import { DetailHero } from './DetailHero';
 import { Nav } from '@/components/navigation/Nav';
-import { TopActions } from '@/components/navigation/TopActions';
+import { DetailAuthorHeader } from './DetailAuthorHeader';
 import { PublicationGallery } from '@/components/publication/PublicationGallery';
 import { useAppTheme } from '@/theme/AppTheme';
 
@@ -49,39 +47,7 @@ export function DetailLayout({
           paddingBottom: 40,
         }}
       >
-        <View
-          style={{
-            minHeight: 66,
-            flexDirection: 'row',
-            alignItems: 'center',
-            borderBottomWidth: 0.5,
-            borderBottomColor: theme.dark ? '#55575B' : '#B8B0A6',
-            marginHorizontal: 16,
-            marginBottom: 20,
-          }}
-        >
-          <Pressable
-            onPress={() => router.back()}
-            accessibilityRole="button"
-            accessibilityLabel="Retour"
-            style={{ width: 44, justifyContent: 'center' }}
-          >
-            <Ionicons name="arrow-back" color={theme.foreground} size={23} />
-          </Pressable>
-          <Text
-            style={{
-              color: theme.foreground,
-              fontSize: 12,
-              fontWeight: '700',
-              letterSpacing: 2.2,
-              flex: 1,
-              textAlign: 'center',
-            }}
-          >
-            JENLOW
-          </Text>
-          <TopActions />
-        </View>
+        <DetailAuthorHeader item={item} />
 
         <View style={{ paddingHorizontal: 16 }}>
           <DetailHero item={item} width={heroWidth} height={heroHeight} />
