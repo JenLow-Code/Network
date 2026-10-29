@@ -184,13 +184,14 @@ export function ActionRail({ item }: { item: Publication }) {
 }
 const s = StyleSheet.create({
   rail: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 3,
+    flexDirection: 'column',
+    gap: 4,
     alignItems: 'center',
-    justifyContent: 'flex-end',
-    paddingVertical: 2,
-    backgroundColor: 'transparent',
+    justifyContent: 'center',
+    paddingVertical: 7,
+    paddingHorizontal: 2,
+    borderRadius: 24,
+    backgroundColor: 'rgba(240,234,224,0.75)',
   },
   iconButton: {
     width: 39,
