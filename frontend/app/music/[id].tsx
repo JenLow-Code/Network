@@ -17,16 +17,13 @@ export default function MusicDetail() {
   return (
     <MusicWaveform
       index={item.audioIndex}
-      renderLayout={(button, wave, time, seek) => (
-        <PublicationDetail item={item}>
+      renderLayout={(_button, wave, time, seek, togglePlayback) => (
+        <PublicationDetail item={item} onCoverPress={togglePlayback}>
           <View style={{ paddingTop: 0, paddingBottom: 12, gap: 9 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-              {button}
-              <View style={{ flex: 1 }}>{wave}</View>
-            </View>
+            <View>{wave}</View>
             <MusicLyrics lines={item.lyrics || []} currentTime={time} onSeek={seek} />
           </View>
-          <DetailPanel title="Paroles complètes" foldable defaultOpen={false}>
+          <DetailPanel title="Paroles complètes" foldable defaultOpen={false} hideTopBorder>
             <FullMusicLyrics lines={item.lyrics || []} />
           </DetailPanel>
           <DetailPanel title="Partitions" foldable defaultOpen={false}>
