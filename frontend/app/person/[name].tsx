@@ -34,7 +34,6 @@ export default function PublicPerson() {
             </View>
           ))}
         </View>
-      </DetailIntro>
       </View>
       <DetailPanel title="Expérience" foldable defaultOpen={false}>
         <Text style={{ fontSize: 14, lineHeight: 22, color: '#444' }}>
