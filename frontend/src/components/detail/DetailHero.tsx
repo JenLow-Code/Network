@@ -1,4 +1,4 @@
-import React, { useId } from 'react';
+import React, { useId, useState } from 'react';
 import { Image, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
@@ -34,12 +34,16 @@ export function DetailHero({
   const titleSize = width < 420 ? 32 : width < 610 ? 39 : 46;
   const theme = useAppTheme();
   const pageColor = theme.background;
+  // Explicit pixel height avoids percentage-sized image overlays stretching the Dream card.
+  // Updated from the measured title + goal; no fixed desktop-sized blank region.
+  const [measuredDreamHeight, setMeasuredDreamHeight] = useState(0);
+  const dreamHeight = measuredDreamHeight || Math.max(270, Math.min(350, width * 0.86));
 
   return (
     <View style={[styles.hero, {
       width,
-      // Dreams grow with the actual title and goal instead of reserving a tall empty canvas.
-      ...(isDream ? { minHeight: 220 } : { height }),
+      // The image and its overlays always have the same finite height.
+      height: isDream ? dreamHeight : height,
       backgroundColor: isDream ? pageColor : item.type === 'music' ? 'transparent' : '#F0EAE0',
     }]}>
       {isDream ? (
@@ -50,29 +54,30 @@ export function DetailHero({
             resizeMode="cover"
             style={StyleSheet.absoluteFill}
           />
-          {/* Darken the whole photograph so title and goal use the same legible ink. */}
-          <Svg pointerEvents="none" width="100%" height="100%" style={StyleSheet.absoluteFill}>
+          {/* Continuous photographic shading behind both title and goal. */}
+          <Svg pointerEvents="none" width={width} height={dreamHeight} style={StyleSheet.absoluteFill}>
             <Defs>
               <LinearGradient id={id} x1="0%" y1="0%" x2="0%" y2="100%">
-                <Stop offset="0%" stopColor="#000000" stopOpacity={0.23} />
-                <Stop offset="45%" stopColor="#000000" stopOpacity={0.56} />
-                <Stop offset="100%" stopColor="#000000" stopOpacity={0.68} />
+                <Stop offset="0%" stopColor="#000000" stopOpacity={0.24} />
+                <Stop offset="45%" stopColor="#000000" stopOpacity={0.48} />
+                <Stop offset="100%" stopColor="#000000" stopOpacity={0.50} />
               </LinearGradient>
             </Defs>
             <Rect width="100%" height="100%" fill={'url(#' + id + ')'} />
           </Svg>
-          {/* Fade ONLY at the bottom of the photo — never through the heading or goal. */}
+          {/* True photo-to-page gradient, confined to the last 78px AFTER the goal. */}
           <Svg
             pointerEvents="none"
-            width="100%"
-            height={92}
+            width={width}
+            height={78}
             style={{ position: 'absolute', bottom: 0, left: 0, right: 0 }}
           >
             <Defs>
               <LinearGradient id={id + '-fade'} x1="0%" y1="0%" x2="0%" y2="100%">
                 <Stop offset="0%" stopColor={pageColor} stopOpacity={0} />
-                <Stop offset="40%" stopColor={pageColor} stopOpacity={0.23} />
-                <Stop offset="75%" stopColor={pageColor} stopOpacity={0.83} />
+                <Stop offset="25%" stopColor={pageColor} stopOpacity={0.10} />
+                <Stop offset="55%" stopColor={pageColor} stopOpacity={0.40} />
+                <Stop offset="80%" stopColor={pageColor} stopOpacity={0.82} />
                 <Stop offset="100%" stopColor={pageColor} stopOpacity={1} />
               </LinearGradient>
             </Defs>
@@ -87,10 +92,20 @@ export function DetailHero({
           {/* One content-sized photographic card: title, MON BUT and goal are inseparable. */}
           <View
             pointerEvents="none"
+            onLayout={event => {
+              const next = Math.ceil(event.nativeEvent.layout.height);
+              if (next > 0) {
+                setMeasuredDreamHeight(previous => Math.abs(previous - next) > 1 ? next : previous);
+              }
+            }}
             style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
               paddingTop: width < 420 ? 82 : 92,
               paddingHorizontal: inset,
-              paddingBottom: 98,
+              paddingBottom: 78,
             }}
           >
             <Text
