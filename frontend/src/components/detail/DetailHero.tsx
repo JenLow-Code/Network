@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useId } from 'react';
+import { Image, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import type { Publication } from '@/domain/publication';
 import { PHASE_LABELS } from '@/domain/publication';
@@ -29,96 +30,88 @@ export function DetailHero({
   const isDream = item.type === 'dream';
   const inset = width < 420 ? 20 : 31;
   const theme = useAppTheme();
-  // Explicit pixel height avoids percentage-sized image overlays stretching the Dream card.
-  // Updated from the measured title + goal; no fixed desktop-sized blank region.
-  const [measuredDreamHeight, setMeasuredDreamHeight] = useState(0);
-  const dreamHeight = measuredDreamHeight || Math.max(270, Math.min(350, width * 0.86));
+  const gradientId = useId().replace(/[^a-zA-Z0-9_-]/g, '');
 
   return (
     <View style={[styles.hero, {
       width,
-      // The image and its overlays always have the same finite height.
-      height: isDream ? dreamHeight : height,
-      backgroundColor: isDream || item.type === 'music' ? 'transparent' : '#F0EAE0',
+      height,
+      backgroundColor: isDream ? (theme.dark ? '#282729' : '#D7C5B4') : item.type === 'music' ? 'transparent' : '#F0EAE0',
     }]}>
       {isDream ? (
         <>
-          {/* The photo and fade live in DetailLayout behind the entire Dream article,
-              including the expandable sections. Keep only content here. */}
+          {/* The same editorial photograph treatment as Discovery:
+              vivid image, restrained dark gradient only where the title sits. */}
+          <Image
+            source={{ uri: item.image }}
+            accessibilityLabel={item.imageAlt}
+            resizeMode="cover"
+            style={StyleSheet.absoluteFill}
+          />
+          <Svg pointerEvents="none" width={width} height={height} style={StyleSheet.absoluteFill}>
+            <Defs>
+              <LinearGradient id={gradientId} x1="0%" y1="0%" x2="0%" y2="100%">
+                <Stop offset="0%" stopColor="#000" stopOpacity={0.12} />
+                <Stop offset="42%" stopColor="#000" stopOpacity={0.03} />
+                <Stop offset="61%" stopColor="#000" stopOpacity={0.23} />
+                <Stop offset="80%" stopColor="#000" stopOpacity={0.58} />
+                <Stop offset="100%" stopColor="#000" stopOpacity={0.84} />
+              </LinearGradient>
+            </Defs>
+            <Rect width="100%" height="100%" fill={'url(#' + gradientId + ')'} />
+          </Svg>
+
           <View
             pointerEvents="none"
             style={{
               position: 'absolute',
               top: inset,
-              right: inset + 16, // matches the photo's extra 16px right inset
+              right: inset,
               flexDirection: 'row',
               alignItems: 'center',
-              gap: 12,
+              gap: 10,
             }}
           >
-            <Text style={[styles.heroKicker, { color: '#FFFFFF' }]}>
+            <Text numberOfLines={1} style={[styles.heroKicker, {
+              color: '#FFFFFF',
+              textShadowColor: 'rgba(0,0,0,0.5)',
+              textShadowOffset: { width: 0, height: 1 },
+              textShadowRadius: 2,
+            }]}>
               {PHASE_LABELS[item.phase].toUpperCase()}
             </Text>
             <View style={styles.phaseIcon}>
               <DreamPhaseIcon phase={item.phase} size={30} />
             </View>
           </View>
-          {/* A single typographic group: title followed immediately by the description. */}
+
           <View
             pointerEvents="none"
-            onLayout={event => {
-              const next = Math.ceil(event.nativeEvent.layout.height);
-              if (next > 0) {
-                setMeasuredDreamHeight(previous => Math.abs(previous - next) > 1 ? next : previous);
-              }
-            }}
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              paddingTop: width < 420 ? 76 : 90,
-              paddingHorizontal: inset,
-              paddingBottom: width < 420 ? 53 : 60,
-            }}
+            style={{ position: 'absolute', left: inset, right: inset, bottom: width < 420 ? 22 : 29 }}
           >
             <Text
               numberOfLines={3}
               adjustsFontSizeToFit
-              minimumFontScale={0.75}
+              minimumFontScale={0.72}
               style={[
                 styles.headline,
                 {
                   color: '#FFFFFF',
-                  textShadowColor: 'rgba(0,0,0,0.38)',
-                  textShadowOffset: { width: 0, height: 2 },
-                  textShadowRadius: 3,
-                  fontSize: width < 420 ? 30 : width < 610 ? 35 : 43,
-                  lineHeight: width < 420 ? 36 : width < 610 ? 42 : 51,
+                  fontSize: width < 420 ? 33 : width < 610 ? 39 : 46,
+                  lineHeight: width < 420 ? 39 : width < 610 ? 46 : 53,
                   fontFamily: Platform.select({
                     web: 'Georgia, "Times New Roman", serif',
                     ios: 'Georgia',
                     default: 'serif',
                   }),
+                  textShadowColor: 'rgba(0,0,0,0.4)',
+                  textShadowOffset: { width: 0, height: 2 },
+                  textShadowRadius: 4,
                 },
               ]}
             >
               {item.title}
             </Text>
-            <View style={{ marginTop: 10, paddingLeft: 4 }}>
-              <Text
-                style={{
-                  color: '#FFFFFF',
-                  textShadowColor: 'rgba(0,0,0,0.45)',
-                  textShadowOffset: { width: 0, height: 1 },
-                  textShadowRadius: 3,
-                  fontSize: width < 420 ? 15 : 17,
-                  lineHeight: width < 420 ? 22 : 25,
-                }}
-              >
-                {item.summary}
-              </Text>
-            </View>
           </View>
         </>
       ) : item.type === 'bible' ? (
