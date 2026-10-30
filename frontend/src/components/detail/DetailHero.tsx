@@ -45,12 +45,24 @@ export function DetailHero({
         <>
           {/* The photo and fade live in DetailLayout behind the entire Dream article,
               including the expandable sections. Keep only content here. */}
-          <View pointerEvents="none" style={[styles.phaseIcon, { right: inset, top: inset }]}>
-            <DreamPhaseIcon phase={item.phase} size={30} />
+          <View
+            pointerEvents="none"
+            style={{
+              position: 'absolute',
+              top: inset,
+              right: inset + 16, // matches the photo's extra 16px right inset
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 12,
+            }}
+          >
+            <Text style={[styles.heroKicker, { color: '#FFFFFF' }]}>
+              {PHASE_LABELS[item.phase].toUpperCase()}
+            </Text>
+            <View style={styles.phaseIcon}>
+              <DreamPhaseIcon phase={item.phase} size={30} />
+            </View>
           </View>
-          <Text style={[styles.heroKicker, { color: '#FFFFFF', top: inset + 11, right: inset + 50 }]}>
-            {PHASE_LABELS[item.phase].toUpperCase()}
-          </Text>
           {/* A single typographic group: title followed immediately by the description. */}
           <View
             pointerEvents="none"
@@ -77,7 +89,10 @@ export function DetailHero({
               style={[
                 styles.headline,
                 {
-                  color: theme.foreground,
+                  color: '#FFFFFF',
+                  textShadowColor: 'rgba(0,0,0,0.38)',
+                  textShadowOffset: { width: 0, height: 2 },
+                  textShadowRadius: 3,
                   fontSize: width < 420 ? 30 : width < 610 ? 35 : 43,
                   lineHeight: width < 420 ? 36 : width < 610 ? 42 : 51,
                   fontFamily: Platform.select({
@@ -93,7 +108,10 @@ export function DetailHero({
             <View style={{ marginTop: 10, paddingLeft: 4 }}>
               <Text
                 style={{
-                  color: theme.foreground,
+                  color: '#FFFFFF',
+                  textShadowColor: 'rgba(0,0,0,0.45)',
+                  textShadowOffset: { width: 0, height: 1 },
+                  textShadowRadius: 3,
                   fontSize: width < 420 ? 15 : 17,
                   lineHeight: width < 420 ? 22 : 25,
                 }}
@@ -136,7 +154,6 @@ export function DetailHero({
 const styles = StyleSheet.create({
   hero: { position: 'relative', overflow: 'hidden' },
   phaseIcon: {
-    position: 'absolute',
     width: 41,
     height: 41,
     borderRadius: 21,
@@ -145,7 +162,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,252,245,0.94)',
   },
   heroKicker: {
-    position: 'absolute',
     fontSize: 10,
     fontWeight: '700',
     letterSpacing: 1.2,
