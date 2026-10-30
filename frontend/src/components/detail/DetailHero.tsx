@@ -29,9 +29,7 @@ export function DetailHero({
 }) {
   const id = useId().replace(/[^a-zA-Z0-9_-]/g, '');
   const isDream = item.type === 'dream';
-  const darkInk = '#26211D';
   const inset = width < 420 ? 20 : 31;
-  const titleSize = width < 420 ? 32 : width < 610 ? 39 : 46;
   const theme = useAppTheme();
   const pageColor = theme.background;
   // Explicit pixel height avoids percentage-sized image overlays stretching the Dream card.
@@ -54,34 +52,20 @@ export function DetailHero({
             resizeMode="cover"
             style={StyleSheet.absoluteFill}
           />
-          {/* Continuous photographic shading behind both title and goal. */}
+          {/* One photo-to-page fade across the ENTIRE image, not a bottom strip.
+              Title and goal share the same photographic surface. */}
           <Svg pointerEvents="none" width={width} height={dreamHeight} style={StyleSheet.absoluteFill}>
             <Defs>
-              <LinearGradient id={id} x1="0%" y1="0%" x2="0%" y2="100%">
-                <Stop offset="0%" stopColor="#000000" stopOpacity={0.24} />
-                <Stop offset="45%" stopColor="#000000" stopOpacity={0.48} />
-                <Stop offset="100%" stopColor="#000000" stopOpacity={0.50} />
-              </LinearGradient>
-            </Defs>
-            <Rect width="100%" height="100%" fill={'url(#' + id + ')'} />
-          </Svg>
-          {/* True photo-to-page gradient, confined to the last 78px AFTER the goal. */}
-          <Svg
-            pointerEvents="none"
-            width={width}
-            height={78}
-            style={{ position: 'absolute', bottom: 0, left: 0, right: 0 }}
-          >
-            <Defs>
-              <LinearGradient id={id + '-fade'} x1="0%" y1="0%" x2="0%" y2="100%">
-                <Stop offset="0%" stopColor={pageColor} stopOpacity={0} />
-                <Stop offset="25%" stopColor={pageColor} stopOpacity={0.10} />
-                <Stop offset="55%" stopColor={pageColor} stopOpacity={0.40} />
-                <Stop offset="80%" stopColor={pageColor} stopOpacity={0.82} />
+              <LinearGradient id={id + '-editorial'} x1="0%" y1="0%" x2="0%" y2="100%">
+                <Stop offset="0%" stopColor={pageColor} stopOpacity={0.08} />
+                <Stop offset="15%" stopColor={pageColor} stopOpacity={0.24} />
+                <Stop offset="27%" stopColor={pageColor} stopOpacity={0.76} />
+                <Stop offset="43%" stopColor={pageColor} stopOpacity={0.93} />
+                <Stop offset="65%" stopColor={pageColor} stopOpacity={0.985} />
                 <Stop offset="100%" stopColor={pageColor} stopOpacity={1} />
               </LinearGradient>
             </Defs>
-            <Rect width="100%" height="100%" fill={'url(#' + id + '-fade)'} />
+            <Rect width="100%" height="100%" fill={'url(#' + id + '-editorial)'} />
           </Svg>
           <View pointerEvents="none" style={[styles.phaseIcon, { right: inset, top: inset }]}>
             <DreamPhaseIcon phase={item.phase} size={30} />
@@ -103,9 +87,9 @@ export function DetailHero({
               top: 0,
               left: 0,
               right: 0,
-              paddingTop: width < 420 ? 82 : 92,
+              paddingTop: width < 420 ? 76 : 90,
               paddingHorizontal: inset,
-              paddingBottom: 78,
+              paddingBottom: width < 420 ? 32 : 40,
             }}
           >
             <Text
@@ -115,6 +99,7 @@ export function DetailHero({
               style={[
                 styles.headline,
                 {
+                  color: theme.foreground,
                   fontSize: width < 420 ? 30 : width < 610 ? 35 : 43,
                   lineHeight: width < 420 ? 36 : width < 610 ? 42 : 51,
                   fontFamily: Platform.select({
@@ -122,9 +107,6 @@ export function DetailHero({
                     ios: 'Georgia',
                     default: 'serif',
                   }),
-                  textShadowColor: 'rgba(0,0,0,0.57)',
-                  textShadowOffset: { width: 0, height: 2 },
-                  textShadowRadius: 4,
                 },
               ]}
             >
@@ -136,19 +118,16 @@ export function DetailHero({
                   fontSize: 10,
                   fontWeight: '700',
                   letterSpacing: 1.4,
-                  color: '#F5C1D2',
+                  color: theme.dark ? '#F5C1D2' : '#B34D74',
                 }}
               >
                 MON BUT
               </Text>
               <Text
                 style={{
-                  color: '#FFFFFF',
+                  color: theme.foreground,
                   fontSize: width < 420 ? 15 : 17,
                   lineHeight: width < 420 ? 22 : 25,
-                  textShadowColor: 'rgba(0,0,0,0.57)',
-                  textShadowOffset: { width: 0, height: 1 },
-                  textShadowRadius: 3,
                 }}
               >
                 {item.summary}
@@ -204,15 +183,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1.2,
     textAlign: 'right',
   },
-  dreamText: { position: 'absolute' },
   headline: { fontWeight: '400', color: '#FFFFFF', letterSpacing: -0.75 },
-  signature: {
-    position: 'absolute',
-    fontFamily: 'Caveat_700Bold',
-    fontSize: 29,
-    lineHeight: 33,
-    textAlign: 'right',
-  },
   talentArtwork: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10, paddingBottom: 18 },
   levelLabel: { fontSize: 9, letterSpacing: 1.4, color: '#8A8076' },
   talentLabel: { fontSize: 10, letterSpacing: 1.3, fontWeight: '700', color: '#26211D', marginTop: 5 },
