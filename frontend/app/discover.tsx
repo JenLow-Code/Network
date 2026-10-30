@@ -164,6 +164,7 @@ export default function Discover() {
         </ScrollView>
         <View style={{ marginHorizontal: -15 }}>
         <PublicationGallery
+          layout="masonry"
           items={(filter === 'Talents'
             ? personPublications
             : filter === 'Tout'
