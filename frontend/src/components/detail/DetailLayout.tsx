@@ -1,5 +1,6 @@
-import React from 'react';
-import { ScrollView, Text, View, useWindowDimensions } from 'react-native';
+import React, { useId } from 'react';
+import { Image, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { Publication } from '@/domain/publication';
 import { publications, personPublications } from '@/mocks/publications';
@@ -30,6 +31,8 @@ export function DetailLayout({
   musicPlaying?: boolean;
 }) {
   const theme = useAppTheme();
+  const fadeId = useId().replace(/[^a-zA-Z0-9_-]/g, '');
+  const isDream = item.type === 'dream';
   const { width: screenWidth } = useWindowDimensions();
   const width = Math.min(screenWidth, 760);
   const heroWidth = Math.max(0, width - 32);
@@ -54,6 +57,28 @@ export function DetailLayout({
         <DetailAuthorHeader item={item} />
 
         <View style={{ paddingHorizontal: 16 }}>
+          {isDream && (
+            <View pointerEvents="none" style={[StyleSheet.absoluteFill, { left: 16, right: 16, bottom: 0, overflow: 'hidden' }]}>
+              <Image
+                source={{ uri: item.image }}
+                resizeMode="cover"
+                style={StyleSheet.absoluteFill}
+              />
+              <Svg width="100%" height="100%" style={StyleSheet.absoluteFill}>
+                <Defs>
+                  <LinearGradient id={fadeId} x1="0%" y1="0%" x2="0%" y2="100%">
+                    <Stop offset="0%" stopColor={theme.background} stopOpacity={0.16} />
+                    <Stop offset="13%" stopColor={theme.background} stopOpacity={0.58} />
+                    <Stop offset="34%" stopColor={theme.background} stopOpacity={0.80} />
+                    <Stop offset="65%" stopColor={theme.background} stopOpacity={0.94} />
+                    <Stop offset="88%" stopColor={theme.background} stopOpacity={0.985} />
+                    <Stop offset="100%" stopColor={theme.background} stopOpacity={1} />
+                  </LinearGradient>
+                </Defs>
+                <Rect width="100%" height="100%" fill={'url(#' + fadeId + ')'} />
+              </Svg>
+            </View>
+          )}
           <DetailHero item={item} width={heroWidth} height={heroHeight} onMusicPress={onCoverPress} musicPlaying={musicPlaying} />
 
           <View style={{ paddingTop: item.type === 'music' ? 4 : item.type === 'dream' ? 0 : 22, paddingRight: 0 }}>
@@ -65,7 +90,7 @@ export function DetailLayout({
               </View>
             </View>
           </View>
-          <View style={{ marginTop: 42, borderTopWidth: 0.5, borderTopColor: theme.border, paddingTop: 21 }}>
+          <View style={{ marginTop: 42, borderTopWidth: isDream ? 0 : 0.5, borderTopColor: theme.border, paddingTop: 21 }}>
             <Text
               style={{
                 color: theme.foreground,
