@@ -62,12 +62,7 @@ export function DetailLayout({
             {featured}
             {isDream ? (
               <View style={{ paddingTop: 0 }}>
-                <View style={{ paddingHorizontal: 5, paddingTop: 22, paddingBottom: 4 }}>
-                  <Text style={{ color: theme.foreground, fontSize: 15, lineHeight: 23 }}>
-                    {item.summary}
-                  </Text>
-                </View>
-                <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 24, paddingTop: 18 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 24, paddingTop: 8 }}>
                   <View style={{ flex: 1, minWidth: 0 }}>{children}</View>
                   <View style={{ width: 42, justifyContent: 'flex-end', paddingBottom: 12 }}>
                     <ActionRail item={item} />
