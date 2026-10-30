@@ -1,6 +1,5 @@
-import React, { useId } from 'react';
-import { Image, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
-import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
+import React from 'react';
+import { ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { Publication } from '@/domain/publication';
 import { publications, personPublications } from '@/mocks/publications';
@@ -31,14 +30,13 @@ export function DetailLayout({
   musicPlaying?: boolean;
 }) {
   const theme = useAppTheme();
-  const fadeId = useId().replace(/[^a-zA-Z0-9_-]/g, '');
   const isDream = item.type === 'dream';
   const { width: screenWidth } = useWindowDimensions();
   const width = Math.min(screenWidth, 760);
   const heroWidth = Math.max(0, width - 32);
   const heroHeight =
     item.type === 'dream'
-      ? Math.min(580, Math.max(420, heroWidth * 0.88))
+      ? Math.min(530, Math.max(280, heroWidth * 0.70))
       : item.type === 'bible'
         ? Math.min(420, Math.max(275, heroWidth * 0.62))
         : Math.min(330, Math.max(210, heroWidth * 0.50));
@@ -58,37 +56,25 @@ export function DetailLayout({
 
         <View style={{ paddingHorizontal: 16 }}>
           <View style={{ position: 'relative' }}>
-          {isDream && (
-            <View pointerEvents="none" style={[StyleSheet.absoluteFill, { left: 16, right: 16, bottom: 0, overflow: 'hidden' }]}>
-              <Image
-                source={{ uri: item.image }}
-                resizeMode="cover"
-                style={StyleSheet.absoluteFill}
-              />
-              <Svg width="100%" height="100%" style={StyleSheet.absoluteFill}>
-                <Defs>
-                  <LinearGradient id={fadeId} x1="0%" y1="0%" x2="0%" y2="100%">
-                    <Stop offset="0%" stopColor={theme.background} stopOpacity={0.02} />
-                    <Stop offset="13%" stopColor={theme.background} stopOpacity={0.18} />
-                    <Stop offset="34%" stopColor={theme.background} stopOpacity={0.67} />
-                    <Stop offset="65%" stopColor={theme.background} stopOpacity={0.94} />
-                    <Stop offset="88%" stopColor={theme.background} stopOpacity={0.985} />
-                    <Stop offset="100%" stopColor={theme.background} stopOpacity={1} />
-                  </LinearGradient>
-                </Defs>
-                <Rect width="100%" height="100%" fill={'url(#' + fadeId + ')'} />
-              </Svg>
-            </View>
-          )}
           <DetailHero item={item} width={heroWidth} height={heroHeight} onMusicPress={onCoverPress} musicPlaying={musicPlaying} />
 
           <View style={{ paddingTop: item.type === 'music' ? 4 : item.type === 'dream' ? 0 : 22, paddingRight: 0 }}>
             {featured}
             {isDream ? (
-              <View style={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 48, flexDirection: 'row', gap: 20, alignItems: 'stretch' }}>
-                <View style={{ flex: 1, minWidth: 0 }}>{children}</View>
-                <View style={{ width: 42, alignSelf: 'flex-end', justifyContent: 'flex-end', paddingBottom: 0 }}>
-                  <ActionRail item={item} />
+              <View style={{ paddingTop: 0 }}>
+                <View style={{ paddingHorizontal: 5, paddingTop: 22, paddingBottom: 4 }}>
+                  <Text style={{ color: theme.muted, fontSize: 10, fontWeight: '700', letterSpacing: 1.3, marginBottom: 7 }}>
+                    LE RÊVE
+                  </Text>
+                  <Text style={{ color: theme.foreground, fontSize: 15, lineHeight: 23 }}>
+                    {item.summary}
+                  </Text>
+                </View>
+                <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 24, paddingTop: 18 }}>
+                  <View style={{ flex: 1, minWidth: 0 }}>{children}</View>
+                  <View style={{ width: 42, justifyContent: 'flex-end', paddingBottom: 12 }}>
+                    <ActionRail item={item} />
+                  </View>
                 </View>
               </View>
             ) : (
@@ -101,7 +87,7 @@ export function DetailLayout({
             )}
           </View>
           </View>
-          <View style={{ marginTop: 42, borderTopWidth: isDream ? 0 : 0.5, borderTopColor: theme.border, paddingTop: 21 }}>
+          <View style={{ marginTop: isDream ? 30 : 42, borderTopWidth: isDream ? 0 : 0.5, borderTopColor: theme.border, paddingTop: 21 }}>
             <Text
               style={{
                 color: theme.foreground,
