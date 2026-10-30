@@ -63,9 +63,6 @@ export function DetailLayout({
             {isDream ? (
               <View style={{ paddingTop: 0 }}>
                 <View style={{ paddingHorizontal: 5, paddingTop: 22, paddingBottom: 4 }}>
-                  <Text style={{ color: theme.muted, fontSize: 10, fontWeight: '700', letterSpacing: 1.3, marginBottom: 7 }}>
-                    LE RÊVE
-                  </Text>
                   <Text style={{ color: theme.foreground, fontSize: 15, lineHeight: 23 }}>
                     {item.summary}
                   </Text>
