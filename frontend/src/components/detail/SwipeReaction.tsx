@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import { Animated, PanResponder, Pressable, StyleSheet, Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { useAppTheme } from '@/theme/AppTheme';
 
 const TRAVEL = 160;
 const SIZE = 42;
@@ -23,6 +23,7 @@ type SwipeReactionProps = {
  * alone. Use the native accessibility activate action as a non-gesture path.
  */
 export function SwipeReaction({ label, icon, onConfirm, active = false }: SwipeReactionProps) {
+  const theme = useAppTheme();
   const translate = useRef(new Animated.Value(0)).current;
   const callback = useRef(onConfirm);
   callback.current = onConfirm;
@@ -82,20 +83,45 @@ export function SwipeReaction({ label, icon, onConfirm, active = false }: SwipeR
     }
   };
 
-  const colorProgress = translate.interpolate({
+  const progress = translate.interpolate({
     inputRange: [-TRAVEL, 0], outputRange: [1, 0], extrapolate: 'clamp',
   });
   const labelOpacity = translate.interpolate({
-    inputRange: [-TRAVEL, -65, -12, 0],
-    outputRange: [1, 0.9, 0.05, 0],
+    inputRange: [-TRAVEL, -TRAVEL * 0.65, -20, 0],
+    outputRange: [1, 1, 0.1, 0],
+    extrapolate: 'clamp',
+  });
+  const labelColor = translate.interpolate({
+    inputRange: [-TRAVEL, -TRAVEL * 0.65, 0],
+    outputRange: ['#FFFFFF', theme.dark ? '#FFFFFF' : '#3A302D', theme.dark ? '#FFFFFF' : '#3A302D'],
     extrapolate: 'clamp',
   });
 
   return (
     <View style={styles.track}>
-      <Animated.View pointerEvents="none" style={[styles.revealedPill, { opacity: labelOpacity }]} />
-      <Animated.View pointerEvents="none" style={[styles.labelArea, { opacity: labelOpacity }]}>
-        <Text numberOfLines={1} style={styles.label}>{label}</Text>
+      <Animated.View
+        pointerEvents="none"
+        style={[
+          styles.revealedPill,
+          { opacity: labelOpacity, backgroundColor: theme.dark ? '#2E2930' : '#F8F1EB' },
+        ]}
+      >
+        <Animated.View
+          style={[StyleSheet.absoluteFill, { borderRadius: 23, backgroundColor: '#CB245C', opacity: progress }]}
+        />
+      </Animated.View>
+      <Animated.View
+        pointerEvents="none"
+        style={[styles.labelArea, { opacity: labelOpacity }]}
+      >
+        <Animated.Text
+          numberOfLines={2}
+          style={[styles.label, { color: labelColor }]}
+          adjustsFontSizeToFit
+          minimumFontScale={0.72}
+        >
+          {label}
+        </Animated.Text>
       </Animated.View>
       <Animated.View
         {...pan.panHandlers}
@@ -112,7 +138,7 @@ export function SwipeReaction({ label, icon, onConfirm, active = false }: SwipeR
           }}
           style={[styles.circle, active && styles.active]}
         >
-          <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { borderRadius: SIZE / 2, backgroundColor: '#CB245C', opacity: colorProgress }]} />
+          <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { borderRadius: SIZE / 2, backgroundColor: '#CB245C', opacity: progress }]} />
           <View style={{ zIndex: 1 }}>{icon}</View>
         </Pressable>
       </Animated.View>
@@ -135,16 +161,16 @@ const styles = StyleSheet.create({
   },
   labelArea: {
     position: 'absolute',
-    right: SIZE + 9,
+    right: 0,
     top: 0,
-    width: TRAVEL - 17,
+    width: TRAVEL - SIZE - 6,
     height: 44,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingLeft: 15,
-    paddingRight: 2,
+    paddingLeft: 3,
+    paddingRight: 7,
   },
-  label: { fontSize: 12, color: '#3A302D', fontWeight: '600', textAlign: 'center' },
+  label: { fontSize: 11, lineHeight: 14, fontWeight: '600', textAlign: 'center' },
   handle: { position: 'absolute', right: 0, top: 1, zIndex: 2 },
   circle: {
     width: SIZE, height: SIZE, borderRadius: SIZE / 2,
