@@ -1,4 +1,4 @@
-import React, { useId } from 'react';
+import React, { useId, useState } from 'react';
 import { Image, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
@@ -34,9 +34,15 @@ export function DetailHero({
   const titleSize = width < 420 ? 32 : width < 610 ? 39 : 46;
   const theme = useAppTheme();
   const pageColor = theme.background;
+  const [titleBottom, setTitleBottom] = useState(width < 420 ? 148 : 170);
 
   return (
-    <View style={[styles.hero, { width, height, backgroundColor: item.type === 'music' ? 'transparent' : item.type === 'talent' ? '#F0EAE0' : '#F0EAE0' }]}>
+    <View style={[styles.hero, {
+      width,
+      // Dreams grow with the actual title and goal instead of reserving a tall empty canvas.
+      ...(isDream ? { minHeight: 220 } : { height }),
+      backgroundColor: isDream ? pageColor : item.type === 'music' ? 'transparent' : '#F0EAE0',
+    }]}>
       {isDream ? (
         <>
           <Image
@@ -48,20 +54,26 @@ export function DetailHero({
           <Svg pointerEvents="none" width="100%" height="100%" style={StyleSheet.absoluteFill}>
             <Defs>
               <LinearGradient id={id} x1="0%" y1="0%" x2="0%" y2="100%">
-                <Stop offset="0%" stopColor="#000" stopOpacity={0.10} />
-                <Stop offset="39%" stopColor="#000" stopOpacity={0.06} />
-                <Stop offset="69%" stopColor="#000" stopOpacity={0.46} />
-                <Stop offset="100%" stopColor="#000" stopOpacity={0.94} />
+                <Stop offset="0%" stopColor="#000" stopOpacity={0.32} />
+                <Stop offset="45%" stopColor="#000" stopOpacity={0.38} />
+                <Stop offset="100%" stopColor="#000" stopOpacity={0.65} />
               </LinearGradient>
             </Defs>
             <Rect width="100%" height="100%" fill={'url(#' + id + ')'} />
           </Svg>
+          {/* Position the fade after the measured title, not halfway through its letters. */}
           <Svg pointerEvents="none" width="100%" height="100%" style={StyleSheet.absoluteFill}>
             <Defs>
-              <LinearGradient id={id + '-fade'} x1="0%" y1="0%" x2="0%" y2="100%">
-                <Stop offset="35%" stopColor={pageColor} stopOpacity={0} />
-                <Stop offset="43%" stopColor={pageColor} stopOpacity={0.78} />
-                <Stop offset="52%" stopColor={pageColor} stopOpacity={1} />
+              <LinearGradient
+                id={id + '-fade'}
+                x1={0}
+                y1={Math.max(0, titleBottom - 6)}
+                x2={0}
+                y2={titleBottom + 27}
+                gradientUnits="userSpaceOnUse"
+              >
+                <Stop offset="0%" stopColor={pageColor} stopOpacity={0} />
+                <Stop offset="70%" stopColor={pageColor} stopOpacity={0.96} />
                 <Stop offset="100%" stopColor={pageColor} stopOpacity={1} />
               </LinearGradient>
             </Defs>
@@ -73,20 +85,22 @@ export function DetailHero({
           <Text style={[styles.heroKicker, { color: '#FFFFFF', top: inset + 11, right: inset + 50 }]}>
             {PHASE_LABELS[item.phase].toUpperCase()}
           </Text>
-          {/* One editorial group: heading in the upper third, goal immediately below. */}
           <View
             pointerEvents="none"
             style={{
-              position: 'absolute',
-              top: height * (width < 610 ? 0.19 : 0.25),
-              left: inset,
-              right: inset,
+              paddingTop: width < 420 ? 80 : 86,
+              paddingHorizontal: inset,
+              paddingBottom: 22,
             }}
           >
             <Text
-              numberOfLines={2}
+              numberOfLines={3}
               adjustsFontSizeToFit
-              minimumFontScale={0.7}
+              minimumFontScale={0.75}
+              onLayout={event => {
+                const next = Math.round(event.nativeEvent.layout.y + event.nativeEvent.layout.height);
+                setTitleBottom(previous => Math.abs(previous - next) > 1 ? next : previous);
+              }}
               style={[
                 styles.headline,
                 {
@@ -97,15 +111,15 @@ export function DetailHero({
                     ios: 'Georgia',
                     default: 'serif',
                   }),
-                  textShadowColor: 'rgba(0,0,0,0.4)',
-                  textShadowOffset: { width: 0, height: 1 },
-                  textShadowRadius: 3,
+                  textShadowColor: 'rgba(0,0,0,0.6)',
+                  textShadowOffset: { width: 0, height: 2 },
+                  textShadowRadius: 4,
                 },
               ]}
             >
               {item.title}
             </Text>
-            <View style={{ marginTop: width < 610 ? 17 : 20, paddingLeft: 9, gap: 6 }}>
+            <View style={{ marginTop: 17, paddingLeft: 5, gap: 6 }}>
               <Text style={{
                 fontSize: 10,
                 fontWeight: '700',
@@ -113,9 +127,6 @@ export function DetailHero({
                 color: theme.dark ? '#E2A4B8' : '#8C676A',
               }}>MON BUT</Text>
               <Text
-                numberOfLines={4}
-                adjustsFontSizeToFit
-                minimumFontScale={0.8}
                 style={{
                   fontSize: width < 420 ? 15 : 17,
                   lineHeight: width < 420 ? 22 : 25,
