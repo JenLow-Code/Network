@@ -58,9 +58,9 @@ export function DetailLayout({
 
           <View style={{ paddingTop: item.type === 'music' ? 4 : item.type === 'dream' ? 0 : 22, paddingRight: 0 }}>
             {featured}
-            <View style={{ flexDirection: 'row', gap: 36, alignItems: 'flex-start' }}>
+            <View style={{ flexDirection: 'row', gap: 24, alignItems: 'stretch' }}>
               <View style={{ flex: 1, minWidth: 0 }}>{children}</View>
-              <View style={{ width: 42, alignSelf: 'flex-start', paddingTop: 12 }}>
+              <View style={{ width: 42, alignSelf: 'flex-end', justifyContent: 'flex-end', paddingBottom: 12 }}>
                 <ActionRail item={item} />
               </View>
             </View>
