@@ -84,30 +84,12 @@ export function DetailLayout({
 
           <View style={{ paddingTop: item.type === 'music' ? 4 : item.type === 'dream' ? 0 : 22, paddingRight: 0 }}>
             {featured}
-            {isDream ? (
-              <>
-                {/* Preserve the right-hand reactions in their existing end-aligned position.
-                    Dream accordion headings begin only once the reaction rail is finished. */}
-                <View
-                  style={{
-                    height: item.phase === 'Témoignage' ? 236 : 190,
-                    alignItems: 'flex-end',
-                    justifyContent: 'flex-end',
-                    paddingBottom: 12,
-                  }}
-                >
-                  <ActionRail item={item} />
-                </View>
-                <View>{children}</View>
-              </>
-            ) : (
-              <View style={{ flexDirection: 'row', gap: 24, alignItems: 'stretch' }}>
-                <View style={{ flex: 1, minWidth: 0 }}>{children}</View>
-                <View style={{ width: 42, alignSelf: 'flex-end', justifyContent: 'flex-end', paddingBottom: 12 }}>
-                  <ActionRail item={item} />
-                </View>
+            <View style={{ flexDirection: 'row', gap: 24, alignItems: 'stretch' }}>
+              <View style={{ flex: 1, minWidth: 0 }}>{children}</View>
+              <View style={{ width: 42, alignSelf: 'flex-end', justifyContent: 'flex-end', paddingBottom: 12 }}>
+                <ActionRail item={item} />
               </View>
-            )}
+            </View>
           </View>
           </View>
           <View style={{ marginTop: 42, borderTopWidth: isDream ? 0 : 0.5, borderTopColor: theme.border, paddingTop: 21 }}>
