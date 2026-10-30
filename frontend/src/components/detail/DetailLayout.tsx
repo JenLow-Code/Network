@@ -68,9 +68,9 @@ export function DetailLayout({
               <Svg width="100%" height="100%" style={StyleSheet.absoluteFill}>
                 <Defs>
                   <LinearGradient id={fadeId} x1="0%" y1="0%" x2="0%" y2="100%">
-                    <Stop offset="0%" stopColor={theme.background} stopOpacity={0.16} />
-                    <Stop offset="13%" stopColor={theme.background} stopOpacity={0.58} />
-                    <Stop offset="34%" stopColor={theme.background} stopOpacity={0.80} />
+                    <Stop offset="0%" stopColor={theme.background} stopOpacity={0.02} />
+                    <Stop offset="13%" stopColor={theme.background} stopOpacity={0.18} />
+                    <Stop offset="34%" stopColor={theme.background} stopOpacity={0.67} />
                     <Stop offset="65%" stopColor={theme.background} stopOpacity={0.94} />
                     <Stop offset="88%" stopColor={theme.background} stopOpacity={0.985} />
                     <Stop offset="100%" stopColor={theme.background} stopOpacity={1} />
@@ -84,12 +84,21 @@ export function DetailLayout({
 
           <View style={{ paddingTop: item.type === 'music' ? 4 : item.type === 'dream' ? 0 : 22, paddingRight: 0 }}>
             {featured}
-            <View style={{ flexDirection: 'row', gap: 24, alignItems: 'stretch' }}>
-              <View style={{ flex: 1, minWidth: 0 }}>{children}</View>
-              <View style={{ width: 42, alignSelf: 'flex-end', justifyContent: 'flex-end', paddingBottom: 12 }}>
-                <ActionRail item={item} />
+            {isDream ? (
+              <View style={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 48, flexDirection: 'row', gap: 20, alignItems: 'stretch' }}>
+                <View style={{ flex: 1, minWidth: 0 }}>{children}</View>
+                <View style={{ width: 42, alignSelf: 'flex-end', justifyContent: 'flex-end', paddingBottom: 0 }}>
+                  <ActionRail item={item} />
+                </View>
               </View>
-            </View>
+            ) : (
+              <View style={{ flexDirection: 'row', gap: 24, alignItems: 'stretch' }}>
+                <View style={{ flex: 1, minWidth: 0 }}>{children}</View>
+                <View style={{ width: 42, alignSelf: 'flex-end', justifyContent: 'flex-end', paddingBottom: 12 }}>
+                  <ActionRail item={item} />
+                </View>
+              </View>
+            )}
           </View>
           </View>
           <View style={{ marginTop: 42, borderTopWidth: isDream ? 0 : 0.5, borderTopColor: theme.border, paddingTop: 21 }}>
