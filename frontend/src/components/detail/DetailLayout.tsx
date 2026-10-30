@@ -57,6 +57,7 @@ export function DetailLayout({
         <DetailAuthorHeader item={item} />
 
         <View style={{ paddingHorizontal: 16 }}>
+          <View style={{ position: 'relative' }}>
           {isDream && (
             <View pointerEvents="none" style={[StyleSheet.absoluteFill, { left: 16, right: 16, bottom: 0, overflow: 'hidden' }]}>
               <Image
@@ -89,6 +90,7 @@ export function DetailLayout({
                 <ActionRail item={item} />
               </View>
             </View>
+          </View>
           </View>
           <View style={{ marginTop: 42, borderTopWidth: isDream ? 0 : 0.5, borderTopColor: theme.border, paddingTop: 21 }}>
             <Text
