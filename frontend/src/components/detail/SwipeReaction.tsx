@@ -86,6 +86,13 @@ export function SwipeReaction({ label, icon, onConfirm, active = false }: SwipeR
   const progress = translate.interpolate({
     inputRange: [-TRAVEL, 0], outputRange: [1, 0], extrapolate: 'clamp',
   });
+  // Match the capsule OUTLINE to the swipe progress, not just its fill.
+  const outlineColor = translate.interpolate({
+    inputRange: [-TRAVEL, 0],
+    outputRange: ['#CB245C', theme.dark ? '#797078' : '#BCAEB0'],
+    extrapolate: 'clamp',
+  });
+
   const labelOpacity = translate.interpolate({
     inputRange: [-TRAVEL, -TRAVEL * 0.65, -20, 0],
     outputRange: [1, 1, 0.1, 0],
@@ -103,7 +110,7 @@ export function SwipeReaction({ label, icon, onConfirm, active = false }: SwipeR
         pointerEvents="none"
         style={[
           styles.revealedPill,
-          { opacity: labelOpacity, backgroundColor: theme.dark ? '#2E2930' : '#F8F1EB' },
+          { opacity: labelOpacity, borderColor: outlineColor, backgroundColor: theme.dark ? '#2E2930' : '#F8F1EB' },
         ]}
       >
         <Animated.View
@@ -156,7 +163,7 @@ const styles = StyleSheet.create({
     height: 44,
     borderRadius: 23,
     borderWidth: 1,
-    borderColor: '#BCAEB0',
+    overflow: 'hidden',
     backgroundColor: '#F8F1EB',
   },
   labelArea: {
