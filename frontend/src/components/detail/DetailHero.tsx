@@ -58,10 +58,11 @@ export function DetailHero({
             <Defs>
               <LinearGradient id={id + '-editorial'} x1="0%" y1="0%" x2="0%" y2="100%">
                 <Stop offset="0%" stopColor={pageColor} stopOpacity={0.08} />
-                <Stop offset="15%" stopColor={pageColor} stopOpacity={0.24} />
-                <Stop offset="27%" stopColor={pageColor} stopOpacity={0.76} />
-                <Stop offset="43%" stopColor={pageColor} stopOpacity={0.93} />
-                <Stop offset="65%" stopColor={pageColor} stopOpacity={0.985} />
+                <Stop offset="15%" stopColor={pageColor} stopOpacity={0.34} />
+                <Stop offset="28%" stopColor={pageColor} stopOpacity={0.70} />
+                <Stop offset="52%" stopColor={pageColor} stopOpacity={0.81} />
+                <Stop offset="72%" stopColor={pageColor} stopOpacity={0.90} />
+                <Stop offset="90%" stopColor={pageColor} stopOpacity={0.97} />
                 <Stop offset="100%" stopColor={pageColor} stopOpacity={1} />
               </LinearGradient>
             </Defs>
@@ -73,7 +74,7 @@ export function DetailHero({
           <Text style={[styles.heroKicker, { color: '#FFFFFF', top: inset + 11, right: inset + 50 }]}>
             {PHASE_LABELS[item.phase].toUpperCase()}
           </Text>
-          {/* One content-sized photographic card: title, MON BUT and goal are inseparable. */}
+          {/* A single typographic group: title followed immediately by the description. */}
           <View
             pointerEvents="none"
             onLayout={event => {
@@ -89,7 +90,7 @@ export function DetailHero({
               right: 0,
               paddingTop: width < 420 ? 76 : 90,
               paddingHorizontal: inset,
-              paddingBottom: width < 420 ? 32 : 40,
+              paddingBottom: width < 420 ? 53 : 60,
             }}
           >
             <Text
@@ -112,17 +113,7 @@ export function DetailHero({
             >
               {item.title}
             </Text>
-            <View style={{ marginTop: 12, gap: 5, paddingLeft: 4 }}>
-              <Text
-                style={{
-                  fontSize: 10,
-                  fontWeight: '700',
-                  letterSpacing: 1.4,
-                  color: theme.dark ? '#F5C1D2' : '#B34D74',
-                }}
-              >
-                MON BUT
-              </Text>
+            <View style={{ marginTop: 10, paddingLeft: 4 }}>
               <Text
                 style={{
                   color: theme.foreground,
