@@ -2,7 +2,7 @@ import React, { useRef } from 'react';
 import { Animated, PanResponder, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-const TRAVEL = 112;
+const TRAVEL = 160;
 const SIZE = 42;
 const THRESHOLD = TRAVEL * 0.88;
 const DOUBLE_TAP_MS = 340;
@@ -93,6 +93,7 @@ export function SwipeReaction({ label, icon, onConfirm, active = false }: SwipeR
 
   return (
     <View style={styles.track}>
+      <Animated.View pointerEvents="none" style={[styles.revealedPill, { opacity: labelOpacity }]} />
       <Animated.View pointerEvents="none" style={[styles.labelArea, { opacity: labelOpacity }]}>
         <Text numberOfLines={1} style={styles.label}>{label}</Text>
       </Animated.View>
@@ -121,17 +122,29 @@ export function SwipeReaction({ label, icon, onConfirm, active = false }: SwipeR
 
 const styles = StyleSheet.create({
   track: { width: SIZE, height: 44, position: 'relative', overflow: 'visible' },
+  revealedPill: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    width: TRAVEL + SIZE,
+    height: 44,
+    borderRadius: 23,
+    borderWidth: 1,
+    borderColor: '#BCAEB0',
+    backgroundColor: '#F8F1EB',
+  },
   labelArea: {
     position: 'absolute',
-    right: SIZE,
+    right: SIZE + 9,
     top: 0,
-    width: TRAVEL,
+    width: TRAVEL - 17,
     height: 44,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 4,
+    paddingLeft: 15,
+    paddingRight: 2,
   },
-  label: { fontSize: 12, color: '#3A302D', fontWeight: '600' },
+  label: { fontSize: 12, color: '#3A302D', fontWeight: '600', textAlign: 'center' },
   handle: { position: 'absolute', right: 0, top: 1, zIndex: 2 },
   circle: {
     width: SIZE, height: SIZE, borderRadius: SIZE / 2,
