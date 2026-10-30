@@ -102,6 +102,7 @@ export function CassetteArtwork({
   artwork?: string;
   transparent?: boolean;
 }) {
+  const theme = useAppTheme();
   const cassetteId = useId().replace(/[^A-Za-z0-9_-]/g, '');
   const clipId = 'cassette-' + cassetteId;
   const reelId = 'reels-' + cassetteId;
@@ -110,7 +111,7 @@ export function CassetteArtwork({
   const cassetteHeight = cassetteWidth * (255 / 420);
 
   return (
-    <View style={[styles.musicCanvas, { width, height, backgroundColor: transparent ? 'transparent' : '#F0EAE0' }]}>
+    <View style={[styles.musicCanvas, { width, height, backgroundColor: transparent ? 'transparent' : theme.dark ? '#2C2D33' : '#F0EAE0' }]}>
       <View style={{ width: cassetteWidth, height: cassetteHeight, position: 'relative', transform: [{ translateY: tiny ? 7 : 11 }] }}>
         <Svg width="100%" height="100%" viewBox="0 0 420 255">
           <Defs>
@@ -189,12 +190,13 @@ export function BibleVerseCard({
   height: number;
 }) {
   const compact = width < 230;
+  const theme = useAppTheme();
   return (
     <View
       style={{
         width,
         height,
-        backgroundColor: '#F0EAE0',
+        backgroundColor: theme.dark ? '#2C2D33' : '#F0EAE0',
         paddingHorizontal: compact ? 14 : 26,
         paddingVertical: compact ? 18 : 27,
         justifyContent: 'center',
@@ -205,6 +207,7 @@ export function BibleVerseCard({
         <Text
           numberOfLines={1}
           style={[styles.bibleReference, {
+            color: theme.dark ? '#CFC9C4' : '#6B625B',
             fontSize: compact ? 9 : 11,
             marginBottom: compact ? 8 : 10,
           }]}
@@ -219,7 +222,7 @@ export function BibleVerseCard({
             fontFamily: 'serif',
             fontSize: compact ? 17 : Math.min(32, width * 0.06),
             lineHeight: compact ? 23 : Math.min(42, width * 0.082),
-            color: '#CB245C',
+            color: theme.dark ? '#FF88B2' : '#CB245C',
           }}
         >
           {verseExcerpt(item)}
@@ -265,7 +268,7 @@ function StoryCover({
   const isBible = item.type === 'bible';
   const isMusic = item.type === 'music';
   const illustrated = isTalent || isBible || isMusic;
-  const ink = illustrated ? '#26211D' : '#FFFFFF';
+  const ink = illustrated ? (theme.dark ? '#ECE7E1' : '#26211D') : '#FFFFFF';
   const small = scale === 'small';
   const inset = small ? (width < 220 ? 11 : 14) : scale === 'wide' ? 24 : 21;
   const titleSize = small
@@ -287,7 +290,7 @@ function StoryCover({
             styles.photoFrame,
             {
               backgroundColor: illustrated
-                  ? '#F0EAE0'
+                  ? (theme.dark ? '#2C2D33' : '#F0EAE0')
                   : theme.dark ? '#2B2B2B' : '#E8E2DA',
             },
           ]}
@@ -311,7 +314,7 @@ function StoryCover({
                         width: 8,
                         height: 8,
                         borderRadius: 4,
-                        backgroundColor: i < level ? color : '#D5D4D1',
+                        backgroundColor: i < level ? color : (theme.dark ? '#64666B' : '#D5D4D1'),
                       }}
                     />
                   );
@@ -409,7 +412,7 @@ function StoryCover({
                 style={{
                   fontSize: small && width < 220 ? 11 : 13,
                   lineHeight: 18,
-                  color: i === 0 ? '#26211D' : '#776E64',
+                  color: theme.dark ? (i === 0 ? '#ECE7E1' : '#B5B0AC') : (i === 0 ? '#26211D' : '#776E64'),
                   fontWeight: i === 0 ? '600' : '400',
                 }}
               >
