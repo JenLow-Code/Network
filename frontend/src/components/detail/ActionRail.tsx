@@ -72,6 +72,12 @@ export function ActionRail({ item }: { item: Publication }) {
     'audio-collab': 'mic-outline',
     'verse-export': 'download-outline',
   };
+  const shortLabels: Partial<Record<ActionId, string>> = {
+    fire: 'Fire', prayer: 'Prier', encourage: 'Encourager',
+    inspire: 'Inspirer', 'audio-collab': 'Collaborer',
+    'verse-export': 'Exporter', 'offer-help': 'Aider',
+    introduce: 'Présenter', 'share-external': 'Partager',
+  };
   const primary = permitted.filter(
     a => a !== 'share-internal' && a !== 'prayer' && a !== 'same-dream',
   );
@@ -80,7 +86,8 @@ export function ActionRail({ item }: { item: Publication }) {
       {[...primary, ...(permitted.includes('prayer') ? ['prayer' as ActionId] : [])].map(action => (
         <SwipeReaction
           key={action}
-          label={labels[action]}
+          label={shortLabels[action] || labels[action]}
+          fullLabel={labels[action]}
           onConfirm={() => activity(action)}
           active={
             (action === 'fire' && app.fireIds.includes(item.id)) ||
