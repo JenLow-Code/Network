@@ -1,4 +1,4 @@
-import React, { useId, useState } from 'react';
+import React, { useId } from 'react';
 import { Image, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
@@ -34,7 +34,6 @@ export function DetailHero({
   const titleSize = width < 420 ? 32 : width < 610 ? 39 : 46;
   const theme = useAppTheme();
   const pageColor = theme.background;
-  const [titleBottom, setTitleBottom] = useState(width < 420 ? 148 : 170);
 
   return (
     <View style={[styles.hero, {
@@ -51,29 +50,29 @@ export function DetailHero({
             resizeMode="cover"
             style={StyleSheet.absoluteFill}
           />
+          {/* Darken the whole photograph so title and goal use the same legible ink. */}
           <Svg pointerEvents="none" width="100%" height="100%" style={StyleSheet.absoluteFill}>
             <Defs>
               <LinearGradient id={id} x1="0%" y1="0%" x2="0%" y2="100%">
-                <Stop offset="0%" stopColor="#000" stopOpacity={0.32} />
-                <Stop offset="45%" stopColor="#000" stopOpacity={0.38} />
-                <Stop offset="100%" stopColor="#000" stopOpacity={0.65} />
+                <Stop offset="0%" stopColor="#000000" stopOpacity={0.23} />
+                <Stop offset="45%" stopColor="#000000" stopOpacity={0.56} />
+                <Stop offset="100%" stopColor="#000000" stopOpacity={0.68} />
               </LinearGradient>
             </Defs>
             <Rect width="100%" height="100%" fill={'url(#' + id + ')'} />
           </Svg>
-          {/* Position the fade after the measured title, not halfway through its letters. */}
-          <Svg pointerEvents="none" width="100%" height="100%" style={StyleSheet.absoluteFill}>
+          {/* Fade ONLY at the bottom of the photo — never through the heading or goal. */}
+          <Svg
+            pointerEvents="none"
+            width="100%"
+            height={92}
+            style={{ position: 'absolute', bottom: 0, left: 0, right: 0 }}
+          >
             <Defs>
-              <LinearGradient
-                id={id + '-fade'}
-                x1={0}
-                y1={Math.max(0, titleBottom - 6)}
-                x2={0}
-                y2={titleBottom + 27}
-                gradientUnits="userSpaceOnUse"
-              >
+              <LinearGradient id={id + '-fade'} x1="0%" y1="0%" x2="0%" y2="100%">
                 <Stop offset="0%" stopColor={pageColor} stopOpacity={0} />
-                <Stop offset="70%" stopColor={pageColor} stopOpacity={0.96} />
+                <Stop offset="40%" stopColor={pageColor} stopOpacity={0.23} />
+                <Stop offset="75%" stopColor={pageColor} stopOpacity={0.83} />
                 <Stop offset="100%" stopColor={pageColor} stopOpacity={1} />
               </LinearGradient>
             </Defs>
@@ -85,22 +84,19 @@ export function DetailHero({
           <Text style={[styles.heroKicker, { color: '#FFFFFF', top: inset + 11, right: inset + 50 }]}>
             {PHASE_LABELS[item.phase].toUpperCase()}
           </Text>
+          {/* One content-sized photographic card: title, MON BUT and goal are inseparable. */}
           <View
             pointerEvents="none"
             style={{
-              paddingTop: width < 420 ? 80 : 86,
+              paddingTop: width < 420 ? 82 : 92,
               paddingHorizontal: inset,
-              paddingBottom: 22,
+              paddingBottom: 98,
             }}
           >
             <Text
               numberOfLines={3}
               adjustsFontSizeToFit
               minimumFontScale={0.75}
-              onLayout={event => {
-                const next = Math.round(event.nativeEvent.layout.y + event.nativeEvent.layout.height);
-                setTitleBottom(previous => Math.abs(previous - next) > 1 ? next : previous);
-              }}
               style={[
                 styles.headline,
                 {
@@ -111,7 +107,7 @@ export function DetailHero({
                     ios: 'Georgia',
                     default: 'serif',
                   }),
-                  textShadowColor: 'rgba(0,0,0,0.6)',
+                  textShadowColor: 'rgba(0,0,0,0.57)',
                   textShadowOffset: { width: 0, height: 2 },
                   textShadowRadius: 4,
                 },
@@ -119,18 +115,25 @@ export function DetailHero({
             >
               {item.title}
             </Text>
-            <View style={{ marginTop: 17, paddingLeft: 5, gap: 6 }}>
-              <Text style={{
-                fontSize: 10,
-                fontWeight: '700',
-                letterSpacing: 1.4,
-                color: theme.dark ? '#E2A4B8' : '#8C676A',
-              }}>MON BUT</Text>
+            <View style={{ marginTop: 12, gap: 5, paddingLeft: 4 }}>
               <Text
                 style={{
+                  fontSize: 10,
+                  fontWeight: '700',
+                  letterSpacing: 1.4,
+                  color: '#F5C1D2',
+                }}
+              >
+                MON BUT
+              </Text>
+              <Text
+                style={{
+                  color: '#FFFFFF',
                   fontSize: width < 420 ? 15 : 17,
                   lineHeight: width < 420 ? 22 : 25,
-                  color: theme.foreground,
+                  textShadowColor: 'rgba(0,0,0,0.57)',
+                  textShadowOffset: { width: 0, height: 1 },
+                  textShadowRadius: 3,
                 }}
               >
                 {item.summary}
