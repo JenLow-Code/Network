@@ -169,9 +169,9 @@ const styles = StyleSheet.create({
   },
   labelArea: {
     position: 'absolute',
-    right: SIZE + 2,
+    right: 0,
     top: 0,
-    width: TRAVEL - 7,
+    width: TRAVEL - SIZE - 6,
     height: 44,
     justifyContent: 'center',
     alignItems: 'center',
