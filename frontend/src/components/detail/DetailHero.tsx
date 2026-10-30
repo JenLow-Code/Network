@@ -1,7 +1,6 @@
-import React, { useId, useState } from 'react';
-import { Image, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useState } from 'react';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import type { Publication } from '@/domain/publication';
 import { PHASE_LABELS } from '@/domain/publication';
 import { DreamPhaseIcon } from '@/icons/DreamPhaseIcon';
@@ -27,11 +26,9 @@ export function DetailHero({
   onMusicPress?: () => void;
   musicPlaying?: boolean;
 }) {
-  const id = useId().replace(/[^a-zA-Z0-9_-]/g, '');
   const isDream = item.type === 'dream';
   const inset = width < 420 ? 20 : 31;
   const theme = useAppTheme();
-  const pageColor = theme.background;
   // Explicit pixel height avoids percentage-sized image overlays stretching the Dream card.
   // Updated from the measured title + goal; no fixed desktop-sized blank region.
   const [measuredDreamHeight, setMeasuredDreamHeight] = useState(0);
@@ -42,32 +39,12 @@ export function DetailHero({
       width,
       // The image and its overlays always have the same finite height.
       height: isDream ? dreamHeight : height,
-      backgroundColor: isDream ? pageColor : item.type === 'music' ? 'transparent' : '#F0EAE0',
+      backgroundColor: isDream || item.type === 'music' ? 'transparent' : '#F0EAE0',
     }]}>
       {isDream ? (
         <>
-          <Image
-            source={{ uri: item.image }}
-            accessibilityLabel={item.imageAlt}
-            resizeMode="cover"
-            style={StyleSheet.absoluteFill}
-          />
-          {/* One photo-to-page fade across the ENTIRE image, not a bottom strip.
-              Title and goal share the same photographic surface. */}
-          <Svg pointerEvents="none" width={width} height={dreamHeight} style={StyleSheet.absoluteFill}>
-            <Defs>
-              <LinearGradient id={id + '-editorial'} x1="0%" y1="0%" x2="0%" y2="100%">
-                <Stop offset="0%" stopColor={pageColor} stopOpacity={0.08} />
-                <Stop offset="15%" stopColor={pageColor} stopOpacity={0.34} />
-                <Stop offset="28%" stopColor={pageColor} stopOpacity={0.70} />
-                <Stop offset="52%" stopColor={pageColor} stopOpacity={0.81} />
-                <Stop offset="72%" stopColor={pageColor} stopOpacity={0.90} />
-                <Stop offset="90%" stopColor={pageColor} stopOpacity={0.97} />
-                <Stop offset="100%" stopColor={pageColor} stopOpacity={1} />
-              </LinearGradient>
-            </Defs>
-            <Rect width="100%" height="100%" fill={'url(#' + id + '-editorial)'} />
-          </Svg>
+          {/* The photo and fade live in DetailLayout behind the entire Dream article,
+              including the expandable sections. Keep only content here. */}
           <View pointerEvents="none" style={[styles.phaseIcon, { right: inset, top: inset }]}>
             <DreamPhaseIcon phase={item.phase} size={30} />
           </View>
