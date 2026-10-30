@@ -2,13 +2,14 @@ import React, { useRef } from 'react';
 import { Animated, PanResponder, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useAppTheme } from '@/theme/AppTheme';
 
-const TRAVEL = 160;
+const TRAVEL = 108;
 const SIZE = 42;
 const THRESHOLD = TRAVEL * 0.88;
 const DOUBLE_TAP_MS = 340;
 
 type SwipeReactionProps = {
   label: string;
+  fullLabel?: string;
   icon: React.ReactNode;
   onConfirm: () => void;
   active?: boolean;
@@ -22,7 +23,7 @@ type SwipeReactionProps = {
  * The responder only claims horizontal motion, leaving vertical page scrolling
  * alone. Use the native accessibility activate action as a non-gesture path.
  */
-export function SwipeReaction({ label, icon, onConfirm, active = false }: SwipeReactionProps) {
+export function SwipeReaction({ label, fullLabel, icon, onConfirm, active = false }: SwipeReactionProps) {
   const theme = useAppTheme();
   const translate = useRef(new Animated.Value(0)).current;
   const callback = useRef(onConfirm);
@@ -137,7 +138,7 @@ export function SwipeReaction({ label, icon, onConfirm, active = false }: SwipeR
         <Pressable
           onPress={onTap}
           accessibilityRole="button"
-          accessibilityLabel={label}
+          accessibilityLabel={fullLabel || label}
           accessibilityHint="Glisser à gauche ou toucher deux fois pour confirmer"
           accessibilityActions={[{ name: 'activate', label: 'Confirmer ' + label }]}
           onAccessibilityAction={event => {
@@ -168,9 +169,9 @@ const styles = StyleSheet.create({
   },
   labelArea: {
     position: 'absolute',
-    right: 0,
+    right: SIZE + 2,
     top: 0,
-    width: TRAVEL - SIZE - 6,
+    width: TRAVEL - 7,
     height: 44,
     justifyContent: 'center',
     alignItems: 'center',
