@@ -184,10 +184,12 @@ export function BibleVerseCard({
   item,
   width,
   height,
+  adaptive = false,
 }: {
   item: Extract<Publication, { type: 'bible' }>;
   width: number;
   height: number;
+  adaptive?: boolean;
 }) {
   const compact = width < 230;
   const theme = useAppTheme();
@@ -215,8 +217,8 @@ export function BibleVerseCard({
           {item.reference.toUpperCase()}
         </Text>
         <Text
-          numberOfLines={compact ? 7 : 9}
-          adjustsFontSizeToFit
+          numberOfLines={adaptive ? undefined : compact ? 7 : 9}
+          adjustsFontSizeToFit={!adaptive}
           minimumFontScale={0.7}
           style={{
             fontFamily: 'serif',
@@ -256,11 +258,13 @@ function StoryCover({
   width,
   height,
   scale,
+  adaptive = false,
 }: {
   item: Publication;
   width: number;
   height: number;
   scale: StoryScale;
+  adaptive?: boolean;
 }) {
   const shadeId = useId().replace(/[^a-zA-Z0-9_-]/g, '');
   const theme = useAppTheme();
@@ -322,7 +326,7 @@ function StoryCover({
               </View>
             </View>
           ) : isBible ? (
-            <BibleVerseCard item={item} width={width} height={height} />
+            <BibleVerseCard item={item} width={width} height={height} adaptive={adaptive} />
           ) : isMusic ? (
             <CassetteArtwork
               width={width}
@@ -379,8 +383,8 @@ function StoryCover({
             ]}
           >
             <Text
-              numberOfLines={3}
-              adjustsFontSizeToFit
+              numberOfLines={adaptive ? undefined : 3}
+              adjustsFontSizeToFit={!adaptive}
               minimumFontScale={0.8}
               style={[
                 styles.storyTitle,
@@ -487,6 +491,84 @@ function ArticleRow({
 }
 
 /**
+ * One column per card, without featured spans. Only the Discovery screen uses
+ * this variation; detail-page related publications retain the editorial gallery.
+ * Heights estimate the full copy so long Dreams and Bible verses are not clipped.
+ */
+function estimatedLines(copy: string, width: number, fontSize: number): number {
+  const maxChars = Math.max(8, Math.floor(width / (fontSize * 0.56)));
+  let lines = 1;
+  let used = 0;
+  for (const word of copy.split(/\s+/).filter(Boolean)) {
+    const length = word.length;
+    if (used > 0 && used + 1 + length > maxChars) {
+      lines += 1;
+      used = 0;
+    }
+    if (length > maxChars) {
+      lines += Math.floor((length - 1) / maxChars);
+      used = length % maxChars || maxChars;
+    } else {
+      used += (used ? 1 : 0) + length;
+    }
+  }
+  return lines;
+}
+
+function adaptiveTileHeight(item: Publication, width: number): number {
+  if (item.type === 'bible') {
+    const compact = width < 230;
+    const fontSize = compact ? 17 : Math.min(32, width * 0.06);
+    const lineHeight = compact ? 23 : Math.min(42, width * 0.082);
+    const verseWidth = width - (compact ? 28 : 52);
+    const lines = estimatedLines(verseExcerpt(item), verseWidth, fontSize);
+    return Math.max(160, Math.ceil(lines * lineHeight + (compact ? 94 : 112)));
+  }
+  if (item.type === 'dream') {
+    const fontSize = width < 195 ? 17 : 20;
+    const inset = width < 220 ? 11 : 14;
+    const lines = estimatedLines(item.title, width - inset * 2, fontSize);
+    // Room for the phase badge, readable title, and photography.
+    return Math.max(Math.round(width * 1.08), 98 + lines * (fontSize + 6));
+  }
+  if (item.type === 'music') return Math.max(184, Math.round(width * 1.12));
+  return Math.max(190, Math.round(width * 1.17));
+}
+
+function MasonryGallery({ items, viewportWidth }: { items: Publication[]; viewportWidth: number }) {
+  const columns = viewportWidth >= 1100 ? 4 : viewportWidth >= 700 ? 3 : 2;
+  const gap = viewportWidth < 700 ? 12 : viewportWidth < 1100 ? 17 : 19;
+  const contentWidth = Math.max(0, Math.min(920, viewportWidth) - 30);
+  const columnWidth = Math.max(0, (contentWidth - (columns - 1) * gap) / columns);
+  const stacks: Publication[][] = Array.from({ length: columns }, () => []);
+  const heights = Array.from({ length: columns }, () => 0);
+  for (const item of items) {
+    // Balance varying heights while retaining the incoming order inside each column.
+    const shortest = heights.indexOf(Math.min(...heights));
+    stacks[shortest].push(item);
+    heights[shortest] += adaptiveTileHeight(item, columnWidth) + gap;
+  }
+  return (
+    <View style={{ width: '100%', paddingHorizontal: 15, paddingBottom: 18, flexDirection: 'row', alignItems: 'flex-start', gap }}>
+      {stacks.map((stack, index) => (
+        <View key={'column-' + index} style={{ width: columnWidth, gap }}>
+          {stack.map(item => (
+            <StoryCover
+              key={item.id}
+              item={item}
+              width={columnWidth}
+              height={adaptiveTileHeight(item, columnWidth)}
+              scale="small"
+              adaptive
+            />
+          ))}
+        </View>
+      ))}
+    </View>
+  );
+}
+
+/**
  * Deliberate reading rhythm:
  *   featured cover + two smaller image covers;
  *   occasional full-width feature with integrated typography;
@@ -494,7 +576,7 @@ function ArticleRow({
  *
  * Filtering works at every length without empty cells or anonymous image blocks.
  */
-export function PublicationGallery({ items }: { items: Publication[] }) {
+export function PublicationGallery({ items, layout = 'editorial' }: { items: Publication[]; layout?: 'editorial' | 'masonry' }) {
   const { width: windowWidth } = useWindowDimensions();
   const compact = windowWidth < 700;
   const contentWidth = Math.max(0, Math.min(920, windowWidth) - 30);
@@ -502,6 +584,7 @@ export function PublicationGallery({ items }: { items: Publication[] }) {
   const gap = compact ? 28 : 36;
 
   if (!items.length) return null;
+  if (layout === 'masonry') return <MasonryGallery items={items} viewportWidth={windowWidth} />;
 
   const sections: React.ReactNode[] = [];
   let index = 0;
