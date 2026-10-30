@@ -81,7 +81,7 @@ export default function Bible() {
             accessibilityRole="header"
             style={{ fontFamily: 'serif', fontSize: compact ? 29 : 32, lineHeight: 40, color: theme.foreground }}
           >
-            Psaume 150
+            Psaume 150:{shared}
           </Text>
           <Text style={{ fontSize: 10, letterSpacing: 1.4, color: theme.muted }}>
             LOUIS SEGOND 1910
