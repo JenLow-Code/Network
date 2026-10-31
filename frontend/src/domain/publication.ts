@@ -29,7 +29,18 @@ export type DreamPublication = PublicationBase & {
   goalDate?: string;
   logs?: string[];
   galleryImages?: string[];
-  resources?: { title: string; confirmed: boolean }[];
+  resources?: {
+    title: string;
+    confirmed: boolean;
+    /** Distinguishes actual people from equipment/venues and future financial resources. */
+    category?: 'person' | 'practical' | 'financial';
+    /** JenLow's existing talent artwork; only shown for person resources. */
+    illustration?: 'drums' | 'cello' | 'trumpet' | 'acoustic-guitar' | 'singing'
+      | 'bass' | 'violin' | 'saxophone' | 'piano' | 'double-bass'
+      | 'ukulele' | 'electric-guitar' | 'guitar' | 'cavaquinho' | 'viola' | 'camera';
+    /** A requested proficiency, not the proficiency of a confirmed volunteer. */
+    requiredLevel?: string;
+  }[];
   resolvedNeeds?: string[];
   category?: string;
   journalEntry?: { text: string; date?: string };
