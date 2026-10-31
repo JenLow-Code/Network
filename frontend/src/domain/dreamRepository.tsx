@@ -124,7 +124,7 @@ export function DreamProvider({ children }: { children: React.ReactNode }) {
   const transitionToGrowth: Repo['transitionToGrowth'] = id => setItems(p => p.map(d => {
     if (d.id !== id || d.phase !== 'Initiation') return d;
     const resources = d.resources || [];
-    const dateValid = !!d.goalDate && /^\\d{4}-\\d{2}-\\d{2}$/.test(d.goalDate) && !Number.isNaN(Date.parse(d.goalDate));
+    const dateValid = !!d.goalDate && /^\d{4}-\d{2}-\d{2}$/.test(d.goalDate) && !Number.isNaN(Date.parse(d.goalDate));
     if (!dateValid || resources.some(r => !r.confirmed)) return d;
     return { ...d, phase: 'Croissance', visibility: 'public', growthStartedAt: new Date().toISOString(), chat: d.chat || { id: 'dream-' + d.id, messages: [] } };
   }));
