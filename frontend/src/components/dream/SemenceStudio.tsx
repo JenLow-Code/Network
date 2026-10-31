@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Alert, Image, Linking, Modal, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import React, { useRef, useState } from 'react';
+import { Alert, Image, Linking, Modal, PanResponder, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useDreams } from '@/domain/dreamRepository';
 import { router } from 'expo-router';
@@ -27,15 +27,15 @@ function BlockView({block,edit,onTap}:{block:DreamBlock;edit:boolean;onTap:()=>v
  const ink=block.ink==='white'||block.tone==='charcoal'?'#FFFFFF':block.ink==='pink'?PINK:block.ink==='green'?'#3C7951':block.ink==='muted'?'#7F7977':'#282526';
  const font=block.font==='handwritten'?HANDWRITING_FAMILY:block.font==='serif'?'serif':block.font==='mono'?'monospace':undefined;
  const textSize=block.kind==='heading1'?32:block.kind==='heading2'?24:block.kind==='heading3'?19:block.kind==='quote'?23:block.size==='featured'?20:15;
- const width=block.size==='small'?'48.5%':'100%';
+ const width='100%';
  const words=block.content.split('\n').filter(Boolean);
  const containsMedia=mediaKinds.includes(block.kind);
  const urls=(block.media?.length?block.media:block.content.split('\n')).filter(s=>isUrl(s.trim()));
  const actionable=edit||['toggle','accordion','todo'].includes(block.kind);
  const open=()=>{if(edit)onTap();else if(block.kind==='toggle'||block.kind==='accordion')setExpanded(!expanded);else if(block.kind==='todo')setChecked(!checked);else if(['link','bookmark','embed','audio','music','video','pdf','document'].includes(block.kind))linkOpen(block.content);};
- return <View style={{width,marginBottom:9}}>
+ return <View style={{width,marginBottom:0}}>
   <Pressable onPress={open} disabled={!actionable&&!['link','bookmark','embed','audio','music','video','pdf','document'].includes(block.kind)} accessibilityRole={actionable?'button':undefined} accessibilityLabel={edit?'Modifier '+(block.title||block.content.slice(0,20)):undefined}
-   style={{backgroundColor:tone, borderWidth:block.frame==='outline'?1:0,borderColor:'#C6BEB8',borderRadius:block.frame==='none'?0:12,overflow:'hidden',padding:containsMedia?0:block.kind==='divider'?7:block.kind==='spacer'?4:16,minHeight:block.kind==='spacer'?35:block.kind==='divider'?23:block.size==='featured'?180:block.size==='small'?88:45,justifyContent:'center'}}>
+   style={{backgroundColor:tone, borderWidth:block.frame==='outline'?1:0,borderColor:'#C6BEB8',borderRadius:block.frame==='none'?0:12,overflow:'hidden',padding:containsMedia?0:block.kind==='divider'?7:block.kind==='spacer'?4:16,minHeight:block.height|| (block.kind==='spacer'?35:block.kind==='divider'?23:block.size==='featured'?180:block.size==='small'?88:45),justifyContent:'center'}}>
     {block.kind==='divider'?<View style={{height:1,backgroundColor:ink,opacity:.22}}/>:block.kind==='spacer'?null:
      block.kind==='image'||block.kind==='gallery'?<View style={{flexDirection:'row',flexWrap:'wrap',gap:3}}>{urls.map((url,i)=><Image key={i} source={{uri:url}} style={{width:block.kind==='gallery'?'48%':'100%',height:block.kind==='gallery'?115:block.size==='featured'?260:176}} resizeMode="cover"/>)}</View>:
      <View style={{gap:5,padding:containsMedia?15:0}}>
@@ -58,15 +58,46 @@ function BlockView({block,edit,onTap}:{block:DreamBlock;edit:boolean;onTap:()=>v
   {edit?<Pressable onPress={onTap} style={{alignSelf:'flex-end',paddingHorizontal:11,paddingVertical:5}} accessibilityLabel="Modifier ce bloc"><Ionicons name="options-outline" size={17} color="#8A8281"/></Pressable>:null}
  </View>;
 }
+function CanvasTile({block,index,editable,theme,onEdit,onMove,onResize,onStart,onFinish,onHover,dragging,highlight}:{block:DreamBlock;index:number;editable:boolean;theme:{foreground:string;muted:string;border:string;surface:string};onEdit:()=>void;onMove:(from:number,to:number)=>void;onResize:(id:string,span:1|2,height:number)=>void;onStart:(index:number)=>void;onFinish:()=>void;onHover:(index:number)=>void;dragging:boolean;highlight:boolean}) {
+ const position=useRef({x:0,y:0});
+ const size=useRef({span:block.span||(block.size==='small'?1:2),height:block.height||0});
+ size.current={span:block.span||(block.size==='small'?1:2),height:block.height||0};
+ const drag=useRef(PanResponder.create({
+  onStartShouldSetPanResponder:()=>true,
+  onMoveShouldSetPanResponder:()=>true,
+  onPanResponderGrant:()=>{position.current={x:0,y:0};onStart(index);},
+  onPanResponderMove:(_,g)=>{position.current={x:g.dx,y:g.dy};const stride=110;const to=Math.max(0,index+Math.round(g.dy/stride)*2+Math.round(g.dx/145));onHover(to);},
+  onPanResponderRelease:(_,g)=>{const target=Math.max(0,index+Math.round(g.dy/110)*2+Math.round(g.dx/145));onMove(index,target);onFinish();},
+  onPanResponderTerminate:onFinish,
+ })).current;
+ const resize=useRef(PanResponder.create({
+  onStartShouldSetPanResponder:()=>true,
+  onMoveShouldSetPanResponder:()=>true,
+  onPanResponderRelease:(_,g)=>{const nextSpan:1|2=g.dx>28?2:g.dx< -28?1:size.current.span as 1|2;const nextHeight=Math.max(0,Math.min(540,(size.current.height||110)+Math.round(g.dy/28)*28));onResize(block.id,nextSpan,nextHeight);},
+ })).current;
+ return <View style={{width:(block.span||(block.size==='small'?1:2))===1?'48.5%':'100%',paddingBottom:12,opacity:dragging?.60:1}}>
+  <View style={{borderWidth:highlight?2:0,borderColor:'#D71D77',borderRadius:12}}>
+   <BlockView block={block} edit={false} onTap={onEdit}/>
+  </View>
+  {editable?<View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',marginTop:4,paddingHorizontal:5}}>
+    <View {...drag.panHandlers} style={{paddingVertical:8,paddingHorizontal:12,backgroundColor:theme.surface,borderRadius:8,borderWidth:1,borderColor:theme.border}}><Ionicons name="reorder-three-outline" size={19} color={theme.foreground}/></View>
+    <Pressable onPress={onEdit} style={{padding:8}}><Ionicons name="options-outline" size={18} color={theme.muted}/></Pressable>
+    <View {...resize.panHandlers} style={{paddingVertical:8,paddingHorizontal:12,backgroundColor:theme.surface,borderRadius:8,borderWidth:1,borderColor:theme.border}}><Ionicons name="resize-outline" size={19} color="#D71D77"/></View>
+  </View>:null}
+ </View>;
+}
 export default function SemenceStudio({dream,onBack}:{dream:DreamEntry;onBack:()=>void}){
  const theme=useAppTheme(); const {patch,advance}=useDreams();const editable=dream.phase==='Rêve';
  const blocks=dream.blocks||[];
  const [edit,setEdit]=useState(editable);const [library,setLibrary]=useState(false);const [query,setQuery]=useState('');
  const [draft,setDraft]=useState<DreamBlock|null>(null);const [insertAt,setInsertAt]=useState<number|null>(null);
  const [confirm,setConfirm]=useState(false);
+ const [dragIndex,setDragIndex]=useState<number|null>(null);const [hoverIndex,setHoverIndex]=useState<number|null>(null);
  const base=(kind:DreamBlockKind):DreamBlock=>({id:newId(),kind,title:'',content:'',size:'wide',tone:'clear',font:'sans',align:'left',frame:'none'});
  const change=(field:Partial<DreamBlock>)=>setDraft(prev=>prev?{...prev,...field}:prev);
  const save=()=>{if(!draft)return;const updated=[...blocks];const i=updated.findIndex(x=>x.id===draft.id);if(i>=0)updated[i]=draft;else updated.splice(insertAt===null?updated.length:insertAt,0,draft);patch(dream.id,{blocks:updated});setDraft(null);setLibrary(false);setInsertAt(null);};
+ const reorder=(from:number,to:number)=>{if(from===to)return;const a=[...blocks];if(from<0||from>=a.length)return;const [item]=a.splice(from,1);a.splice(Math.min(Math.max(0,to),a.length),0,item);patch(dream.id,{blocks:a});};
+ const resizeBlock=(id:string,span:1|2,height:number)=>{patch(dream.id,{blocks:blocks.map(b=>b.id===id?{...b,span,height,size:span===1?'small':height>=190?'featured':'wide'}:b)});};
  const move=(id:string,step:number)=>{const a=[...blocks],i=a.findIndex(b=>b.id===id),j=i+step;if(i<0||j<0||j>=a.length)return;[a[i],a[j]]=[a[j],a[i]];patch(dream.id,{blocks:a});};
  const alert=(message:string)=>Platform.OS==='web'?window.alert(message):Alert.alert('Semence',message);
  const chooseMedia=()=>{if(!draft)return;pickFlowerMedia(items=>{if(!items.length)return;change({content:items[0].uri,media:[...(draft.media||[]),...items.map(x=>x.uri)]});},alert);};
@@ -91,16 +122,10 @@ export default function SemenceStudio({dream,onBack}:{dream:DreamEntry;onBack:()
    </View>:null}
   {blocks.length===0&&!edit&&editable?<Pressable onPress={()=>{setEdit(true);chooser(null);}} style={{minHeight:200,justifyContent:'center',alignItems:'center',borderWidth:1,borderStyle:'dashed',borderColor:theme.border,borderRadius:14}}><Ionicons name="add" color={theme.muted} size={24}/><Text style={{fontSize:13,color:theme.muted,marginTop:10}}>Un espace pour toutes tes inspirations.</Text></Pressable>:null}
   {edit&&!draft&&!library?<Pressable onPress={()=>chooser(0)} style={{paddingVertical:14,alignItems:'center'}}><Ionicons name="add-circle-outline" size={22} color={PINK}/></Pressable>:null}
-  <View style={{flexDirection:'row',flexWrap:'wrap',justifyContent:'space-between'}}>
-   {blocks.map((b,i)=><React.Fragment key={b.id}>
-     <BlockView block={b} edit={edit&&!library&&!draft} onTap={()=>{setDraft({...b});setLibrary(false);}}/>
-     {edit&&!library&&!draft?<View style={{width:'100%',flexDirection:'row',justifyContent:'flex-end',gap:14,marginBottom:14}}>
-      <Pressable onPress={()=>move(b.id,-1)} accessibilityLabel="Monter"><Ionicons name="arrow-up" color={theme.muted} size={19}/></Pressable>
-      <Pressable onPress={()=>move(b.id,1)} accessibilityLabel="Descendre"><Ionicons name="arrow-down" color={theme.muted} size={19}/></Pressable>
-      <Pressable onPress={()=>chooser(i+1)} accessibilityLabel="Insérer après"><Ionicons name="add-circle-outline" color={PINK} size={20}/></Pressable>
-     </View>:null}
-   </React.Fragment>)}
+  <View style={{flexDirection:'row',flexWrap:'wrap',justifyContent:'space-between',alignItems:'flex-start'}}>
+   {blocks.map((b,i)=><CanvasTile key={b.id} block={b} index={i} editable={edit&&!library&&!draft} theme={theme} onEdit={()=>{setDraft({...b});setLibrary(false);}} onMove={reorder} onResize={resizeBlock} onStart={setDragIndex} onFinish={()=>{setDragIndex(null);setHoverIndex(null);}} onHover={setHoverIndex} dragging={dragIndex===i} highlight={hoverIndex===i&&dragIndex!==i}/>)}
   </View>
+  {dragIndex!==null?<Text style={{fontSize:11,color:PINK,marginBottom:10}}>Déplace le bloc avec la poignée de gauche, relâche pour l'insérer.</Text>:null}
   {edit&&!draft&&!library?<Pressable onPress={()=>chooser(null)} style={{paddingVertical:14,alignItems:'center',borderTopWidth:1,borderColor:theme.border}}><Text style={{color:PINK,fontWeight:'700'}}>＋ Ajouter un bloc</Text></Pressable>:null}
   <Modal visible={library || !!draft} animationType="slide" transparent={false} onRequestClose={()=>{setDraft(null);setLibrary(false);}}>
    <View style={{flex:1,backgroundColor:theme.background,paddingTop:Platform.OS==='web'?12:42}}>
