@@ -35,6 +35,12 @@ export type DreamEntry = {
   id: string;
   title: string;
   phase: DreamPhase;
+  /** Accepted co-owner names only; never display raw account IDs as names. */
+  coOwners?: { userId: string; name: string; accepted: boolean }[];
+  /** Populated by a trusted aggregate once social reactions are connected. */
+  encouragementCount?: number;
+  /** Canonical finished-cover image: same asset the Discovery card should reference. */
+  resultImage?: string;
   visibility?: 'private' | 'public';
   blocks?: DreamBlock[];
   resources?: DreamResource[];
