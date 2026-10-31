@@ -22,7 +22,11 @@ export default function FlowerPreparation() {
   const patch = (update: Partial<typeof draft>) =>
     setFlowerDraft(dream.id, { ...draft, ...update });
   const publish = () => {
-    if (!draft.story.trim()) return;
+    const finalPhoto = draft.attachments.find(item => item.kind === 'photo');
+    if (!draft.story.trim() || !finalPhoto) {
+      Alert.alert('Floraison', 'Une histoire et une photographie sont nécessaires pour finaliser le rêve et préparer sa couverture Discovery.');
+      return;
+    }
     complete(
       dream.id,
       draft.story.trim(),
@@ -35,7 +39,7 @@ export default function FlowerPreparation() {
             : 'text',
       draft.attachments[0]?.uri,
     );
-    router.replace('/my-space');
+    router.replace({ pathname: '/my-dream/[id]', params: { id: dream.id } });
   };
   const validReminder = (s: string) =>
     /^\d{4}-\d{2}-\d{2}$/.test(s) &&
@@ -132,6 +136,7 @@ export default function FlowerPreparation() {
             </Pressable>
           </View>
         ))}
+        <Text style={{ fontSize: 12, color: '#D71D77' }}>Une photographie est requise pour finaliser cette floraison. C'est la même image qui servira de couverture dans Discovery.</Text>
         <Text style={{ fontSize: 11, color: '#888' }}>
           Démonstration : fichiers locaux du navigateur, maximum 2 Mo chacun. Pas de publication
           serveur ni de partage entre appareils.
@@ -186,11 +191,11 @@ export default function FlowerPreparation() {
           </>
         ) : (
           <Pressable
-            disabled={!draft.story.trim()}
+            disabled={!draft.story.trim() || !draft.attachments.some(a => a.kind === 'photo')}
             onPress={publish}
             style={{
               padding: 15,
-              backgroundColor: draft.story.trim() ? '#222' : '#bbb',
+              backgroundColor: draft.story.trim() && draft.attachments.some(a => a.kind === 'photo') ? '#D71D77' : '#bbb',
               borderRadius: 10,
               alignItems: 'center',
             }}
