@@ -8,6 +8,8 @@ import { DreamPhaseIcon } from '@/icons/DreamPhaseIcon';
 import { useAppTheme } from '@/theme/AppTheme';
 import { HANDWRITING_FAMILY } from '@/theme/handwriting';
 import { useApp } from '@/context/AppContext';
+import { TalentArt, type TalentIllustration } from '@/components/talent/TalentArt';
+import { TalentLevelDots } from '@/components/talent/TalentLevelDots';
 
 type Props = {
   item: DreamPublication;
@@ -62,51 +64,52 @@ function MediaImage({ uri, height }: { uri: string; height: number }) {
   );
 }
 
-/** Each resource has an actual confirmed state; this is not an artificial percentage. */
-function ResourceSteps({
-  resources, compact, dark,
-}: {
-  resources: { title: string; confirmed: boolean }[];
+type PersonNeed = {
+  title: string;
+  confirmed: boolean;
+  illustration?: TalentIllustration;
+  requiredLevel?: string;
+};
+
+function PersonResourceTiles({ resources, width, compact, dark }: {
+  resources: PersonNeed[];
+  width: number;
   compact: boolean;
   dark: boolean;
 }) {
-  const total = resources.length;
-  const remaining = resources.filter(resource => !resource.confirmed).length;
-  const visible = resources.slice(0, compact ? 6 : 9);
+  // Four across only when there's space; two across on narrow Discovery cards.
+  const columns = compact ? (width < 270 ? 2 : 3) : (width < 510 ? 3 : 4);
+  const gap = compact ? 8 : 12;
+  const contentWidth = Math.max(0, width - (compact ? (width < 205 ? 26 : 34) : (width < 440 ? 46 : 64)));
+  const tileWidth = Math.floor((contentWidth - gap * (columns - 1)) / columns);
   return (
-    <View style={{ gap: compact ? 9 : 12 }}>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: compact ? 5 : 7 }}>
-        {visible.map((resource, i) => (
-          <View
-            key={resource.title + '-' + i}
-            accessibilityLabel={resource.title + (resource.confirmed ? ' : confirmée' : ' : à trouver')}
-            style={{
-              width: compact ? 27 : 44,
-              height: compact ? 26 : 37,
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: resource.confirmed ? '#9DB861' : (dark ? '#404144' : '#D5D1CB'),
-              borderRadius: 5,
-            }}
-          >
-            {resource.confirmed && <Ionicons name="checkmark" size={compact ? 16 : 20} color="#FFFFFF" />}
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap, alignItems: 'flex-start' }}>
+      {resources.map((resource, index) => (
+        <View
+          key={resource.title + '-' + index}
+          style={{ width: tileWidth, alignItems: 'center', gap: compact ? 6 : 8 }}
+          accessibilityLabel={resource.title + (resource.confirmed ? ', confirmé' : ', recherché') + (resource.requiredLevel ? ', niveau ' + resource.requiredLevel : '')}
+        >
+          <View style={{
+            width: tileWidth, height: compact ? Math.max(52, tileWidth * 0.85) : Math.max(90, tileWidth * 0.87),
+            backgroundColor: resource.confirmed ? '#9DB861' : (dark ? '#45464B' : '#D6D2CD'),
+            alignItems: 'center', justifyContent: 'center',
+          }}>
+            {resource.illustration ? (
+              <TalentArt kind={resource.illustration} size={tileWidth * 0.72} />
+            ) : (
+              <Ionicons name="person-outline" size={tileWidth * 0.45} color={dark ? '#ECE7E1' : '#34302C'} />
+            )}
           </View>
-        ))}
-        {total > visible.length && (
-          <Text style={{ alignSelf: 'center', color: dark ? '#BABAB8' : '#666461', fontSize: 11 }}>
-            +{total - visible.length}
-          </Text>
-        )}
-      </View>
-      <Text style={{ fontSize: compact ? 11 : 14, color: dark ? '#C4C4C2' : '#77746F' }}>
-        {!total
-          ? 'Ressources à définir'
-          : remaining === 0
-            ? 'Toutes les ressources sont réunies'
-            : remaining === 1
-              ? 'Plus qu’une ressource à trouver'
-              : 'Encore ' + remaining + ' ressources à trouver'}
-      </Text>
+          {resource.requiredLevel ? (
+            <View style={{ transform: [{ scale: compact && tileWidth < 87 ? 0.68 : 0.86 }] }}>
+              <TalentLevelDots level={resource.requiredLevel} />
+            </View>
+          ) : (
+            <View style={{ height: 9 }} />
+          )}
+        </View>
+      ))}
     </View>
   );
 }
@@ -214,55 +217,25 @@ export function DreamPhaseCard({ item, width, variant, onOpen }: Props) {
   }
 
   if (item.phase === 'Initiation') {
+    // Only explicitly person-classified resources become talent tiles. Practical
+    // resources remain in the underlying Dream and existing expandable sections.
     const resources = item.resources?.length
       ? item.resources
       : item.needs.map(title => ({ title, confirmed: (item.resolvedNeeds || []).includes(title) }));
-    const missing = resources.filter(resource => !resource.confirmed);
-    const firstNeed = missing[0]?.title;
-    const moreNeeds = missing.slice(1);
+    const people = resources.filter(r => r.category === 'person');
     return (
       <View style={[base, { backgroundColor: compact ? neutral : 'transparent' }]}>
         {withOpen(
-          <View style={{ padding: inset, gap: compact ? 15 : 22 }}>
+          <View style={{ padding: inset, gap: compact ? 15 : 21 }}>
             {topRight()}
-            {compact ? (
-              <View style={{ gap: 6 }}>
-                <Text style={{ fontSize: 9, letterSpacing: 1.2, color: subdued, fontWeight: '600' }}>
-                  {firstNeed ? 'ON RECHERCHE' : 'RESSOURCES'}
-                </Text>
-                <Text style={{ fontFamily: serif, color: ink, fontSize: titleSize + 4, lineHeight: titleSize + 10 }}>
-                  {firstNeed || (resources.length ? 'Tout est réuni' : 'À définir')}
-                </Text>
-                {moreNeeds.length > 0 && (
-                  <Text style={{ color: ink, fontSize: 11, lineHeight: 17, marginTop: 3 }}>
-                    Aussi : {moreNeeds.slice(0, 4).map(resource => resource.title).join(' · ')}
-                    {moreNeeds.length > 4 ? ' · +' + (moreNeeds.length - 4) : ''}
-                  </Text>
-                )}
-                <Text style={{ fontSize: 11, lineHeight: 16, color: subdued }} numberOfLines={3}>
-                  Pour « {item.title} »
-                </Text>
-              </View>
+            {heading()}
+            {people.length > 0 ? (
+              <PersonResourceTiles resources={people} width={width} compact={compact} dark={dark} />
             ) : (
-              <View style={{ gap: 11 }}>
-                {heading()}
-                <Text style={{ color: subdued, fontSize: 11, fontWeight: '600', letterSpacing: 1.1 }}>
-                  {missing.length ? 'NOUS RECHERCHONS' : 'RESSOURCES'}
-                </Text>
-                {missing.length > 0 ? (
-                  <Text style={{ color: ink, fontFamily: serif, fontSize: 23, lineHeight: 31 }}>
-                    {missing.map(resource => resource.title).join(' · ')}
-                  </Text>
-                ) : (
-                  <Text style={{ color: subdued, fontSize: 15 }}>
-                    {resources.length ? 'Toutes les ressources sont réunies.' : 'Les besoins seront définis ici.'}
-                  </Text>
-                )}
-              </View>
+              <Text style={{ color: subdued, fontSize: compact ? 12 : 14, lineHeight: compact ? 18 : 22 }}>
+                Aucun besoin en personnes renseigné pour ce rêve.
+              </Text>
             )}
-            <View style={{ paddingTop: compact ? 5 : 9 }}>
-              <ResourceSteps resources={resources} compact={compact} dark={dark} />
-            </View>
           </View>,
         )}
       </View>
