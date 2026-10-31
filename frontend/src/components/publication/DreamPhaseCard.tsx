@@ -82,8 +82,10 @@ function PersonResourceTiles({ resources, width, compact, dark }: {
   const gap = compact ? 8 : 12;
   const contentWidth = Math.max(0, width - (compact ? (width < 205 ? 26 : 34) : (width < 440 ? 46 : 64)));
   const tileWidth = Math.floor((contentWidth - gap * (columns - 1)) / columns);
+  const confirmed = resources.filter(resource => resource.confirmed).length;
   return (
-    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap, alignItems: 'flex-start' }}>
+    <View style={{ gap: compact ? 12 : 17 }}>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap, alignItems: 'flex-start' }}>
       {resources.map((resource, index) => (
         <View
           key={resource.title + '-' + index}
@@ -92,7 +94,9 @@ function PersonResourceTiles({ resources, width, compact, dark }: {
         >
           <View style={{
             width: tileWidth, height: compact ? Math.max(52, tileWidth * 0.85) : Math.max(90, tileWidth * 0.87),
-            backgroundColor: resource.confirmed ? '#9DB861' : (dark ? '#45464B' : '#D6D2CD'),
+            backgroundColor: resource.confirmed ? '#AEC486' : (dark ? '#111317' : '#FFFCF5'),
+            borderRadius: 8,
+            overflow: 'hidden',
             alignItems: 'center', justifyContent: 'center',
           }}>
             {resource.illustration ? (
@@ -110,6 +114,17 @@ function PersonResourceTiles({ resources, width, compact, dark }: {
           )}
         </View>
       ))}
+      </View>
+      <Text
+        style={{
+          fontSize: compact ? 10 : 12,
+          color: dark ? '#A8C6A9' : '#608067',
+          textAlign: 'right',
+          letterSpacing: 0.2,
+        }}
+      >
+        {confirmed}/{resources.length} talents trouvés
+      </Text>
     </View>
   );
 }
