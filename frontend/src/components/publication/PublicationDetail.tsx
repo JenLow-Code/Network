@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, Text, View, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/theme/AppTheme';
 import { DetailLayout } from '@/components/detail/DetailLayout';
@@ -19,12 +19,14 @@ export function DetailPanel({
 }) {
   const [open, setOpen] = useState(defaultOpen);
   const theme = useAppTheme();
+  const { width } = useWindowDimensions();
+  const fontSize = width < 530 ? 17 : 18;
   return (
     <View
       style={{
         borderTopWidth: hideTopBorder ? 0 : 1,
         borderColor: theme.dark ? '#55575B' : '#D9D2C8',
-        paddingVertical: 17,
+        paddingVertical: width < 530 ? 13 : 15,
         paddingLeft: 0,
       }}
     >
@@ -42,7 +44,7 @@ export function DetailPanel({
           numberOfLines={1}
           adjustsFontSizeToFit
           minimumFontScale={0.65}
-          style={{ fontFamily: 'serif', fontSize: 20, lineHeight: 27, color: theme.foreground, flexShrink: 1 }}
+          style={{ fontFamily: 'serif', fontSize, lineHeight: fontSize + 7, color: theme.foreground, flexShrink: 1 }}
         >
           {title}
         </Text>
