@@ -19,6 +19,10 @@ export type DreamBlock = {
   content: string;
   title?: string;
   size: 'small' | 'wide' | 'featured';
+  /** Canvas width (one or two columns); absent on legacy blocks. */
+  span?: 1 | 2;
+  /** User-adjusted block height in layout points; absent on legacy blocks. */
+  height?: number;
   tone: 'neutral' | 'pink' | 'sage' | 'sand' | 'lavender' | 'blue' | 'peach' | 'charcoal' | 'clear';
   font?: 'sans' | 'serif' | 'handwritten' | 'mono';
   align?: 'left' | 'center' | 'right';
