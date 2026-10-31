@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Alert, Image, Linking, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Alert, Image, Linking, Modal, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useDreams } from '@/domain/dreamRepository';
+import { router } from 'expo-router';
 import type { DreamBlock, DreamBlockKind, DreamEntry } from '@/domain/dreamWorkspace';
 import { useAppTheme } from '@/theme/AppTheme';
 import { HANDWRITING_FAMILY } from '@/theme/handwriting';
@@ -60,7 +61,7 @@ function BlockView({block,edit,onTap}:{block:DreamBlock;edit:boolean;onTap:()=>v
 export default function SemenceStudio({dream,onBack}:{dream:DreamEntry;onBack:()=>void}){
  const theme=useAppTheme(); const {patch,advance}=useDreams();const editable=dream.phase==='Rêve';
  const blocks=dream.blocks||[];
- const [edit,setEdit]=useState(false);const [library,setLibrary]=useState(false);const [query,setQuery]=useState('');
+ const [edit,setEdit]=useState(editable);const [library,setLibrary]=useState(false);const [query,setQuery]=useState('');
  const [draft,setDraft]=useState<DreamBlock|null>(null);const [insertAt,setInsertAt]=useState<number|null>(null);
  const [confirm,setConfirm]=useState(false);
  const base=(kind:DreamBlockKind):DreamBlock=>({id:newId(),kind,title:'',content:'',size:'wide',tone:'clear',font:'sans',align:'left',frame:'none'});
@@ -77,13 +78,18 @@ export default function SemenceStudio({dream,onBack}:{dream:DreamEntry;onBack:()
    {editable?<Pressable onPress={()=>{setEdit(!edit);setLibrary(false);setDraft(null);}} style={{padding:10}}><Text style={{color:PINK,fontWeight:'700'}}>{edit?'Terminer':'Composer'}</Text></Pressable>:<Ionicons name="lock-closed-outline" color={theme.muted} size={19}/>}
   </View>
   <Text style={{fontFamily:'serif',fontSize:34,lineHeight:42,color:theme.foreground,marginBottom:12}}>{dream.title}</Text>
-  <Text style={{fontSize:14,color:theme.muted,lineHeight:22,marginBottom:14}}>{dream.summary}</Text>
+  {!edit || !editable ? <Text style={{fontSize:14,color:theme.muted,lineHeight:22,marginBottom:14}}>{dream.summary}</Text> : null}
   <View style={{flexDirection:'row',justifyContent:'space-between',marginBottom:22}}>
    <Text style={{fontSize:11,color:theme.muted}}>Ton espace d'inspiration</Text>
    <Pressable disabled={!editable} onPress={()=>patch(dream.id,{visibility:dream.visibility==='public'?'private':'public'})} style={{flexDirection:'row',alignItems:'center',gap:6}}><Ionicons name={dream.visibility==='public'?'globe-outline':'lock-closed-outline'} size={15} color={PINK}/><Text style={{color:PINK,fontSize:12}}>{dream.visibility==='public'?'Public':'Privé'}</Text></Pressable>
   </View>
   {edit && !draft && !library?<TextInput multiline value={dream.summary} onChangeText={v=>patch(dream.id,{summary:v})} placeholder="Quelle est ton intention ?" style={{borderBottomWidth:1,borderColor:theme.border,color:theme.foreground,fontSize:16,minHeight:65,marginBottom:16}}/>:null}
-  {blocks.length===0&&!edit?<Pressable onPress={()=>editable?(setEdit(true),chooser(null)):null} style={{minHeight:200,justifyContent:'center',alignItems:'center',borderWidth:1,borderStyle:'dashed',borderColor:theme.border,borderRadius:14}}><Ionicons name="add" color={theme.muted} size={24}/><Text style={{fontSize:13,color:theme.muted,marginTop:10}}>Un espace pour toutes tes inspirations.</Text></Pressable>:null}
+  {!editable ? <View style={{padding:15,borderRadius:12,backgroundColor:theme.surface,borderWidth:1,borderColor:theme.border,marginBottom:16,gap:9}}>
+    <View style={{flexDirection:'row',alignItems:'center',gap:8}}><Ionicons name="lock-closed-outline" size={17} color={theme.muted}/><Text style={{color:theme.foreground,fontSize:13,fontWeight:'700'}}>Semence conservée en lecture seule</Text></View>
+    <Text style={{color:theme.muted,fontSize:13,lineHeight:20}}>Ce rêve est maintenant en {dream.phase==='Initiation'?'Germination':dream.phase==='Croissance'?'Croissance':'Floraison'}. Ses premières inspirations restent consultables, mais elles ne peuvent plus être modifiées.</Text>
+    <Pressable onPress={()=>router.push('/my-dream/new')} accessibilityRole="button" style={{paddingVertical:11,alignItems:'center',borderRadius:9,borderWidth:1,borderColor:theme.border}}><Text style={{color:PINK,fontWeight:'700',fontSize:12}}>Créer une nouvelle Semence</Text></Pressable>
+   </View>:null}
+  {blocks.length===0&&!edit&&editable?<Pressable onPress={()=>{setEdit(true);chooser(null);}} style={{minHeight:200,justifyContent:'center',alignItems:'center',borderWidth:1,borderStyle:'dashed',borderColor:theme.border,borderRadius:14}}><Ionicons name="add" color={theme.muted} size={24}/><Text style={{fontSize:13,color:theme.muted,marginTop:10}}>Un espace pour toutes tes inspirations.</Text></Pressable>:null}
   {edit&&!draft&&!library?<Pressable onPress={()=>chooser(0)} style={{paddingVertical:14,alignItems:'center'}}><Ionicons name="add-circle-outline" size={22} color={PINK}/></Pressable>:null}
   <View style={{flexDirection:'row',flexWrap:'wrap',justifyContent:'space-between'}}>
    {blocks.map((b,i)=><React.Fragment key={b.id}>
@@ -96,6 +102,15 @@ export default function SemenceStudio({dream,onBack}:{dream:DreamEntry;onBack:()
    </React.Fragment>)}
   </View>
   {edit&&!draft&&!library?<Pressable onPress={()=>chooser(null)} style={{paddingVertical:14,alignItems:'center',borderTopWidth:1,borderColor:theme.border}}><Text style={{color:PINK,fontWeight:'700'}}>＋ Ajouter un bloc</Text></Pressable>:null}
+  <Modal visible={library || !!draft} animationType="slide" transparent={false} onRequestClose={()=>{setDraft(null);setLibrary(false);}}>
+   <View style={{flex:1,backgroundColor:theme.background,paddingTop:Platform.OS==='web'?12:42}}>
+    <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{padding:18,paddingBottom:90,maxWidth:720,width:'100%',alignSelf:'center'}}>
+     <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',marginBottom:18}}>
+      <Text style={{fontSize:11,letterSpacing:2,fontWeight:'700',color:'#B88962'}}>SEMENCE · COMPOSER</Text>
+      <Pressable accessibilityRole="button" accessibilityLabel="Fermer l'éditeur" onPress={()=>{setDraft(null);setLibrary(false);}} style={{padding:9}}>
+       <Ionicons name="close" size={23} color={theme.foreground}/>
+      </Pressable>
+     </View>
   {edit&&library&&!draft?<View style={{padding:14,backgroundColor:theme.surface,borderRadius:14,borderWidth:1,borderColor:theme.border}}>
    <Text style={{fontSize:18,color:theme.foreground,fontWeight:'700',marginBottom:13}}>Ajouter à mon rêve</Text>
    <TextInput value={query} onChangeText={setQuery} placeholder="Rechercher un bloc…" style={{padding:12,backgroundColor:theme.dark?'#34363B':'#F5F1EB',borderRadius:10,color:theme.foreground,marginBottom:12}}/>
@@ -124,6 +139,9 @@ export default function SemenceStudio({dream,onBack}:{dream:DreamEntry;onBack:()
    <Pressable onPress={save} style={{backgroundColor:PINK,padding:14,alignItems:'center',borderRadius:10}}><Text style={{color:'white',fontWeight:'700'}}>Enregistrer</Text></Pressable>
    {blocks.some(b=>b.id===draft.id)?<Pressable onPress={()=>{patch(dream.id,{blocks:blocks.filter(b=>b.id!==draft.id)});setDraft(null);}} style={{padding:10,alignItems:'center'}}><Text style={{color:'#BB4C60'}}>Supprimer le bloc</Text></Pressable>:null}
   </View>:null}
+    </ScrollView>
+   </View>
+  </Modal>
   {editable&&!edit&&!library&&!draft?<Pressable onPress={()=>setConfirm(true)} style={{marginTop:35,padding:14,borderWidth:1,borderColor:theme.border,borderRadius:11,alignItems:'center'}}><Text style={{color:theme.foreground,fontWeight:'600'}}>Faire germer mon rêve</Text></Pressable>:null}
   {confirm?<View style={{backgroundColor:theme.surface,padding:17,marginTop:12,borderRadius:12,borderWidth:1,borderColor:theme.border}}><Text style={{fontWeight:'700',fontSize:17,color:theme.foreground}}>Prêt à faire germer ce rêve ?</Text><Text style={{color:theme.muted,marginTop:8,lineHeight:20}}>Ton rêve deviendra public. Tu retrouveras toute cette composition dans son histoire, sans perdre tes inspirations.</Text><Pressable onPress={()=>{patch(dream.id,{visibility:'public'});advance(dream.id);setConfirm(false);onBack();}} style={{backgroundColor:PINK,padding:14,borderRadius:9,marginTop:15}}><Text style={{color:'#fff',textAlign:'center',fontWeight:'700'}}>Confirmer</Text></Pressable><Pressable onPress={()=>setConfirm(false)} style={{padding:13}}><Text style={{color:theme.muted,textAlign:'center'}}>Pas encore</Text></Pressable></View>:null}
   <Text style={{color:theme.muted,fontSize:10,marginTop:28,lineHeight:17}}>Les inspirations sont enregistrées localement sur cet appareil. L'import de fichiers est disponible sur le web ; les fichiers volumineux et l'import natif nécessitent encore le service média.</Text>
