@@ -1,5 +1,6 @@
 import React from 'react';
 import { View } from 'react-native';
+import { useAppTheme } from '@/theme/AppTheme';
 
 /** Same five-dot level indicator in Discovery cards and Talent details. */
 const DOT_COLORS = ['#287D58', '#2ECA65', '#EAC000', '#F38A24', '#CB245C'] as const;
@@ -18,17 +19,23 @@ function coloredDots(level: string) {
 export function TalentLevelDots({
   level,
   align = 'center',
+  size = 9,
+  spacing = 5,
 }: {
   level: string;
   align?: 'center' | 'start';
+  /** Compact variant for the talent illustration squares in Germination. */
+  size?: number;
+  spacing?: number;
 }) {
+  const theme = useAppTheme();
   const count = coloredDots(level);
   return (
     <View
       accessibilityLabel={'Niveau : ' + level}
       style={{
         flexDirection: 'row',
-        gap: 5,
+        gap: spacing,
         alignItems: 'center',
         justifyContent: align === 'center' ? 'center' : 'flex-start',
       }}
@@ -37,10 +44,10 @@ export function TalentLevelDots({
         <View
           key={index}
           style={{
-            width: 9,
-            height: 9,
-            borderRadius: 5,
-            backgroundColor: index < count ? color : INACTIVE,
+            width: size,
+            height: size,
+            borderRadius: size / 2,
+            backgroundColor: index < count ? color : (theme.dark ? '#72747A' : INACTIVE),
           }}
         />
       ))}
