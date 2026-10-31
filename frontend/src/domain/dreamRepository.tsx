@@ -120,7 +120,7 @@ export function DreamProvider({ children }: { children: React.ReactNode }) {
     );
   const patch: Repo['patch'] = (id, changes) => setItems(p => p.map(d => d.id === id ? { ...d, ...changes, id: d.id, title: d.title, phase: d.phase } : d));
   const appendBlock: Repo['appendBlock'] = (id, block) => setItems(p => p.map(d => d.id === id && d.phase === 'Rêve' ? { ...d, blocks: [...(d.blocks || []), block] } : d));
-  const setResources: Repo['setResources'] = (id, resources) => setItems(p => p.map(d => d.id === id && d.phase === 'Initiation' ? { ...d, resources } : d));
+  const setResources: Repo['setResources'] = (id, resources) => setItems(p => p.map(d => d.id === id && (d.phase === 'Initiation' || d.phase === 'Croissance') ? { ...d, resources } : d));
   const setHabits: Repo['setHabits'] = (id, habits) => setItems(p => p.map(d => d.id === id && d.phase === 'Croissance' ? { ...d, habits } : d));
   const transitionToGrowth: Repo['transitionToGrowth'] = id => setItems(p => p.map(d => {
     if (d.id !== id || d.phase !== 'Initiation') return d;
