@@ -5,7 +5,7 @@ import { useLocalSearchParams } from 'expo-router';
 import { Nav } from '@/components/navigation/Nav';
 import { useAppTheme } from '@/theme/AppTheme';
 import { useDreams } from '@/domain/dreamRepository';
-import DreamExperience from './DreamExperience';
+import DreamExperience from '@/components/dream/DreamExperience';
 export default function Workspace() {
  const { id } = useLocalSearchParams<{id:string}>();
  const { items } = useDreams();
