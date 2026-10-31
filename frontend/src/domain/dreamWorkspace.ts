@@ -5,10 +5,45 @@ export type DreamMedia = {
   kind: 'photo' | 'video' | 'audio' | 'document';
 };
 export type FlowerDraft = { story: string; attachments: DreamMedia[]; reminderDate?: string };
+export type DreamBlock = {
+  id: string;
+  kind: 'text' | 'quote' | 'callout' | 'image' | 'audio' | 'video' | 'document' | 'link' | 'accordion' | 'collection';
+  content: string;
+  title?: string;
+  size: 'small' | 'wide' | 'featured';
+  tone: 'neutral' | 'pink' | 'sage' | 'sand' | 'lavender';
+};
+export type DreamResource = {
+  id: string;
+  title: string;
+  category: 'person' | 'practical' | 'financial';
+  confirmed: boolean;
+  linkedBlockId?: string;
+  personId?: string;
+  amount?: number;
+};
+export type DreamHabit = {
+  id: string;
+  title: string;
+  frequency: 'daily' | 'weekly';
+  completed: string[];
+};
+export type DreamMilestone = { id: string; title: string; date: string };
+export type DreamThought = { id: string; text: string; date: string };
+export type DreamChatMessage = { id: string; text: string; createdAt: string };
 export type DreamEntry = {
   id: string;
   title: string;
   phase: DreamPhase;
+  visibility?: 'private' | 'public';
+  blocks?: DreamBlock[];
+  resources?: DreamResource[];
+  financialNeeded?: boolean;
+  habits?: DreamHabit[];
+  milestones?: DreamMilestone[];
+  thoughts?: DreamThought[];
+  growthStartedAt?: string;
+  chat?: { id: string; messages: DreamChatMessage[] };
   summary: string;
   image: string;
   needs: string[];
