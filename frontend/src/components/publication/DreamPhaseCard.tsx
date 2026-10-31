@@ -219,7 +219,7 @@ export function DreamPhaseCard({ item, width, variant, onOpen }: Props) {
   if (item.phase === 'Initiation') {
     // Only explicitly person-classified resources become talent tiles. Practical
     // resources remain in the underlying Dream and existing expandable sections.
-    const resources = item.resources?.length
+    const resources: NonNullable<DreamPublication['resources']> = item.resources?.length
       ? item.resources
       : item.needs.map(title => ({ title, confirmed: (item.resolvedNeeds || []).includes(title) }));
     const people = resources.filter(r => r.category === 'person');
