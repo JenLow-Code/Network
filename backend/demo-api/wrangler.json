@@ -1,0 +1,13 @@
+{
+  "name": "jenlow-network-demo-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-23",
+  "workers_dev": true,
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "network",
+      "database_id": "62ca4199-a913-4444-b176-b5d18c8817d1"
+    }
+  ]
+}
