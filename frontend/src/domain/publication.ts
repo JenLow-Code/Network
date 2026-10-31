@@ -28,6 +28,13 @@ export type DreamPublication = PublicationBase & {
   motivation?: string;
   goalDate?: string;
   logs?: string[];
+  galleryImages?: string[];
+  resources?: { title: string; confirmed: boolean }[];
+  resolvedNeeds?: string[];
+  category?: string;
+  journalEntry?: { text: string; date?: string };
+  createdAt?: string;
+  resultImage?: string;
 };
 
 export type MusicPublication = PublicationBase & {
