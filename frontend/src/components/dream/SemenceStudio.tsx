@@ -59,25 +59,31 @@ function BlockView({block,edit,onTap}:{block:DreamBlock;edit:boolean;onTap:()=>v
  </View>;
 }
 function CanvasTile({block,index,editable,theme,onEdit,onMove,onResize,onStart,onFinish,onHover,dragging,highlight}:{block:DreamBlock;index:number;editable:boolean;theme:{foreground:string;muted:string;border:string;surface:string};onEdit:()=>void;onMove:(from:number,to:number)=>void;onResize:(id:string,span:1|2,height:number)=>void;onStart:(index:number)=>void;onFinish:()=>void;onHover:(index:number)=>void;dragging:boolean;highlight:boolean}) {
- const position=useRef({x:0,y:0});
+ const [preview,setPreview]=useState<{span:1|2;height:number}|null>(null);
+ const callbacks=useRef({index,onStart,onFinish,onHover,onMove,onResize,blockId:block.id});
+ callbacks.current={index,onStart,onFinish,onHover,onMove,onResize,blockId:block.id};
+ const startSize=useRef({span:2 as 1|2,height:110});
  const size=useRef({span:block.span||(block.size==='small'?1:2),height:block.height||0});
  size.current={span:block.span||(block.size==='small'?1:2),height:block.height||0};
  const drag=useRef(PanResponder.create({
   onStartShouldSetPanResponder:()=>true,
   onMoveShouldSetPanResponder:()=>true,
-  onPanResponderGrant:()=>{position.current={x:0,y:0};onStart(index);},
-  onPanResponderMove:(_,g)=>{position.current={x:g.dx,y:g.dy};const stride=110;const to=Math.max(0,index+Math.round(g.dy/stride)*2+Math.round(g.dx/145));onHover(to);},
-  onPanResponderRelease:(_,g)=>{const target=Math.max(0,index+Math.round(g.dy/110)*2+Math.round(g.dx/145));onMove(index,target);onFinish();},
-  onPanResponderTerminate:onFinish,
+  onPanResponderGrant:()=>{callbacks.current.onStart(callbacks.current.index);},
+  onPanResponderMove:(_,g)=>{const to=Math.max(0,callbacks.current.index+Math.round(g.dy/110)*2+Math.round(g.dx/145));callbacks.current.onHover(to);},
+  onPanResponderRelease:(_,g)=>{const target=Math.max(0,callbacks.current.index+Math.round(g.dy/110)*2+Math.round(g.dx/145));callbacks.current.onMove(callbacks.current.index,target);callbacks.current.onFinish();},
+  onPanResponderTerminate:()=>callbacks.current.onFinish(),
  })).current;
  const resize=useRef(PanResponder.create({
   onStartShouldSetPanResponder:()=>true,
   onMoveShouldSetPanResponder:()=>true,
-  onPanResponderRelease:(_,g)=>{const nextSpan:1|2=g.dx>28?2:g.dx< -28?1:size.current.span as 1|2;const nextHeight=Math.max(0,Math.min(540,(size.current.height||110)+Math.round(g.dy/28)*28));onResize(block.id,nextSpan,nextHeight);},
+  onPanResponderGrant:()=>{startSize.current={span:size.current.span as 1|2,height:size.current.height||110};},
+  onPanResponderMove:(_,g)=>{const span:1|2=g.dx>28?2:g.dx< -28?1:startSize.current.span;const height=Math.max(55,Math.min(540,startSize.current.height+Math.round(g.dy/28)*28));setPreview({span,height});},
+  onPanResponderRelease:(_,g)=>{const span:1|2=g.dx>28?2:g.dx< -28?1:startSize.current.span;const height=Math.max(55,Math.min(540,startSize.current.height+Math.round(g.dy/28)*28));callbacks.current.onResize(callbacks.current.blockId,span,height);setPreview(null);},
+  onPanResponderTerminate:()=>setPreview(null),
  })).current;
- return <View style={{width:(block.span||(block.size==='small'?1:2))===1?'48.5%':'100%',paddingBottom:12,opacity:dragging?.60:1}}>
+ return <View style={{width:(preview?.span||(block.span||(block.size==='small'?1:2)))===1?'48.5%':'100%',paddingBottom:12,opacity:dragging?.60:1}}>
   <View style={{borderWidth:highlight?2:0,borderColor:'#D71D77',borderRadius:12}}>
-   <BlockView block={block} edit={false} onTap={onEdit}/>
+   <View style={preview?{minHeight:preview.height}:undefined}><BlockView block={{...block,height:preview?.height||block.height}} edit={false} onTap={onEdit}/></View>
   </View>
   {editable?<View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',marginTop:4,paddingHorizontal:5}}>
     <View {...drag.panHandlers} style={{paddingVertical:8,paddingHorizontal:12,backgroundColor:theme.surface,borderRadius:8,borderWidth:1,borderColor:theme.border}}><Ionicons name="reorder-three-outline" size={19} color={theme.foreground}/></View>
