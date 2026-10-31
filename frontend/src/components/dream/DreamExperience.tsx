@@ -78,13 +78,14 @@ export default function DreamExperience({ dream, viewPhase, onBack }: {dream:Dre
  const checkResource = (item: DreamResource) => {
   const updated = resources.map(x => x.id===item.id ? {...x,confirmed:!x.confirmed} : x);
   setResources(dream.id,updated);
-  if(!item.confirmed && !!dream.goalDate && /^\d{4}-\d{2}-\d{2}$/.test(dream.goalDate) && updated.every(r=>r.confirmed)) {
+  if(dream.phase === 'Initiation' && !item.confirmed && !!dream.goalDate && /^\d{4}-\d{2}-\d{2}$/.test(dream.goalDate) && updated.every(r=>r.confirmed)) {
    confirm('Tout est prêt !', 'Toutes les ressources sont réunies. Commencer la croissance ? Une conversation dédiée sera créée sur cet appareil.', () => transitionToGrowth(dream.id));
   }
  };
  const ready = !!dream.goalDate && /^\d{4}-\d{2}-\d{2}$/.test(dream.goalDate) && !Number.isNaN(Date.parse(dream.goalDate)) && resources.every(r=>r.confirmed);
  const phase = viewPhase || dream.phase;
  const historical = phase !== dream.phase;
+ const resourceEditable = phase === 'Initiation' && (dream.phase === 'Initiation' || dream.phase === 'Croissance');
  return <ScrollView style={{flex:1}} contentContainerStyle={{ paddingHorizontal:16,paddingTop:8,paddingBottom:45,maxWidth:760,width:'100%',alignSelf:'center' }}>
   <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginBottom:13}}>
    <Pressable onPress={onBack || (()=>router.replace('/my-space'))}><Ionicons name="chevron-back" size={25} color={theme.foreground}/></Pressable>
@@ -125,26 +126,26 @@ export default function DreamExperience({ dream, viewPhase, onBack }: {dream:Dre
   {phase==='Initiation' ? <>
     {dream.image ? <Image source={{uri:dream.image}} style={{width:'100%',height:105,borderRadius:12,marginVertical:10}}/>:null}
     <Text style={{color:theme.muted,fontSize:12,marginBottom:10}}>{dream.summary}</Text>
-    {historical ? <Text style={{color:theme.muted,marginBottom:12}}>Date cible : {dream.goalDate||'Non définie'}</Text> : <Field label="Date cible" value={dream.goalDate||''} onChange={v=>patch(dream.id,{goalDate:v})} placeholder="AAAA-MM-JJ"/>}
+    {historical && !resourceEditable ? <Text style={{color:theme.muted,marginBottom:12}}>Date cible : {dream.goalDate||'Non définie'}</Text> : <Field label="Date cible" value={dream.goalDate||''} onChange={v=>patch(dream.id,{goalDate:v})} placeholder="AAAA-MM-JJ"/>}
     <View style={{height:7,backgroundColor:'#ECEDE6',borderRadius:6,marginBottom:8}}><View style={{height:7,width:((resources.length?resources.filter(r=>r.confirmed).length/resources.length*100:0)+'%') as any,backgroundColor:'#98AE51',borderRadius:6}}/></View>
     <Text style={{color:theme.muted,fontSize:12,marginBottom:16}}>{resources.filter(r=>r.confirmed).length} / {resources.length} ressources confirmées</Text>
     {(['person','practical','financial'] as const).map(category=><View key={category} style={{marginBottom:17}}>
       <Text style={{fontSize:17,fontWeight:'800',color:theme.foreground,marginBottom:9}}>{category==='person'?'Personnes':category==='practical'?'Autres ressources':'Financement'}</Text>
       {resources.filter(r=>r.category===category).map(r=><View key={r.id} style={{backgroundColor:theme.surface,borderRadius:11,padding:12,marginBottom:7,borderWidth:1,borderColor:theme.border}}>
-       <Pressable disabled={historical} onPress={()=>checkResource(r)} style={{flexDirection:'row',gap:10,alignItems:'center'}}><Ionicons name={r.confirmed?'checkmark-circle':'ellipse-outline'} color={r.confirmed?'#5B965C':pink} size={23}/><Text style={{color:theme.foreground,flex:1}}>{r.title}</Text><Text style={{fontSize:11,color:theme.muted}}>{r.confirmed?'Trouvé':'À trouver'}</Text></Pressable>
+       <Pressable disabled={!resourceEditable} onPress={()=>checkResource(r)} style={{flexDirection:'row',gap:10,alignItems:'center'}}><Ionicons name={r.confirmed?'checkmark-circle':'ellipse-outline'} color={r.confirmed?'#5B965C':pink} size={23}/><Text style={{color:theme.foreground,flex:1}}>{r.title}</Text><Text style={{fontSize:11,color:theme.muted}}>{r.confirmed?'Trouvé':'À trouver'}</Text></Pressable>
        {r.amount ? <Text style={{marginTop:6,fontSize:12,color:theme.muted}}>Montant prévu : {r.amount.toLocaleString('fr-FR')} €</Text> : null}
-       <Pressable disabled={historical} onPress={()=>setResources(dream.id,resources.filter(x=>x.id!==r.id))} style={{alignSelf:'flex-end',paddingTop:5}}><Text style={{fontSize:11,color:theme.muted}}>Retirer</Text></Pressable>
+       <Pressable disabled={!resourceEditable} onPress={()=>setResources(dream.id,resources.filter(x=>x.id!==r.id))} style={{alignSelf:'flex-end',paddingTop:5}}><Text style={{fontSize:11,color:theme.muted}}>Retirer</Text></Pressable>
        {r.linkedBlockId ? <Text style={{marginTop:7,fontSize:11,color:pink}}>↳ Lié à « {blocks.find(b=>b.id===r.linkedBlockId)?.title||blocks.find(b=>b.id===r.linkedBlockId)?.content.slice(0,30)||'inspiration'} »</Text> : null}
       </View>)}
       {category==='person' ? <Pressable onPress={()=>router.push('/discover?filter=Talents')}><Text style={{color:pink,fontSize:12,marginTop:5}}>Trouver des talents sur JenLow ↗</Text></Pressable>:null}
     </View>)}
-    {!historical ? <><Text style={{fontWeight:'800',color:theme.foreground,marginBottom:7}}>Ajouter un besoin</Text>
+    {resourceEditable ? <><Text style={{fontWeight:'800',color:theme.foreground,marginBottom:7}}>Ajouter un besoin</Text>
     <View style={{flexDirection:'row',gap:7,marginBottom:12}}>{(['person','practical','financial'] as const).map(k=><Pressable key={k} onPress={()=>setResourceCategory(k)} style={{padding:9,backgroundColor:resourceCategory===k?pink:'#F1ECE5',borderRadius:9}}><Text style={{color:resourceCategory===k?'#fff':'#333',fontSize:12}}>{k==='person'?'Personne':k==='practical'?'Matériel / autre':'Financier'}</Text></Pressable>)}</View>
     <Field label="Ressource nécessaire" value={resourceTitle} onChange={setResourceTitle} placeholder="De quoi as-tu besoin ?"/>
     {resourceCategory==='financial'?<Field label="Montant estimé en € (facultatif)" value={resourceAmount} onChange={setResourceAmount} placeholder="Ex. 300"/>:null}
     {blocks.length ? <><Text style={{fontSize:12,color:theme.muted,marginBottom:7}}>Lier une inspiration (facultatif)</Text><ScrollView horizontal style={{marginBottom:10}}>{blocks.map(b=><Pressable key={b.id} onPress={()=>setResourceLink(resourceLink===b.id?'':b.id)} style={{padding:9,marginRight:7,backgroundColor:resourceLink===b.id?'#FBD8E9':'#F1ECE5',borderRadius:9}}><Text style={{fontSize:11,color:'#333'}} numberOfLines={1}>{b.title||b.content.slice(0,24)||'Image'}</Text></Pressable>)}</ScrollView></>:null}
     <Action secondary label="+ Ajouter cette ressource" onPress={addResource}/>
-    <Action label={ready?'Confirmer et commencer la croissance':'Préparatifs en cours'} onPress={()=>{if(!ready){Alert.alert('Encore un peu','Définis la date et confirme les ressources nécessaires.');return;}confirmGrowth();}}/></> : null}
+    {!historical ? <Action label={ready?'Confirmer et commencer la croissance':'Préparatifs en cours'} onPress={()=>{if(!ready){Alert.alert('Encore un peu','Définis la date et confirme les ressources nécessaires.');return;}confirmGrowth();}}/> : null}</> : null}
   </> : null}
   {phase==='Croissance' ? <>
    <Text style={{color:theme.muted,marginBottom:14}}>Petits pas, grands changements.</Text>
