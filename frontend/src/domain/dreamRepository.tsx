@@ -102,10 +102,11 @@ export function DreamProvider({ children }: { children: React.ReactNode }) {
   const complete: Repo['complete'] = (id, comment, mediaType, mediaUrl) =>
     setItems(p =>
       p.map(d =>
-        d.id === id && d.phase === 'Croissance'
+        d.id === id && d.phase === 'Croissance' && !!d.flowerDraft?.attachments?.some(a => a.kind === 'photo')
           ? {
               ...d,
               phase: 'Témoignage',
+              resultImage: d.flowerDraft!.attachments.find(a => a.kind === 'photo')!.uri,
               testimony: {
                 comment,
                 mediaType,
