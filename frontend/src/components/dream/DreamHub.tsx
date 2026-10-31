@@ -18,19 +18,19 @@ const stages: { phase: DreamPhase; position: Direction; color: string }[] = [
 ];
 const order: DreamPhase[] = ['Rêve', 'Initiation', 'Croissance', 'Témoignage'];
 
-function EdgeLight({ position, color }: { position: Direction; color: string }) {
+function EdgeLight({ position, color, locked }: { position: Direction; color: string; locked: boolean }) {
   const horizontal = position === 'left' || position === 'right';
   const reversed = position === 'right' || position === 'bottom';
   const id = 'edge-' + position;
   const style = horizontal
-    ? { position: 'absolute' as const, top: 0, bottom: 0, width: 47, ...(reversed ? { right: 0 } : { left: 0 }) }
-    : { position: 'absolute' as const, left: 0, right: 0, height: 63, ...(reversed ? { bottom: 0 } : { top: 0 }) };
+    ? { position: 'absolute' as const, top: 0, bottom: 0, width: 28, ...(reversed ? { right: 0 } : { left: 0 }) }
+    : { position: 'absolute' as const, left: 0, right: 0, height: 39, ...(reversed ? { bottom: 0 } : { top: 0 }) };
   return (
-    <Svg pointerEvents="none" width={horizontal ? 47 : '100%'} height={horizontal ? '100%' : 63} style={style}>
+    <Svg pointerEvents="none" width={horizontal ? 28 : '100%'} height={horizontal ? '100%' : 39} style={style}>
       <Defs>
         <LinearGradient id={id} x1={horizontal ? (reversed ? '100%' : '0%') : '0%'} y1={horizontal ? '0%' : (reversed ? '100%' : '0%')} x2={horizontal ? (reversed ? '0%' : '100%') : '0%'} y2={horizontal ? '0%' : (reversed ? '0%' : '100%')}>
-          <Stop offset="0%" stopColor={color} stopOpacity={0.14} />
-          <Stop offset="35%" stopColor={color} stopOpacity={0.035} />
+          <Stop offset="0%" stopColor={color} stopOpacity={locked ? 0.025 : 0.085} />
+          <Stop offset="35%" stopColor={color} stopOpacity={locked ? 0 : 0.016} />
           <Stop offset="100%" stopColor={color} stopOpacity={0} />
         </LinearGradient>
       </Defs>
@@ -49,8 +49,8 @@ function DrawnArrow({ position, color }: { position: Direction; color: string })
         ? 'M 10 10 C 21 18 34 25 47 29 C 35 36 22 41 10 48'
         : 'M 49 10 C 36 19 25 24 12 29 C 25 35 38 42 49 48';
   return (
-    <Svg width={position === 'left' || position === 'right' ? 43 : 54} height={position === 'left' || position === 'right' ? 44 : 52} viewBox="0 0 58 58">
-      <Path d={path} stroke={color} strokeWidth={5.2} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+    <Svg width={position === 'left' || position === 'right' ? 29 : 34} height={position === 'left' || position === 'right' ? 30 : 34} viewBox="0 0 58 58">
+      <Path d={path} stroke={color} strokeWidth={4} strokeLinecap="round" strokeLinejoin="round" fill="none" />
     </Svg>
   );
 }
@@ -76,24 +76,18 @@ export default function DreamHub({ dream }: { dream: DreamEntry }) {
   phaseRef.current = dream.phase;
 
   const canOpen = (phase: DreamPhase) => {
-    if (phase === 'Témoignage') return dream.phase === 'Croissance'; // Preparation only; completion changes the centre itself.
+    if (phase === 'Témoignage') return false; // The finished flower already IS the centre. Preparation starts within Croissance.
     return order.indexOf(phase) <= order.indexOf(dream.phase);
   };
 
   const enter = useCallback((phase: DreamPhase) => {
     if (busy.current || openRef.current) return;
-    if (phase === 'Témoignage' ? phaseRef.current !== 'Croissance' : order.indexOf(phase) > order.indexOf(phaseRef.current)) return;
+    if (phase === 'Témoignage' || order.indexOf(phase) > order.indexOf(phaseRef.current)) return;
     busy.current = true;
     setTransition(phase);
     veilOpacity.setValue(0);
     Animated.timing(veilOpacity, { toValue: 1, duration: 240, useNativeDriver: true }).start(({ finished }) => {
       if (!finished) { setTransition(null); busy.current = false; return; }
-      if (phase === 'Témoignage') {
-        busy.current = false;
-        router.push({ pathname: '/my-dream/flower/[id]', params: { id: dream.id } });
-        setTransition(null);
-        return;
-      }
       setOpen(phase);
       Animated.timing(veilOpacity, { toValue: 0, duration: 450, delay: 230, useNativeDriver: true }).start(() => {
         setTransition(null);
@@ -149,38 +143,46 @@ export default function DreamHub({ dream }: { dream: DreamEntry }) {
               <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.48)' }]} />
             </>
           ) : null}
-          {stages.map(stage => <EdgeLight key={stage.position} position={stage.position} color={stage.color} />)}
+          {stages.map(stage => <EdgeLight key={stage.position} position={stage.position} color={stage.color} locked={order.indexOf(stage.phase) > phaseIndex} />)}
           <Pressable onPress={() => router.replace('/my-space')} accessibilityRole="button" accessibilityLabel="Retour à mes rêves" style={{ position: 'absolute', left: 13, top: 9, zIndex: 5, padding: 10 }}>
             <Ionicons name="arrow-back" size={24} color={foreground} />
           </Pressable>
 
           {stages.map(stage => {
+            const locked = order.indexOf(stage.phase) > phaseIndex;
             const disabled = !canOpen(stage.phase);
+            const current = stage.phase === dream.phase;
             const pos = stage.position;
+            const color = locked ? (theme.dark ? '#787B7F' : '#ABACA9') : stage.color;
+            // Side helpers live in a reserved lower zone, away from the dream's title,
+            // description and resource information. These are cues, not floating content.
             const placement: any = pos === 'top'
-              ? { top: 2, left: 95, right: 95, alignItems: 'center' }
+              ? { top: 4, left: 108, right: 108, alignItems: 'center' }
               : pos === 'bottom'
-                ? { bottom: 1, left: 95, right: 95, alignItems: 'center' }
+                ? { bottom: 7, left: 108, right: 108, alignItems: 'center' }
                 : pos === 'left'
-                  ? { left: 2, top: '42%', alignItems: 'center' }
-                  : { right: 2, top: '42%', alignItems: 'center' };
+                  ? { left: 4, bottom: 91, alignItems: 'center', width: 72 }
+                  : { right: 4, bottom: 91, alignItems: 'center', width: 72 };
             return (
-              <Pressable key={stage.phase} accessibilityRole="button" accessibilityState={{ disabled }} accessibilityLabel={'Ouvrir ' + PHASE_LABELS[stage.phase]} disabled={disabled} onPress={() => enter(stage.phase)}
-                style={{ position: 'absolute', zIndex: 4, padding: 8, opacity: disabled ? 0.36 : 0.95, ...placement }}>
-                <DrawnArrow position={pos} color={stage.color} />
-                <Text style={{ fontSize: 8, fontWeight: '700', letterSpacing: 0.8, textAlign: 'center', color: stage.color, marginTop: pos === 'bottom' ? -3 : 0 }}>
+              <Pressable key={stage.phase} accessibilityRole="button"
+                accessibilityState={{ disabled, selected: current }}
+                accessibilityLabel={locked ? PHASE_LABELS[stage.phase] + ', phase à venir' : current ? PHASE_LABELS[stage.phase] + ', phase actuelle' : 'Ouvrir ' + PHASE_LABELS[stage.phase]}
+                disabled={disabled} onPress={() => enter(stage.phase)}
+                style={{ position: 'absolute', zIndex: 4, padding: 5, opacity: locked ? 0.53 : current ? 0.94 : 0.70, ...placement }}>
+                <DrawnArrow position={pos} color={color} />
+                <Text numberOfLines={1} style={{ fontSize: 8, fontWeight: current ? '700' : '600', letterSpacing: 0.5, textAlign: 'center', color, marginTop: 3 }}>
                   {PHASE_LABELS[stage.phase].toUpperCase()}
                 </Text>
               </Pressable>
             );
           })}
 
-          <View style={{ flex: 1, justifyContent: 'center', paddingHorizontal: Math.min(56, Math.max(48, width * .13)), paddingVertical: 94 }}>
+          <View style={{ flex: 1, justifyContent: 'center', paddingHorizontal: Math.min(52, Math.max(34, width * .105)), paddingTop: 84, paddingBottom: 163 }}>
             <View style={{ alignSelf: 'center', width: '100%', maxWidth: 510 }}>
               <Text style={{ fontSize: 11, letterSpacing: 2, fontWeight: '700', color: flower && !hasPhoto ? '#D71D77' : secondary, marginBottom: 20 }}>
                 {flower ? 'FLORAISON' : 'MON RÊVE'}
               </Text>
-              <Text style={{ fontSize: width < 390 ? 32 : 41, lineHeight: width < 390 ? 39 : 49, fontFamily: 'serif', letterSpacing: -1, color: foreground, marginBottom: 16 }}>
+              <Text style={{ fontSize: width < 390 ? 31 : 39, lineHeight: width < 390 ? 39 : 47, fontFamily: 'serif', letterSpacing: -1, color: foreground, marginBottom: 16 }}>
                 {dream.title}
               </Text>
               <Text style={{ fontSize: 15, lineHeight: 24, color: secondary }}>
