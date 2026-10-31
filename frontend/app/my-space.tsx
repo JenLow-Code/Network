@@ -29,17 +29,17 @@ function DreamsOverview() {
       </View>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 9 }}>
         {shown.map(d => (
-          <Pressable key={d.id} onPress={() => router.push({ pathname: '/my-dream/[id]', params: { id: d.id } })} style={{ width: '48%', aspectRatio: 0.94, borderRadius: 12, overflow: 'hidden', backgroundColor: PHASE_COLORS[d.phase].background, justifyContent: 'flex-end' }}>
-            {d.image ? <Image source={{ uri: d.image }} style={{ position: 'absolute', width: '100%', height: '100%' }} /> : null}
-            <View style={{ backgroundColor: 'rgba(0,0,0,.64)', padding: 11 }}>
-              <Text numberOfLines={2} style={{ color: '#fff', fontWeight: '800', fontSize: 15 }}>{d.title}</Text>
-              <Text style={{ color: '#fff', fontSize: 11, marginTop: 5 }}>{PHASE_LABELS[d.phase]}{d.phase === 'Rêve' && d.visibility !== 'public' ? ' · Privé' : ''}</Text>
+          <Pressable key={d.id} onPress={() => router.push({ pathname: '/my-dream/[id]', params: { id: d.id } })} style={{ width: '31.5%', aspectRatio: 0.94, borderRadius: 12, overflow: 'hidden', backgroundColor: PHASE_COLORS[d.phase].background, justifyContent: 'flex-end' }}>
+            {(d.phase === 'Témoignage' ? (d.resultImage || d.testimony?.mediaItems?.find(m => m.kind === 'photo')?.uri || d.image) : d.image) ? <Image source={{ uri: d.phase === 'Témoignage' ? (d.resultImage || d.testimony?.mediaItems?.find(m => m.kind === 'photo')?.uri || d.image) : d.image }} style={{ position: 'absolute', width: '100%', height: '100%' }} /> : null}
+            <View style={{ backgroundColor: 'rgba(0,0,0,.64)', padding: 8 }}>
+              <Text numberOfLines={2} style={{ color: '#fff', fontWeight: '800', fontSize: 12 }}>{d.title}</Text>
+              <Text style={{ color: '#fff', fontSize: 9, marginTop: 4 }}>{PHASE_LABELS[d.phase]}{d.phase === 'Rêve' && d.visibility !== 'public' ? ' · Privé' : ''}</Text>
             </View>
           </Pressable>
         ))}
-        <Pressable onPress={() => router.push('/my-dream/new')} style={{ width: '48%', aspectRatio: 0.94, borderRadius: 12, borderWidth: 1, borderStyle: 'dashed', borderColor: '#D71D77', alignItems: 'center', justifyContent: 'center', gap: 9 }}>
-          <Ionicons name="add-circle-outline" size={32} color="#D71D77" />
-          <Text style={{ fontSize: 12, color: '#D71D77', fontWeight: '700' }}>Créer une semence</Text>
+        <Pressable onPress={() => router.push('/my-dream/new')} style={{ width: '31.5%', aspectRatio: 0.94, borderRadius: 12, borderWidth: 1, borderStyle: 'dashed', borderColor: '#D71D77', alignItems: 'center', justifyContent: 'center', gap: 9 }}>
+          <Ionicons name="add-circle-outline" size={25} color="#D71D77" />
+          <Text style={{ fontSize: 10, color: '#D71D77', fontWeight: '700' }}>Créer une semence</Text>
         </Pressable>
       </View>
       {!shown.length ? <Text style={{ marginTop: 16, color: '#888' }}>Aucun rêve dans cette phase.</Text> : null}
