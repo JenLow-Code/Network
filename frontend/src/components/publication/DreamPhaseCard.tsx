@@ -1,9 +1,10 @@
 import React from 'react';
-import { Image, Platform, Pressable, Text, View } from 'react-native';
-import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
+import { Image, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import Svg, { Circle, Defs, LinearGradient, Path, Rect, Stop } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import type { DreamPublication } from '@/domain/publication';
 import { PHASE_LABELS } from '@/domain/publication';
+import { DreamPhaseIcon } from '@/icons/DreamPhaseIcon';
 import { useAppTheme } from '@/theme/AppTheme';
 import { HANDWRITING_FAMILY } from '@/theme/handwriting';
 import { useApp } from '@/context/AppContext';
@@ -53,82 +54,94 @@ function dreamDuration(value?: string): string | null {
   return years + (years > 1 ? ' ans' : ' an') + (rest ? ' · ' + rest + ' mois' : '');
 }
 
-function MediaImage({ uri, height, radius = 5 }: { uri: string; height: number; radius?: number }) {
+function MediaImage({ uri, height }: { uri: string; height: number }) {
   return (
-    <View style={{ flex: 1, height, overflow: 'hidden', borderRadius: radius, backgroundColor: '#46504B' }}>
+    <View style={{ flex: 1, height, overflow: 'hidden', backgroundColor: '#454545' }}>
       <Image source={{ uri }} resizeMode="cover" style={{ width: '100%', height: '100%' }} />
     </View>
   );
 }
 
+/** A filled pie, not a progress ring or music-player-like linear bar. */
+function ResourcePie({ completed, total, size, dark }: { completed: number; total: number; size: number; dark: boolean }) {
+  const ratio = total > 0 ? Math.max(0, Math.min(1, completed / total)) : 0;
+  const radius = size / 2;
+  const angle = ratio * Math.PI * 2;
+  const x = radius + radius * Math.sin(angle);
+  const y = radius - radius * Math.cos(angle);
+  const wedge = 'M ' + radius + ' ' + radius + ' L ' + radius + ' 0 A ' +
+    radius + ' ' + radius + ' 0 ' + (ratio > 0.5 ? 1 : 0) + ' 1 ' + x + ' ' + y + ' Z';
+  const empty = dark ? '#505157' : '#D5D1CC';
+  return (
+    <Svg width={size} height={size} viewBox={'0 0 ' + size + ' ' + size} accessibilityLabel={total ? completed + ' ressources confirmées sur ' + total : 'Aucune ressource définie'}>
+      <Circle cx={radius} cy={radius} r={radius} fill={ratio === 1 ? '#CB245C' : empty} />
+      {ratio > 0 && ratio < 1 && <Path d={wedge} fill="#CB245C" />}
+    </Svg>
+  );
+}
+
 /**
- * One phase language across Discovery and the Dream detail hero.
- * Interactions below the detail hero (accordion and reaction rail) live in
- * DreamReferenceLayout / DetailLayout and are intentionally not replaced.
+ * Identical Dream phases in Discovery and the detail hero. The detail accordion
+ * and reaction rail remain owned by DreamReferenceLayout and DetailLayout.
  */
 export function DreamPhaseCard({ item, width, variant, onOpen }: Props) {
   const theme = useAppTheme();
   const app = useApp();
   const compact = variant === 'tile';
+  const dark = theme.dark;
   const inset = compact ? (width < 205 ? 13 : 17) : (width < 440 ? 23 : 32);
   const titleSize = compact ? (width < 190 ? 18 : 21) : (width < 440 ? 31 : 41);
-  const dark = theme.dark;
-  const openCard = (content: React.ReactNode) => (
-    <Pressable
-      disabled={!onOpen}
-      onPress={onOpen}
-      accessibilityRole={onOpen ? 'button' : undefined}
-      accessibilityLabel={onOpen ? 'Voir le rêve : ' + item.title : undefined}
-    >
+  const ink = theme.foreground;
+  const subdued = theme.muted;
+  // All neutral surfaces use the same Semence palette, never phase-specific green.
+  const neutral = dark ? '#282A2E' : '#F0EBE4';
+  const base = { width, borderRadius: 0, overflow: 'hidden' as const };
+  const withOpen = (content: React.ReactNode) => onOpen ? (
+    <Pressable onPress={onOpen} accessibilityRole="button" accessibilityLabel={'Voir le rêve : ' + item.title}>
       {content}
     </Pressable>
-  );
-  const phaseLabel = PHASE_LABELS[item.phase].toUpperCase();
-  const phaseText = (color: string) => (
-    <Text style={{ color, fontSize: compact ? 9 : 11, fontWeight: '700', letterSpacing: 1.55 }}>
-      {phaseLabel}
+  ) : <View>{content}</View>;
+  const phaseText = (color: string = subdued) => (
+    <Text style={{ color, fontSize: compact ? 9 : 11, fontWeight: '700', letterSpacing: 1.3, textAlign: 'right' }}>
+      {PHASE_LABELS[item.phase].toUpperCase()}
     </Text>
   );
-  const heading = (color: string) => (
-    <Text
-      style={{
-        fontFamily: serif,
-        fontSize: titleSize,
-        lineHeight: compact ? titleSize + 6 : titleSize + 8,
-        letterSpacing: -0.65,
-        color,
-      }}
-    >
+  const heading = (color: string = ink) => (
+    <Text style={{ fontFamily: serif, fontSize: titleSize, lineHeight: compact ? titleSize + 6 : titleSize + 8, letterSpacing: -0.65, color }}>
       {item.title}
     </Text>
   );
-  const base = { width, overflow: 'hidden' as const, borderRadius: compact ? 5 : 8 };
+  const topRight = (color?: string) => (
+    <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center' }}>
+      {phaseText(color)}
+    </View>
+  );
 
   if (item.phase === 'Rêve') {
     const gallery = (item.galleryImages || []).filter(Boolean);
     const images = gallery.length ? gallery : [item.image];
     const thumbnailHeight = compact ? Math.max(64, width * 0.37) : Math.min(185, width * 0.24);
     const wideHeight = compact ? Math.max(76, width * 0.40) : Math.min(190, width * 0.26);
-    const ink = dark ? '#F5F1EC' : '#292622';
+    const textColor = dark ? '#F5F1EC' : '#292622';
     return (
-      <View style={[base, { backgroundColor: dark ? '#282A2E' : '#F0EBE4' }]}>
-        {openCard(
-          <View style={{ padding: inset, paddingBottom: compact ? 10 : 18, gap: compact ? 11 : 18 }}>
-            {phaseText(dark ? '#CCBCA9' : '#74594B')}
-            {heading(ink)}
+      <View style={[base, { backgroundColor: neutral }]}>
+        {withOpen(
+          <View style={{ padding: inset, gap: compact ? 11 : 18 }}>
+            {topRight(dark ? '#CCBCA9' : '#74594B')}
+            {heading(textColor)}
             {!compact && (
               <View style={{ gap: 5 }}>
                 <Text style={{ fontSize: 10, letterSpacing: 1.1, color: dark ? '#CAB9AB' : '#866D61' }}>MON BUT</Text>
                 <Text style={{ fontSize: 15, lineHeight: 23, color: dark ? '#E3DCD4' : '#4B403B' }}>{item.summary}</Text>
               </View>
             )}
-            <View style={{ gap: 5 }}>
+            <View style={{ position: 'relative', gap: 5 }}>
               <View style={{ flexDirection: 'row', gap: 5 }}>
                 <MediaImage uri={images[0]} height={thumbnailHeight} />
                 {images[1] ? (
                   <MediaImage uri={images[1]} height={thumbnailHeight} />
                 ) : (
-                  <View style={{ flex: 1, height: thumbnailHeight, borderRadius: 5, backgroundColor: dark ? '#343B39' : '#DDD7CB', justifyContent: 'center', padding: 9 }}>
+                  <View style={{ flex: 1, height: thumbnailHeight, backgroundColor: dark ? '#353535' : '#DDD7CB', justifyContent: 'center', padding: 9 }}>
                     <Text style={{ color: dark ? '#D5CAC0' : '#67584D', fontFamily: serif, fontSize: compact ? 12 : 19 }}>
                       {item.summary || 'Une idée à cultiver'}
                     </Text>
@@ -140,30 +153,30 @@ export function DreamPhaseCard({ item, width, variant, onOpen }: Props) {
                   <MediaImage uri={images[2]} height={wideHeight} />
                 </View>
               ) : (
-                <View style={{ height: compact ? 31 : 40, backgroundColor: dark ? '#363A39' : '#E3DCD2', borderRadius: 5, justifyContent: 'center', paddingHorizontal: 12 }}>
+                <View style={{ height: compact ? 31 : 40, backgroundColor: dark ? '#363636' : '#E3DCD2', justifyContent: 'center', paddingHorizontal: 12 }}>
                   <Text style={{ color: dark ? '#D6CBBF' : '#75675B', fontSize: compact ? 10 : 12 }}>Une idée qui prend forme</Text>
+                </View>
+              )}
+              {!compact && (
+                <View pointerEvents="box-none" style={[StyleSheet.absoluteFill, { justifyContent: 'center', alignItems: 'center' }]}>
+                  <Pressable
+                    onPress={() => app.joinDream(item.id)}
+                    accessibilityRole="button"
+                    accessibilityLabel="Moi aussi"
+                    style={{
+                      minWidth: 136, paddingHorizontal: 17, paddingVertical: 11,
+                      backgroundColor: dark ? 'rgba(33,33,35,0.92)' : 'rgba(248,245,241,0.94)',
+                      borderWidth: 1, borderColor: dark ? '#B7ABA8' : '#85756D',
+                      borderRadius: 22, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8,
+                    }}
+                  >
+                    <Ionicons name={app.myDreamIds.includes(item.id) ? 'checkmark-circle' : 'add-circle-outline'} size={19} color={app.myDreamIds.includes(item.id) ? '#CB245C' : textColor} />
+                    <Text style={{ color: textColor, fontSize: 13, fontWeight: '600' }}>Moi aussi</Text>
+                  </Pressable>
                 </View>
               )}
             </View>
           </View>,
-        )}
-        {compact && (
-          <Pressable
-            onPress={() => app.joinDream(item.id)}
-            accessibilityRole="button"
-            accessibilityLabel={app.myDreamIds.includes(item.id) ? 'Retirer Moi aussi' : 'Moi aussi'}
-            style={{
-              marginHorizontal: inset, marginBottom: inset,
-              minHeight: 36, borderWidth: 1, borderColor: dark ? '#7F7874' : '#C1B4A6',
-              borderRadius: 19, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7,
-            }}
-          >
-            <Ionicons
-              name={app.myDreamIds.includes(item.id) ? 'checkmark-circle' : 'add-circle-outline'}
-              size={17} color={app.myDreamIds.includes(item.id) ? '#CB245C' : ink}
-            />
-            <Text style={{ color: ink, fontSize: 12, fontWeight: '600' }}>Moi aussi</Text>
-          </Pressable>
         )}
       </View>
     );
@@ -175,47 +188,34 @@ export function DreamPhaseCard({ item, width, variant, onOpen }: Props) {
       : item.needs.map(title => ({ title, confirmed: (item.resolvedNeeds || []).includes(title) }));
     const confirmed = resources.filter(resource => resource.confirmed).length;
     const total = resources.length;
-    const percent = total ? Math.round(100 * confirmed / total) : null;
     const remaining = resources.filter(resource => !resource.confirmed);
-    const ink = dark ? '#F2F3EC' : '#23382B';
-    const muted = dark ? '#BDC9BD' : '#536859';
-    const barHeight = compact ? 110 : 178;
+    const size = compact ? Math.min(77, width * 0.35) : 126;
     return (
-      <View style={[base, { backgroundColor: dark ? '#29332D' : '#E9EEE7' }]}>
-        {openCard(
-          <View style={{ padding: inset, gap: compact ? 12 : 18 }}>
-            {phaseText(dark ? '#B1CCB2' : '#4B7356')}
-            {heading(ink)}
-            {!compact && (
-              <Text style={{ color: muted, fontSize: 15, lineHeight: 22 }}>{item.summary}</Text>
-            )}
-            <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: compact ? 14 : 28, paddingTop: 4 }}>
-              <View style={{ alignItems: 'center', width: compact ? 38 : 54, gap: 9 }}>
-                <Text style={{ fontSize: compact ? 15 : 20, color: ink, fontWeight: '600' }}>{percent === null ? '—' : percent + '%'}</Text>
-                <View style={{ width: compact ? 7 : 9, height: barHeight, backgroundColor: dark ? '#4D5D50' : '#C8D9C9', borderRadius: 9, overflow: 'hidden', justifyContent: 'flex-end' }}>
-                  <View style={{ width: '100%', height: (percent ?? 0) + '%', backgroundColor: '#83B993', borderRadius: 9 }} />
-                </View>
-              </View>
-              <View style={{ flex: 1, paddingTop: 2, gap: compact ? 9 : 16 }}>
-                <Text style={{ color: muted, fontSize: compact ? 11 : 13 }}>
-                  {total ? confirmed + ' ressources sur ' + total + ' confirmées' : 'Ressources à préciser'}
+      <View style={[base, { backgroundColor: 'transparent' }]}>
+        {withOpen(
+          <View style={{ padding: inset, gap: compact ? 14 : 24 }}>
+            {topRight()}
+            {heading()}
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: compact ? 13 : 27 }}>
+              <ResourcePie completed={confirmed} total={total} size={size} dark={dark} />
+              <View style={{ flex: 1, gap: 6 }}>
+                <Text style={{ color: ink, fontWeight: '600', fontSize: compact ? 15 : 22 }}>
+                  {total ? Math.round(100 * confirmed / total) + '%' : '—'}
                 </Text>
-                <View style={{ height: 1, backgroundColor: dark ? '#4A5C4E' : '#C7D5C8' }} />
-                {remaining.length > 0 ? (
-                  <View style={{ gap: 7 }}>
-                    <Text style={{ color: ink, fontSize: compact ? 10 : 12, fontWeight: '600' }}>Encore recherchées</Text>
-                    {remaining.slice(0, compact ? 2 : 4).map((resource, i) => (
-                      <Text key={i} style={{ color: muted, fontSize: compact ? 11 : 14, lineHeight: compact ? 17 : 21 }}>
-                        {resource.title}
-                      </Text>
-                    ))}
-                  </View>
-                ) : (
-                  <Text style={{ color: muted, fontSize: compact ? 11 : 14, lineHeight: 20 }}>
-                    {total ? 'Toutes les ressources sont réunies.' : 'Les besoins seront définis ici.'}
-                  </Text>
-                )}
+                <Text style={{ color: subdued, fontSize: compact ? 11 : 13 }}>
+                  {total ? confirmed + ' sur ' + total + ' ressources' : 'Ressources à préciser'}
+                </Text>
               </View>
+            </View>
+            <View style={{ gap: 7 }}>
+              <Text style={{ color: subdued, fontSize: compact ? 10 : 12, fontWeight: '600' }}>ENCORE RECHERCHÉES</Text>
+              {remaining.length ? remaining.slice(0, compact ? 3 : undefined).map((resource, i) => (
+                <Text key={i} style={{ color: ink, fontSize: compact ? 12 : 15, lineHeight: compact ? 18 : 23 }}>
+                  {resource.title}
+                </Text>
+              )) : <Text style={{ color: subdued, fontSize: compact ? 11 : 14 }}>
+                {total ? 'Toutes les ressources sont réunies.' : 'Aucun besoin renseigné'}
+              </Text>}
             </View>
           </View>,
         )}
@@ -225,49 +225,40 @@ export function DreamPhaseCard({ item, width, variant, onOpen }: Props) {
 
   if (item.phase === 'Croissance') {
     const journal = item.journalEntry?.text || item.logs?.[item.logs.length - 1] || item.summary;
-    const dated = shortDate(item.journalEntry?.date);
+    const date = shortDate(item.journalEntry?.date);
     const duration = dreamDuration(item.createdAt);
     const horizon = monthHorizon(item.goalDate);
-    const ink = dark ? '#F4F1E9' : '#273B31';
-    const muted = dark ? '#ACC4B2' : '#657C69';
+    const quiet = dark ? '#C0BCB8' : '#766F69';
     return (
-      <View style={[base, { backgroundColor: dark ? '#25312B' : '#E5EDE7' }]}>
-        {openCard(
-          <View style={{ padding: inset, gap: compact ? 13 : 22 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
-              {phaseText(muted)}
-              {!!item.category && <Text style={{ color: muted, fontSize: compact ? 9 : 11, letterSpacing: 1 }}>{item.category.toUpperCase()}</Text>}
-            </View>
-            {heading(ink)}
-            <View style={{ gap: 8, paddingVertical: compact ? 5 : 10 }}>
-              {!!dated && <Text style={{ color: muted, fontSize: compact ? 10 : 12, letterSpacing: 0.7 }}>{dated}</Text>}
-              <Text
-                style={{
-                  color: ink,
-                  fontFamily: HANDWRITING_FAMILY,
-                  fontSize: compact ? (width < 185 ? 17 : 20) : 28,
-                  lineHeight: compact ? 26 : 37,
-                }}
-              >
+      <View style={[base, { backgroundColor: compact ? neutral : 'transparent' }]}>
+        {withOpen(
+          <View style={{ padding: inset, gap: compact ? 12 : 19 }}>
+            {topRight()}
+            {!compact && heading()}
+            <View style={{ gap: 6, paddingVertical: compact ? 5 : 9 }}>
+              {!!date && <Text style={{ color: quiet, fontSize: compact ? 10 : 12 }}>{date}</Text>}
+              <Text style={{ color: ink, fontFamily: HANDWRITING_FAMILY, fontSize: compact ? (width < 185 ? 17 : 20) : 28, lineHeight: compact ? 26 : 37 }}>
                 « {journal} »
               </Text>
             </View>
-            <View style={{ height: 1, backgroundColor: dark ? '#485C50' : '#C7D6CB' }} />
             {(duration || horizon) && (
-              <View style={{ flexDirection: compact && width < 225 ? 'column' : 'row', gap: compact ? 12 : 30 }}>
-                {!!duration && (
-                  <View style={{ flex: 1, gap: 5 }}>
-                    <Text style={{ color: muted, fontSize: compact ? 9 : 11, letterSpacing: 0.7 }}>DEPUIS</Text>
-                    <Text style={{ color: ink, fontSize: compact ? 14 : 19, fontFamily: serif }}>{duration}</Text>
-                  </View>
-                )}
-                {!!horizon && (
-                  <View style={{ flex: 1, gap: 5 }}>
-                    <Text style={{ color: muted, fontSize: compact ? 9 : 11, letterSpacing: 0.7 }}>HORIZON</Text>
-                    <Text style={{ color: ink, fontSize: compact ? 14 : 19, fontFamily: serif }}>{horizon}</Text>
-                  </View>
-                )}
-              </View>
+              <>
+                <View style={{ height: 1, backgroundColor: theme.border }} />
+                <View style={{ flexDirection: compact && width < 225 ? 'column' : 'row', gap: compact ? 9 : 28 }}>
+                  {!!duration && (
+                    <View style={{ flex: 1, gap: 3 }}>
+                      <Text style={{ color: quiet, fontSize: compact ? 9 : 10, letterSpacing: 0.5 }}>DEPUIS</Text>
+                      <Text style={{ color: quiet, fontSize: compact ? 12 : 15, fontFamily: serif }}>{duration}</Text>
+                    </View>
+                  )}
+                  {!!horizon && (
+                    <View style={{ flex: 1, gap: 3 }}>
+                      <Text style={{ color: quiet, fontSize: compact ? 9 : 10, letterSpacing: 0.5 }}>HORIZON</Text>
+                      <Text style={{ color: quiet, fontSize: compact ? 12 : 15, fontFamily: serif }}>{horizon}</Text>
+                    </View>
+                  )}
+                </View>
+              </>
             )}
           </View>,
         )}
@@ -275,30 +266,36 @@ export function DreamPhaseCard({ item, width, variant, onOpen }: Props) {
     );
   }
 
-  // Floraison gets the photographic reveal; earlier phases never reuse this hero.
+  // Floraison reserves the photographic reveal for the completed dream.
   const image = item.resultImage || item.image;
-  const mediaHeight = compact ? Math.max(225, width * 1.35) : Math.max(355, Math.min(485, width * 0.68));
+  const mediaHeight = compact ? Math.max(230, width * 1.40) : Math.max(355, Math.min(485, width * 0.68));
+  const gradientId = 'floraison-' + item.id.replace(/[^a-zA-Z0-9]/g, '');
   return (
-    <View style={[base, { backgroundColor: '#31232B', height: mediaHeight }]}>
-      {openCard(
+    <View style={[base, { backgroundColor: neutral, height: mediaHeight }]}>
+      {withOpen(
         <View style={{ height: mediaHeight, width, overflow: 'hidden', justifyContent: 'space-between' }}>
-          <Image source={{ uri: image }} resizeMode="cover" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100%' }} />
-          <Svg pointerEvents="none" width={width} height={mediaHeight} style={{ position: 'absolute', left: 0, top: 0 }}>
+          <Image source={{ uri: image }} resizeMode="cover" style={StyleSheet.absoluteFill} />
+          <Svg pointerEvents="none" width={width} height={mediaHeight} style={StyleSheet.absoluteFill}>
             <Defs>
-              <LinearGradient id={'floraison-' + item.id.replace(/[^a-zA-Z0-9]/g, '')} x1="0%" y1="0%" x2="0%" y2="100%">
-                <Stop offset="0%" stopColor="#0C080B" stopOpacity={0.25} />
-                <Stop offset="45%" stopColor="#1F0B16" stopOpacity={0.15} />
-                <Stop offset="100%" stopColor="#160710" stopOpacity={0.91} />
+              <LinearGradient id={gradientId} x1="0%" y1="0%" x2="0%" y2="100%">
+                <Stop offset="0%" stopColor="#080609" stopOpacity={0.82} />
+                <Stop offset="28%" stopColor="#130B12" stopOpacity={0.27} />
+                <Stop offset="54%" stopColor="#180E16" stopOpacity={0.13} />
+                <Stop offset="72%" stopColor="#160C13" stopOpacity={0.42} />
+                <Stop offset="100%" stopColor="#080608" stopOpacity={0.96} />
               </LinearGradient>
             </Defs>
-            <Rect width="100%" height="100%" fill={'url(#floraison-' + item.id.replace(/[^a-zA-Z0-9]/g, '') + ')'} />
+            <Rect width="100%" height="100%" fill={'url(#' + gradientId + ')'} />
           </Svg>
-          <View style={{ padding: inset, alignSelf: 'flex-start', backgroundColor: '#CB245C' }}>
-            {phaseText('#FFFFFF')}
-          </View>
-          <View style={{ padding: inset, gap: compact ? 8 : 14 }}>
+          <View style={{ padding: inset, gap: 12 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 7 }}>
+              <DreamPhaseIcon phase="Témoignage" size={compact ? 25 : 34} />
+              {phaseText('#F6EAF1')}
+            </View>
             {heading('#FFFFFF')}
-            <Text style={{ color: '#F5DCE6', fontSize: compact ? 11 : 16, lineHeight: compact ? 17 : 24 }}>
+          </View>
+          <View style={{ padding: inset, gap: 9 }}>
+            <Text style={{ color: '#FFFFFF', fontSize: compact ? 12 : 17, lineHeight: compact ? 18 : 25, textShadowColor: 'rgba(0,0,0,0.6)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 }}>
               {item.summary}
             </Text>
           </View>
