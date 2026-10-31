@@ -85,8 +85,9 @@ export default function DreamExperience({ dream, viewPhase, onBack }: {dream:Dre
  const ready = !!dream.goalDate && /^\d{4}-\d{2}-\d{2}$/.test(dream.goalDate) && !Number.isNaN(Date.parse(dream.goalDate)) && resources.every(r=>r.confirmed);
  const phase = viewPhase || dream.phase;
  const historical = phase !== dream.phase;
+ const readOnly = historical || dream.phase === 'Témoignage';
  const resourceEditable = phase === 'Initiation' && (dream.phase === 'Initiation' || dream.phase === 'Croissance');
- return <ScrollView style={{flex:1}} contentContainerStyle={{ paddingHorizontal:16,paddingTop:8,paddingBottom:45,maxWidth:760,width:'100%',alignSelf:'center' }}>
+ return <ScrollView style={{flex:1,backgroundColor:readOnly?(theme.dark?'#1C1D20':'#F4F3F0'):theme.background}} contentContainerStyle={{ paddingHorizontal:16,paddingTop:8,paddingBottom:45,maxWidth:760,width:'100%',alignSelf:'center' }}>
   <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginBottom:13}}>
    <Pressable onPress={onBack || (()=>router.replace('/my-space'))}><Ionicons name="chevron-back" size={25} color={theme.foreground}/></Pressable>
    <Text style={{fontSize:12,color:theme.muted}}>{PHASE_LABELS[phase]}</Text>
@@ -184,6 +185,6 @@ export default function DreamExperience({ dream, viewPhase, onBack }: {dream:Dre
    <Text style={{fontSize:18,fontWeight:'800',color:theme.foreground,marginTop:24}}>Le chemin parcouru</Text>
    {(dream.milestones||[]).map(m=><Text key={m.id} style={{color:theme.foreground,marginTop:10}}>★ {m.title}</Text>)}
   </> : null}
- {!historical ? <Pressable onPress={()=>confirm('Supprimer ce rêve ?', 'Cette suppression effacera ce rêve et ses données locales.', ()=>{remove(dream.id);router.replace('/my-space');})} style={{alignItems:'center',marginTop:35,padding:15}}><Text style={{color:'#B24C59',fontSize:12}}>Supprimer ce rêve</Text></Pressable> : null}
+ {!readOnly ? <Pressable onPress={()=>confirm('Supprimer ce rêve ?', 'Cette suppression effacera ce rêve et ses données locales.', ()=>{remove(dream.id);router.replace('/my-space');})} style={{alignItems:'center',marginTop:35,padding:15}}><Text style={{color:'#B24C59',fontSize:12}}>Supprimer ce rêve</Text></Pressable> : null}
  </ScrollView>;
 }
