@@ -8,6 +8,7 @@ import type { DreamPhase } from '@/domain/publication';
 import { PHASE_LABELS } from '@/domain/publication';
 import { useAppTheme } from '@/theme/AppTheme';
 import DreamExperience from './DreamExperience';
+import SemenceStudio from './SemenceStudio';
 
 type Direction = 'top' | 'left' | 'bottom' | 'right';
 const stages: { phase: DreamPhase; position: Direction; color: string }[] = [
@@ -134,7 +135,7 @@ export default function DreamHub({ dream }: { dream: DreamEntry }) {
   return (
     <View style={{ flex: 1, backgroundColor: theme.background }}>
       {open ? (
-        <DreamExperience dream={dream} viewPhase={open} onBack={() => setOpen(null)} />
+        open === 'Rêve' ? <SemenceStudio dream={dream} onBack={() => setOpen(null)} /> : <DreamExperience dream={dream} viewPhase={open} onBack={() => setOpen(null)} />
       ) : (
         <View style={{ flex: 1, overflow: 'hidden' }} {...responder.panHandlers}>
           {hasPhoto ? (
