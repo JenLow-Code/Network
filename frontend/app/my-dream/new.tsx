@@ -112,20 +112,7 @@ export default function NewDream() {
             <Text style={{ fontSize: 11, color: '#555' }}>Semence</Text>
           </View>
         </View>
-        <Text style={{ fontWeight: '600', fontSize: 13 }}>Talents recherchés</Text>
-        <TextInput
-          value={needs}
-          onChangeText={setNeeds}
-          placeholder="Guitare, chant, photographie…"
-          style={{
-            borderWidth: 1,
-            borderColor: '#ddd',
-            borderRadius: 8,
-            padding: 12,
-            marginTop: 7,
-            marginBottom: 19,
-          }}
-        />
+        <Text style={{ fontSize: 12, color: '#777', marginBottom: 18 }}>Ta semence sera privée au départ. Tu pourras ajouter des images, chansons, citations, liens et autres inspirations une fois ton rêve créé.</Text>
         <Pressable
           disabled={!valid}
           onPress={() => {
@@ -133,10 +120,7 @@ export default function NewDream() {
               title: title.trim(),
               summary: summary.trim(),
               image: image.trim(),
-              needs: needs
-                .split(',')
-                .map(x => x.trim())
-                .filter(Boolean),
+              needs: [],
             });
             router.replace({ pathname: '/my-dream/[id]', params: { id } });
           }}
