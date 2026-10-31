@@ -91,7 +91,7 @@ export function DetailLayout({
             >
               Continuer l’inspiration
             </Text>
-            <PublicationGallery items={[...publications, ...personPublications].filter(p => p.id !== item.id)} />
+            <PublicationGallery layout="masonry" contentWidth={heroWidth} items={[...publications, ...personPublications].filter(p => p.id !== item.id)} />
           </View>
         </View>
       </ScrollView>
