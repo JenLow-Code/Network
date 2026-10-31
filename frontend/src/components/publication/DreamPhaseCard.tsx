@@ -219,6 +219,7 @@ export function DreamPhaseCard({ item, width, variant, onOpen }: Props) {
       : item.needs.map(title => ({ title, confirmed: (item.resolvedNeeds || []).includes(title) }));
     const missing = resources.filter(resource => !resource.confirmed);
     const firstNeed = missing[0]?.title;
+    const moreNeeds = missing.slice(1);
     return (
       <View style={[base, { backgroundColor: compact ? neutral : 'transparent' }]}>
         {withOpen(
@@ -232,6 +233,12 @@ export function DreamPhaseCard({ item, width, variant, onOpen }: Props) {
                 <Text style={{ fontFamily: serif, color: ink, fontSize: titleSize + 4, lineHeight: titleSize + 10 }}>
                   {firstNeed || (resources.length ? 'Tout est réuni' : 'À définir')}
                 </Text>
+                {moreNeeds.length > 0 && (
+                  <Text style={{ color: ink, fontSize: 11, lineHeight: 17, marginTop: 3 }}>
+                    Aussi : {moreNeeds.slice(0, 4).map(resource => resource.title).join(' · ')}
+                    {moreNeeds.length > 4 ? ' · +' + (moreNeeds.length - 4) : ''}
+                  </Text>
+                )}
                 <Text style={{ fontSize: 11, lineHeight: 16, color: subdued }} numberOfLines={3}>
                   Pour « {item.title} »
                 </Text>
@@ -336,7 +343,7 @@ export function DreamPhaseCard({ item, width, variant, onOpen }: Props) {
           </View>
           <View style={{
             position: 'absolute',
-            bottom: compact ? inset : 48,
+            bottom: compact ? inset : 74,
             left: inset,
             right: inset,
             gap: compact ? 5 : 7,
@@ -353,12 +360,7 @@ export function DreamPhaseCard({ item, width, variant, onOpen }: Props) {
               {item.summary}
             </Text>
           </View>
-          {!compact && (
-            <View pointerEvents="none" style={{
-              position: 'absolute', bottom: 0, left: 0, right: 0, height: 1,
-              backgroundColor: theme.background,
-            }} />
-          )}
+
         </View>,
       )}
     </View>
