@@ -145,8 +145,8 @@ export default function DreamHub({ dream }: { dream: DreamEntry }) {
         <View style={{ flex: 1, overflow: 'hidden' }} {...responder.panHandlers}>
           {hasPhoto ? (
             <>
-              <Image source={{ uri: photo }} resizeMode="cover" style={StyleSheet.absoluteFillObject} />
-              <View pointerEvents="none" style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(0,0,0,0.48)' }]} />
+              <Image source={{ uri: photo }} resizeMode="cover" style={StyleSheet.absoluteFill} />
+              <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.48)' }]} />
             </>
           ) : null}
           {stages.map(stage => <EdgeLight key={stage.position} position={stage.position} color={stage.color} />)}
@@ -236,7 +236,7 @@ export default function DreamHub({ dream }: { dream: DreamEntry }) {
       )}
 
       {transition ? (
-        <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFillObject, { zIndex: 20, backgroundColor: theme.background, justifyContent: 'center', alignItems: 'center', opacity: veilOpacity }]}>
+        <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { zIndex: 20, backgroundColor: theme.background, justifyContent: 'center', alignItems: 'center', opacity: veilOpacity }]}>
           <Text style={{ color: stages.find(stage => stage.phase === transition)?.color, fontSize: 33, fontFamily: 'serif', letterSpacing: -0.8 }}>
             {PHASE_LABELS[transition]}
           </Text>
