@@ -338,9 +338,7 @@ function StoryCover({
               title={item.title}
               artwork={item.coverArt || item.image}
             />
-          ) : (
-            <Image source={{ uri: item.image }} resizeMode="cover" accessibilityLabel={item.imageAlt} style={styles.photo} />
-          )}
+          ) : null}
         </View>
         {!illustrated && (
           <Svg pointerEvents="none" width="100%" height="100%" style={StyleSheet.absoluteFill}>
@@ -363,7 +361,7 @@ function StoryCover({
             styles.topMeta,
             {
               top: small ? 19 : 21,
-              right: item.type === 'dream' || isMusic ? 58 : inset,
+              right: isMusic ? 58 : inset,
               left: inset,
             },
           ]}
@@ -377,37 +375,6 @@ function StoryCover({
             {category(item).toUpperCase()}
           </Text>
         </View>
-        )}
-        {item.type === 'dream' && (
-          <View
-            pointerEvents="none"
-            style={[
-              styles.bottomTitle,
-              { left: inset, right: inset, bottom: inset },
-            ]}
-          >
-            <Text
-              numberOfLines={adaptive ? undefined : 3}
-              adjustsFontSizeToFit={!adaptive}
-              minimumFontScale={0.8}
-              style={[
-                styles.storyTitle,
-                {
-                  color: ink,
-                  fontFamily: Platform.select({
-                    web: 'Georgia, "Times New Roman", serif',
-                    ios: 'Georgia',
-                    default: 'serif',
-                  }),
-                  fontSize: titleSize,
-                  lineHeight: titleSize + (small ? 5 : 7),
-                  letterSpacing: -0.8,
-                },
-              ]}
-            >
-              {item.title}
-            </Text>
-          </View>
         )}
         {isTalent && (
           <View pointerEvents="none" style={{ position: 'absolute', left: inset, right: inset, bottom: inset, gap: 3 }}>
@@ -427,11 +394,6 @@ function StoryCover({
                 {line}
               </Text>
             ))}
-          </View>
-        )}
-        {item.type === 'dream' && (
-          <View pointerEvents="none" style={styles.phase}>
-            <DreamPhaseIcon phase={item.phase} size={25} />
           </View>
         )}
       </Pressable>
@@ -580,15 +542,15 @@ function MasonryGallery({ items, viewportWidth }: { items: Publication[]; viewpo
  *
  * Filtering works at every length without empty cells or anonymous image blocks.
  */
-export function PublicationGallery({ items, layout = 'editorial', contentWidth }: { items: Publication[]; layout?: 'editorial' | 'masonry'; contentWidth?: number }) {
+export function PublicationGallery({ items, layout = 'editorial', contentWidth: requestedWidth }: { items: Publication[]; layout?: 'editorial' | 'masonry'; contentWidth?: number }) {
   const { width: windowWidth } = useWindowDimensions();
   const compact = windowWidth < 700;
-  const contentWidth = Math.max(0, Math.min(920, windowWidth) - 30);
+  const contentWidth = requestedWidth ?? Math.max(0, Math.min(920, windowWidth) - 30);
   // Larger gaps between complete stories, small gaps inside each story.
   const gap = compact ? 28 : 36;
 
   if (!items.length) return null;
-  if (layout === 'masonry') return <MasonryGallery items={items} viewportWidth={contentWidth ?? windowWidth} />;
+  if (layout === 'masonry') return <MasonryGallery items={items} viewportWidth={contentWidth + 30} />;
 
   const sections: React.ReactNode[] = [];
   let index = 0;
