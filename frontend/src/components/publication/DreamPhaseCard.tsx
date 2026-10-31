@@ -1,6 +1,6 @@
 import React from 'react';
 import { Image, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
-import Svg, { Circle, Defs, LinearGradient, Path, Rect, Stop } from 'react-native-svg';
+import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import type { DreamPublication } from '@/domain/publication';
 import { PHASE_LABELS } from '@/domain/publication';
@@ -62,21 +62,52 @@ function MediaImage({ uri, height }: { uri: string; height: number }) {
   );
 }
 
-/** A filled pie, not a progress ring or music-player-like linear bar. */
-function ResourcePie({ completed, total, size, dark }: { completed: number; total: number; size: number; dark: boolean }) {
-  const ratio = total > 0 ? Math.max(0, Math.min(1, completed / total)) : 0;
-  const radius = size / 2;
-  const angle = ratio * Math.PI * 2;
-  const x = radius + radius * Math.sin(angle);
-  const y = radius - radius * Math.cos(angle);
-  const wedge = 'M ' + radius + ' ' + radius + ' L ' + radius + ' 0 A ' +
-    radius + ' ' + radius + ' 0 ' + (ratio > 0.5 ? 1 : 0) + ' 1 ' + x + ' ' + y + ' Z';
-  const empty = dark ? '#505157' : '#D5D1CC';
+/** Each resource has an actual confirmed state; this is not an artificial percentage. */
+function ResourceSteps({
+  resources, compact, dark,
+}: {
+  resources: { title: string; confirmed: boolean }[];
+  compact: boolean;
+  dark: boolean;
+}) {
+  const total = resources.length;
+  const remaining = resources.filter(resource => !resource.confirmed).length;
+  const visible = resources.slice(0, compact ? 6 : 9);
   return (
-    <Svg width={size} height={size} viewBox={'0 0 ' + size + ' ' + size} accessibilityLabel={total ? completed + ' ressources confirmées sur ' + total : 'Aucune ressource définie'}>
-      <Circle cx={radius} cy={radius} r={radius} fill={ratio === 1 ? '#CB245C' : empty} />
-      {ratio > 0 && ratio < 1 && <Path d={wedge} fill="#CB245C" />}
-    </Svg>
+    <View style={{ gap: compact ? 9 : 12 }}>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: compact ? 5 : 7 }}>
+        {visible.map((resource, i) => (
+          <View
+            key={resource.title + '-' + i}
+            accessibilityLabel={resource.title + (resource.confirmed ? ' : confirmée' : ' : à trouver')}
+            style={{
+              width: compact ? 27 : 44,
+              height: compact ? 26 : 37,
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: resource.confirmed ? '#9DB861' : (dark ? '#404144' : '#D5D1CB'),
+              borderRadius: 5,
+            }}
+          >
+            {resource.confirmed && <Ionicons name="checkmark" size={compact ? 16 : 20} color="#FFFFFF" />}
+          </View>
+        ))}
+        {total > visible.length && (
+          <Text style={{ alignSelf: 'center', color: dark ? '#BABAB8' : '#666461', fontSize: 11 }}>
+            +{total - visible.length}
+          </Text>
+        )}
+      </View>
+      <Text style={{ fontSize: compact ? 11 : 14, color: dark ? '#C4C4C2' : '#77746F' }}>
+        {!total
+          ? 'Ressources à définir'
+          : remaining === 0
+            ? 'Toutes les ressources sont réunies'
+            : remaining === 1
+              ? 'Plus qu’une ressource à trouver'
+              : 'Encore ' + remaining + ' ressources à trouver'}
+      </Text>
+    </View>
   );
 }
 
@@ -186,71 +217,44 @@ export function DreamPhaseCard({ item, width, variant, onOpen }: Props) {
     const resources = item.resources?.length
       ? item.resources
       : item.needs.map(title => ({ title, confirmed: (item.resolvedNeeds || []).includes(title) }));
-    const confirmed = resources.filter(resource => resource.confirmed).length;
-    const total = resources.length;
     const missing = resources.filter(resource => !resource.confirmed);
-    const mainNeed = missing[0]?.title;
-    const otherNeeds = missing.slice(1);
-    const chartSize = compact ? 46 : 72;
+    const firstNeed = missing[0]?.title;
     return (
       <View style={[base, { backgroundColor: compact ? neutral : 'transparent' }]}>
         {withOpen(
           <View style={{ padding: inset, gap: compact ? 15 : 22 }}>
             {topRight()}
             {compact ? (
-              <View style={{ gap: 7 }}>
+              <View style={{ gap: 6 }}>
                 <Text style={{ fontSize: 9, letterSpacing: 1.2, color: subdued, fontWeight: '600' }}>
-                  {mainNeed ? 'ON RECHERCHE' : 'LES RESSOURCES'}
+                  {firstNeed ? 'ON RECHERCHE' : 'RESSOURCES'}
                 </Text>
                 <Text style={{ fontFamily: serif, color: ink, fontSize: titleSize + 4, lineHeight: titleSize + 10 }}>
-                  {mainNeed || (total ? 'Tout est réuni' : 'À définir')}
+                  {firstNeed || (resources.length ? 'Tout est réuni' : 'À définir')}
                 </Text>
-                <Text style={{ fontSize: 11, lineHeight: 17, color: subdued }}>
+                <Text style={{ fontSize: 11, lineHeight: 16, color: subdued }} numberOfLines={3}>
                   Pour « {item.title} »
                 </Text>
               </View>
             ) : (
-              <View style={{ gap: 16 }}>
+              <View style={{ gap: 11 }}>
                 {heading()}
-                <View style={{ gap: 8 }}>
-                  <Text style={{ fontSize: 11, letterSpacing: 1.2, fontWeight: '600', color: subdued }}>
-                    {missing.length ? 'NOUS RECHERCHONS' : 'RESSOURCES'}
+                <Text style={{ color: subdued, fontSize: 11, fontWeight: '600', letterSpacing: 1.1 }}>
+                  {missing.length ? 'NOUS RECHERCHONS' : 'RESSOURCES'}
+                </Text>
+                {missing.length > 0 ? (
+                  <Text style={{ color: ink, fontFamily: serif, fontSize: 23, lineHeight: 31 }}>
+                    {missing.map(resource => resource.title).join(' · ')}
                   </Text>
-                  {missing.length ? missing.map((resource, i) => (
-                    <Text key={i} style={{ color: ink, fontFamily: serif, fontSize: 21, lineHeight: 29 }}>
-                      {resource.title}
-                    </Text>
-                  )) : (
-                    <Text style={{ color: subdued, fontSize: 15 }}>
-                      {total ? 'Toutes les ressources sont réunies.' : 'Les besoins seront définis ici.'}
-                    </Text>
-                  )}
-                </View>
+                ) : (
+                  <Text style={{ color: subdued, fontSize: 15 }}>
+                    {resources.length ? 'Toutes les ressources sont réunies.' : 'Les besoins seront définis ici.'}
+                  </Text>
+                )}
               </View>
             )}
-            {compact && otherNeeds.length > 0 && (
-              <View style={{ gap: 4 }}>
-                <Text style={{ fontSize: 9, letterSpacing: 0.8, color: subdued }}>ÉGALEMENT RECHERCHÉ</Text>
-                {otherNeeds.slice(0, 2).map((resource, i) => (
-                  <Text key={i} style={{ color: ink, fontSize: 12, lineHeight: 17 }}>{resource.title}</Text>
-                ))}
-              </View>
-            )}
-            <View style={{
-              borderTopWidth: 1,
-              borderTopColor: theme.border,
-              paddingTop: compact ? 13 : 18,
-              flexDirection: 'row', alignItems: 'center', gap: 13,
-            }}>
-              <ResourcePie completed={confirmed} total={total} size={chartSize} dark={dark} />
-              <View style={{ flex: 1, gap: 3 }}>
-                <Text style={{ fontSize: compact ? 13 : 16, color: ink, fontWeight: '600' }}>
-                  {total ? confirmed + ' sur ' + total + ' réunies' : 'Aucune ressource'}
-                </Text>
-                <Text style={{ color: subdued, fontSize: compact ? 10 : 12 }}>
-                  {total ? 'Ressources confirmées' : 'Pas encore définies'}
-                </Text>
-              </View>
+            <View style={{ paddingTop: compact ? 5 : 9 }}>
+              <ResourceSteps resources={resources} compact={compact} dark={dark} />
             </View>
           </View>,
         )}
@@ -261,89 +265,65 @@ export function DreamPhaseCard({ item, width, variant, onOpen }: Props) {
   if (item.phase === 'Croissance') {
     const journal = item.journalEntry?.text || item.logs?.[item.logs.length - 1] || item.summary;
     const date = shortDate(item.journalEntry?.date);
-    const duration = dreamDuration(item.createdAt);
     const startDate = item.createdAt && /^\d{4}-\d{2}-\d{2}/.test(item.createdAt)
       ? item.createdAt.slice(0, 10).split('-').reverse().join('.') : null;
-    const beginning = monthHorizon(item.createdAt);
-    const horizon = monthHorizon(item.goalDate);
     const quiet = dark ? '#C0BCB8' : '#766F69';
+    const growingGreen = dark ? '#9FC5A0' : '#518663';
     return (
       <View style={[base, { backgroundColor: 'transparent' }]}>
         {withOpen(
-          <View style={{ padding: inset, gap: compact ? 14 : 20 }}>
+          <View style={{ padding: inset, gap: compact ? 12 : 19 }}>
             {topRight()}
             {!compact && heading()}
-            <View style={{ gap: 6, paddingVertical: compact ? 4 : 9 }}>
+            <View style={{ gap: 8, paddingVertical: compact ? 4 : 8 }}>
               {!!date && <Text style={{ color: quiet, fontSize: compact ? 10 : 12 }}>{date}</Text>}
-              <Text style={{ color: ink, fontFamily: HANDWRITING_FAMILY, fontSize: compact ? (width < 185 ? 17 : 20) : 28, lineHeight: compact ? 26 : 37 }}>
+              <Text style={{
+                color: ink,
+                fontFamily: HANDWRITING_FAMILY,
+                fontSize: compact ? (width < 185 ? 17 : 20) : 28,
+                lineHeight: compact ? 26 : 37,
+              }}>
                 « {journal} »
               </Text>
-              {!compact && !!startDate && (
-                <Text style={{ color: quiet, fontSize: 12, marginTop: 12 }}>
+              {!!startDate && (
+                <Text style={{ color: growingGreen, fontSize: compact ? 11 : 12, marginTop: compact ? 5 : 11 }}>
                   Grandit depuis le {startDate}
                 </Text>
               )}
             </View>
-            {compact && (beginning || horizon) && (
-              <View style={{ gap: 7 }}>
-                <View style={{ height: 1, backgroundColor: theme.border }} />
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: compact ? 5 : 12 }}>
-                  <View style={{ flexShrink: 1, gap: 3 }}>
-                    <Text style={{ color: quiet, fontSize: compact ? 8 : 9, letterSpacing: 0.7 }}>DEPUIS</Text>
-                    <Text style={{ color: quiet, fontSize: compact ? 11 : 14, fontFamily: serif }} numberOfLines={1}>
-                      {beginning || '—'}
-                    </Text>
-                  </View>
-                  {horizon ? (
-                    <>
-                      <View style={{ flex: 1, minWidth: 8, height: 1, backgroundColor: theme.border, marginHorizontal: 3 }} />
-                      <View style={{ flexShrink: 1, alignItems: 'flex-end', gap: 3 }}>
-                        <Text style={{ color: quiet, fontSize: compact ? 8 : 9, letterSpacing: 0.7 }}>HORIZON</Text>
-                        <Text style={{ color: quiet, fontSize: compact ? 11 : 14, fontFamily: serif, textAlign: 'right' }} numberOfLines={1}>
-                          {horizon}
-                        </Text>
-                      </View>
-                    </>
-                  ) : !!duration && (
-                    <Text style={{ color: quiet, fontSize: compact ? 10 : 12, textAlign: 'right', flex: 1 }}>{duration}</Text>
-                  )}
-                </View>
-              </View>
-            )}
           </View>,
         )}
       </View>
     );
   }
 
-  // A photograph-first reveal. Discovery keeps the full image and places the
-  // title at the top and the pink result on a light black bottom gradient.
-  // Detail keeps the title below and gently blends the lower edge into the
-  // page color, without separating the title from the result description.
+  // Floraison stays photograph-led in both views. The title and result
+  // form a single bottom-aligned group over a subtle dark gradient. Detail adds
+  // a gentle page-colored fade after the readable caption to meet the panels.
   const image = item.resultImage || item.image;
   const mediaHeight = compact
     ? Math.max(230, width * 1.40)
-    : Math.max(295, Math.min(390, width * 0.61));
+    : Math.max(285, Math.min(385, width * 0.57));
   const gradientId = 'floraison-' + item.id.replace(/[^a-zA-Z0-9]/g, '') + '-' + variant;
   return (
     <View style={[base, { backgroundColor: theme.background }]}>
       {withOpen(
-        <View style={{ width, height: mediaHeight, overflow: 'hidden' }}>
+        <View style={{ width, height: mediaHeight, backgroundColor: theme.background, overflow: 'hidden' }}>
           <Image source={{ uri: image }} resizeMode="cover" style={StyleSheet.absoluteFill} />
           <Svg pointerEvents="none" width={width} height={mediaHeight} style={StyleSheet.absoluteFill}>
             <Defs>
               <LinearGradient id={gradientId + '-shade'} x1="0%" y1="0%" x2="0%" y2="100%">
-                <Stop offset="0%" stopColor="#080609" stopOpacity={compact ? 0.54 : 0.10} />
-                <Stop offset="33%" stopColor="#140B12" stopOpacity={0.08} />
-                <Stop offset="57%" stopColor="#140B12" stopOpacity={compact ? 0.10 : 0.22} />
-                <Stop offset="78%" stopColor="#10070D" stopOpacity={compact ? 0.34 : 0.72} />
-                <Stop offset="100%" stopColor="#0C070B" stopOpacity={compact ? 0.72 : 0.80} />
+                <Stop offset="0%" stopColor="#09070A" stopOpacity={0.06} />
+                <Stop offset="39%" stopColor="#09070A" stopOpacity={0.04} />
+                <Stop offset="66%" stopColor="#09070A" stopOpacity={0.32} />
+                <Stop offset="88%" stopColor="#09070A" stopOpacity={0.69} />
+                <Stop offset="100%" stopColor="#09070A" stopOpacity={0.78} />
               </LinearGradient>
               {!compact && (
                 <LinearGradient id={gradientId + '-fade'} x1="0%" y1="0%" x2="0%" y2="100%">
                   <Stop offset="0%" stopColor={theme.background} stopOpacity={0} />
-                  <Stop offset="82%" stopColor={theme.background} stopOpacity={0} />
-                  <Stop offset="93%" stopColor={theme.background} stopOpacity={0.28} />
+                  <Stop offset="80%" stopColor={theme.background} stopOpacity={0} />
+                  <Stop offset="94%" stopColor={theme.background} stopOpacity={0.36} />
                   <Stop offset="100%" stopColor={theme.background} stopOpacity={1} />
                 </LinearGradient>
               )}
@@ -351,28 +331,33 @@ export function DreamPhaseCard({ item, width, variant, onOpen }: Props) {
             <Rect width="100%" height="100%" fill={'url(#' + gradientId + '-shade)'} />
             {!compact && <Rect width="100%" height="100%" fill={'url(#' + gradientId + '-fade)'} />}
           </Svg>
-          {/* The original user-supplied flower artwork needs no enclosing badge or circle. */}
           <View pointerEvents="none" style={{ position: 'absolute', top: inset - 4, right: inset - 4 }}>
             <DreamPhaseIcon phase="Témoignage" size={compact ? 47 : 65} />
           </View>
-          {compact ? (
-            <>
-              <View style={{ position: 'absolute', top: inset, left: inset, right: inset + 46 }}>
-                {heading('#FFFFFF')}
-              </View>
-              <View style={{ position: 'absolute', bottom: inset, left: inset, right: inset }}>
-                <Text style={{ color: '#F5DCE6', fontSize: 12, lineHeight: 18, textShadowColor: 'rgba(0,0,0,0.52)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 }}>
-                  {item.summary}
-                </Text>
-              </View>
-            </>
-          ) : (
-            <View style={{ position: 'absolute', bottom: 58, left: inset, right: inset, gap: 9 }}>
-              {heading('#FFFFFF')}
-              <Text style={{ color: '#F5DCE6', fontSize: 16, lineHeight: 24, textShadowColor: 'rgba(0,0,0,0.56)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 }}>
-                {item.summary}
-              </Text>
-            </View>
+          <View style={{
+            position: 'absolute',
+            bottom: compact ? inset : 48,
+            left: inset,
+            right: inset,
+            gap: compact ? 5 : 7,
+          }}>
+            {heading('#FFFFFF')}
+            <Text style={{
+              color: '#F5DCE6',
+              fontSize: compact ? 12 : 16,
+              lineHeight: compact ? 18 : 23,
+              textShadowColor: 'rgba(0,0,0,0.48)',
+              textShadowOffset: { width: 0, height: 1 },
+              textShadowRadius: 3,
+            }}>
+              {item.summary}
+            </Text>
+          </View>
+          {!compact && (
+            <View pointerEvents="none" style={{
+              position: 'absolute', bottom: 0, left: 0, right: 0, height: 1,
+              backgroundColor: theme.background,
+            }} />
           )}
         </View>,
       )}
