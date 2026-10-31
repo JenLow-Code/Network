@@ -58,7 +58,7 @@ export function DetailLayout({
           <View style={{ position: 'relative' }}>
           <DetailHero item={item} width={heroWidth} height={heroHeight} onMusicPress={onCoverPress} musicPlaying={musicPlaying} />
 
-          <View style={{ paddingTop: item.type === 'music' ? 4 : item.type === 'dream' ? 0 : 22, paddingRight: 0, marginTop: isDream && item.phase === 'Témoignage' ? -44 : 0, position: 'relative', zIndex: 1 }}>
+          <View style={{ paddingTop: item.type === 'music' ? 4 : item.type === 'dream' ? 0 : 22, paddingRight: 0, marginTop: isDream && item.phase === 'Témoignage' ? -22 : 0, position: 'relative', zIndex: 1 }}>
             {featured}
             {isDream ? (
               <View style={{ paddingTop: 0 }}>
