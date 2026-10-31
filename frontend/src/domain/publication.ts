@@ -40,6 +40,8 @@ export type DreamPublication = PublicationBase & {
       | 'ukulele' | 'electric-guitar' | 'guitar' | 'cavaquinho' | 'viola' | 'camera';
     /** A requested proficiency, not the proficiency of a confirmed volunteer. */
     requiredLevel?: string;
+    /** Owner-authored expectations displayed on the talent detail popup. */
+    description?: string;
   }[];
   resolvedNeeds?: string[];
   category?: string;
