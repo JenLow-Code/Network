@@ -1,3 +1,4 @@
+import DreamExperience from './DreamExperience';
 import { Text, TextInput } from '@/i18n/LocalizedText';
 import React, { useState } from 'react';
 import { Alert, Image, Platform, Pressable, ScrollView, View } from 'react-native';
@@ -60,6 +61,7 @@ export default function Workspace() {
   const [editingImage, setEditingImage] = useState(false);
   const [needDraft, setNeedDraft] = useState('');
   const [entry, setEntry] = useState('');
+  if (dream) return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}><DreamExperience dream={dream}/><Nav/></SafeAreaView>;
   if (!dream)
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
