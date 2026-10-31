@@ -188,47 +188,69 @@ export function DreamPhaseCard({ item, width, variant, onOpen }: Props) {
       : item.needs.map(title => ({ title, confirmed: (item.resolvedNeeds || []).includes(title) }));
     const confirmed = resources.filter(resource => resource.confirmed).length;
     const total = resources.length;
-    const remaining = resources.filter(resource => !resource.confirmed);
-    const primaryNeed = remaining[0]?.title;
-    const size = compact ? Math.min(77, width * 0.35) : 126;
+    const missing = resources.filter(resource => !resource.confirmed);
+    const mainNeed = missing[0]?.title;
+    const otherNeeds = missing.slice(1);
+    const chartSize = compact ? 46 : 72;
     return (
       <View style={[base, { backgroundColor: compact ? neutral : 'transparent' }]}>
         {withOpen(
-          <View style={{ padding: inset, gap: compact ? 13 : 24 }}>
+          <View style={{ padding: inset, gap: compact ? 15 : 22 }}>
             {topRight()}
             {compact ? (
-              <View style={{ gap: 5 }}>
-                <Text style={{ color: subdued, fontSize: 9, fontWeight: '600', letterSpacing: 1.2 }}>
-                  {primaryNeed ? 'ON RECHERCHE' : 'RESSOURCES'}
+              <View style={{ gap: 7 }}>
+                <Text style={{ fontSize: 9, letterSpacing: 1.2, color: subdued, fontWeight: '600' }}>
+                  {mainNeed ? 'ON RECHERCHE' : 'LES RESSOURCES'}
                 </Text>
-                <Text style={{ color: ink, fontFamily: serif, fontSize: titleSize + 2, lineHeight: titleSize + 8 }}>
-                  {primaryNeed || (total ? 'Toutes réunies' : 'À définir')}
+                <Text style={{ fontFamily: serif, color: ink, fontSize: titleSize + 4, lineHeight: titleSize + 10 }}>
+                  {mainNeed || (total ? 'Tout est réuni' : 'À définir')}
                 </Text>
-                <Text style={{ color: subdued, fontSize: 10, lineHeight: 15 }} numberOfLines={2}>
-                  {item.title}
-                </Text>
-              </View>
-            ) : heading()}
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: compact ? 13 : 27 }}>
-              <ResourcePie completed={confirmed} total={total} size={size} dark={dark} />
-              <View style={{ flex: 1, gap: 6 }}>
-                <Text style={{ color: ink, fontWeight: '600', fontSize: compact ? 15 : 22 }}>
-                  {total ? Math.round(100 * confirmed / total) + '%' : '—'}
-                </Text>
-                <Text style={{ color: subdued, fontSize: compact ? 11 : 13 }}>
-                  {total ? confirmed + ' sur ' + total + ' ressources' : 'Ressources à préciser'}
+                <Text style={{ fontSize: 11, lineHeight: 17, color: subdued }}>
+                  Pour « {item.title} »
                 </Text>
               </View>
-            </View>
-            <View style={{ gap: 7 }}>
-              <Text style={{ color: subdued, fontSize: compact ? 10 : 12, fontWeight: '600' }}>ENCORE RECHERCHÉES</Text>
-              {remaining.length ? remaining.slice(0, compact ? 3 : undefined).map((resource, i) => (
-                <Text key={i} style={{ color: ink, fontSize: compact ? 12 : 15, lineHeight: compact ? 18 : 23 }}>
-                  {resource.title}
+            ) : (
+              <View style={{ gap: 16 }}>
+                {heading()}
+                <View style={{ gap: 8 }}>
+                  <Text style={{ fontSize: 11, letterSpacing: 1.2, fontWeight: '600', color: subdued }}>
+                    {missing.length ? 'NOUS RECHERCHONS' : 'RESSOURCES'}
+                  </Text>
+                  {missing.length ? missing.map((resource, i) => (
+                    <Text key={i} style={{ color: ink, fontFamily: serif, fontSize: 21, lineHeight: 29 }}>
+                      {resource.title}
+                    </Text>
+                  )) : (
+                    <Text style={{ color: subdued, fontSize: 15 }}>
+                      {total ? 'Toutes les ressources sont réunies.' : 'Les besoins seront définis ici.'}
+                    </Text>
+                  )}
+                </View>
+              </View>
+            )}
+            {compact && otherNeeds.length > 0 && (
+              <View style={{ gap: 4 }}>
+                <Text style={{ fontSize: 9, letterSpacing: 0.8, color: subdued }}>ÉGALEMENT RECHERCHÉ</Text>
+                {otherNeeds.slice(0, 2).map((resource, i) => (
+                  <Text key={i} style={{ color: ink, fontSize: 12, lineHeight: 17 }}>{resource.title}</Text>
+                ))}
+              </View>
+            )}
+            <View style={{
+              borderTopWidth: 1,
+              borderTopColor: theme.border,
+              paddingTop: compact ? 13 : 18,
+              flexDirection: 'row', alignItems: 'center', gap: 13,
+            }}>
+              <ResourcePie completed={confirmed} total={total} size={chartSize} dark={dark} />
+              <View style={{ flex: 1, gap: 3 }}>
+                <Text style={{ fontSize: compact ? 13 : 16, color: ink, fontWeight: '600' }}>
+                  {total ? confirmed + ' sur ' + total + ' réunies' : 'Aucune ressource'}
                 </Text>
-              )) : <Text style={{ color: subdued, fontSize: compact ? 11 : 14 }}>
-                {total ? 'Toutes les ressources sont réunies.' : 'Aucun besoin renseigné'}
-              </Text>}
+                <Text style={{ color: subdued, fontSize: compact ? 10 : 12 }}>
+                  {total ? 'Ressources confirmées' : 'Pas encore définies'}
+                </Text>
+              </View>
             </View>
           </View>,
         )}
@@ -240,6 +262,8 @@ export function DreamPhaseCard({ item, width, variant, onOpen }: Props) {
     const journal = item.journalEntry?.text || item.logs?.[item.logs.length - 1] || item.summary;
     const date = shortDate(item.journalEntry?.date);
     const duration = dreamDuration(item.createdAt);
+    const startDate = item.createdAt && /^\d{4}-\d{2}-\d{2}/.test(item.createdAt)
+      ? item.createdAt.slice(0, 10).split('-').reverse().join('.') : null;
     const beginning = monthHorizon(item.createdAt);
     const horizon = monthHorizon(item.goalDate);
     const quiet = dark ? '#C0BCB8' : '#766F69';
@@ -254,8 +278,13 @@ export function DreamPhaseCard({ item, width, variant, onOpen }: Props) {
               <Text style={{ color: ink, fontFamily: HANDWRITING_FAMILY, fontSize: compact ? (width < 185 ? 17 : 20) : 28, lineHeight: compact ? 26 : 37 }}>
                 « {journal} »
               </Text>
+              {!compact && !!startDate && (
+                <Text style={{ color: quiet, fontSize: 12, marginTop: 12 }}>
+                  Grandit depuis le {startDate}
+                </Text>
+              )}
             </View>
-            {(beginning || horizon) && (
+            {compact && (beginning || horizon) && (
               <View style={{ gap: 7 }}>
                 <View style={{ height: 1, backgroundColor: theme.border }} />
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: compact ? 5 : 12 }}>
@@ -287,56 +316,64 @@ export function DreamPhaseCard({ item, width, variant, onOpen }: Props) {
     );
   }
 
-  // Floraison is the photographic reveal. The image dissolves into the real
-  // page background; the original flower illustration becomes a standalone badge.
+  // A photograph-first reveal. Discovery keeps the full image and places the
+  // title at the top and the pink result on a light black bottom gradient.
+  // Detail keeps the title below and gently blends the lower edge into the
+  // page color, without separating the title from the result description.
   const image = item.resultImage || item.image;
-  const mediaHeight = compact ? Math.max(230, width * 1.40) : Math.max(355, Math.min(485, width * 0.68));
+  const mediaHeight = compact
+    ? Math.max(230, width * 1.40)
+    : Math.max(295, Math.min(390, width * 0.61));
   const gradientId = 'floraison-' + item.id.replace(/[^a-zA-Z0-9]/g, '') + '-' + variant;
-  const badgeSize = compact ? 44 : 62;
   return (
     <View style={[base, { backgroundColor: theme.background }]}>
       {withOpen(
-        <View>
-          <View style={{ width, height: mediaHeight, overflow: 'hidden' }}>
-            <Image source={{ uri: image }} resizeMode="cover" style={StyleSheet.absoluteFill} />
-            <Svg pointerEvents="none" width={width} height={mediaHeight} style={StyleSheet.absoluteFill}>
-              <Defs>
-                <LinearGradient id={gradientId + '-ink'} x1="0%" y1="0%" x2="0%" y2="100%">
-                  <Stop offset="0%" stopColor="#080609" stopOpacity={0.80} />
-                  <Stop offset="40%" stopColor="#140B12" stopOpacity={0.15} />
-                  <Stop offset="72%" stopColor="#11080F" stopOpacity={0.48} />
-                  <Stop offset="90%" stopColor="#09070B" stopOpacity={0.64} />
-                  <Stop offset="100%" stopColor="#09070B" stopOpacity={0} />
-                </LinearGradient>
+        <View style={{ width, height: mediaHeight, overflow: 'hidden' }}>
+          <Image source={{ uri: image }} resizeMode="cover" style={StyleSheet.absoluteFill} />
+          <Svg pointerEvents="none" width={width} height={mediaHeight} style={StyleSheet.absoluteFill}>
+            <Defs>
+              <LinearGradient id={gradientId + '-shade'} x1="0%" y1="0%" x2="0%" y2="100%">
+                <Stop offset="0%" stopColor="#080609" stopOpacity={compact ? 0.54 : 0.10} />
+                <Stop offset="33%" stopColor="#140B12" stopOpacity={0.08} />
+                <Stop offset="57%" stopColor="#140B12" stopOpacity={compact ? 0.10 : 0.22} />
+                <Stop offset="78%" stopColor="#10070D" stopOpacity={compact ? 0.34 : 0.72} />
+                <Stop offset="100%" stopColor="#0C070B" stopOpacity={compact ? 0.72 : 0.80} />
+              </LinearGradient>
+              {!compact && (
                 <LinearGradient id={gradientId + '-fade'} x1="0%" y1="0%" x2="0%" y2="100%">
                   <Stop offset="0%" stopColor={theme.background} stopOpacity={0} />
-                  <Stop offset="70%" stopColor={theme.background} stopOpacity={0} />
-                  <Stop offset="83%" stopColor={theme.background} stopOpacity={0.18} />
-                  <Stop offset="93%" stopColor={theme.background} stopOpacity={0.72} />
+                  <Stop offset="82%" stopColor={theme.background} stopOpacity={0} />
+                  <Stop offset="93%" stopColor={theme.background} stopOpacity={0.28} />
                   <Stop offset="100%" stopColor={theme.background} stopOpacity={1} />
                 </LinearGradient>
-              </Defs>
-              <Rect width="100%" height="100%" fill={'url(#' + gradientId + '-ink)'} />
-              <Rect width="100%" height="100%" fill={'url(#' + gradientId + '-fade)'} />
-            </Svg>
-            <View style={{ position: 'absolute', top: inset, right: inset, width: badgeSize, height: badgeSize, borderRadius: badgeSize / 2, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(255,251,247,0.92)' }}>
-              <DreamPhaseIcon phase="Témoignage" size={compact ? 34 : 48} />
+              )}
+            </Defs>
+            <Rect width="100%" height="100%" fill={'url(#' + gradientId + '-shade)'} />
+            {!compact && <Rect width="100%" height="100%" fill={'url(#' + gradientId + '-fade)'} />}
+          </Svg>
+          {/* The original user-supplied flower artwork needs no enclosing badge or circle. */}
+          <View pointerEvents="none" style={{ position: 'absolute', top: inset - 4, right: inset - 4 }}>
+            <DreamPhaseIcon phase="Témoignage" size={compact ? 47 : 65} />
+          </View>
+          {compact ? (
+            <>
+              <View style={{ position: 'absolute', top: inset, left: inset, right: inset + 46 }}>
+                {heading('#FFFFFF')}
+              </View>
+              <View style={{ position: 'absolute', bottom: inset, left: inset, right: inset }}>
+                <Text style={{ color: '#F5DCE6', fontSize: 12, lineHeight: 18, textShadowColor: 'rgba(0,0,0,0.52)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 }}>
+                  {item.summary}
+                </Text>
+              </View>
+            </>
+          ) : (
+            <View style={{ position: 'absolute', bottom: 58, left: inset, right: inset, gap: 9 }}>
+              {heading('#FFFFFF')}
+              <Text style={{ color: '#F5DCE6', fontSize: 16, lineHeight: 24, textShadowColor: 'rgba(0,0,0,0.56)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 }}>
+                {item.summary}
+              </Text>
             </View>
-            {compact ? (
-              <View style={{ position: 'absolute', top: inset, left: inset, right: inset + badgeSize + 6 }}>
-                {heading('#FFFFFF')}
-              </View>
-            ) : (
-              <View style={{ position: 'absolute', bottom: Math.max(43, mediaHeight * 0.17), left: inset, right: inset }}>
-                {heading('#FFFFFF')}
-              </View>
-            )}
-          </View>
-          <View style={{ paddingHorizontal: inset, paddingBottom: inset, paddingTop: compact ? 0 : 3, backgroundColor: theme.background }}>
-            <Text style={{ color: ink, fontSize: compact ? 12 : 17, lineHeight: compact ? 18 : 25 }}>
-              {item.summary}
-            </Text>
-          </View>
+          )}
         </View>,
       )}
     </View>
