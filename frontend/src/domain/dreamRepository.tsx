@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { dreams } from '@/mocks/publications';
 import { DreamPhase } from './publication';
-import { DreamEntry, FlowerDraft, fromDemo, canEditField, nextPhase } from './dreamWorkspace';
+import { DreamEntry, DreamBlock, DreamResource, DreamHabit, FlowerDraft, fromDemo, canEditField, nextPhase } from './dreamWorkspace';
 import { useApp } from '@/context/AppContext';
 type Repo = {
   items: DreamEntry[];
@@ -21,6 +21,11 @@ type Repo = {
     mediaType: 'audio' | 'photo' | 'video' | 'text',
     mediaUrl?: string,
   ) => void;
+  patch: (id: string, changes: Partial<DreamEntry>) => void;
+  appendBlock: (id: string, block: DreamBlock) => void;
+  setResources: (id: string, resources: DreamResource[]) => void;
+  setHabits: (id: string, habits: DreamHabit[]) => void;
+  transitionToGrowth: (id: string) => void;
   remove: (id: string) => void;
 };
 const Context = createContext<Repo | null>(null);
@@ -62,6 +67,8 @@ export function DreamProvider({ children }: { children: React.ReactNode }) {
         ...data,
         id,
         phase: 'Rêve',
+        visibility: 'private',
+        blocks: [], resources: [], habits: [], milestones: [], thoughts: [],
         notes: [],
         additions: [],
         createdAt: new Date().toISOString(),
@@ -110,10 +117,21 @@ export function DreamProvider({ children }: { children: React.ReactNode }) {
           : d,
       ),
     );
+  const patch: Repo['patch'] = (id, changes) => setItems(p => p.map(d => d.id === id ? { ...d, ...changes, id: d.id, title: d.title, phase: d.phase } : d));
+  const appendBlock: Repo['appendBlock'] = (id, block) => setItems(p => p.map(d => d.id === id && d.phase === 'Rêve' ? { ...d, blocks: [...(d.blocks || []), block] } : d));
+  const setResources: Repo['setResources'] = (id, resources) => setItems(p => p.map(d => d.id === id && d.phase === 'Initiation' ? { ...d, resources } : d));
+  const setHabits: Repo['setHabits'] = (id, habits) => setItems(p => p.map(d => d.id === id && d.phase === 'Croissance' ? { ...d, habits } : d));
+  const transitionToGrowth: Repo['transitionToGrowth'] = id => setItems(p => p.map(d => {
+    if (d.id !== id || d.phase !== 'Initiation') return d;
+    const resources = d.resources || [];
+    const dateValid = !!d.goalDate && /^\\d{4}-\\d{2}-\\d{2}$/.test(d.goalDate) && !Number.isNaN(Date.parse(d.goalDate));
+    if (!dateValid || resources.some(r => !r.confirmed)) return d;
+    return { ...d, phase: 'Croissance', visibility: 'public', growthStartedAt: new Date().toISOString(), chat: d.chat || { id: 'dream-' + d.id, messages: [] } };
+  }));
   const remove: Repo['remove'] = id => setItems(p => p.filter(d => d.id !== id));
   return (
     <Context.Provider
-      value={{ items, create, update, add, setFlowerDraft, advance, complete, remove }}
+      value={{ items, create, update, add, setFlowerDraft, advance, complete, remove, patch, appendBlock, setResources, setHabits, transitionToGrowth }}
     >
       {children}
     </Context.Provider>
