@@ -23,7 +23,14 @@ export const publications: Publication[] = [
     phase: 'Initiation',
     category: 'Musique',
     createdAt: '2026-07-17',
-    resources: [{ title: 'Guitare', confirmed: true }, { title: 'Tandem', confirmed: false }],
+    // Illustrative people requested by this demo dream; not real volunteer matches.
+    resources: [
+      { title: 'Guitariste', confirmed: true, category: 'person', illustration: 'acoustic-guitar', requiredLevel: 'Intermédiaire' },
+      { title: 'Batteur', confirmed: true, category: 'person', illustration: 'drums', requiredLevel: 'Intermédiaire' },
+      { title: 'Chanteur', confirmed: false, category: 'person', illustration: 'singing', requiredLevel: 'Débutant' },
+      { title: 'Pianiste', confirmed: false, category: 'person', illustration: 'piano', requiredLevel: 'Avancé' },
+      { title: 'Salle de répétition', confirmed: false, category: 'practical' },
+    ],
     summary: 'Apprendre à accompagner les chants à la guitare et rejoindre une équipe de louange.',
     motivation: 'Partager la musique et servir ensemble.',
     needs: ['Guitare', 'Tandem'],
