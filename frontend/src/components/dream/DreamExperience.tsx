@@ -56,7 +56,7 @@ export default function DreamExperience({ dream }: {dream:DreamEntry}) {
  const [milestone, setMilestone] = useState('');
  const [thought, setThought] = useState('');
  const blocks = dream.blocks || [];
- const resources = dream.resources || (dream.needs || []).map((n,i)=>({id:'legacy-'+i,title:n,category:'practical' as const,confirmed:(dream.resolvedNeeds||[]).includes(n)}));
+ const resources: DreamResource[] = dream.resources || (dream.needs || []).map((n,i)=>({id:'legacy-'+i,title:n,category:'practical' as const,confirmed:(dream.resolvedNeeds||[]).includes(n)}));
  const habits = dream.habits || [];
  const confirm = (title:string,message:string,go:()=>void) => Platform.OS==='web' ? (typeof window !== 'undefined' && window.confirm(title+'\n'+message) ? go() : null) : Alert.alert(title,message,[{text:'Annuler',style:'cancel'},{text:'Confirmer',onPress:go}]);
  const saveBlock = () => {
