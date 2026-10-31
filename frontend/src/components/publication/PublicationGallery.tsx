@@ -12,6 +12,7 @@ import { useAppTheme } from '@/theme/AppTheme';
 import { verseExcerpt } from '@/mocks/publications';
 import { approvedCassetteImage } from '@/assets/approvedCassette';
 import { HANDWRITING_FAMILY } from '@/theme/handwriting';
+import { DreamPhaseCard } from '@/components/publication/DreamPhaseCard';
 
 const audio = [
   require('../../../assets/audio/pierre-01-douceur.wav'),
@@ -266,6 +267,9 @@ function StoryCover({
   scale: StoryScale;
   adaptive?: boolean;
 }) {
+  if (item.type === 'dream') {
+    return <DreamPhaseCard item={item} width={width} variant="tile" onOpen={() => router.push(publicationPath(item) as any)} />;
+  }
   const shadeId = useId().replace(/[^a-zA-Z0-9_-]/g, '');
   const theme = useAppTheme();
   const isTalent = item.type === 'talent';
