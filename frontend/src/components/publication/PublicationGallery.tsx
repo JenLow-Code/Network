@@ -267,11 +267,11 @@ function StoryCover({
   scale: StoryScale;
   adaptive?: boolean;
 }) {
+  const shadeId = useId().replace(/[^a-zA-Z0-9_-]/g, '');
+  const theme = useAppTheme();
   if (item.type === 'dream') {
     return <DreamPhaseCard item={item} width={width} variant="tile" onOpen={() => router.push(publicationPath(item) as any)} />;
   }
-  const shadeId = useId().replace(/[^a-zA-Z0-9_-]/g, '');
-  const theme = useAppTheme();
   const isTalent = item.type === 'talent';
   const isBible = item.type === 'bible';
   const isMusic = item.type === 'music';
