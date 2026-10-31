@@ -580,7 +580,7 @@ function MasonryGallery({ items, viewportWidth }: { items: Publication[]; viewpo
  *
  * Filtering works at every length without empty cells or anonymous image blocks.
  */
-export function PublicationGallery({ items, layout = 'editorial' }: { items: Publication[]; layout?: 'editorial' | 'masonry' }) {
+export function PublicationGallery({ items, layout = 'editorial', contentWidth }: { items: Publication[]; layout?: 'editorial' | 'masonry'; contentWidth?: number }) {
   const { width: windowWidth } = useWindowDimensions();
   const compact = windowWidth < 700;
   const contentWidth = Math.max(0, Math.min(920, windowWidth) - 30);
@@ -588,7 +588,7 @@ export function PublicationGallery({ items, layout = 'editorial' }: { items: Pub
   const gap = compact ? 28 : 36;
 
   if (!items.length) return null;
-  if (layout === 'masonry') return <MasonryGallery items={items} viewportWidth={windowWidth} />;
+  if (layout === 'masonry') return <MasonryGallery items={items} viewportWidth={contentWidth ?? windowWidth} />;
 
   const sections: React.ReactNode[] = [];
   let index = 0;
