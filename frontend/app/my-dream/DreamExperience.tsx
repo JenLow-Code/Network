@@ -25,7 +25,7 @@ function DreamBlockCard({ block, editable, onEdit, onMove }: {block:DreamBlock;e
  const bg = tones[block.tone];
  const looksLikeImage = block.kind === 'image' && !!block.content;
  return <View style={{ width: block.size === 'small' ? '48.5%' : '100%', paddingBottom: 9 }}>
-  <Pressable onPress={editable ? onEdit : () => { if (block.kind === 'link' && /^https?:\/\//.test(block.content)) void Linking.openURL(block.content); }} style={{ backgroundColor: bg, borderRadius: 13, overflow: 'hidden', minHeight: block.size === 'featured' ? 205 : block.size === 'small' ? 115 : 80, justifyContent: 'center' }}>
+  <Pressable onPress={editable ? onEdit : () => { if (['link','audio','video','document'].includes(block.kind) && /^https?:\/\//.test(block.content)) void Linking.openURL(block.content); }} style={{ backgroundColor: bg, borderRadius: 13, overflow: 'hidden', minHeight: block.size === 'featured' ? 205 : block.size === 'small' ? 115 : 80, justifyContent: 'center' }}>
    {looksLikeImage ? <Image source={{ uri: block.content }} style={{ width: '100%', height: block.size === 'featured' ? 220 : 132 }} /> :
    <View style={{ padding: 15, gap: 7 }}>
     {block.kind !== 'text' && block.kind !== 'quote' ? <Text style={{ fontSize: 10, fontWeight: '800', color: pink }}>{formLabels[forms.indexOf(block.kind)]?.toUpperCase()}</Text> : null}
@@ -48,6 +48,7 @@ export default function DreamExperience({ dream }: {dream:DreamEntry}) {
  const [blockTone, setBlockTone] = useState<DreamBlock['tone']>('neutral');
  const [blockSize, setBlockSize] = useState<DreamBlock['size']>('wide');
  const [resourceTitle, setResourceTitle] = useState('');
+ const [resourceAmount, setResourceAmount] = useState('');
  const [resourceCategory, setResourceCategory] = useState<DreamResource['category']>('person');
  const [resourceLink, setResourceLink] = useState('');
  const [habitTitle, setHabitTitle] = useState('');
@@ -72,7 +73,7 @@ export default function DreamExperience({ dream }: {dream:DreamEntry}) {
   patch(dream.id,{blocks:updated});
  };
  const editBlock=(block:DreamBlock)=>{setEditingBlock(block.id);setBlockText(block.content);setBlockTitle(block.title||'');setBlockTone(block.tone);setBlockSize(block.size);setBlockKind(block.kind);setPicker(true);};
- const addResource=()=>{if(!resourceTitle.trim())return;setResources(dream.id,[...resources,{id:uid(),title:resourceTitle.trim(),category:resourceCategory,confirmed:false,linkedBlockId:resourceLink||undefined}]);setResourceTitle('');setResourceLink('');};
+ const addResource=()=>{if(!resourceTitle.trim())return;const amount=resourceCategory==='financial'?Number(resourceAmount.replace(',','.')):undefined;setResources(dream.id,[...resources,{id:uid(),title:resourceTitle.trim(),category:resourceCategory,confirmed:false,linkedBlockId:resourceLink||undefined,amount:amount&&Number.isFinite(amount)&&amount>0?amount:undefined}]);setResourceTitle('');setResourceAmount('');setResourceLink('');};
  const ready = !!dream.goalDate && /^\d{4}-\d{2}-\d{2}$/.test(dream.goalDate) && !Number.isNaN(Date.parse(dream.goalDate)) && resources.every(r=>r.confirmed);
  const phase = dream.phase;
  return <ScrollView style={{flex:1}} contentContainerStyle={{ paddingHorizontal:16,paddingTop:8,paddingBottom:45,maxWidth:760,width:'100%',alignSelf:'center' }}>
@@ -122,6 +123,8 @@ export default function DreamExperience({ dream }: {dream:DreamEntry}) {
       <Text style={{fontSize:17,fontWeight:'800',color:theme.foreground,marginBottom:9}}>{category==='person'?'Personnes':category==='practical'?'Autres ressources':'Financement'}</Text>
       {resources.filter(r=>r.category===category).map(r=><View key={r.id} style={{backgroundColor:theme.surface,borderRadius:11,padding:12,marginBottom:7,borderWidth:1,borderColor:theme.border}}>
        <Pressable onPress={()=>checkResource(r)} style={{flexDirection:'row',gap:10,alignItems:'center'}}><Ionicons name={r.confirmed?'checkmark-circle':'ellipse-outline'} color={r.confirmed?'#5B965C':pink} size={23}/><Text style={{color:theme.foreground,flex:1}}>{r.title}</Text><Text style={{fontSize:11,color:theme.muted}}>{r.confirmed?'Trouvé':'À trouver'}</Text></Pressable>
+       {r.amount ? <Text style={{marginTop:6,fontSize:12,color:theme.muted}}>Montant prévu : {r.amount.toLocaleString('fr-FR')} €</Text> : null}
+       <Pressable onPress={()=>setResources(dream.id,resources.filter(x=>x.id!==r.id))} style={{alignSelf:'flex-end',paddingTop:5}}><Text style={{fontSize:11,color:theme.muted}}>Retirer</Text></Pressable>
        {r.linkedBlockId ? <Text style={{marginTop:7,fontSize:11,color:pink}}>↳ Lié à « {blocks.find(b=>b.id===r.linkedBlockId)?.title||blocks.find(b=>b.id===r.linkedBlockId)?.content.slice(0,30)||'inspiration'} »</Text> : null}
       </View>)}
       {category==='person' ? <Pressable onPress={()=>router.push('/discover?filter=Talents')}><Text style={{color:pink,fontSize:12,marginTop:5}}>Trouver des talents sur JenLow ↗</Text></Pressable>:null}
@@ -129,6 +132,7 @@ export default function DreamExperience({ dream }: {dream:DreamEntry}) {
     <Text style={{fontWeight:'800',color:theme.foreground,marginBottom:7}}>Ajouter un besoin</Text>
     <View style={{flexDirection:'row',gap:7,marginBottom:12}}>{(['person','practical','financial'] as const).map(k=><Pressable key={k} onPress={()=>setResourceCategory(k)} style={{padding:9,backgroundColor:resourceCategory===k?pink:'#F1ECE5',borderRadius:9}}><Text style={{color:resourceCategory===k?'#fff':'#333',fontSize:12}}>{k==='person'?'Personne':k==='practical'?'Matériel / autre':'Financier'}</Text></Pressable>)}</View>
     <Field label="Ressource nécessaire" value={resourceTitle} onChange={setResourceTitle} placeholder="De quoi as-tu besoin ?"/>
+    {resourceCategory==='financial'?<Field label="Montant estimé en € (facultatif)" value={resourceAmount} onChange={setResourceAmount} placeholder="Ex. 300"/>:null}
     {blocks.length ? <><Text style={{fontSize:12,color:theme.muted,marginBottom:7}}>Lier une inspiration (facultatif)</Text><ScrollView horizontal style={{marginBottom:10}}>{blocks.map(b=><Pressable key={b.id} onPress={()=>setResourceLink(resourceLink===b.id?'':b.id)} style={{padding:9,marginRight:7,backgroundColor:resourceLink===b.id?'#FBD8E9':'#F1ECE5',borderRadius:9}}><Text style={{fontSize:11,color:'#333'}} numberOfLines={1}>{b.title||b.content.slice(0,24)||'Image'}</Text></Pressable>)}</ScrollView></>:null}
     <Action secondary label="+ Ajouter cette ressource" onPress={addResource}/>
     <Action label={ready?'Confirmer et commencer la croissance':'Préparatifs en cours'} onPress={()=>{if(!ready){Alert.alert('Encore un peu','Définis la date et confirme les ressources nécessaires.');return;}confirmGrowth();}}/>
