@@ -59,6 +59,7 @@ function BlockView({block,edit,onTap}:{block:DreamBlock;edit:boolean;onTap:()=>v
  </View>;
 }
 function CanvasTile({block,index,editable,theme,onEdit,onMove,onResize,onStart,onFinish,onHover,dragging,highlight}:{block:DreamBlock;index:number;editable:boolean;theme:{foreground:string;muted:string;border:string;surface:string};onEdit:()=>void;onMove:(from:number,to:number)=>void;onResize:(id:string,span:1|2,height:number)=>void;onStart:(index:number)=>void;onFinish:()=>void;onHover:(index:number)=>void;dragging:boolean;highlight:boolean}) {
+ const [shift,setShift]=useState({x:0,y:0});
  const [preview,setPreview]=useState<{span:1|2;height:number}|null>(null);
  const callbacks=useRef({index,onStart,onFinish,onHover,onMove,onResize,blockId:block.id});
  callbacks.current={index,onStart,onFinish,onHover,onMove,onResize,blockId:block.id};
@@ -68,10 +69,10 @@ function CanvasTile({block,index,editable,theme,onEdit,onMove,onResize,onStart,o
  const drag=useRef(PanResponder.create({
   onStartShouldSetPanResponder:()=>true,
   onMoveShouldSetPanResponder:()=>true,
-  onPanResponderGrant:()=>{callbacks.current.onStart(callbacks.current.index);},
-  onPanResponderMove:(_,g)=>{const to=Math.max(0,callbacks.current.index+Math.round(g.dy/110)*2+Math.round(g.dx/145));callbacks.current.onHover(to);},
-  onPanResponderRelease:(_,g)=>{const target=Math.max(0,callbacks.current.index+Math.round(g.dy/110)*2+Math.round(g.dx/145));callbacks.current.onMove(callbacks.current.index,target);callbacks.current.onFinish();},
-  onPanResponderTerminate:()=>callbacks.current.onFinish(),
+  onPanResponderGrant:()=>{setShift({x:0,y:0});callbacks.current.onStart(callbacks.current.index);},
+  onPanResponderMove:(_,g)=>{setShift({x:g.dx,y:g.dy});const to=Math.max(0,callbacks.current.index+Math.round(g.dy/110)*2+Math.round(g.dx/145));callbacks.current.onHover(to);},
+  onPanResponderRelease:(_,g)=>{const target=Math.max(0,callbacks.current.index+Math.round(g.dy/110)*2+Math.round(g.dx/145));callbacks.current.onMove(callbacks.current.index,target);setShift({x:0,y:0});callbacks.current.onFinish();},
+  onPanResponderTerminate:()=>{setShift({x:0,y:0});callbacks.current.onFinish();},
  })).current;
  const resize=useRef(PanResponder.create({
   onStartShouldSetPanResponder:()=>true,
@@ -81,7 +82,7 @@ function CanvasTile({block,index,editable,theme,onEdit,onMove,onResize,onStart,o
   onPanResponderRelease:(_,g)=>{const span:1|2=g.dx>28?2:g.dx< -28?1:startSize.current.span;const height=Math.max(55,Math.min(540,startSize.current.height+Math.round(g.dy/28)*28));callbacks.current.onResize(callbacks.current.blockId,span,height);setPreview(null);},
   onPanResponderTerminate:()=>setPreview(null),
  })).current;
- return <View style={{width:(preview?.span||(block.span||(block.size==='small'?1:2)))===1?'48.5%':'100%',paddingBottom:12,opacity:dragging?.60:1}}>
+ return <View style={{width:(preview?.span||(block.span||(block.size==='small'?1:2)))===1?'48.5%':'100%',paddingBottom:12,opacity:dragging?.84:1,transform:dragging?[{translateX:shift.x},{translateY:shift.y}]:undefined,zIndex:dragging?12:0}}>
   <View style={{borderWidth:highlight?2:0,borderColor:'#D71D77',borderRadius:12}}>
    <View style={preview?{minHeight:preview.height}:undefined}><BlockView block={{...block,height:preview?.height||block.height}} edit={false} onTap={onEdit}/></View>
   </View>
