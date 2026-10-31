@@ -31,6 +31,7 @@ export function DetailLayout({
 }) {
   const theme = useAppTheme();
   const isDream = item.type === 'dream';
+  const isFloraison = isDream && item.phase === 'Témoignage';
   const { width: screenWidth } = useWindowDimensions();
   const width = Math.min(screenWidth, 760);
   const heroWidth = Math.max(0, width - 32);
@@ -58,11 +59,11 @@ export function DetailLayout({
           <View style={{ position: 'relative' }}>
           <DetailHero item={item} width={heroWidth} height={heroHeight} onMusicPress={onCoverPress} musicPlaying={musicPlaying} />
 
-          <View style={{ paddingTop: item.type === 'music' ? 4 : item.type === 'dream' ? 0 : 22, paddingRight: 0, marginTop: isDream && item.phase === 'Témoignage' ? -64 : 0, position: 'relative', zIndex: 1 }}>
+          <View style={{ paddingTop: item.type === 'music' ? 4 : item.type === 'dream' ? 0 : 22, paddingRight: 0, marginTop: isFloraison ? -50 : 0, position: 'relative', zIndex: 1 }}>
             {featured}
             {isDream ? (
               <View style={{ paddingTop: 0 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 24, paddingTop: 8 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: screenWidth < 530 ? 14 : 24, paddingTop: isFloraison ? 0 : 8 }}>
                   <View style={{ flex: 1, minWidth: 0 }}>{children}</View>
                   <View style={{ width: 42, justifyContent: 'flex-end', paddingBottom: 12 }}>
                     <ActionRail item={item} />
