@@ -189,13 +189,26 @@ export function DreamPhaseCard({ item, width, variant, onOpen }: Props) {
     const confirmed = resources.filter(resource => resource.confirmed).length;
     const total = resources.length;
     const remaining = resources.filter(resource => !resource.confirmed);
+    const primaryNeed = remaining[0]?.title;
     const size = compact ? Math.min(77, width * 0.35) : 126;
     return (
-      <View style={[base, { backgroundColor: 'transparent' }]}>
+      <View style={[base, { backgroundColor: compact ? neutral : 'transparent' }]}>
         {withOpen(
-          <View style={{ padding: inset, gap: compact ? 14 : 24 }}>
+          <View style={{ padding: inset, gap: compact ? 13 : 24 }}>
             {topRight()}
-            {heading()}
+            {compact ? (
+              <View style={{ gap: 5 }}>
+                <Text style={{ color: subdued, fontSize: 9, fontWeight: '600', letterSpacing: 1.2 }}>
+                  {primaryNeed ? 'ON RECHERCHE' : 'RESSOURCES'}
+                </Text>
+                <Text style={{ color: ink, fontFamily: serif, fontSize: titleSize + 2, lineHeight: titleSize + 8 }}>
+                  {primaryNeed || (total ? 'Toutes réunies' : 'À définir')}
+                </Text>
+                <Text style={{ color: subdued, fontSize: 10, lineHeight: 15 }} numberOfLines={2}>
+                  {item.title}
+                </Text>
+              </View>
+            ) : heading()}
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: compact ? 13 : 27 }}>
               <ResourcePie completed={confirmed} total={total} size={size} dark={dark} />
               <View style={{ flex: 1, gap: 6 }}>
@@ -227,38 +240,46 @@ export function DreamPhaseCard({ item, width, variant, onOpen }: Props) {
     const journal = item.journalEntry?.text || item.logs?.[item.logs.length - 1] || item.summary;
     const date = shortDate(item.journalEntry?.date);
     const duration = dreamDuration(item.createdAt);
+    const beginning = monthHorizon(item.createdAt);
     const horizon = monthHorizon(item.goalDate);
     const quiet = dark ? '#C0BCB8' : '#766F69';
     return (
-      <View style={[base, { backgroundColor: compact ? neutral : 'transparent' }]}>
+      <View style={[base, { backgroundColor: 'transparent' }]}>
         {withOpen(
-          <View style={{ padding: inset, gap: compact ? 12 : 19 }}>
+          <View style={{ padding: inset, gap: compact ? 14 : 20 }}>
             {topRight()}
             {!compact && heading()}
-            <View style={{ gap: 6, paddingVertical: compact ? 5 : 9 }}>
+            <View style={{ gap: 6, paddingVertical: compact ? 4 : 9 }}>
               {!!date && <Text style={{ color: quiet, fontSize: compact ? 10 : 12 }}>{date}</Text>}
               <Text style={{ color: ink, fontFamily: HANDWRITING_FAMILY, fontSize: compact ? (width < 185 ? 17 : 20) : 28, lineHeight: compact ? 26 : 37 }}>
                 « {journal} »
               </Text>
             </View>
-            {(duration || horizon) && (
-              <>
+            {(beginning || horizon) && (
+              <View style={{ gap: 7 }}>
                 <View style={{ height: 1, backgroundColor: theme.border }} />
-                <View style={{ flexDirection: compact && width < 225 ? 'column' : 'row', gap: compact ? 9 : 28 }}>
-                  {!!duration && (
-                    <View style={{ flex: 1, gap: 3 }}>
-                      <Text style={{ color: quiet, fontSize: compact ? 9 : 10, letterSpacing: 0.5 }}>DEPUIS</Text>
-                      <Text style={{ color: quiet, fontSize: compact ? 12 : 15, fontFamily: serif }}>{duration}</Text>
-                    </View>
-                  )}
-                  {!!horizon && (
-                    <View style={{ flex: 1, gap: 3 }}>
-                      <Text style={{ color: quiet, fontSize: compact ? 9 : 10, letterSpacing: 0.5 }}>HORIZON</Text>
-                      <Text style={{ color: quiet, fontSize: compact ? 12 : 15, fontFamily: serif }}>{horizon}</Text>
-                    </View>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: compact ? 5 : 12 }}>
+                  <View style={{ flexShrink: 1, gap: 3 }}>
+                    <Text style={{ color: quiet, fontSize: compact ? 8 : 9, letterSpacing: 0.7 }}>DEPUIS</Text>
+                    <Text style={{ color: quiet, fontSize: compact ? 11 : 14, fontFamily: serif }} numberOfLines={1}>
+                      {beginning || '—'}
+                    </Text>
+                  </View>
+                  {horizon ? (
+                    <>
+                      <View style={{ flex: 1, minWidth: 8, height: 1, backgroundColor: theme.border, marginHorizontal: 3 }} />
+                      <View style={{ flexShrink: 1, alignItems: 'flex-end', gap: 3 }}>
+                        <Text style={{ color: quiet, fontSize: compact ? 8 : 9, letterSpacing: 0.7 }}>HORIZON</Text>
+                        <Text style={{ color: quiet, fontSize: compact ? 11 : 14, fontFamily: serif, textAlign: 'right' }} numberOfLines={1}>
+                          {horizon}
+                        </Text>
+                      </View>
+                    </>
+                  ) : !!duration && (
+                    <Text style={{ color: quiet, fontSize: compact ? 10 : 12, textAlign: 'right', flex: 1 }}>{duration}</Text>
                   )}
                 </View>
-              </>
+              </View>
             )}
           </View>,
         )}
@@ -266,36 +287,53 @@ export function DreamPhaseCard({ item, width, variant, onOpen }: Props) {
     );
   }
 
-  // Floraison reserves the photographic reveal for the completed dream.
+  // Floraison is the photographic reveal. The image dissolves into the real
+  // page background; the original flower illustration becomes a standalone badge.
   const image = item.resultImage || item.image;
   const mediaHeight = compact ? Math.max(230, width * 1.40) : Math.max(355, Math.min(485, width * 0.68));
-  const gradientId = 'floraison-' + item.id.replace(/[^a-zA-Z0-9]/g, '');
+  const gradientId = 'floraison-' + item.id.replace(/[^a-zA-Z0-9]/g, '') + '-' + variant;
+  const badgeSize = compact ? 44 : 62;
   return (
-    <View style={[base, { backgroundColor: neutral, height: mediaHeight }]}>
+    <View style={[base, { backgroundColor: theme.background }]}>
       {withOpen(
-        <View style={{ height: mediaHeight, width, overflow: 'hidden', justifyContent: 'space-between' }}>
-          <Image source={{ uri: image }} resizeMode="cover" style={StyleSheet.absoluteFill} />
-          <Svg pointerEvents="none" width={width} height={mediaHeight} style={StyleSheet.absoluteFill}>
-            <Defs>
-              <LinearGradient id={gradientId} x1="0%" y1="0%" x2="0%" y2="100%">
-                <Stop offset="0%" stopColor="#080609" stopOpacity={0.82} />
-                <Stop offset="28%" stopColor="#130B12" stopOpacity={0.27} />
-                <Stop offset="54%" stopColor="#180E16" stopOpacity={0.13} />
-                <Stop offset="72%" stopColor="#160C13" stopOpacity={0.42} />
-                <Stop offset="100%" stopColor="#080608" stopOpacity={0.96} />
-              </LinearGradient>
-            </Defs>
-            <Rect width="100%" height="100%" fill={'url(#' + gradientId + ')'} />
-          </Svg>
-          <View style={{ padding: inset, gap: 12 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 7 }}>
-              <DreamPhaseIcon phase="Témoignage" size={compact ? 25 : 34} />
-              {phaseText('#F6EAF1')}
+        <View>
+          <View style={{ width, height: mediaHeight, overflow: 'hidden' }}>
+            <Image source={{ uri: image }} resizeMode="cover" style={StyleSheet.absoluteFill} />
+            <Svg pointerEvents="none" width={width} height={mediaHeight} style={StyleSheet.absoluteFill}>
+              <Defs>
+                <LinearGradient id={gradientId + '-ink'} x1="0%" y1="0%" x2="0%" y2="100%">
+                  <Stop offset="0%" stopColor="#080609" stopOpacity={0.80} />
+                  <Stop offset="40%" stopColor="#140B12" stopOpacity={0.15} />
+                  <Stop offset="72%" stopColor="#11080F" stopOpacity={0.48} />
+                  <Stop offset="90%" stopColor="#09070B" stopOpacity={0.64} />
+                  <Stop offset="100%" stopColor="#09070B" stopOpacity={0} />
+                </LinearGradient>
+                <LinearGradient id={gradientId + '-fade'} x1="0%" y1="0%" x2="0%" y2="100%">
+                  <Stop offset="0%" stopColor={theme.background} stopOpacity={0} />
+                  <Stop offset="70%" stopColor={theme.background} stopOpacity={0} />
+                  <Stop offset="83%" stopColor={theme.background} stopOpacity={0.18} />
+                  <Stop offset="93%" stopColor={theme.background} stopOpacity={0.72} />
+                  <Stop offset="100%" stopColor={theme.background} stopOpacity={1} />
+                </LinearGradient>
+              </Defs>
+              <Rect width="100%" height="100%" fill={'url(#' + gradientId + '-ink)'} />
+              <Rect width="100%" height="100%" fill={'url(#' + gradientId + '-fade)'} />
+            </Svg>
+            <View style={{ position: 'absolute', top: inset, right: inset, width: badgeSize, height: badgeSize, borderRadius: badgeSize / 2, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(255,251,247,0.92)' }}>
+              <DreamPhaseIcon phase="Témoignage" size={compact ? 34 : 48} />
             </View>
-            {heading('#FFFFFF')}
+            {compact ? (
+              <View style={{ position: 'absolute', top: inset, left: inset, right: inset + badgeSize + 6 }}>
+                {heading('#FFFFFF')}
+              </View>
+            ) : (
+              <View style={{ position: 'absolute', bottom: Math.max(43, mediaHeight * 0.17), left: inset, right: inset }}>
+                {heading('#FFFFFF')}
+              </View>
+            )}
           </View>
-          <View style={{ padding: inset, gap: 9 }}>
-            <Text style={{ color: '#FFFFFF', fontSize: compact ? 12 : 17, lineHeight: compact ? 18 : 25, textShadowColor: 'rgba(0,0,0,0.6)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 }}>
+          <View style={{ paddingHorizontal: inset, paddingBottom: inset, paddingTop: compact ? 0 : 3, backgroundColor: theme.background }}>
+            <Text style={{ color: ink, fontSize: compact ? 12 : 17, lineHeight: compact ? 18 : 25 }}>
               {item.summary}
             </Text>
           </View>
