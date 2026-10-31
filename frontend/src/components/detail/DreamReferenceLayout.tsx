@@ -32,6 +32,11 @@ export function DreamReferenceLayout({ item }: { item: DreamPublication }) {
           <Text>{item.goalDate || 'À définir'}</Text>
         </DetailPanel>
       ) : null}
+      {item.phase === 'Croissance' && item.goalDate ? (
+        <DetailPanel title="Date objectif" foldable defaultOpen={false}>
+          <Text style={{ color: theme.foreground, fontSize: 13 }}>{item.goalDate}</Text>
+        </DetailPanel>
+      ) : null}
       {item.phase === 'Croissance' ? (
         <DetailPanel title="Journal de croissance" foldable defaultOpen={false}>
           {(item.logs || []).map((log, i) => (
