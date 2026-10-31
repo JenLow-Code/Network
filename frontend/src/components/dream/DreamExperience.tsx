@@ -125,7 +125,7 @@ export default function DreamExperience({ dream }: {dream:DreamEntry}) {
     {dream.image ? <Image source={{uri:dream.image}} style={{width:'100%',height:105,borderRadius:12,marginVertical:10}}/>:null}
     <Text style={{color:theme.muted,fontSize:12,marginBottom:10}}>{dream.summary}</Text>
     <Field label="Date cible" value={dream.goalDate||''} onChange={v=>patch(dream.id,{goalDate:v})} placeholder="AAAA-MM-JJ"/>
-    <View style={{height:7,backgroundColor:'#ECEDE6',borderRadius:6,marginBottom:8}}><View style={{height:7,width:(resources.length?resources.filter(r=>r.confirmed).length/resources.length*100:0)+'%',backgroundColor:'#98AE51',borderRadius:6}}/></View>
+    <View style={{height:7,backgroundColor:'#ECEDE6',borderRadius:6,marginBottom:8}}><View style={{height:7,width:((resources.length?resources.filter(r=>r.confirmed).length/resources.length*100:0)+'%') as any,backgroundColor:'#98AE51',borderRadius:6}}/></View>
     <Text style={{color:theme.muted,fontSize:12,marginBottom:16}}>{resources.filter(r=>r.confirmed).length} / {resources.length} ressources confirmées</Text>
     {(['person','practical','financial'] as const).map(category=><View key={category} style={{marginBottom:17}}>
       <Text style={{fontSize:17,fontWeight:'800',color:theme.foreground,marginBottom:9}}>{category==='person'?'Personnes':category==='practical'?'Autres ressources':'Financement'}</Text>
