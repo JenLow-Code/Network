@@ -17,6 +17,7 @@ import { Nav } from '@/components/navigation/Nav';
 import { TopActions } from '@/components/navigation/TopActions';
 import { useApp } from '@/context/AppContext';
 import { colors as c } from '@/theme/colors';
+import { useDreams } from '@/domain/dreamRepository';
 
 function ChatHeader({ name, subtitle }: { name: string; subtitle: string }) {
   return (
@@ -208,13 +209,38 @@ function PersonChat({
     </SafeAreaView>
   );
 }
+function DreamConversation({ dreamId }: { dreamId: string }) {
+ const { items, patch } = useDreams();
+ const dream = items.find(d => d.id === dreamId);
+ const [input, setInput] = useState('');
+ const submit = () => {
+  if (!dream || !input.trim() || !dream.chat) return;
+  patch(dream.id, { chat: { ...dream.chat, messages: [...dream.chat.messages, { id: 'msg-' + Date.now(), text: input.trim(), createdAt: new Date().toISOString() }] } });
+  setInput('');
+ };
+ return <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFCF5' }}>
+  <View style={{ padding: 18, flexDirection: 'row', alignItems: 'center', gap: 12, borderBottomWidth: 1, borderColor: '#e8e8e8' }}>
+   <Pressable onPress={() => router.back()}><Ionicons name="chevron-back" size={24}/></Pressable>
+   <View style={{ flex: 1 }}><Text style={{ fontWeight: '800', fontSize: 16 }}>{dream?.title || 'Conversation du rêve'}</Text><Text style={{ color: '#777', fontSize: 11 }}>Espace de conversation du rêve · Sur cet appareil</Text></View>
+  </View>
+  <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 10 }}>
+   <Text style={{ fontSize: 12, color: '#888', textAlign: 'center', marginBottom: 18 }}>Cette conversation est enregistrée localement. Les invitations et la messagerie entre membres ne sont pas encore connectées.</Text>
+   {(dream?.chat?.messages || []).map(m => <View key={m.id} style={{ backgroundColor: '#D71D77', padding: 12, borderRadius: 12, alignSelf: 'flex-end', maxWidth: '85%' }}><Text style={{ color: '#fff' }}>{m.text}</Text></View>)}
+  </ScrollView>
+  <View style={{ padding: 12, flexDirection: 'row', gap: 10, alignItems: 'center' }}>
+   <TextInput value={input} onChangeText={setInput} onSubmitEditing={submit} placeholder="Un message pour ce rêve…" style={{ flex: 1, borderRadius: 12, padding: 12, backgroundColor: '#F1ECE5' }}/>
+   <Pressable accessibilityLabel="Envoyer" onPress={submit}><Ionicons name="send" size={23} color="#D71D77"/></Pressable>
+  </View>
+  <Nav/>
+ </SafeAreaView>;
+}
 export default function Chat() {
   const { id, recipient, sharedId } = useLocalSearchParams<{
     id: string;
     recipient?: string;
     sharedId?: string;
   }>();
-  return id === 'system' ? (
+  return id?.startsWith('dream-') ? <DreamConversation dreamId={id.slice(6)}/> : id === 'system' ? (
     <SystemChat />
   ) : (
     <PersonChat teacher={id === 'teacher'} recipient={recipient} sharedId={sharedId} />
