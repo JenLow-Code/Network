@@ -17,8 +17,7 @@ export default function NewDream() {
     ),
     [image, setImage] = useState(
       'https://images.unsplash.com/photo-1510915361894-db8b60106cb1?w=800&q=80',
-    ),
-    [needs, setNeeds] = useState('');
+    );
   const valid = title.trim().length > 2;
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
