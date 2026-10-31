@@ -74,6 +74,14 @@ export default function DreamExperience({ dream }: {dream:DreamEntry}) {
  };
  const editBlock=(block:DreamBlock)=>{setEditingBlock(block.id);setBlockText(block.content);setBlockTitle(block.title||'');setBlockTone(block.tone);setBlockSize(block.size);setBlockKind(block.kind);setPicker(true);};
  const addResource=()=>{if(!resourceTitle.trim())return;const amount=resourceCategory==='financial'?Number(resourceAmount.replace(',','.')):undefined;setResources(dream.id,[...resources,{id:uid(),title:resourceTitle.trim(),category:resourceCategory,confirmed:false,linkedBlockId:resourceLink||undefined,amount:amount&&Number.isFinite(amount)&&amount>0?amount:undefined}]);setResourceTitle('');setResourceAmount('');setResourceLink('');};
+ const confirmGrowth = () => confirm('Tout est réuni !', 'Ta date est fixée et toutes les ressources sont confirmées. Passer à la Croissance créera aussi la conversation de ce rêve sur cet appareil.', () => transitionToGrowth(dream.id));
+ const checkResource = (item: DreamResource) => {
+  const updated = resources.map(x => x.id===item.id ? {...x,confirmed:!x.confirmed} : x);
+  setResources(dream.id,updated);
+  if(!item.confirmed && !!dream.goalDate && /^\d{4}-\d{2}-\d{2}$/.test(dream.goalDate) && updated.every(r=>r.confirmed)) {
+   confirm('Tout est prêt !', 'Toutes les ressources sont réunies. Commencer la croissance ? Une conversation dédiée sera créée sur cet appareil.', () => transitionToGrowth(dream.id));
+  }
+ };
  const ready = !!dream.goalDate && /^\d{4}-\d{2}-\d{2}$/.test(dream.goalDate) && !Number.isNaN(Date.parse(dream.goalDate)) && resources.every(r=>r.confirmed);
  const phase = dream.phase;
  return <ScrollView style={{flex:1}} contentContainerStyle={{ paddingHorizontal:16,paddingTop:8,paddingBottom:45,maxWidth:760,width:'100%',alignSelf:'center' }}>
