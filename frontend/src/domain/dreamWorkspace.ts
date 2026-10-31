@@ -5,13 +5,30 @@ export type DreamMedia = {
   kind: 'photo' | 'video' | 'audio' | 'document';
 };
 export type FlowerDraft = { story: string; attachments: DreamMedia[]; reminderDate?: string };
+export type DreamBlockKind =
+  | 'text' | 'heading1' | 'heading2' | 'heading3'
+  | 'quote' | 'callout' | 'bullet' | 'numbered' | 'todo'
+  | 'toggle' | 'accordion' | 'divider' | 'spacer'
+  | 'image' | 'gallery' | 'audio' | 'music' | 'video'
+  | 'document' | 'pdf' | 'bookmark' | 'link' | 'embed'
+  | 'code' | 'equation' | 'table' | 'toc' | 'date'
+  | 'columns' | 'collection';
 export type DreamBlock = {
   id: string;
-  kind: 'text' | 'quote' | 'callout' | 'image' | 'audio' | 'video' | 'document' | 'link' | 'accordion' | 'collection';
+  kind: DreamBlockKind;
   content: string;
   title?: string;
   size: 'small' | 'wide' | 'featured';
-  tone: 'neutral' | 'pink' | 'sage' | 'sand' | 'lavender';
+  tone: 'neutral' | 'pink' | 'sage' | 'sand' | 'lavender' | 'blue' | 'peach' | 'charcoal' | 'clear';
+  font?: 'sans' | 'serif' | 'handwritten' | 'mono';
+  align?: 'left' | 'center' | 'right';
+  frame?: 'none' | 'soft' | 'outline';
+  ink?: 'default' | 'pink' | 'green' | 'muted' | 'white';
+  caption?: string;
+  icon?: string;
+  media?: string[];
+  checked?: boolean;
+  // Text and styling are stored locally in the dream; no external page is created.
 };
 export type DreamResource = {
   id: string;
