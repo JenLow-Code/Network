@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Image, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,60 +14,35 @@ import { DreamPhaseIcon } from '@/icons/DreamPhaseIcon';
 
 function DreamsOverview() {
   const { items } = useDreams();
+  const [filter, setFilter] = React.useState('Tous');
+  const shown = items.filter(d => filter === 'Tous' || PHASE_LABELS[d.phase] === filter);
   return (
-    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 9 }}>
-      {DREAM_PHASES.map(phase => (
-        <View
-          key={phase}
-          style={{
-            width: '48%',
-            height: 120,
-            borderRadius: 13,
-            backgroundColor: PHASE_COLORS[phase].background,
-            overflow: 'hidden',
-          }}
-        >
-          <Pressable
-            onPress={() => router.push({ pathname: '/my-dreams/[phase]', params: { phase } })}
-            style={{ flex: 1, padding: 15, justifyContent: 'space-between' }}
-          >
-            <View
-              style={{
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-              }}
-            >
-              <Text style={{ fontWeight: '700', color: PHASE_COLORS[phase].foreground }}>
-                {PHASE_LABELS[phase]}
-              </Text>
-              <DreamPhaseIcon phase={phase} size={22} />
-            </View>
-            <Text style={{ fontSize: 12, color: '#444' }}>
-              {items.filter(d => d.phase === phase).length} rêve(s)
-            </Text>
-          </Pressable>
-          {phase === 'Rêve' ? (
-            <Pressable
-              onPress={() => router.push('/my-dream/new')}
-              accessibilityLabel="Créer une semence"
-              style={{
-                position: 'absolute',
-                right: 9,
-                bottom: 9,
-                width: 37,
-                height: 37,
-                borderRadius: 19,
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: 'rgba(255,255,255,.8)',
-              }}
-            >
-              <Ionicons name="add-circle-outline" size={28} color="#252525" />
+    <View>
+      <View style={{ flexDirection: 'row', gap: 7, marginBottom: 12 }}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          {['Tous', 'Semence', 'Germination', 'Croissance', 'Floraison'].map(p => (
+            <Pressable key={p} onPress={() => setFilter(p)} style={{ paddingHorizontal: 13, paddingVertical: 8, marginRight: 6, borderRadius: 20, backgroundColor: filter === p ? '#D71D77' : '#F1ECE5' }}>
+              <Text style={{ fontSize: 11, fontWeight: '700', color: filter === p ? '#fff' : '#333' }}>{p}</Text>
             </Pressable>
-          ) : null}
-        </View>
-      ))}
+          ))}
+        </ScrollView>
+      </View>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 9 }}>
+        {shown.map(d => (
+          <Pressable key={d.id} onPress={() => router.push({ pathname: '/my-dream/[id]', params: { id: d.id } })} style={{ width: '48%', aspectRatio: 0.94, borderRadius: 12, overflow: 'hidden', backgroundColor: PHASE_COLORS[d.phase].background, justifyContent: 'flex-end' }}>
+            {d.image ? <Image source={{ uri: d.image }} style={{ position: 'absolute', width: '100%', height: '100%' }} /> : null}
+            <View style={{ backgroundColor: 'rgba(0,0,0,.64)', padding: 11 }}>
+              <Text numberOfLines={2} style={{ color: '#fff', fontWeight: '800', fontSize: 15 }}>{d.title}</Text>
+              <Text style={{ color: '#fff', fontSize: 11, marginTop: 5 }}>{PHASE_LABELS[d.phase]}{d.phase === 'Rêve' && d.visibility !== 'public' ? ' · Privé' : ''}</Text>
+            </View>
+          </Pressable>
+        ))}
+        <Pressable onPress={() => router.push('/my-dream/new')} style={{ width: '48%', aspectRatio: 0.94, borderRadius: 12, borderWidth: 1, borderStyle: 'dashed', borderColor: '#D71D77', alignItems: 'center', justifyContent: 'center', gap: 9 }}>
+          <Ionicons name="add-circle-outline" size={32} color="#D71D77" />
+          <Text style={{ fontSize: 12, color: '#D71D77', fontWeight: '700' }}>Créer une semence</Text>
+        </Pressable>
+      </View>
+      {!shown.length ? <Text style={{ marginTop: 16, color: '#888' }}>Aucun rêve dans cette phase.</Text> : null}
     </View>
   );
 }
@@ -116,7 +91,7 @@ export default function MySpace() {
             borderColor: '#eee',
           }}
         >
-          <Text style={{ fontSize: 18, fontWeight: '700', marginBottom: 12 }}>Mes rêves</Text>
+          <Text style={{ fontSize: 18, fontWeight: '700', marginBottom: 12 }}>Tous mes rêves</Text>
           <DreamsOverview />
         </View>
         {unfinished.length ? (
