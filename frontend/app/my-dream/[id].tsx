@@ -5,14 +5,14 @@ import { useLocalSearchParams } from 'expo-router';
 import { Nav } from '@/components/navigation/Nav';
 import { useAppTheme } from '@/theme/AppTheme';
 import { useDreams } from '@/domain/dreamRepository';
-import DreamExperience from '@/components/dream/DreamExperience';
+import DreamHub from '@/components/dream/DreamHub';
 export default function Workspace() {
  const { id } = useLocalSearchParams<{id:string}>();
  const { items } = useDreams();
  const theme = useAppTheme();
  const dream = items.find(d=>d.id===id);
  return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
-  {dream ? <DreamExperience dream={dream}/> : <View style={{padding:20}}><Text style={{color:theme.foreground}}>Rêve introuvable.</Text></View>}
+  {dream ? <DreamHub dream={dream}/> : <View style={{padding:20}}><Text style={{color:theme.foreground}}>Rêve introuvable.</Text></View>}
   <Nav/>
  </SafeAreaView>;
 }
