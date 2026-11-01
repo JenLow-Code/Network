@@ -630,6 +630,82 @@ export function PublicationGallery({ items, layout = 'editorial', contentWidth: 
   );
 }
 
+
+/**
+ * Public profiles reuse the Discovery cover itself, not a duplicate card style.
+ * One editorial column, with dates in a separate left gutter on wide screens.
+ * An owner-selected featured publication appears first without duplication.
+ */
+export function ProfilePublicationFeed({
+  items,
+  contentWidth,
+  featuredId,
+  onFeature,
+}: {
+  items: Publication[];
+  contentWidth: number;
+  featuredId?: string | null;
+  onFeature?: (id: string | null) => void;
+}) {
+  const theme = useAppTheme();
+  const wide = contentWidth >= 680;
+  const dateGutter = wide ? 130 : 0;
+  const gap = wide ? 22 : 0;
+  const coverWidth = Math.min(540, Math.max(0, contentWidth - dateGutter - gap));
+  const highlighted = items.find(p => p.id === featuredId);
+  const ordered = highlighted ? [highlighted, ...items.filter(p => p.id !== highlighted.id)] : items;
+  return (
+    <View style={{ width: '100%', gap: 28 }}>
+      {ordered.map(item => {
+        const dateValue = item.createdAt;
+        const parsed = dateValue ? new Date(dateValue + 'T12:00:00') : null;
+        const date = parsed && Number.isFinite(parsed.getTime())
+          ? parsed.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+          : null;
+        const featured = item.id === featuredId;
+        return (
+          <View key={item.id} style={{ flexDirection: 'row', alignItems: 'flex-start', gap }}>
+            {wide ? (
+              <View style={{ width: dateGutter, paddingTop: 12, gap: 9 }}>
+                {date ? <Text style={{ color: theme.muted, fontSize: 12, lineHeight: 18 }}>{date}</Text> : null}
+                {featured ? <Text style={{ color: '#D71D77', fontSize: 10, fontWeight: '700', letterSpacing: 1 }}>À LA UNE</Text> : null}
+              </View>
+            ) : null}
+            <View style={{ width: coverWidth, gap: 8 }}>
+              {!wide && (date || featured) ? (
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 8 }}>
+                  {featured ? <Text style={{ color: '#D71D77', fontSize: 10, fontWeight: '700', letterSpacing: 1 }}>À LA UNE</Text> : <View />}
+                  {date ? <Text style={{ fontSize: 11, color: theme.muted }}>{date}</Text> : null}
+                </View>
+              ) : null}
+              <StoryCover
+                item={item}
+                width={coverWidth}
+                height={adaptiveTileHeight(item, coverWidth)}
+                scale="small"
+                adaptive
+              />
+              {onFeature ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={featured ? 'Retirer cette publication de la une' : 'Mettre cette publication à la une'}
+                  onPress={() => onFeature(featured ? null : item.id)}
+                  style={{ flexDirection: 'row', gap: 6, alignItems: 'center', alignSelf: 'flex-end', paddingVertical: 7 }}
+                >
+                  <Ionicons name={featured ? 'bookmark' : 'bookmark-outline'} size={16} color={featured ? '#D71D77' : theme.muted} />
+                  <Text style={{ fontSize: 11, color: featured ? '#D71D77' : theme.muted }}>
+                    {featured ? 'Retirer de la une' : 'Mettre à la une'}
+                  </Text>
+                </Pressable>
+              ) : null}
+            </View>
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   musicCanvas: { backgroundColor: '#F0EAE0', alignItems: 'center', justifyContent: 'center' },
   musicKicker: { position: 'absolute', fontWeight: '600', letterSpacing: 1.1, color: '#34302B' },
