@@ -6,6 +6,7 @@ import type { Publication } from '@/domain/publication';
 import { personPath } from '@/mocks/people';
 import { TopActions } from '@/components/navigation/TopActions';
 import { useAppTheme } from '@/theme/AppTheme';
+import { HANDWRITING_FAMILY } from '@/theme/handwriting';
 
 /**
  * The contribution belongs to a person rather than a branded article.
@@ -69,5 +70,5 @@ const styles = StyleSheet.create({
   member: { flex: 1, minWidth: 0, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 9 },
   avatar: { width: 32, height: 32, borderRadius: 16 },
   avatarFallback: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
-  author: { fontSize: 16, fontFamily: 'serif', lineHeight: 24 },
+  author: { fontSize: 23, fontFamily: HANDWRITING_FAMILY, lineHeight: 30 },
 });
