@@ -243,20 +243,20 @@ export default function Profile() {
           </Pressable>
         </View>
         <Text style={{fontSize:19,fontWeight:'800',color:theme.foreground,marginTop:25,marginBottom:14}}>Mes publications</Text>
-        {privateDreams.length>0 ? (
+        {myLocalDreams.length>0 ? (
           <View style={{gap:10,marginBottom:19}}>
-            {privateDreams.map(d=><Pressable key={d.id} onPress={()=>router.push({pathname:'/my-dream/[id]',params:{id:d.id}})} accessibilityRole="button" accessibilityLabel={d.title+', privé, ouvrir mon rêve'}
+            {myLocalDreams.map(d=><Pressable key={d.id} onPress={()=>router.push({pathname:'/my-dream/[id]',params:{id:d.id}})} accessibilityRole="button" accessibilityLabel={d.title+(d.visibility==='public'?', public':', privé')+', ouvrir mon rêve'}
               style={{flexDirection:'row',gap:13,alignItems:'center',padding:14,minHeight:75,borderRadius:11,backgroundColor:theme.dark?'#292B30':'#F1F0EE'}}>
-              <Ionicons name="lock-closed" color={theme.muted} size={20}/>
+              <Ionicons name={d.visibility==='public'?'globe-outline':'lock-closed'} color={theme.muted} size={20}/>
               <View style={{flex:1,gap:5}}>
                 <Text numberOfLines={1} style={{color:theme.foreground,fontSize:14,fontWeight:'700'}}>{d.title}</Text>
-                <Text style={{fontSize:11,color:PHASE_COLORS[d.phase].foreground}}>{PHASE_LABELS[d.phase]} · Privé</Text>
+                <Text style={{fontSize:11,color:PHASE_COLORS[d.phase].foreground}}>{PHASE_LABELS[d.phase]} · {d.visibility==='public'?'Public':'Privé'}</Text>
               </View>
               <Ionicons name="chevron-forward" color={theme.muted} size={18}/>
             </Pressable>)}
           </View>
         ):null}
-        {myPublicPosts.length?<ProfilePublicationFeed items={myPublicPosts} contentWidth={areaWidth} featuredId={featuredId} onFeature={feature}/>:<Text style={{color:theme.muted,fontSize:13}}>{privateDreams.length?'Aucune autre publication publique pour le moment.':'Aucune publication pour le moment.'}</Text>}
+        {myPublicPosts.length?<ProfilePublicationFeed items={myPublicPosts} contentWidth={areaWidth} featuredId={featuredId} onFeature={feature}/>:<Text style={{color:theme.muted,fontSize:13}}>{myLocalDreams.length?'Aucune autre publication publique pour le moment.':'Aucune publication pour le moment.'}</Text>}
         <Pressable
           onPress={() => router.push('/settings')}
           style={{ marginTop: 28, alignSelf: 'center', padding: 11 }}
