@@ -13,6 +13,8 @@ import { useAuth } from '@/context/AuthProvider';
 import { useAppTheme } from '@/theme/AppTheme';
 import { ProfileTalentTile } from '@/components/talent/ProfileTalentTile';
 import { ProfilePublicationFeed } from '@/components/publication/PublicationGallery';
+import { useDreams } from '@/domain/dreamRepository';
+import { PHASE_LABELS, PHASE_COLORS } from '@/domain/publication';
 import { publications } from '@/mocks/publications';
 import type { TalentIllustration } from '@/components/talent/TalentArt';
 type Talent = { name: string; level: number; interests: string[]; description?: string };
@@ -49,6 +51,7 @@ export default function Profile() {
     auth = useAuth(),
     theme = useAppTheme();
   const { width } = useWindowDimensions();
+  const { items: workspaceDreams } = useDreams();
   const [edit, setEdit] = useState<'bio' | 'city' | 'church' | null>(null);
   const [draft, setDraft] = useState('');
   const [talents, setTalents] = useState<Talent[]>(initial);
@@ -140,6 +143,8 @@ export default function Profile() {
   const columns=areaWidth<350?2:3;
   const cardWidth=Math.floor((areaWidth-10*(columns-1))/columns);
   const myPublicPosts=publications.filter(p=>p.author===app.name);
+  const myLocalDreams=workspaceDreams.filter(d=>d.id.startsWith('local-') && d.ownerIds?.includes('demo-user'));
+  const privateDreams=myLocalDreams.filter(d=>d.visibility!=='public');
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
       <ScrollView
@@ -238,7 +243,20 @@ export default function Profile() {
           </Pressable>
         </View>
         <Text style={{fontSize:19,fontWeight:'800',color:theme.foreground,marginTop:25,marginBottom:14}}>Mes publications</Text>
-        {myPublicPosts.length?<ProfilePublicationFeed items={myPublicPosts} contentWidth={areaWidth} featuredId={featuredId} onFeature={feature}/>:<Text style={{color:theme.muted,fontSize:13}}>Aucune publication publique pour le moment.</Text>}
+        {privateDreams.length>0 ? (
+          <View style={{gap:10,marginBottom:19}}>
+            {privateDreams.map(d=><Pressable key={d.id} onPress={()=>router.push({pathname:'/my-dream/[id]',params:{id:d.id}})} accessibilityRole="button" accessibilityLabel={d.title+', privé, ouvrir mon rêve'}
+              style={{flexDirection:'row',gap:13,alignItems:'center',padding:14,minHeight:75,borderRadius:11,backgroundColor:theme.dark?'#292B30':'#F1F0EE'}}>
+              <Ionicons name="lock-closed" color={theme.muted} size={20}/>
+              <View style={{flex:1,gap:5}}>
+                <Text numberOfLines={1} style={{color:theme.foreground,fontSize:14,fontWeight:'700'}}>{d.title}</Text>
+                <Text style={{fontSize:11,color:PHASE_COLORS[d.phase].foreground}}>{PHASE_LABELS[d.phase]} · Privé</Text>
+              </View>
+              <Ionicons name="chevron-forward" color={theme.muted} size={18}/>
+            </Pressable>)}
+          </View>
+        ):null}
+        {myPublicPosts.length?<ProfilePublicationFeed items={myPublicPosts} contentWidth={areaWidth} featuredId={featuredId} onFeature={feature}/>:<Text style={{color:theme.muted,fontSize:13}}>{privateDreams.length?'Aucune autre publication publique pour le moment.':'Aucune publication pour le moment.'}</Text>}
         <Pressable
           onPress={() => router.push('/settings')}
           style={{ marginTop: 28, alignSelf: 'center', padding: 11 }}
