@@ -27,11 +27,11 @@ export default function PublicMemberProfile() {
   useEffect(() => {
     let active = true;
     setFeaturedId(null);
-    if (person && isOwner) {
+    if (person) {
       void AsyncStorage.getItem(PIN_KEY + person.name).then(id => { if (active) setFeaturedId(id); }).catch(() => {});
     }
     return () => { active = false; };
-  }, [person?.name, isOwner]);
+  }, [person?.name]);
   const selectFeatured = (id: string | null) => {
     if (!isOwner || !person) return;
     setFeaturedId(id);
