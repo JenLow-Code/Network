@@ -20,7 +20,7 @@ export function DetailPanel({
   const [open, setOpen] = useState(defaultOpen);
   const theme = useAppTheme();
   const { width } = useWindowDimensions();
-  const fontSize = width < 530 ? 17 : 18;
+  const fontSize = width < 530 ? 15 : 16;
   return (
     <View
       style={{
@@ -44,7 +44,7 @@ export function DetailPanel({
           numberOfLines={1}
           adjustsFontSizeToFit
           minimumFontScale={0.65}
-          style={{ fontFamily: 'serif', fontSize, lineHeight: fontSize + 7, color: theme.foreground, flexShrink: 1 }}
+          style={{ fontFamily: foldable ? undefined : 'serif', fontWeight: foldable ? '500' : '400', letterSpacing: foldable ? 0.15 : 0, fontSize: foldable ? fontSize : fontSize + 2, lineHeight: fontSize + 8, color: theme.foreground, flexShrink: 1 }}
         >
           {title}
         </Text>
