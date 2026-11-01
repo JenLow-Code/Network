@@ -657,7 +657,7 @@ export function ProfilePublicationFeed({
   return (
     <View style={{ width: '100%', gap: 28 }}>
       {ordered.map(item => {
-        const dateValue = item.createdAt;
+        const dateValue = item.type === 'dream' ? item.createdAt : undefined;
         const parsed = dateValue ? new Date(dateValue + 'T12:00:00') : null;
         const date = parsed && Number.isFinite(parsed.getTime())
           ? parsed.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
