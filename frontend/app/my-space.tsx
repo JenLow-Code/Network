@@ -1,48 +1,60 @@
 import React from 'react';
-import { Image, Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Avatar } from '@/components/ui/Avatar';
 import { Nav } from '@/components/navigation/Nav';
 import { TopActions } from '@/components/navigation/TopActions';
 import { useApp } from '@/context/AppContext';
-import { DREAM_PHASES, PHASE_COLORS, PHASE_LABELS, PHASE_SYMBOLS } from '@/domain/publication';
+import { PHASE_COLORS, PHASE_LABELS } from '@/domain/publication';
 import { useDreams } from '@/domain/dreamRepository';
 import { useAppTheme } from '@/theme/AppTheme';
-import { DreamPhaseIcon } from '@/icons/DreamPhaseIcon';
 
 function DreamsOverview() {
   const { items } = useDreams();
-  const [filter, setFilter] = React.useState('Tous');
-  const shown = items.filter(d => filter === 'Tous' || PHASE_LABELS[d.phase] === filter);
+  const theme = useAppTheme();
   return (
-    <View>
-      <View style={{ flexDirection: 'row', gap: 7, marginBottom: 12 }}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {['Tous', 'Semence', 'Germination', 'Croissance', 'Floraison'].map(p => (
-            <Pressable key={p} onPress={() => setFilter(p)} style={{ paddingHorizontal: 13, paddingVertical: 8, marginRight: 6, borderRadius: 20, backgroundColor: filter === p ? '#D71D77' : '#F1ECE5' }}>
-              <Text style={{ fontSize: 11, fontWeight: '700', color: filter === p ? '#fff' : '#333' }}>{p}</Text>
-            </Pressable>
-          ))}
-        </ScrollView>
-      </View>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 9 }}>
-        {shown.map(d => (
-          <Pressable key={d.id} onPress={() => router.push({ pathname: '/my-dream/[id]', params: { id: d.id } })} style={{ width: '31.5%', aspectRatio: 0.94, borderRadius: 12, overflow: 'hidden', backgroundColor: PHASE_COLORS[d.phase].background, justifyContent: 'flex-end' }}>
-            {(d.phase === 'Témoignage' ? (d.resultImage || d.testimony?.mediaItems?.find(m => m.kind === 'photo')?.uri || d.image) : d.image) ? <Image source={{ uri: d.phase === 'Témoignage' ? (d.resultImage || d.testimony?.mediaItems?.find(m => m.kind === 'photo')?.uri || d.image) : d.image }} style={{ position: 'absolute', width: '100%', height: '100%' }} /> : null}
-            <View style={{ backgroundColor: 'rgba(0,0,0,.64)', padding: 8 }}>
-              <Text numberOfLines={2} style={{ color: '#fff', fontWeight: '800', fontSize: 12 }}>{d.title}</Text>
-              <Text style={{ color: '#fff', fontSize: 9, marginTop: 4 }}>{PHASE_LABELS[d.phase]}{d.phase === 'Rêve' && d.visibility !== 'public' ? ' · Privé' : ''}</Text>
+    <View style={{ gap: 9 }}>
+      {items.map(d => {
+        const isPrivate = d.visibility === 'private' || (d.phase === 'Rêve' && d.visibility !== 'public' && d.id.startsWith('local-'));
+        const phaseColor = PHASE_COLORS[d.phase].foreground;
+        return (
+          <Pressable
+            key={d.id}
+            accessibilityRole="button"
+            accessibilityLabel={d.title + ', ' + PHASE_LABELS[d.phase] + (isPrivate ? ', privé' : '')}
+            onPress={() => router.push({ pathname: '/my-dream/[id]', params: { id: d.id } })}
+            style={{
+              width: '100%',
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 14,
+              paddingVertical: 13,
+              paddingHorizontal: 15,
+              borderRadius: 12,
+              minHeight: 85,
+              backgroundColor: theme.dark ? '#292B30' : '#F1F0EE',
+            }}
+          >
+            <View style={{ width: 53, height: 53, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.dark ? '#34363A' : '#E7E4DF', borderRadius: 9 }}>
+              <View style={{ width: 24, height: 24, backgroundColor: phaseColor, opacity: .85, borderRadius: d.phase === 'Rêve' ? 12 : d.phase === 'Témoignage' ? 5 : 9 }} />
             </View>
+            <View style={{ flex: 1, gap: 5, minWidth: 0 }}>
+              <Text numberOfLines={1} style={{ fontSize: 15, fontWeight: '700', color: theme.foreground }}>{d.title}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
+                <Text style={{ color: phaseColor, fontSize: 11, fontWeight: '600' }}>{PHASE_LABELS[d.phase]}</Text>
+                {isPrivate ? <Ionicons name="lock-closed-outline" size={13} color={theme.muted} /> : null}
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={19} color={theme.muted} />
           </Pressable>
-        ))}
-        <Pressable onPress={() => router.push('/my-dream/new')} style={{ width: '31.5%', aspectRatio: 0.94, borderRadius: 12, borderWidth: 1, borderStyle: 'dashed', borderColor: '#D71D77', alignItems: 'center', justifyContent: 'center', gap: 9 }}>
-          <Ionicons name="add-circle-outline" size={25} color="#D71D77" />
-          <Text style={{ fontSize: 10, color: '#D71D77', fontWeight: '700' }}>Créer une semence</Text>
-        </Pressable>
-      </View>
-      {!shown.length ? <Text style={{ marginTop: 16, color: '#888' }}>Aucun rêve dans cette phase.</Text> : null}
+        );
+      })}
+      <Pressable onPress={() => router.push('/my-dream/new')} accessibilityRole="button"
+        style={{ flexDirection: 'row', gap: 11, alignItems: 'center', padding: 15, borderRadius: 12, borderWidth: 1, borderStyle: 'dashed', borderColor: theme.dark ? '#6B5660' : '#D3A3BB' }}>
+        <Ionicons name="add-circle-outline" size={23} color="#D71D77" />
+        <Text style={{ color: '#D71D77', fontWeight: '700', fontSize: 13 }}>Créer une Semence</Text>
+      </Pressable>
     </View>
   );
 }
@@ -91,7 +103,7 @@ export default function MySpace() {
             borderColor: '#eee',
           }}
         >
-          <Text style={{ fontSize: 18, fontWeight: '700', marginBottom: 12 }}>Tous mes rêves</Text>
+          <Text style={{ fontSize: 18, fontWeight: '700', color: theme.foreground, marginBottom: 12 }}>Tous mes rêves</Text>
           <DreamsOverview />
         </View>
         {unfinished.length ? (
