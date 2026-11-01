@@ -9,6 +9,7 @@ import { TopActions } from '@/components/navigation/TopActions';
 import { people } from '@/mocks/people';
 import { ProfilePublicationFeed } from '@/components/publication/PublicationGallery';
 import { TalentArt } from '@/components/talent/TalentArt';
+import { ProfileTalentTile } from '@/components/talent/ProfileTalentTile';
 import { TalentLevelDots } from '@/components/talent/TalentLevelDots';
 import { useAppTheme } from '@/theme/AppTheme';
 import { useApp } from '@/context/AppContext';
@@ -72,15 +73,7 @@ export default function PublicMemberProfile() {
         {person.skills.length ? (
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap, alignItems: 'flex-start' }}>
             {person.skills.map(skill => (
-              <Pressable key={skill.id} accessibilityRole="button" accessibilityLabel={skill.skill + ', ' + skill.level + ', consulter la description'}
-                onPress={() => setSelectedTalent(skill)}
-                style={{ width: tileWidth, aspectRatio: 1, borderRadius: 8, backgroundColor: theme.dark ? '#25272C' : '#F0EDE8', justifyContent: 'center', alignItems: 'center', padding: 9, gap: 5 }}>
-                <TalentArt kind={skill.instrument} size={Math.min(110, tileWidth * 0.64)} />
-                <Text numberOfLines={1} adjustsFontSizeToFit style={{ color: theme.foreground, fontSize: 11, fontWeight: '800', letterSpacing: 0.7 }}>
-                  {skill.skill.toLocaleUpperCase('fr')}
-                </Text>
-                <TalentLevelDots level={skill.level} size={tileWidth < 112 ? 6 : 8} spacing={4} />
-              </Pressable>
+              <ProfileTalentTile key={skill.id} title={skill.skill} level={skill.level} art={skill.instrument} width={tileWidth} onPress={() => setSelectedTalent(skill)} />
             ))}
           </View>
         ) : <Text style={{ color: theme.muted }}>Aucun talent publié pour le moment.</Text>}
