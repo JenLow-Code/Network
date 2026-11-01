@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Image, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,6 +9,7 @@ import { useApp } from '@/context/AppContext';
 import { PHASE_COLORS, PHASE_LABELS } from '@/domain/publication';
 import { useDreams } from '@/domain/dreamRepository';
 import { useAppTheme } from '@/theme/AppTheme';
+import { dreamPhaseImageUris } from '../assets/dreamPhaseImages';
 
 function DreamsOverview() {
   const { items } = useDreams();
@@ -37,7 +38,15 @@ function DreamsOverview() {
             }}
           >
             <View style={{ width: 53, height: 53, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.dark ? '#34363A' : '#E7E4DF', borderRadius: 9 }}>
-              <View style={{ width: 24, height: 24, backgroundColor: phaseColor, opacity: .85, borderRadius: d.phase === 'Rêve' ? 12 : d.phase === 'Témoignage' ? 5 : 9 }} />
+              <Image
+                source={{ uri: dreamPhaseImageUris[d.phase] }}
+                resizeMode="contain"
+                accessibilityLabel={'Illustration ' + PHASE_LABELS[d.phase]}
+                style={{
+                  width: d.phase === 'Rêve' ? 37 : d.phase === 'Initiation' ? 43 : 46,
+                  height: d.phase === 'Rêve' ? 37 : d.phase === 'Initiation' ? 43 : 46,
+                }}
+              />
             </View>
             <View style={{ flex: 1, gap: 5, minWidth: 0 }}>
               <Text numberOfLines={1} style={{ fontSize: 15, fontWeight: '700', color: theme.foreground }}>{d.title}</Text>
