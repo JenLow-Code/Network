@@ -5,6 +5,7 @@ import { useAppTheme } from '@/theme/AppTheme';
 
 /** Original JenLow talent drawings, stored directly in frontend/assets. */
 const drawings = {
+  camera: require('../../../assets/camera.png'),
   drums: require('../../../assets/drums.png'),
   cello: require('../../../assets/cello.png'),
   trumpet: require('../../../assets/trumpet.png'),
@@ -23,8 +24,7 @@ export type TalentIllustration =
   | keyof typeof drawings
   | 'guitar'
   | 'cavaquinho'
-  | 'viola'
-  | 'camera';
+  | 'viola';
 
 /** No colored disc, no re-drawing and no cropping of the supplied art. */
 export function TalentArt({
@@ -46,12 +46,6 @@ export function TalentArt({
         : kind === 'viola'
           ? 'violin'
           : kind;
-  if (key === 'camera')
-    return (
-      <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
-        <Ionicons name="camera-outline" size={size * 0.68} color={lineColor} />
-      </View>
-    );
   return (
     <Image
       source={drawings[key]}
