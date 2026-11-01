@@ -84,6 +84,10 @@ function PersonResourceTiles({ resources, width, compact, dark, onInspect }: {
   const gap = compact ? 8 : 12;
   const contentWidth = Math.max(0, width - (compact ? (width < 205 ? 26 : 34) : (width < 440 ? 46 : 64)));
   const tileWidth = Math.floor((contentWidth - gap * (columns - 1)) / columns);
+  // Discovery uses a delicate, tile-size-relative outline; detail has a fixed, stronger frame.
+  const missingTalentBorderWidth = compact
+    ? Math.max(0.6, Math.min(1.2, tileWidth / 120))
+    : 3;
   return (
     <View style={{ gap: compact ? 12 : 17 }}>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap, alignItems: 'flex-start' }}>
@@ -97,7 +101,7 @@ function PersonResourceTiles({ resources, width, compact, dark, onInspect }: {
           style={{
             width: tileWidth, height: compact ? Math.max(70, tileWidth * 0.94) : Math.max(112, tileWidth * 0.98),
             backgroundColor: resource.confirmed ? (dark ? '#566E4E' : '#C0D3B0') : (dark ? '#111317' : '#FFFCF5'),
-            borderRadius: 8, borderWidth: resource.confirmed ? 0 : 1,
+            borderRadius: 8, borderWidth: resource.confirmed ? 0 : missingTalentBorderWidth,
             borderColor: '#D95768', overflow: 'hidden',
             alignItems: 'center', justifyContent: 'center', gap: 4, paddingBottom: 3,
           }}>
