@@ -86,35 +86,6 @@ export default function Discover() {
             <TopActions />
           </View>
           <View style={{ alignSelf: 'flex-start', maxWidth: '100%', paddingBottom: 4 }}>
-            <Text
-              numberOfLines={1}
-              adjustsFontSizeToFit
-              minimumFontScale={0.65}
-              style={{
-                fontFamily: 'serif',
-                fontWeight: '400',
-                fontSize: 40,
-                letterSpacing: -1.4,
-                lineHeight: 46,
-                color: theme.foreground,
-              }}
-            >
-              DÉCOUVRIR
-            </Text>
-            <Text
-              style={{
-                fontFamily: HANDWRITING_FAMILY,
-                fontSize: 32,
-                fontWeight: '400',
-                lineHeight: 32,
-                color: '#CB245C',
-                textAlign: 'right',
-                marginTop: -8,
-                transform: [{ rotate: '-6deg' }],
-              }}
-            >
-              S’INSPIRER
-            </Text>
           </View>
         </View>
         <View
