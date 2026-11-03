@@ -1,43 +1,42 @@
 # JenLow Network database — Cloudflare D1 / SQLite
 
-This folder contains a six-migration, normalized V1 data model for JenLow Network. No production database has been created or modified.
+Database `network` (binding `DB`, id `62ca4199-a913-4444-b176-b5d18c8817d1`), shared by the API Worker in `middleware/`.
 
-## Migration map
+## Migrations
+1. `0001` Identity — users, login identities, talents, contacts, My Circle, consent, blocks, devices.
+2. `0002` Dreams — owners/co-owners, collaborators, "Moi aussi", private encouragements, needs, offers, phases, entries, lineage.
+3. `0003` Publications — Bible editions and verses, music rights/credits/proposals, Fire and prayer saves, media metadata (binaries in R2).
+4. `0004` Communication — chats, trusted introductions, agenda, calendars, notifications, reports, audit.
+5. `0005` Invariants — immutable titles, forward-only phases, publisher-only reposts, dual-consent introductions.
+6. `0006` Extensions — Bible-app share intake, Circle-only video calls, ownership invitations, public counters and feed views.
+7. `0007` Auth sessions (rotating refresh tokens).
+8. `0008` Email/password beta credentials and rate limits.
+9. `0009` **Application API foundation** — demo flag, roles, Dream fields used by the UI (motivation, target date, cover, version), need categories/levels/confirmations, offer-driven slot counting, journal visibility, Semence blocks, habits, milestones, Dream media, talent showcases, prayer list, Fire folders, idempotency keys, conversation/notification uniqueness. Replaces four triggers with rules matching the current UI (see `middleware/DECISIONS.md`).
+10. `0010` Talent taxonomy (33 talents) and moderation visibility columns.
+11. `0011` Bible reference data: 66 books and Louis Segond 1910 (public domain), Psalm 150 only.
 
-1. Identity — users, login identities, talents, contacts, My Circle, consent, blocks and devices.
-2. Dreams — owners/co-owners, collaborators, same-dream participants, private encouragements, needs, offers, phases, entries and inspiration lineage.
-3. Publications — Bible editions and verses, music rights/credits, collaborator proposals, Fire/prayer saves, publication metadata, media in external object storage.
-4. Communication — chats, trusted introductions, agenda, invitations, external calendars, notifications, reports and audit.
-5. Invariants — title immutability, permitted phase transitions, entry types, copyright/owner republishing boundaries and introductions.
-6. Extensions — Bible-app share intake, Circle-only video calls, ownership invitations, public Dream counters and feed views.
+`0009`–`0011` are **additive** (ADD COLUMN, new tables, indexes, triggers, reference rows). No table is rebuilt: in D1 a rebuild of a parent table would cascade-delete child rows.
 
-## Test
+Phase values stay `dream → initiation → growth → testimony`; the API presents them as Semence → Germination → Croissance → Floraison.
 
-Run: python database/test_schema.py
+## Seeds
+`seeds/demo_seed.sql` — fictional demo dataset (10 deactivated profiles, 30 Dreams in all phases, needs filled through accepted offers, journals, talents, Bible and music posts). Generated from `middleware/scripts/demo-data.ts`; idempotent; touches only `demo-*` ids; never contains real people, emails or church affiliations.
 
-The test uses local SQLite; it never connects to a live Cloudflare database. A GitHub Actions workflow is included. Confirm CI passed before executing any migration remotely.
+## Tests
+```sh
+python database/test_schema.py   # all migrations, triggers, upgrade path, idempotent seed (local SQLite)
+cd middleware && npm test        # API-level tests on the same migrations
+```
 
-## Architecture
+## Applying (with Wrangler, from `middleware/`)
+```sh
+npx wrangler d1 export network --remote --output backup.sql   # back up first
+npx wrangler d1 migrations list network --remote
+npx wrangler d1 migrations apply network --local               # rehearse locally
+npx wrangler d1 migrations apply network --remote
+npx wrangler d1 execute network --remote --file=../database/seeds/demo_seed.sql
+```
+Never commit credentials or member data.
 
-- D1 is SQLite, not PostgreSQL. Media binaries go to R2; store references in D1.
-- A Cloudflare Worker can use the D1 binding directly. Java Spring Boot would use a protected Worker API gateway or the D1 HTTP API, rather than standard PostgreSQL JDBC.
-- Use opaque app-generated IDs. Validate ownership and authorization on the server, not solely in SQL.
-- Only an accepted co-owner may edit a Dream. “Moi aussi” and collaborator roles are distinct. Encouragement count is private to owners, while same-dream count is public.
-- Dream stage: dream -> initiation -> growth -> testimony. Titles are immutable.
-- Video calls only among mutually accepted My Circle connections.
-- Only Bible verses have an export workflow. Music adaptation proposals do not grant public download rights; all creators and contributors require proper legal attribution.
-- External music needs source, rights and permission metadata, never a blanket assumption that a URL allows reproduction.
-- Date-specific prayer saves and accepted agenda invitations are separate entities.
-- Audit/retention, deletion, copyright enforcement, chat privacy, calendar OAuth and push scheduling require a backend.
-
-## Later deployment (manual, not executed)
-
-Configure a Worker with a D1 binding and its migrations_dir pointing to database/migrations. After creating or inspecting your D1 database:
-
-npx wrangler d1 migrations apply jenlow-network --local
-
-Only when reviewed and backed up:
-
-npx wrangler d1 migrations apply jenlow-network --remote
-
-Never commit real access credentials or member data. Migration SQL has no production sample users.
+## Importing more Scripture
+Only import editions whose licence allows it. Insert the edition with `import_allowed=1` (and `export_allowed` per licence), then its verses into `bible_verses (edition_id, book_id, chapter, verse, text)`.

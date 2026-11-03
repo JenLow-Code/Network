@@ -1,21 +1,19 @@
-# Installing the JenLow Network schema in Cloudflare D1
+# Applying the JenLow Network schema to Cloudflare D1
 
-This repo does not contain credentials or a real D1 database UUID. Creating a database and applying migrations are separate actions. Use a NEW EMPTY D1 database for these initial migrations.
+The production database already exists: **`network`**, id `62ca4199-a913-4444-b176-b5d18c8817d1`, used by the `jenlow-network-auth` Worker. Do not create a new one.
 
-1. In Cloudflare Dashboard > Workers & Pages > D1 SQL database > Create database, name it jenlow-network.
-2. Copy its Database ID from the D1 dashboard.
-3. Copy database/wrangler.toml.example to database/wrangler.toml and replace REPLACE_WITH_REAL_D1_DATABASE_UUID with the ID. Do not commit this local configuration.
-4. From the repository root in a terminal with Node.js available, run:
-   npx wrangler login
-   npx wrangler d1 migrations apply jenlow-network --config database/wrangler.toml --local
-5. If the local migration passes, run:
-   npx wrangler d1 migrations apply jenlow-network --config database/wrangler.toml --remote
-6. Verify the installation:
-   npx wrangler d1 execute jenlow-network --config database/wrangler.toml --remote --command "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;"
-7. View the tables in Cloudflare D1 dashboard and check d1_migrations has six rows.
+Run these from `middleware/` with `wrangler.toml` copied from `wrangler.toml.example` (it points `migrations_dir` at `../database/migrations`).
 
-If you lack a terminal, each migration may be pasted into the D1 SQL Console in order (0001 through 0006), but this bypasses Wrangler's migration tracking; prefer Wrangler to make future upgrades safer.
+1. Back up: `npx wrangler d1 export network --remote --output backup-$(date +%F).sql`
+2. See what Wrangler has recorded: `npx wrangler d1 migrations list network --remote`
+3. **If 0001–0008 were applied by pasting SQL in the dashboard** (so `d1_migrations` is empty or partial), Wrangler would try to re-run them and fail on `CREATE TABLE`. Record them first:
+   ```sh
+   npx wrangler d1 execute network --remote --command "CREATE TABLE IF NOT EXISTS d1_migrations(id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT UNIQUE, applied_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP); INSERT OR IGNORE INTO d1_migrations(name) VALUES ('0001_identity.sql'),('0002_dreams.sql'),('0003_publications_media.sql'),('0004_collaboration_agenda.sql'),('0005_invariants.sql'),('0006_extensions_views.sql'),('0007_auth_sessions.sql'),('0008_email_password_beta.sql');"
+   ```
+   Only do this after confirming those tables exist (`SELECT name FROM sqlite_master WHERE type='table'`).
+4. Rehearse locally: `npx wrangler d1 migrations apply network --local`
+5. Apply: `npx wrangler d1 migrations apply network --remote` (0009–0011, additive).
+6. Seed demo data: `npx wrangler d1 execute network --remote --file=../database/seeds/demo_seed.sql`
+7. Verify: `curl …/api/health/ready` returns `"schema":"0011"`.
 
-The frontend remains an independent demo. Installing SQL tables alone does NOT make Google/Apple login, data synchronization or account deletion functional. Do not bind D1 to the public frontend Worker unless it runs server-side trusted API endpoints. Never expose database credentials in browser code.
-
-Caution: Initial migration files contain CREATE TABLE statements, not safe to blindly replay over populated tables. Backup first when updating production.
+Installing tables alone enables nothing for members; the Worker in `middleware/` provides the API. Never expose D1 credentials to the frontend.
