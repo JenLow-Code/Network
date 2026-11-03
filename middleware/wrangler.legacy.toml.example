@@ -1,0 +1,17 @@
+# Rollback configuration: the beta auth script that was deployed before the unified API.
+# It serves only /health and /v1/auth/* and is fully compatible with the new Worker's
+# accounts, tokens and sessions (verified by test/auth.test.ts).
+name = "jenlow-network-auth"
+main = "src/worker-runtime.js"
+compatibility_date = "2026-10-25"
+compatibility_flags = ["nodejs_compat"]
+workers_dev = true
+
+[vars]
+ALLOWED_ORIGIN = "https://network.jenlow.net,https://network.jenlow-production.workers.dev"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "network"
+database_id = "62ca4199-a913-4444-b176-b5d18c8817d1"
+migrations_dir = "../database/migrations"

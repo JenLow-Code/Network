@@ -1,15 +1,36 @@
-# Deployment configuration for the free-tier beta API.
-# Copy to wrangler.toml; keep credentials in Cloudflare secret bindings.
+# JenLow Network API — unified Worker (beta auth + application API + scheduled jobs).
+# Copy to wrangler.toml (gitignored). Secrets: `wrangler secret put AUTH_JWT_SECRET`,
+# `wrangler secret put BETA_INVITE_CODE`, optionally `wrangler secret put MEDIA_SIGNING_SECRET`.
+#
+# Same Worker name and D1 database as the deployed beta auth Worker, so the public URL,
+# accounts and tokens stay the same. Rollback: `wrangler rollback`, or deploy
+# wrangler.legacy.toml.example (src/worker-runtime.js).
 name = "jenlow-network-auth"
-main = "src/worker-runtime.js"
+main = "src/index.ts"
 compatibility_date = "2026-10-25"
+# Required: password hashing uses node:crypto PBKDF2 (210,000 iterations; WebCrypto caps at 100,000).
+compatibility_flags = ["nodejs_compat"]
 workers_dev = true
 
 [vars]
 ALLOWED_ORIGIN = "https://network.jenlow.net,https://network.jenlow-production.workers.dev"
+PUBLIC_API_URL = "https://jenlow-network-auth.jenlow-production.workers.dev"
+# Shows the fictional demo dataset in Discovery during the beta. Set "false" at public launch.
+DISCOVERY_INCLUDE_DEMO = "true"
 
 [[d1_databases]]
 binding = "DB"
 database_name = "network"
 database_id = "62ca4199-a913-4444-b176-b5d18c8817d1"
 migrations_dir = "../database/migrations"
+
+# Member media (avatars, covers, music, samples). Free tier: 10 GB storage, no egress fees.
+# Create with: npx wrangler r2 bucket create jenlow-network-media
+# Without this binding, upload endpoints answer 503 media_storage_not_configured.
+# [[r2_buckets]]
+# binding = "MEDIA"
+# bucket_name = "jenlow-network-media"
+
+# Prayer reminders, scheduled notifications, expired uploads and housekeeping.
+[triggers]
+crons = ["*/15 * * * *"]

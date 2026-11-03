@@ -1,4 +1,4 @@
-name: Auth API checks
+name: Network API checks
 on:
   push:
     paths:
@@ -11,7 +11,7 @@ on:
       - 'database/**'
   workflow_dispatch:
 jobs:
-  typecheck:
+  api:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -22,4 +22,13 @@ jobs:
         with:
           node-version: '22'
       - run: npm install --no-audit --no-fund
-      - run: npm run typecheck
+      - name: Typecheck Worker and tests
+        run: npm run typecheck
+      - name: Integration tests (all migrations, D1-compatible SQLite, HTTP API)
+        run: npm test
+      - name: Bundle the Worker (Cloudflare ESM, nodejs_compat)
+        run: npm run bundle:check
+      - name: Demo seed is up to date with demo-data.ts
+        run: |
+          npm run seed:sql
+          git diff --exit-code ../database/seeds/demo_seed.sql
