@@ -18,11 +18,17 @@ type PublicationBase = {
   location?: string;
   image: string;
   imageAlt: string;
+  /** Present on items loaded from the JenLow API (frontend/src/lib/api/adapters.ts). */
+  source?: 'api';
+  /** Member handle for profile navigation (API items); demo mocks only have a display name. */
+  authorHandle?: string;
 };
 
 export type DreamPublication = PublicationBase & {
   type: 'dream';
   phase: DreamPhase;
+  /** Dream aggregate id (the publication id is `id`). */
+  dreamId?: string;
   summary: string;
   needs: string[];
   motivation?: string;
@@ -55,6 +61,8 @@ export type MusicPublication = PublicationBase & {
   /** Optional artwork for the cassette sleeve; omit for a plain, typographic label. */
   coverArt?: string;
   audioIndex: 0 | 1 | 2;
+  /** Streaming URL from the API; when absent the bundled demo clip `audioIndex` plays. */
+  audioUrl?: string;
   songAuthor: string;
   lyrics?: { time: number; text: string }[];
   description: string;
@@ -74,7 +82,9 @@ export type PersonPublication = PublicationBase & {
   experience?: string;
   skill: string;
   level: string;
-  instrument: 'drums' | 'guitar' | 'camera';
+  instrument: 'drums' | 'cello' | 'trumpet' | 'acoustic-guitar' | 'singing' | 'bass' | 'violin'
+    | 'saxophone' | 'piano' | 'double-bass' | 'ukulele' | 'electric-guitar' | 'guitar' | 'cavaquinho'
+    | 'viola' | 'camera';
   seeking: string[];
 };
 export type Publication =

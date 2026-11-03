@@ -10,9 +10,12 @@ const files = [
 ] as const;
 export function MusicWaveform({
   index,
+  uri,
   renderLayout,
 }: {
   index: 0 | 1 | 2;
+  /** Streaming URL from the API (inline playback only); falls back to the bundled demo clip. */
+  uri?: string;
   renderLayout?: (
     button: React.ReactNode,
     wave: React.ReactNode,
@@ -23,7 +26,7 @@ export function MusicWaveform({
   ) => React.ReactNode;
 }) {
   const trackWidth = useRef(0);
-  const player = useAudioPlayer(files[index]);
+  const player = useAudioPlayer(uri ? { uri } : files[index]);
   const status = useAudioPlayerStatus(player);
   const play = () => {
     if (status.playing) {

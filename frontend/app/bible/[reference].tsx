@@ -16,6 +16,8 @@ import { ActionRail } from '@/components/detail/ActionRail';
 import { Nav } from '@/components/navigation/Nav';
 import { PublicationGallery } from '@/components/publication/PublicationGallery';
 import { useAppTheme } from '@/theme/AppTheme';
+import { usePublication } from '@/lib/api/hooks';
+import type { BiblePublication } from '@/domain/publication';
 
 type VersePosition = { y: number; height: number };
 
@@ -25,15 +27,17 @@ type VersePosition = { y: number; height: number };
  * The shared verse stays pink; the verse being read is black; the rest are grey.
  */
 export default function Bible() {
-  const { verse } = useLocalSearchParams<{ reference: string; verse?: string }>();
-  const shared = Math.max(1, Math.min(psalm150.length, Number(verse || 6) || 6));
+  const { verse, id } = useLocalSearchParams<{ reference: string; verse?: string; id?: string }>();
+  const remote = usePublication(id);
+  const chapterTexts: string[] = remote.detail?.chapter?.verses?.map((v: { text: string }) => v.text) ?? psalm150;
+  const shared = Math.max(1, Math.min(chapterTexts.length, Number(verse || 6) || 6));
   const [reading, setReading] = useState(1);
   const positions = useRef<Record<number, VersePosition>>({});
   const chapterStart = useRef(0);
   const theme = useAppTheme();
   const { width: viewportWidth } = useWindowDimensions();
   const compact = viewportWidth < 500;
-  const post = biblePosts.find(p => p.highlightedVerse === shared) || biblePosts[0];
+  const post = (remote.item?.type === 'bible' ? (remote.item as BiblePublication) : undefined) ?? biblePosts.find(p => p.highlightedVerse === shared) ?? biblePosts[0];
 
   const focusOnScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     // A reading line near the top, not a huge centered blank region.
@@ -41,7 +45,7 @@ export default function Bible() {
     let nearest = 1;
     let distance = Infinity;
 
-    for (let n = 1; n <= psalm150.length; n++) {
+    for (let n = 1; n <= chapterTexts.length; n++) {
       const location = positions.current[n];
       if (!location) continue;
       const centre = location.y + location.height / 2;
@@ -94,7 +98,7 @@ export default function Bible() {
           style={{ flexDirection: 'row', alignItems: 'flex-end', paddingHorizontal: compact ? 18 : 30, paddingTop: 5 }}
         >
           <View style={{ flex: 1, minWidth: 0 }}>
-            {psalm150.map((text, index) => {
+            {chapterTexts.map((text, index) => {
               const n = index + 1;
               const current = n === reading;
               return (

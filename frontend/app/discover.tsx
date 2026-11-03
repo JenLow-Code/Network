@@ -1,6 +1,6 @@
 import { Text, TextInput } from '@/i18n/LocalizedText';
 import React, { useMemo, useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, View } from 'react-native';
 import { NetworkMark } from '@/components/brand/NetworkMark';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -10,7 +10,7 @@ import { Nav } from '@/components/navigation/Nav';
 import { Pill } from '@/components/ui/Pill';
 import { TopActions } from '@/components/navigation/TopActions';
 import { PublicationGallery } from '@/components/publication/PublicationGallery';
-import { publications, personPublications } from '@/mocks/publications';
+import { useDiscovery } from '@/lib/api/hooks';
 import { people, personPath } from '@/mocks/people';
 import { Avatar } from '@/components/ui/Avatar';
 import { FireHeader } from '@/components/fire/FireHeader';
@@ -27,6 +27,10 @@ export default function Discover() {
     params.filter === 'Talents' ? 'Talents' : 'Tout',
   );
   const [query, setQuery] = useState('');
+  // Discovery is backed by D1 through the API; there is deliberately no mock fallback.
+  const feed = useDiscovery();
+  const publications = useMemo(() => feed.items.filter(p => p.type !== 'talent'), [feed.items]);
+  const personPublications = useMemo(() => feed.items.filter(p => p.type === 'talent'), [feed.items]);
   const items = useMemo(
     () =>
       publications.filter(
@@ -40,11 +44,16 @@ export default function Discover() {
             .toLowerCase()
             .includes(query.trim().toLowerCase()),
       ),
-    [filter, query],
+    [filter, query, publications],
   );
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
       <ScrollView
+        scrollEventThrottle={250}
+        onScroll={e => {
+          const { layoutMeasurement, contentOffset, contentSize } = e.nativeEvent;
+          if (feed.hasMore && layoutMeasurement.height + contentOffset.y > contentSize.height - 900) void feed.loadMore();
+        }}
         contentContainerStyle={{
           paddingHorizontal: 15,
           paddingBottom: 55,
@@ -154,7 +163,20 @@ export default function Discover() {
           )}
         />
         </View>
-        {filter !== 'Talents' && items.length === 0 && (
+        {feed.state === 'loading' && feed.items.length === 0 ? (
+          <ActivityIndicator style={{ marginTop: 30 }} color={theme.foreground} />
+        ) : null}
+        {feed.state === 'error' ? (
+          <View style={{ alignItems: 'center', marginTop: 25, gap: 10 }}>
+            <Text style={{ textAlign: 'center', color: '#999' }}>
+              Impossible de charger Discovery pour le moment.
+            </Text>
+            <Pressable accessibilityRole="button" onPress={() => void feed.retry()} style={{ paddingVertical: 8, paddingHorizontal: 16 }}>
+              <Text style={{ color: '#D71D77', fontSize: 13 }}>Réessayer</Text>
+            </Pressable>
+          </View>
+        ) : null}
+        {feed.state === 'ready' && filter !== 'Talents' && items.length === 0 && (
           <Text style={{ textAlign: 'center', marginTop: 25, color: '#999' }}>
             Aucune publication trouvée.
           </Text>

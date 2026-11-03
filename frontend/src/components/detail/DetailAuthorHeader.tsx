@@ -34,7 +34,7 @@ export function DetailAuthorHeader({ item }: { item: Publication }) {
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={'Voir le profil de ' + item.author}
-        onPress={() => router.push(personPath(item.author))}
+        onPress={() => router.push(personPath(item.authorHandle ?? item.author))}
         style={styles.member}
       >
         {item.avatar ? (

@@ -1,4 +1,12 @@
-# JenLow Network — Supabase Auth + Cloudflare D1
+# JenLow Network — authentication
+
+> **Update (November 2026):** the app now signs in through the JenLow beta auth Worker
+> (`/v1/auth/*`, invite code required), the same token issuer the application API trusts.
+> Sessions are restored after a reload (`src/context/AuthProvider.tsx`, `src/lib/api/session.ts`).
+> Google and Apple stay disabled until a provider is configured and verified with the API.
+> The Supabase notes below are kept for reference; see `middleware/DECISIONS.md` §2.
+
+## Previous approach: Supabase Auth + Cloudflare D1
 
 ## What is prepared
 The React Native/Web client can use **Supabase Auth** for email-password, Google OAuth and (when Apple Developer is available) Apple sign-in. Supabase supplies password verification, persistent refresh sessions and account identity. JenLow's existing D1 database and ten inactive mock accounts are untouched.

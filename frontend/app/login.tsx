@@ -25,7 +25,7 @@ export default function Login() {
     [code, setCode] = useState(''),
     [busy, setBusy] = useState(false),
     [error, setError] = useState('');
-  const { signIn, signUp, signInWithSocial, resetPassword, configured } = useAuth();
+  const { signIn, signUp, signInWithSocial, resetPassword, configured, socialConfigured } = useAuth();
   const submit = async () => {
     if (busy) return;
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -36,11 +36,15 @@ export default function Login() {
       setError('Your password must contain at least 12 characters.');
       return;
     }
+    if (register && !code.trim()) {
+      setError('An invitation code is required for the private beta.');
+      return;
+    }
     setError('');
     setBusy(true);
     try {
       if (register) {
-        const result = await signUp(name, email, password);
+        const result = await signUp(name, email, password, code);
         if (result === 'email_confirmation_required') {
           setError('Account created. Please confirm your email before signing in.');
           return;
@@ -60,6 +64,8 @@ export default function Login() {
         password_auth_unavailable:
           'Email sign-in is temporarily unavailable. The server needs an authentication provider.',
         request_failed: 'Unable to reach the server. Check your internet connection.',
+        oauth_not_configured: 'Google sign-in is not available yet.',
+        password_reset_unavailable: 'Password recovery is not available yet. Contact the JenLow team.',
       };
       setError(errors[key] || key);
     } finally {
@@ -155,17 +161,19 @@ export default function Login() {
             <View style={s.line} />
           </View>
           <Pressable
-            disabled={!configured || busy}
+            disabled={!configured || !socialConfigured || busy}
             onPress={() => {
               setBusy(true);
               void signInWithSocial('google')
                 .catch(e => setError(e.message || 'Google login failed'))
                 .finally(() => setBusy(false));
             }}
-            style={[s.oauth, (!configured || busy) && { opacity: 0.55 }]}
+            style={[s.oauth, (!configured || !socialConfigured || busy) && { opacity: 0.55 }]}
           >
             <GoogleMark size={18} />
-            <Text style={s.oauthLabel}>Continuer avec Google</Text>
+            <Text style={s.oauthLabel}>
+              {socialConfigured ? 'Continuer avec Google' : 'Google · configuration requise'}
+            </Text>
           </Pressable>
           <Pressable disabled style={[s.oauth, { opacity: 0.55 }]}>
             <Ionicons name="logo-apple" size={19} color="#111" />
@@ -182,7 +190,7 @@ export default function Login() {
             <Text style={{ fontSize: 11, color: '#777' }}>Mot de passe oublié ?</Text>
           </Pressable>
           <Text style={s.terms}>
-            JenLow Network utilise une authentification sécurisée externe. Google et Apple
+            JenLow Network utilise une authentification sécurisée. Google et Apple
             nécessitent une configuration fournisseur.
           </Text>
         </ScrollView>

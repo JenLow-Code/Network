@@ -26,10 +26,10 @@ export const publicationPath = (p: Publication) =>
     : p.type === 'music'
       ? ({ pathname: '/music/[id]', params: { id: p.id } } as const)
       : p.type === 'talent'
-        ? ({ pathname: '/person/[name]', params: { name: p.author } } as const)
+        ? ({ pathname: '/person/[name]', params: { name: p.source === 'api' ? p.id : p.author } } as const)
         : ({
             pathname: '/bible/[reference]',
-            params: { reference: p.referenceId, verse: String(p.highlightedVerse) },
+            params: { reference: p.referenceId, verse: String(p.highlightedVerse), ...(p.source === 'api' ? { id: p.id } : {}) },
           } as const);
 
 function category(item: Publication): string {
@@ -45,8 +45,8 @@ function category(item: Publication): string {
   }
 }
 
-function MusicPlayback({ index }: { index: 0 | 1 | 2 }) {
-  const player = useAudioPlayer(audio[index]);
+function MusicPlayback({ index, uri }: { index: 0 | 1 | 2; uri?: string }) {
+  const player = useAudioPlayer(uri ? { uri } : audio[index]);
   const status = useAudioPlayerStatus(player);
   const toggle = () => {
     if (status.playing) player.pause();
@@ -73,7 +73,7 @@ function AudioCorner({ item }: { item: Publication }) {
   if (item.type !== 'music') return null;
   return (
     <View style={styles.audioCorner}>
-      <MusicPlayback index={item.audioIndex} />
+      <MusicPlayback index={item.audioIndex} uri={item.audioUrl} />
     </View>
   );
 }

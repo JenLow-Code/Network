@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Image, Modal, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, Image, Modal, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -14,31 +14,61 @@ import { TalentLevelDots } from '@/components/talent/TalentLevelDots';
 import { useAppTheme } from '@/theme/AppTheme';
 import { useApp } from '@/context/AppContext';
 import type { PersonPublication } from '@/domain/publication';
+import { useMemberProfile } from '@/lib/api/hooks';
+import { profileTalentToPublication } from '@/lib/api/adapters';
+import { api } from '@/lib/api/client';
 
 const PIN_KEY = 'jenlow.public-profile.featured.v1.';
 export default function PublicMemberProfile() {
   const { name } = useLocalSearchParams<{ name: string }>();
-  const person = people.find(p => p.name === name);
+  // Profiles from the API are addressed by handle; the remaining local-demo screens use mock names.
+  const mock = people.find(p => p.name === name);
+  const remote = useMemberProfile(mock ? undefined : name);
+  const apiProfile = remote.profile;
+  const person = mock ?? (apiProfile ? {
+    name: apiProfile.displayName,
+    bio: apiProfile.bio,
+    church: apiProfile.church ?? undefined,
+    talents: apiProfile.talents.map(t => t.name),
+    posts: remote.posts,
+    skills: apiProfile.talents.map(t => profileTalentToPublication(apiProfile, t)),
+  } : undefined);
   const theme = useAppTheme();
   const app = useApp();
   const { width: screenWidth } = useWindowDimensions();
   const [selectedTalent, setSelectedTalent] = useState<PersonPublication | null>(null);
   const [featuredId, setFeaturedId] = useState<string | null>(null);
-  const isOwner = !!person && app.signedIn && app.name === person.name;
+  const isOwner = apiProfile ? apiProfile.isSelf : !!person && app.signedIn && app.name === person.name;
   useEffect(() => {
     let active = true;
     setFeaturedId(null);
-    if (person) {
+    if (apiProfile) {
+      setFeaturedId(apiProfile.featured?.id ?? null);
+    } else if (person) {
       void AsyncStorage.getItem(PIN_KEY + person.name).then(id => { if (active) setFeaturedId(id); }).catch(() => {});
     }
     return () => { active = false; };
-  }, [person?.name]);
+  }, [person?.name, apiProfile?.featured?.id]);
   const selectFeatured = (id: string | null) => {
     if (!isOwner || !person) return;
     setFeaturedId(id);
+    if (apiProfile) {
+      // Server-side featured post: only the owner's own public publication is accepted.
+      void (id
+        ? api('/api/me/featured-post', { method: 'PUT', body: { publicationId: id }, auth: 'required' })
+        : api('/api/me/featured-post', { method: 'DELETE', auth: 'required' })
+      ).catch(() => setFeaturedId(apiProfile.featured?.id ?? null));
+      return;
+    }
     if (id) void AsyncStorage.setItem(PIN_KEY + person.name, id).catch(() => {});
     else void AsyncStorage.removeItem(PIN_KEY + person.name).catch(() => {});
   };
+  if (!mock && remote.state === 'loading') return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.background, justifyContent: 'center' }}>
+      <ActivityIndicator color={theme.foreground} />
+      <Nav />
+    </SafeAreaView>
+  );
   if (!person) return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
       <Text style={{ padding: 24, color: theme.foreground }}>Profil introuvable</Text>
@@ -46,9 +76,12 @@ export default function PublicMemberProfile() {
     </SafeAreaView>
   );
   const female = ['Sarah', 'Esther', 'Helena', 'Léa', 'Mila'].includes(person.name);
-  const photo = female
-    ? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=320&q=80'
-    : 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=320&q=80';
+  // Real members show their own avatar or an initial; stock portraits remain only on mock profiles.
+  const photo = apiProfile
+    ? apiProfile.avatarUrl
+    : female
+      ? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=320&q=80'
+      : 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=320&q=80';
   const width = Math.min(screenWidth - 36, 860);
   const columns = width < 350 ? 2 : 3;
   const gap = 10;
@@ -62,7 +95,13 @@ export default function PublicMemberProfile() {
           <TopActions />
         </View>
         <View style={{ alignItems: 'center', gap: 8, paddingVertical: 16 }}>
-          <Image source={{ uri: photo }} style={{ width: 102, height: 102, borderRadius: 51 }} />
+          {photo ? (
+            <Image source={{ uri: photo }} style={{ width: 102, height: 102, borderRadius: 51 }} />
+          ) : (
+            <View style={{ width: 102, height: 102, borderRadius: 51, backgroundColor: theme.dark ? '#2A2A2A' : '#EFE8DF', alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ fontSize: 38, color: theme.foreground }}>{person.name.trim().slice(0, 1).toLocaleUpperCase('fr')}</Text>
+            </View>
+          )}
           <Text style={{ fontSize: 24, fontWeight: '800', color: theme.foreground }}>{person.name}</Text>
           {person.bio ? <Text style={{ fontSize: 14, lineHeight: 21, color: theme.muted, textAlign: 'center', maxWidth: 430 }}>{person.bio}</Text> : null}
           <Text style={{ fontSize: 12, color: theme.muted, textAlign: 'center' }}>
@@ -81,7 +120,7 @@ export default function PublicMemberProfile() {
         {person.posts.length
           ? <ProfilePublicationFeed items={person.posts} contentWidth={width} featuredId={featuredId} onFeature={isOwner ? selectFeatured : undefined} />
           : <Text style={{ color: theme.muted }}>Aucune publication pour le moment.</Text>}
-        <Text style={{ fontSize: 11, color: theme.muted }}>Profil de démonstration. Les données des membres seront connectées ultérieurement.</Text>
+        {mock ? <Text style={{ fontSize: 11, color: theme.muted }}>Profil de démonstration. Les données des membres seront connectées ultérieurement.</Text> : null}
       </ScrollView>
       <Modal visible={!!selectedTalent} transparent animationType="fade" onRequestClose={() => setSelectedTalent(null)}>
         <View style={{ flex: 1, justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.6)', padding: 20 }}>
