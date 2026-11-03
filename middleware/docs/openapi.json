@@ -100,7 +100,7 @@
         "tags": [
           "System"
         ],
-        "summary": "Readiness: D1 reachable and schema at 0011",
+        "summary": "Readiness: D1 reachable and schema at 0012",
         "responses": {
           "200": {
             "description": "Success"
@@ -4040,7 +4040,7 @@
         "tags": [
           "Prayer"
         ],
-        "summary": "Add to my prayers (repeat once/daily/weekly; no fabricated dates)",
+        "summary": "Add any publication (incl. a talent) to my prayers: repeat once/daily/weekly, no fabricated dates",
         "parameters": [
           {
             "name": "id",
@@ -4082,90 +4082,6 @@
           "Prayer"
         ],
         "summary": "Remove from my prayers",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success"
-          },
-          "400": {
-            "$ref": "#/components/responses/Error"
-          },
-          "401": {
-            "$ref": "#/components/responses/Error"
-          },
-          "404": {
-            "$ref": "#/components/responses/Error"
-          },
-          "422": {
-            "$ref": "#/components/responses/Error"
-          },
-          "429": {
-            "$ref": "#/components/responses/Error"
-          }
-        }
-      }
-    },
-    "/api/talent-posts/{id}/prayer": {
-      "post": {
-        "tags": [
-          "Prayer"
-        ],
-        "summary": "Pray for a talent showcase",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success"
-          },
-          "400": {
-            "$ref": "#/components/responses/Error"
-          },
-          "401": {
-            "$ref": "#/components/responses/Error"
-          },
-          "404": {
-            "$ref": "#/components/responses/Error"
-          },
-          "422": {
-            "$ref": "#/components/responses/Error"
-          },
-          "429": {
-            "$ref": "#/components/responses/Error"
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "Prayer"
-        ],
-        "summary": "Remove a talent showcase from my prayers",
         "parameters": [
           {
             "name": "id",
@@ -4689,7 +4605,7 @@
         "tags": [
           "Talents"
         ],
-        "summary": "Talent showcase detail",
+        "summary": "Talent showcase detail (same object as GET /api/publications/:id)",
         "parameters": [
           {
             "name": "id",

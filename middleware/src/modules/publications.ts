@@ -141,37 +141,34 @@ export function registerPublications(r: Router): void {
   });
 
   // ------------------------------------------------------------------ Prayer (distinct from Fire)
-  const prayerOn = (targetType: 'publication' | 'talent_post') => async (ctx: Ctx) => {
+  const prayerOn = async (ctx: Ctx) => {
     const viewer = await ctx.user();
     const item = await actionable(ctx, ctx.param('id'), 'prayer');
-    if ((item.type === 'talent') !== (targetType === 'talent_post')) throw notFound();
     const v = new V(await ctx.optionalBody());
     const repeat = v.oneOf('repeat', ['once', 'daily', 'weekly'] as const) ?? 'daily';
     const startDate = v.date('startDate') ?? todayIn(viewer.timezone);
     v.done();
     await ctx.sql.run(
-      `INSERT INTO prayer_list(user_id,target_type,target_id,repeat_mode,start_date) VALUES(?,?,?,?,?)
-       ON CONFLICT(user_id,target_type,target_id) DO UPDATE SET repeat_mode=excluded.repeat_mode,start_date=excluded.start_date`,
-      viewer.id, targetType, item.id, repeat, startDate,
+      `INSERT INTO prayer_list(user_id,publication_id,repeat_mode,start_date) VALUES(?,?,?,?)
+       ON CONFLICT(user_id,publication_id) DO UPDATE SET repeat_mode=excluded.repeat_mode,start_date=excluded.start_date`,
+      viewer.id, item.id, repeat, startDate,
     );
     return { prayer: true, repeat, startDate };
   };
-  const prayerOff = (targetType: 'publication' | 'talent_post') => async (ctx: Ctx) => {
+  const prayerOff = async (ctx: Ctx) => {
     const viewer = await ctx.user();
-    await ctx.sql.run('DELETE FROM prayer_list WHERE user_id=? AND target_type=? AND target_id=?', viewer.id, targetType, ctx.param('id'));
+    await ctx.sql.run('DELETE FROM prayer_list WHERE user_id=? AND publication_id=?', viewer.id, ctx.param('id'));
     return { prayer: false };
   };
-  r.add('POST', '/api/publications/:id/prayer', { tag: 'Prayer', summary: 'Add to my prayers (repeat once/daily/weekly; no fabricated dates)', auth: 'required' }, prayerOn('publication'));
-  r.add('DELETE', '/api/publications/:id/prayer', { tag: 'Prayer', summary: 'Remove from my prayers', auth: 'required' }, prayerOff('publication'));
-  r.add('POST', '/api/talent-posts/:id/prayer', { tag: 'Prayer', summary: 'Pray for a talent showcase', auth: 'required' }, prayerOn('talent_post'));
-  r.add('DELETE', '/api/talent-posts/:id/prayer', { tag: 'Prayer', summary: 'Remove a talent showcase from my prayers', auth: 'required' }, prayerOff('talent_post'));
+  r.add('POST', '/api/publications/:id/prayer', { tag: 'Prayer', summary: 'Add any publication (incl. a talent) to my prayers: repeat once/daily/weekly, no fabricated dates', auth: 'required' }, prayerOn);
+  r.add('DELETE', '/api/publications/:id/prayer', { tag: 'Prayer', summary: 'Remove from my prayers', auth: 'required' }, prayerOff);
 
   r.add('GET', '/api/me/prayers', { tag: 'Prayer', summary: 'My prayers; with ?date=YYYY-MM-DD only those due that day (repeat rules applied)', auth: 'required' }, async ctx => {
     const viewer = await ctx.user();
     const date = ctx.query('date');
     if (date && !/^\d{4}-\d{2}-\d{2}$/.test(date)) throw unprocessable('invalid_date');
-    const rows = await ctx.sql.all<{ target_type: string; target_id: string; repeat_mode: string; start_date: string | null; created_at: string }>(
-      'SELECT target_type,target_id,repeat_mode,start_date,created_at FROM prayer_list WHERE user_id=? ORDER BY created_at DESC LIMIT 300',
+    const rows = await ctx.sql.all<{ publication_id: string; repeat_mode: string; start_date: string | null; created_at: string }>(
+      'SELECT publication_id,repeat_mode,start_date,created_at FROM prayer_list WHERE user_id=? ORDER BY created_at DESC LIMIT 300',
       viewer.id,
     );
     const due = (row: (typeof rows)[number]) => {
@@ -181,17 +178,10 @@ export function registerPublications(r: Router): void {
       return days >= 0 && (row.repeat_mode === 'daily' || (row.repeat_mode === 'weekly' && days % 7 === 0) || (row.repeat_mode === 'once' && days === 0));
     };
     const selected = rows.filter(due);
-    const pubItems = await itemsByPublicationIds(ctx, selected.filter(x => x.target_type === 'publication').map(x => x.target_id));
-    const talentIds = selected.filter(x => x.target_type === 'talent_post').map(x => x.target_id);
-    const talentItems = [] as FeedItem[];
-    for (const id of talentIds) {
-      const it = await loadItem(ctx, id, { includeDemo: true });
-      if (it) talentItems.push(it);
-    }
-    const byId = new Map([...pubItems, ...talentItems].map(i => [i.id, i]));
+    const byId = new Map((await itemsByPublicationIds(ctx, selected.map(x => x.publication_id))).map(i => [i.id, i]));
     return {
       date: date ?? null,
-      items: selected.filter(x => byId.has(x.target_id)).map(x => ({ repeat: x.repeat_mode, startDate: x.start_date, item: byId.get(x.target_id) })),
+      items: selected.filter(x => byId.has(x.publication_id)).map(x => ({ repeat: x.repeat_mode, startDate: x.start_date, item: byId.get(x.publication_id) })),
     };
   });
 

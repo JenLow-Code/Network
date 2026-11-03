@@ -29,8 +29,7 @@ export type FeedQuery = {
   ids?: string[];
 };
 
-type PubRow = { id: string; type: 'dream' | 'bible' | 'music'; author_id: string; dream_id: string | null; title: string; cover_asset_id: string | null; visibility: 'private' | 'members' | 'public'; created_at: string; updated_at: string; moderation_hidden_at: string | null };
-type TalentRow = { id: string; user_id: string; talent_id: string; visibility: 'private' | 'members' | 'public'; created_at: string; updated_at: string };
+export type PubRow = { id: string; type: ContentType; author_id: string; dream_id: string | null; title: string; cover_asset_id: string | null; visibility: 'private' | 'members' | 'public'; created_at: string; updated_at: string; moderation_hidden_at: string | null };
 
 const likeEscape = (s: string) => '%' + s.replace(/[\\%_]/g, c => '\\' + c) + '%';
 
@@ -41,7 +40,7 @@ function cursorClause(alias: string, cursor: Cursor | null, args: D1Value[]): st
 }
 
 export async function queryPublications(ctx: Ctx, q: FeedQuery): Promise<PubRow[]> {
-  const types = (q.types ?? ['dream', 'bible', 'music', 'talent']).filter(t => t !== 'talent');
+  const types = q.types ?? ['dream', 'bible', 'music', 'talent'];
   if (!types.length) return [];
   const where: string[] = ['p.deleted_at IS NULL', `p.type IN (${marks(types.length)})`];
   const args: D1Value[] = [...types];
@@ -54,6 +53,9 @@ export async function queryPublications(ctx: Ctx, q: FeedQuery): Promise<PubRow[
     where.push(q.viewer ? "p.visibility IN ('public','members')" : "p.visibility='public'");
     where.push(`(p.type<>'dream' OR EXISTS(SELECT 1 FROM dreams d WHERE d.id=p.dream_id AND d.deleted_at IS NULL AND d.moderation_hidden_at IS NULL${q.requireDreamCover ? ' AND d.cover_media_id IS NOT NULL' : ''}))`);
     where.push("(p.type<>'music' OR NOT EXISTS(SELECT 1 FROM music_tracks t WHERE t.publication_id=p.id AND t.withdrawn_at IS NOT NULL))");
+    // A talent showcase also follows the visibility of the member's talent itself.
+    where.push(`(p.type<>'talent' OR EXISTS(SELECT 1 FROM talent_publications tp JOIN user_talents ut ON ut.user_id=tp.user_id AND ut.talent_id=tp.talent_id
+      WHERE tp.publication_id=p.id AND ut.visibility IN (${q.viewer ? "'public','members'" : "'public'"})))`);
     if (!q.includeDemo) where.push('u.is_demo=0');
     if (q.authorId) {
       where.push('p.author_id=?');
@@ -87,67 +89,15 @@ export async function queryPublications(ctx: Ctx, q: FeedQuery): Promise<PubRow[
   );
 }
 
-export async function queryTalentPosts(ctx: Ctx, q: FeedQuery): Promise<TalentRow[]> {
-  if (q.types && !q.types.includes('talent')) return [];
-  if (q.phase) return [];
-  const where: string[] = ['tp.deleted_at IS NULL'];
-  const args: D1Value[] = [];
-  if (q.ownerView && q.authorId) {
-    where.push('tp.user_id=?');
-    args.push(q.authorId);
-  } else {
-    where.push('tp.moderation_hidden_at IS NULL', AUTHOR_VISIBLE_SQL('u'));
-    where.push(q.viewer ? "tp.visibility IN ('public','members') AND ut.visibility IN ('public','members')" : "tp.visibility='public' AND ut.visibility='public'");
-    if (!q.includeDemo) where.push('u.is_demo=0');
-    if (q.authorId) {
-      where.push('tp.user_id=?');
-      args.push(q.authorId);
-    }
-    if (q.viewer) {
-      where.push(NOT_BLOCKED_SQL('tp.user_id'));
-      args.push(q.viewer.id, q.viewer.id);
-    }
-  }
-  if (q.search) {
-    where.push("(t.name LIKE ? ESCAPE '\\' OR u.display_name LIKE ? ESCAPE '\\')");
-    args.push(likeEscape(q.search), likeEscape(q.search));
-  }
-  if (q.ids?.length) {
-    where.push(`tp.id IN (${marks(q.ids.length)})`);
-    args.push(...q.ids);
-  }
-  const c = cursorClause('tp', q.cursor, args);
-  if (c) where.push(c);
-  args.push(q.limit + 1);
-  return ctx.sql.all<TalentRow>(
-    `SELECT tp.id,tp.user_id,tp.talent_id,tp.visibility,tp.created_at,tp.updated_at
-     FROM talent_posts tp JOIN user_talents ut ON ut.user_id=tp.user_id AND ut.talent_id=tp.talent_id
-     JOIN talents t ON t.id=tp.talent_id JOIN users u ON u.id=tp.user_id
-     WHERE ${where.join(' AND ')} ORDER BY tp.created_at DESC, tp.id DESC LIMIT ?`,
-    ...args,
-  );
-}
-
-/** Merge both sources newest-first with one shared keyset cursor. */
+/** One page of publications (all four types) newest first, with a keyset cursor. */
 export async function feedPage(ctx: Ctx, q: FeedQuery): Promise<{ items: FeedItem[]; nextCursor: string | null }> {
-  const [pubs, talents] = await Promise.all([queryPublications(ctx, q), queryTalentPosts(ctx, q)]);
-  type Entry = { kind: 'pub'; row: PubRow } | { kind: 'talent'; row: TalentRow };
-  const merged: Entry[] = [
-    ...pubs.map(row => ({ kind: 'pub' as const, row })),
-    ...talents.map(row => ({ kind: 'talent' as const, row })),
-  ].sort((a, b) => (a.row.created_at === b.row.created_at ? (a.row.id < b.row.id ? 1 : -1) : a.row.created_at < b.row.created_at ? 1 : -1));
-  const page = merged.slice(0, q.limit);
-  const more = merged.length > q.limit;
-  const items = await hydrate(
-    ctx,
-    q.viewer,
-    page.filter((e): e is { kind: 'pub'; row: PubRow } => e.kind === 'pub').map(e => e.row),
-    page.filter((e): e is { kind: 'talent'; row: TalentRow } => e.kind === 'talent').map(e => e.row),
-  );
-  const order = new Map(page.map((e, i) => [e.row.id, i]));
+  const rows = await queryPublications(ctx, q);
+  const page = rows.slice(0, q.limit);
+  const items = await hydrate(ctx, q.viewer, page);
+  const order = new Map(page.map((r, i) => [r.id, i]));
   items.sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
   const last = page[page.length - 1];
-  return { items, nextCursor: more && last ? encodeCursor({ t: last.row.created_at, id: last.row.id }) : null };
+  return { items, nextCursor: rows.length > q.limit && last ? encodeCursor({ t: last.created_at, id: last.id }) : null };
 }
 
 type UserRow = { id: string; handle: string; display_name: string; church_name: string | null; avatar_media_id: string | null; is_demo: number; show_church: number | null };
@@ -227,15 +177,14 @@ async function counter(ctx: Ctx, sql: string, args: D1Value[]): Promise<Map<stri
 }
 
 /** Turn publication and talent rows into typed, viewer-aware feed items. */
-export async function hydrate(ctx: Ctx, viewer: Viewer | null, pubs: PubRow[], talents: TalentRow[], opts: { detail?: boolean } = {}): Promise<FeedItem[]> {
+export async function hydrate(ctx: Ctx, viewer: Viewer | null, pubs: PubRow[], opts: { detail?: boolean } = {}): Promise<FeedItem[]> {
   const locale = await ctx.locale();
-  const authorById = await authors(ctx, uniq([...pubs.map(p => p.author_id), ...talents.map(t => t.user_id)]));
+  const authorById = await authors(ctx, uniq(pubs.map(p => p.author_id)));
   const pubIds = pubs.map(p => p.id);
   const vid = viewer?.id ?? null;
 
   const fire = vid && pubIds.length ? await idSet(ctx, `SELECT publication_id AS k FROM fire_saves WHERE user_id=? AND publication_id IN (${marks(pubIds.length)})`, [vid, ...pubIds]) : new Set<string>();
-  const prayerTargets = [...pubIds, ...talents.map(t => t.id)];
-  const prayer = vid && prayerTargets.length ? await idSet(ctx, `SELECT target_id AS k FROM prayer_list WHERE user_id=? AND target_id IN (${marks(prayerTargets.length)})`, [vid, ...prayerTargets]) : new Set<string>();
+  const prayer = vid && pubIds.length ? await idSet(ctx, `SELECT publication_id AS k FROM prayer_list WHERE user_id=? AND publication_id IN (${marks(pubIds.length)})`, [vid, ...pubIds]) : new Set<string>();
 
   // Dreams
   const dreamPubs = pubs.filter(p => p.type === 'dream' && p.dream_id);
@@ -321,25 +270,29 @@ export async function hydrate(ctx: Ctx, viewer: Viewer | null, pubs: PubRow[], t
   const talentData = new Map<string, TalentData>();
   const talentSamples = new Map<string, string[]>();
   let talentEnc = new Map<string, number>(), myTalentEnc = new Set<string>();
-  if (talents.length) {
-    const ids = talents.map(t => t.id);
+  const talentPubIds = pubs.filter(p => p.type === 'talent').map(p => p.id);
+  if (talentPubIds.length) {
+    const ph = marks(talentPubIds.length);
     for (const t of await ctx.sql.all<TalentData>(
-      `SELECT tp.id AS post_id,ut.user_id,ut.talent_id,t.name,t.slug,t.category,ut.level,ut.can_teach,ut.wants_to_learn,ut.wants_tandem,ut.available_for_projects,
+      `SELECT tp.publication_id AS post_id,ut.user_id,ut.talent_id,t.name,t.slug,t.category,ut.level,ut.can_teach,ut.wants_to_learn,ut.wants_tandem,ut.available_for_projects,
          ut.description,ut.experience,ut.illustration,t.illustration AS t_illustration
-       FROM talent_posts tp JOIN user_talents ut ON ut.user_id=tp.user_id AND ut.talent_id=tp.talent_id JOIN talents t ON t.id=tp.talent_id WHERE tp.id IN (${marks(ids.length)})`,
-      ...ids,
+       FROM talent_publications tp JOIN user_talents ut ON ut.user_id=tp.user_id AND ut.talent_id=tp.talent_id JOIN talents t ON t.id=tp.talent_id WHERE tp.publication_id IN (${ph})`,
+      ...talentPubIds,
     ))
       talentData.set(t.post_id, t);
-    for (const m of await ctx.sql.all<{ user_id: string; talent_id: string; media_id: string }>(
-      `SELECT user_id,talent_id,media_id FROM user_talent_media WHERE (user_id||'|'||talent_id) IN (${marks(talents.length)}) ORDER BY sort_order`,
-      ...talents.map(t => t.user_id + '|' + t.talent_id),
-    )) {
-      const key = m.user_id + '|' + m.talent_id;
-      talentSamples.set(key, [...(talentSamples.get(key) ?? []), m.media_id]);
-    }
-    const mine = talents.filter(t => t.user_id === vid).map(t => t.id);
-    if (mine.length) talentEnc = await counter(ctx, `SELECT talent_post_id AS k, count(*) AS n FROM talent_post_encouragements WHERE talent_post_id IN (${marks(mine.length)}) GROUP BY talent_post_id`, mine);
-    if (vid) myTalentEnc = await idSet(ctx, `SELECT talent_post_id AS k FROM talent_post_encouragements WHERE user_id=? AND talent_post_id IN (${marks(ids.length)})`, [vid, ...ids]);
+    const keys = Array.from(talentData.values()).map(t => t.user_id + '|' + t.talent_id);
+    if (keys.length)
+      for (const m of await ctx.sql.all<{ user_id: string; talent_id: string; media_id: string }>(
+        `SELECT user_id,talent_id,media_id FROM user_talent_media WHERE (user_id||'|'||talent_id) IN (${marks(keys.length)}) ORDER BY sort_order`,
+        ...keys,
+      )) {
+        const key = m.user_id + '|' + m.talent_id;
+        talentSamples.set(key, [...(talentSamples.get(key) ?? []), m.media_id]);
+      }
+    // Encouragement totals only for the viewer's own showcases.
+    const mine = pubs.filter(p => p.type === 'talent' && p.author_id === vid).map(p => p.id);
+    if (mine.length) talentEnc = await counter(ctx, `SELECT publication_id AS k, count(*) AS n FROM talent_encouragements WHERE publication_id IN (${marks(mine.length)}) GROUP BY publication_id`, mine);
+    if (vid) myTalentEnc = await idSet(ctx, `SELECT publication_id AS k FROM talent_encouragements WHERE user_id=? AND publication_id IN (${ph})`, [vid, ...talentPubIds]);
   }
 
   // Media for everything at once
@@ -411,34 +364,29 @@ export async function hydrate(ctx: Ctx, viewer: Viewer | null, pubs: PubRow[], t
         viewer: { isOwner: isOwnerAuthor, actions: viewerActions('music', null, { authenticated: !!viewer, isOwner: isOwnerAuthor }), fire: fire.has(p.id), prayer: prayer.has(p.id) },
       };
       items.push(card);
+    } else if (p.type === 'talent') {
+      const d = talentData.get(p.id);
+      if (!d) continue;
+      const card: TalentCard = {
+        ...base, type: 'talent', talent: { id: d.talent_id, name: d.name, slug: d.slug, category: d.category }, level: d.level, levelLabel: levelLabel(d.level, locale),
+        illustration: d.illustration || d.t_illustration, description: d.description, experience: d.experience, seeking: seekingFrom(d, locale),
+        availableForProjects: d.available_for_projects === 1, canTeach: d.can_teach === 1, wantsToLearn: d.wants_to_learn === 1, wantsTandem: d.wants_tandem === 1,
+        samples: (talentSamples.get(d.user_id + '|' + d.talent_id) ?? []).map(id => m(id)).filter((x): x is MediaDTO => !!x),
+        counts: isOwnerAuthor ? { encouragements: talentEnc.get(p.id) ?? 0 } : {},
+        viewer: { isOwner: isOwnerAuthor, actions: viewerActions('talent', null, { authenticated: !!viewer, isOwner: isOwnerAuthor }), fire: false, prayer: prayer.has(p.id), encouraged: myTalentEnc.has(p.id) },
+      };
+      items.push(card);
     }
-  }
-  for (const t of talents) {
-    const author = authorById.get(t.user_id);
-    const d = talentData.get(t.id);
-    if (!author || !d) continue;
-    const isOwner = vid === t.user_id;
-    const card: TalentCard = {
-      id: t.id, author, createdAt: iso(t.created_at), updatedAt: iso(t.updated_at), visibility: t.visibility, locked: isOwner && t.visibility !== 'public', isDemo: author.isDemo,
-      type: 'talent', talent: { id: d.talent_id, name: d.name, slug: d.slug, category: d.category }, level: d.level, levelLabel: levelLabel(d.level, locale),
-      illustration: d.illustration || d.t_illustration, description: d.description, experience: d.experience, seeking: seekingFrom(d, locale),
-      availableForProjects: d.available_for_projects === 1, canTeach: d.can_teach === 1, wantsToLearn: d.wants_to_learn === 1, wantsTandem: d.wants_tandem === 1,
-      samples: (talentSamples.get(t.user_id + '|' + t.talent_id) ?? []).map(id => m(id)).filter((x): x is MediaDTO => !!x),
-      counts: isOwner ? { encouragements: talentEnc.get(t.id) ?? 0 } : {},
-      viewer: { isOwner, actions: viewerActions('talent', null, { authenticated: !!viewer, isOwner }), fire: false, prayer: prayer.has(t.id), encouraged: myTalentEnc.has(t.id) },
-    };
-    items.push(card);
   }
   return items;
 }
 
-/** Load one publication or talent showcase the viewer may see (same rules as Discovery). */
+/** Load one publication of any type the viewer may see (same rules as Discovery). */
 export async function loadItem(ctx: Ctx, id: string, opts: { includeDemo: boolean; allowOwnPrivate?: boolean } = { includeDemo: true }): Promise<FeedItem | null> {
   const viewer = await ctx.viewer();
   const base = { viewer, cursor: null, limit: 1, includeDemo: true, ids: [id] } as FeedQuery;
   let pubs = await queryPublications(ctx, base);
-  let talents = pubs.length ? [] : await queryTalentPosts(ctx, base);
-  if (!pubs.length && !talents.length && viewer && opts.allowOwnPrivate !== false) {
+  if (!pubs.length && viewer && opts.allowOwnPrivate !== false) {
     // The author (or an accepted Dream owner) may open their own private item.
     pubs = await queryPublications(ctx, { ...base, ownerView: true, authorId: viewer.id });
     if (!pubs.length) {
@@ -448,9 +396,8 @@ export async function loadItem(ctx: Ctx, id: string, opts: { includeDemo: boolea
       );
       if (own) pubs = await queryPublications(ctx, { ...base, ownerView: true, authorId: own.author_id });
     }
-    if (!pubs.length) talents = await queryTalentPosts(ctx, { ...base, ownerView: true, authorId: viewer.id });
   }
-  const items = await hydrate(ctx, viewer, pubs, talents, { detail: true });
+  const items = await hydrate(ctx, viewer, pubs, { detail: true });
   return items[0] ?? null;
 }
 

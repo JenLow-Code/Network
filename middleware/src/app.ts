@@ -26,13 +26,14 @@ export const API_VERSION = '1.0.0';
 export function buildRouter(): Router {
   const r = new Router();
   r.add('GET', '/health', { tag: 'System', summary: 'Liveness (kept compatible with the beta smoke test)', auth: 'none' }, ctx => ({ status: 'ok', auth: 'email-beta', api: 'v1', version: ctx.env.APP_VERSION || API_VERSION }));
-  r.add('GET', '/api/health/ready', { tag: 'System', summary: 'Readiness: D1 reachable and schema at 0011', auth: 'none' }, async ctx => {
-    const tables = await ctx.sql.all<{ name: string }>("SELECT name FROM sqlite_master WHERE type='table' AND name IN ('users','idempotency_keys','talent_posts')");
-    const cols = await ctx.sql.all<{ name: string }>("SELECT name FROM pragma_table_info('talents') WHERE name='slug'");
-    const bible = await ctx.sql.exists("SELECT 1 FROM bible_editions WHERE id='edition-lsg1910'");
+  r.add('GET', '/api/health/ready', { tag: 'System', summary: 'Readiness: D1 reachable and schema at 0012', auth: 'none' }, async ctx => {
+    const tables = await ctx.sql.all<{ name: string }>("SELECT name FROM sqlite_master WHERE type='table' AND name IN ('users','talent_publications')");
     const names = new Set(tables.map(t => t.name));
-    const schema = names.has('idempotency_keys') && names.has('talent_posts') ? (cols.length ? (bible ? '0011' : '0010') : '0009') : names.has('users') ? 'pre-0009' : 'missing';
-    const ready = schema === '0011';
+    const pubSql = (await ctx.sql.first<{ sql: string }>("SELECT sql FROM sqlite_master WHERE type='table' AND name='publications'"))?.sql ?? '';
+    const slug = (await ctx.sql.all<{ name: string }>("SELECT name FROM pragma_table_info('talents') WHERE name='slug'")).length > 0;
+    const bible = await ctx.sql.exists("SELECT name FROM sqlite_master WHERE type='table' AND name='bible_editions'") && (await ctx.sql.exists("SELECT 1 FROM bible_editions WHERE id='edition-lsg1910'"));
+    const schema = bible && slug ? '0012' : slug ? '0011' : names.has('talent_publications') ? '0010' : pubSql.includes("'talent'") ? '0009' : names.has('users') ? 'pre-0009' : 'missing';
+    const ready = schema === '0012';
     return json({ status: ready ? 'ready' : 'degraded', db: 'ok', schema, media: ctx.env.MEDIA ? 'configured' : 'not_configured', push: 'not_configured', email: 'not_configured' }, ready ? 200 : 503);
   });
   r.add('GET', '/api/openapi.json', { tag: 'System', summary: 'This OpenAPI document', auth: 'none' }, () => openApi(r, API_VERSION));

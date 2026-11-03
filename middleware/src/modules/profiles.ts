@@ -345,7 +345,7 @@ export async function talentTiles(ctx: Ctx, userId: string, isSelf: boolean) {
   const rows = await ctx.sql.all<{ talent_id: string; name: string; slug: string | null; category: string; level: number; can_teach: number; wants_to_learn: number; wants_tandem: number; available_for_projects: number; description: string | null; experience: string | null; illustration: string | null; t_illustration: string | null; visibility: string; post_id: string | null }>(
     `SELECT ut.talent_id,t.name,t.slug,t.category,ut.level,ut.can_teach,ut.wants_to_learn,ut.wants_tandem,ut.available_for_projects,ut.description,ut.experience,
        ut.illustration,t.illustration AS t_illustration,ut.visibility,
-       (SELECT id FROM talent_posts tp WHERE tp.user_id=ut.user_id AND tp.talent_id=ut.talent_id AND tp.deleted_at IS NULL) AS post_id
+       (SELECT tp.publication_id FROM talent_publications tp JOIN publications p ON p.id=tp.publication_id WHERE tp.user_id=ut.user_id AND tp.talent_id=ut.talent_id AND p.deleted_at IS NULL) AS post_id
      FROM user_talents ut JOIN talents t ON t.id=ut.talent_id WHERE ut.user_id=? ORDER BY ut.level DESC, t.name`,
     userId,
   );

@@ -1,6 +1,6 @@
 # Feature matrix
 
-**Backend status** — ✅ working, verified by automated tests (all 218 operations have a tested success path, see `docs/ROUTE_COVERAGE.md`) · 🔌 needs an external provider or Cloudflare setup · ❓ product decision open (`DECISIONS.md`).
+**Backend status** — ✅ working, verified by automated tests (all 216 operations have a tested success path, see `docs/ROUTE_COVERAGE.md`) · 🔌 needs an external provider or Cloudflare setup · ❓ product decision open (`DECISIONS.md`).
 **UI** — 🟢 screen reads/writes the API · 🟡 API ready, screen still uses local demo state · ⚪ no screen.
 Frontend changes were type-checked against stubs only (no npm registry here); the Expo typecheck runs in CI.
 
@@ -9,12 +9,12 @@ Nothing is deployed yet: these statuses describe the code in this repository, te
 ## Account & session
 | Screen / action | Endpoint | Backend | UI |
 | --- | --- | --- | --- |
-| Login (email + password) | `POST /v1/auth/email/login` | ✅ | 🟢 `app/login.tsx` |
-| Register (12+ chars, invite code) | `POST /v1/auth/email/register` | ✅ | 🟢 invite code now sent |
-| Session restore after reload | `POST /v1/auth/refresh` → `GET /api/me` | ✅ rotation + replay rejection | 🟢 `AuthProvider` |
-| Sign out | `POST /v1/auth/logout` | ✅ | 🟢 |
-| Google / Apple sign-in | — | 🔌 provider + verified callback needed ❓ | 🟢 buttons disabled with notice |
-| Password reset / email verification | — | 🔌 transactional email provider | 🟢 shows "not available yet" |
+| Login (email + password) | `POST /v1/auth/email/login` | ✅ | 🟡 app still signs in with Supabase (unchanged on purpose, `DECISIONS.md` §2) |
+| Register (12+ chars, invite code) | `POST /v1/auth/email/register` | ✅ | 🟡 unchanged (Supabase) |
+| Session restore after reload | `POST /v1/auth/refresh` → `GET /api/me` | ✅ rotation + replay rejection | 🟡 unchanged (Supabase) |
+| Sign out | `POST /v1/auth/logout` | ✅ | 🟡 unchanged (Supabase) |
+| Google / Apple sign-in | — | 🔌 provider + verified callback needed ❓ | unchanged |
+| Password reset / email verification | — | 🔌 transactional email provider | unchanged |
 | Settings: locale, timezone, appearance, privacy, notification opt-outs, quiet hours | `GET/PATCH /api/me/preferences` | ✅ | 🟡 `app/settings.tsx` |
 | Data export (GDPR) | `GET /api/me/export` | ✅ | 🟡 |
 | Delete account | `POST /api/me/deletion-request` | ✅ deactivate + revoke; erasure is an operator step ❓ | 🟡 |
@@ -63,7 +63,7 @@ Nothing is deployed yet: these statuses describe the code in this repository, te
 | Fire save / remove (phase policy enforced) | `POST/DELETE /api/publications/:id/fire` | ✅ | 🟡 `ActionRail` (local) |
 | Firelist | `GET /api/me/fire` | ✅ | 🟡 `app/fire.tsx` |
 | Fire folders | `/api/me/fire/folders…` | ✅ | 🟡 |
-| Prayer (once/daily/weekly, no fake dates) | `POST/DELETE /api/publications/:id/prayer`, `/api/talent-posts/:id/prayer`, `GET /api/me/prayers?date=` | ✅ | 🟡 `app/prayers.tsx`, `app/agenda.tsx` |
+| Prayer (once/daily/weekly, no fake dates; any publication incl. talents) | `POST/DELETE /api/publications/:id/prayer`, `GET /api/me/prayers?date=` | ✅ | 🟡 `app/prayers.tsx`, `app/agenda.tsx` |
 | Dated prayer reminder (opt-in) | `GET/POST/DELETE /api/me/prayer-reminders` + cron | ✅ in-app; push 🔌 | 🟡 |
 | Share internally / externally | `POST /api/publications/:id/shares` | ✅ contacts/Circle only | 🟡 `app/share/[id].tsx` |
 | Verse export | `GET /api/bible/posts/:id/export` | ✅ licence-checked | 🟡 `app/verse-export/[id].tsx` |
@@ -90,7 +90,7 @@ Nothing is deployed yet: these statuses describe the code in this repository, te
 | --- | --- | --- | --- |
 | Taxonomy | `GET /api/talents` | ✅ 33 talents | 🟡 |
 | My talents (5 levels, give/learn/tandem, availability, samples, showcase) | `/api/me/talents…` | ✅ | 🟡 `app/profile.tsx` |
-| Talent showcase detail, encourage | `GET /api/talent-posts/:id`, `…/encouragements` | ✅ owner-only count | 🟢 `app/person/[name].tsx` |
+| Talent showcase (publication type `talent`) detail, encourage | `GET /api/publications/:id` (alias `/api/talent-posts/:id`), `…/encouragements` | ✅ owner-only count | 🟢 `app/person/[name].tsx` |
 | Talent search | `GET /api/talent-search` | ✅ transparent filters | 🟡 |
 | Public profile (bio, optional church, talents, featured post, one-column feed) | `GET /api/users/:handle`, `…/publications`, `…/talents` | ✅ | 🟢 `app/member/[name].tsx` |
 | Own profile incl. locked drafts; edit | `GET/PATCH /api/me`, `GET /api/me/publications` | ✅ | 🟡 `app/profile.tsx` |

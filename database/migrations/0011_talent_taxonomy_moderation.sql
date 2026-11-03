@@ -1,4 +1,4 @@
--- 0010 · Talent taxonomy reference data and moderation visibility (additive).
+-- 0011 · Talent taxonomy reference data and moderation visibility (additive).
 -- Reference data only: no member records. INSERT OR IGNORE keeps it re-runnable and never
 -- overwrites talents an operator may already have created with the same name.
 
@@ -42,7 +42,6 @@ INSERT OR IGNORE INTO talents(id,name,category,slug,illustration) VALUES
  ('talent-menuiserie','Menuiserie','practical','menuiserie',NULL);
 
 -- Moderation: hiding keeps evidence for review instead of deleting member content.
-ALTER TABLE publications ADD COLUMN moderation_hidden_at TEXT;
+-- (publications.moderation_hidden_at is created by the 0009 rebuild.)
 ALTER TABLE dreams ADD COLUMN moderation_hidden_at TEXT;
 ALTER TABLE messages ADD COLUMN moderation_hidden_at TEXT;
-ALTER TABLE talent_posts ADD COLUMN moderation_hidden_at TEXT;

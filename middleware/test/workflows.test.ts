@@ -154,10 +154,10 @@ test('Fire, prayer and shares: undo paths, folder rename/delete, talent prayers,
   assert.equal((await app.call('GET', '/api/me/fire', { token: u.token })).body.items.length, 0);
   await app.call('POST', `/api/publications/${bible}/prayer`, { token: u.token, body: {} });
   ok(await app.call('DELETE', `/api/publications/${bible}/prayer`, { token: u.token }));
-  const talent = 'demo-talent-09-piano';
-  ok(await app.call('POST', `/api/talent-posts/${talent}/prayer`, { token: u.token, body: { repeat: 'once' } }));
+  const talent = 'demo-pub-talent-09-piano';
+  ok(await app.call('POST', `/api/publications/${talent}/prayer`, { token: u.token, body: { repeat: 'once' } }));
   assert.equal((await app.call('GET', '/api/me/prayers', { token: u.token })).body.items[0].item.type, 'talent');
-  ok(await app.call('DELETE', `/api/talent-posts/${talent}/prayer`, { token: u.token }));
+  ok(await app.call('DELETE', `/api/publications/${talent}/prayer`, { token: u.token }));
   await app.call('POST', '/api/me/prayer-reminders', { token: u.token, body: { publicationId: bible, scheduledFor: '2031-05-01T07:00:00+02:00' } });
   const reminders = await app.call('GET', '/api/me/prayer-reminders', { token: u.token });
   assert.equal(reminders.body.items[0].scheduledFor, '2031-05-01T05:00:00Z');

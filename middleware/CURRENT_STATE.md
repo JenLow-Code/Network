@@ -28,10 +28,10 @@ observed, not what earlier notes claimed.
 
 | Area | State | Evidence |
 | --- | --- | --- |
-| Unified Worker (`middleware/src/index.ts`) | `/health`, 7 `/v1/*` (5 unchanged auth routes + 2 legacy aliases), 210 `/api/*` operations, cron | 62 automated tests; all 218 operations have a tested success path (`docs/ROUTE_COVERAGE.md`) |
+| Unified Worker (`middleware/src/index.ts`) | `/health`, 7 `/v1/*` (5 unchanged auth routes + 2 legacy aliases), 208 `/api/*` operations, cron | 63 automated tests; all 216 operations have a tested success path (`docs/ROUTE_COVERAGE.md`) |
 | Auth compatibility | Accounts, hashes, tokens and refresh rotation interoperate with the deployed `worker-runtime.js` | `test/auth.test.ts` runs both implementations on one database |
-| Migrations | `0009`–`0011` additive; fresh install and upgrade from the reproduced remote state pass | `test/migrations.test.ts`, `database/test_schema.py` |
+| Migrations | `0009` rebuilds `publications` so Talent is a publication type (all dependent rows kept); `0010`–`0012` additive. Fresh install and upgrade from the reproduced remote state pass | `test/migrations.test.ts`, `database/test_schema.py` |
 | Demo data | `database/seeds/demo_seed.sql`, reuses remote IDs, idempotent | seeded twice in tests with identical counts |
-| Frontend | Auth, session restore, Discovery, Dream/Music/Talent/Bible details and public profiles read the API; other screens unchanged (local demo) | Stub-typechecked only (npm registry unavailable here); see `FEATURE_MATRIX.md` |
+| Frontend | Discovery, Dream/Music/Talent/Bible details and public profiles read the API (anonymously). Sign-in left unchanged (Supabase) at the owner's request. Other screens unchanged (local demo) | Stub-typechecked only (npm registry unavailable here); see `FEATURE_MATRIX.md` |
 | Deployment | **Not deployed.** No Cloudflare credentials in this environment. | — |
 | Push to `main` | **Not pushed.** GitHub was not linked for the session; commits are local. | — |

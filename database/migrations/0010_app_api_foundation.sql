@@ -1,9 +1,7 @@
--- 0009 · Application API foundation (additive; no table rebuilds, no data rewrites).
+-- 0010 · Application API foundation (additive; no table rebuilds, no data rewrites).
 --
--- Why additive only: rebuilding a parent table such as `publications` in D1 would run an
--- implicit DELETE with foreign keys ON and cascade-delete fire_saves, bible_posts,
--- music_tracks and publication_media. Every change below is ADD COLUMN, new table,
--- new index, or a trigger replaced by a more precise one.
+-- Every change below is ADD COLUMN, new table, new index, or a trigger replaced by a more
+-- precise one. (The one table rebuild, `publications`, is isolated in 0009.)
 --
 -- Phase codes stay as stored ('dream','initiation','growth','testimony'). The API maps
 -- them to semence / germination / croissance / floraison (middleware/src/domain/phases.ts).
@@ -287,7 +285,7 @@ CREATE UNIQUE INDEX idx_notifications_dedupe ON notifications(user_id,dedupe_key
 CREATE INDEX idx_notifications_user_recent ON notifications(user_id,created_at);
 
 ------------------------------------------------------------------------------------------
--- Talents as first-class showcases (publications.type cannot be widened without a rebuild)
+-- Talents: profile fields, samples and showcases (publication type 'talent', see 0009)
 ------------------------------------------------------------------------------------------
 ALTER TABLE user_talents ADD COLUMN description TEXT;
 ALTER TABLE user_talents ADD COLUMN experience TEXT;
@@ -304,24 +302,30 @@ CREATE TABLE user_talent_media (
  PRIMARY KEY(user_id,talent_id,media_id),
  FOREIGN KEY(user_id,talent_id) REFERENCES user_talents(user_id,talent_id) ON DELETE CASCADE
 );
-CREATE TABLE talent_posts (
- id TEXT PRIMARY KEY,
+-- A talent showcase is a publication of type 'talent' (0009) plus this detail row, like
+-- bible_posts and music_tracks. One showcase per member talent: unpublishing soft-deletes the
+-- publication and publishing again restores the same one.
+CREATE TABLE talent_publications (
+ publication_id TEXT PRIMARY KEY REFERENCES publications(id) ON DELETE CASCADE,
  user_id TEXT NOT NULL,
  talent_id TEXT NOT NULL,
- visibility TEXT NOT NULL DEFAULT 'public' CHECK(visibility IN ('public','members','private')),
- created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
- updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
- deleted_at TEXT,
  FOREIGN KEY(user_id,talent_id) REFERENCES user_talents(user_id,talent_id) ON DELETE CASCADE
 );
-CREATE UNIQUE INDEX idx_talent_posts_one_live ON talent_posts(user_id,talent_id) WHERE deleted_at IS NULL;
-CREATE INDEX idx_talent_posts_feed ON talent_posts(visibility,created_at) WHERE deleted_at IS NULL;
+CREATE UNIQUE INDEX idx_talent_publications_one ON talent_publications(user_id,talent_id);
+CREATE TRIGGER trg_talent_publication_matches
+ BEFORE INSERT ON talent_publications
+ WHEN NOT EXISTS(SELECT 1 FROM publications WHERE id=NEW.publication_id AND type='talent' AND author_id=NEW.user_id)
+ BEGIN SELECT RAISE(ABORT,'talent showcase must be a talent publication by the talent owner'); END;
+-- Removing a member talent retires its showcase from every feed.
+CREATE TRIGGER trg_talent_publication_removed
+ AFTER DELETE ON talent_publications
+ BEGIN UPDATE publications SET deleted_at=coalesce(deleted_at,CURRENT_TIMESTAMP) WHERE id=OLD.publication_id; END;
 -- Encouragement on a talent showcase: count visible to the talent owner only.
-CREATE TABLE talent_post_encouragements (
- talent_post_id TEXT NOT NULL REFERENCES talent_posts(id) ON DELETE CASCADE,
+CREATE TABLE talent_encouragements (
+ publication_id TEXT NOT NULL REFERENCES publications(id) ON DELETE CASCADE,
  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
- PRIMARY KEY(talent_post_id,user_id)
+ PRIMARY KEY(publication_id,user_id)
 );
 
 ------------------------------------------------------------------------------------------
@@ -331,14 +335,13 @@ CREATE TABLE talent_post_encouragements (
 -- prayer selection exactly as the UI models it: a start day and a repetition.
 CREATE TABLE prayer_list (
  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
- target_type TEXT NOT NULL CHECK(target_type IN ('publication','talent_post')),
- target_id TEXT NOT NULL,
+ publication_id TEXT NOT NULL REFERENCES publications(id) ON DELETE CASCADE,
  repeat_mode TEXT NOT NULL DEFAULT 'daily' CHECK(repeat_mode IN ('once','daily','weekly')),
  start_date TEXT CHECK(start_date IS NULL OR start_date GLOB '[0-9][0-9][0-9][0-9]-[0-1][0-9]-[0-3][0-9]'),
  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
- PRIMARY KEY(user_id,target_type,target_id)
+ PRIMARY KEY(user_id,publication_id)
 );
-CREATE INDEX idx_prayer_list_target ON prayer_list(target_type,target_id);
+CREATE INDEX idx_prayer_list_publication ON prayer_list(publication_id);
 CREATE TABLE fire_folders (
  id TEXT PRIMARY KEY,
  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -362,7 +365,6 @@ ALTER TABLE music_tracks ADD COLUMN song_author TEXT;
 -- Time-coded lyric lines supplied by the artist: [{"time":seconds,"text":"..."}]. Never generated.
 ALTER TABLE music_tracks ADD COLUMN lyrics_json TEXT CHECK(lyrics_json IS NULL OR json_valid(lyrics_json));
 ALTER TABLE music_tracks ADD COLUMN withdrawn_at TEXT;
-CREATE INDEX idx_publications_author_visible ON publications(author_id,visibility,created_at) WHERE deleted_at IS NULL;
 
 ------------------------------------------------------------------------------------------
 -- Agenda visibility (addresses are public only when the organiser chooses)

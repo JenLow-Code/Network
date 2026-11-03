@@ -1,4 +1,4 @@
--- 0011 · Bible reference data (no member data).
+-- 0012 · Bible reference data (no member data).
 -- Louis Segond 1910 is in the public domain. Only Psalm 150 is included — the chapter the
 -- current app already displays. Other editions or chapters must be imported from a source
 -- whose licence permits it (bible_editions.import_allowed=1); see database/README.md.

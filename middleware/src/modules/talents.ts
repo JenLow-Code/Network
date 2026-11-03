@@ -3,7 +3,7 @@ import type { Ctx } from '../http/context';
 import { V, type Obj } from '../http/validate';
 import { conflict, notFound, unprocessable } from '../http/errors';
 import { enforceLimit, LIMITS } from '../http/rateLimit';
-import { newId, marks } from '../lib/util';
+import { newId } from '../lib/util';
 import { authorMap, loadItem } from '../services/feed';
 import { talentTiles } from './profiles';
 import { requireOwnedMedia } from './media';
@@ -32,16 +32,34 @@ function parseTalentFields(body: Obj, partial: boolean) {
   return { v, out };
 }
 
+/**
+ * A showcase is a publication of type 'talent' plus a talent_publications row. Each member
+ * talent has at most one: publishing again restores it instead of creating a duplicate.
+ */
 async function syncShowcase(ctx: Ctx, userId: string, talentId: string, publish: boolean | undefined, visibility: string | undefined | null) {
+  const existing = await ctx.sql.first<{ publication_id: string }>('SELECT publication_id FROM talent_publications WHERE user_id=? AND talent_id=?', userId, talentId);
   if (publish === true) {
-    await ctx.sql.run(
-      "INSERT INTO talent_posts(id,user_id,talent_id,visibility) SELECT ?,?,?,coalesce(?,visibility) FROM user_talents WHERE user_id=? AND talent_id=? AND NOT EXISTS(SELECT 1 FROM talent_posts WHERE user_id=? AND talent_id=? AND deleted_at IS NULL)",
-      newId(), userId, talentId, visibility ?? null, userId, talentId, userId, talentId,
-    );
-  } else if (publish === false) {
-    await ctx.sql.run('UPDATE talent_posts SET deleted_at=CURRENT_TIMESTAMP WHERE user_id=? AND talent_id=? AND deleted_at IS NULL', userId, talentId);
+    if (existing) {
+      await ctx.sql.run(
+        'UPDATE publications SET deleted_at=NULL,visibility=coalesce(?,(SELECT visibility FROM user_talents WHERE user_id=? AND talent_id=?)),updated_at=CURRENT_TIMESTAMP WHERE id=?',
+        visibility ?? null, userId, talentId, existing.publication_id,
+      );
+    } else {
+      const id = newId();
+      await ctx.sql.batch([
+        ctx.sql.stmt(
+          `INSERT INTO publications(id,type,author_id,title,visibility)
+           SELECT ?,'talent',?,t.name,coalesce(?,ut.visibility) FROM user_talents ut JOIN talents t ON t.id=ut.talent_id WHERE ut.user_id=? AND ut.talent_id=?`,
+          id, userId, visibility ?? null, userId, talentId,
+        ),
+        ctx.sql.stmt('INSERT INTO talent_publications(publication_id,user_id,talent_id) VALUES(?,?,?)', id, userId, talentId),
+      ]);
+    }
+  } else if (publish === false && existing) {
+    await ctx.sql.run('UPDATE publications SET deleted_at=CURRENT_TIMESTAMP WHERE id=? AND deleted_at IS NULL', existing.publication_id);
   }
-  if (visibility) await ctx.sql.run('UPDATE talent_posts SET visibility=?,updated_at=CURRENT_TIMESTAMP WHERE user_id=? AND talent_id=? AND deleted_at IS NULL', visibility, userId, talentId);
+  if (visibility && existing && publish !== true)
+    await ctx.sql.run('UPDATE publications SET visibility=?,updated_at=CURRENT_TIMESTAMP WHERE id=?', visibility, existing.publication_id);
 }
 
 export function registerTalents(r: Router): void {
@@ -104,11 +122,8 @@ export function registerTalents(r: Router): void {
   r.add('DELETE', '/api/me/talents/:talentId', { tag: 'Talents', summary: 'Remove one of my talents (and its showcase)', auth: 'required' }, async ctx => {
     const viewer = await ctx.user();
     const talentId = ctx.param('talentId');
-    const posts = await ctx.sql.all<{ id: string }>('SELECT id FROM talent_posts WHERE user_id=? AND talent_id=?', viewer.id, talentId);
-    await ctx.sql.batch([
-      ...(posts.length ? [ctx.sql.stmt(`DELETE FROM prayer_list WHERE target_type='talent_post' AND target_id IN (${marks(posts.length)})`, ...posts.map(p => p.id))] : []),
-      ctx.sql.stmt('DELETE FROM user_talents WHERE user_id=? AND talent_id=?', viewer.id, talentId),
-    ]);
+    // Deleting the talent removes its showcase detail; a trigger retires the publication from every feed.
+    await ctx.sql.run('DELETE FROM user_talents WHERE user_id=? AND talent_id=?', viewer.id, talentId);
     return { items: await talentTiles(ctx, viewer.id, true) };
   });
 
@@ -133,7 +148,7 @@ export function registerTalents(r: Router): void {
     return { removed: true };
   });
 
-  r.add('GET', '/api/talent-posts/:id', { tag: 'Talents', summary: 'Talent showcase detail', auth: 'optional' }, async ctx => {
+  r.add('GET', '/api/talent-posts/:id', { tag: 'Talents', summary: 'Talent showcase detail (same object as GET /api/publications/:id)', auth: 'optional' }, async ctx => {
     const item = await loadItem(ctx, ctx.param('id'), { includeDemo: true });
     if (!item || item.type !== 'talent') throw notFound();
     return { item };
@@ -146,9 +161,9 @@ export function registerTalents(r: Router): void {
     if (on) {
       if (item.author.id === viewer.id) throw unprocessable('own_talent');
       await enforceLimit(ctx.sql, 'social', viewer.id, LIMITS.social);
-      await ctx.sql.run('INSERT OR IGNORE INTO talent_post_encouragements(talent_post_id,user_id) VALUES(?,?)', item.id, viewer.id);
+      await ctx.sql.run('INSERT OR IGNORE INTO talent_encouragements(publication_id,user_id) VALUES(?,?)', item.id, viewer.id);
     } else {
-      await ctx.sql.run('DELETE FROM talent_post_encouragements WHERE talent_post_id=? AND user_id=?', item.id, viewer.id);
+      await ctx.sql.run('DELETE FROM talent_encouragements WHERE publication_id=? AND user_id=?', item.id, viewer.id);
     }
     return { encouraged: on };
   };

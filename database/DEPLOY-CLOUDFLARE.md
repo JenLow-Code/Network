@@ -12,8 +12,8 @@ Run these from `middleware/` with `wrangler.toml` copied from `wrangler.toml.exa
    ```
    Only do this after confirming those tables exist (`SELECT name FROM sqlite_master WHERE type='table'`).
 4. Rehearse locally: `npx wrangler d1 migrations apply network --local`
-5. Apply: `npx wrangler d1 migrations apply network --remote` (0009–0011, additive).
+5. Apply: `npx wrangler d1 migrations apply network --remote` (0009 rebuilds `publications` and restores every dependent row; 0010–0012 are additive).
 6. Seed demo data: `npx wrangler d1 execute network --remote --file=../database/seeds/demo_seed.sql`
-7. Verify: `curl …/api/health/ready` returns `"schema":"0011"`.
+7. Verify: `curl …/api/health/ready` returns `"schema":"0012"`.
 
 Installing tables alone enables nothing for members; the Worker in `middleware/` provides the API. Never expose D1 credentials to the frontend.

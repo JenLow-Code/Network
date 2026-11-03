@@ -11,11 +11,12 @@ Database `network` (binding `DB`, id `62ca4199-a913-4444-b176-b5d18c8817d1`), sh
 6. `0006` Extensions — Bible-app share intake, Circle-only video calls, ownership invitations, public counters and feed views.
 7. `0007` Auth sessions (rotating refresh tokens).
 8. `0008` Email/password beta credentials and rate limits.
-9. `0009` **Application API foundation** — demo flag, roles, Dream fields used by the UI (motivation, target date, cover, version), need categories/levels/confirmations, offer-driven slot counting, journal visibility, Semence blocks, habits, milestones, Dream media, talent showcases, prayer list, Fire folders, idempotency keys, conversation/notification uniqueness. Replaces four triggers with rules matching the current UI (see `middleware/DECISIONS.md`).
-10. `0010` Talent taxonomy (33 talents) and moderation visibility columns.
-11. `0011` Bible reference data: 66 books and Louis Segond 1910 (public domain), Psalm 150 only.
+9. `0009` **Talent becomes a publication type.** Rebuilds `publications` (SQLite cannot change a `CHECK` in place) to allow `type='talent'` and add `moderation_hidden_at`. Every row that references a publication is copied aside and restored, so nothing is lost; each step keeps foreign keys consistent.
+10. `0010` **Application API foundation** — demo flag, roles, Dream fields used by the UI (motivation, target date, cover, version), need categories/levels/confirmations, offer-driven slot counting, journal visibility, Semence blocks, habits, milestones, Dream media, talent showcase details (`talent_publications`), prayer list, Fire folders, idempotency keys, conversation/notification uniqueness. Replaces four triggers with rules matching the current UI (see `middleware/DECISIONS.md`).
+11. `0011` Talent taxonomy (33 talents) and moderation visibility columns.
+12. `0012` Bible reference data: 66 books and Louis Segond 1910 (public domain), Psalm 150 only.
 
-`0009`–`0011` are **additive** (ADD COLUMN, new tables, indexes, triggers, reference rows). No table is rebuilt: in D1 a rebuild of a parent table would cascade-delete child rows.
+`0010`–`0012` are additive (ADD COLUMN, new tables, indexes, triggers, reference rows). Back up before applying `0009` remotely (`wrangler d1 export`).
 
 Phase values stay `dream → initiation → growth → testimony`; the API presents them as Semence → Germination → Croissance → Floraison.
 

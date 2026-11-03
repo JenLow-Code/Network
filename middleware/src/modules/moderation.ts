@@ -12,7 +12,7 @@ const REASONS = ['spam', 'harassment', 'hate', 'violence', 'sexual', 'self_harm'
 /**
  * Reports are open to every member; review is restricted to moderators (user_roles, granted by
  * operators in SQL). Hiding keeps evidence; removal soft-deletes. Talent showcases are
- * reported as `publication` with the showcase id.
+ * publications, reported with targetType `publication`.
  */
 export function registerModeration(r: Router): void {
   r.add('POST', '/api/reports', { tag: 'Safety', summary: 'Report a member, Dream, publication, message or track', auth: 'required', status: 201 }, async ctx => {
@@ -56,12 +56,12 @@ export function registerModeration(r: Router): void {
     const pubLike = t === 'publication' || t === 'music';
     if (action === 'hide' || action === 'restore') {
       const val = action === 'hide' ? 'CURRENT_TIMESTAMP' : 'NULL';
-      if (pubLike) stmts.push(ctx.sql.stmt(`UPDATE publications SET moderation_hidden_at=${val} WHERE id=?`, id), ctx.sql.stmt(`UPDATE talent_posts SET moderation_hidden_at=${val} WHERE id=?`, id));
+      if (pubLike) stmts.push(ctx.sql.stmt(`UPDATE publications SET moderation_hidden_at=${val} WHERE id=?`, id));
       else if (t === 'dream') stmts.push(ctx.sql.stmt(`UPDATE dreams SET moderation_hidden_at=${val} WHERE id=?`, id), ctx.sql.stmt(`UPDATE publications SET moderation_hidden_at=${val} WHERE dream_id=? AND type='dream'`, id));
       else if (t === 'message') stmts.push(ctx.sql.stmt(`UPDATE messages SET moderation_hidden_at=${val} WHERE id=?`, id));
       else throw unprocessable('action_not_applicable');
     } else if (action === 'remove') {
-      if (pubLike) stmts.push(ctx.sql.stmt('UPDATE publications SET deleted_at=CURRENT_TIMESTAMP WHERE id=?', id), ctx.sql.stmt('UPDATE talent_posts SET deleted_at=CURRENT_TIMESTAMP WHERE id=?', id));
+      if (pubLike) stmts.push(ctx.sql.stmt('UPDATE publications SET deleted_at=CURRENT_TIMESTAMP WHERE id=?', id));
       else if (t === 'dream') stmts.push(ctx.sql.stmt('UPDATE dreams SET deleted_at=CURRENT_TIMESTAMP WHERE id=?', id));
       else if (t === 'message') stmts.push(ctx.sql.stmt('UPDATE messages SET deleted_at=CURRENT_TIMESTAMP,body=NULL WHERE id=?', id));
       else throw unprocessable('action_not_applicable');

@@ -288,7 +288,7 @@ export async function dreamDetail(ctx: Ctx, dreamId: string): Promise<Record<str
     dreamId,
   );
   const row = pub ?? { id: dream.id, type: 'dream' as const, author_id: dream.created_by, dream_id: dream.id, title: dream.title, cover_asset_id: null, visibility: dream.visibility, created_at: dream.created_at, updated_at: dream.updated_at, moderation_hidden_at: null };
-  const [card] = (await hydrate(ctx, viewer, [row], [], { detail: true })) as DreamCard[];
+  const [card] = (await hydrate(ctx, viewer, [row], { detail: true })) as DreamCard[];
   const insider = role.isOwner || role.isCollaborator;
   const owners = await ctx.sql.all<{ user_id: string; accepted_at: string | null }>("SELECT user_id,accepted_at FROM dream_owners WHERE dream_id=? AND status='accepted' ORDER BY accepted_at", dreamId);
   const collaborators = await ctx.sql.all<{ user_id: string; status: string; role_title: string | null; accepted_at: string | null }>(
@@ -369,7 +369,7 @@ export async function itemsByPublicationIds(ctx: Ctx, ids: string[]): Promise<Fe
   for (let i = 0; i < ids.length; i += 50) {
     const part = ids.slice(i, i + 50);
     const pubs = await queryPublications(ctx, { viewer, cursor: null, limit: part.length, includeDemo: true, ids: part });
-    out.push(...(await hydrate(ctx, viewer, pubs, [])));
+    out.push(...(await hydrate(ctx, viewer, pubs)));
   }
   const order = new Map(ids.map((id, i) => [id, i]));
   return out.sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));

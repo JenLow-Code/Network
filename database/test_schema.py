@@ -8,7 +8,7 @@ import sqlite3
 
 root = Path(__file__).resolve().parent
 migrations = sorted((root / "migrations").glob("*.sql"))
-assert len(migrations) >= 11, [m.name for m in migrations]
+assert len(migrations) >= 12, [m.name for m in migrations]
 
 
 def fresh(upto=None):
@@ -31,7 +31,7 @@ expected = {"users", "dreams", "dream_owners", "dream_collaborators", "dream_sam
             "contacts", "circle_members", "conversations", "messages", "agenda_events", "agenda_invites",
             "prayer_saves", "fire_saves", "introductions", "video_call_sessions", "music_collab_proposals",
             # 0009+
-            "user_roles", "dream_media", "dream_blocks", "dream_habits", "dream_milestones", "talent_posts",
+            "user_roles", "dream_media", "dream_blocks", "dream_habits", "dream_milestones", "talent_publications", "talent_encouragements",
             "prayer_list", "fire_folders", "idempotency_keys"}
 assert expected <= tables, expected - tables
 
@@ -81,20 +81,25 @@ old.executescript("""
 INSERT INTO users(id,handle,display_name,email,account_status) VALUES('demo-user-01','mock01','Mock','m@example.invalid','deactivated');
 INSERT INTO dreams(id,title,summary,phase,visibility,created_by,started_at,growing_at,completed_at,testimony_text)
  VALUES('demo-dream-02-1','Construire un home studio accessible','x','testimony','public','demo-user-01',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,'Un premier résultat');
+INSERT INTO publications(id,type,author_id,dream_id,title) VALUES('p1','dream','demo-user-01','demo-dream-02-1','Construire un home studio accessible');
+INSERT INTO fire_saves(user_id,publication_id) VALUES('demo-user-01','p1');
 """)
 for path in migrations:
     if path.name > "0008_email_password_beta.sql":
         old.executescript(path.read_text(encoding="utf8"))
 assert old.execute("PRAGMA foreign_key_check").fetchall() == []
 assert old.execute("SELECT count(*) FROM dreams").fetchone()[0] == 1
+# 0009 rebuilt `publications` (type 'talent' allowed) without losing dependent rows.
+assert old.execute("SELECT count(*) FROM fire_saves WHERE publication_id='p1'").fetchone()[0] == 1
+assert "'talent'" in old.execute("SELECT sql FROM sqlite_master WHERE name='publications'").fetchone()[0]
 
 # Demo seed applies on a fresh schema and is idempotent.
 seed = (root / "seeds" / "demo_seed.sql").read_text(encoding="utf8")
 s = fresh()
 s.executescript(seed)
-snapshot = [s.execute(f"SELECT count(*) FROM {t}").fetchone()[0] for t in ("users", "dreams", "publications", "dream_help_offers", "talent_posts")]
+snapshot = [s.execute(f"SELECT count(*) FROM {t}").fetchone()[0] for t in ("users", "dreams", "publications", "dream_help_offers", "talent_publications")]
 s.executescript(seed)
-assert snapshot == [s.execute(f"SELECT count(*) FROM {t}").fetchone()[0] for t in ("users", "dreams", "publications", "dream_help_offers", "talent_posts")]
+assert snapshot == [s.execute(f"SELECT count(*) FROM {t}").fetchone()[0] for t in ("users", "dreams", "publications", "dream_help_offers", "talent_publications")]
 assert snapshot[0] == 10 and snapshot[1] == 30, snapshot
 assert s.execute("SELECT count(*) FROM users WHERE is_demo=1 AND account_status<>'deactivated'").fetchone()[0] == 0
 

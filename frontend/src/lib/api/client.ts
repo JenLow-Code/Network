@@ -1,3 +1,8 @@
+/**
+ * JenLow API client. Sign-in currently stays on Supabase (unchanged on purpose), and the API
+ * does not accept Supabase tokens, so these requests are anonymous reads for now. When the app
+ * signs in through the API (/v1/auth), session.ts holds the tokens and they are sent here.
+ */
 import { API_BASE } from '@/lib/authApi';
 import { currentAccessToken, loadSession, saveSession, setAccessToken } from './session';
 

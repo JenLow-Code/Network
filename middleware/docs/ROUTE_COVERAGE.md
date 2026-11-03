@@ -4,7 +4,7 @@ Produced by `npm test && npm run coverage:routes`. A route counts as tested when
 test received a 2xx/3xx response from it; "only error paths" means tests exercised its guards
 (401/403/404/409/422) but not a success.
 
-**218 of 218 operations have a tested success path.**
+**216 of 216 operations have a tested success path.**
 
 | Area | Operation | Status | Calls (ok / error) |
 | --- | --- | --- | --- |
@@ -109,10 +109,8 @@ test received a 2xx/3xx response from it; "only error paths" means tests exercis
 | Fire | `DELETE /api/me/fire/folders/:id` | success path tested | 1 / 0 |
 | Fire | `POST /api/me/fire/folders/:id/items/:publicationId` | success path tested | 2 / 1 |
 | Fire | `DELETE /api/me/fire/folders/:id/items/:publicationId` | success path tested | 1 / 0 |
-| Prayer | `POST /api/publications/:id/prayer` | success path tested | 2 / 0 |
-| Prayer | `DELETE /api/publications/:id/prayer` | success path tested | 1 / 0 |
-| Prayer | `POST /api/talent-posts/:id/prayer` | success path tested | 1 / 0 |
-| Prayer | `DELETE /api/talent-posts/:id/prayer` | success path tested | 1 / 0 |
+| Prayer | `POST /api/publications/:id/prayer` | success path tested | 3 / 0 |
+| Prayer | `DELETE /api/publications/:id/prayer` | success path tested | 2 / 0 |
 | Prayer | `GET /api/me/prayers` | success path tested | 4 / 0 |
 | Prayer | `POST /api/me/prayer-reminders` | success path tested | 3 / 0 |
 | Prayer | `GET /api/me/prayer-reminders` | success path tested | 2 / 0 |
