@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import type { Publication } from '@/domain/publication';
 import { publications, personPublications } from '@/mocks/publications';
 import { ActionRail } from './ActionRail';
+import { PublicationPrimaryAction } from './PublicationPrimaryAction';
 import { DetailHero } from './DetailHero';
 import { Nav } from '@/components/navigation/Nav';
 import { DetailAuthorHeader } from './DetailAuthorHeader';
@@ -78,6 +79,7 @@ export function DetailLayout({
                 </View>
               </View>
             )}
+            <PublicationPrimaryAction item={item} />
           </View>
           </View>
           <View style={{ marginTop: isDream ? 30 : 42, borderTopWidth: isDream ? 0 : 0.5, borderTopColor: theme.border, paddingTop: 21 }}>

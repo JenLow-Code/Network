@@ -9,12 +9,14 @@ export function PrayerIcon({
   size = 24,
   muted = false,
   active = false,
+  color,
 }: {
   size?: number;
   muted?: boolean;
   active?: boolean;
+  color?: string;
 }) {
-  const ink = muted && !active ? '#999' : '#252525';
+  const ink = muted && !active ? '#999' : (color || '#252525');
   const stroke = active ? '#CB245C' : ink;
   const hands = active ? '#FFF5DC' : 'none';
   const sleeves = active ? '#CB245C' : 'none';

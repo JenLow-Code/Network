@@ -132,13 +132,15 @@ function PersonChat({
   teacher,
   recipient,
   sharedId,
+  draft,
 }: {
   teacher: boolean;
   recipient?: string;
   sharedId?: string;
+  draft?: string;
 }) {
   const { messages, send } = useApp();
-  const [input, setInput] = useState('');
+  const [input, setInput] = useState(draft || '');
   const submit = () => {
     const m = input.trim();
     if (m) {
@@ -235,15 +237,16 @@ function DreamConversation({ dreamId }: { dreamId: string }) {
  </SafeAreaView>;
 }
 export default function Chat() {
-  const { id, recipient, sharedId } = useLocalSearchParams<{
+  const { id, recipient, sharedId, draft } = useLocalSearchParams<{
     id: string;
     recipient?: string;
     sharedId?: string;
+    draft?: string;
   }>();
   return id?.startsWith('dream-') ? <DreamConversation dreamId={id.slice(6)}/> : id === 'system' ? (
     <SystemChat />
   ) : (
-    <PersonChat teacher={id === 'teacher'} recipient={recipient} sharedId={sharedId} />
+    <PersonChat teacher={id === 'teacher'} recipient={recipient} sharedId={sharedId} draft={draft} />
   );
 }
 const s = StyleSheet.create({

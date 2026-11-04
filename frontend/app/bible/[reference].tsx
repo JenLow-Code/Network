@@ -13,6 +13,7 @@ import { useLocalSearchParams } from 'expo-router';
 import { biblePosts, psalm150, publications, personPublications } from '@/mocks/publications';
 import { DetailAuthorHeader } from '@/components/detail/DetailAuthorHeader';
 import { ActionRail } from '@/components/detail/ActionRail';
+import { PublicationPrimaryAction } from '@/components/detail/PublicationPrimaryAction';
 import { Nav } from '@/components/navigation/Nav';
 import { PublicationGallery } from '@/components/publication/PublicationGallery';
 import { useAppTheme } from '@/theme/AppTheme';
@@ -138,6 +139,10 @@ export default function Bible() {
           <View style={{ width: 43, marginLeft: compact ? 5 : 12, paddingBottom: 12, alignItems: 'center' }}>
             <ActionRail item={post} />
           </View>
+        </View>
+
+        <View style={{ paddingHorizontal: compact ? 18 : 30 }}>
+          <PublicationPrimaryAction item={post} />
         </View>
 
         <View style={{ marginTop: 30, paddingHorizontal: compact ? 18 : 30 }}>

@@ -2,12 +2,12 @@ import React from 'react';
 import { Image, Modal, Platform, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import type { DreamPublication } from '@/domain/publication';
 import { PHASE_LABELS } from '@/domain/publication';
 import { DreamPhaseIcon } from '@/icons/DreamPhaseIcon';
 import { useAppTheme } from '@/theme/AppTheme';
 import { HANDWRITING_FAMILY } from '@/theme/handwriting';
-import { useApp } from '@/context/AppContext';
 import { TalentArt, type TalentIllustration } from '@/components/talent/TalentArt';
 import { TalentLevelDots } from '@/components/talent/TalentLevelDots';
 
@@ -131,7 +131,6 @@ function PersonResourceTiles({ resources, width, compact, dark, onInspect }: {
  */
 export function DreamPhaseCard({ item, width, variant, onOpen }: Props) {
   const theme = useAppTheme();
-  const app = useApp();
   const [inspectedTalent, setInspectedTalent] = React.useState<PersonNeed | null>(null);
   const [inspectedImage, setInspectedImage] = React.useState<string | null>(null);
   const viewport = useWindowDimensions();
@@ -239,9 +238,9 @@ export function DreamPhaseCard({ item, width, variant, onOpen }: Props) {
               {!compact && (
                 <View pointerEvents="box-none" style={[StyleSheet.absoluteFill, { justifyContent: 'center', alignItems: 'center' }]}>
                   <Pressable
-                    onPress={() => app.joinDream(item.id)}
+                    onPress={() => router.push({ pathname: '/chat/[id]', params: { id: 'member', recipient: item.author, draft: 'Bonjour ' + item.author + ', j’aimerais échanger sur votre rêve « ' + item.title + ' ».' } })}
                     accessibilityRole="button"
-                    accessibilityLabel="Moi aussi"
+                    accessibilityLabel="Échanger sur ce rêve"
                     style={{
                       minWidth: 136, paddingHorizontal: 17, paddingVertical: 11,
                       backgroundColor: dark ? 'rgba(33,33,35,0.92)' : 'rgba(248,245,241,0.94)',
@@ -249,8 +248,8 @@ export function DreamPhaseCard({ item, width, variant, onOpen }: Props) {
                       borderRadius: 22, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8,
                     }}
                   >
-                    <Ionicons name={app.myDreamIds.includes(item.id) ? 'checkmark-circle' : 'add-circle-outline'} size={19} color={app.myDreamIds.includes(item.id) ? '#CB245C' : textColor} />
-                    <Text style={{ color: textColor, fontSize: 13, fontWeight: '600' }}>Moi aussi</Text>
+                    <Ionicons name="chatbubble-ellipses-outline" size={18} color={textColor} />
+                    <Text style={{ color: textColor, fontSize: 13, fontWeight: '600' }}>Échanger</Text>
                   </Pressable>
                 </View>
               )}

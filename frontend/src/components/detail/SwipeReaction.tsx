@@ -2,8 +2,8 @@ import React, { useRef } from 'react';
 import { Animated, PanResponder, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useAppTheme } from '@/theme/AppTheme';
 
-const TRAVEL = 108;
-const SIZE = 42;
+const TRAVEL = 96;
+const SIZE = 36;
 const THRESHOLD = TRAVEL * 0.88;
 const DOUBLE_TAP_MS = 340;
 
@@ -155,14 +155,14 @@ export function SwipeReaction({ label, fullLabel, icon, onConfirm, active = fals
 }
 
 const styles = StyleSheet.create({
-  track: { width: SIZE, height: 44, position: 'relative', overflow: 'visible' },
+  track: { width: SIZE, height: 40, position: 'relative', overflow: 'visible' },
   revealedPill: {
     position: 'absolute',
     right: 0,
     top: 0,
     width: TRAVEL + SIZE,
-    height: 44,
-    borderRadius: 23,
+    height: 40,
+    borderRadius: 21,
     borderWidth: 1,
     overflow: 'hidden',
     backgroundColor: '#F8F1EB',
@@ -172,18 +172,18 @@ const styles = StyleSheet.create({
     right: 0,
     top: 0,
     width: TRAVEL - SIZE - 6,
-    height: 44,
+    height: 40,
     justifyContent: 'center',
     alignItems: 'center',
     paddingLeft: 3,
     paddingRight: 7,
   },
   label: { fontSize: 11, lineHeight: 14, fontWeight: '600', textAlign: 'center' },
-  handle: { position: 'absolute', right: 0, top: 1, zIndex: 2 },
+  handle: { position: 'absolute', right: 0, top: 2, zIndex: 2 },
   circle: {
     width: SIZE, height: SIZE, borderRadius: SIZE / 2,
-    backgroundColor: '#EAE2D8',
+    backgroundColor: 'transparent',
     alignItems: 'center', justifyContent: 'center',
   },
-  active: { backgroundColor: '#F6DEE8' },
+  active: { backgroundColor: 'transparent' },
 });

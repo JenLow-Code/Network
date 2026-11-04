@@ -1,211 +1,70 @@
-import React, { useState } from 'react';
-import { Modal, Pressable, Share, StyleSheet, Text, View } from 'react-native';
+import React from 'react';
+import { Share, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
 import { useApp } from '@/context/AppContext';
-import { dreams } from '@/mocks/publications';
-import { Publication } from '@/domain/publication';
-import { allowedActions, ActionId } from '@/domain/publicationRules';
-import { myCircle, matchingTalents, myTalents } from '@/mocks/demoCircle';
+import type { Publication } from '@/domain/publication';
 import { PrayerIcon } from '@/icons/PrayerIcon';
-import { FireIcon } from '@/icons/FireIcon';
-import { colors as c } from '@/theme/colors';
+import { useAppTheme } from '@/theme/AppTheme';
 import { SwipeReaction } from './SwipeReaction';
-import { labels } from '@/domain/publicationRules';
 
+/**
+ * Quiet supporting reactions: encouragement, prayer and sharing.
+ * Participation belongs to the separate, context-specific primary action.
+ */
 export function ActionRail({ item }: { item: Publication }) {
-  const app = useApp(),
-    [modal, setModal] = useState<'dream' | 'circle' | null>(null);
-  const permitted = allowedActions(item);
-  const seeded = Object.values(app.dreamInspirations).some(ids => ids.includes(item.id));
-  const activity = (id: ActionId) => {
-    switch (id) {
-      case 'fire':
-        app.toggleFire(item.id);
-        break;
-      case 'prayer':
-        app.togglePrayer(item.id);
-        break;
-      case 'inspire':
-        if (item.type === 'music')
-          router.push({
-            pathname: '/my-dream/new',
-            params: { inspiration: item.title, from: item.id },
-          });
-        else setModal('dream');
-        break;
-      case 'share-internal':
-        router.push({ pathname: '/share/[id]', params: { id: item.id } });
-        break;
-      case 'share-external':
-        void Share.share({ message: item.title + ' — JenLow Network' });
-        break;
-      case 'offer-help':
-        router.push({ pathname: '/chat/[id]', params: { id: 'teacher' } });
-        break;
-      case 'introduce':
-        setModal('circle');
-        break;
-      case 'encourage':
-        app.encourage(item.id);
-        break;
-      case 'same-dream':
-        app.joinDream(item.id);
-        break;
-      case 'audio-collab':
-        router.push({ pathname: '/music-proposal/[id]', params: { id: item.id } });
-        break;
-      case 'verse-export':
-        router.push({ pathname: '/verse-export/[id]', params: { id: item.id } });
-        break;
-    }
+  const app = useApp();
+  const theme = useAppTheme();
+  const fireActive = app.fireIds.includes(item.id);
+  const prayerActive = app.isPraying(item.id);
+  const inactiveColor = theme.dark ? '#D4D0CC' : '#504B47';
+
+  const sharePath = item.type === 'dream'
+    ? '/dream/' + encodeURIComponent(item.id)
+    : item.type === 'music'
+      ? '/music/' + encodeURIComponent(item.id)
+      : item.type === 'talent'
+        ? '/person/' + encodeURIComponent(item.author)
+        : '/bible/' + encodeURIComponent(item.referenceId) + '?verse=' + item.highlightedVerse;
+  const share = () => {
+    // Semence can be shared by its exact link, without appearing in Discovery.
+    // Backend visibility rules must separately enforce unlisted access.
+    const link = 'https://network.jenlow.net' + sharePath;
+    void Share.share({ message: item.title + ' — JenLow Network\n' + link });
   };
-  const icons: Partial<Record<ActionId, keyof typeof Ionicons.glyphMap>> = {
-    fire: 'flame-outline',
-    'share-internal': 'chatbubble-outline',
-    'share-external': 'share-outline',
-    inspire: 'add-circle-outline',
-    encourage: 'heart-outline',
-    'same-dream': 'people-outline',
-    'offer-help': 'hand-left-outline',
-    introduce: 'people-circle-outline',
-    'audio-collab': 'mic-outline',
-    'verse-export': 'download-outline',
-  };
-  const shortLabels: Partial<Record<ActionId, string>> = {
-    fire: 'Fire', prayer: 'Prier', encourage: 'Encourager',
-    inspire: 'Inspirer', 'audio-collab': 'Collaborer',
-    'verse-export': 'Exporter', 'offer-help': 'Aider',
-    introduce: 'Présenter', 'share-external': 'Partager',
-  };
-  const primary = permitted.filter(
-    a => a !== 'share-internal' && a !== 'prayer' && a !== 'same-dream',
-  );
+
   return (
-    <View style={s.rail}>
-      {[...primary, ...(permitted.includes('prayer') ? ['prayer' as ActionId] : [])].map(action => (
-        <SwipeReaction
-          key={action}
-          label={shortLabels[action] || labels[action]}
-          fullLabel={labels[action]}
-          onConfirm={() => activity(action)}
-          active={
-            (action === 'fire' && app.fireIds.includes(item.id)) ||
-            (action === 'prayer' && app.isPraying(item.id)) ||
-            (action === 'inspire' && seeded) ||
-            (action === 'encourage' && app.encouragementIds.includes(item.id))
-          }
-          icon={action === 'prayer'
-            ? <PrayerIcon size={22} active={app.isPraying(item.id)} />
-            : action === 'fire'
-              ? <FireIcon size={22} active={app.fireIds.includes(item.id)} />
-              : <Ionicons
-                  name={action === 'inspire' && seeded ? 'leaf' : action === 'encourage' && app.encouragementIds.includes(item.id) ? 'heart' : icons[action] || 'add'}
-                  size={22}
-                  color={action === 'inspire' && seeded || action === 'encourage' && app.encouragementIds.includes(item.id) ? c.pink : '#252525'}
-                />
-          }
-        />
-      ))}
-      <Modal
-        visible={modal !== null}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setModal(null)}
-      >
-        <View style={s.overlay}>
-          <View style={s.box}>
-            <View style={s.heading}>
-              <Text style={{ fontWeight: '700', fontSize: 16 }}>
-                {modal === 'circle' ? 'Présenter quelqu’un' : 'Ajouter à mon rêve'}
-              </Text>
-              <Pressable onPress={() => setModal(null)}>
-                <Ionicons name="close" size={24} />
-              </Pressable>
-            </View>
-            {modal === 'dream'
-              ? dreams.map(d => (
-                  <Pressable
-                    key={d.id}
-                    style={s.item}
-                    onPress={() => {
-                      app.addToDream(d.id, item.id);
-                      setModal(null);
-                    }}
-                  >
-                    <Text style={{ flex: 1, fontSize: 13 }}>{d.title}</Text>
-                    {app.dreamInspirations[d.id]?.includes(item.id) ? (
-                      <Ionicons name="checkmark" color={c.pink} size={18} />
-                    ) : null}
-                  </Pressable>
-                ))
-              : myCircle
-                  .filter(
-                    person =>
-                      item.type === 'dream' &&
-                      matchingTalents(item.needs, person.talents).length > 0,
-                  )
-                  .map(person => (
-                    <Pressable
-                      key={person.id}
-                      style={s.item}
-                      onPress={() => {
-                        setModal(null);
-                        router.push({
-                          pathname: '/introduce/[id]',
-                          params: { id: item.id, person: person.id },
-                        });
-                      }}
-                    >
-                      <Text style={{ flex: 1 }}>
-                        {person.name} · {person.talents.join(', ')}
-                      </Text>
-                      <Ionicons name="chevron-forward" size={19} />
-                    </Pressable>
-                  ))}
-            <Text style={{ color: '#888', fontSize: 11, marginTop: 12 }}>
-              Démo : les invitations et introductions réelles nécessitent le backend.
-            </Text>
-          </View>
-        </View>
-      </Modal>
+    <View style={styles.rail}>
+      <SwipeReaction
+        label="Fire"
+        fullLabel="Encourager avec Fire"
+        onConfirm={() => app.toggleFire(item.id)}
+        active={fireActive}
+        icon={<Ionicons name={fireActive ? 'flame' : 'flame-outline'} size={20} color={fireActive ? '#CB245C' : inactiveColor} />}
+      />
+      <SwipeReaction
+        label="Prier"
+        fullLabel="Prier pour cette publication"
+        onConfirm={() => app.togglePrayer(item.id)}
+        active={prayerActive}
+        icon={<PrayerIcon size={20} active={prayerActive} color={inactiveColor} />}
+      />
+      <SwipeReaction
+        label="Partager"
+        fullLabel="Partager cette publication"
+        onConfirm={share}
+        icon={<Ionicons name="share-outline" size={20} color={inactiveColor} />}
+      />
     </View>
   );
 }
-const s = StyleSheet.create({
+
+const styles = StyleSheet.create({
   rail: {
     flexDirection: 'column',
-    gap: 4,
+    gap: 6,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 7,
-    paddingHorizontal: 2,
-    borderRadius: 24,
+    paddingVertical: 4,
     backgroundColor: 'transparent',
-  },
-  iconButton: {
-    width: 39,
-    height: 39,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 12,
-    backgroundColor: 'transparent',
-  },
-  overlay: { flex: 1, justifyContent: 'center', padding: 20, backgroundColor: 'rgba(0,0,0,.38)' },
-  box: { padding: 18, backgroundColor: '#fff', borderRadius: 15 },
-  heading: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 13,
-  },
-  item: {
-    paddingVertical: 12,
-    paddingHorizontal: 7,
-    borderBottomWidth: 1,
-    borderColor: '#eee',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 9,
   },
 });
