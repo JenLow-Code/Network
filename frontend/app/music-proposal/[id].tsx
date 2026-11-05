@@ -5,10 +5,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { musics } from '@/mocks/publications';
+import { usePublication } from '@/lib/api/hooks';
 import { Nav } from '@/components/navigation/Nav';
 export default function MusicProposal() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const music = musics.find(m => m.id === id);
+  const local = musics.find(m => m.id === id);
+  const remote = usePublication(local ? undefined : id);
+  const music = local ?? (remote.item?.type === 'music' ? remote.item : undefined);
   const [note, setNote] = useState(''),
     [recording, setRecording] = useState(''),
     [submitted, setSubmitted] = useState(false);
