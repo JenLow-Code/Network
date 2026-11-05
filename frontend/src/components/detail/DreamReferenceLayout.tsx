@@ -3,7 +3,7 @@ import { Animated, Modal, Pressable, ScrollView, StyleSheet, Text, View, useWind
 import { Ionicons } from '@expo/vector-icons';
 import type { DreamPublication } from '@/domain/publication';
 import { DetailLayout } from './DetailLayout';
-import { DetailPanel } from '@/components/publication/PublicationDetail';
+import { DetailMoreDrawer, DetailInfoSection } from './DetailMoreDrawer';
 import { useAppTheme } from '@/theme/AppTheme';
 
 /**
@@ -110,31 +110,24 @@ export function DreamReferenceLayout({ item }: { item: DreamPublication }) {
             </View>
           </Modal>
         </>
-      ) : (
-        <>
-          <DetailPanel title="Ma motivation" foldable defaultOpen={false} hideTopBorder>
-            {paragraph(item.motivation || 'Ce rêve me tient à cœur.')}
-          </DetailPanel>
-          {!!item.needs.length && (
-            <DetailPanel title="Les talents nécessaires" foldable defaultOpen={false}>
-              {paragraph(item.needs.join(' · '))}
-            </DetailPanel>
+      ) : item.phase === 'Rêve' ? null : (
+        <DetailMoreDrawer
+          heading={item.title}
+          subtitle={item.phase === 'Croissance' ? 'Croissance · ' + item.author : 'Floraison · ' + item.author}
+        >
+          <DetailInfoSection title="Ma motivation" text={item.motivation || item.summary} />
+          {!!item.goalDate && <DetailInfoSection title="Date objectif" text={item.goalDate} />}
+          {!!item.needs.length && <DetailInfoSection title="Besoins et talents" text={item.needs.join(' · ')} />}
+          {item.phase === 'Croissance' && (
+            <DetailInfoSection
+              title="Journal de croissance"
+              text={(item.logs || []).join('\n\n') || item.journalEntry?.text || 'Pas encore de nouvelles publiées.'}
+            />
           )}
-          {item.phase === 'Croissance' && item.goalDate ? (
-            <DetailPanel title="Date objectif" foldable defaultOpen={false}>
-              {paragraph(item.goalDate)}
-            </DetailPanel>
-          ) : null}
-          {item.phase === 'Croissance' ? (
-            <DetailPanel title="Journal de croissance" foldable defaultOpen={false}>
-              {(item.logs || []).map((log, i) => (
-                <Text key={i} style={{ marginVertical: 4, color: ink, fontSize: 13, lineHeight: 21 }}>
-                  🌿 {log}
-                </Text>
-              ))}
-            </DetailPanel>
-          ) : null}
-        </>
+          {item.phase === 'Témoignage' && (
+            <DetailInfoSection title="Le résultat" text={item.summary} />
+          )}
+        </DetailMoreDrawer>
       )}
     </DetailLayout>
   );
