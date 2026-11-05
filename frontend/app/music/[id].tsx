@@ -2,7 +2,8 @@ import React from 'react';
 import { ActivityIndicator, Text, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { musics } from '@/mocks/publications';
-import { PublicationDetail, DetailPanel } from '@/components/publication/PublicationDetail';
+import { PublicationDetail } from '@/components/publication/PublicationDetail';
+import { DetailMoreDrawer, DetailInfoSection } from '@/components/detail/DetailMoreDrawer';
 import { MusicWaveform } from '@/components/music/MusicWaveform';
 import { MusicLyrics, FullMusicLyrics } from '@/components/music/MusicLyrics';
 import { EditorialInline } from '@/components/detail/EditorialInline';
@@ -37,15 +38,12 @@ export default function MusicDetail() {
               <MusicLyrics lines={item.lyrics || []} currentTime={time} onSeek={seek} />
             </View>
           </EditorialInline>
-          <DetailPanel title="Paroles complètes" foldable defaultOpen={false} hideTopBorder>
-            <FullMusicLyrics lines={item.lyrics || []} />
-          </DetailPanel>
-          <DetailPanel title="Partitions" foldable defaultOpen={false}>
-            <Text style={{ fontSize: 13, color: '#666' }}>Aucune partition jointe.</Text>
-          </DetailPanel>
-          <DetailPanel title="Description" foldable defaultOpen={false}>
-            <Text style={{ fontSize: 14, lineHeight: 22, color: '#444' }}>{item.description}</Text>
-          </DetailPanel>
+          <DetailMoreDrawer heading={item.title} subtitle={'Musique · ' + item.author}>
+            <DetailInfoSection title="À propos du morceau" text={item.description} />
+            <DetailInfoSection title="Paroles complètes" text={item.lyrics?.length ? undefined : 'Paroles non disponibles pour cet enregistrement.'} />
+            {!!item.lyrics?.length && <FullMusicLyrics lines={item.lyrics} />}
+            <DetailInfoSection title="Partitions" text="Aucune partition jointe." />
+          </DetailMoreDrawer>
         </PublicationDetail>
       )}
     />
