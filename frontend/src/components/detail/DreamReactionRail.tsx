@@ -1,24 +1,31 @@
 import React from 'react';
 import { Pressable, Share, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import type { DreamPublication } from '@/domain/publication';
+import type { Publication } from '@/domain/publication';
 import { useApp } from '@/context/AppContext';
 import { useAppTheme } from '@/theme/AppTheme';
 import { PrayerIcon } from '@/icons/PrayerIcon';
 
 /**
- * Small, always-visible reaction rail beside the two participation actions.
+ * Small, always-visible reaction rail beside contextual publication actions.
  * It occupies its own layout column so it never overlays either button.
  * Fire and prayer currently use the app's existing local demo state.
  */
-export function DreamReactionRail({ item }: { item: DreamPublication }) {
+export function DreamReactionRail({ item }: { item: Publication }) {
   const app = useApp();
   const theme = useAppTheme();
   const fireActive = app.fireIds.includes(item.id);
   const prayerActive = app.isPraying(item.id);
   const quiet = theme.dark ? '#D4D0CC' : '#504B47';
   const share = () => {
-    const url = 'https://network.jenlow.net/dream/' + encodeURIComponent(item.id);
+    const route = item.type === 'dream'
+      ? '/dream/' + encodeURIComponent(item.id)
+      : item.type === 'music'
+        ? '/music/' + encodeURIComponent(item.id)
+        : item.type === 'talent'
+          ? '/person/' + encodeURIComponent(item.source === 'api' ? item.id : item.author)
+          : '/bible/' + encodeURIComponent(item.referenceId) + '?verse=' + item.highlightedVerse + (item.source === 'api' ? '&id=' + encodeURIComponent(item.id) : '');
+    const url = 'https://network.jenlow.net' + route;
     void Share.share({ message: item.title + ' — JenLow Network\n' + url });
   };
 
