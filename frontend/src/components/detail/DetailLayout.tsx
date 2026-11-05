@@ -22,7 +22,6 @@ export function DetailLayout({
   headerIcon,
   onCoverPress,
   musicPlaying = false,
-  inlineDreamReactions = false,
 }: {
   item: Publication;
   children: React.ReactNode;
@@ -30,8 +29,6 @@ export function DetailLayout({
   headerIcon?: React.ReactNode;
   onCoverPress?: () => void;
   musicPlaying?: boolean;
-  /** Let the Germination details place Fire / Prayer / Share beside "En savoir plus". */
-  inlineDreamReactions?: boolean;
 }) {
   const theme = useAppTheme();
   const isDream = item.type === 'dream';
@@ -85,10 +82,8 @@ export function DetailLayout({
               </View>
             )}
             <PublicationPrimaryAction item={item} />
-            {isDream && !inlineDreamReactions && (
-              <View style={{ marginTop: 3, marginBottom: 8, paddingRight: 3 }}>
-                <ActionRail item={item} horizontal />
-              </View>
+            {isDream && (
+              <ActionRail item={item} labeledFooter />
             )}
           </View>
           </View>
