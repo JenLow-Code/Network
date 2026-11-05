@@ -17,6 +17,21 @@ const demoFeed: Publication[] = [...samplePublications, ...sampleTalents].filter
   p => p.type !== 'dream' || p.phase !== 'Rêve',
 );
 
+/**
+ * Interleave the D1-backed demo dreams with music, Scripture and talent previews.
+ * Stable order (no random shuffling) keeps the masonry layout predictable.
+ */
+function interleaveEditorial(dreams: Publication[], editorial: Publication[]): Publication[] {
+  const result: Publication[] = [];
+  let next = 0;
+  for (const dream of dreams) {
+    result.push(dream);
+    if (next < editorial.length) result.push(editorial[next++]);
+    if (result.length % 5 === 0 && next < editorial.length) result.push(editorial[next++]);
+  }
+  return [...result, ...editorial.slice(next)];
+}
+
 /** Items already loaded by a list are reused by detail screens for an instant first paint. */
 const cache = new Map<string, Publication>();
 export const cachedPublication = (id: string) => cache.get(id);
@@ -55,7 +70,7 @@ export function useDiscovery(params: { type?: string; q?: string } = {}) {
         const remote = await fetchDemoDiscovery();
         // Music, Bible and Talent are visibly demo previews; D1 currently has only dream data.
         const demoEditorial = demoFeed.filter(p => p.type !== 'dream');
-        const mixed = [...remote, ...demoEditorial].filter(p =>
+        const mixed = interleaveEditorial(remote, demoEditorial).filter(p =>
           (!params.type || p.type === params.type) &&
           (!params.q || [p.title, p.author].join(' ').toLowerCase().includes(params.q.toLowerCase())),
         );
