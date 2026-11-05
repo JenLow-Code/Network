@@ -11,7 +11,7 @@ import { SwipeReaction } from './SwipeReaction';
  * Quiet supporting reactions: encouragement, prayer and sharing.
  * Participation belongs to the separate, context-specific primary action.
  */
-export function ActionRail({ item }: { item: Publication }) {
+export function ActionRail({ item, horizontal = false }: { item: Publication; horizontal?: boolean }) {
   const app = useApp();
   const theme = useAppTheme();
   const fireActive = app.fireIds.includes(item.id);
@@ -33,7 +33,7 @@ export function ActionRail({ item }: { item: Publication }) {
   };
 
   return (
-    <View style={styles.rail}>
+    <View style={[styles.rail, horizontal && styles.horizontal]}>
       <SwipeReaction
         label="Fire"
         fullLabel="Encourager avec Fire"
@@ -67,4 +67,5 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     backgroundColor: 'transparent',
   },
+  horizontal: { flexDirection: 'row', justifyContent: 'flex-end', gap: 22, paddingVertical: 0 },
 });
