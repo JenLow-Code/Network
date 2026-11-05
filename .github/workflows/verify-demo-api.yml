@@ -1,0 +1,41 @@
+name: Production beta Discovery API smoke test
+
+on:
+  push:
+    branches: [fronti, main]
+    paths:
+      - "frontend/src/lib/api/**"
+      - ".github/workflows/verify-demo-api.yml"
+  workflow_dispatch:
+
+jobs:
+  demo-api:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Verify deployed read-only D1 API health and Discovery shape
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --retry 2 --max-time 20             'https://jenlow-network-demo-api.jenlow-production.workers.dev/health' > /tmp/health.json
+          curl --fail --silent --show-error --retry 2 --max-time 20             'https://jenlow-network-demo-api.jenlow-production.workers.dev/api/demo/users?limit=20' > /tmp/users.json
+          python3 - <<'PY'
+          import json
+          with open('/tmp/health.json',encoding='utf-8') as f:
+              health=json.load(f)
+          with open('/tmp/users.json',encoding='utf-8') as f:
+              payload=json.load(f)
+          assert health.get('status')=='ok', 'API unhealthy'
+          users=payload.get('users')
+          assert isinstance(users,list) and len(users)>=1, 'No users or invalid API contract'
+          dreams=[]
+          for user in users:
+              assert isinstance(user.get('display_name'),str), 'Invalid author'
+              assert isinstance(user.get('dreams'),list), 'Invalid nested dreams'
+              dreams.extend(user['dreams'])
+          assert dreams, 'No D1-backed dreams'
+          assert all(isinstance(d.get('id'),str) and isinstance(d.get('phase'),str) and isinstance(d.get('title'),str) for d in dreams), 'Invalid dream fields'
+          visible=[d for d in dreams if d.get('phase')!='dream']
+          assert visible, 'No public Germination/Growth/Floraison dreams'
+          print(f'API OK: {len(users)} demo users, {len(dreams)} D1 dreams, {len(visible)} visible.')
+          PY
