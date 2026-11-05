@@ -1,5 +1,5 @@
 import React from 'react';
-import { Share, StyleSheet, View } from 'react-native';
+import { Pressable, Share, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useApp } from '@/context/AppContext';
 import type { Publication } from '@/domain/publication';
@@ -11,7 +11,7 @@ import { SwipeReaction } from './SwipeReaction';
  * Quiet supporting reactions: encouragement, prayer and sharing.
  * Participation belongs to the separate, context-specific primary action.
  */
-export function ActionRail({ item, horizontal = false }: { item: Publication; horizontal?: boolean }) {
+export function ActionRail({ item, horizontal = false, labeledFooter = false }: { item: Publication; horizontal?: boolean; labeledFooter?: boolean }) {
   const app = useApp();
   const theme = useAppTheme();
   const fireActive = app.fireIds.includes(item.id);
@@ -31,6 +31,33 @@ export function ActionRail({ item, horizontal = false }: { item: Publication; ho
     const link = 'https://network.jenlow.net' + sharePath;
     void Share.share({ message: item.title + ' — JenLow Network\n' + link });
   };
+
+  // Publication footer: reactions are lightweight, directly tappable actions.
+  // Keep the historical swipe controls in other layouts that still use them.
+  if (labeledFooter) {
+    const actions = [
+      { label: 'Fire', description: 'Encourager avec Fire', active: fireActive, onPress: () => app.toggleFire(item.id), icon: <Ionicons name={fireActive ? 'flame' : 'flame-outline'} size={17} color={fireActive ? '#CB245C' : inactiveColor} /> },
+      { label: 'Prier', description: 'Prier pour cette publication', active: prayerActive, onPress: () => app.togglePrayer(item.id), icon: <PrayerIcon size={18} active={prayerActive} color={inactiveColor} /> },
+      { label: 'Partager', description: 'Partager cette publication', active: false, onPress: share, icon: <Ionicons name="share-outline" size={17} color={inactiveColor} /> },
+    ];
+    return (
+      <View style={[styles.footer, { borderTopColor: theme.border }]}>
+        {actions.map(action => (
+          <Pressable
+            key={action.label}
+            accessibilityRole="button"
+            accessibilityLabel={action.description}
+            accessibilityState={{ selected: action.active }}
+            onPress={action.onPress}
+            style={styles.footerAction}
+          >
+            {action.icon}
+            <Text style={[styles.footerLabel, { color: action.active ? '#CB245C' : inactiveColor }]}>{action.label}</Text>
+          </Pressable>
+        ))}
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.rail, horizontal && styles.horizontal]}>
@@ -68,4 +95,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   horizontal: { flexDirection: 'row', justifyContent: 'flex-end', gap: 22, paddingVertical: 0 },
+  footer: { borderTopWidth: StyleSheet.hairlineWidth, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 15, paddingTop: 12 },
+  footerAction: { flex: 1, minWidth: 0, minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 8, paddingHorizontal: 2 },
+  footerLabel: { fontSize: 11, fontWeight: '500' },
 });
