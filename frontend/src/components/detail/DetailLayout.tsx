@@ -3,7 +3,6 @@ import { ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { Publication } from '@/domain/publication';
 import { publications, personPublications } from '@/mocks/publications';
-import { ActionRail } from './ActionRail';
 import { DreamReactionRail } from './DreamReactionRail';
 import { PublicationPrimaryAction } from './PublicationPrimaryAction';
 import { DetailHero } from './DetailHero';
@@ -34,6 +33,7 @@ export function DetailLayout({
   const theme = useAppTheme();
   const isDream = item.type === 'dream';
   const isFloraison = isDream && item.phase === 'Témoignage';
+  const isSeed = isDream && item.phase === 'Rêve';
   const { width: screenWidth } = useWindowDimensions();
   const width = Math.min(screenWidth, 760);
   const heroWidth = Math.max(0, width - 32);
@@ -64,37 +64,23 @@ export function DetailLayout({
           <View style={{
             paddingTop: item.type === 'music' ? 4 : item.type === 'dream' ? 0 : 22,
             // Match the Germination detail controls to the talent tiles/title inset.
-            paddingHorizontal: isDream && item.phase === 'Initiation' ? (heroWidth < 440 ? 23 : 32) : 0,
+            paddingHorizontal: !isSeed && !isFloraison ? (heroWidth < 440 ? 23 : 32) : 0,
             marginTop: isFloraison ? -50 : 0,
             position: 'relative',
             zIndex: 1,
           }}>
             {featured}
-            {isDream ? (
-              <View style={{ paddingTop: isFloraison ? 0 : 8 }}>
-                {children}
-              </View>
-            ) : (
-              <View style={{ flexDirection: 'row', gap: 24, alignItems: 'stretch' }}>
-                <View style={{ flex: 1, minWidth: 0 }}>{children}</View>
-                <View style={{ width: 42, alignSelf: 'flex-end', justifyContent: 'flex-end', paddingBottom: 12 }}>
-                  <ActionRail item={item} />
-                </View>
-              </View>
-            )}
-            {isDream && (item.phase === 'Initiation' || item.phase === 'Croissance') ? (
+            <View style={{ paddingTop: isFloraison ? 0 : isDream ? 8 : 3 }}>
+              {children}
+            </View>
+            {!isSeed && (
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                {/* The buttons and reaction rail have separate columns: no floating overlap. */}
+                {/* Shared aligned primary actions + discreet reactions for every publication type. */}
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <PublicationPrimaryAction item={item} />
                 </View>
                 <DreamReactionRail item={item} />
               </View>
-            ) : (
-              <>
-                <PublicationPrimaryAction item={item} />
-                {isDream && <ActionRail item={item} labeledFooter />}
-              </>
             )}
           </View>
           </View>
@@ -110,7 +96,7 @@ export function DetailLayout({
             >
               Continuer l’inspiration
             </Text>
-            <PublicationGallery layout="masonry" contentWidth={heroWidth} items={[...publications, ...personPublications].filter(p => p.id !== item.id)} />
+            <PublicationGallery layout="masonry" contentWidth={heroWidth} items={[...publications, ...personPublications].filter(p => p.id !== item.id && (p.type !== 'dream' || p.phase !== 'Rêve'))} />
           </View>
         </View>
       </ScrollView>
