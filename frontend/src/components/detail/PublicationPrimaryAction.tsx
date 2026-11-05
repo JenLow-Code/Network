@@ -74,11 +74,31 @@ export function PublicationPrimaryAction({ item }: { item: Publication }) {
       </Modal>
   );
 
+  const [unavailable, setUnavailable] = useState(false);
+  const unavailablePopup = (
+    <Modal transparent animationType="fade" visible={unavailable} onRequestClose={() => setUnavailable(false)}>
+      <View style={styles.overlay}>
+        <Pressable style={StyleSheet.absoluteFill} accessibilityRole="button" accessibilityLabel="Fermer" onPress={() => setUnavailable(false)} />
+        <View style={[styles.dialog, { backgroundColor: theme.surface, alignItems: 'center' }]}>
+          <Ionicons name="construct-outline" size={26} color="#CB245C" />
+          <Text style={[styles.heading, { color: theme.foreground, textAlign: 'center' }]}>Not ready yet :)</Text>
+          <Text style={{ color: theme.muted, fontSize: 13, textAlign: 'center', lineHeight: 20 }}>
+            Cette fonctionnalité arrive bientôt sur JenLow Network.
+          </Text>
+          <Pressable accessibilityRole="button" onPress={() => setUnavailable(false)} style={{ paddingVertical: 11, paddingHorizontal: 28 }}>
+            <Text style={{ color: '#CB245C', fontWeight: '600' }}>Compris</Text>
+          </Pressable>
+        </View>
+      </View>
+    </Modal>
+  );
   const button = (label: string, onPress: () => void, secondary = false, glyph?: keyof typeof Ionicons.glyphMap) => (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={label}
-      onPress={onPress}
+      // Only native sharing and local dream creation are functional in beta;
+      // other actions must never imply a real message or collaboration was sent.
+      onPress={label === 'Partager ce verset' || label === 'Créer un rêve inspiré' ? onPress : () => setUnavailable(true)}
       style={[
         styles.action,
         styles.fullAction,
@@ -95,6 +115,7 @@ export function PublicationPrimaryAction({ item }: { item: Publication }) {
     <View style={{ paddingTop: 7, gap: 8 }}>
       {buttons}
       {needDialog}
+      {unavailablePopup}
     </View>
   );
 
@@ -143,7 +164,7 @@ export function PublicationPrimaryAction({ item }: { item: Publication }) {
     return controls(...offers);
   }
 
-  return <BibleDreamPicker item={item} button={button} />;
+  return <><BibleDreamPicker item={item} button={button} />{unavailablePopup}</>;
 }
 
 function BibleDreamPicker({
