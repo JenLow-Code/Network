@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import type { Publication } from '@/domain/publication';
 import { publications, personPublications } from '@/mocks/publications';
 import { ActionRail } from './ActionRail';
-import { DreamReactionPopover } from './DreamReactionPopover';
+import { DreamReactionRail } from './DreamReactionRail';
 import { PublicationPrimaryAction } from './PublicationPrimaryAction';
 import { DetailHero } from './DetailHero';
 import { Nav } from '@/components/navigation/Nav';
@@ -83,11 +83,12 @@ export function DetailLayout({
               </View>
             )}
             {isDream && (item.phase === 'Initiation' || item.phase === 'Croissance') ? (
-              <View style={{ position: 'relative', overflow: 'visible' }}>
-                <PublicationPrimaryAction item={item} />
-                <View style={{ position: 'absolute', right: -18, top: 36, zIndex: 5 }}>
-                  <DreamReactionPopover item={item} />
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                {/* The buttons and reaction rail have separate columns: no floating overlap. */}
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <PublicationPrimaryAction item={item} />
                 </View>
+                <DreamReactionRail item={item} />
               </View>
             ) : (
               <>
