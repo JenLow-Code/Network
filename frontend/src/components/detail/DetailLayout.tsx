@@ -63,7 +63,14 @@ export function DetailLayout({
           <View style={{ position: 'relative' }}>
           <DetailHero item={item} width={heroWidth} height={heroHeight} onMusicPress={onCoverPress} musicPlaying={musicPlaying} />
 
-          <View style={{ paddingTop: item.type === 'music' ? 4 : item.type === 'dream' ? 0 : 22, paddingRight: 0, marginTop: isFloraison ? -50 : 0, position: 'relative', zIndex: 1 }}>
+          <View style={{
+            paddingTop: item.type === 'music' ? 4 : item.type === 'dream' ? 0 : 22,
+            // Match the Germination detail controls to the talent tiles/title inset.
+            paddingHorizontal: isDream && item.phase === 'Initiation' ? (heroWidth < 440 ? 23 : 32) : 0,
+            marginTop: isFloraison ? -50 : 0,
+            position: 'relative',
+            zIndex: 1,
+          }}>
             {featured}
             {isDream ? (
               <View style={{ paddingTop: isFloraison ? 0 : 8 }}>
