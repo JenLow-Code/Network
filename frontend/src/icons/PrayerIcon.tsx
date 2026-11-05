@@ -2,8 +2,8 @@ import React from 'react';
 import Svg, { Path } from 'react-native-svg';
 
 /**
- * Restrained Christian cross for the prayer reaction.
- * Active state uses JenLow magenta; inactive remains neutral.
+ * A quiet Latin cross for the prayer reaction:
+ * outlined when inactive, filled with JenLow magenta when selected.
  */
 export function PrayerIcon({
   size = 24,
@@ -20,11 +20,11 @@ export function PrayerIcon({
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <Path
-        d="M12 3.5V20.5M5.5 9.5H18.5"
+        d="M10.4 3.2H13.6V8.4H18.4V11.3H13.6V20.8H10.4V11.3H5.6V8.4H10.4Z"
         stroke={ink}
-        strokeWidth="1.8"
-        strokeLinecap="round"
+        strokeWidth="1.55"
         strokeLinejoin="round"
+        fill={active ? '#CB245C' : 'none'}
       />
     </Svg>
   );
