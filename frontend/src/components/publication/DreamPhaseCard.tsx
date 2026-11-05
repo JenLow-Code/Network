@@ -1,5 +1,5 @@
 import React from 'react';
-import { Image, Modal, Platform, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Animated, Image, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -80,16 +80,16 @@ function PersonResourceTiles({ resources, width, compact, dark, onInspect }: {
   onInspect?: (resource: PersonNeed) => void;
 }) {
   // Four across only when there's space; two across on narrow Discovery cards.
-  const columns = compact ? (width < 270 ? 2 : 3) : (width < 510 ? 3 : 4);
-  const gap = compact ? 8 : 12;
+  const columns = compact ? (width < 270 ? 2 : 3) : (width < 315 ? 3 : 4);
+  const gap = compact ? 8 : 9;
   const contentWidth = Math.max(0, width - (compact ? (width < 205 ? 26 : 34) : (width < 440 ? 46 : 64)));
   const tileWidth = Math.floor((contentWidth - gap * (columns - 1)) / columns);
   // Discovery uses a delicate, tile-size-relative outline; detail has a fixed, stronger frame.
   const missingTalentBorderWidth = compact
     ? Math.max(0.6, Math.min(1.2, tileWidth / 120))
-    : 3;
+    : 1.5;
   return (
-    <View style={{ gap: compact ? 12 : 17 }}>
+    <View style={{ gap: compact ? 12 : 9 }}>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap, alignItems: 'flex-start' }}>
       {resources.map((resource, index) => (
         <Pressable
@@ -99,22 +99,23 @@ function PersonResourceTiles({ resources, width, compact, dark, onInspect }: {
           accessibilityRole={onInspect ? 'button' : undefined}
           accessibilityLabel={resource.title + (resource.confirmed ? ', confirmé' : ', recherché') + (resource.requiredLevel ? ', niveau ' + resource.requiredLevel : '')}
           style={{
-            width: tileWidth, height: compact ? Math.max(70, tileWidth * 0.94) : Math.max(112, tileWidth * 0.98),
-            backgroundColor: resource.confirmed ? (dark ? '#566E4E' : '#C0D3B0') : (dark ? '#111317' : '#FFFCF5'),
+            width: tileWidth, height: compact ? Math.max(70, tileWidth * 0.94) : Math.max(76, tileWidth * 1.08),
+            backgroundColor: resource.confirmed ? (dark ? '#324536' : '#E1ECE0') : (dark ? '#25252A' : '#FFFCF8'),
             borderRadius: 8, borderWidth: resource.confirmed ? 0 : missingTalentBorderWidth,
-            borderColor: '#D95768', overflow: 'hidden',
-            alignItems: 'center', justifyContent: 'center', gap: 4, paddingBottom: 3,
+            borderColor: compact ? '#D95768' : '#C13B82', overflow: 'hidden',
+            alignItems: 'center', justifyContent: 'center', gap: compact ? 4 : 2, paddingHorizontal: 3, paddingBottom: 3,
           }}>
             {resource.illustration ? (
-              <TalentArt kind={resource.illustration} size={tileWidth * 0.72} />
+              <TalentArt kind={resource.illustration} size={tileWidth * (compact ? 0.72 : 0.50)} />
             ) : (
-              <Ionicons name="person-outline" size={tileWidth * 0.45} color={dark ? '#ECE7E1' : '#34302C'} />
+              <Ionicons name="person-outline" size={tileWidth * (compact ? 0.45 : 0.34)} color={dark ? '#ECE7E1' : '#34302C'} />
             )}
+          {!compact && <Text numberOfLines={1} style={{ color: dark ? '#F1EBE4' : '#34302C', fontSize: 9, fontWeight: '600', textAlign: 'center', width: '100%' }}>{resource.title}</Text>}
           {resource.requiredLevel && (
             <TalentLevelDots
               level={resource.requiredLevel}
-              size={compact && tileWidth < 96 ? 5 : 7}
-              spacing={compact && tileWidth < 96 ? 3 : 5}
+              size={compact ? (tileWidth < 96 ? 5 : 7) : 4}
+              spacing={compact ? (tileWidth < 96 ? 3 : 5) : 3}
             />
           )}
         </Pressable>
@@ -134,6 +135,11 @@ export function DreamPhaseCard({ item, width, variant, onOpen }: Props) {
   const [inspectedTalent, setInspectedTalent] = React.useState<PersonNeed | null>(null);
   const [inspectedImage, setInspectedImage] = React.useState<string | null>(null);
   const viewport = useWindowDimensions();
+  const talentDrawerX = React.useRef(new Animated.Value(440)).current;
+  React.useEffect(() => {
+    if (inspectedTalent) Animated.timing(talentDrawerX, { toValue: 0, duration: 250, useNativeDriver: true }).start();
+    else talentDrawerX.setValue(440);
+  }, [inspectedTalent, talentDrawerX]);
   const compact = variant === 'tile';
   const dark = theme.dark;
   const inset = compact ? (width < 205 ? 13 : 17) : (width < 440 ? 23 : 32);
@@ -170,22 +176,32 @@ export function DreamPhaseCard({ item, width, variant, onOpen }: Props) {
   );
   const talentViewer = (
     <Modal visible={!!inspectedTalent} transparent animationType="fade" onRequestClose={() => setInspectedTalent(null)}>
-      <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.72)', justifyContent: 'center', padding: 25 }}>
-        <View style={{ backgroundColor: theme.surface, padding: 24, gap: 14, maxWidth: 460, width: '100%', alignSelf: 'center' }}>
-          <Pressable onPress={() => setInspectedTalent(null)} style={{ alignSelf: 'flex-end' }} accessibilityLabel="Fermer"><Ionicons name="close" size={22} color={ink} /></Pressable>
-          <Text style={{ color: subdued, fontSize: 10, letterSpacing: 1.2 }}>TALENT RECHERCHÉ</Text>
-          <Text style={{ color: ink, fontFamily: serif, fontSize: 28 }}>{inspectedTalent?.title}</Text>
-          {inspectedTalent?.requiredLevel && <View style={{ gap: 8 }}>
-            <Text style={{ color: subdued, fontSize: 13 }}>Niveau souhaité : {inspectedTalent.requiredLevel}</Text>
-            <TalentLevelDots level={inspectedTalent.requiredLevel} align="start" />
-          </View>}
-          <Text style={{ color: subdued, fontSize: 14, lineHeight: 22 }}>
-            {inspectedTalent?.description?.trim() || 'Le porteur de ce rêve n’a pas encore précisé les attentes pour ce talent.'}
-          </Text>
-          <Text style={{ color: inspectedTalent?.confirmed ? '#739C75' : '#C75968', fontSize: 12 }}>
-            {inspectedTalent?.confirmed ? 'Talent confirmé' : 'Talent encore recherché'}
-          </Text>
-        </View>
+      <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.52)', flexDirection: 'row', justifyContent: 'flex-end' }}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={() => setInspectedTalent(null)} accessibilityRole="button" accessibilityLabel="Fermer les détails du talent" />
+        <Animated.View style={{
+          backgroundColor: theme.surface, width: Math.min(420, viewport.width * 0.94),
+          height: '100%', paddingTop: 30, paddingHorizontal: 23, paddingBottom: 40,
+          transform: [{ translateX: talentDrawerX }],
+        }}>
+          <ScrollView contentContainerStyle={{ gap: 17, paddingBottom: 30 }}>
+            <Pressable onPress={() => setInspectedTalent(null)} style={{ alignSelf: 'flex-start', flexDirection: 'row', gap: 7, alignItems: 'center', paddingVertical: 10 }} accessibilityRole="button" accessibilityLabel="Retour au rêve">
+              <Ionicons name="chevron-back" size={19} color={ink} />
+              <Text style={{ color: ink, fontSize: 13 }}>Retour au rêve</Text>
+            </Pressable>
+            <Text style={{ color: subdued, fontSize: 10, letterSpacing: 1.3 }}>TALENT {inspectedTalent?.confirmed ? 'CONFIRMÉ' : 'RECHERCHÉ'}</Text>
+            <Text style={{ color: ink, fontFamily: serif, fontSize: 29 }}>{inspectedTalent?.title}</Text>
+            {inspectedTalent?.requiredLevel && <View style={{ gap: 8 }}>
+              <Text style={{ color: subdued, fontSize: 13 }}>Niveau souhaité : {inspectedTalent.requiredLevel}</Text>
+              <TalentLevelDots level={inspectedTalent.requiredLevel} align="start" />
+            </View>}
+            <Text style={{ color: subdued, fontSize: 14, lineHeight: 23 }}>
+              {inspectedTalent?.description?.trim() || 'Le porteur de ce rêve n’a pas encore précisé les attentes pour ce talent.'}
+            </Text>
+            <Text style={{ color: inspectedTalent?.confirmed ? '#739C75' : '#C13B82', fontSize: 12 }}>
+              {inspectedTalent?.confirmed ? 'Ce talent a été confirmé' : 'Ce talent est encore recherché'}
+            </Text>
+          </ScrollView>
+        </Animated.View>
       </View>
     </Modal>
   );
@@ -273,18 +289,24 @@ export function DreamPhaseCard({ item, width, variant, onOpen }: Props) {
         {withOpen(
           <View style={{ padding: inset, gap: compact ? 15 : 21 }}>
             {topRight()}
-            {heading()}
+            {compact && heading()}
             {people.length > 0 && (
-              <Text style={{ color: subdued, fontSize: compact ? 10 : 12 }}>
+              <Text style={{ color: subdued, fontSize: compact ? 10 : 11, letterSpacing: compact ? 0 : 0.3 }}>
                 {people.filter(resource => resource.confirmed).length}/{people.length} talents trouvés
               </Text>
             )}
             {people.length > 0 ? (
               <PersonResourceTiles resources={people} width={width} compact={compact} dark={dark} onInspect={compact ? undefined : setInspectedTalent} />
-            ) : (
-              <Text style={{ color: subdued, fontSize: compact ? 12 : 14, lineHeight: compact ? 18 : 22 }}>
-                Aucun besoin en personnes renseigné pour ce rêve.
+            ) : compact ? (
+              <Text style={{ color: subdued, fontSize: 12, lineHeight: 18 }}>
+                Aucun talent recherché pour ce rêve.
               </Text>
+            ) : null}
+            {!compact && (
+              <View style={{ gap: 10, paddingTop: people.length ? 5 : 0 }}>
+                {heading()}
+                {!!item.summary && <Text style={{ color: subdued, fontSize: 14, lineHeight: 22 }}>{item.summary}</Text>}
+              </View>
             )}
           </View>,
         )}
