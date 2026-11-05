@@ -287,12 +287,18 @@ export function DreamPhaseCard({ item, width, variant, onOpen }: Props) {
     return (
       <View style={[base, { backgroundColor: compact ? neutral : 'transparent' }]}>
         {withOpen(
-          <View style={{ padding: inset, gap: compact ? 15 : 21 }}>
-            {topRight()}
+          <View style={{ padding: inset, gap: compact ? 15 : 14 }}>
+            {compact && topRight()}
             {compact && heading()}
             {people.length > 0 && (
               <Text style={{ color: subdued, fontSize: compact ? 10 : 11, letterSpacing: compact ? 0 : 0.3 }}>
+                {!compact && 'GERMINATION  ·  '}
                 {people.filter(resource => resource.confirmed).length}/{people.length} talents trouvés
+              </Text>
+            )}
+            {!compact && people.length === 0 && (
+              <Text style={{ color: subdued, fontSize: 10, fontWeight: '600', letterSpacing: 1.2 }}>
+                GERMINATION
               </Text>
             )}
             {people.length > 0 ? (
