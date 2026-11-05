@@ -13,7 +13,7 @@ export default function NewDream() {
   const { create } = useDreams();
   const [title, setTitle] = useState(inspiration ? 'Autour de ' + inspiration : ''),
     [summary, setSummary] = useState(
-      inspiration ? 'Ce morceau m’inspire à créer quelque chose de nouveau.' : '',
+      inspiration ? 'Cette inspiration me donne envie de créer quelque chose de nouveau.' : '',
     ),
     [image, setImage] = useState(
       'https://images.unsplash.com/photo-1510915361894-db8b60106cb1?w=800&q=80',
