@@ -61,19 +61,22 @@ export function DreamReferenceLayout({ item }: { item: DreamPublication }) {
       {isGermination ? (
         <>
           <View style={{
-            flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-            minHeight: 44, marginTop: 2, gap: 10,
+            flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end',
+            minHeight: 44, marginTop: 0, gap: 12,
           }}>
+            {/* Secondary reactions occupy the left side without changing their swipe behavior. */}
+            <View style={{ flex: 1, minWidth: 0, alignItems: 'flex-end' }}>
+              <ActionRail item={item} horizontal />
+            </View>
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="En savoir plus sur ce rêve"
               onPress={() => setMoreOpen(true)}
-              style={{ flexDirection: 'row', gap: 7, alignItems: 'center', paddingVertical: 9, flexShrink: 1 }}
+              style={{ flexDirection: 'row', gap: 5, alignItems: 'center', justifyContent: 'flex-end', paddingVertical: 9 }}
             >
-              <Text style={{ color: ink, fontWeight: '600', fontSize: 13 }}>En savoir plus</Text>
+              <Text numberOfLines={1} style={{ color: ink, fontWeight: '600', fontSize: 12 }}>En savoir plus</Text>
               <Ionicons name="arrow-forward" color={ink} size={14} />
             </Pressable>
-            <ActionRail item={item} horizontal />
           </View>
           <Modal
             visible={moreOpen}
