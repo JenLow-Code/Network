@@ -64,7 +64,7 @@ export function DetailLayout({
           <View style={{
             paddingTop: item.type === 'music' ? 4 : item.type === 'dream' ? 0 : 22,
             // Match the Germination detail controls to the talent tiles/title inset.
-            paddingHorizontal: !isSeed && !isFloraison ? (heroWidth < 440 ? 23 : 32) : 0,
+            paddingHorizontal: !isSeed ? (heroWidth < 440 ? 23 : 32) : 0,
             marginTop: isFloraison ? -50 : 0,
             position: 'relative',
             zIndex: 1,
