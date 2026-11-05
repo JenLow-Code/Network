@@ -63,13 +63,8 @@ export function DetailLayout({
           <View style={{ paddingTop: item.type === 'music' ? 4 : item.type === 'dream' ? 0 : 22, paddingRight: 0, marginTop: isFloraison ? -50 : 0, position: 'relative', zIndex: 1 }}>
             {featured}
             {isDream ? (
-              <View style={{ paddingTop: 0 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: screenWidth < 530 ? 14 : 24, paddingTop: isFloraison ? 0 : 8 }}>
-                  <View style={{ flex: 1, minWidth: 0 }}>{children}</View>
-                  <View style={{ width: 42, justifyContent: 'flex-end', paddingBottom: 12 }}>
-                    <ActionRail item={item} />
-                  </View>
-                </View>
+              <View style={{ paddingTop: isFloraison ? 0 : 8 }}>
+                {children}
               </View>
             ) : (
               <View style={{ flexDirection: 'row', gap: 24, alignItems: 'stretch' }}>
@@ -80,6 +75,11 @@ export function DetailLayout({
               </View>
             )}
             <PublicationPrimaryAction item={item} />
+            {isDream && (
+              <View style={{ marginTop: 3, marginBottom: 8, paddingRight: 3 }}>
+                <ActionRail item={item} horizontal />
+              </View>
+            )}
           </View>
           </View>
           <View style={{ marginTop: isDream ? 30 : 42, borderTopWidth: isDream ? 0 : 0.5, borderTopColor: theme.border, paddingTop: 21 }}>
