@@ -100,27 +100,27 @@ export function PublicationPrimaryAction({ item }: { item: Publication }) {
   if (isActiveDream) {
     const canSelectNeed = needs.length > 0;
     return (
-      <View style={{ paddingTop: 10, paddingBottom: 4, gap: 8 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'stretch', gap: 8 }}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Je peux aider"
-            onPress={() => canSelectNeed ? setChoosingNeed(true) : contact()}
-            style={[styles.action, styles.compactAction, { flex: 0.92, backgroundColor: theme.dark ? '#EAE5DF' : '#292725' }]}
-          >
-            <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.82} style={[styles.actionLabel, { color: theme.dark ? '#292725' : '#FFFFFF', fontSize: 12 }]}>Je peux aider</Text>
-            <Ionicons name="arrow-forward" size={14} color={theme.dark ? '#292725' : '#FFFFFF'} />
-          </Pressable>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Je connais quelqu'un qui pourrait aider"
-            onPress={() => contact(undefined, true)}
-            style={[styles.action, styles.compactAction, styles.secondaryAction, { flex: 1.3, borderColor: theme.dark ? '#C89BAF' : '#B84A7A' }]}
-          >
-            <Ionicons name="people-outline" size={15} color={theme.dark ? '#E7B9CD' : '#963E67'} />
-            <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.76} style={[styles.actionLabel, { color: theme.dark ? '#E7B9CD' : '#963E67', fontSize: 12, flexShrink: 1 }]}>Je connais quelqu’un</Text>
-          </Pressable>
-        </View>
+      <View style={{ paddingTop: 7, paddingBottom: 0, gap: 8 }}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Je peux aider"
+          onPress={() => canSelectNeed ? setChoosingNeed(true) : contact()}
+          style={[styles.action, styles.fullAction, { backgroundColor: '#CB245C' }]}
+        >
+          <Text style={[styles.actionLabel, { color: '#FFFFFF' }]}>Je peux aider</Text>
+          <Ionicons name="arrow-forward" size={16} color="#FFFFFF" />
+        </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Je connais quelqu'un qui pourrait aider"
+          onPress={() => contact(undefined, true)}
+          style={[styles.action, styles.fullAction, styles.secondaryAction, { borderColor: theme.dark ? '#C89BAF' : '#B84A7A' }]}
+        >
+          <Ionicons name="people-outline" size={16} color={theme.dark ? '#E7B9CD' : '#963E67'} />
+          <Text style={[styles.actionLabel, { color: theme.dark ? '#E7B9CD' : '#963E67', flexShrink: 1 }]}>
+            Je connais quelqu’un qui pourrait aider
+          </Text>
+        </Pressable>
         {needDialog}
       </View>
     );
@@ -133,11 +133,11 @@ export function PublicationPrimaryAction({ item }: { item: Publication }) {
         accessibilityLabel={label}
         onPress={action}
         style={[styles.action, {
-          backgroundColor: theme.dark ? '#EAE5DF' : '#292725',
+          backgroundColor: '#CB245C',
         }]}
       >
-        <Text style={[styles.actionLabel, { color: theme.dark ? '#292725' : '#FFFFFF' }]}>{label}</Text>
-        <Ionicons name="arrow-forward" size={15} color={theme.dark ? '#292725' : '#FFFFFF'} />
+        <Text style={[styles.actionLabel, { color: '#FFFFFF' }]}>{label}</Text>
+        <Ionicons name="arrow-forward" size={15} color="#FFFFFF" />
       </Pressable>
       {needDialog}
     </View>
