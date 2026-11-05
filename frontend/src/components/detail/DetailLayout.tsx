@@ -10,6 +10,7 @@ import { Nav } from '@/components/navigation/Nav';
 import { DetailAuthorHeader } from './DetailAuthorHeader';
 import { PublicationGallery } from '@/components/publication/PublicationGallery';
 import { useAppTheme } from '@/theme/AppTheme';
+import { useDiscovery } from '@/lib/api/hooks';
 
 /**
  * Shared editorial detail layout. The featured image mirrors Discovery,
@@ -31,6 +32,10 @@ export function DetailLayout({
   musicPlaying?: boolean;
 }) {
   const theme = useAppTheme();
+  // Related stories use the same source and editorial order as Discovery.
+  // This prevents detail pages from silently falling back to an obsolete mock-only feed.
+  const relatedFeed = useDiscovery();
+  const relatedItems = relatedFeed.state === 'ready' ? relatedFeed.items : [...publications, ...personPublications];
   const isDream = item.type === 'dream';
   const isFloraison = isDream && item.phase === 'Témoignage';
   const isSeed = isDream && item.phase === 'Rêve';
@@ -65,12 +70,12 @@ export function DetailLayout({
             paddingTop: item.type === 'music' ? 4 : item.type === 'dream' ? 0 : 22,
             // Match the Germination detail controls to the talent tiles/title inset.
             paddingHorizontal: !isSeed ? (heroWidth < 440 ? 23 : 32) : 0,
-            marginTop: isFloraison ? -50 : 0,
+            marginTop: 0,
             position: 'relative',
             zIndex: 1,
           }}>
             {featured}
-            <View style={{ paddingTop: isFloraison ? 0 : isDream ? 8 : 3 }}>
+            <View style={{ paddingTop: isDream ? 8 : 3 }}>
               {children}
             </View>
             {!isSeed && (
@@ -79,7 +84,7 @@ export function DetailLayout({
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <PublicationPrimaryAction item={item} />
                 </View>
-                <DreamReactionRail item={item} />
+                <View style={{ marginTop: 15 }}><DreamReactionRail item={item} /></View>
               </View>
             )}
           </View>
@@ -96,7 +101,7 @@ export function DetailLayout({
             >
               Continuer l’inspiration
             </Text>
-            <PublicationGallery layout="masonry" contentWidth={heroWidth} items={[...publications, ...personPublications].filter(p => p.id !== item.id && (p.type !== 'dream' || p.phase !== 'Rêve'))} />
+            <PublicationGallery layout="masonry" contentWidth={heroWidth} items={relatedItems.filter(p => p.id !== item.id && (p.type !== 'dream' || p.phase !== 'Rêve'))} />
           </View>
         </View>
       </ScrollView>
