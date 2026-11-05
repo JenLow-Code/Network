@@ -3,12 +3,16 @@ import type { Publication } from '@/domain/publication';
 import { api, ApiRequestError } from './client';
 import { toPublication, toPublications, type ApiFeedItem, type ApiProfile } from './adapters';
 import { publications as samplePublications, personPublications as sampleTalents } from '@/mocks/publications';
+import { fetchDemoDiscovery, fetchDemoPublication } from './demo';
 
 /**
  * Opt-in local design preview. Only enabled inside Expo development builds.
  * Never silently substitute sample content when a real API request fails.
  */
 const previewDiscovery = __DEV__ && process.env.EXPO_PUBLIC_DISCOVERY_SOURCE === 'demo';
+// Production beta uses the actually deployed read-only D1 demo Worker until the unified API is ready.
+// Set EXPO_PUBLIC_DISCOVERY_SOURCE=unified only after /api/discovery is deployed and verified.
+const betaDiscovery = process.env.EXPO_PUBLIC_DISCOVERY_SOURCE !== 'unified';
 const demoFeed: Publication[] = [...samplePublications, ...sampleTalents].filter(
   p => p.type !== 'dream' || p.phase !== 'Rêve',
 );
@@ -47,6 +51,20 @@ export function useDiscovery(params: { type?: string; q?: string } = {}) {
     setState('loading');
     setError(null);
     try {
+      if (betaDiscovery) {
+        const remote = await fetchDemoDiscovery();
+        // Music, Bible and Talent are visibly demo previews; D1 currently has only dream data.
+        const demoEditorial = demoFeed.filter(p => p.type !== 'dream');
+        const mixed = [...remote, ...demoEditorial].filter(p =>
+          (!params.type || p.type === params.type) &&
+          (!params.q || [p.title, p.author].join(' ').toLowerCase().includes(params.q.toLowerCase())),
+        );
+        mixed.forEach(p => cache.set(p.id, p));
+        setItems(mixed);
+        setCursor(null);
+        setState('ready');
+        return;
+      }
       const page = await api<{ items: ApiFeedItem[]; nextCursor: string | null }>(`/api/discovery?limit=40${key ? '&' + key : ''}`);
       const mapped = toPublications(page.items);
       mapped.forEach(p => cache.set(p.id, p));
@@ -60,7 +78,7 @@ export function useDiscovery(params: { type?: string; q?: string } = {}) {
   }, [key]);
 
   const loadMore = useCallback(async () => {
-    if (previewDiscovery || !cursor || loadingMore.current) return;
+    if (betaDiscovery || previewDiscovery || !cursor || loadingMore.current) return;
     loadingMore.current = true;
     try {
       const page = await api<{ items: ApiFeedItem[]; nextCursor: string | null }>(`/api/discovery?limit=40&cursor=${encodeURIComponent(cursor)}${key ? '&' + key : ''}`);
@@ -91,6 +109,13 @@ export function usePublication(id: string | undefined) {
     if (!id) return;
     if (!cache.get(id)) setState('loading');
     try {
+      if (betaDiscovery && id.startsWith('demo-dream-')) {
+        const demo = await fetchDemoPublication(id);
+        if (demo) cache.set(id, demo);
+        setItem(demo);
+        setState(demo ? 'ready' : 'error');
+        return;
+      }
       const res = await api<{ item: ApiFeedItem; dream?: unknown; chapter?: unknown }>(`/api/publications/${encodeURIComponent(id)}`);
       const mapped = toPublication({ ...res.item, ...((res.dream as object) || {}) } as ApiFeedItem);
       if (mapped) cache.set(id, mapped);
