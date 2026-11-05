@@ -29,7 +29,7 @@ export default function Discover() {
   const [query, setQuery] = useState('');
   // Discovery is backed by D1 through the API; there is deliberately no mock fallback.
   const feed = useDiscovery();
-  const publications = useMemo(() => feed.items.filter(p => p.type !== 'talent'), [feed.items]);
+  const publications = useMemo(() => feed.items.filter(p => p.type !== 'talent' && (p.type !== 'dream' || p.phase !== 'Rêve')), [feed.items]);
   const personPublications = useMemo(() => feed.items.filter(p => p.type === 'talent'), [feed.items]);
   const items = useMemo(
     () =>
