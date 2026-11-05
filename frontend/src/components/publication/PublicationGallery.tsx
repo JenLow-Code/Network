@@ -542,7 +542,9 @@ function MasonryGallery({ items, viewportWidth }: { items: Publication[]; viewpo
  *
  * Filtering works at every length without empty cells or anonymous image blocks.
  */
-export function PublicationGallery({ items, layout = 'editorial', contentWidth: requestedWidth }: { items: Publication[]; layout?: 'editorial' | 'masonry'; contentWidth?: number }) {
+export function PublicationGallery({ items: receivedItems, layout = 'editorial', contentWidth: requestedWidth }: { items: Publication[]; layout?: 'editorial' | 'masonry'; contentWidth?: number }) {
+  // Semence remains link-accessible but never appears in public Discovery/recommendation galleries.
+  const items = receivedItems.filter(item => item.type !== 'dream' || item.phase !== 'Rêve');
   const { width: windowWidth } = useWindowDimensions();
   const compact = windowWidth < 700;
   const contentWidth = requestedWidth ?? Math.max(0, Math.min(920, windowWidth) - 30);
