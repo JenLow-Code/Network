@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, Share, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import type { Publication } from '@/domain/publication';
 import { useAppTheme } from '@/theme/AppTheme';
+import { useDreams } from '@/domain/dreamRepository';
+import { useApp } from '@/context/AppContext';
 
 type Need = { title: string; description?: string };
 
@@ -22,44 +24,20 @@ export function PublicationPrimaryAction({ item }: { item: Publication }) {
   // Semence's intentional-link interaction is integrated into its cover.
   if (item.type === 'dream' && item.phase === 'Rêve') return null;
 
-  const contact = (topic?: string, introduction = false) => {
+  const contact = (topic?: string, introduction = false, customDraft?: string) => {
     setChoosingNeed(false);
-    const draft = introduction
+    const draft = customDraft || (introduction
       ? 'Bonjour ' + item.author + ', je connais peut-être quelqu’un qui pourrait contribuer à votre rêve « ' + item.title + ' ». Est-ce que nous pourrions en discuter avant toute mise en relation ?'
       : item.type === 'talent'
       ? 'Bonjour ' + item.author + ', j’aimerais collaborer avec vous autour de votre talent : ' + item.skill + '.'
       : topic
         ? 'Bonjour ' + item.author + ', je peux peut-être aider pour « ' + topic + ' » dans votre projet « ' + item.title + ' ». Pouvons-nous en parler ?'
-        : 'Bonjour ' + item.author + ', j’aimerais échanger à propos de « ' + item.title + ' ».';
+        : 'Bonjour ' + item.author + ', j’aimerais échanger à propos de « ' + item.title + ' ».');
     router.push({
       pathname: '/chat/[id]',
       params: { id: 'member', recipient: item.author, draft },
     });
   };
-
-  let label: string;
-  let action: () => void;
-  if (item.type === 'dream') {
-    if (item.phase === 'Témoignage') {
-      label = 'Créer un rêve inspiré';
-      action = () => router.push({ pathname: '/my-dream/new', params: { inspiration: item.title, from: item.id } });
-    } else if (needs.length > 0) {
-      label = 'Répondre à un besoin';
-      action = () => setChoosingNeed(true);
-    } else {
-      label = item.phase === 'Croissance' ? 'Échanger sur les avancées' : 'Contacter le porteur';
-      action = () => contact();
-    }
-  } else if (item.type === 'talent') {
-    label = item.seeking.includes('Tandem') ? 'Proposer un tandem' : 'Proposer une collaboration';
-    action = () => contact();
-  } else if (item.type === 'music') {
-    label = 'Proposer une adaptation';
-    action = () => router.push({ pathname: '/music-proposal/[id]', params: { id: item.id } });
-  } else {
-    label = 'Exporter ce verset';
-    action = () => router.push({ pathname: '/verse-export/[id]', params: { id: item.id } });
-  }
 
   const needDialog = (
       <Modal transparent animationType="fade" visible={choosingNeed} onRequestClose={() => setChoosingNeed(false)}>
@@ -96,50 +74,118 @@ export function PublicationPrimaryAction({ item }: { item: Publication }) {
       </Modal>
   );
 
-  const isActiveDream = item.type === 'dream' && (item.phase === 'Initiation' || item.phase === 'Croissance');
-  if (isActiveDream) {
-    const canSelectNeed = needs.length > 0;
-    return (
-      <View style={{ paddingTop: 7, paddingBottom: 0, gap: 8 }}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Je peux aider"
-          onPress={() => canSelectNeed ? setChoosingNeed(true) : contact()}
-          style={[styles.action, styles.fullAction, { backgroundColor: '#CB245C' }]}
-        >
-          <Text style={[styles.actionLabel, { color: '#FFFFFF' }]}>Je peux aider</Text>
-          <Ionicons name="arrow-forward" size={16} color="#FFFFFF" />
-        </Pressable>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Je connais quelqu'un qui pourrait aider"
-          onPress={() => contact(undefined, true)}
-          style={[styles.action, styles.fullAction, styles.secondaryAction, { borderColor: theme.dark ? '#C89BAF' : '#B84A7A' }]}
-        >
-          <Ionicons name="people-outline" size={16} color={theme.dark ? '#E7B9CD' : '#963E67'} />
-          <Text style={[styles.actionLabel, { color: theme.dark ? '#E7B9CD' : '#963E67', flexShrink: 1 }]}>
-            Je connais quelqu’un qui pourrait aider
-          </Text>
-        </Pressable>
-        {needDialog}
-      </View>
+  const button = (label: string, onPress: () => void, secondary = false, glyph?: keyof typeof Ionicons.glyphMap) => (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      onPress={onPress}
+      style={[
+        styles.action,
+        styles.fullAction,
+        secondary && styles.secondaryAction,
+        { backgroundColor: secondary ? 'transparent' : '#CB245C', borderColor: theme.dark ? '#C89BAF' : '#B84A7A' },
+      ]}
+    >
+      {glyph && <Ionicons name={glyph} size={16} color={secondary ? (theme.dark ? '#E7B9CD' : '#963E67') : '#FFFFFF'} />}
+      <Text style={[styles.actionLabel, { color: secondary ? (theme.dark ? '#E7B9CD' : '#963E67') : '#FFFFFF', flexShrink: 1, textAlign: 'center' }]}>{label}</Text>
+      {!secondary && <Ionicons name="arrow-forward" size={16} color="#FFFFFF" />}
+    </Pressable>
+  );
+  const controls = (...buttons: React.ReactNode[]) => (
+    <View style={{ paddingTop: 7, gap: 8 }}>
+      {buttons}
+      {needDialog}
+    </View>
+  );
+
+  if (item.type === 'dream') {
+    if (item.phase === 'Initiation') return controls(
+      button('Je peux aider', () => needs.length ? setChoosingNeed(true) : contact()),
+      button('Je connais quelqu’un qui pourrait aider', () => contact(undefined, true), true, 'people-outline'),
     );
+
+    if (item.phase === 'Croissance') return controls(
+      button('Encourager ce rêve', () => contact(undefined, false,
+        'Bonjour ' + item.author + ', je voulais vous encourager dans la croissance de votre rêve « ' + item.title + ' » !')),
+    );
+
+    if (item.phase === 'Témoignage') return controls(
+      button('Créer un rêve inspiré', () => router.push({ pathname: '/my-dream/new', params: { inspiration: item.title, from: item.id } })),
+      button('Partager l’impact de ce rêve', () => contact(undefined, false,
+        'Bonjour ' + item.author + ', votre rêve « ' + item.title + ' » a eu un impact sur moi et j’aimerais vous raconter comment.'), true),
+    );
+    return null;
   }
 
+  if (item.type === 'music') return controls(
+    button('Collaborer sur ce morceau', () => router.push({ pathname: '/music-proposal/[id]', params: { id: item.id } })),
+    button('Encourager l’artiste', () => contact(undefined, false,
+      'Bonjour ' + item.author + ', je voulais vous encourager pour votre morceau « ' + item.title + ' » !'), true),
+  );
+
+  if (item.type === 'talent') {
+    const offers: React.ReactNode[] = [];
+    if (item.seeking.includes('Tandem')) offers.push(
+      button('J’aimerais être ton tandem', () => contact(undefined, false,
+        'Bonjour ' + item.author + ', j’aimerais former un tandem avec toi autour de « ' + item.skill + ' » !')),
+    );
+    if (item.seeking.includes('Professeur')) offers.push(
+      button('Je peux t’enseigner', () => contact(undefined, false,
+        'Bonjour ' + item.author + ', je pourrais t’accompagner comme professeur pour « ' + item.skill + ' ».'),
+        offers.length > 0),
+    );
+    if (item.seeking.includes('Élèves')) offers.push(
+      button('J’aimerais être ton élève', () => contact(undefined, false,
+        'Bonjour ' + item.author + ', j’aimerais apprendre « ' + item.skill + ' » avec toi.'),
+        offers.length > 0),
+    );
+    if (!offers.length) offers.push(button('Proposer une collaboration', () => contact()));
+    return controls(...offers);
+  }
+
+  return <BibleDreamPicker item={item} button={button} />;
+}
+
+function BibleDreamPicker({
+  item,
+  button,
+}: {
+  item: Extract<Publication, { type: 'bible' }>;
+  button: (label: string, onPress: () => void, secondary?: boolean, glyph?: keyof typeof Ionicons.glyphMap) => React.ReactNode;
+}) {
+  const theme = useAppTheme();
+  const { items: dreams } = useDreams();
+  const app = useApp();
+  const [open, setOpen] = useState(false);
+  const share = () => {
+    const url = 'https://network.jenlow.net/bible/' + encodeURIComponent(item.referenceId) + '?verse=' + item.highlightedVerse;
+    void Share.share({ message: item.reference + ' — JenLow Network\n' + url });
+  };
   return (
-    <View style={{ paddingTop: 15, paddingBottom: 8, alignItems: 'flex-start' }}>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={label}
-        onPress={action}
-        style={[styles.action, {
-          backgroundColor: '#CB245C',
-        }]}
-      >
-        <Text style={[styles.actionLabel, { color: '#FFFFFF' }]}>{label}</Text>
-        <Ionicons name="arrow-forward" size={15} color="#FFFFFF" />
-      </Pressable>
-      {needDialog}
+    <View style={{ gap: 8, paddingTop: 7 }}>
+      {button('Ajouter à mon rêve', () => setOpen(true))}
+      {button('Partager ce verset', share, true, 'share-outline')}
+      <Modal transparent animationType="fade" visible={open} onRequestClose={() => setOpen(false)}>
+        <View style={styles.overlay}>
+          <Pressable style={StyleSheet.absoluteFill} accessibilityLabel="Annuler" onPress={() => setOpen(false)} />
+          <View style={[styles.dialog, { backgroundColor: theme.surface }]}>
+            <Text style={[styles.heading, { color: theme.foreground }]}>Ajouter ce verset à un rêve</Text>
+            {dreams.length ? dreams.map(dream => (
+              <Pressable
+                key={dream.id}
+                accessibilityRole="button"
+                onPress={() => { app.addToDream(dream.id, item.id); setOpen(false); }}
+                style={[styles.need, { borderColor: theme.border }]}
+              >
+                <Text style={{ color: theme.foreground, fontSize: 14 }}>{dream.title}</Text>
+              </Pressable>
+            )) : <Text style={{ color: theme.muted, fontSize: 13 }}>Crée d’abord un rêve pour y ajouter ce verset.</Text>}
+            <Pressable onPress={() => setOpen(false)} style={{ paddingVertical: 10 }} accessibilityRole="button">
+              <Text style={{ color: theme.muted, fontSize: 13 }}>Fermer</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
