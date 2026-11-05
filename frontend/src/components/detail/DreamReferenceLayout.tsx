@@ -59,7 +59,8 @@ export function DreamReferenceLayout({ item }: { item: DreamPublication }) {
     <DetailLayout item={item}>
       {isGermination ? (
         <>
-          <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', minHeight: 42 }}>
+          {/* Match the help buttons' right edge: 40px reaction rail + 10px gap. */}
+          <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', minHeight: 42, paddingRight: 50 }}>
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="En savoir plus sur ce rêve"
