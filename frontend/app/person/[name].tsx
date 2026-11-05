@@ -2,7 +2,8 @@ import React from 'react';
 import { ActivityIndicator, Text, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { personPublications } from '@/mocks/publications';
-import { PublicationDetail, DetailPanel } from '@/components/publication/PublicationDetail';
+import { PublicationDetail } from '@/components/publication/PublicationDetail';
+import { DetailMoreDrawer, DetailInfoSection } from '@/components/detail/DetailMoreDrawer';
 import { EditorialInline } from '@/components/detail/EditorialInline';
 import { usePublication } from '@/lib/api/hooks';
 import type { PersonPublication } from '@/domain/publication';
@@ -25,49 +26,20 @@ export default function PublicPerson() {
     );
   return (
     <PublicationDetail item={person}>
-      <EditorialInline bottomSpace={22}>
-        <Text style={{ fontSize: 10, fontWeight: '700', letterSpacing: 1.4, color: '#746C64', marginBottom: 10 }}>
-          QUI JE SUIS
-        </Text>
-        <Text style={{ fontSize: 14, lineHeight: 21, color: '#333' }}>{person.description}</Text>
-        <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
-          {person.seeking.map(t => (
-            <View
-              key={t}
-              style={{
-                paddingHorizontal: 12,
-                paddingVertical: 8,
-                backgroundColor: '#F1F1EF',
-                borderRadius: 18,
-              }}
-            >
-              <Text style={{ fontSize: 12 }}>{t}</Text>
-            </View>
-          ))}
+      <EditorialInline bottomSpace={7}>
+        <View style={{ gap: 8 }}>
+          <Text style={{ fontSize: 10, fontWeight: '700', letterSpacing: 1.35, color: '#746C64' }}>
+            {person.seeking.length ? 'RECHERCHE · ' + person.seeking.join(' / ').toUpperCase() : 'MON TALENT'}
+          </Text>
+          <Text style={{ fontSize: 14, lineHeight: 22, color: '#77716B' }}>{person.description}</Text>
         </View>
       </EditorialInline>
-      <DetailPanel title="Expérience" foldable defaultOpen={false} hideTopBorder>
-        <Text style={{ fontSize: 14, lineHeight: 22, color: '#444' }}>
-          {person.experience?.trim() || 'Expérience non renseignée.'}
-        </Text>
-      </DetailPanel>
-      <DetailPanel title="Autres talents" foldable defaultOpen={false}>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-          {person.talents.map(t => (
-            <View
-              key={t}
-              style={{
-                paddingHorizontal: 12,
-                paddingVertical: 9,
-                borderRadius: 19,
-                backgroundColor: '#F1F1EF',
-              }}
-            >
-              <Text style={{ fontSize: 12 }}>{t}</Text>
-            </View>
-          ))}
-        </View>
-      </DetailPanel>
+      <DetailMoreDrawer heading={person.skill} subtitle={'Talent · ' + person.author}>
+        <DetailInfoSection title="Qui je suis" text={person.description} />
+        <DetailInfoSection title="Expérience" text={person.experience} />
+        <DetailInfoSection title="Ce que je recherche" text={person.seeking.join(' · ')} />
+        <DetailInfoSection title="Autres talents" text={person.talents.join(' · ')} />
+      </DetailMoreDrawer>
     </PublicationDetail>
   );
 }
