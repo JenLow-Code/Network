@@ -383,21 +383,21 @@ export function DreamPhaseCard({ item, width, variant, onOpen }: Props) {
           <Svg pointerEvents="none" width={photoWidth} height={mediaHeight} style={StyleSheet.absoluteFill}>
             <Defs>
               <LinearGradient id={gradientId + '-shade'} x1="0%" y1="0%" x2="0%" y2="100%">
-                {/* Four zones: natural image, readable shaded caption, fade, beige page. */}
-                <Stop offset="0%" stopColor="#09070A" stopOpacity={0.04} />
-                <Stop offset="30%" stopColor="#09070A" stopOpacity={0.09} />
-                <Stop offset="46%" stopColor="#09070A" stopOpacity={0.36} />
-                <Stop offset="65%" stopColor="#09070A" stopOpacity={0.65} />
-                <Stop offset="77%" stopColor="#09070A" stopOpacity={0.66} />
-                <Stop offset="100%" stopColor="#09070A" stopOpacity={0.14} />
+                {/* Floraison shade, values specified for the photo. */}
+                <Stop offset="0%" stopColor="#09070A" stopOpacity={0.7} />
+                <Stop offset="30%" stopColor="#09070A" stopOpacity={0.7} />
+                <Stop offset="46%" stopColor="#09070A" stopOpacity={0.6} />
+                <Stop offset="65%" stopColor="#09070A" stopOpacity={0.6} />
+                <Stop offset="77%" stopColor="#09070A" stopOpacity={0.2} />
+                <Stop offset="100%" stopColor="#09070A" stopOpacity={0.1} />
               </LinearGradient>
               {!compact && (
                 <LinearGradient id={gradientId + '-fade'} x1="0%" y1="0%" x2="0%" y2="100%">
                   <Stop offset="0%" stopColor={theme.background} stopOpacity={0} />
-                  <Stop offset="76%" stopColor={theme.background} stopOpacity={0} />
-                  <Stop offset="82%" stopColor={theme.background} stopOpacity={0.13} />
-                  <Stop offset="91%" stopColor={theme.background} stopOpacity={0.70} />
-                  <Stop offset="97%" stopColor={theme.background} stopOpacity={1} />
+                  <Stop offset="50%" stopColor={theme.background} stopOpacity={0.15} />
+                  <Stop offset="60%" stopColor={theme.background} stopOpacity={0.3} />
+                  <Stop offset="70%" stopColor={theme.background} stopOpacity={0.70} />
+                  <Stop offset="80%" stopColor={theme.background} stopOpacity={0.85} />
                   <Stop offset="100%" stopColor={theme.background} stopOpacity={1} />
                 </LinearGradient>
               )}
