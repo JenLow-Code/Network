@@ -1,9 +1,10 @@
 import React from 'react';
-import { Pressable, Text, TextInput, View } from 'react-native';
+import { Image, Pressable, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/theme/AppTheme';
 import type { DreamEntry } from '@/domain/dreamWorkspace';
 import { DREAM_PHASES, PHASE_LABELS, type DreamPhase } from '@/domain/publication';
+import { dreamPhaseImageUris } from '../../../assets/dreamPhaseImages';
 
 /** One editorial design language for all four dream phases. */
 export const phaseAccent: Record<DreamPhase, string> = {
@@ -38,7 +39,8 @@ export function DreamPhaseHeader({
       </View>
 
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 21 }}>
-        <View style={{ width: 28, height: 3, borderRadius: 3, backgroundColor: accent }}/>
+        <Image source={{ uri: dreamPhaseImageUris[phase] }} resizeMode="contain" style={{ width: 37, height: 37, marginRight: 2 }}/>
+        <View style={{ width: 21, height: 3, borderRadius: 3, backgroundColor: accent }}/>
         <Text style={{ color: accent, fontSize: 11, letterSpacing: 1.4, fontWeight: '700', textTransform: 'uppercase' }}>
           {PHASE_LABELS[phase]}
         </Text>
