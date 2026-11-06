@@ -356,9 +356,9 @@ export function DreamPhaseCard({ item, width, variant, onOpen }: Props) {
     );
   }
 
-  // Floraison stays photograph-led in both views. The title and result
-  // form a single bottom-aligned group over a subtle dark gradient. Detail adds
-  // a gentle page-colored fade after the readable caption to meet the panels.
+  // Floraison: Discovery keeps its white overlay typography and a subtle black
+  // gradient in the bottom third. Detail has its own dark/photo-to-page gradients,
+  // a mid-photo title and a dark subtitle on the beige fade.
   const image = item.resultImage || item.image;
   const mediaHeight = compact
     ? Math.max(230, width * 1.40)
@@ -383,13 +383,25 @@ export function DreamPhaseCard({ item, width, variant, onOpen }: Props) {
           <Svg pointerEvents="none" width={photoWidth} height={mediaHeight} style={StyleSheet.absoluteFill}>
             <Defs>
               <LinearGradient id={gradientId + '-shade'} x1="0%" y1="0%" x2="0%" y2="100%">
-                {/* Floraison shade, values specified for the photo. */}
-                <Stop offset="0%" stopColor="#09070A" stopOpacity={0.7} />
-                <Stop offset="30%" stopColor="#09070A" stopOpacity={0.7} />
-                <Stop offset="46%" stopColor="#09070A" stopOpacity={0.6} />
-                <Stop offset="65%" stopColor="#09070A" stopOpacity={0.6} />
-                <Stop offset="77%" stopColor="#09070A" stopOpacity={0.2} />
-                <Stop offset="100%" stopColor="#09070A" stopOpacity={0.1} />
+                {compact ? (
+                  <>
+                    {/* Discovery: only the bottom third darkens; existing white text is unchanged. */}
+                    <Stop offset="0%" stopColor="#09070A" stopOpacity={0} />
+                    <Stop offset="66%" stopColor="#09070A" stopOpacity={0} />
+                    <Stop offset="82%" stopColor="#09070A" stopOpacity={0.24} />
+                    <Stop offset="100%" stopColor="#09070A" stopOpacity={0.54} />
+                  </>
+                ) : (
+                  <>
+                    {/* Detail: retain the explicitly approved photographic shade. */}
+                    <Stop offset="0%" stopColor="#09070A" stopOpacity={0.7} />
+                    <Stop offset="30%" stopColor="#09070A" stopOpacity={0.7} />
+                    <Stop offset="46%" stopColor="#09070A" stopOpacity={0.6} />
+                    <Stop offset="65%" stopColor="#09070A" stopOpacity={0.6} />
+                    <Stop offset="77%" stopColor="#09070A" stopOpacity={0.2} />
+                    <Stop offset="100%" stopColor="#09070A" stopOpacity={0.1} />
+                  </>
+                )}
               </LinearGradient>
               {!compact && (
                 <LinearGradient id={gradientId + '-fade'} x1="0%" y1="0%" x2="0%" y2="100%">
@@ -407,31 +419,60 @@ export function DreamPhaseCard({ item, width, variant, onOpen }: Props) {
           </Svg>
           <View pointerEvents="none" style={{
             position: 'absolute',
-            top: compact ? inset - 4 : 29,
-            right: compact ? inset - 4 : 43,
+            top: compact ? inset - 4 : 32,
+            right: compact ? inset - 4 : 54,
           }}>
-            <DreamPhaseIcon phase="Témoignage" size={compact ? 47 : 80} />
+            <DreamPhaseIcon phase="Témoignage" size={compact ? 47 : 90} />
           </View>
-          <View style={{
-            position: 'absolute',
-            // Keep the *entire* white caption above the start of the beige fade.
-            bottom: compact ? inset : Math.round(mediaHeight * 0.26),
-            left: compact ? inset : 20,
-            right: compact ? inset : 20,
-            gap: compact ? 5 : 7,
-          }}>
-            {heading('#FFFFFF')}
-            <Text style={{
-              color: '#F5DCE6',
-              fontSize: compact ? 12 : 16,
-              lineHeight: compact ? 18 : 23,
-              textShadowColor: 'rgba(0,0,0,0.48)',
-              textShadowOffset: { width: 0, height: 1 },
-              textShadowRadius: 3,
+          {compact ? (
+            // Discovery: preserve the original white title and pale subtitle.
+            <View style={{
+              position: 'absolute',
+              bottom: inset,
+              left: inset,
+              right: inset,
+              gap: 5,
             }}>
-              {item.summary}
-            </Text>
-          </View>
+              {heading('#FFFFFF')}
+              <Text style={{
+                color: '#F5DCE6',
+                fontSize: 12,
+                lineHeight: 18,
+                textShadowColor: 'rgba(0,0,0,0.48)',
+                textShadowOffset: { width: 0, height: 1 },
+                textShadowRadius: 3,
+              }}>
+                {item.summary}
+              </Text>
+            </View>
+          ) : (
+            <>
+              {/* Detail: title begins at the vertical middle of the photograph. */}
+              <View style={{
+                position: 'absolute',
+                top: Math.round(mediaHeight * 0.50),
+                left: 20,
+                right: 20,
+              }}>
+                {heading('#FFFFFF')}
+              </View>
+              {/* The subtitle sits on the light, mostly opaque beige part of the fade. */}
+              <View style={{
+                position: 'absolute',
+                bottom: Math.round(mediaHeight * 0.075),
+                left: 20,
+                right: 20,
+              }}>
+                <Text style={{
+                  color: dark ? theme.foreground : '#171717',
+                  fontSize: 16,
+                  lineHeight: 23,
+                }}>
+                  {item.summary}
+                </Text>
+              </View>
+            </>
+          )}
           {/* A fully opaque final edge prevents the photograph's last pixel from forming a dark rule. */}
           {!compact && (
             <View pointerEvents="none" style={{
