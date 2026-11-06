@@ -508,11 +508,27 @@ function MasonryGallery({ items, viewportWidth }: { items: Publication[]; viewpo
   const columnWidth = Math.max(0, (contentWidth - (columns - 1) * gap) / columns);
   const stacks: Publication[][] = Array.from({ length: columns }, () => []);
   const heights = Array.from({ length: columns }, () => 0);
+  // Keep the masonry columns balanced *and* avoid repeating the same
+  // publication phase/type down a single column. This also applies to
+  // "Continuer l'inspiration" on detail pages, not only Discovery.
+  const family = (p: Publication) => p.type === 'dream' ? 'dream:' + p.phase : p.type;
   for (const item of items) {
-    // Balance varying heights while retaining the incoming order inside each column.
-    const shortest = heights.indexOf(Math.min(...heights));
-    stacks[shortest].push(item);
-    heights[shortest] += adaptiveTileHeight(item, columnWidth) + gap;
+    const cardHeight = adaptiveTileHeight(item, columnWidth);
+    let target = 0;
+    let bestScore = Infinity;
+    for (let column = 0; column < columns; column += 1) {
+      const stack = stacks[column];
+      const previous = stack[stack.length - 1];
+      const repetitionPenalty = previous && family(previous) === family(item)
+        ? Math.min(145, cardHeight * 0.45) : 0;
+      const score = heights[column] + repetitionPenalty;
+      if (score < bestScore) {
+        bestScore = score;
+        target = column;
+      }
+    }
+    stacks[target].push(item);
+    heights[target] += cardHeight + gap;
   }
   return (
     <View style={{ width: '100%', paddingHorizontal: 15, paddingBottom: 18, flexDirection: 'row', alignItems: 'flex-start', gap }}>
