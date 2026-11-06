@@ -362,7 +362,9 @@ export function DreamPhaseCard({ item, width, variant, onOpen }: Props) {
   const image = item.resultImage || item.image;
   const mediaHeight = compact
     ? Math.max(230, width * 1.40)
-    : Math.max(285, Math.min(385, width * 0.57));
+    // The detail title starts at mid-height, while its black subtitle sits near
+    // the beige bottom. Leave enough separation for wrapped titles on phones.
+    : Math.max(410, Math.min(460, width * 0.62));
   // The detail photograph follows the same edges as the content and reaction rail.
   // Keep the Discovery tile full bleed.
   const photoWidth = compact ? width : width - 2 * inset;
@@ -452,7 +454,18 @@ export function DreamPhaseCard({ item, width, variant, onOpen }: Props) {
                 left: 20,
                 right: 20,
               }}>
-                {heading('#FFFFFF')}
+                <Text style={{
+                  fontFamily: serif,
+                  fontSize: titleSize,
+                  lineHeight: titleSize + 8,
+                  letterSpacing: -0.65,
+                  color: '#FFFFFF',
+                  textShadowColor: 'rgba(0,0,0,0.50)',
+                  textShadowOffset: { width: 0, height: 1 },
+                  textShadowRadius: 3,
+                }}>
+                  {item.title}
+                </Text>
               </View>
               {/* The subtitle sits on the light, mostly opaque beige part of the fade. */}
               <View style={{
