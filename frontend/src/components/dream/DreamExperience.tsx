@@ -9,6 +9,7 @@ import { useAppTheme } from '@/theme/AppTheme';
 import { HANDWRITING_FAMILY } from '@/theme/handwriting';
 import { pickDreamImage } from '@/lib/pickDreamImage';
 import { DreamPhaseHeader, DreamPhaseSection, DreamPhaseButton, DreamPhaseField } from './DreamPhaseLayout';
+import { DreamTalentSquare } from './DreamTalentSquare';
 
 const pink = '#D71D77';
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
@@ -129,7 +130,14 @@ export default function DreamExperience({ dream, viewPhase, onBack }: {dream:Dre
    <DreamPhaseSection title="Mes ressources" subtitle="Personnes, matériel et financement à réunir.">
    {(['person','practical','financial'] as const).map(category=><View key={category} style={{marginBottom:17}}>
       <Text style={{fontSize:17,fontWeight:'700',color:theme.foreground,marginBottom:9}}>{category==='person'?'Personnes':category==='practical'?'Autres ressources':'Financement'}</Text>
-      {resources.filter(r=>r.category===category).map(r=><View key={r.id} style={{backgroundColor:theme.surface,borderRadius:11,padding:12,marginBottom:7,borderWidth:1,borderColor:theme.border}}>
+      {category === 'person' ? (
+        <View style={{flexDirection:'row',flexWrap:'wrap',gap:9,marginBottom:8}}>
+          {resources.filter(r=>r.category==='person').map(r=><DreamTalentSquare key={r.id} resource={r} size={100}
+            onToggle={resourceEditable ? ()=>checkResource(r) : undefined}
+            onRemove={resourceEditable ? ()=>setResources(dream.id,resources.filter(x=>x.id!==r.id)) : undefined}
+          />)}
+        </View>
+      ) : resources.filter(r=>r.category===category).map(r=><View key={r.id} style={{backgroundColor:theme.surface,borderRadius:11,padding:12,marginBottom:7,borderWidth:1,borderColor:theme.border}}>
        <Pressable disabled={!resourceEditable} onPress={()=>checkResource(r)} style={{flexDirection:'row',gap:10,alignItems:'center'}}><Ionicons name={r.confirmed?'checkmark-circle':'ellipse-outline'} color={r.confirmed?'#5B965C':pink} size={23}/><Text style={{color:theme.foreground,flex:1}}>{r.title}</Text><Text style={{fontSize:11,color:theme.muted}}>{r.confirmed?'Trouvé':'À trouver'}</Text></Pressable>
        {r.amount ? <Text style={{marginTop:6,fontSize:12,color:theme.muted}}>Montant prévu : {r.amount.toLocaleString('fr-FR')} €</Text> : null}
        <Pressable disabled={!resourceEditable} onPress={()=>setResources(dream.id,resources.filter(x=>x.id!==r.id))} style={{alignSelf:'flex-end',paddingTop:5}}><Text style={{fontSize:11,color:theme.muted}}>Retirer</Text></Pressable>
