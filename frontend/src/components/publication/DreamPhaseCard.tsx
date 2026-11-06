@@ -382,27 +382,25 @@ export function DreamPhaseCard({ item, width, variant, onOpen }: Props) {
           {!!image && <Image source={{ uri: image }} resizeMode="cover" style={StyleSheet.absoluteFill} />}
           <Svg pointerEvents="none" width={photoWidth} height={mediaHeight} style={StyleSheet.absoluteFill}>
             <Defs>
-              <LinearGradient id={gradientId + '-shade'} x1="0%" y1="0%" x2="0%" y2="100%">
-                {compact ? (
-                  <>
-                    {/* Discovery: only the bottom third darkens; existing white text is unchanged. */}
-                    <Stop offset="0%" stopColor="#09070A" stopOpacity={0} />
-                    <Stop offset="66%" stopColor="#09070A" stopOpacity={0} />
-                    <Stop offset="82%" stopColor="#09070A" stopOpacity={0.24} />
-                    <Stop offset="100%" stopColor="#09070A" stopOpacity={0.54} />
-                  </>
-                ) : (
-                  <>
-                    {/* Detail: retain the explicitly approved photographic shade. */}
-                    <Stop offset="0%" stopColor="#09070A" stopOpacity={0.7} />
-                    <Stop offset="30%" stopColor="#09070A" stopOpacity={0.7} />
-                    <Stop offset="46%" stopColor="#09070A" stopOpacity={0.6} />
-                    <Stop offset="65%" stopColor="#09070A" stopOpacity={0.6} />
-                    <Stop offset="77%" stopColor="#09070A" stopOpacity={0.2} />
-                    <Stop offset="100%" stopColor="#09070A" stopOpacity={0.1} />
-                  </>
-                )}
-              </LinearGradient>
+              {compact ? (
+                <LinearGradient id={gradientId + '-shade'} x1="0%" y1="0%" x2="0%" y2="100%">
+                  {/* Discovery: only the bottom third darkens. */}
+                  <Stop offset="0%" stopColor="#09070A" stopOpacity={0} />
+                  <Stop offset="66%" stopColor="#09070A" stopOpacity={0} />
+                  <Stop offset="82%" stopColor="#09070A" stopOpacity={0.24} />
+                  <Stop offset="100%" stopColor="#09070A" stopOpacity={0.54} />
+                </LinearGradient>
+              ) : (
+                <LinearGradient id={gradientId + '-shade'} x1="0%" y1="0%" x2="0%" y2="100%">
+                  {/* Detail: retain the explicitly approved photographic shade. */}
+                  <Stop offset="0%" stopColor="#09070A" stopOpacity={0.7} />
+                  <Stop offset="30%" stopColor="#09070A" stopOpacity={0.7} />
+                  <Stop offset="46%" stopColor="#09070A" stopOpacity={0.6} />
+                  <Stop offset="65%" stopColor="#09070A" stopOpacity={0.6} />
+                  <Stop offset="77%" stopColor="#09070A" stopOpacity={0.2} />
+                  <Stop offset="100%" stopColor="#09070A" stopOpacity={0.1} />
+                </LinearGradient>
+              )}
               {!compact && (
                 <LinearGradient id={gradientId + '-fade'} x1="0%" y1="0%" x2="0%" y2="100%">
                   <Stop offset="0%" stopColor={theme.background} stopOpacity={0} />
