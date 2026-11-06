@@ -363,26 +363,40 @@ export function DreamPhaseCard({ item, width, variant, onOpen }: Props) {
   const mediaHeight = compact
     ? Math.max(230, width * 1.40)
     : Math.max(285, Math.min(385, width * 0.57));
+  // The detail photograph follows the same edges as the content and reaction rail.
+  // Keep the Discovery tile full bleed.
+  const photoWidth = compact ? width : width - 2 * inset;
   const gradientId = 'floraison-' + item.id.replace(/[^a-zA-Z0-9]/g, '') + '-' + variant;
   return (
     <View style={[base, { backgroundColor: theme.background }]}>
       {withOpen(
-        <View style={{ width, height: mediaHeight, backgroundColor: theme.background, overflow: 'hidden' }}>
-          <Image source={{ uri: image }} resizeMode="cover" style={StyleSheet.absoluteFill} />
-          <Svg pointerEvents="none" width={width} height={mediaHeight} style={StyleSheet.absoluteFill}>
+        <View style={{
+          width: photoWidth,
+          marginHorizontal: compact ? 0 : inset,
+          height: mediaHeight,
+          backgroundColor: theme.background,
+          overflow: 'hidden',
+          borderBottomWidth: 0,
+          elevation: 0,
+        }}>
+          {!!image && <Image source={{ uri: image }} resizeMode="cover" style={StyleSheet.absoluteFill} />}
+          <Svg pointerEvents="none" width={photoWidth} height={mediaHeight} style={StyleSheet.absoluteFill}>
             <Defs>
               <LinearGradient id={gradientId + '-shade'} x1="0%" y1="0%" x2="0%" y2="100%">
-                <Stop offset="0%" stopColor="#09070A" stopOpacity={0.06} />
-                <Stop offset="39%" stopColor="#09070A" stopOpacity={0.04} />
-                <Stop offset="66%" stopColor="#09070A" stopOpacity={0.32} />
-                <Stop offset="88%" stopColor="#09070A" stopOpacity={0.69} />
-                <Stop offset="100%" stopColor="#09070A" stopOpacity={0.78} />
+                {/* Four reading zones: clear photograph, gradual shade, legible caption, beige fade. */}
+                <Stop offset="0%" stopColor="#09070A" stopOpacity={0.03} />
+                <Stop offset="31%" stopColor="#09070A" stopOpacity={0.04} />
+                <Stop offset="55%" stopColor="#09070A" stopOpacity={0.23} />
+                <Stop offset="76%" stopColor="#09070A" stopOpacity={0.59} />
+                <Stop offset="100%" stopColor="#09070A" stopOpacity={0.37} />
               </LinearGradient>
               {!compact && (
                 <LinearGradient id={gradientId + '-fade'} x1="0%" y1="0%" x2="0%" y2="100%">
                   <Stop offset="0%" stopColor={theme.background} stopOpacity={0} />
-                  <Stop offset="80%" stopColor={theme.background} stopOpacity={0} />
-                  <Stop offset="94%" stopColor={theme.background} stopOpacity={0.36} />
+                  <Stop offset="71%" stopColor={theme.background} stopOpacity={0} />
+                  <Stop offset="82%" stopColor={theme.background} stopOpacity={0.24} />
+                  <Stop offset="92%" stopColor={theme.background} stopOpacity={0.80} />
+                  <Stop offset="97%" stopColor={theme.background} stopOpacity={1} />
                   <Stop offset="100%" stopColor={theme.background} stopOpacity={1} />
                 </LinearGradient>
               )}
@@ -390,14 +404,18 @@ export function DreamPhaseCard({ item, width, variant, onOpen }: Props) {
             <Rect width="100%" height="100%" fill={'url(#' + gradientId + '-shade)'} />
             {!compact && <Rect width="100%" height="100%" fill={'url(#' + gradientId + '-fade)'} />}
           </Svg>
-          <View pointerEvents="none" style={{ position: 'absolute', top: inset - 4, right: inset - 4 }}>
-            <DreamPhaseIcon phase="Témoignage" size={compact ? 47 : 65} />
+          <View pointerEvents="none" style={{
+            position: 'absolute',
+            top: compact ? inset - 4 : 21,
+            right: compact ? inset - 4 : 23,
+          }}>
+            <DreamPhaseIcon phase="Témoignage" size={compact ? 47 : 76} />
           </View>
           <View style={{
             position: 'absolute',
             bottom: compact ? inset : 74,
-            left: inset,
-            right: inset,
+            left: compact ? inset : 0,
+            right: compact ? inset : 12,
             gap: compact ? 5 : 7,
           }}>
             {heading('#FFFFFF')}
@@ -412,7 +430,13 @@ export function DreamPhaseCard({ item, width, variant, onOpen }: Props) {
               {item.summary}
             </Text>
           </View>
-
+          {/* A fully opaque final edge prevents the photograph's last pixel from forming a dark rule. */}
+          {!compact && (
+            <View pointerEvents="none" style={{
+              position: 'absolute', left: 0, right: 0, bottom: 0, height: 4,
+              backgroundColor: theme.background,
+            }} />
+          )}
         </View>,
       )}
     </View>
