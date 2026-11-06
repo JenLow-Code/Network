@@ -79,12 +79,14 @@ export function DetailLayout({
               {children}
             </View>
             {!isSeed && (
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                {/* Shared aligned primary actions + discreet reactions for every publication type. */}
+              <View style={{ flexDirection: 'row', alignItems: 'stretch', gap: 10 }}>
+                {/* Both columns share the same top/bottom; the rail cannot drift above the buttons. */}
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <PublicationPrimaryAction item={item} />
                 </View>
-                <View style={{ marginTop: 15 }}><DreamReactionRail item={item} /></View>
+                <View style={{ width: 40, paddingTop: 7, justifyContent: 'center' }}>
+                  <DreamReactionRail item={item} />
+                </View>
               </View>
             )}
           </View>
