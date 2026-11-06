@@ -76,11 +76,11 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 3,
+    paddingVertical: 0,
   },
   action: {
     width: 40,
-    height: 36,
+    height: 32,
     alignItems: 'center',
     justifyContent: 'center',
   },
