@@ -135,6 +135,9 @@ export function DreamPhaseCard({ item, width, variant, onOpen }: Props) {
   const [inspectedTalent, setInspectedTalent] = React.useState<PersonNeed | null>(null);
   const [inspectedImage, setInspectedImage] = React.useState<string | null>(null);
   const viewport = useWindowDimensions();
+  // SVG gradient ids must be unique per mounted card, including copies of the
+  // same publication in Discovery and "Continuer l'inspiration".
+  const gradientInstanceId = React.useId().replace(/[^a-zA-Z0-9_-]/g, '');
   const talentDrawerX = React.useRef(new Animated.Value(440)).current;
   React.useEffect(() => {
     if (inspectedTalent) Animated.timing(talentDrawerX, { toValue: 0, duration: 250, useNativeDriver: true }).start();
@@ -369,7 +372,7 @@ export function DreamPhaseCard({ item, width, variant, onOpen }: Props) {
   // The detail photograph follows the same edges as the content and reaction rail.
   // Keep the Discovery tile full bleed.
   const photoWidth = compact ? width : width - 2 * inset;
-  const gradientId = 'floraison-' + item.id.replace(/[^a-zA-Z0-9]/g, '') + '-' + variant;
+  const gradientId = 'floraison-' + gradientInstanceId;
   return (
     <View style={[base, { backgroundColor: theme.background }]}>
       {withOpen(
@@ -383,21 +386,20 @@ export function DreamPhaseCard({ item, width, variant, onOpen }: Props) {
           elevation: 0,
         }}>
           {!!image && <Image source={{ uri: image }} resizeMode="cover" style={StyleSheet.absoluteFill} />}
-          {Platform.OS === 'web' ? (
-            // CSS background gradients remain reliable when navigating between
-            // multiple mounted Discovery/detail screens, unlike duplicate SVG IDs.
-            // Keep Discovery's bottom-third shade separate from detail's two fades.
+          {Platform.OS === 'web' && !compact ? (
+            // Detail on web uses CSS to combine the dark and beige fades.
+            // Small Discovery tiles use an SVG with a per-instance unique id,
+            // because React Native Web can discard backgroundImage on View.
+
             <View
               pointerEvents="none"
               style={[
                 StyleSheet.absoluteFill,
                 {
-                  backgroundImage: compact
-                    ? 'linear-gradient(to bottom, rgba(9,7,10,0) 0%, rgba(9,7,10,0) 66%, rgba(9,7,10,0.24) 82%, rgba(9,7,10,0.54) 100%)'
-                    : [
-                      'linear-gradient(to bottom, transparent 0%, ' + theme.background + '26 50%, ' + theme.background + '4D 60%, ' + theme.background + 'B3 70%, ' + theme.background + 'D9 80%, ' + theme.background + ' 100%)',
-                      'linear-gradient(to bottom, rgba(9,7,10,0.7) 0%, rgba(9,7,10,0.7) 30%, rgba(9,7,10,0.6) 46%, rgba(9,7,10,0.6) 65%, rgba(9,7,10,0.2) 77%, rgba(9,7,10,0.1) 100%)',
-                    ].join(', '),
+                  backgroundImage: [
+                    'linear-gradient(to bottom, transparent 0%, ' + theme.background + '26 50%, ' + theme.background + '4D 60%, ' + theme.background + 'B3 70%, ' + theme.background + 'D9 80%, ' + theme.background + ' 100%)',
+                    'linear-gradient(to bottom, rgba(9,7,10,0.7) 0%, rgba(9,7,10,0.7) 30%, rgba(9,7,10,0.6) 46%, rgba(9,7,10,0.6) 65%, rgba(9,7,10,0.2) 77%, rgba(9,7,10,0.1) 100%)',
+                  ].join(', '),
                 } as any,
               ]}
             />
@@ -468,9 +470,9 @@ export function DreamPhaseCard({ item, width, variant, onOpen }: Props) {
             </View>
           ) : (
             <>
-              {/* The TITLE ENDS near 64%, no matter how many lines it wraps.
-                  The SUBTITLE STARTS at 68%, always after the title and on beige.
-                  Long descriptions remain available in the "En savoir plus" panel. */}
+              {/* The title ends near 64% of the photograph. The subtitle is
+                  anchored 62px above the bottom, just above "En savoir plus".
+                  Long descriptions remain in its information panel. */}
               <View style={{
                 position: 'absolute',
                 bottom: Math.round(mediaHeight * 0.36),
@@ -492,7 +494,7 @@ export function DreamPhaseCard({ item, width, variant, onOpen }: Props) {
               </View>
               <View style={{
                 position: 'absolute',
-                top: Math.round(mediaHeight * 0.68),
+                bottom: 62,
                 left: 20,
                 right: 20,
               }}>
