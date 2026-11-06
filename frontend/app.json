@@ -35,14 +35,20 @@
     ],
     "web": {
       "bundler": "metro",
-      "name": "JenLow Network"
+      "name": "JenLow Network",
+      "favicon": "./public/favicon.svg"
     },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.jenlow.network"
     },
     "android": {
-      "package": "com.jenlow.network"
+      "package": "com.jenlow.network",
+      "icon": "./assets/images/network-icon.png",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/network-icon.png",
+        "backgroundColor": "#FFFCF5"
+      }
     },
     "extra": {
       "router": {
@@ -70,6 +76,7 @@
         },
         "projectId": "cdfe03a8-44c2-449d-8789-166e2eae7359"
       }
-    }
+    },
+    "icon": "./assets/images/network-icon.png"
   }
 }
