@@ -97,7 +97,7 @@ function CanvasTile({block,index,editable,theme,onEdit,onMove,onResize,onStart,o
 export default function SemenceStudio({dream,onBack}:{dream:DreamEntry;onBack:()=>void}){
  const theme=useAppTheme(); const {patch,advance}=useDreams();const editable=dream.phase==='Rêve';
  const blocks=dream.blocks||[];
- const [edit,setEdit]=useState(editable);const [library,setLibrary]=useState(false);const [query,setQuery]=useState('');
+ const [edit,setEdit]=useState(false);const [library,setLibrary]=useState(false);const [query,setQuery]=useState('');
  const [draft,setDraft]=useState<DreamBlock|null>(null);const [insertAt,setInsertAt]=useState<number|null>(null);
  const [confirm,setConfirm]=useState(false);
  const [dragIndex,setDragIndex]=useState<number|null>(null);const [hoverIndex,setHoverIndex]=useState<number|null>(null);
