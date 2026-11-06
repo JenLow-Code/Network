@@ -53,6 +53,8 @@ function PhaseMarker({
     position === 'top' ? dy : position === 'bottom' ? -dy : position === 'left' ? dx : -dx;
   const sign = position === 'top' || position === 'left' ? 1 : -1;
   const responder = useRef(PanResponder.create({
+    // Capture the handle from touch-down so the surrounding full-screen swipe never steals it.
+    onStartShouldSetPanResponder: () => enabledRef.current,
     onMoveShouldSetPanResponder: (_, g) => {
       const main = inward(g.dx, g.dy);
       const cross = horizontal ? Math.abs(g.dx) : Math.abs(g.dy);
@@ -64,8 +66,9 @@ function PhaseMarker({
       offset.setValue(value * sign);
     },
     onPanResponderRelease: (_, g) => {
+      const isTap = Math.abs(g.dx) < 8 && Math.abs(g.dy) < 8;
       const reached = inward(g.dx, g.dy) >= 60;
-      if (reached && enabledRef.current) {
+      if ((isTap || reached) && enabledRef.current) {
         offset.setValue(0);
         onPressRef.current();
       } else {
