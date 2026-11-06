@@ -75,7 +75,14 @@ export function DetailLayout({
             zIndex: 1,
           }}>
             {featured}
-            <View style={{ paddingTop: isDream ? 8 : 3 }}>
+            {/* For Floraison, the photograph continues under "En savoir plus"
+                and fades out just above the main participation buttons. */}
+            <View style={{
+              paddingTop: isDream ? 8 : 3,
+              marginTop: isFloraison ? -56 : 0,
+              position: 'relative',
+              zIndex: isFloraison ? 2 : 1,
+            }}>
               {children}
             </View>
             {!isSeed && (
