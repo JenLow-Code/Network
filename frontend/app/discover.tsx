@@ -18,6 +18,22 @@ import { useLocale } from '@/i18n/locale';
 import { useAppTheme } from '@/theme/AppTheme';
 import { HANDWRITING_FAMILY } from '@/theme/handwriting';
 const filters = ['Tout', 'Rêves', 'Musique', 'Bible', 'Talents'] as const;
+
+/** Stable, well-distributed editorial shuffle: no jumping cards on each render. */
+function discoveryRank(id: string): number {
+  let hash = 2166136261;
+  const key = 'jenlow:discovery:' + id;
+  for (let i = 0; i < key.length; i += 1) {
+    hash = Math.imul(hash ^ key.charCodeAt(i), 16777619);
+  }
+  hash ^= hash >>> 16;
+  hash = Math.imul(hash, 0x7feb352d);
+  hash ^= hash >>> 15;
+  hash = Math.imul(hash, 0x846ca68b);
+  hash ^= hash >>> 16;
+  return hash >>> 0;
+}
+
 export default function Discover() {
   const { tr } = useLocale();
   const theme = useAppTheme();
@@ -29,8 +45,17 @@ export default function Discover() {
   const [query, setQuery] = useState('');
   // Discovery is backed by D1 through the API; there is deliberately no mock fallback.
   const feed = useDiscovery();
-  const publications = useMemo(() => feed.items.filter(p => p.type !== 'talent' && (p.type !== 'dream' || p.phase !== 'Rêve')), [feed.items]);
-  const personPublications = useMemo(() => feed.items.filter(p => p.type === 'talent'), [feed.items]);
+  // Preserve the original mixed feed, including Talent posts. Previously the
+  // "Tout" view appended all talents *after* all dreams, undoing API interleaving.
+  const shuffledFeed = useMemo(() =>
+    feed.items
+      .filter(p => p.type !== 'dream' || p.phase !== 'Rêve')
+      .slice()
+      .sort((a, b) => discoveryRank(a.id) - discoveryRank(b.id) || a.id.localeCompare(b.id)),
+    [feed.items],
+  );
+  const publications = useMemo(() => shuffledFeed.filter(p => p.type !== 'talent'), [shuffledFeed]);
+  const personPublications = useMemo(() => shuffledFeed.filter(p => p.type === 'talent'), [shuffledFeed]);
   const items = useMemo(
     () =>
       publications.filter(
@@ -148,7 +173,7 @@ export default function Discover() {
           items={(filter === 'Talents'
             ? personPublications
             : filter === 'Tout'
-              ? [...publications, ...personPublications]
+              ? shuffledFeed
               : items
           ).filter(p =>
             [
