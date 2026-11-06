@@ -147,10 +147,10 @@ export default function DreamExperience({ dream, viewPhase, onBack }: {dream:Dre
     {!historical ? <Action label={ready?'Confirmer et commencer la croissance':'Préparatifs en cours'} onPress={()=>{if(!ready){Alert.alert('Encore un peu','Définis la date et confirme les ressources nécessaires.');return;}confirmGrowth();}}/> : null}</DreamPhaseSection> : null}
   </> : null}
   {phase==='Croissance' ? <>
-   <Text style={{color:theme.muted,marginBottom:14}}>Petits pas, grands changements.</Text>
-   <Pressable onPress={()=>router.push({pathname:'/chat/[id]',params:{id:'dream-'+dream.id}})} style={{padding:12,borderRadius:12,backgroundColor:'#E8EEE4',flexDirection:'row',alignItems:'center',gap:8,marginBottom:16}}><Ionicons name="chatbubbles-outline" size={21} color="#3A6743"/><Text style={{color:'#3A6743',fontWeight:'700'}}>Conversation de ce rêve</Text></Pressable>
-   <Text style={{fontSize:19,fontWeight:'700',color:theme.foreground,marginBottom:10}}>Mes habitudes</Text>
-   {habits.map(h=><View key={h.id} style={{padding:12,backgroundColor:theme.surface,borderRadius:12,marginBottom:10}}>
+   <DreamPhaseSection title="Mes habitudes" subtitle="Petits pas, grands changements.">
+   <Pressable onPress={()=>router.push({pathname:'/chat/[id]',params:{id:'dream-'+dream.id}})} style={{padding:14,borderRadius:12,backgroundColor:theme.surface,borderWidth:1,borderColor:theme.border,flexDirection:'row',alignItems:'center',gap:10,marginBottom:18}}><Ionicons name="chatbubbles-outline" size={20} color="#27845B"/><Text style={{color:theme.foreground,fontWeight:'600',fontSize:13}}>Conversation de ce rêve</Text></Pressable>
+   
+   {habits.map(h=><View key={h.id} style={{padding:14,backgroundColor:theme.surface,borderRadius:12,borderWidth:1,borderColor:theme.border,marginBottom:10}}>
     <Text style={{color:theme.foreground,fontWeight:'700',marginBottom:8}}>{h.title} · {h.frequency==='daily'?'Chaque jour':'Chaque semaine'}</Text>
     <View style={{flexDirection:'row',flexWrap:'wrap',gap:4}}>{Array.from({length: (()=>{const from=new Date(dream.growthStartedAt||dream.createdAt);const until=new Date(dream.goalDate||day());const days=Math.max(1,Math.ceil((until.getTime()-from.getTime())/86400000)+1);return Math.min(2000,h.frequency==='daily'?days:Math.ceil(days/7));})()},(_,i)=>{
      const d=new Date(dream.growthStartedAt||dream.createdAt);d.setDate(d.getDate()+i*(h.frequency==='daily'?1:7));const key=d.toISOString().slice(0,10);const done=h.completed.includes(key);
@@ -161,27 +161,32 @@ export default function DreamExperience({ dream, viewPhase, onBack }: {dream:Dre
    {!historical ? <><Field label="Nouvelle habitude" value={habitTitle} onChange={setHabitTitle} placeholder="Ex. Répéter 20 minutes"/>
    <View style={{flexDirection:'row',gap:8}}>{(['daily','weekly'] as const).map(f=><Pressable key={f} onPress={()=>setFrequency(f)} style={{padding:10,backgroundColor:frequency===f?'#DDEBD9':'#F1ECE5',borderRadius:8}}><Text style={{color:theme.foreground}}>{f==='daily'?'Quotidienne':'Hebdomadaire'}</Text></Pressable>)}</View>
    <Action secondary label="+ Ajouter l’habitude" onPress={()=>{if(!habitTitle.trim())return;setHabits(dream.id,[...habits,{id:uid(),title:habitTitle.trim(),frequency,completed:[]}]);setHabitTitle('');}}/>
-   <Text style={{fontSize:19,fontWeight:'700',color:theme.foreground,marginTop:22,marginBottom:10}}>Étapes marquantes</Text>
+   <Text style={{fontSize:18,fontWeight:'700',color:theme.foreground,marginTop:33,paddingTop:20,borderTopWidth:1,borderColor:theme.border,marginBottom:16}}>Étapes marquantes</Text>
    {(dream.milestones||[]).map(m=><Text key={m.id} style={{padding:12,marginBottom:6,backgroundColor:theme.surface,borderRadius:10,color:theme.foreground}}>★ {m.title}  ·  {m.date}</Text>)}
    <Field label="Nouvelle étape" value={milestone} onChange={setMilestone}/>
    <Action secondary label="+ Conserver ce moment" onPress={()=>{if(milestone.trim())patch(dream.id,{milestones:[...(dream.milestones||[]),{id:uid(),title:milestone.trim(),date:day()}]});setMilestone('');}}/>
-   <Text style={{fontSize:19,fontWeight:'700',color:theme.foreground,marginTop:22,marginBottom:10}}>Mes pensées</Text>
+   <Text style={{fontSize:18,fontWeight:'700',color:theme.foreground,marginTop:33,paddingTop:20,borderTopWidth:1,borderColor:theme.border,marginBottom:16}}>Mon journal</Text>
    {(dream.thoughts||[]).map(t=><Text key={t.id} style={{fontFamily:HANDWRITING_FAMILY,fontSize:23,color:theme.foreground,padding:12,backgroundColor:theme.surface,marginBottom:7,borderRadius:10}}>{t.text}</Text>)}
    <Field label="Une pensée à garder" value={thought} onChange={setThought} multiline/>
    <Action secondary label="+ Ajouter ma pensée" onPress={()=>{if(thought.trim())patch(dream.id,{thoughts:[...(dream.thoughts||[]),{id:uid(),text:thought.trim(),date:day()}]});setThought('');}}/>
    <Action label="Préparer ma floraison" onPress={()=>router.push({pathname:'/my-dream/flower/[id]',params:{id:dream.id}})}/></> : null}
+   </DreamPhaseSection>
   </> : null}
   {phase==='Témoignage' ? <>
-   <View style={{height:5,backgroundColor:pink,borderRadius:3,marginVertical:12}}/>
-   <Text style={{fontWeight:'800',color:pink,fontSize:12,letterSpacing:2}}>LÀ OÙ TOUT A COMMENCÉ</Text>
-   <Text style={{fontSize:18,fontFamily:HANDWRITING_FAMILY,color:theme.foreground,marginTop:12}}>{dream.summary}</Text>
-   {dream.image?<Image source={{uri:dream.image}} style={{width:'100%',height:155,borderRadius:11,marginVertical:12}}/>:null}
-   <Text style={{fontWeight:'800',color:pink,fontSize:12,letterSpacing:2,marginTop:24}}>ET AUJOURD’HUI</Text>
-   <Text style={{fontWeight:'800',fontSize:25,color:theme.foreground,marginVertical:12}}>{dream.title}</Text>
-   <Text style={{color:theme.foreground,fontSize:16,lineHeight:24}}>{dream.testimony?.comment}</Text>
-   {(dream.testimony?.mediaItems||[]).map((m,i)=><Pressable key={i} onPress={()=>void Linking.openURL(m.uri)} style={{backgroundColor:theme.surface,borderRadius:12,padding:13,marginTop:12,flexDirection:'row',alignItems:'center',gap:12}}>{m.kind==='photo'?<Image source={{uri:m.uri}} style={{width:64,height:64,borderRadius:7}}/>:<Ionicons name={m.kind==='document'?'document-text-outline':m.kind==='audio'?'musical-notes':'videocam-outline'} size={30} color={pink}/>}<Text style={{color:theme.foreground,flex:1}}>{m.name}</Text><Ionicons name="open-outline" size={18} color={pink}/></Pressable>)}
-   <Text style={{fontSize:18,fontWeight:'800',color:theme.foreground,marginTop:24}}>Le chemin parcouru</Text>
-   {(dream.milestones||[]).map(m=><Text key={m.id} style={{color:theme.foreground,marginTop:10}}>★ {m.title}</Text>)}
+    <DreamPhaseSection title="Au commencement">
+      <Text style={{fontSize:22,fontFamily:HANDWRITING_FAMILY,color:theme.foreground,lineHeight:32,marginBottom:14}}>{dream.summary}</Text>
+      {dream.image?<Image source={{uri:dream.image}} resizeMode="cover" style={{width:'100%',height:190,borderRadius:12,marginBottom:8}}/>:null}
+    </DreamPhaseSection>
+    <DreamPhaseSection title="Et aujourd'hui" subtitle="Le résultat de ce qui a été semé.">
+      <Text style={{color:theme.foreground,fontSize:16,lineHeight:26,marginBottom:14}}>{dream.testimony?.comment}</Text>
+      {(dream.testimony?.mediaItems||[]).map((m,i)=><Pressable key={i} onPress={()=>void Linking.openURL(m.uri)} style={{backgroundColor:theme.surface,borderRadius:12,padding:13,marginTop:9,flexDirection:'row',alignItems:'center',gap:12,borderWidth:1,borderColor:theme.border}}>
+        {m.kind==='photo'?<Image source={{uri:m.uri}} style={{width:64,height:64,borderRadius:8}}/>:<Ionicons name={m.kind==='document'?'document-text-outline':m.kind==='audio'?'musical-notes':'videocam-outline'} size={28} color={theme.foreground}/>}
+        <Text style={{color:theme.foreground,flex:1,fontSize:12}}>{m.name}</Text><Ionicons name="open-outline" size={17} color={theme.muted}/>
+      </Pressable>)}
+    </DreamPhaseSection>
+    {(dream.milestones||[]).length>0?<DreamPhaseSection title="Le chemin parcouru">
+      {(dream.milestones||[]).map(m=><View key={m.id} style={{flexDirection:'row',gap:10,alignItems:'center',paddingVertical:9}}><Ionicons name="checkmark-circle-outline" size={18} color="#27845B"/><Text style={{color:theme.foreground,fontSize:13}}>{m.title}</Text></View>)}
+    </DreamPhaseSection>:null}
   </> : null}
  {!readOnly ? <Pressable onPress={()=>confirm('Supprimer ce rêve ?', 'Cette suppression effacera ce rêve et ses données locales.', ()=>{remove(dream.id);router.replace('/my-space');})} style={{alignItems:'center',marginTop:35,padding:15}}><Text style={{color:'#B24C59',fontSize:12}}>Supprimer ce rêve</Text></Pressable> : null}
  </ScrollView>;
