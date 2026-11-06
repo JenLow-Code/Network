@@ -383,19 +383,20 @@ export function DreamPhaseCard({ item, width, variant, onOpen }: Props) {
           <Svg pointerEvents="none" width={photoWidth} height={mediaHeight} style={StyleSheet.absoluteFill}>
             <Defs>
               <LinearGradient id={gradientId + '-shade'} x1="0%" y1="0%" x2="0%" y2="100%">
-                {/* Four reading zones: clear photograph, gradual shade, legible caption, beige fade. */}
-                <Stop offset="0%" stopColor="#09070A" stopOpacity={0.03} />
-                <Stop offset="31%" stopColor="#09070A" stopOpacity={0.04} />
-                <Stop offset="55%" stopColor="#09070A" stopOpacity={0.23} />
-                <Stop offset="76%" stopColor="#09070A" stopOpacity={0.59} />
-                <Stop offset="100%" stopColor="#09070A" stopOpacity={0.37} />
+                {/* Four zones: natural image, readable shaded caption, fade, beige page. */}
+                <Stop offset="0%" stopColor="#09070A" stopOpacity={0.04} />
+                <Stop offset="30%" stopColor="#09070A" stopOpacity={0.09} />
+                <Stop offset="46%" stopColor="#09070A" stopOpacity={0.36} />
+                <Stop offset="65%" stopColor="#09070A" stopOpacity={0.65} />
+                <Stop offset="77%" stopColor="#09070A" stopOpacity={0.66} />
+                <Stop offset="100%" stopColor="#09070A" stopOpacity={0.14} />
               </LinearGradient>
               {!compact && (
                 <LinearGradient id={gradientId + '-fade'} x1="0%" y1="0%" x2="0%" y2="100%">
                   <Stop offset="0%" stopColor={theme.background} stopOpacity={0} />
-                  <Stop offset="71%" stopColor={theme.background} stopOpacity={0} />
-                  <Stop offset="82%" stopColor={theme.background} stopOpacity={0.24} />
-                  <Stop offset="92%" stopColor={theme.background} stopOpacity={0.80} />
+                  <Stop offset="76%" stopColor={theme.background} stopOpacity={0} />
+                  <Stop offset="82%" stopColor={theme.background} stopOpacity={0.13} />
+                  <Stop offset="91%" stopColor={theme.background} stopOpacity={0.70} />
                   <Stop offset="97%" stopColor={theme.background} stopOpacity={1} />
                   <Stop offset="100%" stopColor={theme.background} stopOpacity={1} />
                 </LinearGradient>
@@ -406,16 +407,17 @@ export function DreamPhaseCard({ item, width, variant, onOpen }: Props) {
           </Svg>
           <View pointerEvents="none" style={{
             position: 'absolute',
-            top: compact ? inset - 4 : 21,
-            right: compact ? inset - 4 : 23,
+            top: compact ? inset - 4 : 29,
+            right: compact ? inset - 4 : 43,
           }}>
-            <DreamPhaseIcon phase="Témoignage" size={compact ? 47 : 76} />
+            <DreamPhaseIcon phase="Témoignage" size={compact ? 47 : 80} />
           </View>
           <View style={{
             position: 'absolute',
-            bottom: compact ? inset : 74,
-            left: compact ? inset : 0,
-            right: compact ? inset : 12,
+            // Keep the *entire* white caption above the start of the beige fade.
+            bottom: compact ? inset : Math.round(mediaHeight * 0.26),
+            left: compact ? inset : 20,
+            right: compact ? inset : 20,
             gap: compact ? 5 : 7,
           }}>
             {heading('#FFFFFF')}
