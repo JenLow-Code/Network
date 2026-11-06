@@ -54,6 +54,7 @@ function PhaseMarker({
   const sign = position === 'top' || position === 'left' ? 1 : -1;
   const responder = useRef(PanResponder.create({
     // Capture the handle from touch-down so the surrounding full-screen swipe never steals it.
+    onStartShouldSetPanResponderCapture: () => enabledRef.current,
     onStartShouldSetPanResponder: () => enabledRef.current,
     onMoveShouldSetPanResponder: (_, g) => {
       const main = inward(g.dx, g.dy);
