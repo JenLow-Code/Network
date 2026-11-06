@@ -386,23 +386,22 @@ export function DreamPhaseCard({ item, width, variant, onOpen }: Props) {
           elevation: 0,
         }}>
           {!!image && <Image source={{ uri: image }} resizeMode="cover" style={StyleSheet.absoluteFill} />}
-          {Platform.OS === 'web' && !compact ? (
-            // Detail on web uses CSS to combine the dark and beige fades.
-            // Small Discovery tiles use an SVG with a per-instance unique id,
-            // because React Native Web can discard backgroundImage on View.
-
-            <View
-              pointerEvents="none"
-              style={[
-                StyleSheet.absoluteFill,
-                {
-                  backgroundImage: [
-                    'linear-gradient(to bottom, transparent 0%, ' + theme.background + '26 50%, ' + theme.background + '4D 60%, ' + theme.background + 'B3 70%, ' + theme.background + 'D9 80%, ' + theme.background + ' 100%)',
-                    'linear-gradient(to bottom, rgba(9,7,10,0.7) 0%, rgba(9,7,10,0.7) 30%, rgba(9,7,10,0.6) 46%, rgba(9,7,10,0.6) 65%, rgba(9,7,10,0.2) 77%, rgba(9,7,10,0.1) 100%)',
-                  ].join(', '),
-                } as any,
-              ]}
-            />
+          {Platform.OS === 'web' ? (
+            // Use an actual DOM element so React Native Web does not discard
+            // the background-image CSS. Both contexts get the same CSS behavior
+            // whether opened from Discovery or "Continuer l'inspiration".
+            React.createElement('div', {
+              'aria-hidden': true,
+              style: {
+                position: 'absolute', inset: 0, pointerEvents: 'none',
+                backgroundImage: compact
+                  ? 'linear-gradient(to bottom, rgba(9,7,10,0) 0%, rgba(9,7,10,0) 66%, rgba(9,7,10,0.24) 82%, rgba(9,7,10,0.54) 100%)'
+                  : [
+                      'linear-gradient(to bottom, transparent 0%, ' + theme.background + '26 50%, ' + theme.background + '4D 60%, ' + theme.background + 'B3 70%, ' + theme.background + 'D9 80%, ' + theme.background + ' 100%)',
+                      'linear-gradient(to bottom, rgba(9,7,10,0.7) 0%, rgba(9,7,10,0.7) 30%, rgba(9,7,10,0.6) 46%, rgba(9,7,10,0.6) 65%, rgba(9,7,10,0.2) 77%, rgba(9,7,10,0.1) 100%)',
+                    ].join(', '),
+              },
+            })
           ) : (
           <Svg pointerEvents="none" width={photoWidth} height={mediaHeight} style={StyleSheet.absoluteFill}>
             <Defs>
@@ -469,44 +468,36 @@ export function DreamPhaseCard({ item, width, variant, onOpen }: Props) {
               </Text>
             </View>
           ) : (
-            <>
-              {/* The title ends near 64% of the photograph. The subtitle is
-                  anchored 62px above the bottom, just above "En savoir plus".
-                  Long descriptions remain in its information panel. */}
-              <View style={{
-                position: 'absolute',
-                bottom: Math.round(mediaHeight * 0.36),
-                left: 20,
-                right: 20,
+            // One naturally flowing title + subtitle block, anchored just
+            // above the in-photo "En savoir plus" link. Unlike two separate
+            // absolute offsets, wrapped titles cannot create a huge gap.
+            <View style={{
+              position: 'absolute',
+              bottom: 78,
+              left: 20,
+              right: 20,
+              gap: 9,
+            }}>
+              <Text style={{
+                fontFamily: serif,
+                fontSize: titleSize,
+                lineHeight: titleSize + 8,
+                letterSpacing: -0.65,
+                color: '#FFFFFF',
+                textShadowColor: 'rgba(0,0,0,0.68)',
+                textShadowOffset: { width: 0, height: 1 },
+                textShadowRadius: 5,
               }}>
-                <Text style={{
-                  fontFamily: serif,
-                  fontSize: titleSize,
-                  lineHeight: titleSize + 8,
-                  letterSpacing: -0.65,
-                  color: '#FFFFFF',
-                  textShadowColor: 'rgba(0,0,0,0.58)',
-                  textShadowOffset: { width: 0, height: 1 },
-                  textShadowRadius: 4,
-                }}>
-                  {item.title}
-                </Text>
-              </View>
-              <View style={{
-                position: 'absolute',
-                bottom: 62,
-                left: 20,
-                right: 20,
+                {item.title}
+              </Text>
+              <Text numberOfLines={3} style={{
+                color: dark ? theme.foreground : '#171717',
+                fontSize: 15,
+                lineHeight: 22,
               }}>
-                <Text numberOfLines={3} style={{
-                  color: dark ? theme.foreground : '#171717',
-                  fontSize: 15,
-                  lineHeight: 22,
-                }}>
-                  {item.summary}
-                </Text>
-              </View>
-            </>
+                {item.summary}
+              </Text>
+            </View>
           )}
           {/* A fully opaque final edge prevents the photograph's last pixel from forming a dark rule. */}
           {!compact && (
