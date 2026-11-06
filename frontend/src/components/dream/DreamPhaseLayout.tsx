@@ -1,10 +1,9 @@
 import React from 'react';
-import { Image, Pressable, Text, TextInput, View } from 'react-native';
+import { Pressable, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/theme/AppTheme';
 import type { DreamEntry } from '@/domain/dreamWorkspace';
 import { DREAM_PHASES, PHASE_LABELS, type DreamPhase } from '@/domain/publication';
-import { dreamPhaseImageUris } from '../../../assets/dreamPhaseImages';
 
 /** One editorial design language for all four dream phases. */
 export const phaseAccent: Record<DreamPhase, string> = {
@@ -38,15 +37,15 @@ export function DreamPhaseHeader({
         <View style={{ minWidth: 42, alignItems: 'flex-end' }}>{action || (readOnly ? <Ionicons name="lock-closed-outline" size={17} color={theme.muted} /> : null)}</View>
       </View>
 
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 17 }}>
-        <Image source={{ uri: dreamPhaseImageUris[phase] }} resizeMode="contain" style={{ width: 46, height: 46 }} />
-        <View style={{ flex: 1 }}>
-          <Text style={{ color: accent, fontSize: 10, letterSpacing: 1.6, fontWeight: '800', marginBottom: 4 }}>
-            {String(index + 1).padStart(2, '0')} / 04
-          </Text>
-          <Text style={{ color: theme.foreground, fontSize: 15, fontWeight: '700' }}>{PHASE_LABELS[phase]}</Text>
-        </View>
-        {readOnly ? <Text style={{ color: theme.muted, fontSize: 11 }}>Souvenir</Text> : null}
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 21 }}>
+        <View style={{ width: 28, height: 3, borderRadius: 3, backgroundColor: accent }}/>
+        <Text style={{ color: accent, fontSize: 11, letterSpacing: 1.4, fontWeight: '700', textTransform: 'uppercase' }}>
+          {PHASE_LABELS[phase]}
+        </Text>
+        <Text style={{ color: theme.muted, fontSize: 11, marginLeft: 3 }}>
+          {String(index + 1).padStart(2, '0')} / 04
+        </Text>
+        {readOnly ? <Text style={{ color: theme.muted, fontSize: 11, marginLeft: 'auto' }}>Souvenir</Text> : null}
       </View>
       <Text style={{ color: theme.foreground, fontFamily: 'serif', fontSize: 33, lineHeight: 41, letterSpacing: -0.5, marginBottom: description ? 10 : 19 }}>
         {dream.title}
