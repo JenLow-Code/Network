@@ -42,6 +42,9 @@ export type DreamResource = {
   linkedBlockId?: string;
   personId?: string;
   amount?: number;
+  illustration?: NonNullable<DreamPublication['resources']>[number]['illustration'];
+  requiredLevel?: string;
+  description?: string;
 };
 export type DreamHabit = {
   id: string;
@@ -100,6 +103,9 @@ export function fromDemo(d: DreamPublication): DreamEntry {
     summary: d.summary,
     image: d.image,
     needs: d.needs,
+    motivation: d.motivation,
+    goalDate: d.goalDate,
+    resources: d.resources?.map((resource, index) => ({ ...resource, id: 'demo-' + d.id + '-' + index, category: resource.category || 'practical' })),
     notes: [],
     additions: [],
     createdAt: new Date().toISOString(),
