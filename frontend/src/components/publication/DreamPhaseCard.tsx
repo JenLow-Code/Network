@@ -360,11 +360,12 @@ export function DreamPhaseCard({ item, width, variant, onOpen }: Props) {
   // gradient in the bottom third. Detail has its own dark/photo-to-page gradients,
   // a mid-photo title and a dark subtitle on the beige fade.
   const image = item.resultImage || item.image;
+  // In detail, the last 56px sit *behind* "En savoir plus" (the content row
+  // overlaps that area). The participation buttons therefore don't move down.
+  const detailFadeOverlap = 56;
   const mediaHeight = compact
     ? Math.max(230, width * 1.40)
-    // The detail title starts at mid-height, while its black subtitle sits near
-    // the beige bottom. Leave enough separation for wrapped titles on phones.
-    : Math.max(410, Math.min(460, width * 0.62));
+    : Math.max(410, Math.min(460, width * 0.62)) + detailFadeOverlap;
   // The detail photograph follows the same edges as the content and reaction rail.
   // Keep the Discovery tile full bleed.
   const photoWidth = compact ? width : width - 2 * inset;
@@ -382,6 +383,25 @@ export function DreamPhaseCard({ item, width, variant, onOpen }: Props) {
           elevation: 0,
         }}>
           {!!image && <Image source={{ uri: image }} resizeMode="cover" style={StyleSheet.absoluteFill} />}
+          {Platform.OS === 'web' ? (
+            // CSS background gradients remain reliable when navigating between
+            // multiple mounted Discovery/detail screens, unlike duplicate SVG IDs.
+            // Keep Discovery's bottom-third shade separate from detail's two fades.
+            <View
+              pointerEvents="none"
+              style={[
+                StyleSheet.absoluteFill,
+                {
+                  backgroundImage: compact
+                    ? 'linear-gradient(to bottom, rgba(9,7,10,0) 0%, rgba(9,7,10,0) 66%, rgba(9,7,10,0.24) 82%, rgba(9,7,10,0.54) 100%)'
+                    : [
+                      'linear-gradient(to bottom, transparent 0%, ' + theme.background + '26 50%, ' + theme.background + '4D 60%, ' + theme.background + 'B3 70%, ' + theme.background + 'D9 80%, ' + theme.background + ' 100%)',
+                      'linear-gradient(to bottom, rgba(9,7,10,0.7) 0%, rgba(9,7,10,0.7) 30%, rgba(9,7,10,0.6) 46%, rgba(9,7,10,0.6) 65%, rgba(9,7,10,0.2) 77%, rgba(9,7,10,0.1) 100%)',
+                    ].join(', '),
+                } as any,
+              ]}
+            />
+          ) : (
           <Svg pointerEvents="none" width={photoWidth} height={mediaHeight} style={StyleSheet.absoluteFill}>
             <Defs>
               {compact ? (
@@ -417,6 +437,7 @@ export function DreamPhaseCard({ item, width, variant, onOpen }: Props) {
             <Rect width="100%" height="100%" fill={'url(#' + gradientId + '-shade)'} />
             {!compact && <Rect width="100%" height="100%" fill={'url(#' + gradientId + '-fade)'} />}
           </Svg>
+          )}
           <View pointerEvents="none" style={{
             position: 'absolute',
             top: compact ? inset - 4 : 32,
@@ -447,10 +468,12 @@ export function DreamPhaseCard({ item, width, variant, onOpen }: Props) {
             </View>
           ) : (
             <>
-              {/* Detail: title begins at the vertical middle of the photograph. */}
+              {/* The TITLE ENDS near 64%, no matter how many lines it wraps.
+                  The SUBTITLE STARTS at 68%, always after the title and on beige.
+                  Long descriptions remain available in the "En savoir plus" panel. */}
               <View style={{
                 position: 'absolute',
-                top: Math.round(mediaHeight * 0.50),
+                bottom: Math.round(mediaHeight * 0.36),
                 left: 20,
                 right: 20,
               }}>
@@ -460,24 +483,23 @@ export function DreamPhaseCard({ item, width, variant, onOpen }: Props) {
                   lineHeight: titleSize + 8,
                   letterSpacing: -0.65,
                   color: '#FFFFFF',
-                  textShadowColor: 'rgba(0,0,0,0.50)',
+                  textShadowColor: 'rgba(0,0,0,0.58)',
                   textShadowOffset: { width: 0, height: 1 },
-                  textShadowRadius: 3,
+                  textShadowRadius: 4,
                 }}>
                   {item.title}
                 </Text>
               </View>
-              {/* The subtitle sits on the light, mostly opaque beige part of the fade. */}
               <View style={{
                 position: 'absolute',
-                bottom: Math.round(mediaHeight * 0.075),
+                top: Math.round(mediaHeight * 0.68),
                 left: 20,
                 right: 20,
               }}>
-                <Text style={{
+                <Text numberOfLines={3} style={{
                   color: dark ? theme.foreground : '#171717',
-                  fontSize: 16,
-                  lineHeight: 23,
+                  fontSize: 15,
+                  lineHeight: 22,
                 }}>
                   {item.summary}
                 </Text>
