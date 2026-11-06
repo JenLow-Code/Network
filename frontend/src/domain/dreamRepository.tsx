@@ -46,7 +46,17 @@ export function DreamProvider({ children }: { children: React.ReactNode }) {
         if (live && v) {
           try {
             const p = JSON.parse(v);
-            if (Array.isArray(p)) setItems(p);
+            if (Array.isArray(p)) setItems(p.map((stored: DreamEntry) => {
+              const seed = initial.find(item => item.id === stored.id);
+              if (!seed) return stored;
+              // Fill missing demo metadata without overwriting the person's saved edits.
+              return {
+                ...stored,
+                resources: stored.resources ?? seed.resources,
+                goalDate: stored.goalDate ?? seed.goalDate,
+                motivation: stored.motivation ?? seed.motivation,
+              };
+            }));
           } catch {}
         }
       })
