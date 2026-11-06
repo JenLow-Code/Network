@@ -1,4 +1,4 @@
-import { Text, TextInput } from '@/i18n/LocalizedText';
+import { Text } from '@/i18n/LocalizedText';
 import React, { useState } from 'react';
 import { Alert, Image, Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -8,130 +8,92 @@ import { useDreams } from '@/domain/dreamRepository';
 import { Nav } from '@/components/navigation/Nav';
 import { TopActions } from '@/components/navigation/TopActions';
 import { pickDreamImage } from '@/lib/pickDreamImage';
+import { useAppTheme } from '@/theme/AppTheme';
+import { DreamPhaseButton, DreamPhaseField } from '@/components/dream/DreamPhaseLayout';
+
 export default function NewDream() {
   const { inspiration } = useLocalSearchParams<{ inspiration?: string }>();
   const { create } = useDreams();
-  const [title, setTitle] = useState(inspiration ? 'Autour de ' + inspiration : ''),
-    [summary, setSummary] = useState(
-      inspiration ? 'Cette inspiration me donne envie de créer quelque chose de nouveau.' : '',
-    ),
-    [image, setImage] = useState(
-      'https://images.unsplash.com/photo-1510915361894-db8b60106cb1?w=800&q=80',
-    );
+  const theme = useAppTheme();
+  const [title, setTitle] = useState(inspiration ? 'Autour de ' + inspiration : '');
+  const [summary, setSummary] = useState(inspiration ? 'Cette inspiration me donne envie de créer quelque chose de nouveau.' : '');
+  const [image, setImage] = useState('');
   const valid = title.trim().length > 2;
+
+  const save = () => {
+    if (!valid) return;
+    const id = create({
+      title: title.trim(),
+      summary: summary.trim(),
+      image: image.trim(),
+      needs: [],
+    });
+    // All newly created dreams enter the same redesigned central DreamHub.
+    router.replace({ pathname: '/my-dream/[id]', params: { id } });
+  };
+
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20, paddingBottom: 30 }}>
-        <View
-          style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
-        >
-          <Pressable onPress={() => router.back()}>
-            <Ionicons name="chevron-back" size={26} />
-          </Pressable>
-          <TopActions />
-        </View>
-        <Text style={{ fontSize: 30, fontWeight: '700', marginVertical: 16 }}>Créer un rêve</Text>
-        <Text style={{ fontSize: 12, color: '#666', marginBottom: 22 }}>
-          Commence simplement. Le titre est définitif une fois créé; tu pourras faire grandir le
-          reste.
-        </Text>
-        <Text style={{ fontWeight: '600', fontSize: 13 }}>Nom du rêve *</Text>
-        <TextInput
-          value={title}
-          onChangeText={setTitle}
-          placeholder="Un résultat concret…"
-          style={{
-            borderWidth: 1,
-            borderColor: '#ddd',
-            borderRadius: 8,
-            padding: 12,
-            marginTop: 7,
-            marginBottom: 17,
-          }}
-        />
-        <Text style={{ fontWeight: '600', fontSize: 13 }}>Mon but</Text>
-        <TextInput
-          multiline
-          value={summary}
-          onChangeText={setSummary}
-          placeholder="Qu'aimerais-tu accomplir ?"
-          style={{
-            borderWidth: 1,
-            borderColor: '#ddd',
-            borderRadius: 8,
-            padding: 12,
-            minHeight: 90,
-            marginTop: 7,
-            marginBottom: 17,
-          }}
-        />
-        <Text style={{ fontWeight: '600', fontSize: 13, marginBottom: 9 }}>Image du rêve</Text>
-        <Pressable
-          onPress={() => pickDreamImage(setImage, message => Alert.alert('Image', message))}
-          style={{
-            borderWidth: 1,
-            borderColor: '#ddd',
-            borderRadius: 8,
-            padding: 12,
-            marginBottom: 10,
-            alignItems: 'center',
-          }}
-        >
-          <Text>Importer une image</Text>
-        </Pressable>
-        <View style={{ flexDirection: 'row', gap: 8, marginBottom: 17 }}>
-          {[
-            'https://images.unsplash.com/photo-1510915361894-db8b60106cb1?w=800',
-            'https://images.unsplash.com/photo-1490750967868-88aa4486c946?w=800',
-          ].map(url => (
-            <Pressable key={url} onPress={() => setImage(url)}>
-              <Image source={{ uri: url }} style={{ width: 95, height: 67, borderRadius: 8 }} />
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 21, paddingTop: 18, paddingBottom: 70 }}>
+        <View style={{ width: '100%', maxWidth: 660, alignSelf: 'center' }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 38 }}>
+            <Pressable onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Retour" style={{ padding: 8, marginLeft: -8 }}>
+              <Ionicons name="arrow-back-outline" color={theme.foreground} size={23}/>
             </Pressable>
-          ))}
-        </View>
-        <View
-          style={{
-            height: 185,
-            borderRadius: 12,
-            overflow: 'hidden',
-            marginBottom: 17,
-            backgroundColor: '#eee',
-            justifyContent: 'flex-end',
-          }}
-        >
-          <Image
-            source={{ uri: image }}
-            style={{ position: 'absolute', width: '100%', height: '100%', opacity: 0.72 }}
-            resizeMode="cover"
-          />
-          <View style={{ backgroundColor: 'rgba(255,255,255,.8)', padding: 12 }}>
-            <Text style={{ fontSize: 23, fontWeight: '700', color: '#222' }}>
-              {title.trim() || 'Mon rêve'}
-            </Text>
-            <Text style={{ fontSize: 11, color: '#555' }}>Semence</Text>
+            <TopActions />
           </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 11, marginBottom: 17 }}>
+            <View style={{ height: 2, width: 27, backgroundColor: '#B88962', borderRadius: 2 }}/>
+            <Text style={{ color: '#B88962', fontSize: 11, fontWeight: '700', letterSpacing: 1.4 }}>SEMENCE · 01 / 04</Text>
+          </View>
+          <Text style={{ fontFamily: 'serif', fontSize: 37, lineHeight: 46, letterSpacing: -0.6, color: theme.foreground, marginBottom: 13 }}>
+            Donner naissance à un rêve
+          </Text>
+          <Text style={{ color: theme.muted, fontSize: 14, lineHeight: 23, marginBottom: 33 }}>
+            Une idée suffit pour commencer. Tu pourras ensuite rassembler tes inspirations et faire grandir ce projet.
+          </Text>
+
+          <DreamPhaseField label="Nom de mon rêve *" value={title} onChange={setTitle} placeholder="Qu'aimerais-tu accomplir ?" />
+          <Text style={{ color: theme.muted, fontSize: 11, marginTop: -6, marginBottom: 18 }}>
+            Le nom sera conservé lors des étapes suivantes.
+          </Text>
+          <DreamPhaseField label="Mon but" value={summary} onChange={setSummary}
+            placeholder="Décris simplement ce que tu souhaites réaliser…" multiline />
+
+          <View style={{ borderTopWidth: 1, borderColor: theme.border, marginTop: 19, paddingTop: 25 }}>
+            <Text style={{ color: theme.foreground, fontSize: 16, fontWeight: '700', marginBottom: 7 }}>Image de couverture</Text>
+            <Text style={{ color: theme.muted, fontSize: 12, lineHeight: 20, marginBottom: 16 }}>
+              Facultative. Tu peux choisir une image maintenant ou plus tard.
+            </Text>
+            <Pressable
+              onPress={() => pickDreamImage(setImage, message => Alert.alert('Image', message))}
+              accessibilityRole="button"
+              style={{
+                borderWidth: 1, borderStyle: 'dashed', borderColor: theme.border,
+                backgroundColor: theme.surface, borderRadius: 13,
+                minHeight: image ? 188 : 110, overflow: 'hidden',
+                alignItems: 'center', justifyContent: 'center',
+              }}
+            >
+              {image ? (
+                <>
+                  <Image source={{ uri: image }} resizeMode="cover" style={{ width: '100%', height: 188 }}/>
+                  <View style={{ backgroundColor: theme.surface, padding: 11, width: '100%', alignItems: 'center' }}>
+                    <Text style={{ color: theme.foreground, fontWeight: '600', fontSize: 12 }}>Changer l'image</Text>
+                  </View>
+                </>
+              ) : (
+                <Text style={{ color: theme.foreground, fontSize: 13, fontWeight: '600' }}>Choisir une image</Text>
+              )}
+            </Pressable>
+          </View>
+          <View style={{ marginTop: 28 }}>
+            <DreamPhaseButton label="Créer ma Semence" onPress={save} disabled={!valid}/>
+          </View>
+          <Text style={{ color: theme.muted, fontSize: 11, lineHeight: 18, marginTop: 15, textAlign: 'center' }}>
+            Ta Semence ne figure pas dans Discovery. Elle reste accessible par un lien direct jusqu'à la Germination.
+          </Text>
         </View>
-        <Text style={{ fontSize: 12, color: '#777', marginBottom: 18 }}>Ta semence sera privée au départ. Tu pourras ajouter des images, chansons, citations, liens et autres inspirations une fois ton rêve créé.</Text>
-        <Pressable
-          disabled={!valid}
-          onPress={() => {
-            const id = create({
-              title: title.trim(),
-              summary: summary.trim(),
-              image: image.trim(),
-              needs: [],
-            });
-            router.replace({ pathname: '/my-dream/[id]', params: { id } });
-          }}
-          style={{
-            backgroundColor: valid ? '#111' : '#bbb',
-            padding: 15,
-            borderRadius: 10,
-            alignItems: 'center',
-          }}
-        >
-          <Text style={{ color: '#fff' }}>Créer mon rêve</Text>
-        </Pressable>
       </ScrollView>
       <Nav />
     </SafeAreaView>
