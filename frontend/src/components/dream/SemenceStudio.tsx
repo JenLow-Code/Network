@@ -8,6 +8,7 @@ import { useAppTheme } from '@/theme/AppTheme';
 import { HANDWRITING_FAMILY } from '@/theme/handwriting';
 import { pickDreamImage } from '@/lib/pickDreamImage';
 import { pickFlowerMedia } from '@/lib/pickFlowerMedia';
+import { DreamPhaseHeader, DreamPhaseSection, DreamPhaseButton } from './DreamPhaseLayout';
 
 const PINK = '#D71D77';
 const groups: { title: string; kinds: { kind: DreamBlockKind; title: string; icon: keyof typeof Ionicons.glyphMap }[] }[] = [
@@ -109,19 +110,17 @@ export default function SemenceStudio({dream,onBack}:{dream:DreamEntry;onBack:()
  const alert=(message:string)=>Platform.OS==='web'?window.alert(message):Alert.alert('Semence',message);
  const chooseMedia=()=>{if(!draft)return;pickFlowerMedia(items=>{if(!items.length)return;change({content:items[0].uri,media:[...(draft.media||[]),...items.map(x=>x.uri)]});},alert);};
  const chooser=(index:number|null)=>{setInsertAt(index);setQuery('');setLibrary(true);};
- return <ScrollView style={{flex:1,backgroundColor:theme.background}} contentContainerStyle={{padding:18,paddingBottom:90,maxWidth:720,width:'100%',alignSelf:'center'}}>
-  <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',marginBottom:18}}>
-   <Pressable onPress={draft?()=>setDraft(null):onBack} style={{padding:8}} accessibilityLabel="Retour"><Ionicons name="chevron-back" size={24} color={theme.foreground}/></Pressable>
-   <Text style={{fontSize:11,fontWeight:'700',letterSpacing:2,color:'#B88962'}}>SEMENCE</Text>
-   {editable?<Pressable onPress={()=>{setEdit(!edit);setLibrary(false);setDraft(null);}} style={{padding:10}}><Text style={{color:PINK,fontWeight:'700'}}>{edit?'Terminer':'Composer'}</Text></Pressable>:<Ionicons name="lock-closed-outline" color={theme.muted} size={19}/>}
-  </View>
-  <Text style={{fontFamily:'serif',fontSize:34,lineHeight:42,color:theme.foreground,marginBottom:12}}>{dream.title}</Text>
-  {!edit || !editable ? <Text style={{fontSize:14,color:theme.muted,lineHeight:22,marginBottom:14}}>{dream.summary}</Text> : null}
-  <View style={{flexDirection:'row',justifyContent:'space-between',marginBottom:22}}>
-   <Text style={{fontSize:11,color:theme.muted}}>Ton espace d'inspiration</Text>
-   <Pressable disabled={!editable} onPress={()=>patch(dream.id,{visibility:dream.visibility==='public'?'private':'public'})} style={{flexDirection:'row',alignItems:'center',gap:6}}><Ionicons name={dream.visibility==='public'?'globe-outline':'lock-closed-outline'} size={15} color={PINK}/><Text style={{color:PINK,fontSize:12}}>{dream.visibility==='public'?'Public':'Privé'}</Text></Pressable>
-  </View>
-  {edit && !draft && !library?<TextInput multiline value={dream.summary} onChangeText={v=>patch(dream.id,{summary:v})} placeholder="Quelle est ton intention ?" style={{borderBottomWidth:1,borderColor:theme.border,color:theme.foreground,fontSize:16,minHeight:65,marginBottom:16}}/>:null}
+ return <ScrollView style={{flex:1,backgroundColor:theme.background}} contentContainerStyle={{paddingHorizontal:19,paddingTop:10,paddingBottom:90,maxWidth:760,width:'100%',alignSelf:'center'}}>
+   <DreamPhaseHeader dream={dream} phase="Rêve" onBack={draft?()=>setDraft(null):onBack} readOnly={!editable}
+      summary={edit&&editable?null:undefined}
+      action={editable?<Pressable onPress={()=>{setEdit(!edit);setLibrary(false);setDraft(null);}} style={{padding:9}}><Text style={{color:theme.foreground,fontWeight:'700',fontSize:12}}>{edit?'Terminer':'Composer'}</Text></Pressable>:undefined}
+   />
+   <View style={{flexDirection:'row',alignItems:'center',gap:7,marginBottom:10}}>
+     <Ionicons name="link-outline" size={16} color={theme.muted}/>
+     <Text style={{color:theme.muted,fontSize:12}}>Semence non répertoriée · publique dès la Germination</Text>
+   </View>
+   <DreamPhaseSection title="Idées & inspirations" subtitle="Donne forme à ton rêve avec des images, mots et références.">
+   {edit && !draft && !library?<TextInput multiline value={dream.summary} onChangeText={v=>patch(dream.id,{summary:v})} placeholder="Quelle est ton intention ?" style={{borderBottomWidth:1,borderColor:theme.border,color:theme.foreground,fontSize:16,minHeight:65,marginBottom:16}}/>:null}
   {!editable ? <View style={{padding:15,borderRadius:12,backgroundColor:theme.surface,borderWidth:1,borderColor:theme.border,marginBottom:16,gap:9}}>
     <View style={{flexDirection:'row',alignItems:'center',gap:8}}><Ionicons name="lock-closed-outline" size={17} color={theme.muted}/><Text style={{color:theme.foreground,fontSize:13,fontWeight:'700'}}>Semence conservée en lecture seule</Text></View>
     <Text style={{color:theme.muted,fontSize:13,lineHeight:20}}>Ce rêve est maintenant en {dream.phase==='Initiation'?'Germination':dream.phase==='Croissance'?'Croissance':'Floraison'}. Ses premières inspirations restent consultables, mais elles ne peuvent plus être modifiées.</Text>
@@ -134,6 +133,7 @@ export default function SemenceStudio({dream,onBack}:{dream:DreamEntry;onBack:()
   </View>
   {dragIndex!==null?<Text style={{fontSize:11,color:PINK,marginBottom:10}}>Déplace le bloc avec la poignée de gauche, relâche pour l'insérer.</Text>:null}
   {edit&&!draft&&!library?<Pressable onPress={()=>chooser(null)} style={{paddingVertical:14,alignItems:'center',borderTopWidth:1,borderColor:theme.border}}><Text style={{color:PINK,fontWeight:'700'}}>＋ Ajouter un bloc</Text></Pressable>:null}
+  </DreamPhaseSection>
   <Modal visible={library || !!draft} animationType="slide" transparent={false} onRequestClose={()=>{setDraft(null);setLibrary(false);}}>
    <View style={{flex:1,backgroundColor:theme.background,paddingTop:Platform.OS==='web'?12:42}}>
     <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{padding:18,paddingBottom:90,maxWidth:720,width:'100%',alignSelf:'center'}}>
@@ -174,8 +174,8 @@ export default function SemenceStudio({dream,onBack}:{dream:DreamEntry;onBack:()
     </ScrollView>
    </View>
   </Modal>
-  {editable&&!edit&&!library&&!draft?<Pressable onPress={()=>setConfirm(true)} style={{marginTop:35,padding:14,borderWidth:1,borderColor:theme.border,borderRadius:11,alignItems:'center'}}><Text style={{color:theme.foreground,fontWeight:'600'}}>Faire germer mon rêve</Text></Pressable>:null}
-  {confirm?<View style={{backgroundColor:theme.surface,padding:17,marginTop:12,borderRadius:12,borderWidth:1,borderColor:theme.border}}><Text style={{fontWeight:'700',fontSize:17,color:theme.foreground}}>Prêt à faire germer ce rêve ?</Text><Text style={{color:theme.muted,marginTop:8,lineHeight:20}}>Ton rêve deviendra public. Tu retrouveras toute cette composition dans son histoire, sans perdre tes inspirations.</Text><Pressable onPress={()=>{patch(dream.id,{visibility:'public'});advance(dream.id);setConfirm(false);onBack();}} style={{backgroundColor:PINK,padding:14,borderRadius:9,marginTop:15}}><Text style={{color:'#fff',textAlign:'center',fontWeight:'700'}}>Confirmer</Text></Pressable><Pressable onPress={()=>setConfirm(false)} style={{padding:13}}><Text style={{color:theme.muted,textAlign:'center'}}>Pas encore</Text></Pressable></View>:null}
+  {editable&&!edit&&!library&&!draft?<DreamPhaseButton label="Faire germer mon rêve" onPress={()=>setConfirm(true)}/>:null}
+  {confirm?<View style={{backgroundColor:theme.surface,padding:17,marginTop:12,borderRadius:12,borderWidth:1,borderColor:theme.border}}><Text style={{fontWeight:'700',fontSize:17,color:theme.foreground}}>Prêt à faire germer ce rêve ?</Text><Text style={{color:theme.muted,marginTop:8,lineHeight:20}}>Ton rêve deviendra public. Tu retrouveras toute cette composition dans son histoire, sans perdre tes inspirations.</Text><DreamPhaseButton label="Confirmer la germination" onPress={()=>{patch(dream.id,{visibility:'public'});advance(dream.id);setConfirm(false);onBack();}}/><Pressable onPress={()=>setConfirm(false)} style={{padding:13}}><Text style={{color:theme.muted,textAlign:'center'}}>Pas encore</Text></Pressable></View>:null}
   <Text style={{color:theme.muted,fontSize:10,marginTop:28,lineHeight:17}}>Les inspirations sont enregistrées localement sur cet appareil. L'import de fichiers est disponible sur le web ; les fichiers volumineux et l'import natif nécessitent encore le service média.</Text>
  </ScrollView>;
 }
