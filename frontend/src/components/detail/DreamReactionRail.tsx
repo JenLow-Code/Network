@@ -33,7 +33,7 @@ export function DreamReactionRail({ item }: { item: Publication }) {
     <View
       style={[
         styles.rail,
-        { backgroundColor: theme.dark ? '#25252A' : '#FFFCF8' },
+        { backgroundColor: theme.dark ? '#343335' : '#F0EBE4' },
       ]}
     >
       <Pressable
