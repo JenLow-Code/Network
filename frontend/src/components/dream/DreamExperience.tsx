@@ -228,26 +228,26 @@ export default function DreamExperience({ dream, viewPhase, onBack, onNavigate }
    {!historical && phase==='Initiation' ? (
      <View style={{gap:11,marginTop:12,marginBottom:21}}>
        {resourceEditable ? <>
-         <Pressable accessibilityRole="button" onPress={()=>{
-           if(!ready){Alert.alert('Préparatifs en cours','Fixe la date objectif et confirme tes besoins avant de faire pousser cette plante.');return;}
-           confirmGrowth();
-         }} style={{minHeight:48,backgroundColor:'#225D42',borderRadius:11,
-           alignItems:'center',justifyContent:'center',paddingHorizontal:16}}>
+         <Pressable accessibilityRole="button" onPress={()=>setGoalDateDialog(true)}
+           style={{minHeight:48,backgroundColor:'#225D42',borderRadius:11,
+             alignItems:'center',justifyContent:'center',paddingHorizontal:16}}>
            <Text style={{color:'#FFFFFF',fontSize:13,fontWeight:'700'}}>Faire pousser</Text>
          </Pressable>
          <Pressable accessibilityRole="button" onPress={()=>{
-           if((dream.pauseCount||0)>=3){Alert.alert('Limite atteinte','Ce rêve a déjà été congelé trois fois.');return;}
+           if((dream.pauseCount||0)>=3){Alert.alert('Limite atteinte','Cette germination a déjà été congelée trois fois.');return;}
            setPauseDeadline('');setFreezeDialog(true);
          }} style={{minHeight:48,borderWidth:1.5,borderColor:'#397F9E',borderRadius:11,
            alignItems:'center',justifyContent:'center',paddingHorizontal:16}}>
            <Text style={{color:'#397F9E',fontSize:13,fontWeight:'700'}}>Congeler</Text>
          </Pressable>
-         <View accessibilityRole="text" style={{minHeight:48,backgroundColor:'#242322',
-           borderRadius:11,alignItems:'center',justifyContent:'center',paddingHorizontal:16}}>
-           <Text style={{color:'#FFFFFF',fontSize:13,fontWeight:'700'}}>
-             {ready?'Préparatifs terminés':'Préparatifs en cours'}
-           </Text>
-         </View>
+         <Pressable accessibilityRole="button" accessibilityLabel="Arracher cette plante"
+           onPress={()=>confirm('Arracher cette plante ?',
+             'Cette action supprimera définitivement ce rêve et ses données sur cet appareil.',
+             ()=>{remove(dream.id);router.replace('/my-space');})}
+           style={{minHeight:48,backgroundColor:'#242322',borderRadius:11,
+             alignItems:'center',justifyContent:'center',paddingHorizontal:16}}>
+           <Text style={{color:'#FFFFFF',fontSize:13,fontWeight:'700'}}>Arracher</Text>
+         </Pressable>
          <Text style={{color:theme.muted,textAlign:'center',fontSize:11}}>
            {(dream.pauseCount||0)}/3 pauses utilisées · date de reprise obligatoire
          </Text>
