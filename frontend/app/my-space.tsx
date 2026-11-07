@@ -12,7 +12,7 @@ import { useAppTheme } from '@/theme/AppTheme';
 
 type ViewFilter = 'Tout' | 'Liste' | 'Congelés';
 const series: { phase: DreamPhase; title: string; sub: string }[] = [
-  { phase: 'Témoignage', title: 'Mes témoignages', sub: 'Des rêves devenus réalité.' },
+  { phase: 'Témoignage', title: 'Fruits potentiels', sub: 'Des rêves accomplis, de possibles nouvelles semences.' },
   { phase: 'Rêve', title: 'Mes semences', sub: 'Les idées que je cultive.' },
   { phase: 'Initiation', title: 'En germination', sub: 'Les projets que je prépare.' },
   { phase: 'Croissance', title: 'En croissance', sub: 'Les rêves qui prennent vie.' },
@@ -97,7 +97,9 @@ export default function MySpace() {
   const list = view === 'Liste';
   const visible = view === 'Congelés' ? items.filter(frozen) : items;
   const testimonies = visible.filter(d => d.phase === 'Témoignage');
-  const unfinished = items.filter(d => d.phase === 'Croissance' && !!d.flowerDraft?.story);
+  const inFlower = (d:DreamEntry) => d.phase==='Croissance' &&
+    (!!d.flowerDraft?.story?.trim() || !!d.flowerDraft?.attachments?.length);
+  const unfinished = visible.filter(inFlower);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
@@ -153,14 +155,14 @@ export default function MySpace() {
         ) : list ? (
           // List mode is a single flat list: no phase headings or category sections.
           <View style={{ paddingHorizontal: side }}>
-            {visible.map(d => <DreamListRow key={d.id} dream={d} />)}
+            {visible.filter(d=>!inFlower(d)).map(d => <DreamListRow key={d.id} dream={d} />)}
           </View>
         ) : (
           <>
             {testimonies.length > 0 ? (
               <View style={{ marginBottom: 30 }}>
                 <View style={{ paddingHorizontal: side, marginBottom: 13, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                  <Text style={{ fontSize: 18, color: theme.foreground, fontWeight: '700', flex: 1 }}>Mes témoignages</Text>
+                  <Text style={{ fontSize: 18, color: theme.foreground, fontWeight: '700', flex: 1 }}>Fruits potentiels</Text>
                   <Text style={{ color: theme.muted, fontSize: 12 }}>{testimonies.length}</Text>
                 </View>
                 <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false}
@@ -185,7 +187,8 @@ export default function MySpace() {
               </View>
             ) : null}
             {series.filter(g => g.phase !== 'Témoignage').map(group => {
-              const dreams = visible.filter(d => d.phase === group.phase);
+              const dreams = visible.filter(d => d.phase === group.phase &&
+    (group.phase!=='Croissance' || !inFlower(d)));
               if (!dreams.length) return null;
               return (
                 <View key={group.phase} style={{ marginBottom: compact ? 27 : 36 }}>
@@ -207,24 +210,42 @@ export default function MySpace() {
           </>
         )}
 
-        {unfinished.length > 0 && view !== 'Congelés' ? (
-          <View style={{ paddingHorizontal: side, paddingTop: 8 }}>
-            <Text style={{ fontSize: 15, color: theme.foreground, fontWeight: '700', marginBottom: 11 }}>
-              Floraisons à terminer
-            </Text>
-            {unfinished.map(d => (
-              <Pressable key={d.id} accessibilityRole="button"
-                onPress={() => router.push({ pathname: '/my-dream/flower/[id]', params: { id: d.id } })}
-                style={{ padding: 14, marginBottom: 8, borderRadius: 10,
-                  borderWidth: 1, borderColor: theme.border, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                <Text numberOfLines={1} style={{ flex: 1, fontSize: 12, fontWeight: '700', color: theme.foreground }}>
-                  {d.title}
-                </Text>
-                <Ionicons name="chevron-forward" size={17} color={theme.muted}/>
-              </Pressable>
-            ))}
+        {unfinished.length>0 && view!=='Congelés' ? (
+          <View style={{marginTop:6,marginBottom:26}}>
+            <View style={{paddingHorizontal:side,marginBottom:12}}>
+              <Text style={{fontSize:17,fontWeight:'700',color:theme.foreground}}>En floraison</Text>
+              <Text style={{fontSize:11,color:theme.muted,marginTop:4}}>Prépare et partage le résultat de ton rêve.</Text>
+            </View>
+            {view==='Liste' ? (
+              <View style={{paddingHorizontal:side}}>
+                {unfinished.map(d=><Pressable key={d.id} accessibilityRole="button"
+                  onPress={()=>router.push({pathname:'/my-dream/flower/[id]',params:{id:d.id}})}
+                  style={{flexDirection:'row',alignItems:'center',paddingVertical:12,gap:12,
+                    borderBottomWidth:1,borderColor:theme.border}}>
+                  <Image source={{uri:d.flowerDraft?.attachments?.find(m=>m.kind==='photo')?.uri || d.image}}
+                    style={{width:61,height:61,borderRadius:8}}/>
+                  <Text numberOfLines={2} style={{flex:1,color:theme.foreground,fontSize:14,fontWeight:'700'}}>{d.title}</Text>
+                  <Ionicons name="chevron-forward" size={18} color={theme.muted}/>
+                </Pressable>)}
+              </View>
+            ):(
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{paddingHorizontal:side,gap:11}}>
+                {unfinished.map(d=><Pressable key={d.id} accessibilityRole="button"
+                  accessibilityLabel={'Reprendre ma Floraison : '+d.title}
+                  onPress={()=>router.push({pathname:'/my-dream/flower/[id]',params:{id:d.id}})}
+                  style={{width:tileWidth,height:compact?137:165,borderRadius:11,overflow:'hidden'}}>
+                  <Image source={{uri:d.flowerDraft?.attachments?.find(m=>m.kind==='photo')?.uri||d.image}}
+                    resizeMode="cover" style={{width:'100%',height:'100%'}}/>
+                  <View style={{position:'absolute',left:0,right:0,top:0,bottom:0,
+                    backgroundColor:'rgba(0,0,0,.32)'}}/>
+                  <Text numberOfLines={2} style={{position:'absolute',bottom:12,left:12,right:12,
+                    color:'#FFFFFF',fontWeight:'700',fontSize:14}}>{d.title}</Text>
+                </Pressable>)}
+              </ScrollView>
+            )}
           </View>
-        ) : null}
+        ):null}
       </ScrollView>
       <Nav />
     </SafeAreaView>
