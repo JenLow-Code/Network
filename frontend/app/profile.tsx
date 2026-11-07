@@ -1,5 +1,5 @@
 import { Text, TextInput } from '@/i18n/LocalizedText';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Image, Modal, Pressable, ScrollView, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -57,6 +57,11 @@ export default function Profile() {
   const [talents, setTalents] = useState<Talent[]>(initial);
   const [loaded, setLoaded] = useState(false);
   const [newTalent, setNewTalent] = useState('');
+  const [addTalentOpen,setAddTalentOpen]=useState(false);
+  const scrollRef=useRef<ScrollView>(null);
+  const talentY=useRef(0);
+  const postsY=useRef(0);
+  const scrollTo=(y:number)=>scrollRef.current?.scrollTo({y:Math.max(0,y-18),animated:true});
   const [selectedTalent, setSelectedTalent] = useState<number | null>(null);
   const [featuredId, setFeaturedId] = useState<string | null>(null);
   const pinKey='jenlow.public-profile.featured.v1.'+app.name;
@@ -147,7 +152,7 @@ export default function Profile() {
   const privateDreams=myLocalDreams.filter(d=>d.visibility!=='public');
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
-      <ScrollView
+      <ScrollView ref={scrollRef}
         contentContainerStyle={{
           paddingHorizontal: 18,
           paddingTop: 12,
@@ -158,13 +163,14 @@ export default function Profile() {
         }}
       >
         <PageHeader />
-        <View
-          style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
-        >
-          <Text style={{ fontSize: 29, fontWeight: '800', color: theme.foreground }}>
-            Mon profil
-          </Text>
-          
+        <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
+          <Text style={{fontSize:29,fontWeight:'800',color:theme.foreground}}>Mon profil</Text>
+          <Pressable onPress={()=>router.push('/profile-preview')} accessibilityRole="button"
+            style={{padding:11,borderWidth:1,borderColor:theme.border,borderRadius:10,
+              flexDirection:'row',alignItems:'center',gap:7}}>
+            <Ionicons name="eye-outline" size={18} color={theme.foreground}/>
+            <Text style={{fontSize:12,color:theme.foreground,fontWeight:'700'}}>Aperçu</Text>
+          </Pressable>
         </View>
         <View style={{ alignItems: 'center', marginTop: 23 }}>
           {avatar ? (
@@ -198,14 +204,16 @@ export default function Profile() {
           <Text style={{fontSize:11,color:theme.muted,fontWeight:'700',letterSpacing:1.25,marginBottom:12}}>MON ESPACE PERSONNEL</Text>
           <View style={{flexDirection:'row',gap:10,flexWrap:'wrap'}}>
             {([
+              {title:'Mes talents',subtitle:'Compétences et niveaux',icon:'sparkles-outline',path:'talents',color:'#27845B'},
+              {title:'Mes publications',subtitle:'Ce que je partage',icon:'albums-outline',path:'publications',color:'#CB245C'},
+              {title:'Mes musiques',subtitle:'Mes morceaux',icon:'musical-note-outline',path:'music',color:'#7364A6'},
               {title:'Mes prières',subtitle:'Intentions & suivis',icon:'heart-outline',path:'/prayers',color:'#C83D77'},
               {title:'Paramètres',subtitle:'Compte & préférences',icon:'settings-outline',path:'/settings',color:'#647A8D'},
-              {title:'Mes rêves',subtitle:'Mes projets en cours',icon:'layers-outline',path:'/my-space',color:'#26865F'},
             ] as const).map(link => (
               <Pressable key={link.path} accessibilityRole="button" accessibilityLabel={link.title}
-                onPress={()=>router.push(link.path)}
+                onPress={()=>link.path==='talents'?scrollTo(talentY.current):link.path==='publications'?scrollTo(postsY.current):link.path==='music'?router.push({pathname:'/music-hub',params:{mine:'1'}}):router.push(link.path as '/prayers' | '/settings')}
                 style={{
-                  width:width<570?'100%':'31.8%',padding:16,borderWidth:1,borderColor:theme.border,
+                  width:width<570?'100%':'31.8%',padding:13,borderWidth:1,borderColor:theme.border,
                   borderRadius:12,backgroundColor:theme.surface,flexDirection:'row',alignItems:'center',gap:13,
                   minHeight:70,
                 }}>
@@ -222,17 +230,9 @@ export default function Profile() {
             ))}
           </View>
         </View>
-        <Text
-          style={{
-            fontSize: 19,
-            fontWeight: '800',
-            color: theme.foreground,
-            marginTop: 24,
-            marginBottom: 7,
-          }}
-        >
-          Mes talents
-        </Text>
+        <View onLayout={e=>{talentY.current=e.nativeEvent.layout.y;}}>
+          <Text style={{fontSize:19,fontWeight:'800',color:theme.foreground,marginTop:24,marginBottom:7}}>Mes talents</Text>
+        </View>
         <Text style={{ fontSize: 12, color: theme.muted, lineHeight: 18 }}>
           Choisis ton niveau et ce que tu souhaites partager. Les talents seront visibles dans
           Découvrir lorsque les profils seront publiés.
