@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useIncomingShare } from 'expo-sharing';
 import { Nav } from '@/components/navigation/Nav';
+import { PageHeader } from '@/components/navigation/PageHeader';
 const parseRef = (raw: string) => {
   const match = raw.match(
     /(?:psaumes?|psalms?|psalm|salmos?|salmo)\s*(\d{1,3})\s*(?:[:.,]\s*(\d{1,3}))?/i,
@@ -26,9 +27,7 @@ export default function ImportVerse() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20 }}>
-        <Pressable onPress={close}>
-          <Ionicons name="chevron-back" size={26} />
-        </Pressable>
+        <PageHeader onBack={close} />
         <Text style={{ fontFamily: 'Caveat_700Bold', fontSize: 33, marginTop: 17 }}>
           Recevoir un verset
         </Text>
