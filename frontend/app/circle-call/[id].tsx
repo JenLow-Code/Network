@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Nav } from '@/components/navigation/Nav';
+import { PageHeader } from '@/components/navigation/PageHeader';
 import { myCircle } from '@/mocks/demoCircle';
 export default function CircleCall() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -12,9 +13,7 @@ export default function CircleCall() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
       <View style={{ flex: 1, padding: 23 }}>
-        <Pressable onPress={() => router.back()}>
-          <Ionicons name="chevron-back" size={27} />
-        </Pressable>
+        <PageHeader />
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
           <Ionicons name="videocam-outline" size={53} color="#D71D77" />
           <Text style={{ fontSize: 20, fontWeight: '700', marginTop: 14 }}>
