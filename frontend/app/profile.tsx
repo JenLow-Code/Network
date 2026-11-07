@@ -194,6 +194,34 @@ export default function Profile() {
           {field('bio','Ma description')}{field('city','Ma ville')}{field('church','Ma communauté')}
           <Pressable onPress={()=>setEdit(null)} style={{padding:10,alignItems:'center'}}><Text style={{color:theme.muted}}>Fermer</Text></Pressable>
         </View>:null}
+        <View style={{marginTop:28,marginBottom:18}}>
+          <Text style={{fontSize:11,color:theme.muted,fontWeight:'700',letterSpacing:1.25,marginBottom:12}}>MON ESPACE PERSONNEL</Text>
+          <View style={{flexDirection:'row',gap:10,flexWrap:'wrap'}}>
+            {([
+              {title:'Mes prières',subtitle:'Intentions & suivis',icon:'heart-outline',path:'/prayers',color:'#C83D77'},
+              {title:'Paramètres',subtitle:'Compte & préférences',icon:'settings-outline',path:'/settings',color:'#647A8D'},
+              {title:'Mes rêves',subtitle:'Mes projets en cours',icon:'layers-outline',path:'/my-space',color:'#26865F'},
+            ] as const).map(link => (
+              <Pressable key={link.path} accessibilityRole="button" accessibilityLabel={link.title}
+                onPress={()=>router.push(link.path)}
+                style={{
+                  width:width<570?'100%':'31.8%',padding:16,borderWidth:1,borderColor:theme.border,
+                  borderRadius:12,backgroundColor:theme.surface,flexDirection:'row',alignItems:'center',gap:13,
+                  minHeight:70,
+                }}>
+                <View style={{width:38,height:38,borderRadius:11,backgroundColor:theme.background,
+                  justifyContent:'center',alignItems:'center'}}>
+                  <Ionicons name={link.icon} size={21} color={link.color}/>
+                </View>
+                <View style={{flex:1,gap:4}}>
+                  <Text style={{color:theme.foreground,fontWeight:'700',fontSize:14}}>{link.title}</Text>
+                  <Text style={{color:theme.muted,fontSize:11}}>{link.subtitle}</Text>
+                </View>
+                <Ionicons name="chevron-forward-outline" size={17} color={theme.muted}/>
+              </Pressable>
+            ))}
+          </View>
+        </View>
         <Text
           style={{
             fontSize: 19,
@@ -258,21 +286,6 @@ export default function Profile() {
           </View>
         ):null}
         {myPublicPosts.length?<ProfilePublicationFeed items={myPublicPosts} contentWidth={areaWidth} featuredId={featuredId} onFeature={feature}/>:<Text style={{color:theme.muted,fontSize:13}}>{myLocalDreams.length?'Aucune autre publication publique pour le moment.':'Aucune publication pour le moment.'}</Text>}
-        <View style={{
-          marginTop: 31, paddingVertical: 16, borderTopWidth: 1, borderColor: theme.border,
-          flexDirection: 'row', justifyContent: 'center', gap: 23,
-        }}>
-          <Pressable onPress={()=>router.push('/prayers')} accessibilityRole="button"
-            style={{flexDirection:'row',alignItems:'center',gap:6,padding:9}}>
-            <Ionicons name="heart-outline" size={17} color={theme.foreground}/>
-            <Text style={{color:theme.foreground,fontSize:12,fontWeight:'600'}}>Mes prières</Text>
-          </Pressable>
-          <Pressable onPress={()=>router.push('/settings')} accessibilityRole="button"
-            style={{flexDirection:'row',alignItems:'center',gap:6,padding:9}}>
-            <Ionicons name="settings-outline" size={17} color={theme.foreground}/>
-            <Text style={{color:theme.foreground,fontSize:12,fontWeight:'600'}}>Paramètres</Text>
-          </Pressable>
-        </View>
       </ScrollView>
       <Modal visible={selectedTalent!==null} transparent animationType="fade" onRequestClose={()=>setSelectedTalent(null)}>
         <View style={{flex:1,backgroundColor:'rgba(0,0,0,0.6)',justifyContent:'center',padding:18}}>
