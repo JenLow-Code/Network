@@ -215,25 +215,6 @@ export function DreamPhaseCard({ item, width, variant, onOpen }: Props) {
   );
 
   if (item.phase === 'Rêve') {
-    // Discovery cards use one real cover photo rather than the older mosaic.
-    // The larger detail view retains its inspiration gallery and interactions.
-    if (compact) {
-      return (
-        <View style={[base, { backgroundColor: neutral }]}>
-          {withOpen(
-            <View style={{ padding: inset, gap: 11 }}>
-              {topRight(dark ? '#CCBCA9' : '#74594B')}
-              {heading(dark ? '#F5F1EC' : '#292622')}
-              <Image
-                source={{ uri: item.image }}
-                resizeMode="cover"
-                style={{ width: '100%', height: Math.max(142, width * 0.76), backgroundColor: dark ? '#353535' : '#DDD7CB' }}
-              />
-            </View>,
-          )}
-        </View>
-      );
-    }
     const gallery = (item.galleryImages || []).filter(Boolean);
     const images = gallery.length ? gallery : [item.image];
     const thumbnailHeight = compact ? Math.max(64, width * 0.37) : Math.min(185, width * 0.24);
