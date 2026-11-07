@@ -291,16 +291,54 @@ export default function SemenceStudio({dream,onBack,onNavigate}:{dream:DreamEntr
   {edit&&library&&!draft?<View style={{padding:14,backgroundColor:theme.surface,borderRadius:14,borderWidth:1,borderColor:theme.border}}>
    <Text style={{fontSize:18,color:theme.foreground,fontWeight:'700',marginBottom:13}}>Ajouter à mon rêve</Text>
    <TextInput value={query} onChangeText={setQuery} placeholder="Rechercher un bloc…" style={{padding:12,backgroundColor:theme.dark?'#34363B':'#F5F1EB',borderRadius:10,color:theme.foreground,marginBottom:12}}/>
-   {groups.map(g=>{const kinds=g.kinds.filter(x=>x.title.toLowerCase().includes(query.toLowerCase())||x.kind.includes(query.toLowerCase()));return kinds.length?<View key={g.title} style={{marginBottom:14}}><Text style={{fontWeight:'700',fontSize:11,color:theme.muted,marginBottom:7,letterSpacing:1}}>{g.title.toUpperCase()}</Text><View style={{flexDirection:'row',flexWrap:'wrap',gap:7}}>{kinds.map(x=><Pressable key={x.kind} onPress={()=>{setDraft(base(x.kind));setLibrary(false);}} style={{width:'47.8%',padding:12,borderRadius:9,backgroundColor:theme.dark?'#28292D':'#F5F1EB',flexDirection:'row',alignItems:'center',gap:9}}><Ionicons name={x.icon} size={18} color={theme.foreground}/><Text style={{fontSize:12,color:theme.foreground,flex:1}}>{x.title}</Text></Pressable>)}</View></View>:null})}
+   {compact && !showAllBlocks && !query.trim() ? (
+     <View style={{gap:8,marginBottom:15}}>
+       {([
+         {kind:'text',title:'Écrire une idée',icon:'create-outline'},
+         {kind:'image',title:'Ajouter une photo',icon:'image-outline'},
+         {kind:'quote',title:'Garder une citation',icon:'chatbubble-outline'},
+         {kind:'todo',title:'Créer une liste',icon:'checkbox-outline'},
+         {kind:'link',title:'Ajouter un lien',icon:'link-outline'},
+       ] as const).map(choice=><Pressable key={choice.kind} accessibilityRole="button"
+         onPress={()=>{setDraft(base(choice.kind));setLibrary(false);setAdvancedEditor(false);}}
+         style={{minHeight:53,paddingHorizontal:14,paddingVertical:11,borderRadius:10,
+           borderWidth:1,borderColor:theme.border,
+           backgroundColor:theme.background,flexDirection:'row',alignItems:'center',gap:12}}>
+         <Ionicons name={choice.icon} size={19} color={theme.foreground}/>
+         <Text style={{fontSize:13,color:theme.foreground,fontWeight:'600',flex:1}}>{choice.title}</Text>
+         <Ionicons name="add" size={17} color={theme.muted}/>
+       </Pressable>)}
+     </View>
+   ):null}
+   {(!compact||showAllBlocks||!!query.trim()) ? (groups.map(g=>{const kinds=g.kinds.filter(x=>x.title.toLowerCase().includes(query.toLowerCase())||x.kind.includes(query.toLowerCase()));return kinds.length?<View key={g.title} style={{marginBottom:14}}><Text style={{fontWeight:'700',fontSize:11,color:theme.muted,marginBottom:7,letterSpacing:1}}>{g.title.toUpperCase()}</Text><View style={{flexDirection:'row',flexWrap:'wrap',gap:7}}>{kinds.map(x=><Pressable key={x.kind} onPress={()=>{setDraft(base(x.kind));setLibrary(false);}} style={{width:'47.8%',padding:12,borderRadius:9,backgroundColor:theme.dark?'#28292D':'#F5F1EB',flexDirection:'row',alignItems:'center',gap:9}}><Ionicons name={x.icon} size={18} color={theme.foreground}/><Text style={{fontSize:12,color:theme.foreground,flex:1}}>{x.title}</Text></Pressable>)}</View></View>:null})) : null}
+   {compact && !query.trim() ? <Pressable accessibilityRole="button"
+     onPress={()=>setShowAllBlocks(!showAllBlocks)}
+     style={{padding:13,alignItems:'center',borderTopWidth:1,borderColor:theme.border}}>
+     <Text style={{fontSize:12,color:theme.muted,fontWeight:'700'}}>
+       {showAllBlocks?'Moins d’options':'Afficher tous les blocs'}
+     </Text>
+   </Pressable>:null}
    <Pressable onPress={()=>setLibrary(false)}><Text style={{color:theme.muted,textAlign:'center',padding:13}}>Annuler</Text></Pressable>
   </View>:null}
   {draft?<View style={{backgroundColor:theme.surface,padding:15,borderRadius:14,borderWidth:1,borderColor:theme.border,gap:12}}>
    <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}><Text style={{fontWeight:'700',fontSize:18,color:theme.foreground}}>Personnaliser le bloc</Text><Pressable onPress={()=>setDraft(null)}><Ionicons name="close" color={theme.muted} size={22}/></Pressable></View>
-   <ScrollView horizontal showsHorizontalScrollIndicator={false}>{groups.flatMap(g=>g.kinds).map(x=><Pressable key={x.kind} onPress={()=>change({kind:x.kind})} style={{padding:9,borderRadius:8,backgroundColor:draft.kind===x.kind?PINK:(theme.dark?'#303137':'#F0ECE8'),marginRight:5}}><Text style={{fontSize:11,color:draft.kind===x.kind?'#fff':theme.foreground}}>{x.title}</Text></Pressable>)}</ScrollView>
+   {!compact ? (<ScrollView horizontal showsHorizontalScrollIndicator={false}>{groups.flatMap(g=>g.kinds).map(x=><Pressable key={x.kind} onPress={()=>change({kind:x.kind})} style={{padding:9,borderRadius:8,backgroundColor:draft.kind===x.kind?PINK:(theme.dark?'#303137':'#F0ECE8'),marginRight:5}}><Text style={{fontSize:11,color:draft.kind===x.kind?'#fff':theme.foreground}}>{x.title}</Text></Pressable>)}</ScrollView>) : (
+     <Text style={{fontSize:11,color:theme.muted,fontWeight:'700'}}>
+       BLOC · {groups.flatMap(g=>g.kinds).find(k=>k.kind===draft.kind)?.title||draft.kind}
+     </Text>
+   )}
    <TextInput value={draft.title||''} onChangeText={title=>change({title})} placeholder="Titre / légende (facultatif)" style={{backgroundColor:theme.dark?'#303137':'#F5F1EB',color:theme.foreground,padding:12,borderRadius:8}}/>
    {!['divider','spacer'].includes(draft.kind)?<TextInput value={draft.content} multiline onChangeText={content=>change({content})} placeholder={mediaKinds.includes(draft.kind)?'Colle un lien ou importe un média…':draft.kind==='table'?'Une ligne par rangée, colonnes séparées par |':draft.kind==='columns'?'Colonne gauche | colonne droite':'Écris librement…'} style={{backgroundColor:theme.dark?'#303137':'#F5F1EB',color:theme.foreground,padding:12,borderRadius:8,minHeight:95,textAlignVertical:'top'}}/>:null}
    {mediaKinds.includes(draft.kind)?<Pressable onPress={chooseMedia} style={{borderWidth:1,borderStyle:'dashed',borderColor:theme.border,padding:13,borderRadius:10,alignItems:'center'}}><Text style={{color:theme.foreground}}>＋ Importer une photo / un média</Text></Pressable>:null}
    {draft.kind==='image'?<Pressable onPress={()=>pickDreamImage(content=>change({content}),alert)} style={{padding:10}}><Text style={{color:PINK}}>Choisir une photo</Text></Pressable>:null}
+   {compact?<Pressable accessibilityRole="button" accessibilityState={{expanded:advancedEditor}}
+     onPress={()=>setAdvancedEditor(!advancedEditor)}
+     style={{paddingVertical:12,borderTopWidth:1,borderBottomWidth:1,borderColor:theme.border,
+       flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
+     <Text style={{fontSize:12,fontWeight:'700',color:theme.foreground}}>Personnalisation avancée</Text>
+     <Ionicons name={advancedEditor?'chevron-up':'chevron-down'} size={19} color={theme.muted}/>
+   </Pressable>:null}
+   {(!compact || advancedEditor) ? <>
    <Text style={{color:theme.muted,fontSize:11,fontWeight:'700'}}>PROPORTIONS</Text>
    <View style={{flexDirection:'row',gap:7}}>{(['small','wide','featured'] as const).map(size=><Pressable key={size} onPress={()=>change({size})} style={{padding:9,backgroundColor:draft.size===size?PINK:(theme.dark?'#303137':'#F1EDE8'),borderRadius:8}}><Text style={{color:draft.size===size?'#fff':theme.foreground,fontSize:12}}>{size==='small'?'Petit':size==='wide'?'Large':'Vedette'}</Text></Pressable>)}</View>
    <Text style={{color:theme.muted,fontSize:11,fontWeight:'700'}}>TYPOGRAPHIE</Text>
@@ -312,7 +350,8 @@ export default function SemenceStudio({dream,onBack,onNavigate}:{dream:DreamEntr
    <View style={{flexDirection:'row',flexWrap:'wrap',gap:7}}>{(['default','pink','green','muted','white'] as const).map(ink=><Pressable key={ink} onPress={()=>change({ink})} style={{backgroundColor:draft.ink===ink?PINK:(theme.dark?'#303137':'#F1EDE8'),padding:8,borderRadius:8}}><Text style={{color:draft.ink===ink?'#fff':theme.foreground,fontSize:12}}>{ink}</Text></Pressable>)}</View>
    <View style={{flexDirection:'row',gap:7}}>{(['none','soft','outline'] as const).map(frame=><Pressable key={frame} onPress={()=>change({frame})} style={{backgroundColor:draft.frame===frame?PINK:(theme.dark?'#303137':'#F1EDE8'),padding:9,borderRadius:8}}><Text style={{fontSize:12,color:draft.frame===frame?'#fff':theme.foreground}}>{frame==='none'?'Libre':frame==='soft'?'Doux':'Contour'}</Text></Pressable>)}</View>
    <TextInput value={draft.caption||''} onChangeText={caption=>change({caption})} placeholder="Petite légende (facultatif)" style={{padding:11,backgroundColor:theme.dark?'#303137':'#F5F1EB',color:theme.foreground,borderRadius:8}}/>
-   <Text style={{color:theme.muted,fontSize:11}}>Aperçu</Text><BlockView block={draft} edit={false} onTap={()=>{}}/>
+   </>:null}
+   {!compact?<><Text style={{color:theme.muted,fontSize:11}}>Aperçu</Text><BlockView block={draft} edit={false} onTap={()=>{}}/></>:null}
    <Pressable onPress={save} style={{backgroundColor:PINK,padding:14,alignItems:'center',borderRadius:10}}><Text style={{color:'white',fontWeight:'700'}}>Enregistrer</Text></Pressable>
    {blocks.some(b=>b.id===draft.id)?<Pressable onPress={()=>{patch(dream.id,{blocks:blocks.filter(b=>b.id!==draft.id)});setDraft(null);}} style={{padding:10,alignItems:'center'}}><Text style={{color:'#BB4C60'}}>Supprimer le bloc</Text></Pressable>:null}
   </View>:null}
