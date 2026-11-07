@@ -45,7 +45,7 @@ function category(item: Publication): string {
   }
 }
 
-function MusicPlayback({ index, uri }: { index: 0 | 1 | 2; uri?: string }) {
+function MusicPlayback({ index, uri, size = 42 }: { index: 0 | 1 | 2; uri?: string; size?: number }) {
   const player = useAudioPlayer(uri ? { uri } : audio[index]);
   const status = useAudioPlayerStatus(player);
   const toggle = () => {
@@ -61,19 +61,29 @@ function MusicPlayback({ index, uri }: { index: 0 | 1 | 2; uri?: string }) {
       onPress={toggle}
       accessibilityRole="button"
       accessibilityLabel={status.playing ? 'Pause sample' : 'Play 8 second sample'}
-      style={styles.playButton}
+      style={[styles.playButton, { width: size, height: size, borderRadius: size / 2 }]}
     >
-      <Ionicons name={status.playing ? 'pause' : 'play'} size={21} color="#FFFFFF" />
+      <Ionicons name={status.playing ? 'pause' : 'play'} size={Math.round(size * 0.50)} color="#FFFFFF" />
     </Pressable>
   );
 }
 
 /** Sibling audio control: never nest a button inside the story's Pressable on web. */
-function AudioCorner({ item }: { item: Publication }) {
+function AudioCorner({ item, width, height }: { item: Publication; width: number; height: number }) {
   if (item.type !== 'music') return null;
+  // Sit on the lower-right cassette shell, beneath its handwritten title/label.
+  // CassetteArtwork computes the same physical shell size.
+  const tiny = width < 225;
+  const shellWidth = Math.min(width * (tiny ? 0.86 : 0.74), height * 1.30, 340);
+  const shellHeight = shellWidth * (255 / 420);
+  const size = Math.min(42, Math.max(31, width * 0.20));
   return (
-    <View style={styles.audioCorner}>
-      <MusicPlayback index={item.audioIndex} uri={item.audioUrl} />
+    <View style={{
+      position: 'absolute', zIndex: 5,
+      right: Math.max(3, (width - shellWidth) / 2 + 8),
+      top: (height - shellHeight) / 2 + shellHeight - size - 8 + (tiny ? 7 : 11),
+    }}>
+      <MusicPlayback index={item.audioIndex} uri={item.audioUrl} size={size} />
     </View>
   );
 }
@@ -305,10 +315,12 @@ function StoryCover({
         >
           {isTalent ? (
             <View style={[styles.talentImage, { paddingBottom: small ? 55 : 80 }]}>
-              <TalentArt
-                kind={item.instrument}
-                size={Math.min(155, width * 0.54, height * 0.52)}
-              />
+              <View style={{ transform: [{ translateY: small ? 9 : 11 }] }}>
+                <TalentArt
+                  kind={item.instrument}
+                  size={Math.min(155, width * 0.54, height * 0.52)}
+                />
+              </View>
               <View
                 style={styles.talentLevels}
                 accessibilityLabel={'Niveau : ' + item.level}
@@ -354,14 +366,13 @@ function StoryCover({
           </Svg>
         )}
         {/* Consistent taxonomy in the top-right, next to the phase or play control. */}
-        {!isBible && (
         <View
           pointerEvents="none"
           style={[
             styles.topMeta,
             {
               top: small ? 19 : 21,
-              right: isMusic ? 58 : inset,
+              right: inset,
               left: inset,
             },
           ]}
@@ -375,7 +386,6 @@ function StoryCover({
             {category(item).toUpperCase()}
           </Text>
         </View>
-        )}
         {isTalent && (
           <View pointerEvents="none" style={{ position: 'absolute', left: inset, right: inset, bottom: inset, gap: 3 }}>
             {talentIntent(item).map((line, i) => (
@@ -398,7 +408,7 @@ function StoryCover({
         )}
       </Pressable>
       {/* Audio control remains an independent sibling, never a nested button. */}
-      <AudioCorner item={item} />
+      <AudioCorner item={item} width={width} height={height} />
     </View>
   );
 }
@@ -568,7 +578,11 @@ export function PublicationGallery({ items: receivedItems, layout = 'editorial',
   const gap = compact ? 28 : 36;
 
   if (!items.length) return null;
-  if (layout === 'masonry') return <MasonryGallery items={items} viewportWidth={contentWidth + 30} />;
+  // When width is supplied by DetailLayout, it already includes the masonry
+  // outer padding. Adding 30px again caused the final grid to overflow right.
+  if (layout === 'masonry') return (
+    <MasonryGallery items={items} viewportWidth={requestedWidth === undefined ? contentWidth + 30 : contentWidth} />
+  );
 
   const sections: React.ReactNode[] = [];
   let index = 0;
