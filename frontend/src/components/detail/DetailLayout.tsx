@@ -62,7 +62,7 @@ export function DetailLayout({
           paddingBottom: 40,
         }}
       >
-        <DetailAuthorHeader item={item} />
+        <DetailAuthorHeader item={item} flushToImage={isFloraison} />
 
         <View style={{ paddingHorizontal: 16 }}>
           <View style={{ position: 'relative', marginHorizontal: isFloraison ? -16 : 0 }}>
@@ -102,7 +102,7 @@ export function DetailLayout({
             )}
           </View>
           </View>
-          <View style={{ marginTop: isDream ? 30 : 42, borderTopWidth: isDream ? 0 : 0.5, borderTopColor: theme.border, paddingTop: 21 }}>
+          <View style={{ marginTop: isDream ? 30 : 42, borderTopWidth: isDream ? 0 : 0.5, borderTopColor: theme.border, paddingTop: 21, width: '100%', alignSelf: 'center' }}>
             <Text
               style={{
                 color: theme.foreground,
