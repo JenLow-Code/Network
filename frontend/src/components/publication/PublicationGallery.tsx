@@ -684,19 +684,48 @@ export function ProfilePublicationFeed({
   contentWidth,
   featuredId,
   onFeature,
+  grid = false,
 }: {
   items: Publication[];
   contentWidth: number;
   featuredId?: string | null;
   onFeature?: (id: string | null) => void;
+  grid?: boolean;
 }) {
   const theme = useAppTheme();
+  const columns = contentWidth < 350 ? 2 : 3;
+  const cardGap = 10;
+  const tileWidth = Math.max(90, Math.floor((contentWidth - cardGap * (columns - 1)) / columns));
   const wide = contentWidth >= 680;
   const dateGutter = wide ? 130 : 0;
   const gap = wide ? 22 : 0;
   const coverWidth = Math.min(540, Math.max(0, contentWidth - dateGutter - gap));
   const highlighted = items.find(p => p.id === featuredId);
   const ordered = highlighted ? [highlighted, ...items.filter(p => p.id !== highlighted.id)] : items;
+  if (grid) return (
+    <View style={{width:'100%',flexDirection:'row',flexWrap:'wrap',gap:cardGap,alignItems:'flex-start'}}>
+      {ordered.map(item => {
+        const featured = item.id === featuredId;
+        return (
+          <View key={item.id} style={{width:tileWidth,gap:5}}>
+            <StoryCover item={item} width={tileWidth}
+              height={Math.max(145, Math.round(tileWidth * 1.10))}
+              scale="small" adaptive />
+            {onFeature ? <Pressable accessibilityRole="button"
+              accessibilityLabel={featured?'Retirer de la une':'Mettre à la une'}
+              onPress={()=>onFeature(featured?null:item.id)}
+              style={{flexDirection:'row',alignItems:'center',gap:4,alignSelf:'flex-start',minHeight:27}}>
+              <Ionicons name={featured?'bookmark':'bookmark-outline'} size={15}
+                color={featured?'#D71D77':theme.muted}/>
+              <Text style={{color:featured?'#D71D77':theme.muted,fontSize:10}}>
+                {featured?'À la une':'Mettre à la une'}
+              </Text>
+            </Pressable> : null}
+          </View>
+        );
+      })}
+    </View>
+  );
   return (
     <View style={{ width: '100%', gap: 28 }}>
       {ordered.map(item => {
