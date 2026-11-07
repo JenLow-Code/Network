@@ -64,18 +64,20 @@ export function DreamPhaseHeader({
               accessibilityState={{ disabled: !reached, selected: item === phase }}
               disabled={!reached || !onNavigate}
               onPress={() => onNavigate?.(item)}
-              style={{ flex: 1, minHeight: 32, justifyContent: 'flex-end', alignItems: 'center', paddingBottom: 8 }}
+              style={{ flex: 1, minHeight: 47, justifyContent: 'space-between', alignItems: 'center', paddingVertical: 3 }}
             >
+              <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}
+                style={{
+                  color: item === phase ? accent : theme.muted, fontSize: 10,
+                  fontWeight: item === phase ? '800' : '500', textAlign: 'center',
+                  opacity: reached ? 1 : .42,
+                }}>{PHASE_LABELS[item]}</Text>
               <View style={{
                 width: '100%', height: item === phase ? 4 : 3, borderRadius: 3,
                 backgroundColor: item === phase ? accent : reached
                   ? phaseAccent[item] : theme.dark ? '#35373A' : '#E9E7E1',
-                opacity: item === phase ? 1 : reached ? .55 : .45,
+                opacity: item === phase ? 1 : reached ? .65 : .45,
               }} />
-              <Text style={{
-                position: 'absolute', top: 0, fontSize: 9,
-                color: item === phase ? accent : theme.muted, fontWeight: item === phase ? '700' : '400',
-              }}>{String(i + 1).padStart(2, '0')}</Text>
             </Pressable>
           );
         })}
