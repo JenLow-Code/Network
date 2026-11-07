@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Nav } from '@/components/navigation/Nav';
-import { TopActions } from '@/components/navigation/TopActions';
+import { PageHeader } from '@/components/navigation/PageHeader';
 import { musics } from '@/mocks/publications';
 import { useLocale } from '@/i18n/locale';
 import { useAppTheme } from '@/theme/AppTheme';
@@ -26,6 +26,7 @@ export default function MusicHub() {
           paddingTop: compact ? 16 : 30, paddingBottom: 76,
         }}
       >
+        <PageHeader />
         <View style={{
           flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between',
           paddingBottom: 20, borderBottomWidth: 0.5, borderColor: theme.border,
@@ -40,7 +41,7 @@ export default function MusicHub() {
               Écouter, partager et proposer une collaboration.
             </Text>
           </View>
-          <TopActions />
+          
         </View>
 
         <Pressable
