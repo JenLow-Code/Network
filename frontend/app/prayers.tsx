@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Nav } from '@/components/navigation/Nav';
-import { TopActions } from '@/components/navigation/TopActions';
+import { PageHeader } from '@/components/navigation/PageHeader';
 import { publications } from '@/mocks/publications';
 import { useApp } from '@/context/AppContext';
 import { publicationPath } from '@/components/publication/PublicationGallery';
@@ -17,6 +17,7 @@ export default function Prayers() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 17, paddingBottom: 55 }}>
+        <PageHeader />
         <View
           style={{
             flexDirection: 'row',
@@ -28,7 +29,7 @@ export default function Prayers() {
           <Text style={{ fontSize: 26, fontWeight: '700', color: theme.foreground }}>
             Mes prières
           </Text>
-          <TopActions />
+          
         </View>
         <Text style={{ fontSize: 12, color: '#888', marginBottom: 19 }}>
           Toutes mes prières, avec leur rythme de répétition.
