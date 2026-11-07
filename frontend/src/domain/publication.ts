@@ -66,6 +66,8 @@ export type MusicPublication = PublicationBase & {
   songAuthor: string;
   lyrics?: { time: number; text: string }[];
   description: string;
+  /** Explicit musical collaborators being sought; absent means no verified request. */
+  requestedTalents?: string[];
 };
 
 export type BiblePublication = PublicationBase & {
