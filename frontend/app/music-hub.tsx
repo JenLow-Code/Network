@@ -34,8 +34,8 @@ export default function MusicHub() {
         }}>
           <View style={{ flex: 1, paddingRight: 8 }}>
             <Text style={{
-              fontFamily: 'serif', fontSize: compact ? 33 : 41,
-              lineHeight: compact ? 43 : 49, color: theme.foreground,
+              fontSize: compact ? 30 : 32, fontWeight:'700',
+              lineHeight: compact ? 38 : 41, color: theme.foreground,
             }}>{t('music')}</Text>
             <Text style={{ color: theme.muted, fontSize: 12, lineHeight: 19, marginTop: 5 }}>
               Écouter, partager et proposer une collaboration.
