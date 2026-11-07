@@ -1,4 +1,5 @@
 import React from 'react';
+import { useLocalSearchParams } from 'expo-router';
 import { ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { Publication } from '@/domain/publication';
@@ -32,6 +33,9 @@ export function DetailLayout({
   musicPlaying?: boolean;
 }) {
   const theme = useAppTheme();
+  const { from } = useLocalSearchParams<{ from?: string }>();
+  // Music detail and saved Fire material are focused reading spaces.
+  const showRelated = item.type !== 'music' && from !== 'fire';
   // Related stories use the same source and editorial order as Discovery.
   // This prevents detail pages from silently falling back to an obsolete mock-only feed.
   const relatedFeed = useDiscovery();
@@ -102,6 +106,7 @@ export function DetailLayout({
             )}
           </View>
           </View>
+          {showRelated ? (
           <View style={{ marginTop: isDream ? 30 : 42, borderTopWidth: isDream ? 0 : 0.5, borderTopColor: theme.border, paddingTop: 21, width: '100%', alignSelf: 'center' }}>
             <Text
               style={{
@@ -116,6 +121,7 @@ export function DetailLayout({
             </Text>
             <PublicationGallery layout="masonry" contentWidth={heroWidth} items={relatedItems.filter(p => p.id !== item.id && (p.type !== 'dream' || p.phase !== 'Rêve'))} />
           </View>
+          ) : null}
         </View>
       </ScrollView>
       </View>
