@@ -79,9 +79,9 @@ export default function MySpace() {
           <PageHeader />
           <View style={{marginTop: compact ? 12 : 24, marginBottom: compact ? 26 : 38}}>
             <Text style={{
-              fontFamily: 'serif', color: theme.foreground,
-              fontSize: compact ? 31 : 39, lineHeight: compact ? 40 : 49,
-              letterSpacing: -0.7,
+              color: theme.foreground, fontWeight:'700',
+              fontSize: compact ? 30 : 32, lineHeight: compact ? 38 : 42,
+              letterSpacing: -0.4,
             }}>Mes rêves</Text>
             <Text style={{color:theme.muted,fontSize:compact?12:13,marginTop:4}}>
               Tous mes rêves, de la première idée à leur floraison.
