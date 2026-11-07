@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Nav } from '@/components/navigation/Nav';
-import { TopActions } from '@/components/navigation/TopActions';
+import { PageHeader } from '@/components/navigation/PageHeader';
 import { PHASE_LABELS } from '@/domain/publication';
 import { useDreams } from '@/domain/dreamRepository';
 import { useAppTheme } from '@/theme/AppTheme';
@@ -66,45 +66,30 @@ function DreamsOverview({ compact }: { compact: boolean }) {
 export default function MySpace() {
   const theme = useAppTheme();
   const { width } = useWindowDimensions();
-  const wide = width >= 980;
   const compact = width < 600;
   const { items } = useDreams();
   const unfinished = items.filter(d => d.phase === 'Croissance' && !!d.flowerDraft?.story);
-  const shortcuts = [
-    { title: 'Mon profil', detail: 'Informations et talents', path: '/profile' as const },
-    { title: 'Mes prières', detail: 'Prière et intentions', path: '/prayers' as const },
-    { title: 'Paramètres', detail: 'Compte et préférences', path: '/settings' as const },
-  ];
-
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{
         flexGrow: 1, paddingHorizontal: compact ? 18 : 22,
         paddingTop: compact ? 18 : 30, paddingBottom: compact ? 45 : 90,
       }}>
-        <View style={{ width: '100%', maxWidth: 1120, alignSelf: 'center' }}>
-          <View style={{
-            flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start',
-            marginBottom: compact ? 24 : 38,
-          }}>
-            <View style={{ flex: 1, paddingRight: 14 }}>
-              <Text style={{
-                fontFamily: 'serif', color: theme.foreground, fontSize: compact ? 31 : wide ? 39 : 34,
-                lineHeight: compact ? 40 : wide ? 49 : 43, letterSpacing: -0.7,
-              }}>Mon espace</Text>
-              <Text style={{ color: theme.muted, fontSize: compact ? 12 : 13, marginTop: compact ? 3 : 6 }}>
-                Mes rêves, mes projets, mon chemin.
-              </Text>
-            </View>
-            <TopActions />
+        <View style={{ width: '100%', maxWidth: 840, alignSelf: 'center' }}>
+          <PageHeader />
+          <View style={{marginTop: compact ? 12 : 24, marginBottom: compact ? 26 : 38}}>
+            <Text style={{
+              fontFamily: 'serif', color: theme.foreground,
+              fontSize: compact ? 31 : 39, lineHeight: compact ? 40 : 49,
+              letterSpacing: -0.7,
+            }}>Mes rêves</Text>
+            <Text style={{color:theme.muted,fontSize:compact?12:13,marginTop:4}}>
+              Tous mes rêves, de la première idée à leur floraison.
+            </Text>
           </View>
 
-          <View style={{
-            flexDirection: wide ? 'row' : 'column',
-            gap: wide ? 65 : compact ? 25 : 39,
-            alignItems: 'flex-start',
-          }}>
-            <View style={{ flex: wide ? 1 : undefined, width: wide ? undefined : '100%', minWidth: 0 }}>
+          <View style={{width:'100%',maxWidth:840,alignSelf:'center'}}>
+            <View style={{ width: '100%', minWidth: 0 }}>
               <View style={{
                 flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
                 gap: 10, marginBottom: compact ? 12 : 22,
@@ -123,7 +108,7 @@ export default function MySpace() {
                   }}
                 >
                   <Text style={{ color: theme.dark ? '#242322' : '#FFFFFF', fontSize: compact ? 11 : 12, fontWeight: '700' }}>
-                    {compact ? 'Nouvelle Semence' : 'Créer une Semence'}
+                    {compact ? 'Nouvelle Semence' : 'Planter une Semence'}
                   </Text>
                 </Pressable>
               </View>
@@ -153,40 +138,6 @@ export default function MySpace() {
               ) : null}
             </View>
 
-            <View style={{ width: wide ? 270 : '100%', paddingTop: wide ? 4 : 0 }}>
-              <Text style={{ color: theme.muted, fontSize: 11, fontWeight: '700', letterSpacing: 1.1, marginBottom: compact ? 14 : 19 }}>
-                MON COMPTE
-              </Text>
-              <View style={{
-                flexDirection: compact ? 'row' : 'column',
-                borderTopWidth: compact ? 1 : 0,
-                borderBottomWidth: compact ? 1 : 0,
-                borderColor: theme.border,
-              }}>
-                {shortcuts.map((item, index) => (
-                  <Pressable
-                    key={item.path}
-                    onPress={() => router.push(item.path)}
-                    accessibilityRole="button"
-                    style={{
-                      width: compact ? '33.33%' : '100%',
-                      paddingVertical: compact ? 15 : 17,
-                      paddingHorizontal: compact ? 5 : 0,
-                      borderTopWidth: compact ? 0 : index === 0 ? 1 : 0,
-                      borderBottomWidth: compact ? 0 : 1,
-                      borderRightWidth: compact && index < 2 ? 1 : 0,
-                      borderColor: theme.border,
-                    }}
-                  >
-                    <Text style={{
-                      fontSize: compact ? 12 : 14, color: theme.foreground,
-                      fontWeight: '600', textAlign: compact ? 'center' : 'left',
-                    }}>{item.title}</Text>
-                    {!compact ? <Text style={{ fontSize: 11, marginTop: 5, color: theme.muted }}>{item.detail}</Text> : null}
-                  </Pressable>
-                ))}
-              </View>
-            </View>
           </View>
         </View>
       </ScrollView>
