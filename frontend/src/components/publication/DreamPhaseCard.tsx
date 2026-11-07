@@ -485,8 +485,9 @@ export function DreamPhaseCard({ item, width, variant, onOpen }: Props) {
             <View style={{
               position: 'absolute',
               bottom: 78,
-              left: 20,
-              right: 20,
+              // Align Floraison headline and summary with the primary action column.
+              left: width < 440 ? 39 : 48,
+              right: width < 440 ? 39 : 48,
               gap: 9,
             }}>
               <Text style={{
