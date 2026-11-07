@@ -3,10 +3,9 @@ import React, { useState } from 'react';
 import { Alert, Image, Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import { useDreams } from '@/domain/dreamRepository';
 import { Nav } from '@/components/navigation/Nav';
-import { TopActions } from '@/components/navigation/TopActions';
+import { PageHeader } from '@/components/navigation/PageHeader';
 import { pickDreamImage } from '@/lib/pickDreamImage';
 import { useAppTheme } from '@/theme/AppTheme';
 import { DreamPhaseButton, DreamPhaseField } from '@/components/dream/DreamPhaseLayout';
@@ -36,12 +35,8 @@ export default function NewDream() {
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 21, paddingTop: 18, paddingBottom: 70 }}>
         <View style={{ width: '100%', maxWidth: 660, alignSelf: 'center' }}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 38 }}>
-            <Pressable onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Retour" style={{ padding: 8, marginLeft: -8 }}>
-              <Ionicons name="arrow-back-outline" color={theme.foreground} size={23}/>
-            </Pressable>
-            <TopActions />
-          </View>
+          <PageHeader />
+          <View style={{height:28}} />
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 11, marginBottom: 17 }}>
             <View style={{ height: 2, width: 27, backgroundColor: '#B88962', borderRadius: 2 }}/>
             <Text style={{ color: '#B88962', fontSize: 11, fontWeight: '700', letterSpacing: 1.4 }}>SEMENCE · 01 / 04</Text>
@@ -88,7 +83,7 @@ export default function NewDream() {
             </Pressable>
           </View>
           <View style={{ marginTop: 28 }}>
-            <DreamPhaseButton label="Créer ma Semence" onPress={save} disabled={!valid}/>
+            <DreamPhaseButton label="Planter cette semence" onPress={save} disabled={!valid}/>
           </View>
           <Text style={{ color: theme.muted, fontSize: 11, lineHeight: 18, marginTop: 15, textAlign: 'center' }}>
             Ta Semence ne figure pas dans Discovery. Elle reste accessible par un lien direct jusqu'à la Germination.
