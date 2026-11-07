@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Image, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
+import { Image, Modal, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -38,6 +38,7 @@ export default function ProfilePreview() {
  const tileWidth=Math.floor((contentWidth-10*(columns-1))/columns);
  const [talents,setTalents]=useState<Talent[]>([]);
  const [featuredId,setFeaturedId]=useState<string|null>(null);
+ const [selectedTalent,setSelectedTalent]=useState<Talent|null>(null);
  const avatar=typeof auth.user?.user_metadata?.avatar_url==='string'?auth.user.user_metadata.avatar_url:undefined;
  const posts=publications.filter(p=>p.author===app.name);
  useEffect(()=>{
@@ -76,7 +77,7 @@ export default function ProfilePreview() {
      <View style={{flexDirection:'row',flexWrap:'wrap',gap:10,marginBottom:25}}>
        {talents.map((t,i)=><ProfileTalentTile key={i} title={t.name}
          level={levels[t.level]||'À définir'} art={art(t.name)} width={tileWidth}
-         onPress={()=>{}}/>)}
+         onPress={()=>setSelectedTalent(t)}/>)}
      </View>
      {talents.length===0?<Text style={{fontSize:12,color:theme.muted,marginBottom:25}}>Aucun talent enregistré.</Text>:null}
      <Text style={{fontWeight:'700',fontSize:18,color:theme.foreground,marginBottom:14}}>Mes publications</Text>
@@ -87,6 +88,32 @@ export default function ProfilePreview() {
        <Text style={{color:theme.foreground,fontSize:12,fontWeight:'700'}}>Retour à la modification du profil</Text>
      </Pressable>
    </ScrollView>
+   <Modal visible={selectedTalent!==null} transparent animationType="fade"
+     onRequestClose={()=>setSelectedTalent(null)}>
+     <View style={{flex:1,backgroundColor:'rgba(0,0,0,.57)',justifyContent:'center',padding:19}}>
+       <Pressable onPress={()=>setSelectedTalent(null)} style={{position:'absolute',top:0,bottom:0,left:0,right:0}}/>
+       <View style={{padding:23,borderRadius:15,backgroundColor:theme.surface,
+         maxWidth:430,width:'100%',alignSelf:'center',gap:11}}>
+         <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}>
+           <Text style={{color:theme.foreground,fontSize:22,fontWeight:'700'}}>
+             {selectedTalent?.name}
+           </Text>
+           <Pressable onPress={()=>setSelectedTalent(null)} accessibilityLabel="Fermer">
+             <Ionicons name="close-outline" size={22} color={theme.foreground}/>
+           </Pressable>
+         </View>
+         <Text style={{color:theme.muted,fontSize:12}}>
+           Niveau : {selectedTalent?levels[selectedTalent.level]||'À définir':''}
+         </Text>
+         {!!selectedTalent?.description&&<Text style={{color:theme.foreground,fontSize:13,lineHeight:21}}>
+           {selectedTalent.description}
+         </Text>}
+         {!!selectedTalent?.interests?.length&&<Text style={{color:theme.muted,fontSize:12}}>
+           Recherche : {selectedTalent.interests.join(' · ')}
+         </Text>}
+       </View>
+     </View>
+   </Modal>
    <Nav/>
  </SafeAreaView>;
 }
