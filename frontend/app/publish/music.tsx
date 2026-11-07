@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Nav } from '@/components/navigation/Nav';
+import { PageHeader } from '@/components/navigation/PageHeader';
 export default function MusicSubmission() {
   const [title, setTitle] = useState(''),
     [creator, setCreator] = useState(''),
@@ -35,9 +36,7 @@ export default function MusicSubmission() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20, paddingBottom: 30 }}>
-        <Pressable onPress={() => router.back()}>
-          <Ionicons name="chevron-back" size={26} />
-        </Pressable>
+        <PageHeader />
         <Text style={{ fontSize: 34, fontFamily: 'Caveat_700Bold', marginVertical: 13 }}>
           Partager une musique
         </Text>
