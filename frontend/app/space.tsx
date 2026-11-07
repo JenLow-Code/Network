@@ -7,7 +7,7 @@ import { router } from 'expo-router';
 import { Avatar } from '@/components/ui/Avatar';
 import { Nav } from '@/components/navigation/Nav';
 import { Pill } from '@/components/ui/Pill';
-import { TopActions } from '@/components/navigation/TopActions';
+import { PageHeader } from '@/components/navigation/PageHeader';
 import { ContactSheet } from '@/components/ui/ContactSheet';
 import { colors as c } from '@/theme/colors';
 import { useApp } from '@/context/AppContext';
@@ -95,6 +95,7 @@ export default function Space() {
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
       <View style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={{ paddingTop: 15, paddingBottom: 148 }}>
+          <PageHeader />
           <View
             style={{
               flexDirection: 'row',
@@ -105,7 +106,7 @@ export default function Space() {
             }}
           >
             <Text style={{ fontSize: 30, fontWeight: '700', color: '#101010' }}>{t('space')}</Text>
-            <TopActions />
+            
           </View>
           <View style={{ flexDirection: 'row', gap: 6, marginHorizontal: 15, marginBottom: 20 }}>
             {(['All', 'Chats', 'Collabs', 'Lessons'] as Kind[]).map(t => (
