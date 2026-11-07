@@ -308,17 +308,13 @@ export default function DreamHub({ dream, startInSemence = false, startPhase }: 
             <View pointerEvents="box-none" style={{
               flex: 1, justifyContent: 'center', alignItems: 'center',
               paddingHorizontal: compact ? (width < 380 ? 28 : 39) : 80,
-              paddingTop: compact ? 53 : 74,
-              paddingBottom: compact ? 54 : Math.min(height * .10, 90),
+              paddingTop: compact ? 58 : 74,
+              paddingBottom: compact ? 12 : 23,
             }}>
               <View style={{ alignItems: 'center', width: '100%', maxWidth: 580 }}>
                 <Text style={{
-                  color: muted, fontSize: 10, letterSpacing: 2,
-                  fontWeight: '700', marginBottom: compact ? 13 : 20,
-                }}>{currentLabel.toUpperCase()}</Text>
-                <Text style={{
-                  fontFamily: 'serif', fontSize: compact ? (height < 730 ? 29 : 33) : 45,
-                  lineHeight: compact ? (height < 730 ? 37 : 42) : 55, letterSpacing: -.7,
+                  fontFamily: 'serif', fontSize: compact ? (height < 620 ? 26 : height < 730 ? 29 : 33) : 45,
+                  lineHeight: compact ? (height < 620 ? 33 : height < 730 ? 37 : 42) : 55, letterSpacing: -.7,
                   color: ink, textAlign: 'center', marginBottom: compact ? 9 : 15,
                 }}>{dream.title}</Text>
                 {dream.summary ? (
@@ -337,7 +333,7 @@ export default function DreamHub({ dream, startInSemence = false, startPhase }: 
                     accessibilityRole="button"
                     style={{
                       flexDirection: 'row', alignItems: 'center', gap: 7,
-                      marginTop: compact ? 14 : 19, paddingVertical: 5,
+                      marginTop: compact ? 10 : 16, paddingVertical: 4,
                     }}
                   >
                     <Ionicons name="calendar-outline" size={15} color={ink}/>
@@ -356,17 +352,15 @@ export default function DreamHub({ dream, startInSemence = false, startPhase }: 
                   </Text>
                 ) : null}
                 {phaseIndex >= 1 ? (
-                  <View style={{ marginTop: compact ? 17 : 25, alignItems: 'center', gap: 8 }}>
+                  <View style={{ marginTop: compact ? 8 : 18, alignItems: 'center', gap: compact?5:8 }}>
                     {requestedTalents.length > 0 ? (
-                      <Text style={{ fontSize: 11, color: muted, textAlign: 'center' }}>
-                        <Text style={{ fontWeight: '700', letterSpacing: 0.7 }}>TALENTS NÉCESSAIRES  </Text>
-                        {talentFound}/{requestedTalents.length} trouvés
+                      <Text style={{ fontSize: 12, fontWeight: '700', color: '#D71D77', textAlign: 'center' }}>
+                        {talentFound}/{requestedTalents.length} talents trouvés
                       </Text>
                     ) : null}
                     {otherResources.length > 0 ? (
-                      <Text style={{ fontSize: 11, color: muted, textAlign: 'center' }}>
-                        <Text style={{ fontWeight: '700', letterSpacing: 0.7 }}>RESSOURCES NÉCESSAIRES  </Text>
-                        {resourceFound}/{otherResources.length} trouvées
+                      <Text style={{ fontSize: 12, fontWeight: '700', color: '#387D9F', textAlign: 'center' }}>
+                        {resourceFound}/{otherResources.length} ressources trouvées
                       </Text>
                     ) : null}
                   </View>
@@ -375,8 +369,8 @@ export default function DreamHub({ dream, startInSemence = false, startPhase }: 
               </View>
             </View>
             <View style={{
-              position: 'absolute', left: compact ? 26 : 40, right: compact ? 26 : 40,
-              bottom: compact ? 59 : 73,
+              paddingHorizontal: compact ? 26 : 40,
+              paddingBottom: compact ? 21 : 34,
               zIndex: 5, alignItems: 'center',
             }}>
               <Pressable
@@ -397,7 +391,7 @@ export default function DreamHub({ dream, startInSemence = false, startPhase }: 
                 <Pressable
                   onPress={() => router.push({ pathname: '/chat/[id]', params: { id: 'dream-' + dream.id } })}
                   accessibilityRole="button" accessibilityLabel="Ouvrir la conversation du rêve"
-                  style={{ flexDirection: 'row', alignItems: 'center', gap: 7, marginTop: 11, padding: 8 }}
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: 7, marginTop: compact ? 7 : 11, padding: 8 }}
                 >
                   <Ionicons name="chatbubbles-outline" size={17} color={ink} />
                   <Text style={{ color: ink, fontSize: 12, textDecorationLine: 'underline' }}>Conversation du rêve</Text>
