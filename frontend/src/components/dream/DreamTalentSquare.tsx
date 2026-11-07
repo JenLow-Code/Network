@@ -30,9 +30,11 @@ export function DreamTalentSquare({
           padding: Math.max(5, size * .08),
           alignItems: 'center', justifyContent: 'center',
           gap: Math.max(3, size * .045),
-          backgroundColor: theme.dark ? '#2A2B2C' : '#F1F0EB',
-          borderWidth: 1,
-          borderColor: theme.border,
+          backgroundColor: resource.confirmed
+            ? (theme.dark ? '#254635' : '#E3F3E7')
+            : (theme.dark ? '#2A2B2C' : '#F9F6F2'),
+          borderWidth: resource.confirmed ? 1.5 : 1.6,
+          borderColor: resource.confirmed ? '#318656' : '#D71D77',
         }}
       >
         {resource.illustration
