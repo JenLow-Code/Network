@@ -40,14 +40,12 @@ export function DreamPhaseHeader({
 
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 21 }}>
         <Image source={{ uri: dreamPhaseImageUris[phase] }} resizeMode="contain" style={{ width: 37, height: 37, marginRight: 2 }}/>
-        <View style={{ width: 21, height: 3, borderRadius: 3, backgroundColor: accent }}/>
         <Text style={{ color: accent, fontSize: 11, letterSpacing: 1.4, fontWeight: '700', textTransform: 'uppercase' }}>
           {PHASE_LABELS[phase]}
         </Text>
         <Text style={{ color: theme.muted, fontSize: 11, marginLeft: 3 }}>
           {String(index + 1).padStart(2, '0')} / 04
         </Text>
-        {readOnly ? <Text style={{ color: theme.muted, fontSize: 11, marginLeft: 'auto' }}>Souvenir</Text> : null}
       </View>
       <Text style={{ color: theme.foreground, fontFamily: 'serif', fontSize: 33, lineHeight: 41, letterSpacing: -0.5, marginBottom: description ? 10 : 19 }}>
         {dream.title}
