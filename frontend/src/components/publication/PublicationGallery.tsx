@@ -71,17 +71,14 @@ function MusicPlayback({ index, uri, size = 42 }: { index: 0 | 1 | 2; uri?: stri
 /** Sibling audio control: never nest a button inside the story's Pressable on web. */
 function AudioCorner({ item, width, height }: { item: Publication; width: number; height: number }) {
   if (item.type !== 'music') return null;
-  // Sit on the lower-right cassette shell, beneath its handwritten title/label.
-  // CassetteArtwork computes the same physical shell size.
-  const tiny = width < 225;
-  const shellWidth = Math.min(width * (tiny ? 0.86 : 0.74), height * 1.30, 340);
-  const shellHeight = shellWidth * (255 / 420);
+  // Center the control on the tape reels, below the handwritten title strip.
   const size = Math.min(42, Math.max(31, width * 0.20));
+  const tiny = width < 225;
   return (
     <View style={{
       position: 'absolute', zIndex: 5,
-      right: Math.max(3, (width - shellWidth) / 2 + 8),
-      top: (height - shellHeight) / 2 + shellHeight - size - 8 + (tiny ? 7 : 11),
+      left: (width - size) / 2,
+      top: (height - size) / 2 + (tiny ? 7 : 11),
     }}>
       <MusicPlayback index={item.audioIndex} uri={item.audioUrl} size={size} />
     </View>
@@ -290,7 +287,7 @@ function StoryCover({
   const illustrated = isTalent || isBible || isMusic;
   const ink = illustrated ? (theme.dark ? '#ECE7E1' : '#26211D') : '#FFFFFF';
   const small = scale === 'small';
-  const inset = small ? (width < 220 ? 11 : 14) : scale === 'wide' ? 24 : 21;
+  const inset = small ? (width < 205 ? 13 : 17) : scale === 'wide' ? 24 : 21;
   const titleSize = small
     ? width < 195 ? 17 : 20
     : scale === 'wide'
@@ -374,7 +371,7 @@ function StoryCover({
             styles.topMeta,
             {
               // Match the category inset used on all Dream phase tiles.
-              top: small ? (width < 205 ? 13 : 17) : (width < 440 ? 23 : 32),
+              top: inset,
               right: inset,
               left: inset,
             },
@@ -384,7 +381,7 @@ function StoryCover({
             numberOfLines={1}
             adjustsFontSizeToFit
             minimumFontScale={0.75}
-            style={[styles.kicker, { color: theme.dark ? '#CFC9C4' : '#6B625B', textAlign: 'right', fontSize: small ? 9 : 10 }]}
+            style={[styles.kicker, { color: theme.dark ? '#CFC9C4' : '#6B625B', textAlign: 'right', fontSize: small ? 9 : 11, fontWeight: '700', letterSpacing: 1.3 }]}
           >
             {category(item).toUpperCase()}
           </Text>
