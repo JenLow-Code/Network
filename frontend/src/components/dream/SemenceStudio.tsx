@@ -180,7 +180,19 @@ export default function SemenceStudio({dream,onBack,onNavigate}:{dream:DreamEntr
         </View>
       )}
 
-      {blocks.length === 0 ? (
+      {blocks.length === 0 && !editable && (dream.image || dream.summary) ? (
+        <View style={{gap:14,marginBottom:9}}>
+          {dream.image ? <Image source={{uri:dream.image}} resizeMode="cover"
+            style={{width:'100%',height:230,borderRadius:10,backgroundColor:theme.surface}}/> : null}
+          {dream.summary ? <View style={{padding:15,backgroundColor:theme.dark?'#353334':'#F5F0EA',borderRadius:10}}>
+            <Text style={{fontSize:10,fontWeight:'700',letterSpacing:1.2,color:theme.muted,marginBottom:9}}>L'INTENTION DE DÉPART</Text>
+            <Text style={{fontSize:17,fontFamily:'serif',lineHeight:26,color:theme.foreground}}>{dream.summary}</Text>
+          </View> : null}
+          <Text style={{color:theme.muted,fontSize:11,lineHeight:18}}>
+            Cette Semence n'a pas de blocs d'inspiration enregistrés. Son image et son intention initiale restent ici.
+          </Text>
+        </View>
+      ) : blocks.length === 0 ? (
         <View style={{
           minHeight: editable ? 180 : 110, alignItems:'center', justifyContent:'center',
           padding:18, gap:11, borderWidth:1, borderStyle:'dashed',
