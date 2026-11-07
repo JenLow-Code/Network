@@ -9,7 +9,7 @@ import { dreamPhaseImageUris } from '../../../assets/dreamPhaseImages';
 /** One editorial design language for all four dream phases. */
 export const phaseAccent: Record<DreamPhase, string> = {
   Rêve: '#B88962',
-  Initiation: '#83877F',
+  Initiation: '#A1BA44',
   Croissance: '#27845B',
   Témoignage: '#D71D77',
 };
