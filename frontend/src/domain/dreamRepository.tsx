@@ -26,6 +26,8 @@ type Repo = {
   setResources: (id: string, resources: DreamResource[]) => void;
   setHabits: (id: string, habits: DreamHabit[]) => void;
   transitionToGrowth: (id: string) => void;
+  /** Explicit calendar confirmation records the date and starts Growth atomically. */
+  setGoalAndGrow: (id: string, date: string) => void;
   remove: (id: string) => void;
 };
 const Context = createContext<Repo | null>(null);
@@ -139,10 +141,32 @@ export function DreamProvider({ children }: { children: React.ReactNode }) {
     if (!dateValid || resources.some(r => !r.confirmed)) return d;
     return { ...d, phase: 'Croissance', visibility: 'public', growthStartedAt: new Date().toISOString(), chat: d.chat || { id: 'dream-' + d.id, messages: [] } };
   }));
+  const setGoalAndGrow: Repo['setGoalAndGrow'] = (id, date) => setItems(previous =>
+    previous.map(d => {
+      if (d.id !== id || d.phase !== 'Initiation') return d;
+      const parsed = /^\d{4}-\d{2}-\d{2}$/.test(date) ? new Date(date + 'T12:00:00') : null;
+      const valid = parsed && !Number.isNaN(parsed.getTime()) &&
+        parsed.getFullYear() + '-' + String(parsed.getMonth() + 1).padStart(2, '0') + '-' +
+          String(parsed.getDate()).padStart(2, '0') === date;
+      const now = new Date();
+      const today = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' +
+        String(now.getDate()).padStart(2, '0');
+      const frozen = !!d.paused && !!d.pauseUntil && d.pauseUntil >= today;
+      if (!valid || date < today || frozen) return d;
+      return {
+        ...d,
+        goalDate: date,
+        phase: 'Croissance' as const,
+        visibility: 'public' as const,
+        growthStartedAt: new Date().toISOString(),
+        chat: d.chat || { id: 'dream-' + d.id, messages: [] },
+      };
+    }),
+  );
   const remove: Repo['remove'] = id => setItems(p => p.filter(d => d.id !== id));
   return (
     <Context.Provider
-      value={{ items, create, update, add, setFlowerDraft, advance, complete, remove, patch, appendBlock, setResources, setHabits, transitionToGrowth }}
+      value={{ items, create, update, add, setFlowerDraft, advance, complete, remove, patch, appendBlock, setResources, setHabits, transitionToGrowth, setGoalAndGrow }}
     >
       {children}
     </Context.Provider>
