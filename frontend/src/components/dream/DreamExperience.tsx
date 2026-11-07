@@ -64,6 +64,7 @@ export default function DreamExperience({ dream, viewPhase, onBack, onNavigate }
  const [resourceDialog,setResourceDialog]=useState(false);
  const [freezeDialog,setFreezeDialog]=useState(false);
  const [goalDateDialog,setGoalDateDialog]=useState(false);
+ const [growthDialog,setGrowthDialog]=useState<'habit'|'log'|'note'|null>(null);
  const [habitTitle, setHabitTitle] = useState('');
  const [frequency, setFrequency] = useState<DreamHabit['frequency']>('daily');
  const [milestone, setMilestone] = useState('');
@@ -262,31 +263,139 @@ export default function DreamExperience({ dream, viewPhase, onBack, onNavigate }
    ):null}
   </> : null}
   {phase==='Croissance' ? <>
-   <DreamPhaseSection title="Mes habitudes" subtitle="Petits pas, grands changements.">
-   <Pressable onPress={()=>router.push({pathname:'/chat/[id]',params:{id:'dream-'+dream.id}})} style={{padding:14,borderRadius:12,backgroundColor:theme.surface,borderWidth:1,borderColor:theme.border,flexDirection:'row',alignItems:'center',gap:10,marginBottom:18}}><Ionicons name="chatbubbles-outline" size={20} color="#27845B"/><Text style={{color:theme.foreground,fontWeight:'600',fontSize:13}}>Conversation de ce rêve</Text></Pressable>
-   
-   {habits.map(h=><View key={h.id} style={{padding:14,backgroundColor:theme.surface,borderRadius:12,borderWidth:1,borderColor:theme.border,marginBottom:10}}>
-    <Text style={{color:theme.foreground,fontWeight:'700',marginBottom:8}}>{h.title} · {h.frequency==='daily'?'Chaque jour':'Chaque semaine'}</Text>
-    <View style={{flexDirection:'row',flexWrap:'wrap',gap:4}}>{Array.from({length: (()=>{const from=new Date(dream.growthStartedAt||dream.createdAt);const until=new Date(dream.goalDate||day());const days=Math.max(1,Math.ceil((until.getTime()-from.getTime())/86400000)+1);return Math.min(2000,h.frequency==='daily'?days:Math.ceil(days/7));})()},(_,i)=>{
-     const d=new Date(dream.growthStartedAt||dream.createdAt);d.setDate(d.getDate()+i*(h.frequency==='daily'?1:7));const key=d.toISOString().slice(0,10);const done=h.completed.includes(key);
-     const future = key > day();
-     return <Pressable disabled={future || historical} accessibilityLabel={'Période '+key} key={i} onPress={()=>setHabits(dream.id,habits.map(x=>x.id===h.id?{...x,completed:done?x.completed.filter(z=>z!==key):[...x.completed,key]}:x))} style={{width:20,height:20,backgroundColor:done?'#6A996F':future?'#F2F2EF':'#E5E7DE',borderRadius:4,justifyContent:'center',alignItems:'center'}}>{done?<Ionicons name="checkmark" size={12} color="#fff"/>:null}</Pressable>;
-    })}</View>
-   </View>)}
-   {!historical ? <><Field label="Nouvelle habitude" value={habitTitle} onChange={setHabitTitle} placeholder="Ex. Répéter 20 minutes"/>
-   <View style={{flexDirection:'row',gap:8}}>{(['daily','weekly'] as const).map(f=><Pressable key={f} onPress={()=>setFrequency(f)} style={{padding:10,backgroundColor:frequency===f?'#DDEBD9':'#F1ECE5',borderRadius:8}}><Text style={{color:theme.foreground}}>{f==='daily'?'Quotidienne':'Hebdomadaire'}</Text></Pressable>)}</View>
-   <Action secondary label="+ Ajouter l’habitude" onPress={()=>{if(!habitTitle.trim())return;setHabits(dream.id,[...habits,{id:uid(),title:habitTitle.trim(),frequency,completed:[]}]);setHabitTitle('');}}/>
-   <Text style={{fontSize:18,fontWeight:'700',color:theme.foreground,marginTop:33,paddingTop:20,borderTopWidth:1,borderColor:theme.border,marginBottom:16}}>Étapes marquantes</Text>
-   {(dream.milestones||[]).map(m=><Text key={m.id} style={{padding:12,marginBottom:6,backgroundColor:theme.surface,borderRadius:10,color:theme.foreground}}>★ {m.title}  ·  {m.date}</Text>)}
-   <Field label="Nouvelle étape" value={milestone} onChange={setMilestone}/>
-   <Action secondary label="+ Conserver ce moment" onPress={()=>{if(milestone.trim())patch(dream.id,{milestones:[...(dream.milestones||[]),{id:uid(),title:milestone.trim(),date:day()}]});setMilestone('');}}/>
-   <Text style={{fontSize:18,fontWeight:'700',color:theme.foreground,marginTop:33,paddingTop:20,borderTopWidth:1,borderColor:theme.border,marginBottom:16}}>Mon journal</Text>
-   {(dream.thoughts||[]).map(t=><Text key={t.id} style={{fontFamily:HANDWRITING_FAMILY,fontSize:23,color:theme.foreground,padding:12,backgroundColor:theme.surface,marginBottom:7,borderRadius:10}}>{t.text}</Text>)}
-   <Field label="Une pensée à garder" value={thought} onChange={setThought} multiline/>
-   <Action secondary label="+ Ajouter ma pensée" onPress={()=>{if(thought.trim())patch(dream.id,{thoughts:[...(dream.thoughts||[]),{id:uid(),text:thought.trim(),date:day()}]});setThought('');}}/>
-   <Action label="Admirer les fleurs de cette plante" onPress={()=>router.push({pathname:'/my-dream/flower/[id]',params:{id:dream.id}})}/></> : null}
-   </DreamPhaseSection>
-  </> : null}
+    <DreamPhaseSection title="Mes habitudes" subtitle="Des petits gestes qui font avancer ton rêve.">
+      <View style={{gap:10}}>
+        {habits.length===0?<View style={{backgroundColor:theme.surface,borderRadius:13,
+          padding:20,borderWidth:1,borderColor:theme.border,alignItems:'center',gap:8}}>
+          <Ionicons name="leaf-outline" size={24} color="#27845B"/>
+          <Text style={{fontFamily:'serif',color:theme.foreground,fontSize:20,textAlign:'center'}}>
+            Faire grandir ce qui compte
+          </Text>
+          <Text style={{color:theme.muted,fontSize:12,textAlign:'center',lineHeight:19}}>
+            Une habitude concrète suffit pour commencer.
+          </Text>
+        </View>:null}
+        {habits.map(h=>{
+          const now=new Date();
+          now.setHours(12,0,0,0);
+          const start=new Date(now);
+          start.setDate(now.getDate()-((now.getDay()+6)%7));
+          const dates=Array.from({length:7},(_,i)=>{
+            const d=new Date(start);d.setDate(start.getDate()+i);
+            const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+            return {key,number:d.getDate(),label:['L','M','M','J','V','S','D'][i]};
+          });
+          const displayed=h.frequency==='weekly'?[dates[0]]:dates;
+          return <View key={h.id} style={{backgroundColor:theme.surface,
+            borderWidth:1,borderColor:theme.border,borderRadius:13,padding:16,gap:13}}>
+            <View style={{flexDirection:'row',alignItems:'center',gap:10}}>
+              <View style={{width:34,height:34,borderRadius:10,backgroundColor:theme.dark?'#334C3D':'#E6F0E8',
+                justifyContent:'center',alignItems:'center'}}>
+                <Ionicons name="leaf-outline" size={19} color="#27845B"/>
+              </View>
+              <View style={{flex:1,gap:3}}>
+                <Text style={{color:theme.foreground,fontSize:14,fontWeight:'700'}}>{h.title}</Text>
+                <Text style={{color:theme.muted,fontSize:11}}>
+                  {h.frequency==='daily'?'Chaque jour':'Chaque semaine'} · {h.completed.length} accomplissement(s)
+                </Text>
+              </View>
+            </View>
+            <View style={{flexDirection:'row',gap:7,alignItems:'center',justifyContent:'space-between'}}>
+              {displayed.map((d,i)=>{
+                const checked=h.completed.includes(d.key);
+                const disabled=historical||d.key>day();
+                return <Pressable key={d.key} disabled={disabled} accessibilityRole="checkbox"
+                  accessibilityState={{checked,disabled}}
+                  accessibilityLabel={h.title+', '+(h.frequency==='weekly'?'Cette semaine':d.key)}
+                  onPress={()=>setHabits(dream.id,habits.map(x=>x.id===h.id?{
+                    ...x,completed:checked?x.completed.filter(v=>v!==d.key):[...x.completed,d.key]
+                  }:x))}
+                  style={{flex:1,minHeight:57,borderRadius:9,
+                    borderWidth:1,borderColor:checked?'#27845B':theme.border,
+                    backgroundColor:checked?(theme.dark?'#2A513B':'#E4F0E5'):theme.background,
+                    alignItems:'center',justifyContent:'center',gap:5,opacity:disabled&&!checked?.45:1}}>
+                  <Text style={{fontSize:10,color:checked?'#27845B':theme.muted,fontWeight:'600'}}>
+                    {h.frequency==='weekly'?'Semaine':d.label}
+                  </Text>
+                  {checked?<Ionicons name="checkmark" size={17} color="#27845B"/>:
+                    <Text style={{fontSize:12,color:theme.foreground,fontWeight:'600'}}>
+                      {h.frequency==='weekly'?'✓':d.number}
+                    </Text>}
+                </Pressable>;
+              })}
+            </View>
+          </View>;
+        })}
+        {!historical?<Pressable accessibilityRole="button" onPress={()=>setGrowthDialog('habit')}
+          style={{minHeight:60,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:9,
+            borderWidth:1,borderStyle:'dashed',borderColor:'#27845B',borderRadius:12}}>
+          <Ionicons name="add" size={22} color="#27845B"/>
+          <Text style={{color:theme.foreground,fontSize:13,fontWeight:'700'}}>Ajouter une habitude</Text>
+        </Pressable>:null}
+      </View>
+    </DreamPhaseSection>
+    <DreamPhaseSection title="Journal de croissance"
+      subtitle="Conserve les avancées importantes et les moments qui marquent le chemin.">
+      <View style={{gap:10}}>
+        {(dream.milestones||[]).map(log=><View key={log.id}
+          style={{padding:16,borderRadius:13,backgroundColor:theme.surface,
+            borderWidth:1,borderColor:theme.border,gap:10}}>
+          <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',gap:8}}>
+            <Text style={{fontSize:10,color:'#27845B',fontWeight:'700',letterSpacing:1.0}}>
+              {log.date}
+            </Text>
+            {log.shareRequested?<View style={{flexDirection:'row',gap:4,alignItems:'center'}}>
+              <Ionicons name="paper-plane-outline" size={13} color="#D71D77"/>
+              <Text style={{fontSize:10,color:'#D71D77',fontWeight:'700'}}>À partager</Text>
+            </View>:null}
+          </View>
+          <Text style={{color:theme.foreground,fontSize:15,lineHeight:23}}>{log.title}</Text>
+          {!historical?<Pressable accessibilityRole="button"
+            onPress={()=>patch(dream.id,{milestones:(dream.milestones||[]).map(m=>({
+              ...m,shareRequested:m.id===log.id?!m.shareRequested:false
+            }))})}
+            style={{alignSelf:'flex-start',flexDirection:'row',alignItems:'center',gap:6,paddingVertical:6}}>
+            <Ionicons name={log.shareRequested?'bookmark':'bookmark-outline'}
+              size={16} color={log.shareRequested?'#D71D77':theme.muted}/>
+            <Text style={{fontSize:11,color:log.shareRequested?'#D71D77':theme.muted}}>
+              {log.shareRequested?'Retirer du partage':'Sélectionner pour publication'}
+            </Text>
+          </Pressable>:null}
+        </View>)}
+        {(dream.milestones||[]).some(m=>m.shareRequested)?<Text
+          style={{fontSize:11,lineHeight:18,color:theme.muted}}>
+          Un seul log est sélectionné pour le partage. Sa publication publique nécessite encore la synchronisation avec Network.
+        </Text>:null}
+        {!historical?<Pressable accessibilityRole="button" onPress={()=>setGrowthDialog('log')}
+          style={{minHeight:60,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:9,
+            borderWidth:1,borderStyle:'dashed',borderColor:theme.border,borderRadius:12}}>
+          <Ionicons name="add" size={22} color="#27845B"/>
+          <Text style={{color:theme.foreground,fontSize:13,fontWeight:'700'}}>Ajouter un log</Text>
+        </Pressable>:null}
+      </View>
+    </DreamPhaseSection>
+    <DreamPhaseSection title="Notes personnelles"
+      subtitle="Des pensées et réflexions privées, rien que pour toi.">
+      <View style={{gap:9}}>
+        {(dream.thoughts||[]).map(note=><View key={note.id} style={{
+          backgroundColor:theme.dark?'#322F31':'#F4EEE6',borderRadius:12,padding:16,gap:8}}>
+          <Text style={{fontSize:10,fontWeight:'700',letterSpacing:1,color:theme.muted}}>NOTE · {note.date}</Text>
+          <Text style={{fontFamily:HANDWRITING_FAMILY,fontSize:23,lineHeight:31,
+            color:theme.foreground}}>{note.text}</Text>
+        </View>)}
+        {!historical?<Pressable accessibilityRole="button" onPress={()=>setGrowthDialog('note')}
+          style={{minHeight:61,borderWidth:1,borderColor:theme.border,borderStyle:'dashed',
+            borderRadius:12,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:8}}>
+          <Ionicons name="create-outline" size={21} color="#B88962"/>
+          <Text style={{color:theme.foreground,fontSize:13,fontWeight:'700'}}>Écrire une note</Text>
+        </Pressable>:null}
+      </View>
+    </DreamPhaseSection>
+    {!historical?<View style={{marginVertical:16}}>
+      <Action label="Admirer les fleurs de cette plante"
+        onPress={()=>router.push({pathname:'/my-dream/flower/[id]',params:{id:dream.id}})}/>
+    </View>:null}
+  </>:null}
   {phase==='Témoignage' ? <>
     <DreamPhaseSection title="Au commencement">
       <Text style={{fontSize:22,fontFamily:HANDWRITING_FAMILY,color:theme.foreground,lineHeight:32,marginBottom:14}}>{dream.summary}</Text>
@@ -308,6 +417,64 @@ export default function DreamExperience({ dream, viewPhase, onBack, onNavigate }
     accessibilityRole="button" style={{alignItems:'center',marginTop:26,padding:15}}>
       <Text style={{color:'#B24C59',fontSize:12}}>{'Arracher cette plante'}</Text>
    </Pressable> : null}
+ <Modal visible={growthDialog!==null} transparent animationType="fade"
+   onRequestClose={()=>setGrowthDialog(null)}>
+   <View style={{flex:1,backgroundColor:'rgba(0,0,0,.54)',justifyContent:'center',padding:18}}>
+     <Pressable style={{position:'absolute',top:0,left:0,bottom:0,right:0}}
+       onPress={()=>setGrowthDialog(null)}/>
+     <View style={{backgroundColor:theme.surface,borderRadius:15,padding:21,
+       maxWidth:440,width:'100%',alignSelf:'center',gap:13}}>
+       <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
+         <Text style={{color:theme.foreground,fontSize:20,fontWeight:'700'}}>
+           {growthDialog==='habit'?'Nouvelle habitude':
+             growthDialog==='log'?'Nouveau log':'Note personnelle'}
+         </Text>
+         <Pressable accessibilityLabel="Fermer" onPress={()=>setGrowthDialog(null)}>
+           <Ionicons name="close-outline" color={theme.foreground} size={23}/>
+         </Pressable>
+       </View>
+       {growthDialog==='habit'?<>
+         <Field label="Ce que je veux pratiquer" value={habitTitle}
+           onChange={setHabitTitle} placeholder="Ex. Répéter 20 minutes"/>
+         <View style={{flexDirection:'row',gap:8}}>
+           {(['daily','weekly'] as const).map(f=><Pressable key={f}
+             onPress={()=>setFrequency(f)}
+             style={{flex:1,padding:12,borderRadius:10,alignItems:'center',
+               borderWidth:1,borderColor:frequency===f?'#27845B':theme.border}}>
+             <Text style={{color:theme.foreground,fontSize:12,fontWeight:'600'}}>
+               {f==='daily'?'Quotidienne':'Hebdomadaire'}
+             </Text>
+           </Pressable>)}
+         </View>
+         <Action label="Créer l’habitude" onPress={()=>{
+           if(!habitTitle.trim())return;
+           setHabits(dream.id,[...habits,{id:uid(),title:habitTitle.trim(),frequency,completed:[]}]);
+           setHabitTitle('');setGrowthDialog(null);
+         }}/>
+       </>:growthDialog==='log'?<>
+         <Field label="Une étape importante" value={milestone} onChange={setMilestone}
+           placeholder="Qu’as-tu accompli aujourd’hui ?" multiline/>
+         <Text style={{color:theme.muted,fontSize:11,lineHeight:18}}>
+           Le log reste dans ton journal. Tu peux ensuite le sélectionner pour un partage futur.
+         </Text>
+         <Action label="Conserver ce log" onPress={()=>{
+           if(!milestone.trim())return;
+           patch(dream.id,{milestones:[...(dream.milestones||[]),
+             {id:uid(),title:milestone.trim(),date:day()}]});
+           setMilestone('');setGrowthDialog(null);
+         }}/>
+       </>:growthDialog==='note'?<>
+         <Field label="À garder pour moi" value={thought} onChange={setThought}
+           placeholder="Mes réflexions, découvertes, prières…" multiline/>
+         <Action label="Enregistrer ma note" onPress={()=>{
+           if(!thought.trim())return;
+           patch(dream.id,{thoughts:[...(dream.thoughts||[]),{id:uid(),text:thought.trim(),date:day()}]});
+           setThought('');setGrowthDialog(null);
+         }}/>
+       </>:null}
+     </View>
+   </View>
+ </Modal>
  <DreamResourceDetailsModal
    resource={resources.find(r=>r.id===selectedResourceId)||null}
    editable={resourceEditable}
