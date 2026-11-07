@@ -1,6 +1,7 @@
 import { Text, TextInput } from '@/i18n/LocalizedText';
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, View } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NetworkMark } from '@/components/brand/NetworkMark';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,7 +18,8 @@ import { FireHeader } from '@/components/fire/FireHeader';
 import { useLocale } from '@/i18n/locale';
 import { useAppTheme } from '@/theme/AppTheme';
 import { HANDWRITING_FAMILY } from '@/theme/handwriting';
-const filters = ['Tout', 'Rêves', 'Musique', 'Bible', 'Talents'] as const;
+import { matchesForMe, profileTalentStorageKey, type SavedTalent } from '@/domain/personalDiscovery';
+const filters = ['Tout', 'Pour moi', 'Rêves', 'Musique', 'Bible', 'Talents'] as const;
 
 /** Stable, well-distributed editorial shuffle: no jumping cards on each render. */
 function discoveryRank(id: string): number {
@@ -40,9 +42,27 @@ export default function Discover() {
   const params = useLocalSearchParams<{ filter?: string }>();
 
   const [filter, setFilter] = useState<(typeof filters)[number]>(
-    params.filter === 'Talents' ? 'Talents' : 'Tout',
+    params.filter === 'Talents' ? 'Talents' : params.filter === 'Pour moi' ? 'Pour moi' : 'Tout',
   );
   const [query, setQuery] = useState('');
+  const { email } = useApp();
+  const [savedTalents, setSavedTalents] = useState<SavedTalent[]>([]);
+  const [talentsLoaded, setTalentsLoaded] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    setTalentsLoaded(false);
+    setSavedTalents([]);
+    void AsyncStorage.getItem(profileTalentStorageKey(email)).then(raw => {
+      if (!alive) return;
+      try {
+        const data: unknown = raw ? JSON.parse(raw) : [];
+        setSavedTalents(Array.isArray(data) ? data.filter(
+          (t): t is SavedTalent => !!t && typeof t === 'object' && typeof t.name === 'string' && t.name.trim().length > 0,
+        ) : []);
+      } catch { setSavedTalents([]); }
+    }).catch(()=>{ if (alive) setSavedTalents([]); }).finally(()=>{ if (alive) setTalentsLoaded(true); });
+    return () => { alive = false; };
+  }, [email]);
   // Discovery is backed by D1 through the API; there is deliberately no mock fallback.
   const feed = useDiscovery();
   // Preserve the original mixed feed, including Talent posts. Previously the
@@ -61,6 +81,7 @@ export default function Discover() {
       publications.filter(
         p =>
           (filter === 'Tout' ||
+            (filter === 'Pour moi' && matchesForMe(p, savedTalents)) ||
             (filter === 'Rêves' && p.type === 'dream') ||
             (filter === 'Musique' && p.type === 'music') ||
             (filter === 'Bible' && p.type === 'bible')) &&
@@ -69,7 +90,7 @@ export default function Discover() {
             .toLowerCase()
             .includes(query.trim().toLowerCase()),
       ),
-    [filter, query, publications],
+    [filter, query, publications, savedTalents],
   );
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
@@ -152,6 +173,8 @@ export default function Discover() {
               text={
                 f === 'Tout'
                   ? tr('all')
+                  : f === 'Pour moi'
+                    ? 'Pour moi'
                   : f === 'Rêves'
                     ? tr('dreamsFilter')
                     : f === 'Musique'
@@ -172,7 +195,9 @@ export default function Discover() {
             ? personPublications
             : filter === 'Tout'
               ? shuffledFeed
-              : items
+              : filter === 'Pour moi'
+                ? shuffledFeed.filter(p => matchesForMe(p, savedTalents))
+                : items
           ).filter(p =>
             [
               p.title,
@@ -186,6 +211,25 @@ export default function Discover() {
           )}
         />
         </View>
+        {filter === 'Pour moi' && talentsLoaded && savedTalents.length === 0 ? (
+          <View style={{padding:23,alignItems:'center',gap:10}}>
+            <Ionicons name="sparkles-outline" color={theme.muted} size={24}/>
+            <Text style={{color:theme.foreground,fontWeight:'700',fontSize:15}}>Des occasions pensées pour tes talents</Text>
+            <Text style={{color:theme.muted,fontSize:12,lineHeight:20,textAlign:'center'}}>
+              Renseigne tes talents dans ton profil pour découvrir les demandes qui correspondent à tes compétences.
+            </Text>
+            <Pressable accessibilityRole="button" onPress={()=>router.push('/profile')} style={{padding:12,borderWidth:1,borderColor:theme.border,borderRadius:9}}>
+              <Text style={{color:theme.foreground,fontSize:12,fontWeight:'700'}}>Renseigner mes talents</Text>
+            </Pressable>
+          </View>
+        ) : null}
+        {filter === 'Pour moi' && talentsLoaded && savedTalents.length > 0 &&
+          !shuffledFeed.some(p => matchesForMe(p, savedTalents)) && feed.state !== 'loading' ? (
+          <Text style={{color:theme.muted,fontSize:13,lineHeight:21,textAlign:'center',marginTop:26}}>
+            Aucun besoin correspondant à tes talents dans les publications chargées.
+            Les demandes de matériel de JenLow Tools ne sont pas encore synchronisées.
+          </Text>
+        ) : null}
         {feed.state === 'loading' && feed.items.length === 0 ? (
           <ActivityIndicator style={{ marginTop: 30 }} color={theme.foreground} />
         ) : null}
@@ -199,7 +243,7 @@ export default function Discover() {
             </Pressable>
           </View>
         ) : null}
-        {feed.state === 'ready' && filter !== 'Talents' && items.length === 0 && (
+        {feed.state === 'ready' && filter !== 'Talents' && filter !== 'Pour moi' && items.length === 0 && (
           <Text style={{ textAlign: 'center', marginTop: 25, color: '#999' }}>
             Aucune publication trouvée.
           </Text>
