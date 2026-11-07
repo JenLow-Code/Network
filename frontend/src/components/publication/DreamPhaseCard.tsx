@@ -149,6 +149,7 @@ export function DreamPhaseCard({ item, width, variant, onOpen }: Props) {
   const titleSize = compact ? (width < 190 ? 18 : 21) : (width < 440 ? 31 : 41);
   const ink = theme.foreground;
   const subdued = theme.muted;
+  const discoveryLabelColor = dark ? '#CFC9C4' : '#6B625B';
   // All neutral surfaces use the same Semence palette, never phase-specific green.
   const neutral = dark ? '#282A2E' : '#F0EBE4';
   const base = { width, borderRadius: 0, overflow: 'hidden' as const };
@@ -157,7 +158,7 @@ export function DreamPhaseCard({ item, width, variant, onOpen }: Props) {
       {content}
     </Pressable>
   ) : <View>{content}</View>;
-  const phaseText = (color: string = subdued) => (
+  const phaseText = (color: string = discoveryLabelColor) => (
     <Text style={{ color, fontSize: compact ? 9 : 11, fontWeight: '700', letterSpacing: 1.3, textAlign: 'right' }}>
       {PHASE_LABELS[item.phase].toUpperCase()}
     </Text>
@@ -224,7 +225,7 @@ export function DreamPhaseCard({ item, width, variant, onOpen }: Props) {
       <View style={[base, { backgroundColor: neutral }]}>
         {withOpen(
           <View style={{ padding: inset, gap: compact ? 11 : 18 }}>
-            {topRight(dark ? '#CCBCA9' : '#74594B')}
+            {topRight()}
             {heading(textColor)}
             {!compact && (
               <View style={{ gap: 5 }}>
