@@ -6,6 +6,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { dreams } from '@/mocks/publications';
 import { myCircle } from '@/mocks/demoCircle';
 import { Nav } from '@/components/navigation/Nav';
+import { PageHeader } from '@/components/navigation/PageHeader';
 export default function Introduction() {
   const { id, person } = useLocalSearchParams<{ id: string; person?: string }>();
   const d = dreams.find(x => x.id === id),
@@ -14,9 +15,7 @@ export default function Introduction() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
       <View style={{ flex: 1, padding: 22 }}>
-        <Pressable onPress={() => router.back()}>
-          <Ionicons name="chevron-back" size={25} />
-        </Pressable>
+        <PageHeader />
         <Text style={{ fontFamily: 'Caveat_700Bold', fontSize: 33, marginTop: 18 }}>
           Introduction de confiance
         </Text>
