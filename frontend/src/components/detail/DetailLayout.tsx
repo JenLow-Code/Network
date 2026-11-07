@@ -42,6 +42,8 @@ export function DetailLayout({
   const { width: screenWidth } = useWindowDimensions();
   const width = Math.min(screenWidth, 760);
   const heroWidth = Math.max(0, width - 32);
+  // Let Floraison photography meet the detail-page edges; other content keeps its insets.
+  const coverWidth = isFloraison ? width : heroWidth;
   const heroHeight =
     item.type === 'dream'
       ? Math.min(530, Math.max(280, heroWidth * 0.70))
@@ -63,13 +65,15 @@ export function DetailLayout({
         <DetailAuthorHeader item={item} />
 
         <View style={{ paddingHorizontal: 16 }}>
-          <View style={{ position: 'relative' }}>
-          <DetailHero item={item} width={heroWidth} height={heroHeight} onMusicPress={onCoverPress} musicPlaying={musicPlaying} />
+          <View style={{ position: 'relative', marginHorizontal: isFloraison ? -16 : 0 }}>
+          <DetailHero item={item} width={coverWidth} height={heroHeight} onMusicPress={onCoverPress} musicPlaying={musicPlaying} />
 
           <View style={{
             paddingTop: item.type === 'music' ? 4 : item.type === 'dream' ? 0 : 22,
             // Match the Germination detail controls to the talent tiles/title inset.
-            paddingHorizontal: !isSeed ? (heroWidth < 440 ? 23 : 32) : 0,
+            paddingHorizontal: isFloraison
+              ? (heroWidth < 440 ? 23 : 32) + 16
+              : !isSeed ? (heroWidth < 440 ? 23 : 32) : 0,
             marginTop: 0,
             position: 'relative',
             zIndex: 1,
