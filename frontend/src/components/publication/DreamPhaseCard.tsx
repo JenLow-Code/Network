@@ -215,6 +215,25 @@ export function DreamPhaseCard({ item, width, variant, onOpen }: Props) {
   );
 
   if (item.phase === 'Rêve') {
+    // Discovery cards use one real cover photo rather than the older mosaic.
+    // The larger detail view retains its inspiration gallery and interactions.
+    if (compact) {
+      return (
+        <View style={[base, { backgroundColor: neutral }]}>
+          {withOpen(
+            <View style={{ padding: inset, gap: 11 }}>
+              {topRight(dark ? '#CCBCA9' : '#74594B')}
+              {heading(dark ? '#F5F1EC' : '#292622')}
+              <Image
+                source={{ uri: item.image }}
+                resizeMode="cover"
+                style={{ width: '100%', height: Math.max(142, width * 0.76), backgroundColor: dark ? '#353535' : '#DDD7CB' }}
+              />
+            </View>,
+          )}
+        </View>
+      );
+    }
     const gallery = (item.galleryImages || []).filter(Boolean);
     const images = gallery.length ? gallery : [item.image];
     const thumbnailHeight = compact ? Math.max(64, width * 0.37) : Math.min(185, width * 0.24);
@@ -369,16 +388,16 @@ export function DreamPhaseCard({ item, width, variant, onOpen }: Props) {
   const mediaHeight = compact
     ? Math.max(230, width * 1.40)
     : Math.max(410, Math.min(460, width * 0.62)) + detailFadeOverlap;
-  // The detail photograph follows the same edges as the content and reaction rail.
-  // Keep the Discovery tile full bleed.
-  const photoWidth = compact ? width : width - 2 * inset;
+  // The photograph spans the full available hero width in both contexts.
+  // Detail's outer page margins are handled by DetailLayout, not doubled here.
+  const photoWidth = width;
   const gradientId = 'floraison-' + gradientInstanceId;
   return (
     <View style={[base, { backgroundColor: theme.background }]}>
       {withOpen(
         <View style={{
           width: photoWidth,
-          marginHorizontal: compact ? 0 : inset,
+          marginHorizontal: 0,
           height: mediaHeight,
           backgroundColor: theme.background,
           overflow: 'hidden',
@@ -439,13 +458,15 @@ export function DreamPhaseCard({ item, width, variant, onOpen }: Props) {
             {!compact && <Rect width="100%" height="100%" fill={'url(#' + gradientId + '-fade)'} />}
           </Svg>
           )}
-          <View pointerEvents="none" style={{
-            position: 'absolute',
-            top: compact ? inset - 4 : 32,
-            right: compact ? inset - 4 : 54,
-          }}>
-            <DreamPhaseIcon phase="Témoignage" size={compact ? 47 : 90} />
-          </View>
+          {!compact && (
+            <View pointerEvents="none" style={{
+              position: 'absolute',
+              top: 32,
+              right: 54,
+            }}>
+              <DreamPhaseIcon phase="Témoignage" size={90} />
+            </View>
+          )}
           {compact ? (
             // Discovery: preserve the original white title and pale subtitle.
             <View style={{
