@@ -67,7 +67,7 @@ export default function MusicHub() {
         {musics.map(m => (
           <Pressable
             key={m.id}
-            onPress={() => router.push({ pathname: '/music/[id]', params: { id: m.id } })}
+            onPress={() => router.push({ pathname: '/music/[id]', params: { id: m.id, from: 'music-tab' } })}
             accessibilityRole="button"
             style={{
               flexDirection: 'row', paddingVertical: 16, gap: 14,
