@@ -138,6 +138,16 @@ export default function DreamExperience({ dream, viewPhase, onBack, onNavigate }
   {phase==='Initiation' ? <>
    <DreamPhaseSection title="Préparer mon rêve" subtitle="Donne une date à ce rêve et rassemble les ressources nécessaires.">
     {!resourceEditable ? <Text style={{color:theme.muted,marginBottom:12}}>Date cible : {dream.goalDate||'Non définie'}</Text> : <Field label="Date cible" value={dream.goalDate||''} onChange={v=>patch(dream.id,{goalDate:v})} placeholder="AAAA-MM-JJ"/>}
+    {dream.phase==='Initiation' && dream.paused ? <View style={{
+      padding:14,backgroundColor:theme.dark?'#433D31':'#F5EAD3',borderRadius:11,marginBottom:14,gap:8,
+    }}>
+      <Text style={{color:theme.foreground,fontWeight:'700'}}>
+        {frozen?'Germination congelée jusqu’au '+dream.pauseUntil:'La pause est terminée'}
+      </Text>
+      <Pressable onPress={()=>patch(dream.id,{paused:false,pauseUntil:undefined})} accessibilityRole="button">
+        <Text style={{color:'#9B772E',fontWeight:'700',fontSize:12}}>Reprendre cette germination</Text>
+      </Pressable>
+    </View> : null}
     <View style={{height:7,backgroundColor:theme.dark?'#35412C':'#EFEEC9',borderRadius:6,marginBottom:8}}><View style={{height:7,width:((resources.length?resources.filter(r=>r.confirmed).length/resources.length*100:0)+'%') as any,backgroundColor:'#A1BA44',borderRadius:6}}/></View>
     <Text style={{color:theme.muted,fontSize:12,marginBottom:16}}>{resources.filter(r=>r.confirmed).length} / {resources.length} ressources confirmées</Text>
     </DreamPhaseSection>
@@ -193,13 +203,28 @@ export default function DreamExperience({ dream, viewPhase, onBack, onNavigate }
      </Pressable> : null}
     </View>)}
     </DreamPhaseSection>
-   {resourceEditable ? <DreamPhaseSection title="Ajouter un besoin">
-    <View style={{flexDirection:'row',gap:7,marginBottom:12}}>{(['person','practical','financial'] as const).map(k=><Pressable key={k} onPress={()=>setResourceCategory(k)} style={{padding:9,backgroundColor:resourceCategory===k?pink:'#F1ECE5',borderRadius:9}}><Text style={{color:resourceCategory===k?'#fff':'#333',fontSize:12}}>{k==='person'?'Personne':k==='practical'?'Matériel / autre':'Financier'}</Text></Pressable>)}</View>
-    <Field label="Ressource nécessaire" value={resourceTitle} onChange={setResourceTitle} placeholder="De quoi as-tu besoin ?"/>
-    {resourceCategory==='financial'?<Field label="Montant estimé en € (facultatif)" value={resourceAmount} onChange={setResourceAmount} placeholder="Ex. 300"/>:null}
-    {blocks.length ? <><Text style={{fontSize:12,color:theme.muted,marginBottom:7}}>Lier une inspiration (facultatif)</Text><ScrollView horizontal style={{marginBottom:10}}>{blocks.map(b=><Pressable key={b.id} onPress={()=>setResourceLink(resourceLink===b.id?'':b.id)} style={{padding:9,marginRight:7,backgroundColor:resourceLink===b.id?'#FBD8E9':'#F1ECE5',borderRadius:9}}><Text style={{fontSize:11,color:theme.foreground}} numberOfLines={1}>{b.title||b.content.slice(0,24)||'Image'}</Text></Pressable>)}</ScrollView></>:null}
-    <Action secondary label="+ Ajouter cette ressource" onPress={addResource}/>
-    {!historical ? <Action label={ready?'Faire grandir cette plante':'Préparatifs en cours'} onPress={()=>{if(!ready){Alert.alert('Encore un peu','Définis la date et confirme les ressources nécessaires.');return;}confirmGrowth();}}/> : null}</DreamPhaseSection> : null}
+   {!historical && phase==='Initiation' ? <View style={{gap:10,marginBottom:18}}>
+     {resourceEditable ? <>
+       <Pressable accessibilityRole="button" onPress={()=>setResourceDialog(true)} style={{
+         flexDirection:'row',gap:9,alignItems:'center',justifyContent:'center',padding:14,
+         borderWidth:1,borderColor:theme.border,borderRadius:11,
+       }}>
+         <Ionicons name="add-circle-outline" size={20} color={theme.foreground}/>
+         <Text style={{color:theme.foreground,fontWeight:'700'}}>Ajouter un besoin</Text>
+       </Pressable>
+       <Action label={ready?'Faire pousser cette plante':'Préparatifs en cours'} onPress={()=>{
+         if(!ready){Alert.alert('Encore un peu','Définis la date et confirme les besoins.');return;}
+         confirmGrowth();
+       }}/>
+       <Action secondary label="Congeler cette germination" onPress={()=>{
+         if((dream.pauseCount||0)>=3){Alert.alert('Limite atteinte','Ce rêve a déjà été congelé trois fois.');return;}
+         setPauseDeadline('');setFreezeDialog(true);
+       }}/>
+       <Text style={{fontSize:11,color:theme.muted,textAlign:'center'}}>
+         {(dream.pauseCount||0)}/3 pauses utilisées · date de reprise obligatoire
+       </Text>
+     </> : null}
+   </View> : null}
   </> : null}
   {phase==='Croissance' ? <>
    <DreamPhaseSection title="Mes habitudes" subtitle="Petits pas, grands changements.">
@@ -248,5 +273,49 @@ export default function DreamExperience({ dream, viewPhase, onBack, onNavigate }
     accessibilityRole="button" style={{alignItems:'center',marginTop:26,padding:15}}>
       <Text style={{color:'#B24C59',fontSize:12}}>{'Arracher cette plante'}</Text>
    </Pressable> : null}
+ <Modal visible={resourceDialog} transparent animationType="fade" onRequestClose={()=>setResourceDialog(false)}>
+   <View style={{flex:1,justifyContent:'center',padding:18,backgroundColor:'rgba(0,0,0,0.5)'}}>
+     <Pressable style={{position:'absolute',top:0,bottom:0,left:0,right:0}} onPress={()=>setResourceDialog(false)}/>
+     <ScrollView style={{backgroundColor:theme.surface,borderRadius:14,maxWidth:440,width:'100%',alignSelf:'center',maxHeight:'85%'}}
+       contentContainerStyle={{padding:20,gap:12}} keyboardShouldPersistTaps="handled">
+       <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}>
+         <Text style={{color:theme.foreground,fontWeight:'700',fontSize:19}}>Ajouter un besoin</Text>
+         <Pressable onPress={()=>setResourceDialog(false)} accessibilityLabel="Fermer">
+           <Ionicons name="close-outline" size={22} color={theme.foreground}/>
+         </Pressable>
+       </View>
+       <View style={{flexDirection:'row',flexWrap:'wrap',gap:6}}>
+         {(['person','practical','financial'] as const).map(k=><Pressable key={k} onPress={()=>setResourceCategory(k)}
+           accessibilityRole="button" accessibilityState={{selected:resourceCategory===k}}
+           style={{padding:10,borderRadius:9,backgroundColor:resourceCategory===k?'#242322':theme.background}}>
+           <Text style={{color:resourceCategory===k?'#fff':theme.foreground,fontSize:12}}>
+             {k==='person'?'Talent':k==='practical'?'Ressource':'Financement'}
+           </Text>
+         </Pressable>)}
+       </View>
+       <Field label={resourceCategory==='person'?'Talent recherché':resourceCategory==='financial'?'Objet du financement':'Ressource nécessaire'}
+         value={resourceTitle} onChange={setResourceTitle} placeholder="Ex. Salle de répétition / Pianiste"/>
+       {resourceCategory==='financial'?<Field label="Montant estimé en €" value={resourceAmount} onChange={setResourceAmount} placeholder="Ex. 300"/>:null}
+       <Action label="Ajouter ce besoin" onPress={addResource}/>
+     </ScrollView>
+   </View>
+ </Modal>
+ <Modal visible={freezeDialog} transparent animationType="fade" onRequestClose={()=>setFreezeDialog(false)}>
+   <View style={{flex:1,justifyContent:'center',padding:18,backgroundColor:'rgba(0,0,0,0.5)'}}>
+     <Pressable style={{position:'absolute',top:0,bottom:0,left:0,right:0}} onPress={()=>setFreezeDialog(false)}/>
+     <View style={{backgroundColor:theme.surface,borderRadius:14,maxWidth:430,width:'100%',alignSelf:'center',padding:22,gap:13}}>
+       <Text style={{color:theme.foreground,fontSize:19,fontWeight:'700'}}>Congeler cette germination</Text>
+       <Text style={{color:theme.muted,fontSize:12,lineHeight:20}}>
+         Choisis une date de reprise. Tu peux reprendre plus tôt, mais chaque rêve peut être gelé trois fois maximum.
+         Il reste {Math.max(0,3-(dream.pauseCount||0))} pause(s).
+       </Text>
+       <Field label="Date limite (obligatoire)" value={pauseDeadline} onChange={setPauseDeadline} placeholder="AAAA-MM-JJ"/>
+       <Action label="Confirmer la pause" onPress={freeze}/>
+       <Pressable onPress={()=>setFreezeDialog(false)} style={{alignItems:'center',padding:10}}>
+         <Text style={{color:theme.muted}}>Annuler</Text>
+       </Pressable>
+     </View>
+   </View>
+ </Modal>
  </ScrollView>;
 }
