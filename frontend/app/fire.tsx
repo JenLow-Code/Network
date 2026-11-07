@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Alert, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Alert, Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -13,6 +13,8 @@ export default function FireList() {
   const theme = useAppTheme();
   const { fireIds, fireFolders, createFireFolder, renameFireFolder, deleteFireFolder, toggleFireFolderItem } = useApp();
   const [folderName, setFolderName] = useState('');
+  const [createFolderOpen, setCreateFolderOpen] = useState(false);
+  const submitFolder = () => { const name = folderName.trim(); if (!name) return; createFireFolder(name); setFolderName(''); setCreateFolderOpen(false); };
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [renaming, setRenaming] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
@@ -41,11 +43,23 @@ export default function FireList() {
           <View />
           <TopActions />
         </View>
-        <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center', marginBottom: 14 }}>
-          <Ionicons name="flame" size={26} color="#D71D77" />
-          <Text style={{ fontSize: 28, fontWeight: '700', color: theme.foreground }}>
-            Ma liste Fire
-          </Text>
+        <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+          <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center', flexShrink: 1 }}>
+            <Ionicons name="flame" size={26} color="#D71D77" />
+            <Text style={{ fontSize: 28, fontWeight: '700', color: theme.foreground }}>Ma liste Fire</Text>
+          </View>
+          <Pressable
+            accessibilityRole="button" accessibilityLabel="Créer un dossier Fire"
+            onPress={() => setCreateFolderOpen(true)}
+            style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
+            <Ionicons name="folder-outline" size={25} color={theme.foreground}/>
+            <View pointerEvents="none" style={{
+              position: 'absolute', right: 2, bottom: 3, borderRadius: 9,
+              backgroundColor: theme.background, padding: 1,
+            }}>
+              <Ionicons name="add-circle" size={15} color="#CB245C"/>
+            </View>
+          </Pressable>
         </View>
         <Text style={{ fontSize: 12, color: '#777', marginBottom: 14 }}>
           Les publications qui t'inspirent, indépendamment de tes rêves.
@@ -71,18 +85,7 @@ export default function FireList() {
             style={{ flex: 1, fontSize: 13 }}
           />
         </View>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-          <TextInput
-            accessibilityLabel="Nom du nouveau dossier"
-            value={folderName}
-            onChangeText={setFolderName}
-            placeholder="Nouveau dossier (ex. Playlist)"
-            style={{ flex: 1, paddingVertical: 10, paddingHorizontal: 12, borderWidth: 1, borderColor: theme.border, borderRadius: 9, color: theme.foreground }}
-          />
-          <Pressable accessibilityRole="button" accessibilityLabel="Créer le dossier" disabled={!folderName.trim()} onPress={() => { createFireFolder(folderName); setFolderName(''); }} style={{ padding: 11, opacity: folderName.trim() ? 1 : 0.4 }}>
-            <Ionicons name="folder-open-outline" size={23} color={theme.foreground} />
-          </Pressable>
-        </View>
+
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 14 }} contentContainerStyle={{ alignItems: 'center', gap: 8 }}>
           <Pressable onPress={() => setSelectedFolder(null)} style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, backgroundColor: selectedFolder === null ? '#F4DCE6' : theme.surface }}>
             <Text style={{ color: theme.foreground, fontSize: 12 }}>Tous</Text>
@@ -140,6 +143,48 @@ export default function FireList() {
           </View>
         )}
       </ScrollView>
+      <Modal visible={createFolderOpen} transparent animationType="fade"
+        onRequestClose={() => { setCreateFolderOpen(false); setFolderName(''); }}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 22, backgroundColor: 'rgba(0,0,0,0.50)' }}>
+          <Pressable
+            accessibilityRole="button" accessibilityLabel="Fermer la création de dossier"
+            onPress={() => { setCreateFolderOpen(false); setFolderName(''); }}
+            style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+          />
+          <View style={{ width: '100%', maxWidth: 420, backgroundColor: theme.surface, padding: 23, borderRadius: 16 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 19 }}>
+              <Text style={{ fontSize: 20, fontWeight: '700', color: theme.foreground }}>Nouveau dossier</Text>
+              <Pressable onPress={() => { setCreateFolderOpen(false); setFolderName(''); }}
+                accessibilityRole="button" accessibilityLabel="Fermer" style={{ padding: 6 }}>
+                <Ionicons name="close-outline" size={23} color={theme.foreground} />
+              </Pressable>
+            </View>
+            <Text style={{ color: theme.muted, fontSize: 12, marginBottom: 9 }}>Nom du dossier</Text>
+            <TextInput
+              autoFocus accessibilityLabel="Nom du dossier"
+              value={folderName} onChangeText={setFolderName}
+              maxLength={60}
+              placeholder="Ex. Musique, Inspiration..."
+              placeholderTextColor={theme.muted}
+              returnKeyType="done" onSubmitEditing={submitFolder}
+              style={{ color: theme.foreground, fontSize: 15, borderWidth: 1, borderColor: theme.border,
+                backgroundColor: theme.background, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12 }}
+            />
+            <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 11, marginTop: 23, alignItems: 'center' }}>
+              <Pressable onPress={() => { setCreateFolderOpen(false); setFolderName(''); }}
+                accessibilityRole="button" style={{ padding: 12 }}>
+                <Text style={{ color: theme.foreground, fontWeight: '600', fontSize: 13 }}>Annuler</Text>
+              </Pressable>
+              <Pressable onPress={submitFolder} disabled={!folderName.trim()}
+                accessibilityRole="button" accessibilityState={{ disabled: !folderName.trim() }}
+                style={{ borderRadius: 9, paddingHorizontal: 19, paddingVertical: 13,
+                  backgroundColor: folderName.trim() ? '#242322' : '#A4A29E' }}>
+                <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 13 }}>Créer le dossier</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
       <Nav />
     </SafeAreaView>
   );
