@@ -13,14 +13,14 @@ import { HANDWRITING_FAMILY } from '@/theme/handwriting';
  * Real uploaded avatars display when present; otherwise show initials.
  * Never substitute a generic stock portrait for a member's identity.
  */
-export function DetailAuthorHeader({ item }: { item: Publication }) {
+export function DetailAuthorHeader({ item, flushToImage = false }: { item: Publication; flushToImage?: boolean }) {
   const theme = useAppTheme();
   const initial = item.author.trim().slice(0, 1).toLocaleUpperCase('fr');
   return (
     <View
       style={[
         styles.header,
-        { borderBottomColor: theme.dark ? '#55575B' : '#B8B0A6' },
+        { borderBottomColor: theme.dark ? '#55575B' : '#B8B0A6', marginBottom: flushToImage ? 0 : 19 },
       ]}
     >
       <Pressable
