@@ -45,10 +45,6 @@ export function DreamTalentSquare({
           {role}
         </Text>
         {resource.requiredLevel ? <TalentLevelDots level={resource.requiredLevel} size={size < 80 ? 4 : 6} spacing={3}/> : null}
-        {resource.confirmed ? <View style={{
-          width: 6, height: 6, borderRadius: 4, backgroundColor: '#27845B',
-          position: 'absolute', right: 6, top: 6,
-        }}/> : null}
       </Pressable>
       <Modal visible={detailsOpen} transparent animationType="fade" onRequestClose={() => setDetailsOpen(false)}>
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20, backgroundColor: 'rgba(0,0,0,0.55)' }}>
