@@ -20,7 +20,7 @@ export function DetailAuthorHeader({ item, flushToImage = false }: { item: Publi
     <View
       style={[
         styles.header,
-        { borderBottomColor: theme.dark ? '#55575B' : '#B8B0A6', marginBottom: flushToImage ? 0 : 19 },
+        { borderBottomColor: theme.dark ? '#55575B' : '#B8B0A6', borderBottomWidth: flushToImage ? 0 : 0.5, marginBottom: flushToImage ? 0 : 19 },
       ]}
     >
       <Pressable
