@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Nav } from '@/components/navigation/Nav';
+import { PageHeader } from '@/components/navigation/PageHeader';
 import { useDreams } from '@/domain/dreamRepository';
 import { useLocale } from '@/i18n/locale';
 export default function Participants() {
@@ -18,9 +19,7 @@ export default function Participants() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
       <View style={{ flex: 1, padding: 20 }}>
-        <Pressable onPress={() => router.back()}>
-          <Ionicons name="chevron-back" size={25} />
-        </Pressable>
+        <PageHeader />
         <Text style={{ fontFamily: 'Caveat_700Bold', fontSize: 32, marginTop: 17 }}>
           {tr('participantTitle')}
         </Text>
