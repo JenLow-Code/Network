@@ -98,7 +98,7 @@ export default function MySpace() {
   const visible = view === 'Congelés' ? items.filter(frozen) : items;
   const testimonies = visible.filter(d => d.phase === 'Témoignage');
   const inFlower = (d:DreamEntry) => d.phase==='Croissance' &&
-    (!!d.flowerDraft?.story?.trim() || !!d.flowerDraft?.attachments?.length);
+    (!!d.flowerStartedAt || !!d.flowerDraft?.story?.trim() || !!d.flowerDraft?.attachments?.length);
   const unfinished = visible.filter(inFlower);
 
   return (
@@ -210,13 +210,19 @@ export default function MySpace() {
           </>
         )}
 
-        {unfinished.length>0 && view!=='Congelés' ? (
+        {view==='Tout' ? (
           <View style={{marginTop:6,marginBottom:26}}>
             <View style={{paddingHorizontal:side,marginBottom:12}}>
-              <Text style={{fontSize:17,fontWeight:'700',color:theme.foreground}}>En floraison</Text>
+              <Text style={{fontSize:17,fontWeight:'700',color:theme.foreground}}>Floraison</Text>
               <Text style={{fontSize:11,color:theme.muted,marginTop:4}}>Prépare et partage le résultat de ton rêve.</Text>
             </View>
-            {view==='Liste' ? (
+            {unfinished.length===0?(
+              <View style={{marginHorizontal:side,paddingVertical:17,paddingHorizontal:15,borderWidth:1,borderColor:theme.border,borderRadius:11}}>
+                <Text style={{fontSize:12,color:theme.muted,lineHeight:19}}>
+                  Les fleurs que tu prépares apparaîtront ici, avant leur publication.
+                </Text>
+              </View>
+            ):view==='Liste' ? (
               <View style={{paddingHorizontal:side}}>
                 {unfinished.map(d=><Pressable key={d.id} accessibilityRole="button"
                   onPress={()=>router.push({pathname:'/my-dream/flower/[id]',params:{id:d.id}})}
