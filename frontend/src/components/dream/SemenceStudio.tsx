@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Alert, Image, Linking, Modal, PanResponder, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Alert, Image, Linking, Modal, PanResponder, Platform, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { Circle, Defs, Pattern, Rect } from 'react-native-svg';
 import { useDreams } from '@/domain/dreamRepository';
@@ -61,7 +61,7 @@ function BlockView({block,edit,onTap}:{block:DreamBlock;edit:boolean;onTap:()=>v
   {edit?<Pressable onPress={onTap} style={{alignSelf:'flex-end',paddingHorizontal:11,paddingVertical:5}} accessibilityLabel="Modifier ce bloc"><Ionicons name="options-outline" size={17} color="#8A8281"/></Pressable>:null}
  </View>;
 }
-function CanvasTile({block,index,editable,theme,onEdit,onMove,onResize,onStart,onFinish,onHover,dragging,highlight}:{block:DreamBlock;index:number;editable:boolean;theme:{foreground:string;muted:string;border:string;surface:string};onEdit:()=>void;onMove:(from:number,to:number)=>void;onResize:(id:string,span:1|2,height:number)=>void;onStart:(index:number)=>void;onFinish:()=>void;onHover:(index:number)=>void;dragging:boolean;highlight:boolean}) {
+function CanvasTile({block,index,editable,compact,theme,onEdit,onMove,onResize,onStart,onFinish,onHover,dragging,highlight}:{block:DreamBlock;index:number;editable:boolean;compact:boolean;theme:{foreground:string;muted:string;border:string;surface:string};onEdit:()=>void;onMove:(from:number,to:number)=>void;onResize:(id:string,span:1|2,height:number)=>void;onStart:(index:number)=>void;onFinish:()=>void;onHover:(index:number)=>void;dragging:boolean;highlight:boolean}) {
  const [shift,setShift]=useState({x:0,y:0});
  const [preview,setPreview]=useState<{span:1|2;height:number}|null>(null);
  const callbacks=useRef({index,onStart,onFinish,onHover,onMove,onResize,blockId:block.id});
@@ -85,11 +85,24 @@ function CanvasTile({block,index,editable,theme,onEdit,onMove,onResize,onStart,o
   onPanResponderRelease:(_,g)=>{const span:1|2=g.dx>28?2:g.dx< -28?1:startSize.current.span;const height=Math.max(55,Math.min(540,startSize.current.height+Math.round(g.dy/28)*28));callbacks.current.onResize(callbacks.current.blockId,span,height);setPreview(null);},
   onPanResponderTerminate:()=>setPreview(null),
  })).current;
- return <View style={{width:(preview?.span||(block.span||(block.size==='small'?1:2)))===1?'48.5%':'100%',paddingBottom:12,opacity:dragging?.84:1,transform:dragging?[{translateX:shift.x},{translateY:shift.y}]:undefined,zIndex:dragging?12:0}}>
+ return <View style={{width:compact?'100%':(preview?.span||(block.span||(block.size==='small'?1:2)))===1?'48.5%':'100%',paddingBottom:compact?8:12,opacity:dragging?.84:1,transform:!compact&&dragging?[{translateX:shift.x},{translateY:shift.y}]:undefined,zIndex:dragging?12:0}}>
   <View style={{borderWidth:highlight?2:0,borderColor:'#D71D77',borderRadius:12}}>
-   <View style={preview?{minHeight:preview.height}:undefined}><BlockView block={{...block,height:preview?.height||block.height}} edit={false} onTap={onEdit}/></View>
+   <View style={preview?{minHeight:preview.height}:undefined}><BlockView block={{...block,height:compact?undefined:preview?.height||block.height}} edit={editable&&compact} onTap={onEdit}/></View>
   </View>
-  {editable?<View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',marginTop:4,paddingHorizontal:5}}>
+  {editable&&compact?<View style={{flexDirection:'row',alignItems:'center',justifyContent:'flex-end',gap:9,marginTop:4}}>
+    <Pressable onPress={()=>onMove(index,index-1)} accessibilityRole="button" accessibilityLabel="Monter ce bloc"
+      style={{padding:9,borderWidth:1,borderColor:theme.border,borderRadius:8}}>
+      <Ionicons name="arrow-up-outline" size={17} color={theme.muted}/>
+    </Pressable>
+    <Pressable onPress={()=>onMove(index,index+1)} accessibilityRole="button" accessibilityLabel="Descendre ce bloc"
+      style={{padding:9,borderWidth:1,borderColor:theme.border,borderRadius:8}}>
+      <Ionicons name="arrow-down-outline" size={17} color={theme.muted}/>
+    </Pressable>
+    <Pressable onPress={onEdit} accessibilityRole="button" accessibilityLabel="Modifier ce bloc"
+      style={{padding:9,borderWidth:1,borderColor:theme.border,borderRadius:8}}>
+      <Ionicons name="pencil-outline" size={17} color={theme.foreground}/>
+    </Pressable>
+  </View>:editable?<View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',marginTop:4,paddingHorizontal:5}}>
     <View {...drag.panHandlers} style={{paddingVertical:8,paddingHorizontal:12,backgroundColor:theme.surface,borderRadius:8,borderWidth:1,borderColor:theme.border}}><Ionicons name="reorder-three-outline" size={19} color={theme.foreground}/></View>
     <Pressable onPress={onEdit} style={{padding:8}}><Ionicons name="options-outline" size={18} color={theme.muted}/></Pressable>
     <View {...resize.panHandlers} style={{paddingVertical:8,paddingHorizontal:12,backgroundColor:theme.surface,borderRadius:8,borderWidth:1,borderColor:theme.border}}><Ionicons name="resize-outline" size={19} color="#D71D77"/></View>
@@ -97,11 +110,14 @@ function CanvasTile({block,index,editable,theme,onEdit,onMove,onResize,onStart,o
  </View>;
 }
 export default function SemenceStudio({dream,onBack,onNavigate}:{dream:DreamEntry;onBack:()=>void;onNavigate?:(phase:DreamPhase)=>void}){
- const theme=useAppTheme(); const {patch,advance,remove}=useDreams();const editable=dream.phase==='Rêve';
+ const theme=useAppTheme();const {width:viewportWidth}=useWindowDimensions();const compact=viewportWidth<520;
+ const {patch,advance,remove}=useDreams();const editable=dream.phase==='Rêve';
  const blocks=dream.blocks||[];
  const [edit,setEdit]=useState(editable);const [library,setLibrary]=useState(false);const [query,setQuery]=useState('');
  const [draft,setDraft]=useState<DreamBlock|null>(null);const [insertAt,setInsertAt]=useState<number|null>(null);
  const [confirm,setConfirm]=useState(false);
+ const [advancedEditor,setAdvancedEditor]=useState(false);
+ const [showAllBlocks,setShowAllBlocks]=useState(false);
  const [dragIndex,setDragIndex]=useState<number|null>(null);const [hoverIndex,setHoverIndex]=useState<number|null>(null);
  const base=(kind:DreamBlockKind):DreamBlock=>({id:newId(),kind,title:'',content:'',size:'wide',tone:'clear',font:'sans',align:'left',frame:'none'});
  const change=(field:Partial<DreamBlock>)=>setDraft(prev=>prev?{...prev,...field}:prev);
@@ -111,15 +127,15 @@ export default function SemenceStudio({dream,onBack,onNavigate}:{dream:DreamEntr
  const move=(id:string,step:number)=>{const a=[...blocks],i=a.findIndex(b=>b.id===id),j=i+step;if(i<0||j<0||j>=a.length)return;[a[i],a[j]]=[a[j],a[i]];patch(dream.id,{blocks:a});};
  const alert=(message:string)=>Platform.OS==='web'?window.alert(message):Alert.alert('Semence',message);
  const chooseMedia=()=>{if(!draft)return;pickFlowerMedia(items=>{if(!items.length)return;change({content:items[0].uri,media:[...(draft.media||[]),...items.map(x=>x.uri)]});},alert);};
- const chooser=(index:number|null)=>{setInsertAt(index);setQuery('');setLibrary(true);};
- const quickAdd=(kind:DreamBlockKind)=>{if(!editable)return;setEdit(true);setInsertAt(null);setDraft(base(kind));setLibrary(false);};
+ const chooser=(index:number|null)=>{setInsertAt(index);setQuery('');setShowAllBlocks(false);setLibrary(true);};
+ const quickAdd=(kind:DreamBlockKind)=>{if(!editable)return;setEdit(true);setInsertAt(null);setAdvancedEditor(false);setDraft(base(kind));setLibrary(false);};
  const uproot=()=>{
    const run=()=>{remove(dream.id);router.replace('/my-space');};
    const message='Cette action supprimera définitivement cette semence et ses inspirations sur cet appareil.';
    if(Platform.OS==='web'){if(typeof window!=='undefined' && window.confirm('Arracher cette semence ?\n'+message))run();}
    else Alert.alert('Arracher cette semence ?',message,[{text:'Annuler',style:'cancel'},{text:'Arracher',style:'destructive',onPress:run}]);
  };
- return <ScrollView style={{flex:1,backgroundColor:theme.background}} contentContainerStyle={{paddingHorizontal:19,paddingTop:10,paddingBottom:90,maxWidth:760,width:'100%',alignSelf:'center'}}>
+ return <ScrollView style={{flex:1,backgroundColor:theme.background}} contentContainerStyle={{paddingHorizontal:compact?15:19,paddingTop:10,paddingBottom:100,maxWidth:760,width:'100%',alignSelf:'center'}}>
    <DreamPhaseHeader dream={dream} phase="Rêve" onBack={draft?()=>setDraft(null):onBack}
       onNavigate={onNavigate} readOnly={!editable}
    />
@@ -129,21 +145,21 @@ export default function SemenceStudio({dream,onBack,onNavigate}:{dream:DreamEntr
        {editable?'Semence non répertoriée · publique dès la Germination':'Premières inspirations · archive en lecture seule'}
      </Text>
    </View>
-   <DreamPhaseSection title="Mon tableau d’inspiration" subtitle="Un espace libre pour imaginer, rassembler et composer ton rêve.">
+   <DreamPhaseSection title="Mon tableau d’inspiration" subtitle={compact?undefined:"Un espace libre pour imaginer, rassembler et composer ton rêve."}>
     <View style={{
       borderWidth: 1, borderColor: theme.border, borderRadius: 16, overflow: 'hidden',
       backgroundColor: theme.dark ? '#292A2C' : '#FDFCF9',
-      paddingHorizontal: 13, paddingTop: 14, paddingBottom: 17,
-      minHeight: 330, position:'relative',
+      paddingHorizontal: compact?10:13, paddingTop: compact?12:14, paddingBottom: 17,
+      minHeight: compact?220:330, position:'relative',
     }}>
-      <Svg pointerEvents="none" width="100%" height="100%" style={{position:'absolute',top:0,left:0,right:0,bottom:0}}>
+      {!compact?<Svg pointerEvents="none" width="100%" height="100%" style={{position:'absolute',top:0,left:0,right:0,bottom:0}}>
         <Defs>
           <Pattern id="dream-canvas-dots" patternUnits="userSpaceOnUse" width="22" height="22">
             <Circle cx="11" cy="11" r=".75" fill={theme.dark?'#66615D':'#DAD4CE'} opacity={0.5}/>
           </Pattern>
         </Defs>
         <Rect width="100%" height="100%" fill="url(#dream-canvas-dots)"/>
-      </Svg>
+      </Svg>:null}
       <View style={{
         flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
         borderBottomWidth: 1, borderColor: theme.border, paddingBottom: 12, marginBottom: 16,
@@ -156,11 +172,11 @@ export default function SemenceStudio({dream,onBack,onNavigate}:{dream:DreamEntr
         </View>
         {editable ? (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-            <Pressable onPress={()=>{setEdit(!edit);setLibrary(false);setDraft(null);}}
+            {!compact?<Pressable onPress={()=>{setEdit(!edit);setLibrary(false);setDraft(null);}}
               accessibilityRole="button" accessibilityLabel={edit?'Terminer la composition':'Modifier le tableau'}
               style={{paddingHorizontal:11,paddingVertical:10,borderRadius:9}}>
               <Text style={{color:theme.foreground,fontSize:12,fontWeight:'700'}}>{edit?'Terminer':'Modifier'}</Text>
-            </Pressable>
+            </Pressable>:null}
             <Pressable onPress={()=>{setEdit(true);chooser(null);}}
               accessibilityRole="button" accessibilityLabel="Ajouter un bloc"
               style={{padding:9,backgroundColor:PINK,borderRadius:9}}>
@@ -170,7 +186,7 @@ export default function SemenceStudio({dream,onBack,onNavigate}:{dream:DreamEntr
         ) : <Ionicons name="lock-closed-outline" size={18} color={theme.muted}/>}
       </View>
 
-      {editable && edit && (
+      {editable && edit && !compact && (
         <View style={{flexDirection:'row',flexWrap:'wrap',gap:7,marginBottom:blocks.length ? 20 : 26}}>
           {([
             { kind:'text', label:'Une idée', icon:'text-outline' },
@@ -206,9 +222,9 @@ export default function SemenceStudio({dream,onBack,onNavigate}:{dream:DreamEntr
       ) : blocks.length === 0 ? (
         <View style={{paddingVertical:10,gap:13}}>
           {editable ? (
-            <View style={{flexDirection:'row',gap:11,alignItems:'stretch'}}>
+            <View style={{flexDirection:compact?'column':'row',gap:compact?9:11,alignItems:'stretch'}}>
               <Pressable accessibilityRole="button" onPress={()=>quickAdd('image')}
-                style={{flex:1,minHeight:178,borderRadius:13,padding:14,
+                style={{flex:1,minHeight:compact?108:178,borderRadius:13,padding:14,
                   backgroundColor:theme.dark?'#373739':'#EFE6DC',
                   borderWidth:1,borderStyle:'dashed',borderColor:theme.border,
                   justifyContent:'space-between'}}>
@@ -218,7 +234,7 @@ export default function SemenceStudio({dream,onBack,onNavigate}:{dream:DreamEntr
                   <Text style={{fontSize:11,color:theme.muted}}>Ajouter une photo</Text>
                 </View>
               </Pressable>
-              <View style={{flex:1,gap:11}}>
+              <View style={{flex:1,flexDirection:compact?'row':'column',gap:compact?9:11}}>
                 <Pressable accessibilityRole="button" onPress={()=>quickAdd('text')}
                   style={{flex:1,minHeight:82,backgroundColor:theme.dark?'#34383A':'#E9EDE8',
                     borderRadius:12,padding:12,justifyContent:'space-between'}}>
@@ -243,7 +259,7 @@ export default function SemenceStudio({dream,onBack,onNavigate}:{dream:DreamEntr
         </View>
       ) : (
         <View style={{flexDirection:'row',flexWrap:'wrap',justifyContent:'space-between',alignItems:'flex-start'}}>
-          {blocks.map((b,i)=><CanvasTile key={b.id} block={b} index={i} editable={editable&&edit&&!library&&!draft}
+          {blocks.map((b,i)=><CanvasTile key={b.id} block={b} index={i} compact={compact} editable={editable&&edit&&!library&&!draft}
             theme={theme} onEdit={()=>{setDraft({...b});setLibrary(false);}} onMove={reorder} onResize={resizeBlock}
             onStart={setDragIndex} onFinish={()=>{setDragIndex(null);setHoverIndex(null);}}
             onHover={setHoverIndex} dragging={dragIndex===i} highlight={hoverIndex===i&&dragIndex!==i}/>)}
