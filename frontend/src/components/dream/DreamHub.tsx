@@ -103,12 +103,17 @@ function shortDate(date?: string) {
     : date;
 }
 
-export default function DreamHub({ dream, startInSemence = false }: { dream: DreamEntry; startInSemence?: boolean }) {
+export default function DreamHub({ dream, startInSemence = false, startPhase }: {
+  dream: DreamEntry; startInSemence?: boolean; startPhase?: DreamPhase;
+}) {
   const theme = useAppTheme();
   const { patch } = useDreams();
   const { width, height } = useWindowDimensions();
   const compact = width < 720;
-  const [open, setOpen] = useState<DreamPhase | null>(startInSemence && dream.phase === 'Rêve' ? 'Rêve' : null);
+  const [open, setOpen] = useState<DreamPhase | null>(() =>
+    startPhase && order.indexOf(startPhase) <= order.indexOf(dream.phase)
+      ? startPhase : startInSemence && dream.phase === 'Rêve' ? 'Rêve' : null
+  );
   const firstRender = useRef(true);
   const switchPhase = (next: DreamPhase) => {
     if (order.indexOf(next) <= order.indexOf(dream.phase)) setOpen(next);
