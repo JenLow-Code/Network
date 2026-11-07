@@ -64,7 +64,6 @@ export default function DreamExperience({ dream, viewPhase, onBack, onNavigate }
  const [resourceDialog,setResourceDialog]=useState(false);
  const [freezeDialog,setFreezeDialog]=useState(false);
  const [goalDateDialog,setGoalDateDialog]=useState(false);
- const [pauseDeadline,setPauseDeadline]=useState('');
  const [habitTitle, setHabitTitle] = useState('');
  const [frequency, setFrequency] = useState<DreamHabit['frequency']>('daily');
  const [milestone, setMilestone] = useState('');
@@ -119,15 +118,16 @@ export default function DreamExperience({ dream, viewPhase, onBack, onNavigate }
  const readOnly = historical || dream.phase === 'Témoignage';
  const frozen=!!dream.paused && !!dream.pauseUntil && dream.pauseUntil>=day();
  const resourceEditable=phase==='Initiation' && !historical && !frozen;
- const freeze=()=>{
-   if(historical || dream.phase!=='Initiation'||frozen)return;
-   if((dream.pauseCount||0)>=3){Alert.alert('Limite atteinte','Trois pauses maximum par rêve.');return;}
-   if(!/^\d{4}-\d{2}-\d{2}$/.test(pauseDeadline) ||
-      !Number.isFinite(Date.parse(pauseDeadline)) || pauseDeadline<=day()){
-     Alert.alert('Date requise','Choisis une date de reprise future au format AAAA-MM-JJ.');return;
+ const freezeAt=(date:string)=>{
+   if(historical || dream.phase!=='Initiation' || frozen)return;
+   if((dream.pauseCount||0)>=3){
+     Alert.alert('Limite atteinte','Cette germination a déjà été congelée trois fois.');return;
    }
-   patch(dream.id,{paused:true,pauseUntil:pauseDeadline,pauseCount:(dream.pauseCount||0)+1});
-   setFreezeDialog(false);setPauseDeadline('');
+   if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||date<=day()||Number.isNaN(Date.parse(date))){
+     Alert.alert('Date requise','Sélectionne une date future dans le calendrier.');return;
+   }
+   patch(dream.id,{paused:true,pauseUntil:date,pauseCount:(dream.pauseCount||0)+1});
+   setFreezeDialog(false);
  };
  return <ScrollView style={{flex:1,backgroundColor:theme.background}} contentContainerStyle={{paddingHorizontal:19,paddingTop:10,paddingBottom:65,maxWidth:760,width:'100%',alignSelf:'center'}}>
   <DreamPhaseHeader dream={dream} phase={phase} onBack={onBack || (()=>router.replace('/my-space'))} onNavigate={onNavigate} readOnly={historical}
@@ -244,7 +244,7 @@ export default function DreamExperience({ dream, viewPhase, onBack, onNavigate }
          </Pressable>
          <Pressable accessibilityRole="button" onPress={()=>{
            if((dream.pauseCount||0)>=3){Alert.alert('Limite atteinte','Cette germination a déjà été congelée trois fois.');return;}
-           setPauseDeadline('');setFreezeDialog(true);
+           setFreezeDialog(true);
          }} style={{minHeight:48,borderWidth:1.5,borderColor:'#397F9E',borderRadius:11,
            alignItems:'center',justifyContent:'center',paddingHorizontal:16}}>
            <Text style={{color:'#397F9E',fontSize:13,fontWeight:'700'}}>Congeler</Text>
@@ -409,25 +409,17 @@ export default function DreamExperience({ dream, viewPhase, onBack, onNavigate }
      </ScrollView>
    </View>
  </Modal>
- <Modal visible={freezeDialog} transparent animationType="fade" onRequestClose={()=>setFreezeDialog(false)}>
-   <View style={{flex:1,justifyContent:'center',padding:18,backgroundColor:'rgba(0,0,0,0.5)'}}>
-     <Pressable style={{position:'absolute',top:0,bottom:0,left:0,right:0}} onPress={()=>setFreezeDialog(false)}/>
-     <View style={{backgroundColor:theme.surface,borderRadius:14,maxWidth:430,width:'100%',alignSelf:'center',padding:22,gap:13}}>
-       <Text style={{color:theme.foreground,fontSize:19,fontWeight:'700'}}>Congeler cette germination</Text>
-       <Text style={{color:theme.muted,fontSize:12,lineHeight:20}}>
-         Choisis une date de reprise. Tu peux reprendre plus tôt, mais chaque rêve peut être gelé trois fois maximum.
-         Il reste {Math.max(0,3-(dream.pauseCount||0))} pause(s).
-       </Text>
-       <Text style={{color:'#397F9E',fontSize:11,fontWeight:'600'}}>
-         {(dream.pauseCount||0)}/3 pauses utilisées · date de reprise obligatoire
-       </Text>
-       <Field label="Date limite (obligatoire)" value={pauseDeadline} onChange={setPauseDeadline} placeholder="AAAA-MM-JJ"/>
-       <Action label="Confirmer la pause" onPress={freeze}/>
-       <Pressable onPress={()=>setFreezeDialog(false)} style={{alignItems:'center',padding:10}}>
-         <Text style={{color:theme.muted}}>Annuler</Text>
-       </Pressable>
-     </View>
-   </View>
- </Modal>
+ <DreamGoalDatePicker
+   visible={freezeDialog}
+   onCancel={()=>setFreezeDialog(false)}
+   title="Date de reprise"
+   explanation={`Choisis quand reprendre cette germination. ${dream.pauseCount||0}/3 pauses utilisées · date de reprise obligatoire. Tu peux reprendre plus tôt, mais trois congélations maximum.`}
+   confirmationLabel="Confirmer la congélation"
+   minDate={(()=>{
+     const d=new Date();d.setDate(d.getDate()+1);
+     return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+   })()}
+   onConfirm={freezeAt}
+ />
  </ScrollView>;
 }
