@@ -87,6 +87,8 @@ export type DreamEntry = {
   /** Lifetime freezes on this dream, never reset by resuming. */
   pauseCount?: number;
   resolvedNeeds?: string[];
+  /** Personal fruit milestone after finishing Floraison. Public phase stays Témoignage/Floraison. */
+  fruitAt?: string;
   flowerDraft?: FlowerDraft;
   testimony?: {
     comment: string;
