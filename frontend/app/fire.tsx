@@ -142,7 +142,7 @@ export default function FireList() {
           </View>
         )}
         {items.length ? (
-          <PublicationGallery items={items} />
+          <PublicationGallery origin="fire" items={items} />
         ) : (
           <View style={{ marginTop: 70, alignItems: 'center', gap: 10 }}>
             <Ionicons name="flame-outline" size={45} color="#aaa" />
