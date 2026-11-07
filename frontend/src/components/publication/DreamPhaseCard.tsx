@@ -395,7 +395,7 @@ export function DreamPhaseCard({ item, width, variant, onOpen }: Props) {
               style: {
                 position: 'absolute', inset: 0, pointerEvents: 'none',
                 backgroundImage: compact
-                  ? 'linear-gradient(to bottom, rgba(9,7,10,0) 0%, rgba(9,7,10,0) 66%, rgba(9,7,10,0.24) 82%, rgba(9,7,10,0.54) 100%)'
+                  ? 'linear-gradient(rgba(0,0,0,0.24), rgba(0,0,0,0.24)), linear-gradient(to bottom, rgba(9,7,10,0) 0%, rgba(9,7,10,0) 66%, rgba(9,7,10,0.24) 82%, rgba(9,7,10,0.54) 100%)'
                   : [
                       'linear-gradient(to bottom, transparent 0%, ' + theme.background + '26 50%, ' + theme.background + '4D 60%, ' + theme.background + 'B3 70%, ' + theme.background + 'D9 80%, ' + theme.background + ' 100%)',
                       'linear-gradient(to bottom, rgba(9,7,10,0.7) 0%, rgba(9,7,10,0.7) 30%, rgba(9,7,10,0.6) 46%, rgba(9,7,10,0.6) 65%, rgba(9,7,10,0.2) 77%, rgba(9,7,10,0.1) 100%)',
@@ -435,6 +435,7 @@ export function DreamPhaseCard({ item, width, variant, onOpen }: Props) {
                 </LinearGradient>
               )}
             </Defs>
+            {compact && <Rect width="100%" height="100%" fill="#000000" opacity={0.24} />}
             <Rect width="100%" height="100%" fill={'url(#' + gradientId + '-shade)'} />
             {!compact && <Rect width="100%" height="100%" fill={'url(#' + gradientId + '-fade)'} />}
           </Svg>
@@ -446,6 +447,14 @@ export function DreamPhaseCard({ item, width, variant, onOpen }: Props) {
               right: 54,
             }}>
               <DreamPhaseIcon phase="Témoignage" size={90} />
+            </View>
+          )}
+          {compact && (
+            <View pointerEvents="none" style={{ position: 'absolute', top: inset, right: inset, zIndex: 2 }}>
+              <Text style={{
+                color: '#FFFFFF', fontWeight: '700', fontSize: 9, letterSpacing: 1.3,
+                textShadowColor: 'rgba(0,0,0,0.5)', textShadowOffset: {width:0,height:1}, textShadowRadius: 2,
+              }}>FLORAISON</Text>
             </View>
           )}
           {compact ? (
