@@ -39,6 +39,12 @@ function PictureCard({ dream, width, height }: { dream: DreamEntry; width: numbe
         paddingHorizontal: 13, paddingTop: 36, paddingBottom: 12,
         backgroundColor: 'rgba(0,0,0,0.30)',
       }}>
+        {dream.phase === 'Témoignage' ? (
+          <View style={{flexDirection:'row',alignItems:'center',gap:5,marginBottom:6}}>
+            <Ionicons name="nutrition-outline" size={13} color="#F3D9AD"/>
+            <Text style={{color:'#F7E7C7',fontSize:10,fontWeight:'700',letterSpacing:1.1}}>FRUIT</Text>
+          </View>
+        ) : null}
         <Text style={{ fontSize: width < 230 ? 13 : 18, lineHeight: width < 230 ? 18 : 24,
           color: '#FFFFFF', fontWeight: '700' }} numberOfLines={3}>{dream.title}</Text>
       </View>
