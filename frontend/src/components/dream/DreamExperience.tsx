@@ -65,6 +65,7 @@ export default function DreamExperience({ dream, viewPhase, onBack, onNavigate }
  const [freezeDialog,setFreezeDialog]=useState(false);
  const [goalDateDialog,setGoalDateDialog]=useState(false);
  const [growthDialog,setGrowthDialog]=useState<'habit'|'log'|'note'|null>(null);
+ const [preparationOpen,setPreparationOpen]=useState(false);
  const [habitTitle, setHabitTitle] = useState('');
  const [frequency, setFrequency] = useState<DreamHabit['frequency']>('daily');
  const [milestone, setMilestone] = useState('');
@@ -174,7 +175,7 @@ export default function DreamExperience({ dream, viewPhase, onBack, onNavigate }
         <Text style={{color:'#9B772E',fontWeight:'700',fontSize:12}}>Reprendre cette germination</Text>
       </Pressable>
     </View> : null}
-   {(['person','practical','financial'] as const).map(category=><View key={category} style={{marginBottom:17}}>
+   {(['person','practical','financial'] as const).filter(category=>resources.some(r=>r.category===category)).map(category=><View key={category} style={{marginBottom:17}}>
       <Text style={{fontSize:17,fontWeight:'700',color:theme.foreground,marginBottom:9}}>{category==='person'?'Talents':category==='practical'?'Autres ressources':'Financement'}</Text>
       <View style={{flexDirection:'row',flexWrap:'wrap',gap:9,marginBottom:8}}>
         {category==='person'
@@ -234,6 +235,20 @@ export default function DreamExperience({ dream, viewPhase, onBack, onNavigate }
        <Text style={{color:'#387D9F',fontSize:12,marginTop:6}}>Trouver des ressources sur JenLow Tools ↗</Text>
      </Pressable> : null}
     </View>)}
+    {resources.length===0 && resourceEditable ? (
+      <View style={{gap:9,paddingBottom:16}}>
+        <Text style={{fontSize:12,color:theme.muted,lineHeight:20}}>
+          Ajoute seulement les talents, le matériel ou le financement dont tu as besoin.
+        </Text>
+        <Pressable accessibilityRole="button" accessibilityLabel="Ajouter un premier besoin"
+          onPress={()=>{setResourceCategory('person');setResourceDialog(true);}}
+          style={{width:96,height:96,borderWidth:1.5,borderStyle:'dashed',
+            borderColor:theme.border,borderRadius:11,alignItems:'center',
+            justifyContent:'center',backgroundColor:theme.surface}}>
+          <Ionicons name="add" size={25} color={theme.foreground}/>
+        </Pressable>
+      </View>
+    ):null}
     </View>
    {!historical && phase==='Initiation' ? (
      <View style={{gap:11,marginTop:12,marginBottom:21}}>
@@ -263,6 +278,51 @@ export default function DreamExperience({ dream, viewPhase, onBack, onNavigate }
    ):null}
   </> : null}
   {phase==='Croissance' ? <>
+    {(resources.length>0 || !!dream.goalDate) ? (
+      <View style={{borderWidth:1,borderColor:theme.border,borderRadius:12,
+        backgroundColor:theme.surface,overflow:'hidden',marginTop:10,marginBottom:15}}>
+        <Pressable accessibilityRole="button" accessibilityState={{expanded:preparationOpen}}
+          onPress={()=>setPreparationOpen(!preparationOpen)}
+          style={{flexDirection:'row',alignItems:'center',gap:10,
+            minHeight:53,paddingHorizontal:15,paddingVertical:10}}>
+          <Ionicons name="leaf-outline" size={19} color="#27845B"/>
+          <View style={{flex:1,gap:3}}>
+            <Text style={{fontSize:12,fontWeight:'700',color:theme.foreground}}>
+              Depuis la Germination
+            </Text>
+            <Text style={{fontSize:11,color:theme.muted}}>
+              {dream.goalDate?'Objectif · '+dream.goalDate:'Préparatifs et besoins'}
+            </Text>
+          </View>
+          <Ionicons name={preparationOpen?'chevron-up':'chevron-down'} color={theme.muted} size={18}/>
+        </Pressable>
+        {preparationOpen?<View style={{paddingHorizontal:15,paddingBottom:15,gap:12,
+          borderTopWidth:1,borderColor:theme.border,paddingTop:13}}>
+          {([
+            {category:'person',title:'Talents',color:'#D71D77'},
+            {category:'practical',title:'Ressources',color:'#397F9E'},
+            {category:'financial',title:'Financement',color:'#A1BA44'},
+          ] as const).map(item=>{
+            const subset=resources.filter(r=>r.category===item.category);
+            if(!subset.length)return null;
+            const found=subset.filter(r=>r.confirmed).length;
+            return <View key={item.category} style={{gap:6}}>
+              <View style={{flexDirection:'row',justifyContent:'space-between',gap:8}}>
+                <Text style={{fontSize:12,color:theme.foreground,fontWeight:'600'}}>{item.title}</Text>
+                <Text style={{fontSize:11,color:theme.muted}}>{found}/{subset.length} trouvés</Text>
+              </View>
+              <View style={{height:4,borderRadius:3,backgroundColor:theme.border,overflow:'hidden'}}>
+                <View style={{height:4,width:(found/subset.length*100)+'%',
+                  backgroundColor:item.color,borderRadius:3}}/>
+              </View>
+            </View>;
+          })}
+          <Text style={{fontSize:11,color:theme.muted,lineHeight:18}}>
+            Le détail de Germination reste consultable en lecture seule.
+          </Text>
+        </View>:null}
+      </View>
+    ):null}
     <DreamPhaseSection title="Mes habitudes" subtitle="Des petits gestes qui font avancer ton rêve.">
       <View style={{gap:10}}>
         {habits.length===0?<View style={{backgroundColor:theme.surface,borderRadius:13,
