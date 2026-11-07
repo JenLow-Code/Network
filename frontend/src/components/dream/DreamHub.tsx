@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Easing, Image, PanResponder, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Animated, Easing, Image, PanResponder, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -79,11 +79,12 @@ function PhaseMarker({
   },
   onPanResponderTerminate: () => onCancelRef.current(),
  })).current;
+ if (disabled) return null;
  return (
   <View {...responder.panHandlers} style={{
    position: 'absolute', zIndex: 6, width: markerWidth, height: markerHeight,
    alignItems: 'center', justifyContent: 'center',
-   opacity: disabled ? .35 : selected ? 1 : .84, ...placement,
+   opacity: selected ? 1 : .84, ...placement,
   }}>
    <Pressable onPress={onPress} disabled={disabled} accessibilityRole="button"
     accessibilityLabel={disabled ? label + ', phase à venir' : 'Tirer ou ouvrir ' + label}
@@ -180,29 +181,6 @@ export default function DreamHub({ dream, startInSemence = false, startPhase }: 
     dragScene(phase, distance);
   }, [dragScene]);
 
-  const enterRef = useRef(enter);
-  enterRef.current = enter;
-  const dragRef = useRef(dragScene);
-  dragRef.current = dragScene;
-  const resetRef = useRef(resetScene);
-  resetRef.current = resetScene;
-  const responder = useMemo(() => PanResponder.create({
-    onMoveShouldSetPanResponder: (_, g) =>
-      !openRef.current && !busy.current && (Math.abs(g.dx) > 13 || Math.abs(g.dy) > 13),
-    onPanResponderTerminationRequest: () => false,
-    onPanResponderMove: (_, g) => {
-      const target = phaseFromSwipe(g.dx, g.dy, 10);
-      if (target) dragRef.current(target, Math.max(Math.abs(g.dx), Math.abs(g.dy)));
-    },
-    onPanResponderRelease: (_, g) => {
-      if (openRef.current || busy.current) return;
-      const target = phaseFromSwipe(g.dx, g.dy, 75);
-      if (target && order.indexOf(target) <= order.indexOf(phaseRef.current)) enterRef.current(target);
-      else resetRef.current();
-    },
-    onPanResponderTerminate: () => resetRef.current(),
-  }), []);
-
   useEffect(() => {
     if (firstRender.current) { firstRender.current = false; return; }
     setOpen(null);
@@ -257,7 +235,7 @@ export default function DreamHub({ dream, startInSemence = false, startPhase }: 
             flex: 1, width: '100%', maxWidth: 1120,
             backgroundColor: theme.dark ? '#252725' : '#EEECE5',
             borderRadius: compact ? 0 : 15, overflow: 'hidden',
-          }} {...responder.panHandlers}>
+          }}>
             {hasImage ? <Image source={{ uri: image }} resizeMode="cover" style={StyleSheet.absoluteFill} /> : null}
             <View pointerEvents="none" style={[StyleSheet.absoluteFill, {
               backgroundColor: theme.dark ? 'rgba(20,22,21,0.79)' : 'rgba(255,252,245,0.78)',
@@ -305,12 +283,14 @@ export default function DreamHub({ dream, startInSemence = false, startPhase }: 
               />
             ))}
 
-            <View pointerEvents="box-none" style={{
-              flex: 1, justifyContent: 'center', alignItems: 'center',
-              paddingHorizontal: compact ? (width < 380 ? 28 : 39) : 80,
-              paddingTop: compact ? 58 : 74,
-              paddingBottom: compact ? 12 : 23,
-            }}>
+            <ScrollView style={{ flex: 1, width: '100%' }}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{
+                flexGrow: 1, justifyContent: 'center', alignItems: 'center',
+                paddingHorizontal: compact ? 57 : 84,
+                paddingTop: compact ? 108 : 124,
+                paddingBottom: compact ? 81 : 100,
+              }}>
               <View style={{ alignItems: 'center', width: '100%', maxWidth: 580 }}>
                 <Text style={{
                   fontFamily: 'serif', fontSize: compact ? (height < 620 ? 26 : height < 730 ? 29 : 33) : 45,
@@ -367,11 +347,10 @@ export default function DreamHub({ dream, startInSemence = false, startPhase }: 
                 ) : null}
 
               </View>
-            </View>
             <View style={{
-              paddingHorizontal: compact ? 26 : 40,
-              paddingBottom: compact ? 21 : 34,
-              zIndex: 5, alignItems: 'center',
+              paddingHorizontal: compact ? 10 : 40,
+              marginTop: compact ? 21 : 28,
+              alignItems: 'center',
             }}>
               <Pressable
                 accessibilityRole="button"
@@ -398,6 +377,7 @@ export default function DreamHub({ dream, startInSemence = false, startPhase }: 
                 </Pressable>
               ) : null}
             </View>
+            </ScrollView>
           </View>
           {preview ? (
             <Animated.View pointerEvents="none" style={{
