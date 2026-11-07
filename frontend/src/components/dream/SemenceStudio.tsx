@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useDreams } from '@/domain/dreamRepository';
 import { router } from 'expo-router';
 import type { DreamBlock, DreamBlockKind, DreamEntry } from '@/domain/dreamWorkspace';
+import type { DreamPhase } from '@/domain/publication';
 import { useAppTheme } from '@/theme/AppTheme';
 import { HANDWRITING_FAMILY } from '@/theme/handwriting';
 import { pickDreamImage } from '@/lib/pickDreamImage';
@@ -94,10 +95,10 @@ function CanvasTile({block,index,editable,theme,onEdit,onMove,onResize,onStart,o
   </View>:null}
  </View>;
 }
-export default function SemenceStudio({dream,onBack}:{dream:DreamEntry;onBack:()=>void}){
- const theme=useAppTheme(); const {patch,advance}=useDreams();const editable=dream.phase==='Rêve';
+export default function SemenceStudio({dream,onBack,onNavigate}:{dream:DreamEntry;onBack:()=>void;onNavigate?:(phase:DreamPhase)=>void}){
+ const theme=useAppTheme(); const {patch,advance,remove}=useDreams();const editable=dream.phase==='Rêve';
  const blocks=dream.blocks||[];
- const [edit,setEdit]=useState(false);const [library,setLibrary]=useState(false);const [query,setQuery]=useState('');
+ const [edit,setEdit]=useState(editable);const [library,setLibrary]=useState(false);const [query,setQuery]=useState('');
  const [draft,setDraft]=useState<DreamBlock|null>(null);const [insertAt,setInsertAt]=useState<number|null>(null);
  const [confirm,setConfirm]=useState(false);
  const [dragIndex,setDragIndex]=useState<number|null>(null);const [hoverIndex,setHoverIndex]=useState<number|null>(null);
@@ -110,29 +111,115 @@ export default function SemenceStudio({dream,onBack}:{dream:DreamEntry;onBack:()
  const alert=(message:string)=>Platform.OS==='web'?window.alert(message):Alert.alert('Semence',message);
  const chooseMedia=()=>{if(!draft)return;pickFlowerMedia(items=>{if(!items.length)return;change({content:items[0].uri,media:[...(draft.media||[]),...items.map(x=>x.uri)]});},alert);};
  const chooser=(index:number|null)=>{setInsertAt(index);setQuery('');setLibrary(true);};
+ const quickAdd=(kind:DreamBlockKind)=>{if(!editable)return;setEdit(true);setInsertAt(null);setDraft(base(kind));setLibrary(false);};
+ const uproot=()=>{
+   const run=()=>{remove(dream.id);router.replace('/my-space');};
+   const message='Cette action supprimera définitivement cette semence et ses inspirations sur cet appareil.';
+   if(Platform.OS==='web'){if(typeof window!=='undefined' && window.confirm('Arracher cette semence ?\n'+message))run();}
+   else Alert.alert('Arracher cette semence ?',message,[{text:'Annuler',style:'cancel'},{text:'Arracher',style:'destructive',onPress:run}]);
+ };
  return <ScrollView style={{flex:1,backgroundColor:theme.background}} contentContainerStyle={{paddingHorizontal:19,paddingTop:10,paddingBottom:90,maxWidth:760,width:'100%',alignSelf:'center'}}>
-   <DreamPhaseHeader dream={dream} phase="Rêve" onBack={draft?()=>setDraft(null):onBack} readOnly={!editable}
-      summary={edit&&editable?null:undefined}
-      action={editable?<Pressable onPress={()=>{setEdit(!edit);setLibrary(false);setDraft(null);}} style={{padding:9}}><Text style={{color:theme.foreground,fontWeight:'700',fontSize:12}}>{edit?'Terminer':'Composer'}</Text></Pressable>:undefined}
+   <DreamPhaseHeader dream={dream} phase="Rêve" onBack={draft?()=>setDraft(null):onBack}
+      onNavigate={onNavigate} readOnly={!editable}
    />
    <View style={{flexDirection:'row',alignItems:'center',gap:7,marginBottom:10}}>
      <Ionicons name="link-outline" size={16} color={theme.muted}/>
      <Text style={{color:theme.muted,fontSize:12}}>Semence non répertoriée · publique dès la Germination</Text>
    </View>
-   <DreamPhaseSection title="Idées & inspirations" subtitle="Donne forme à ton rêve avec des images, mots et références.">
-   {edit && !draft && !library?<TextInput multiline value={dream.summary} onChangeText={v=>patch(dream.id,{summary:v})} placeholder="Quelle est ton intention ?" style={{borderBottomWidth:1,borderColor:theme.border,color:theme.foreground,fontSize:16,minHeight:65,marginBottom:16}}/>:null}
-  {!editable ? <View style={{padding:15,borderRadius:12,backgroundColor:theme.surface,borderWidth:1,borderColor:theme.border,marginBottom:16,gap:9}}>
-    <View style={{flexDirection:'row',alignItems:'center',gap:8}}><Ionicons name="lock-closed-outline" size={17} color={theme.muted}/><Text style={{color:theme.foreground,fontSize:13,fontWeight:'700'}}>Semence conservée en lecture seule</Text></View>
-    <Text style={{color:theme.muted,fontSize:13,lineHeight:20}}>Ce rêve est maintenant en {dream.phase==='Initiation'?'Germination':dream.phase==='Croissance'?'Croissance':'Floraison'}. Ses premières inspirations restent consultables, mais elles ne peuvent plus être modifiées.</Text>
-    <Pressable onPress={()=>router.push('/my-dream/new')} accessibilityRole="button" style={{paddingVertical:11,alignItems:'center',borderRadius:9,borderWidth:1,borderColor:theme.border}}><Text style={{color:PINK,fontWeight:'700',fontSize:12}}>Créer une nouvelle Semence</Text></Pressable>
-   </View>:null}
-  {blocks.length===0&&!edit&&editable?<Pressable onPress={()=>{setEdit(true);chooser(null);}} style={{minHeight:200,justifyContent:'center',alignItems:'center',borderWidth:1,borderStyle:'dashed',borderColor:theme.border,borderRadius:14}}><Ionicons name="add" color={theme.muted} size={24}/><Text style={{fontSize:13,color:theme.muted,marginTop:10}}>Un espace pour toutes tes inspirations.</Text></Pressable>:null}
-  {edit&&!draft&&!library?<Pressable onPress={()=>chooser(0)} style={{paddingVertical:14,alignItems:'center'}}><Ionicons name="add-circle-outline" size={22} color={PINK}/></Pressable>:null}
-  <View style={{flexDirection:'row',flexWrap:'wrap',justifyContent:'space-between',alignItems:'flex-start'}}>
-   {blocks.map((b,i)=><CanvasTile key={b.id} block={b} index={i} editable={edit&&!library&&!draft} theme={theme} onEdit={()=>{setDraft({...b});setLibrary(false);}} onMove={reorder} onResize={resizeBlock} onStart={setDragIndex} onFinish={()=>{setDragIndex(null);setHoverIndex(null);}} onHover={setHoverIndex} dragging={dragIndex===i} highlight={hoverIndex===i&&dragIndex!==i}/>)}
-  </View>
-  {dragIndex!==null?<Text style={{fontSize:11,color:PINK,marginBottom:10}}>Déplace le bloc avec la poignée de gauche, relâche pour l'insérer.</Text>:null}
-  {edit&&!draft&&!library?<Pressable onPress={()=>chooser(null)} style={{paddingVertical:14,alignItems:'center',borderTopWidth:1,borderColor:theme.border}}><Text style={{color:PINK,fontWeight:'700'}}>＋ Ajouter un bloc</Text></Pressable>:null}
+   <DreamPhaseSection title="Mon tableau d’inspiration" subtitle="Un espace libre pour imaginer, rassembler et composer ton rêve.">
+    <View style={{
+      borderWidth: 1, borderColor: theme.border, borderRadius: 16, overflow: 'hidden',
+      backgroundColor: theme.dark ? '#292A2C' : '#FDFCF9',
+      paddingHorizontal: 13, paddingTop: 14, paddingBottom: 17,
+      minHeight: 270,
+    }}>
+      <View style={{
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+        borderBottomWidth: 1, borderColor: theme.border, paddingBottom: 12, marginBottom: 16,
+      }}>
+        <View style={{ flex: 1, gap: 4 }}>
+          <Text style={{ fontSize: 10, letterSpacing: 1.35, fontWeight: '700', color: theme.muted }}>MON CANVAS</Text>
+          <Text style={{ fontSize: 12, color: theme.muted }}>
+            {editable ? (edit ? 'Composer · déplacer · ajuster' : 'Lecture de mon tableau') : 'Inspirations archivées'}
+          </Text>
+        </View>
+        {editable ? (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+            <Pressable onPress={()=>{setEdit(!edit);setLibrary(false);setDraft(null);}}
+              accessibilityRole="button" accessibilityLabel={edit?'Terminer la composition':'Modifier le tableau'}
+              style={{paddingHorizontal:11,paddingVertical:10,borderRadius:9}}>
+              <Text style={{color:theme.foreground,fontSize:12,fontWeight:'700'}}>{edit?'Terminer':'Modifier'}</Text>
+            </Pressable>
+            <Pressable onPress={()=>{setEdit(true);chooser(null);}}
+              accessibilityRole="button" accessibilityLabel="Ajouter un bloc"
+              style={{padding:9,backgroundColor:PINK,borderRadius:9}}>
+              <Ionicons name="add" size={19} color="#fff" />
+            </Pressable>
+          </View>
+        ) : <Ionicons name="lock-closed-outline" size={18} color={theme.muted}/>}
+      </View>
+
+      {editable && edit && (
+        <View style={{flexDirection:'row',flexWrap:'wrap',gap:7,marginBottom:blocks.length ? 20 : 26}}>
+          {([
+            { kind:'text', label:'Une idée', icon:'text-outline' },
+            { kind:'image', label:'Une image', icon:'image-outline' },
+            { kind:'quote', label:'Une citation', icon:'chatbubble-outline' },
+            { kind:'columns', label:'Deux colonnes', icon:'grid-outline' },
+          ] as const).map(x=><Pressable
+            key={x.kind} onPress={()=>quickAdd(x.kind)}
+            accessibilityRole="button" accessibilityLabel={'Ajouter '+x.label}
+            style={{
+              backgroundColor: theme.dark?'#333539':'#F3F0EA', borderWidth:1,borderColor:theme.border,
+              borderRadius:10, paddingHorizontal:11,paddingVertical:11,
+              flexDirection:'row',alignItems:'center',gap:7,
+            }}>
+              <Ionicons name={x.icon} size={16} color={theme.foreground}/>
+              <Text style={{color:theme.foreground,fontSize:11,fontWeight:'600'}}>{x.label}</Text>
+          </Pressable>)}
+        </View>
+      )}
+
+      {blocks.length === 0 ? (
+        <View style={{
+          minHeight: editable ? 180 : 110, alignItems:'center', justifyContent:'center',
+          padding:18, gap:11, borderWidth:1, borderStyle:'dashed',
+          borderColor:theme.dark?'#5A5650':'#E0DAD1', borderRadius:12,
+        }}>
+          <Ionicons name={editable?'sparkles-outline':'archive-outline'} size={24} color={theme.muted}/>
+          <Text style={{color:theme.foreground,fontFamily:'serif',fontSize:22,textAlign:'center'}}>
+            {editable ? 'Tout commence par une idée.' : 'Aucun bloc conservé'}
+          </Text>
+          <Text style={{color:theme.muted,fontSize:12,lineHeight:20,textAlign:'center',maxWidth:270}}>
+            {editable ? 'Images, versets, croquis, mots, musique… compose ton univers à ta façon.'
+              : 'Les premières idées n’ont pas été enregistrées en blocs dans cette Semence.'}
+          </Text>
+          {editable ? <Pressable onPress={()=>{setEdit(true);chooser(null);}}
+            accessibilityRole="button" style={{paddingHorizontal:17,paddingVertical:11,borderRadius:9,borderWidth:1,borderColor:theme.border}}>
+            <Text style={{fontSize:12,color:theme.foreground,fontWeight:'700'}}>Explorer les blocs</Text>
+          </Pressable> : null}
+        </View>
+      ) : (
+        <View style={{flexDirection:'row',flexWrap:'wrap',justifyContent:'space-between',alignItems:'flex-start'}}>
+          {blocks.map((b,i)=><CanvasTile key={b.id} block={b} index={i} editable={editable&&edit&&!library&&!draft}
+            theme={theme} onEdit={()=>{setDraft({...b});setLibrary(false);}} onMove={reorder} onResize={resizeBlock}
+            onStart={setDragIndex} onFinish={()=>{setDragIndex(null);setHoverIndex(null);}}
+            onHover={setHoverIndex} dragging={dragIndex===i} highlight={hoverIndex===i&&dragIndex!==i}/>)}
+        </View>
+      )}
+      {dragIndex !== null ? <Text style={{fontSize:11,color:PINK,marginTop:8}}>Déplace le bloc et relâche pour le placer.</Text> : null}
+      {blocks.length > 0 && editable && edit && !draft && !library ? (
+        <Pressable onPress={()=>chooser(null)} accessibilityRole="button"
+          style={{paddingVertical:15,alignItems:'center',borderTopWidth:1,borderColor:theme.border,marginTop:11}}>
+          <Text style={{color:PINK,fontWeight:'700',fontSize:12}}>＋ Ajouter un bloc</Text>
+        </Pressable>
+      ) : null}
+    </View>
+    {!editable ? (
+      <Text style={{color:theme.muted,fontSize:12,lineHeight:20,marginTop:14}}>
+        Cette Semence reste consultable telle qu’elle a été composée, avant son passage en {dream.phase==='Initiation'?'Germination':dream.phase==='Croissance'?'Croissance':'Floraison'}.
+      </Text>
+    ) : null}
   </DreamPhaseSection>
   <Modal visible={library || !!draft} animationType="slide" transparent={false} onRequestClose={()=>{setDraft(null);setLibrary(false);}}>
    <View style={{flex:1,backgroundColor:theme.background,paddingTop:Platform.OS==='web'?12:42}}>
@@ -174,8 +261,11 @@ export default function SemenceStudio({dream,onBack}:{dream:DreamEntry;onBack:()
     </ScrollView>
    </View>
   </Modal>
-  {editable&&!edit&&!library&&!draft?<DreamPhaseButton label="Faire germer mon rêve" onPress={()=>setConfirm(true)}/>:null}
-  {confirm?<View style={{backgroundColor:theme.surface,padding:17,marginTop:12,borderRadius:12,borderWidth:1,borderColor:theme.border}}><Text style={{fontWeight:'700',fontSize:17,color:theme.foreground}}>Prêt à faire germer ce rêve ?</Text><Text style={{color:theme.muted,marginTop:8,lineHeight:20}}>Ton rêve deviendra public. Tu retrouveras toute cette composition dans son histoire, sans perdre tes inspirations.</Text><DreamPhaseButton label="Confirmer la germination" onPress={()=>{patch(dream.id,{visibility:'public'});advance(dream.id);setConfirm(false);onBack();}}/><Pressable onPress={()=>setConfirm(false)} style={{padding:13}}><Text style={{color:theme.muted,textAlign:'center'}}>Pas encore</Text></Pressable></View>:null}
+  {editable&&!library&&!draft?<DreamPhaseButton label="Faire grandir cette semence" onPress={()=>setConfirm(true)}/>:null}
+  {confirm?<View style={{backgroundColor:theme.surface,padding:17,marginTop:12,borderRadius:12,borderWidth:1,borderColor:theme.border}}><Text style={{fontWeight:'700',fontSize:17,color:theme.foreground}}>Prêt à faire germer ce rêve ?</Text><Text style={{color:theme.muted,marginTop:8,lineHeight:20}}>Ton rêve deviendra public. Tu retrouveras toute cette composition dans son histoire, sans perdre tes inspirations.</Text><DreamPhaseButton label="Faire grandir cette semence" onPress={()=>{patch(dream.id,{visibility:'public'});advance(dream.id);setConfirm(false);onBack();}}/><Pressable onPress={()=>setConfirm(false)} style={{padding:13}}><Text style={{color:theme.muted,textAlign:'center'}}>Pas encore</Text></Pressable></View>:null}
+  {editable ? <Pressable onPress={uproot} accessibilityRole="button" style={{alignItems:'center',padding:13,marginTop:16}}>
+    <Text style={{color:'#A95760',fontSize:12}}>Arracher cette semence</Text>
+  </Pressable> : null}
   <Text style={{color:theme.muted,fontSize:10,marginTop:28,lineHeight:17}}>Les inspirations sont enregistrées localement sur cet appareil. L'import de fichiers est disponible sur le web ; les fichiers volumineux et l'import natif nécessitent encore le service média.</Text>
  </ScrollView>;
 }
