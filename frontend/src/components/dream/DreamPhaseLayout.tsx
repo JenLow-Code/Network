@@ -27,7 +27,6 @@ export function DreamPhaseHeader({
   readOnly?: boolean;
 }) {
   const theme = useAppTheme();
-  const index = DREAM_PHASES.indexOf(phase);
   const accent = phaseAccent[phase];
   const description = summary === undefined ? dream.summary : summary;
   return (
@@ -40,48 +39,54 @@ export function DreamPhaseHeader({
         <TopActions />
       </View>
 
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 21 }}>
-        <Image source={{ uri: dreamPhaseImageUris[phase] }} resizeMode="contain" style={{ width: 37, height: 37, marginRight: 2 }}/>
-        <Text style={{ color: accent, fontSize: 11, letterSpacing: 1.4, fontWeight: '700', textTransform: 'uppercase' }}>
-          {PHASE_LABELS[phase]}
-        </Text>
-        <Text style={{ color: theme.muted, fontSize: 11, marginLeft: 3 }}>
-          {String(index + 1).padStart(2, '0')} / 04
-        </Text>
-      </View>
-      <Text style={{ color: theme.foreground, fontFamily: 'serif', fontSize: 33, lineHeight: 41, letterSpacing: -0.5, marginBottom: description ? 10 : 19 }}>
-        {dream.title}
-      </Text>
-      {description ? <Text style={{ color: theme.muted, fontSize: 14, lineHeight: 22, marginBottom: 21 }}>{description}</Text> : null}
-      <View style={{ flexDirection: 'row', gap: 5, marginBottom: 16 }}>
+      {/* The phase progression is the single botanical header, preceding the dream identity. */}
+      <View style={{ flexDirection: 'row', gap: 6, marginBottom: 24 }}>
         {DREAM_PHASES.map((item, i) => {
           const reached = i <= DREAM_PHASES.indexOf(dream.phase);
+          const selected = item === phase;
           return (
-            <Pressable
-              key={item}
+            <Pressable key={item}
               accessibilityRole="button"
               accessibilityLabel={'Ouvrir ' + PHASE_LABELS[item]}
-              accessibilityState={{ disabled: !reached, selected: item === phase }}
+              accessibilityState={{ disabled: !reached || !onNavigate, selected }}
               disabled={!reached || !onNavigate}
               onPress={() => onNavigate?.(item)}
-              style={{ flex: 1, minHeight: 47, justifyContent: 'space-between', alignItems: 'center', paddingVertical: 3 }}
-            >
+              style={{
+                flex: 1, minWidth: 0, minHeight: 75,
+                justifyContent: 'flex-end', alignItems: 'center',
+                paddingBottom: 2,
+              }}>
+              {selected ? (
+                <Image source={{ uri: dreamPhaseImageUris[item] }} resizeMode="contain"
+                  style={{ width: 31, height: 31, marginBottom: 5 }}/>
+              ) : <View style={{ height: 36 }} />}
               <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}
                 style={{
-                  color: item === phase ? accent : theme.muted, fontSize: 10,
-                  fontWeight: item === phase ? '800' : '500', textAlign: 'center',
-                  opacity: reached ? 1 : .42,
+                  color: selected ? accent : reached ? theme.muted : theme.border,
+                  fontSize: 10, fontWeight: selected ? '800' : '500',
+                  textAlign: 'center',
                 }}>{PHASE_LABELS[item]}</Text>
               <View style={{
-                width: '100%', height: item === phase ? 4 : 3, borderRadius: 3,
-                backgroundColor: item === phase ? accent : reached
-                  ? phaseAccent[item] : theme.dark ? '#35373A' : '#E9E7E1',
-                opacity: item === phase ? 1 : reached ? .65 : .45,
+                width: '100%', height: selected ? 4 : 3,
+                marginTop: 11, borderRadius: 3,
+                backgroundColor: selected ? accent :
+                  reached ? phaseAccent[item] :
+                  theme.dark ? '#35373A' : '#E9E7E1',
+                opacity: selected ? 1 : reached ? .60 : .7,
               }} />
             </Pressable>
           );
         })}
       </View>
+      <Text style={{
+        color: theme.foreground, fontFamily: 'serif', fontSize: 33, lineHeight: 41,
+        letterSpacing: -0.5, marginBottom: description ? 10 : 19,
+      }}>{dream.title}</Text>
+      {description ? (
+        <Text style={{ color: theme.muted, fontSize: 14, lineHeight: 22, marginBottom: 19 }}>
+          {description}
+        </Text>
+      ) : null}
       {readOnly ? (
         <View style={{
           flexDirection:'row',alignItems:'center',gap:7,
