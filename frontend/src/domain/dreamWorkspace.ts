@@ -82,6 +82,10 @@ export type DreamEntry = {
   motivation?: string;
   goalDate?: string;
   paused?: boolean;
+  /** Inclusive local date through which Germination is frozen. */
+  pauseUntil?: string;
+  /** Lifetime freezes on this dream, never reset by resuming. */
+  pauseCount?: number;
   resolvedNeeds?: string[];
   flowerDraft?: FlowerDraft;
   testimony?: {
