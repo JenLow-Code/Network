@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Alert, Image, Pressable, ScrollView, Text, View } from 'react-native';
+import React, { useEffect } from 'react';
+import { Alert, Image, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -11,21 +11,31 @@ import { DreamPhaseHeader, DreamPhaseSection, DreamPhaseButton, DreamPhaseField 
 
 export default function FlowerPreparation() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { items, complete, setFlowerDraft } = useDreams();
+  const { items, complete, setFlowerDraft, patch: patchDream, remove } = useDreams();
   const theme = useAppTheme();
   const dream = items.find(d => d.id === id);
-  const [confirmation, setConfirmation] = useState(false);
+  useEffect(()=>{
+    if(dream && dream.phase==='Croissance' && !dream.flowerStartedAt){
+      patchDream(dream.id,{flowerStartedAt:new Date().toISOString()});
+    }
+  },[dream?.id,dream?.phase,dream?.flowerStartedAt,patchDream]);
 
   if (!dream) return <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}><Text style={{ padding: 20, color: theme.foreground }}>Rêve introuvable</Text></SafeAreaView>;
 
   const draft = dream.flowerDraft || { story: '', attachments: [], reminderDate: '' };
   const patch = (update: Partial<typeof draft>) => setFlowerDraft(dream.id, { ...draft, ...update });
-  const validReminder = (date: string) =>
-    /^\d{4}-\d{2}-\d{2}$/.test(date) &&
-    (!dream.goalDate || date <= dream.goalDate) &&
-    date >= new Date().toISOString().slice(0, 10);
   const ready = !!draft.story.trim() && draft.attachments.some(a => a.kind === 'photo');
 
+  const uproot=()=>{
+    const go=()=>{remove(dream.id);router.replace('/my-space');};
+    const message='Cette action supprimera définitivement ce rêve, sa Floraison et les données associées.';
+    if(Platform.OS==='web'){
+      if(typeof window!=='undefined' && window.confirm('Arracher cette plante ?\n'+message))go();
+    }else Alert.alert('Arracher cette plante ?',message,[
+      {text:'Annuler',style:'cancel'},
+      {text:'Arracher',style:'destructive',onPress:go},
+    ]);
+  };
   const publish = () => {
     const finalPhoto = draft.attachments.find(item => item.kind === 'photo');
     if (!draft.story.trim() || !finalPhoto) {
@@ -79,24 +89,31 @@ export default function FlowerPreparation() {
           <Text style={{ fontSize: 12, lineHeight: 19, color: theme.muted, marginTop: 8 }}>Une photographie est nécessaire pour la couverture Discovery. Les médias sont encore conservés localement sur cet appareil (2 Mo maximum par fichier).</Text>
         </DreamPhaseSection>
 
-        <DreamPhaseSection title="Prêt pour la floraison ?" subtitle="Tu peux publier ton résultat ou continuer à préparer ton histoire.">
-          <View style={{ flexDirection: 'row', gap: 9 }}>
-            <Pressable onPress={() => setConfirmation(false)} accessibilityRole="button" accessibilityState={{ selected: !confirmation }}
-              style={{ flex: 1, padding: 13, alignItems: 'center', borderRadius: 10, backgroundColor: !confirmation ? (theme.dark ? '#35373A' : '#E7E5E0') : theme.surface, borderWidth: 1, borderColor: theme.border }}>
-              <Text style={{ color: theme.foreground, fontSize: 12, fontWeight: '600' }}>Pas encore</Text>
+        <DreamPhaseSection title="La floraison" subtitle="Tu peux revenir sur ton histoire, la publier ou abandonner ce rêve.">
+          <View style={{gap:10}}>
+            <Pressable onPress={()=>router.replace('/my-space')} accessibilityRole="button"
+              style={{minHeight:48,alignItems:'center',justifyContent:'center',paddingHorizontal:14,
+                borderWidth:1,borderColor:theme.border,borderRadius:11,backgroundColor:theme.surface}}>
+              <Text style={{color:theme.foreground,fontSize:13,fontWeight:'700'}}>
+                Continuer à éditer cette fleur plus tard
+              </Text>
             </Pressable>
-            <Pressable onPress={() => setConfirmation(true)} accessibilityRole="button" accessibilityState={{ selected: confirmation }}
-              style={{ flex: 1, padding: 13, alignItems: 'center', borderRadius: 10, backgroundColor: confirmation ? (theme.dark ? '#35373A' : '#E7E5E0') : theme.surface, borderWidth: 1, borderColor: theme.border }}>
-              <Text style={{ color: theme.foreground, fontSize: 12, fontWeight: '600' }}>Oui, je suis prêt(e)</Text>
+            <Pressable onPress={publish} accessibilityRole="button"
+              style={{minHeight:48,alignItems:'center',justifyContent:'center',paddingHorizontal:14,
+                borderRadius:11,backgroundColor:'#D71D77'}}>
+              <Text style={{color:'#FFFFFF',fontSize:13,fontWeight:'700'}}>
+                Afficher (publier) cette fleur
+              </Text>
+            </Pressable>
+            {!ready?<Text style={{fontSize:11,color:theme.muted,textAlign:'center',lineHeight:18}}>
+              Pour publier, ajoute au moins une photographie et raconte ton histoire.
+            </Text>:null}
+            <Pressable onPress={uproot} accessibilityRole="button"
+              style={{minHeight:48,alignItems:'center',justifyContent:'center',paddingHorizontal:14,
+                borderRadius:11,backgroundColor:'#242322'}}>
+              <Text style={{color:'#FFFFFF',fontSize:13,fontWeight:'700'}}>Arracher cette plante</Text>
             </Pressable>
           </View>
-          {!confirmation ? <>
-            <View style={{ height: 19 }} />
-            <DreamPhaseField label="Me rappeler de terminer" value={draft.reminderDate || ''} onChange={reminderDate => patch({ reminderDate })} placeholder="AAAA-MM-JJ" />
-            {draft.reminderDate && !validReminder(draft.reminderDate)
-              ? <Text style={{ color: '#AB4354', fontSize: 12 }}>Choisis une date future, avant la date cible si elle existe.</Text> : null}
-            <Text style={{ fontSize: 11, color: theme.muted, lineHeight: 18 }}>La date est conservée sur cet appareil. Les notifications automatiques ne sont pas encore activées.</Text>
-          </> : <DreamPhaseButton label="Publier cette floraison" onPress={publish} disabled={!ready} />}
         </DreamPhaseSection>
       </ScrollView>
       <Nav />
