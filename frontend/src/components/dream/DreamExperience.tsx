@@ -10,6 +10,7 @@ import { HANDWRITING_FAMILY } from '@/theme/handwriting';
 import { pickDreamImage } from '@/lib/pickDreamImage';
 import { DreamPhaseHeader, DreamPhaseSection, DreamPhaseButton, DreamPhaseField } from './DreamPhaseLayout';
 import { DreamTalentSquare } from './DreamTalentSquare';
+import { DreamGoalDatePicker } from './DreamGoalDatePicker';
 
 const pink = '#D71D77';
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
@@ -39,7 +40,7 @@ function DreamBlockCard({ block, editable, onEdit, onMove }: {block:DreamBlock;e
  </View>;
 }
 export default function DreamExperience({ dream, viewPhase, onBack, onNavigate }: {dream:DreamEntry; viewPhase?: DreamEntry['phase']; onBack?: () => void; onNavigate?: (phase: DreamPhase)=>void}) {
- const { patch, appendBlock, setResources, setHabits, transitionToGrowth, advance, remove } = useDreams();
+ const { patch, appendBlock, setResources, setHabits, setGoalAndGrow, advance, remove } = useDreams();
  const theme = useAppTheme();
  const [editing, setEditing] = useState(false);
  const [picker, setPicker] = useState(false);
@@ -55,6 +56,7 @@ export default function DreamExperience({ dream, viewPhase, onBack, onNavigate }
  const [resourceLink, setResourceLink] = useState('');
  const [resourceDialog,setResourceDialog]=useState(false);
  const [freezeDialog,setFreezeDialog]=useState(false);
+ const [goalDateDialog,setGoalDateDialog]=useState(false);
  const [pauseDeadline,setPauseDeadline]=useState('');
  const [habitTitle, setHabitTitle] = useState('');
  const [frequency, setFrequency] = useState<DreamHabit['frequency']>('daily');
@@ -79,15 +81,8 @@ export default function DreamExperience({ dream, viewPhase, onBack, onNavigate }
  };
  const editBlock=(block:DreamBlock)=>{setEditingBlock(block.id);setBlockText(block.content);setBlockTitle(block.title||'');setBlockTone(block.tone);setBlockSize(block.size);setBlockKind(block.kind);setPicker(true);};
  const addResource=()=>{if(!resourceTitle.trim())return;const amount=resourceCategory==='financial'?Number(resourceAmount.replace(',','.')):undefined;setResources(dream.id,[...resources,{id:uid(),title:resourceTitle.trim(),category:resourceCategory,confirmed:false,linkedBlockId:resourceLink||undefined,amount:amount&&Number.isFinite(amount)&&amount>0?amount:undefined}]);setResourceTitle('');setResourceAmount('');setResourceLink('');setResourceDialog(false);};
- const confirmGrowth = () => confirm('Tout est réuni !', 'Ta date est fixée et toutes les ressources sont confirmées. Passer à la Croissance créera aussi la conversation de ce rêve sur cet appareil.', () => transitionToGrowth(dream.id));
- const checkResource = (item: DreamResource) => {
-  const updated = resources.map(x => x.id===item.id ? {...x,confirmed:!x.confirmed} : x);
-  setResources(dream.id,updated);
-  if(dream.phase === 'Initiation' && !item.confirmed && !!dream.goalDate && /^\d{4}-\d{2}-\d{2}$/.test(dream.goalDate) && updated.every(r=>r.confirmed)) {
-   confirm('Tout est prêt !', 'Toutes les ressources sont réunies. Commencer la croissance ? Une conversation dédiée sera créée sur cet appareil.', () => transitionToGrowth(dream.id));
-  }
- };
- const ready = !!dream.goalDate && /^\d{4}-\d{2}-\d{2}$/.test(dream.goalDate) && !Number.isNaN(Date.parse(dream.goalDate)) && resources.every(r=>r.confirmed);
+ const checkResource = (resource: DreamResource) =>
+   setResources(dream.id, resources.map(r => r.id===resource.id?{...r,confirmed:!r.confirmed}:r));
  const phase = viewPhase || dream.phase;
  const historical = phase !== dream.phase;
  const readOnly = historical || dream.phase === 'Témoignage';
@@ -136,8 +131,7 @@ export default function DreamExperience({ dream, viewPhase, onBack, onNavigate }
    {!historical ? <Action label="Faire germer ce rêve" onPress={()=>confirm('Faire germer','Ton rêve deviendra public. Tu pourras toujours retrouver tes inspirations dans son histoire.',()=>{patch(dream.id,{visibility:'public'});advance(dream.id);})}/> : null}
   </> : null}
   {phase==='Initiation' ? <>
-   <DreamPhaseSection title="Préparer mon rêve" subtitle="Donne une date à ce rêve et rassemble les ressources nécessaires.">
-    {!resourceEditable ? <Text style={{color:theme.muted,marginBottom:12}}>Date cible : {dream.goalDate||'Non définie'}</Text> : <Field label="Date cible" value={dream.goalDate||''} onChange={v=>patch(dream.id,{goalDate:v})} placeholder="AAAA-MM-JJ"/>}
+   <DreamPhaseSection title="Préparer mon rêve">
     {dream.phase==='Initiation' && dream.paused ? <View style={{
       padding:14,backgroundColor:theme.dark?'#433D31':'#F5EAD3',borderRadius:11,marginBottom:14,gap:8,
     }}>
@@ -148,10 +142,6 @@ export default function DreamExperience({ dream, viewPhase, onBack, onNavigate }
         <Text style={{color:'#9B772E',fontWeight:'700',fontSize:12}}>Reprendre cette germination</Text>
       </Pressable>
     </View> : null}
-    <View style={{height:7,backgroundColor:theme.dark?'#35412C':'#EFEEC9',borderRadius:6,marginBottom:8}}><View style={{height:7,width:((resources.length?resources.filter(r=>r.confirmed).length/resources.length*100:0)+'%') as any,backgroundColor:'#A1BA44',borderRadius:6}}/></View>
-    <Text style={{color:theme.muted,fontSize:12,marginBottom:16}}>{resources.filter(r=>r.confirmed).length} / {resources.length} ressources confirmées</Text>
-    </DreamPhaseSection>
-   <DreamPhaseSection title="Mes ressources" subtitle="Personnes, matériel et financement à réunir.">
    {(['person','practical','financial'] as const).map(category=><View key={category} style={{marginBottom:17}}>
       <Text style={{fontSize:17,fontWeight:'700',color:theme.foreground,marginBottom:9}}>{category==='person'?'Talents':category==='practical'?'Autres ressources':'Financement'}</Text>
       <View style={{flexDirection:'row',flexWrap:'wrap',gap:9,marginBottom:8}}>
@@ -207,6 +197,29 @@ export default function DreamExperience({ dream, viewPhase, onBack, onNavigate }
        <Text style={{color:'#387D9F',fontSize:12,marginTop:6}}>Trouver des ressources sur JenLow Tools ↗</Text>
      </Pressable> : null}
     </View>)}
+    <View style={{marginTop:20,paddingTop:20,borderTopWidth:1,borderColor:theme.border,marginBottom:10}}>
+      <Text style={{color:theme.foreground,fontSize:17,fontWeight:'700',marginBottom:10}}>Date cible</Text>
+      {resourceEditable ? (
+        <Pressable accessibilityRole="button" accessibilityLabel="Choisir la date cible"
+          onPress={()=>setGoalDateDialog(true)} style={{
+            flexDirection:'row',alignItems:'center',justifyContent:'space-between',
+            minHeight:52,borderWidth:1,borderColor:theme.border,
+            backgroundColor:theme.surface,borderRadius:11,paddingHorizontal:15,gap:10,
+          }}>
+          <Text style={{color:dream.goalDate?theme.foreground:theme.muted,fontSize:14}}>
+            {dream.goalDate ? new Date(dream.goalDate+'T12:00:00').toLocaleDateString('fr-FR',
+              {day:'numeric',month:'long',year:'numeric'}) : 'Choisir une date'}
+          </Text>
+          <Ionicons name="calendar-outline" color={theme.foreground} size={21}/>
+        </Pressable>
+      ) : <Text style={{color:theme.muted,fontSize:13}}>
+        {dream.goalDate ? new Date(dream.goalDate+'T12:00:00').toLocaleDateString('fr-FR',
+          {day:'numeric',month:'long',year:'numeric'}) : 'Non définie'}
+      </Text>}
+      {resourceEditable ? <Text style={{color:theme.muted,fontSize:11,lineHeight:17,marginTop:9}}>
+        Valider cette date fait passer le rêve en Croissance, même si certains besoins restent à trouver.
+      </Text> : null}
+    </View>
     </DreamPhaseSection>
    {!historical && phase==='Initiation' ? (
      <View style={{gap:11,marginTop:12,marginBottom:21}}>
@@ -285,6 +298,9 @@ export default function DreamExperience({ dream, viewPhase, onBack, onNavigate }
     accessibilityRole="button" style={{alignItems:'center',marginTop:26,padding:15}}>
       <Text style={{color:'#B24C59',fontSize:12}}>{'Arracher cette plante'}</Text>
    </Pressable> : null}
+ <DreamGoalDatePicker visible={goalDateDialog} initialDate={dream.goalDate}
+   onCancel={()=>setGoalDateDialog(false)}
+   onConfirm={date=>{setGoalDateDialog(false);setGoalAndGrow(dream.id,date);}}/>
  <Modal visible={resourceDialog} transparent animationType="fade" onRequestClose={()=>setResourceDialog(false)}>
    <View style={{flex:1,justifyContent:'center',padding:18,backgroundColor:'rgba(0,0,0,0.5)'}}>
      <Pressable style={{position:'absolute',top:0,bottom:0,left:0,right:0}} onPress={()=>setResourceDialog(false)}/>
