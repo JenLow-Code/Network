@@ -102,7 +102,7 @@ export function DreamProvider({ children }: { children: React.ReactNode }) {
     );
   const setFlowerDraft: Repo['setFlowerDraft'] = (id, draft) =>
     setItems(p =>
-      p.map(d => (d.id === id && d.phase === 'Croissance' ? { ...d, flowerDraft: draft } : d)),
+      p.map(d => (d.id === id && d.phase === 'Croissance' ? { ...d, flowerDraft: draft, flowerStartedAt: d.flowerStartedAt || new Date().toISOString() } : d)),
     );
   const advance: Repo['advance'] = id =>
     setItems(p =>
