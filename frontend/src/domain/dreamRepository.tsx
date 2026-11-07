@@ -118,6 +118,7 @@ export function DreamProvider({ children }: { children: React.ReactNode }) {
           ? {
               ...d,
               phase: 'Témoignage',
+              fruitAt: new Date().toISOString(),
               resultImage: d.flowerDraft!.attachments.find(a => a.kind === 'photo')!.uri,
               testimony: {
                 comment,
