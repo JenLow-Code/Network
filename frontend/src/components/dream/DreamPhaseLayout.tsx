@@ -5,6 +5,7 @@ import { useAppTheme } from '@/theme/AppTheme';
 import type { DreamEntry } from '@/domain/dreamWorkspace';
 import { DREAM_PHASES, PHASE_LABELS, type DreamPhase } from '@/domain/publication';
 import { dreamPhaseImageUris } from '../../../assets/dreamPhaseImages';
+import { TopActions } from '@/components/navigation/TopActions';
 
 /** One editorial design language for all four dream phases. */
 export const phaseAccent: Record<DreamPhase, string> = {
@@ -15,11 +16,12 @@ export const phaseAccent: Record<DreamPhase, string> = {
 };
 
 export function DreamPhaseHeader({
-  dream, phase, onBack, action, summary, readOnly = false,
+  dream, phase, onBack, onNavigate, action, summary, readOnly = false,
 }: {
   dream: DreamEntry;
   phase: DreamPhase;
   onBack: () => void;
+  onNavigate?: (phase: DreamPhase) => void;
   action?: React.ReactNode;
   summary?: string | null;
   readOnly?: boolean;
@@ -30,12 +32,12 @@ export function DreamPhaseHeader({
   const description = summary === undefined ? dream.summary : summary;
   return (
     <View style={{ marginBottom: 13 }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 42, marginBottom: 27 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 44, marginBottom: 23 }}>
         <Pressable onPress={onBack} accessibilityRole="button" accessibilityLabel="Retour au rêve" style={{ padding: 9, marginLeft: -9 }}>
           <Ionicons name="arrow-back-outline" size={22} color={theme.foreground} />
         </Pressable>
-        <Text style={{ fontSize: 10, fontWeight: '700', letterSpacing: 1.8, color: theme.muted }}>MON RÊVE</Text>
-        <View style={{ minWidth: 42, alignItems: 'flex-end' }}>{action || (readOnly ? <Ionicons name="lock-closed-outline" size={17} color={theme.muted} /> : null)}</View>
+        <Text style={{ fontSize: 10, fontWeight: '700', letterSpacing: 1.6, color: theme.muted, flex: 1, textAlign: 'center' }}>MON RÊVE</Text>
+        <TopActions />
       </View>
 
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 21 }}>
@@ -52,13 +54,33 @@ export function DreamPhaseHeader({
       </Text>
       {description ? <Text style={{ color: theme.muted, fontSize: 14, lineHeight: 22, marginBottom: 21 }}>{description}</Text> : null}
       <View style={{ flexDirection: 'row', gap: 5, marginBottom: 16 }}>
-        {DREAM_PHASES.map((item, i) => (
-          <View key={item} style={{
-            flex: 1, height: 3, borderRadius: 3,
-            backgroundColor: i === index ? accent : i < index ? (theme.dark ? '#666A67' : '#B8B7AE') : (theme.dark ? '#35373A' : '#E9E7E1'),
-          }} />
-        ))}
+        {DREAM_PHASES.map((item, i) => {
+          const reached = i <= DREAM_PHASES.indexOf(dream.phase);
+          return (
+            <Pressable
+              key={item}
+              accessibilityRole="button"
+              accessibilityLabel={'Ouvrir ' + PHASE_LABELS[item]}
+              accessibilityState={{ disabled: !reached, selected: item === phase }}
+              disabled={!reached || !onNavigate}
+              onPress={() => onNavigate?.(item)}
+              style={{ flex: 1, minHeight: 32, justifyContent: 'flex-end', alignItems: 'center', paddingBottom: 8 }}
+            >
+              <View style={{
+                width: '100%', height: item === phase ? 4 : 3, borderRadius: 3,
+                backgroundColor: item === phase ? accent : reached
+                  ? phaseAccent[item] : theme.dark ? '#35373A' : '#E9E7E1',
+                opacity: item === phase ? 1 : reached ? .55 : .45,
+              }} />
+              <Text style={{
+                position: 'absolute', top: 0, fontSize: 9,
+                color: item === phase ? accent : theme.muted, fontWeight: item === phase ? '700' : '400',
+              }}>{String(i + 1).padStart(2, '0')}</Text>
+            </Pressable>
+          );
+        })}
       </View>
+      {action ? <View style={{ alignItems: 'flex-end', marginTop: -8, marginBottom: 12 }}>{action}</View> : null}
     </View>
   );
 }
