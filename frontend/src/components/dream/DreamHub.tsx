@@ -103,12 +103,16 @@ function shortDate(date?: string) {
     : date;
 }
 
-export default function DreamHub({ dream }: { dream: DreamEntry }) {
+export default function DreamHub({ dream, startInSemence = false }: { dream: DreamEntry; startInSemence?: boolean }) {
   const theme = useAppTheme();
   const { patch } = useDreams();
   const { width, height } = useWindowDimensions();
   const compact = width < 720;
-  const [open, setOpen] = useState<DreamPhase | null>(null);
+  const [open, setOpen] = useState<DreamPhase | null>(startInSemence && dream.phase === 'Rêve' ? 'Rêve' : null);
+  const firstRender = useRef(true);
+  const switchPhase = (next: DreamPhase) => {
+    if (order.indexOf(next) <= order.indexOf(dream.phase)) setOpen(next);
+  };
   const [preview, setPreview] = useState<DreamPhase | null>(null);
   const sheet = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
   const busy = useRef(false);
@@ -195,6 +199,7 @@ export default function DreamHub({ dream }: { dream: DreamEntry }) {
   }), []);
 
   useEffect(() => {
+    if (firstRender.current) { firstRender.current = false; return; }
     setOpen(null);
     setPreview(null);
     previewRef.current = null;
@@ -236,8 +241,8 @@ export default function DreamHub({ dream }: { dream: DreamEntry }) {
   return (
     <View style={{ flex: 1, backgroundColor: theme.background }}>
       {open ? (
-        open === 'Rêve' ? <SemenceStudio dream={dream} onBack={() => setOpen(null)} />
-          : <DreamExperience dream={dream} viewPhase={open} onBack={() => setOpen(null)} />
+        open === 'Rêve' ? <SemenceStudio dream={dream} onBack={() => setOpen(null)} onNavigate={switchPhase} />
+          : <DreamExperience dream={dream} viewPhase={open} onBack={() => setOpen(null)} onNavigate={switchPhase} />
       ) : (
         <View style={{
           flex: 1, paddingHorizontal: compact ? 0 : 24,
