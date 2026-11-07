@@ -7,7 +7,7 @@ import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Avatar } from '@/components/ui/Avatar';
 import { Nav } from '@/components/navigation/Nav';
-import { TopActions } from '@/components/navigation/TopActions';
+import { PageHeader } from '@/components/navigation/PageHeader';
 import { useApp } from '@/context/AppContext';
 import { useAuth } from '@/context/AuthProvider';
 import { useAppTheme } from '@/theme/AppTheme';
@@ -157,13 +157,14 @@ export default function Profile() {
           alignSelf: 'center',
         }}
       >
+        <PageHeader />
         <View
           style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
         >
           <Text style={{ fontSize: 29, fontWeight: '800', color: theme.foreground }}>
             Mon profil
           </Text>
-          <TopActions />
+          
         </View>
         <View style={{ alignItems: 'center', marginTop: 23 }}>
           {avatar ? (
