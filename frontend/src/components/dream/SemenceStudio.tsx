@@ -123,8 +123,10 @@ export default function SemenceStudio({dream,onBack,onNavigate}:{dream:DreamEntr
       onNavigate={onNavigate} readOnly={!editable}
    />
    <View style={{flexDirection:'row',alignItems:'center',gap:7,marginBottom:10}}>
-     <Ionicons name="link-outline" size={16} color={theme.muted}/>
-     <Text style={{color:theme.muted,fontSize:12}}>Semence non répertoriée · publique dès la Germination</Text>
+     <Ionicons name={editable?'link-outline':'lock-closed-outline'} size={16} color={theme.muted}/>
+     <Text style={{color:theme.muted,fontSize:12}}>
+       {editable?'Semence non répertoriée · publique dès la Germination':'Premières inspirations · archive en lecture seule'}
+     </Text>
    </View>
    <DreamPhaseSection title="Mon tableau d’inspiration" subtitle="Un espace libre pour imaginer, rassembler et composer ton rêve.">
     <View style={{
