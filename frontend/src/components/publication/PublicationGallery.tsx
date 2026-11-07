@@ -39,7 +39,7 @@ function category(item: Publication): string {
     case 'music':
       return 'Musique';
     case 'bible':
-      return 'Bible';
+      return item.reference;
     case 'talent':
       return item.skill;
   }
@@ -196,11 +196,13 @@ export function BibleVerseCard({
   width,
   height,
   adaptive = false,
+  showReference = true,
 }: {
   item: Extract<Publication, { type: 'bible' }>;
   width: number;
   height: number;
   adaptive?: boolean;
+  showReference?: boolean;
 }) {
   const compact = width < 230;
   const theme = useAppTheme();
@@ -215,9 +217,9 @@ export function BibleVerseCard({
         justifyContent: 'center',
       }}
     >
-      {/* Reference and verse are one typographic unit: no floating heading. */}
+      {/* On Discovery the reference already occupies the shared top-right label. */}
       <View>
-        <Text
+        {showReference && <Text
           numberOfLines={1}
           style={[styles.bibleReference, {
             color: theme.dark ? '#CFC9C4' : '#6B625B',
@@ -226,7 +228,7 @@ export function BibleVerseCard({
           }]}
         >
           {item.reference.toUpperCase()}
-        </Text>
+        </Text>}
         <Text
           numberOfLines={adaptive ? undefined : compact ? 7 : 9}
           adjustsFontSizeToFit={!adaptive}
@@ -342,7 +344,7 @@ function StoryCover({
               </View>
             </View>
           ) : isBible ? (
-            <BibleVerseCard item={item} width={width} height={height} adaptive={adaptive} />
+            <BibleVerseCard item={item} width={width} height={height} adaptive={adaptive} showReference={false} />
           ) : isMusic ? (
             <CassetteArtwork
               width={width}
@@ -371,7 +373,8 @@ function StoryCover({
           style={[
             styles.topMeta,
             {
-              top: small ? 19 : 21,
+              // Match the category inset used on all Dream phase tiles.
+              top: small ? (width < 205 ? 13 : 17) : (width < 440 ? 23 : 32),
               right: inset,
               left: inset,
             },
@@ -381,7 +384,7 @@ function StoryCover({
             numberOfLines={1}
             adjustsFontSizeToFit
             minimumFontScale={0.75}
-            style={[styles.kicker, { color: ink, textAlign: 'right', fontSize: small ? 9 : 10 }]}
+            style={[styles.kicker, { color: theme.dark ? '#CFC9C4' : '#6B625B', textAlign: 'right', fontSize: small ? 9 : 10 }]}
           >
             {category(item).toUpperCase()}
           </Text>
