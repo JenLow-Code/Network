@@ -3,7 +3,9 @@ import React from 'react';
 import { Image, Pressable, ScrollView, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
+import { useDiscovery } from '@/lib/api/hooks';
+import { useApp } from '@/context/AppContext';
 import { Nav } from '@/components/navigation/Nav';
 import { PageHeader } from '@/components/navigation/PageHeader';
 import { musics } from '@/mocks/publications';
@@ -13,6 +15,11 @@ import { useAppTheme } from '@/theme/AppTheme';
 /** Same warm editorial shell, header rhythm and actions as the Network views. */
 export default function MusicHub() {
   const { t } = useLocale();
+  const {mine}=useLocalSearchParams<{mine?:string}>();
+  const app=useApp();
+  const feed=useDiscovery();
+  const allMusic=feed.state==='ready' ? feed.items.filter(p=>p.type==='music') : musics;
+  const visibleMusic=mine==='1'?allMusic.filter(m=>m.author===app.name):allMusic;
   const theme = useAppTheme();
   const { width } = useWindowDimensions();
   const compact = width < 620;
@@ -36,9 +43,9 @@ export default function MusicHub() {
             <Text style={{
               fontSize: compact ? 30 : 32, fontWeight:'700',
               lineHeight: compact ? 38 : 41, color: theme.foreground,
-            }}>{t('music')}</Text>
+            }}>{mine==='1'?'Mes musiques':t('music')}</Text>
             <Text style={{ color: theme.muted, fontSize: 12, lineHeight: 19, marginTop: 5 }}>
-              Écouter, partager et proposer une collaboration.
+              {mine==='1'?'Mes morceaux et collaborations publiés.':'Écouter, partager et proposer une collaboration.'}
             </Text>
           </View>
           
@@ -64,7 +71,7 @@ export default function MusicHub() {
         <Text style={{ fontSize: 18, fontWeight: '700', color: theme.foreground, marginBottom: 12 }}>
           Musiques et collaborations
         </Text>
-        {musics.map(m => (
+        {visibleMusic.map(m => (
           <Pressable
             key={m.id}
             onPress={() => router.push({ pathname: '/music/[id]', params: { id: m.id, from: 'music-tab' } })}
@@ -84,6 +91,14 @@ export default function MusicHub() {
             <Ionicons name="chevron-forward" size={17} color={theme.muted} />
           </Pressable>
         ))}
+        {mine==='1' && visibleMusic.length===0 ? (
+          <View style={{padding:20,borderWidth:1,borderColor:theme.border,borderRadius:12,gap:8}}>
+            <Text style={{fontWeight:'700',fontSize:14,color:theme.foreground}}>Aucun morceau publié</Text>
+            <Text style={{color:theme.muted,fontSize:12,lineHeight:18}}>
+              Les morceaux associés à ton profil apparaîtront ici dès qu'ils seront disponibles dans le catalogue.
+            </Text>
+          </View>
+        ):null}
         <Text style={{ color: theme.muted, fontSize: 11, lineHeight: 18, marginTop: 24 }}>
           Les adaptations se font par des propositions créditées. Aucun téléchargement public de chansons.
         </Text>
