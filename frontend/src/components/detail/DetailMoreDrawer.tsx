@@ -47,7 +47,7 @@ export function DetailMoreDrawer({
                 accessibilityLabel="Retour à la publication" style={{width:42,height:42,justifyContent:'center'}}>
                 <Ionicons name="arrow-back-outline" color={theme.foreground} size={23}/>
               </Pressable>
-              <Text style={{fontSize:10,color:theme.muted,fontWeight:'700',letterSpacing:1.25}}>LE RÊVE EN DÉTAIL</Text>
+              <Text style={{fontSize:10,color:theme.muted,fontWeight:'700',letterSpacing:1.25}}>EN SAVOIR PLUS</Text>
               <Pressable onPress={()=>setOpen(false)} accessibilityRole="button"
                 accessibilityLabel="Fermer" style={{padding:9}}>
                 <Ionicons name="close-outline" size={21} color={theme.foreground}/>
