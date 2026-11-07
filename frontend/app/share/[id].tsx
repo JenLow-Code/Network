@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Nav } from '@/components/navigation/Nav';
+import { PageHeader } from '@/components/navigation/PageHeader';
 import { findPublication } from '@/mocks/publications';
 export default function ShareInside() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -14,9 +15,7 @@ export default function ShareInside() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
       <View style={{ flex: 1, padding: 19 }}>
-        <Pressable onPress={() => router.back()}>
-          <Ionicons name="chevron-back" size={26} />
-        </Pressable>
+        <PageHeader />
         <Text style={{ fontFamily: 'Caveat_700Bold', fontSize: 33, marginTop: 15 }}>
           Partager dans JenLow
         </Text>
