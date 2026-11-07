@@ -441,15 +441,6 @@ export function DreamPhaseCard({ item, width, variant, onOpen }: Props) {
             {!compact && <Rect width="100%" height="100%" fill={'url(#' + gradientId + '-fade)'} />}
           </Svg>
           )}
-          {!compact && (
-            <View pointerEvents="none" style={{
-              position: 'absolute',
-              top: 32,
-              right: 54,
-            }}>
-              <DreamPhaseIcon phase="Témoignage" size={90} />
-            </View>
-          )}
           {compact && (
             <View pointerEvents="none" style={{ position: 'absolute', top: inset, right: inset, zIndex: 2 }}>
               <Text style={{
@@ -485,7 +476,7 @@ export function DreamPhaseCard({ item, width, variant, onOpen }: Props) {
             // absolute offsets, wrapped titles cannot create a huge gap.
             <View style={{
               position: 'absolute',
-              bottom: 78,
+              bottom: 96,
               // Align Floraison headline and summary with the primary action column.
               left: width < 440 ? 39 : 48,
               right: width < 440 ? 39 : 48,
