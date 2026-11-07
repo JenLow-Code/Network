@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Image, PanResponder, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Animated, Easing, Image, PanResponder, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -21,94 +21,78 @@ const stages: { phase: DreamPhase; position: Direction; color: string }[] = [
   { phase: 'Témoignage', position: 'right', color: '#D71D77' },
 ];
 const order: DreamPhase[] = ['Rêve', 'Initiation', 'Croissance', 'Témoignage'];
+// Swiping reveals the phase located on that side of the DreamHub.
+function phaseFromSwipe(dx: number, dy: number, threshold: number): DreamPhase | null {
+ const ax = Math.abs(dx), ay = Math.abs(dy);
+ if (ax > ay * 1.2) return dx > threshold ? 'Initiation' : dx < -threshold ? 'Témoignage' : null;
+ if (ay > ax * 1.2) return dy > threshold ? 'Rêve' : dy < -threshold ? 'Croissance' : null;
+ return null;
+}
+function exitVector(phase: DreamPhase, width: number, height: number) {
+ if (phase === 'Initiation') return { x: width, y: 0 };
+ if (phase === 'Témoignage') return { x: -width, y: 0 };
+ if (phase === 'Rêve') return { x: 0, y: height };
+ return { x: 0, y: -height };
+}
 
 /**
  * A handle may be tapped or physically pulled towards the centre.
  * Whole-screen directional swipes keep their original JenLow semantics.
  */
 function PhaseMarker({
-  position, color, disabled, selected, onPress, label,
+ position, color, disabled, selected, onPress, label, onPull, onCancel,
 }: {
-  position: Direction;
-  color: string;
-  disabled: boolean;
-  selected: boolean;
-  onPress: () => void;
-  label: string;
+ position: Direction; color: string; disabled: boolean; selected: boolean;
+ onPress: () => void; label: string; onPull: (distance: number) => void; onCancel: () => void;
 }) {
-  const horizontal = position === 'top' || position === 'bottom';
-  const placement =
-    position === 'top' ? { top: 3, left: '50%' as const, marginLeft: -29 } :
-    position === 'bottom' ? { bottom: 3, left: '50%' as const, marginLeft: -29 } :
-    position === 'left' ? { left: 2, top: '50%' as const, marginTop: -29 } :
-    { right: 2, top: '50%' as const, marginTop: -29 };
-
-  const offset = useRef(new Animated.Value(0)).current;
-  const onPressRef = useRef(onPress);
-  const enabledRef = useRef(!disabled);
-  onPressRef.current = onPress;
-  enabledRef.current = !disabled;
-
-  const inward = (dx: number, dy: number) =>
-    position === 'top' ? dy : position === 'bottom' ? -dy : position === 'left' ? dx : -dx;
-  const sign = position === 'top' || position === 'left' ? 1 : -1;
-  const responder = useRef(PanResponder.create({
-    // Capture the handle from touch-down so the surrounding full-screen swipe never steals it.
-    onStartShouldSetPanResponderCapture: () => enabledRef.current,
-    onStartShouldSetPanResponder: () => enabledRef.current,
-    onMoveShouldSetPanResponder: (_, g) => {
-      const main = inward(g.dx, g.dy);
-      const cross = horizontal ? Math.abs(g.dx) : Math.abs(g.dy);
-      return enabledRef.current && main > 8 && main > cross * 0.8;
-    },
-    onPanResponderTerminationRequest: () => false,
-    onPanResponderMove: (_, g) => {
-      const value = Math.min(114, Math.max(0, inward(g.dx, g.dy)));
-      offset.setValue(value * sign);
-    },
-    onPanResponderRelease: (_, g) => {
-      const isTap = Math.abs(g.dx) < 8 && Math.abs(g.dy) < 8;
-      const reached = inward(g.dx, g.dy) >= 60;
-      if ((isTap || reached) && enabledRef.current) {
-        offset.setValue(0);
-        onPressRef.current();
-      } else {
-        Animated.spring(offset, { toValue: 0, useNativeDriver: true, speed: 20, bounciness: 5 }).start();
-      }
-    },
-    onPanResponderTerminate: () => {
-      Animated.spring(offset, { toValue: 0, useNativeDriver: true, speed: 20, bounciness: 5 }).start();
-    },
-  })).current;
-
-  return (
-    <Animated.View
-      {...responder.panHandlers}
-      style={{
-        position: 'absolute', zIndex: 6,
-        width: 58, height: 58,
-        alignItems: 'center', justifyContent: 'center',
-        opacity: disabled ? 0.38 : selected ? 1 : 0.85,
-        transform: horizontal ? [{ translateY: offset }] : [{ translateX: offset }],
-        ...placement,
-      }}
-    >
-      <Pressable
-        onPress={onPress}
-        disabled={disabled}
-        accessibilityRole="button"
-        accessibilityLabel={disabled ? label + ', phase à venir' : 'Tirer ou ouvrir ' + label}
-        accessibilityState={{ disabled, selected }}
-        style={{ width: 58, height: 58, alignItems: 'center', justifyContent: 'center' }}
-      >
-        <View style={{
-          width: horizontal ? 43 : 3,
-          height: horizontal ? 3 : 43,
-          borderRadius: 4, backgroundColor: color,
-        }} />
-      </Pressable>
-    </Animated.View>
-  );
+ const horizontal = position === 'top' || position === 'bottom';
+ const markerWidth = horizontal ? 58 : 44;
+ const markerHeight = horizontal ? 50 : 54;
+ const placement =
+  position === 'top' ? { top: 57, left: '50%' as const, marginLeft: -markerWidth / 2 } :
+  position === 'bottom' ? { bottom: 1, left: '50%' as const, marginLeft: -markerWidth / 2 } :
+  position === 'left' ? { left: 0, top: '50%' as const, marginTop: -markerHeight / 2 } :
+  { right: 0, top: '50%' as const, marginTop: -markerHeight / 2 };
+ const enabledRef = useRef(!disabled);
+ const onPressRef = useRef(onPress);
+ const onPullRef = useRef(onPull);
+ const onCancelRef = useRef(onCancel);
+ enabledRef.current = !disabled;
+ onPressRef.current = onPress;
+ onPullRef.current = onPull;
+ onCancelRef.current = onCancel;
+ const inward = (dx: number, dy: number) => position === 'top' ? dy : position === 'bottom' ? -dy : position === 'left' ? dx : -dx;
+ const responder = useRef(PanResponder.create({
+  onStartShouldSetPanResponderCapture: () => enabledRef.current,
+  onStartShouldSetPanResponder: () => enabledRef.current,
+  onMoveShouldSetPanResponder: (_, g) => {
+   const main = inward(g.dx, g.dy);
+   const cross = horizontal ? Math.abs(g.dx) : Math.abs(g.dy);
+   return enabledRef.current && main > 8 && main > cross * .8;
+  },
+  onPanResponderTerminationRequest: () => false,
+  onPanResponderMove: (_, g) => onPullRef.current(Math.max(0, inward(g.dx, g.dy))),
+  onPanResponderRelease: (_, g) => {
+   const tap = Math.abs(g.dx) < 8 && Math.abs(g.dy) < 8;
+   if (enabledRef.current && (tap || inward(g.dx, g.dy) > 62)) onPressRef.current();
+   else onCancelRef.current();
+  },
+  onPanResponderTerminate: () => onCancelRef.current(),
+ })).current;
+ return (
+  <View {...responder.panHandlers} style={{
+   position: 'absolute', zIndex: 6, width: markerWidth, height: markerHeight,
+   alignItems: 'center', justifyContent: 'center',
+   opacity: disabled ? .35 : selected ? 1 : .84, ...placement,
+  }}>
+   <Pressable onPress={onPress} disabled={disabled} accessibilityRole="button"
+    accessibilityLabel={disabled ? label + ', phase à venir' : 'Tirer ou ouvrir ' + label}
+    accessibilityState={{ disabled, selected }}
+    style={{ width: markerWidth, height: markerHeight, alignItems: 'center', justifyContent: 'center' }}>
+     <View style={{ width: horizontal ? 43 : 3, height: horizontal ? 3 : 41, borderRadius: 4, backgroundColor: color }} />
+   </Pressable>
+  </View>
+ );
 }
 
 function shortDate(date?: string) {
@@ -125,47 +109,77 @@ export default function DreamHub({ dream }: { dream: DreamEntry }) {
   const { width, height } = useWindowDimensions();
   const compact = width < 720;
   const [open, setOpen] = useState<DreamPhase | null>(null);
-  const [transition, setTransition] = useState<DreamPhase | null>(null);
-  const veilOpacity = useRef(new Animated.Value(0)).current;
+  const [preview, setPreview] = useState<DreamPhase | null>(null);
+  const scene = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
   const busy = useRef(false);
   const openRef = useRef(open);
   openRef.current = open;
   const phaseRef = useRef(dream.phase);
   phaseRef.current = dream.phase;
-
   const canOpen = (phase: DreamPhase) => order.indexOf(phase) <= order.indexOf(dream.phase);
+
+  const resetScene = useCallback(() => {
+    Animated.spring(scene, { toValue: { x: 0, y: 0 }, useNativeDriver: true, speed: 22, bounciness: 2 })
+      .start(() => setPreview(null));
+  }, [scene]);
   const enter = useCallback((phase: DreamPhase) => {
-    if (busy.current || openRef.current || order.indexOf(phase) > order.indexOf(phaseRef.current)) return;
+    if (busy.current || openRef.current || order.indexOf(phase) > order.indexOf(phaseRef.current)) {
+      resetScene();
+      return;
+    }
     busy.current = true;
-    setTransition(phase);
-    veilOpacity.setValue(0);
-    Animated.timing(veilOpacity, { toValue: 1, duration: 180, useNativeDriver: true }).start(({ finished }) => {
-      if (!finished) { setTransition(null); busy.current = false; return; }
-      setOpen(phase);
-      Animated.timing(veilOpacity, { toValue: 0, duration: 290, useNativeDriver: true }).start(() => {
-        setTransition(null);
+    setPreview(phase);
+    Animated.timing(scene, { toValue: exitVector(phase, width, height), duration: 270,
+      easing: Easing.out(Easing.cubic), useNativeDriver: true })
+      .start(({ finished }) => {
+        if (finished) setOpen(phase);
+        scene.setValue({ x: 0, y: 0 });
+        setPreview(null);
         busy.current = false;
       });
-    });
-  }, [veilOpacity]);
+  }, [scene, width, height, resetScene]);
 
+  const dragScene = useCallback((dx: number, dy: number) => {
+    if (busy.current || openRef.current) return;
+    const target = phaseFromSwipe(dx, dy, 10);
+    if (target && order.indexOf(target) <= order.indexOf(phaseRef.current)) {
+      scene.setValue({ x: dx, y: dy });
+      setPreview(previous => previous === target ? previous : target);
+    } else {
+      // A future phase resists movement instead of opening another phase.
+      scene.setValue({ x: dx * .13, y: dy * .13 });
+      setPreview(null);
+    }
+  }, [scene]);
+
+  const pullHandle = useCallback((phase: DreamPhase, distance: number) => {
+    const vector = exitVector(phase, 1, 1);
+    dragScene(vector.x * distance, vector.y * distance);
+  }, [dragScene]);
   const enterRef = useRef(enter);
   enterRef.current = enter;
+  const dragRef = useRef(dragScene);
+  dragRef.current = dragScene;
+  const resetRef = useRef(resetScene);
+  resetRef.current = resetScene;
   const responder = useMemo(() => PanResponder.create({
     onMoveShouldSetPanResponder: (_, g) =>
-      !openRef.current && !busy.current && (Math.abs(g.dx) > 26 || Math.abs(g.dy) > 26),
+      !openRef.current && !busy.current && (Math.abs(g.dx) > 11 || Math.abs(g.dy) > 11),
+    onPanResponderTerminationRequest: () => false,
+    onPanResponderMove: (_, g) => dragRef.current(g.dx, g.dy),
     onPanResponderRelease: (_, g) => {
       if (openRef.current || busy.current) return;
-      const horizontal = Math.abs(g.dx) > Math.abs(g.dy) * 1.25;
-      const vertical = Math.abs(g.dy) > Math.abs(g.dx) * 1.25;
-      const phase = horizontal
-        ? (g.dx < -68 ? 'Initiation' : g.dx > 68 ? 'Témoignage' : null)
-        : vertical ? (g.dy > 68 ? 'Rêve' : g.dy < -68 ? 'Croissance' : null) : null;
-      if (phase) enterRef.current(phase);
+      const target = phaseFromSwipe(g.dx, g.dy, 68);
+      if (target && order.indexOf(target) <= order.indexOf(phaseRef.current)) enterRef.current(target);
+      else resetRef.current();
     },
+    onPanResponderTerminate: () => resetRef.current(),
   }), []);
-
-  useEffect(() => { setOpen(null); }, [dream.phase]);
+  useEffect(() => {
+    setOpen(null);
+    scene.setValue({ x: 0, y: 0 });
+    setPreview(null);
+  }, [dream.phase]);
 
   const resources: DreamResource[] = dream.resources || (dream.needs || []).map((title, index) => ({
     id: 'legacy-' + index,
@@ -195,6 +209,8 @@ export default function DreamHub({ dream }: { dream: DreamEntry }) {
   }, [dream.id, dream.phase, !!dream.chat]);
 
   const tileSize = width < 350 ? 51 : width < 390 ? 58 : compact ? 70 : 85;
+  const activeAccent = stages.find(stage => stage.phase === dream.phase)?.color || '#242322';
+  const activeButtonText = dream.phase === 'Rêve' || dream.phase === 'Initiation' ? '#242322' : '#FFFFFF';
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.background }}>
@@ -206,10 +222,21 @@ export default function DreamHub({ dream }: { dream: DreamEntry }) {
           flex: 1, paddingHorizontal: compact ? 0 : 24,
           paddingVertical: compact ? 0 : 17, alignItems: 'center',
         }}>
-          <View style={{
+          {preview ? (
+            <View pointerEvents="none" style={{
+              ...StyleSheet.absoluteFillObject, justifyContent: 'center', alignItems: 'center',
+            }}>
+              <Text style={{ fontFamily: 'serif', fontSize: compact ? 29 : 38, color: stages.find(stage => stage.phase === preview)?.color }}>
+                {PHASE_LABELS[preview]}
+              </Text>
+              <Text style={{ color: theme.muted, fontSize: 12, marginTop: 10 }}>Glisser pour ouvrir</Text>
+            </View>
+          ) : null}
+          <Animated.View style={{
             flex: 1, width: '100%', maxWidth: 1120,
             backgroundColor: theme.dark ? '#252725' : '#EEECE5',
             borderRadius: compact ? 0 : 15, overflow: 'hidden',
+            transform: scene.getTranslateTransform(),
           }} {...responder.panHandlers}>
             {hasImage ? <Image source={{ uri: image }} resizeMode="cover" style={StyleSheet.absoluteFill} /> : null}
             <View pointerEvents="none" style={[StyleSheet.absoluteFill, {
@@ -252,6 +279,8 @@ export default function DreamHub({ dream }: { dream: DreamEntry }) {
                 disabled={!canOpen(stage.phase)}
                 selected={stage.phase === dream.phase}
                 onPress={() => enter(stage.phase)}
+                onPull={distance => pullHandle(stage.phase, distance)}
+                onCancel={resetScene}
                 label={PHASE_LABELS[stage.phase]}
               />
             ))}
@@ -315,11 +344,11 @@ export default function DreamHub({ dream }: { dream: DreamEntry }) {
                     minHeight: 44, marginTop: compact ? 18 : 24,
                     paddingHorizontal: 26, paddingVertical: 12,
                     borderRadius: 11, alignItems: 'center', justifyContent: 'center',
-                    backgroundColor: theme.dark ? '#F7F4ED' : '#242322',
+                    backgroundColor: activeAccent,
                   }}
                 >
                   <Text style={{
-                    color: theme.dark ? '#242322' : '#FFFFFF',
+                    color: activeButtonText,
                     fontSize: 12, fontWeight: '700', letterSpacing: .2,
                   }}>{dream.phase === 'Témoignage' ? 'Voir ma Floraison' : 'Ouvrir ' + currentLabel}</Text>
                 </Pressable>
@@ -362,20 +391,9 @@ export default function DreamHub({ dream }: { dream: DreamEntry }) {
                 ) : null}
               </View>
             </View>
-          </View>
+          </Animated.View>
         </View>
       )}
-
-      {transition ? (
-        <Animated.View pointerEvents="none" style={[
-          StyleSheet.absoluteFill,
-          { zIndex: 20, backgroundColor: theme.background, justifyContent: 'center', alignItems: 'center', opacity: veilOpacity },
-        ]}>
-          <Text style={{ color: stages.find(stage => stage.phase === transition)?.color, fontSize: 30, fontFamily: 'serif' }}>
-            {PHASE_LABELS[transition]}
-          </Text>
-        </Animated.View>
-      ) : null}
     </View>
   );
 }
