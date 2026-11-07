@@ -8,12 +8,13 @@ import { useAppTheme } from '@/theme/AppTheme';
 
 /** Talent request, not a profile or a claim that a real volunteer has joined. */
 export function DreamTalentSquare({
-  resource, size = 78, onToggle, onRemove,
+  resource, size = 78, onToggle, onRemove, onEditRequest,
 }: {
   resource: DreamResource;
   size?: number;
   onToggle?: () => void;
   onRemove?: () => void;
+  onEditRequest?: () => void;
 }) {
   const theme = useAppTheme();
   const [detailsOpen, setDetailsOpen] = useState(false);
@@ -22,7 +23,7 @@ export function DreamTalentSquare({
   return (
     <>
       <Pressable
-        onPress={() => setDetailsOpen(true)}
+        onPress={() => onEditRequest ? onEditRequest() : setDetailsOpen(true)}
         accessibilityRole="button"
         accessibilityLabel={role + (resource.requiredLevel ? ', niveau recherché ' + resource.requiredLevel : '') + ', voir le besoin'}
         style={{
