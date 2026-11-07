@@ -7,6 +7,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { musics } from '@/mocks/publications';
 import { usePublication } from '@/lib/api/hooks';
 import { Nav } from '@/components/navigation/Nav';
+import { PageHeader } from '@/components/navigation/PageHeader';
 export default function MusicProposal() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const local = musics.find(m => m.id === id);
@@ -18,9 +19,7 @@ export default function MusicProposal() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
       <View style={{ flex: 1, padding: 20 }}>
-        <Pressable onPress={() => router.back()}>
-          <Ionicons name="chevron-back" size={25} />
-        </Pressable>
+        <PageHeader />
         <Text style={{ fontFamily: 'Caveat_700Bold', fontSize: 31, marginTop: 13 }}>
           Proposer une adaptation
         </Text>
