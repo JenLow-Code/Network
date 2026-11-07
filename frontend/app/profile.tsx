@@ -250,20 +250,54 @@ export default function Profile() {
           <Text style={{fontSize:19,fontWeight:'800',color:theme.foreground,marginTop:25,marginBottom:14}}>Mes publications</Text>
         </View>
         {myLocalDreams.length>0 ? (
-          <View style={{gap:10,marginBottom:19}}>
-            {myLocalDreams.map(d=><Pressable key={d.id} onPress={()=>router.push({pathname:'/my-dream/[id]',params:{id:d.id}})} accessibilityRole="button" accessibilityLabel={d.title+(d.visibility==='public'?', public':', privé')+', ouvrir mon rêve'}
-              style={{flexDirection:'row',gap:13,alignItems:'center',padding:14,minHeight:75,borderRadius:11,backgroundColor:theme.dark?'#292B30':'#F1F0EE'}}>
-              <Ionicons name={d.visibility==='public'?'globe-outline':'lock-closed'} color={theme.muted} size={20}/>
-              <View style={{flex:1,gap:5}}>
-                <Text numberOfLines={1} style={{color:theme.foreground,fontSize:14,fontWeight:'700'}}>{d.title}</Text>
-                <Text style={{fontSize:11,color:PHASE_COLORS[d.phase].foreground}}>{PHASE_LABELS[d.phase]} · {d.visibility==='public'?'Public':'Privé'}</Text>
+          <View style={{flexDirection:'row',flexWrap:'wrap',gap:10,marginBottom:18}}>
+            {myLocalDreams.map(d=><Pressable key={d.id}
+              onPress={()=>router.push({pathname:'/my-dream/[id]',params:{id:d.id}})}
+              accessibilityRole="button" accessibilityLabel={d.title+(d.visibility==='public'?', public':', privé')}
+              style={{width:cardWidth,height:Math.max(145,Math.round(cardWidth*1.10)),
+                borderRadius:10,overflow:'hidden',backgroundColor:theme.surface}}>
+              {d.image?<Image source={{uri:d.resultImage||d.image}} resizeMode="cover"
+                style={{position:'absolute',width:'100%',height:'100%'}}/>:null}
+              <View style={{position:'absolute',top:0,bottom:0,left:0,right:0,
+                backgroundColor:'rgba(0,0,0,.39)'}}/>
+              <View style={{position:'absolute',top:9,right:9}}>
+                <Ionicons name={d.visibility==='public'?'globe-outline':'lock-closed'}
+                  size={16} color="#FFFFFF"/>
               </View>
-              <Ionicons name="chevron-forward" color={theme.muted} size={18}/>
+              <Text numberOfLines={3} style={{color:'#FFFFFF',fontWeight:'700',fontSize:13,
+                position:'absolute',bottom:12,left:10,right:10}}>{d.title}</Text>
             </Pressable>)}
           </View>
         ):null}
-        {myPublicPosts.length?<ProfilePublicationFeed items={myPublicPosts} contentWidth={areaWidth} featuredId={featuredId} onFeature={feature}/>:<Text style={{color:theme.muted,fontSize:13}}>{myLocalDreams.length?'Aucune autre publication publique pour le moment.':'Aucune publication pour le moment.'}</Text>}
+        {myPublicPosts.length?<ProfilePublicationFeed grid items={myPublicPosts} contentWidth={areaWidth} featuredId={featuredId} onFeature={feature}/>:<Text style={{color:theme.muted,fontSize:13}}>{myLocalDreams.length?'Aucune autre publication publique pour le moment.':'Aucune publication pour le moment.'}</Text>}
       </ScrollView>
+      <Modal visible={addTalentOpen} transparent animationType="fade"
+        onRequestClose={()=>setAddTalentOpen(false)}>
+        <View style={{flex:1,backgroundColor:'rgba(0,0,0,.56)',justifyContent:'center',padding:19}}>
+          <Pressable onPress={()=>setAddTalentOpen(false)}
+            style={{position:'absolute',top:0,bottom:0,left:0,right:0}}/>
+          <View style={{backgroundColor:theme.surface,maxWidth:430,width:'100%',
+            alignSelf:'center',padding:21,borderRadius:15,gap:15}}>
+            <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
+              <Text style={{fontSize:20,fontWeight:'700',color:theme.foreground}}>Ajouter un talent</Text>
+              <Pressable onPress={()=>setAddTalentOpen(false)} accessibilityLabel="Fermer">
+                <Ionicons name="close-outline" size={23} color={theme.foreground}/>
+              </Pressable>
+            </View>
+            <TextInput value={newTalent} onChangeText={setNewTalent} maxLength={70}
+              placeholder="Ex. Guitare, photographie, chant…"
+              style={{borderWidth:1,borderColor:theme.border,borderRadius:10,
+                padding:13,color:theme.foreground,fontSize:14}}/>
+            <Pressable accessibilityRole="button" onPress={()=>{
+              if(!newTalent.trim())return;
+              setTalents(items=>[...items,{name:newTalent.trim(),level:0,interests:[]}]);
+              setNewTalent('');setAddTalentOpen(false);
+            }} style={{backgroundColor:'#242322',borderRadius:10,padding:14,alignItems:'center'}}>
+              <Text style={{color:'#FFFFFF',fontSize:13,fontWeight:'700'}}>Ajouter à mon profil</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
       <Modal visible={selectedTalent!==null} transparent animationType="fade" onRequestClose={()=>setSelectedTalent(null)}>
         <View style={{flex:1,backgroundColor:'rgba(0,0,0,0.6)',justifyContent:'center',padding:18}}>
           <ScrollView style={{backgroundColor:theme.surface,borderRadius:14,maxWidth:470,width:'100%',alignSelf:'center',maxHeight:'85%'}} contentContainerStyle={{padding:20,gap:14}}>
