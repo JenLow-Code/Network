@@ -32,6 +32,16 @@ export const publicationPath = (p: Publication) =>
             params: { reference: p.referenceId, verse: String(p.highlightedVerse), ...(p.source === 'api' ? { id: p.id } : {}) },
           } as const);
 
+type GalleryOrigin = 'normal' | 'fire';
+const GalleryOriginContext = React.createContext<GalleryOrigin>('normal');
+function openPublication(item: Publication, origin: GalleryOrigin) {
+  const destination = publicationPath(item);
+  router.push({
+    ...destination,
+    params: { ...destination.params, ...(origin === 'fire' ? { from: 'fire' } : {}) },
+  } as any);
+}
+
 function category(item: Publication): string {
   switch (item.type) {
     case 'dream':
@@ -278,8 +288,9 @@ function StoryCover({
 }) {
   const shadeId = useId().replace(/[^a-zA-Z0-9_-]/g, '');
   const theme = useAppTheme();
+  const origin = React.useContext(GalleryOriginContext);
   if (item.type === 'dream') {
-    return <DreamPhaseCard item={item} width={width} variant="tile" onOpen={() => router.push(publicationPath(item) as any)} />;
+    return <DreamPhaseCard item={item} width={width} variant="tile" onOpen={() => openPublication(item, origin)} />;
   }
   const isTalent = item.type === 'talent';
   const isBible = item.type === 'bible';
@@ -299,7 +310,7 @@ function StoryCover({
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={'Open ' + item.title}
-        onPress={() => router.push(publicationPath(item) as any)}
+        onPress={() => openPublication(item, origin)}
         style={styles.storyLink}
       >
         <View
@@ -568,7 +579,7 @@ function MasonryGallery({ items, viewportWidth }: { items: Publication[]; viewpo
  *
  * Filtering works at every length without empty cells or anonymous image blocks.
  */
-export function PublicationGallery({ items: receivedItems, layout = 'editorial', contentWidth: requestedWidth }: { items: Publication[]; layout?: 'editorial' | 'masonry'; contentWidth?: number }) {
+export function PublicationGallery({ items: receivedItems, layout = 'editorial', contentWidth: requestedWidth, origin = 'normal' }: { items: Publication[]; layout?: 'editorial' | 'masonry'; contentWidth?: number; origin?: GalleryOrigin }) {
   // Semence remains link-accessible but never appears in public Discovery/recommendation galleries.
   const items = receivedItems.filter(item => item.type !== 'dream' || item.phase !== 'Rêve');
   const { width: windowWidth } = useWindowDimensions();
@@ -581,7 +592,7 @@ export function PublicationGallery({ items: receivedItems, layout = 'editorial',
   // When width is supplied by DetailLayout, it already includes the masonry
   // outer padding. Adding 30px again caused the final grid to overflow right.
   if (layout === 'masonry') return (
-    <MasonryGallery items={items} viewportWidth={requestedWidth === undefined ? contentWidth + 30 : contentWidth} />
+    <GalleryOriginContext.Provider value={origin}><MasonryGallery items={items} viewportWidth={requestedWidth === undefined ? contentWidth + 30 : contentWidth} /></GalleryOriginContext.Provider>
   );
 
   const sections: React.ReactNode[] = [];
@@ -656,9 +667,9 @@ export function PublicationGallery({ items: receivedItems, layout = 'editorial',
   }
 
   return (
-    <View style={{ width: '100%', gap, paddingBottom: 18 }}>
-      {sections}
-    </View>
+    <GalleryOriginContext.Provider value={origin}>
+      <View style={{ width: '100%', gap, paddingBottom: 18 }}>{sections}</View>
+    </GalleryOriginContext.Provider>
   );
 }
 
