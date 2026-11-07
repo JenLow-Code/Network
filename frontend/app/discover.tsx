@@ -101,16 +101,14 @@ export default function Discover() {
             }}
           >
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}>
-              <NetworkMark size={24} color={theme.foreground} />
+              <NetworkMark size={28} color="#E5006E" />
             <Text
               accessibilityLabel="JenLow"
               style={{
                 fontSize: 19,
-                fontWeight: '900',
-                letterSpacing: 2.1,
-                fontStyle: 'italic',
+                fontWeight: '800',
+                letterSpacing: 2.0,
                 color: theme.foreground,
-                transform: [{ scaleX: 1.12 }],
                 marginLeft: 5,
               }}
             >
