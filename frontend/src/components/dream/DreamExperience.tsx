@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Alert, Image, Linking, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Alert, Image, Linking, Modal, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useDreams } from '@/domain/dreamRepository';
@@ -53,6 +53,9 @@ export default function DreamExperience({ dream, viewPhase, onBack, onNavigate }
  const [resourceAmount, setResourceAmount] = useState('');
  const [resourceCategory, setResourceCategory] = useState<DreamResource['category']>('person');
  const [resourceLink, setResourceLink] = useState('');
+ const [resourceDialog,setResourceDialog]=useState(false);
+ const [freezeDialog,setFreezeDialog]=useState(false);
+ const [pauseDeadline,setPauseDeadline]=useState('');
  const [habitTitle, setHabitTitle] = useState('');
  const [frequency, setFrequency] = useState<DreamHabit['frequency']>('daily');
  const [milestone, setMilestone] = useState('');
@@ -75,7 +78,7 @@ export default function DreamExperience({ dream, viewPhase, onBack, onNavigate }
   patch(dream.id,{blocks:updated});
  };
  const editBlock=(block:DreamBlock)=>{setEditingBlock(block.id);setBlockText(block.content);setBlockTitle(block.title||'');setBlockTone(block.tone);setBlockSize(block.size);setBlockKind(block.kind);setPicker(true);};
- const addResource=()=>{if(!resourceTitle.trim())return;const amount=resourceCategory==='financial'?Number(resourceAmount.replace(',','.')):undefined;setResources(dream.id,[...resources,{id:uid(),title:resourceTitle.trim(),category:resourceCategory,confirmed:false,linkedBlockId:resourceLink||undefined,amount:amount&&Number.isFinite(amount)&&amount>0?amount:undefined}]);setResourceTitle('');setResourceAmount('');setResourceLink('');};
+ const addResource=()=>{if(!resourceTitle.trim())return;const amount=resourceCategory==='financial'?Number(resourceAmount.replace(',','.')):undefined;setResources(dream.id,[...resources,{id:uid(),title:resourceTitle.trim(),category:resourceCategory,confirmed:false,linkedBlockId:resourceLink||undefined,amount:amount&&Number.isFinite(amount)&&amount>0?amount:undefined}]);setResourceTitle('');setResourceAmount('');setResourceLink('');setResourceDialog(false);};
  const confirmGrowth = () => confirm('Tout est réuni !', 'Ta date est fixée et toutes les ressources sont confirmées. Passer à la Croissance créera aussi la conversation de ce rêve sur cet appareil.', () => transitionToGrowth(dream.id));
  const checkResource = (item: DreamResource) => {
   const updated = resources.map(x => x.id===item.id ? {...x,confirmed:!x.confirmed} : x);
@@ -88,7 +91,18 @@ export default function DreamExperience({ dream, viewPhase, onBack, onNavigate }
  const phase = viewPhase || dream.phase;
  const historical = phase !== dream.phase;
  const readOnly = historical || dream.phase === 'Témoignage';
- const resourceEditable = phase === 'Initiation' && (dream.phase === 'Initiation' || dream.phase === 'Croissance');
+ const frozen=!!dream.paused && !!dream.pauseUntil && dream.pauseUntil>=day();
+ const resourceEditable=phase==='Initiation' && !historical && !frozen;
+ const freeze=()=>{
+   if(historical || dream.phase!=='Initiation'||frozen)return;
+   if((dream.pauseCount||0)>=3){Alert.alert('Limite atteinte','Trois pauses maximum par rêve.');return;}
+   if(!/^\d{4}-\d{2}-\d{2}$/.test(pauseDeadline) ||
+      !Number.isFinite(Date.parse(pauseDeadline)) || pauseDeadline<=day()){
+     Alert.alert('Date requise','Choisis une date de reprise future au format AAAA-MM-JJ.');return;
+   }
+   patch(dream.id,{paused:true,pauseUntil:pauseDeadline,pauseCount:(dream.pauseCount||0)+1});
+   setFreezeDialog(false);setPauseDeadline('');
+ };
  return <ScrollView style={{flex:1,backgroundColor:theme.background}} contentContainerStyle={{paddingHorizontal:19,paddingTop:10,paddingBottom:65,maxWidth:760,width:'100%',alignSelf:'center'}}>
   <DreamPhaseHeader dream={dream} phase={phase} onBack={onBack || (()=>router.replace('/my-space'))} onNavigate={onNavigate} readOnly={historical}
     summary={phase==='Témoignage'?'Le rêve est devenu réalité. Voici ce qui a pris vie.':undefined}
@@ -123,13 +137,13 @@ export default function DreamExperience({ dream, viewPhase, onBack, onNavigate }
   </> : null}
   {phase==='Initiation' ? <>
    <DreamPhaseSection title="Préparer mon rêve" subtitle="Donne une date à ce rêve et rassemble les ressources nécessaires.">
-    {historical && !resourceEditable ? <Text style={{color:theme.muted,marginBottom:12}}>Date cible : {dream.goalDate||'Non définie'}</Text> : <Field label="Date cible" value={dream.goalDate||''} onChange={v=>patch(dream.id,{goalDate:v})} placeholder="AAAA-MM-JJ"/>}
+    {!resourceEditable ? <Text style={{color:theme.muted,marginBottom:12}}>Date cible : {dream.goalDate||'Non définie'}</Text> : <Field label="Date cible" value={dream.goalDate||''} onChange={v=>patch(dream.id,{goalDate:v})} placeholder="AAAA-MM-JJ"/>}
     <View style={{height:7,backgroundColor:theme.dark?'#35412C':'#EFEEC9',borderRadius:6,marginBottom:8}}><View style={{height:7,width:((resources.length?resources.filter(r=>r.confirmed).length/resources.length*100:0)+'%') as any,backgroundColor:'#A1BA44',borderRadius:6}}/></View>
     <Text style={{color:theme.muted,fontSize:12,marginBottom:16}}>{resources.filter(r=>r.confirmed).length} / {resources.length} ressources confirmées</Text>
     </DreamPhaseSection>
    <DreamPhaseSection title="Mes ressources" subtitle="Personnes, matériel et financement à réunir.">
    {(['person','practical','financial'] as const).map(category=><View key={category} style={{marginBottom:17}}>
-      <Text style={{fontSize:17,fontWeight:'700',color:theme.foreground,marginBottom:9}}>{category==='person'?'Personnes':category==='practical'?'Autres ressources':'Financement'}</Text>
+      <Text style={{fontSize:17,fontWeight:'700',color:theme.foreground,marginBottom:9}}>{category==='person'?'Talents':category==='practical'?'Autres ressources':'Financement'}</Text>
       {category === 'person' ? (
         <View style={{flexDirection:'row',flexWrap:'wrap',gap:9,marginBottom:8}}>
           {resources.filter(r=>r.category==='person').map(r=><DreamTalentSquare key={r.id} resource={r} size={100}
@@ -171,7 +185,12 @@ export default function DreamExperience({ dream, viewPhase, onBack, onNavigate }
           )}
         </View>
       )}
-      {category==='person' ? <Pressable onPress={()=>router.push('/discover?filter=Talents')}><Text style={{color:pink,fontSize:12,marginTop:5}}>Trouver des talents sur JenLow ↗</Text></Pressable>:null}
+      {category==='person' ? <Pressable onPress={()=>router.push('/discover?filter=Talents')}>
+       <Text style={{color:pink,fontSize:12,marginTop:5}}>Trouver des talents sur JenLow ↗</Text>
+     </Pressable> : category==='practical' ?
+     <Pressable accessibilityRole="link" onPress={()=>void Linking.openURL('https://jenlow-tools.patatas-bravas.chatgpt.site/')}>
+       <Text style={{color:'#387D9F',fontSize:12,marginTop:6}}>Trouver des ressources sur JenLow Tools ↗</Text>
+     </Pressable> : null}
     </View>)}
     </DreamPhaseSection>
    {resourceEditable ? <DreamPhaseSection title="Ajouter un besoin">
@@ -225,9 +244,9 @@ export default function DreamExperience({ dream, viewPhase, onBack, onNavigate }
     </DreamPhaseSection>:null}
   </> : null}
  {(!historical && phase !== 'Rêve') ? <Pressable
-    onPress={()=>confirm('Arracher ' + (phase === 'Initiation' ? 'ce germe' : 'cette plante') + ' ?', 'Cette action supprimera définitivement ce rêve et ses données enregistrées sur cet appareil.', ()=>{remove(dream.id);router.replace('/my-space');})}
+    onPress={()=>confirm('Arracher ' + ('cette plante') + ' ?', 'Cette action supprimera définitivement ce rêve et ses données enregistrées sur cet appareil.', ()=>{remove(dream.id);router.replace('/my-space');})}
     accessibilityRole="button" style={{alignItems:'center',marginTop:26,padding:15}}>
-      <Text style={{color:'#B24C59',fontSize:12}}>{phase === 'Initiation' ? 'Arracher ce germe' : 'Arracher cette plante'}</Text>
+      <Text style={{color:'#B24C59',fontSize:12}}>{'Arracher cette plante'}</Text>
    </Pressable> : null}
  </ScrollView>;
 }
