@@ -40,8 +40,15 @@ export default function FireList() {
             marginBottom: 11,
           }}
         >
-          <View />
-          <TopActions />
+          <Pressable
+            onPress={() => router.canGoBack() ? router.back() : router.replace('/discover')}
+            accessibilityRole="button"
+            accessibilityLabel="Retour"
+            style={{ width: 44, height: 44, justifyContent: 'center', alignItems: 'center' }}
+          >
+            <Ionicons name="arrow-back-outline" size={23} color={theme.foreground} />
+          </Pressable>
+          <TopActions showFire={false} />
         </View>
         <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
           <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center', flexShrink: 1 }}>
