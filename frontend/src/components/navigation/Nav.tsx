@@ -1,5 +1,7 @@
 import React from 'react';
 import { Image, Platform, Pressable, View } from 'react-native';
+import { BlurView } from 'expo-blur';
+import Svg, { Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { router, usePathname } from 'expo-router';
 import { useLocale } from '@/i18n/locale';
@@ -40,26 +42,50 @@ export function Nav() {
     },
   ];
   const foreground = theme.foreground;
-  const glass = theme.dark ? 'rgba(30,35,39,0.73)' : 'rgba(246,251,252,0.69)';
-  const glassEffect = Platform.OS === 'web'
-    ? ({ backdropFilter: 'blur(20px) saturate(160%)', WebkitBackdropFilter: 'blur(20px) saturate(160%)' } as any)
+  const webFrost = Platform.OS === 'web'
+    ? ({ backdropFilter: 'blur(30px) saturate(190%)', WebkitBackdropFilter: 'blur(30px) saturate(190%)' } as any)
     : {};
+  // A real translucent overlay: the page can remain visible and scroll behind it.
   return (
     <View style={{
+      position: 'absolute', bottom: 0, left: 0, right: 0,
       flexDirection: 'row', alignItems: 'center',
-      backgroundColor: glass,
-      borderTopWidth: 0.8, borderTopColor: theme.dark ? 'rgba(255,255,255,0.23)' : 'rgba(255,255,255,0.93)',
       justifyContent: 'space-around',
-      paddingTop: 9, paddingBottom: 9,
-      shadowColor: theme.dark ? '#9AAAB5' : '#83B5C8', shadowOpacity: 0.14,
-      shadowRadius: 12, shadowOffset: { width: 0, height: -5 },
-      elevation: 5, zIndex: 20,
-      ...glassEffect,
+      paddingTop: 11, paddingBottom: 10,
+      minHeight: 60, zIndex: 30,
+      overflow: 'hidden',
+      borderTopLeftRadius: 18, borderTopRightRadius: 18,
+      backgroundColor: theme.dark ? 'rgba(18,29,38,0.10)' : 'rgba(239,248,251,0.10)',
+      borderTopWidth: 1,
+      borderColor: theme.dark ? 'rgba(221,241,250,0.26)' : 'rgba(255,255,255,0.84)',
+      shadowColor: theme.dark ? '#A4D5ED' : '#7FB5C9',
+      shadowOpacity: 0.21, shadowRadius: 18,
+      shadowOffset: { width: 0, height: -5 }, elevation: 8,
+      ...webFrost,
     }}>
-      {/* A thin water-like reflection, not a heavy opaque border. */}
+      <BlurView
+        pointerEvents="none"
+        intensity={Platform.OS === 'ios' ? 74 : 63}
+        tint={theme.dark ? 'systemUltraThinMaterialDark' : 'systemUltraThinMaterialLight'}
+        // On Android 12+ native blur requires a BlurTargetView; the web/iOS
+        // path blurs content directly while Android keeps a translucent surface.
+        style={{position:'absolute',top:0,left:0,right:0,bottom:0}}
+      />
+      <Svg pointerEvents="none" width="100%" height="100%"
+        style={{position:'absolute',top:0,left:0,right:0,bottom:0}}>
+        <Defs>
+          <LinearGradient id="nav-water" x1="0" x2="0" y1="0" y2="1">
+            <Stop offset="0" stopColor={theme.dark ? '#CDEFFA' : '#FFFFFF'} stopOpacity={theme.dark ? .16 : .59} />
+            <Stop offset=".22" stopColor={theme.dark ? '#8BBCCB' : '#D7EFF6'} stopOpacity={.11}/>
+            <Stop offset=".75" stopColor={theme.dark ? '#304F60' : '#DEEDF0'} stopOpacity={.07}/>
+            <Stop offset="1" stopColor={theme.dark ? '#7897AA' : '#B5D9E2'} stopOpacity={.18}/>
+          </LinearGradient>
+        </Defs>
+        <Rect width="100%" height="100%" fill="url(#nav-water)"/>
+      </Svg>
       <View pointerEvents="none" style={{
-        position: 'absolute', top: 2, left: 19, right: 19, height: 1,
-        backgroundColor: theme.dark ? 'rgba(255,255,255,0.17)' : 'rgba(255,255,255,0.64)',
+        position: 'absolute', top: 2, left: 24, right: 24, height: 1,
+        backgroundColor: theme.dark ? 'rgba(255,255,255,0.27)' : 'rgba(255,255,255,0.85)',
       }} />
       {links.map(x => (
         <Pressable
