@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Animated, Easing, Image, PanResponder, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Animated, Easing, Image, PanResponder, Modal, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -111,6 +111,7 @@ export default function DreamHub({ dream, startInSemence = false, startPhase }: 
   const { patch } = useDreams();
   const { width, height } = useWindowDimensions();
   const compact = width < 720;
+  const [resultOpen,setResultOpen]=useState(false);
   const [open, setOpen] = useState<DreamPhase | null>(() =>
     startPhase && order.indexOf(startPhase) <= order.indexOf(dream.phase)
       ? startPhase : startInSemence && dream.phase === 'Rêve' ? 'Rêve' : null
@@ -206,8 +207,11 @@ export default function DreamHub({ dream, startInSemence = false, startPhase }: 
     ? (dream.resultImage || dream.testimony?.mediaItems?.find(media => media.kind === 'photo')?.uri || dream.image)
     : dream.image;
   const hasImage = !!image;
-  const ink = theme.dark ? '#F7F5F0' : '#222320';
-  const muted = theme.dark ? '#D1D0C9' : '#565A56';
+  const fruit = dream.phase === 'Témoignage';
+  const fruitPhoto = dream.resultImage || dream.testimony?.mediaItems?.find(m=>m.kind==='photo')?.uri;
+  const completedOn = dream.testimony?.date || dream.fruitAt;
+  const ink = fruit ? '#FFFFFF' : theme.dark ? '#F7F5F0' : '#222320';
+  const muted = fruit ? '#FDE8EE' : theme.dark ? '#D1D0C9' : '#565A56';
   const coOwners = (dream.coOwners || []).filter(owner => owner.accepted && !!owner.name.trim());
 
   // Older demo Croissance/Floraison entries existed before local dream conversations.
@@ -238,9 +242,9 @@ export default function DreamHub({ dream, startInSemence = false, startPhase }: 
           }}>
             {hasImage ? <Image source={{ uri: image }} resizeMode="cover" style={StyleSheet.absoluteFill} /> : null}
             <View pointerEvents="none" style={[StyleSheet.absoluteFill, {
-              backgroundColor: theme.dark ? 'rgba(20,22,21,0.79)' : 'rgba(255,252,245,0.78)',
+              backgroundColor: fruit ? 'rgba(14,15,15,0.38)' : theme.dark ? 'rgba(20,22,21,0.79)' : 'rgba(255,252,245,0.78)',
             }]} />
-            {hasImage && !theme.dark ? (
+            {hasImage && !theme.dark && !fruit ? (
               <Svg pointerEvents="none" width="100%" height="100%" style={StyleSheet.absoluteFill}>
                 <Defs>
                   <LinearGradient id="dream-top-fade" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -308,7 +312,7 @@ export default function DreamHub({ dream, startInSemence = false, startPhase }: 
 
                 {phaseIndex >= 1 ? (
                   <Pressable
-                    disabled={!!dream.goalDate || dream.phase !== 'Initiation'}
+                    disabled={fruit || !!dream.goalDate || dream.phase !== 'Initiation'}
                     onPress={() => enter('Initiation')}
                     accessibilityRole="button"
                     style={{
@@ -318,7 +322,8 @@ export default function DreamHub({ dream, startInSemence = false, startPhase }: 
                   >
                     <Ionicons name="calendar-outline" size={15} color={ink}/>
                     <Text style={{ fontSize: compact ? 12 : 13, color: ink, fontWeight: '600' }}>
-                      {dream.goalDate ? 'Date objectif · ' + shortDate(dream.goalDate) : 'Date objectif à définir'}
+                      {fruit ? (completedOn ? 'Accompli le ' + shortDate(completedOn.slice(0,10)) : 'Rêve accompli') :
+                        dream.goalDate ? 'Date objectif · ' + shortDate(dream.goalDate) : 'Date objectif à définir'}
                     </Text>
                   </Pressable>
                 ) : null}
@@ -331,7 +336,7 @@ export default function DreamHub({ dream, startInSemence = false, startPhase }: 
                     {dream.encouragementCount} encouragement{dream.encouragementCount === 1 ? '' : 's'}
                   </Text>
                 ) : null}
-                {phaseIndex >= 1 ? (
+                {phaseIndex >= 1 && !fruit ? (
                   <View style={{ marginTop: compact ? 8 : 18, alignItems: 'center', gap: compact?5:8 }}>
                     {requestedTalents.length > 0 ? (
                       <Text style={{ fontSize: 12, fontWeight: '700', color: '#D71D77', textAlign: 'center' }}>
@@ -352,20 +357,37 @@ export default function DreamHub({ dream, startInSemence = false, startPhase }: 
               marginTop: compact ? 21 : 28,
               alignItems: 'center',
             }}>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={'Ouvrir ' + currentLabel}
-                onPress={() => enter(dream.phase)}
-                style={{
-                  minHeight: 45, paddingHorizontal: 27, paddingVertical: 12,
-                  borderRadius: 11, alignItems: 'center', justifyContent: 'center',
-                  backgroundColor: activeAccent,
-                }}
-              >
-                <Text style={{
-                  color: activeButtonText, fontSize: 12, fontWeight: '700', letterSpacing: .2,
-                }}>{dream.phase === 'Témoignage' ? 'Voir mon fruit' : 'Ouvrir ' + currentLabel}</Text>
-              </Pressable>
+              {fruit ? (
+                <Pressable onPress={()=>fruitPhoto&&setResultOpen(true)}
+                  disabled={!fruitPhoto} accessibilityRole="button"
+                  accessibilityLabel="Voir le résultat accompli en grand"
+                  style={{width:compact?112:150,alignItems:'center',gap:8}}>
+                  <View style={{width:compact?112:150,height:compact?112:150,borderRadius:12,
+                    overflow:'hidden',borderWidth:1,borderColor:'rgba(255,255,255,.70)',
+                    backgroundColor:'rgba(255,255,255,.18)',justifyContent:'center',alignItems:'center'}}>
+                    {fruitPhoto ? <Image source={{uri:fruitPhoto}} resizeMode="cover"
+                      style={{width:'100%',height:'100%'}}/> :
+                      <Ionicons name="image-outline" size={30} color="#FFFFFF"/>}
+                    {fruitPhoto ? <View style={{position:'absolute',bottom:7,right:7,
+                      borderRadius:14,width:26,height:26,backgroundColor:'rgba(0,0,0,.55)',
+                      alignItems:'center',justifyContent:'center'}}>
+                      <Ionicons name="expand-outline" size={15} color="#FFFFFF"/>
+                    </View>:null}
+                  </View>
+                  <Text style={{color:'#FDE8EE',fontSize:12,fontWeight:'700',textAlign:'center'}}>
+                    {fruitPhoto?'Voir le résultat':'Aucune photo du résultat'}
+                  </Text>
+                </Pressable>
+              ):(
+                <Pressable accessibilityRole="button" accessibilityLabel={'Ouvrir '+currentLabel}
+                  onPress={()=>enter(dream.phase)}
+                  style={{minHeight:45,paddingHorizontal:27,paddingVertical:12,
+                    borderRadius:11,alignItems:'center',justifyContent:'center',backgroundColor:activeAccent}}>
+                  <Text style={{color:activeButtonText,fontSize:12,fontWeight:'700',letterSpacing:.2}}>
+                    {'Ouvrir '+currentLabel}
+                  </Text>
+                </Pressable>
+              )}
               {phaseIndex >= 2 ? (
                 <Pressable
                   onPress={() => router.push({ pathname: '/chat/[id]', params: { id: 'dream-' + dream.id } })}
@@ -379,6 +401,24 @@ export default function DreamHub({ dream, startInSemence = false, startPhase }: 
             </View>
             </ScrollView>
           </View>
+          <Modal visible={resultOpen} transparent animationType="fade" onRequestClose={()=>setResultOpen(false)}>
+            <View style={{flex:1,backgroundColor:'rgba(0,0,0,.94)',
+              justifyContent:'center',alignItems:'center',padding:17}}>
+              <Pressable onPress={()=>setResultOpen(false)} accessibilityRole="button"
+                accessibilityLabel="Fermer le résultat" style={{position:'absolute',top:32,right:19,
+                  zIndex:3,padding:12}}>
+                <Ionicons name="close" color="#FFFFFF" size={26}/>
+              </Pressable>
+              {fruitPhoto?<Image source={{uri:fruitPhoto}} resizeMode="contain"
+                style={{width:'100%',height:'77%'}}/>:null}
+              <Text style={{color:'#FFFFFF',fontSize:17,fontWeight:'700',marginTop:12,
+                textAlign:'center'}}>{dream.title}</Text>
+              {!!dream.testimony?.comment&&<Text numberOfLines={3}
+                style={{color:'#FDE8EE',fontSize:12,marginTop:8,textAlign:'center',lineHeight:20}}>
+                {dream.testimony.comment}
+              </Text>}
+            </View>
+          </Modal>
           {preview ? (
             <Animated.View pointerEvents="none" style={{
               position: 'absolute',
