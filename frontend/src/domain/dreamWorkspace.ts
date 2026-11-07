@@ -45,6 +45,8 @@ export type DreamResource = {
   illustration?: NonNullable<DreamPublication['resources']>[number]['illustration'];
   requiredLevel?: string;
   description?: string;
+  /** Local intent to request listing in Tools; not a published listing until synced. */
+  toolsPublicationRequested?: boolean;
 };
 export type DreamHabit = {
   id: string;
