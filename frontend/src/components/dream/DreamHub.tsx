@@ -224,7 +224,7 @@ export default function DreamHub({ dream }: { dream: DreamEntry }) {
         }}>
           {preview ? (
             <View pointerEvents="none" style={{
-              ...StyleSheet.absoluteFillObject, justifyContent: 'center', alignItems: 'center',
+              position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, justifyContent: 'center', alignItems: 'center',
             }}>
               <Text style={{ fontFamily: 'serif', fontSize: compact ? 29 : 38, color: stages.find(stage => stage.phase === preview)?.color }}>
                 {PHASE_LABELS[preview]}
