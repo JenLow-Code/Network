@@ -10,11 +10,19 @@ const mondayOffset = (day: number) => (day + 6) % 7;
 
 export function DreamGoalDatePicker({
   visible, initialDate, onCancel, onConfirm,
+  title = 'Date cible',
+  explanation = 'Le choix de cette date lancera la Croissance. Les ressources encore recherchées resteront enregistrées.',
+  confirmationLabel = 'Valider la date et faire pousser',
+  minDate,
 }: {
   visible: boolean;
   initialDate?: string;
   onCancel: () => void;
   onConfirm: (date: string) => void;
+  title?: string;
+  explanation?: string;
+  confirmationLabel?: string;
+  minDate?: string;
 }) {
   const theme = useAppTheme();
   const { width } = useWindowDimensions();
@@ -23,15 +31,15 @@ export function DreamGoalDatePicker({
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), 1);
   });
-  const today = localToday();
+  const today = minDate && minDate > localToday() ? minDate : localToday();
 
   useEffect(() => {
     if (!visible) return;
-    const start = initialDate && /^\d{4}-\d{2}-\d{2}$/.test(initialDate) && initialDate >= localToday()
+    const start = initialDate && /^\d{4}-\d{2}-\d{2}$/.test(initialDate) && initialDate >= today
       ? new Date(initialDate + 'T12:00:00') : new Date();
     setMonth(new Date(start.getFullYear(), start.getMonth(), 1));
-    setSelected(initialDate && initialDate >= localToday() ? initialDate : null);
-  }, [visible, initialDate]);
+    setSelected(initialDate && initialDate >= today ? initialDate : null);
+  }, [visible, initialDate, today]);
 
   const days = useMemo(() => {
     const leading = mondayOffset(new Date(month.getFullYear(), month.getMonth(), 1).getDay());
@@ -60,13 +68,13 @@ export function DreamGoalDatePicker({
           backgroundColor: theme.background, padding: width < 390 ? 17 : 23,
         }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <Text style={{ color: theme.foreground, fontSize: 20, fontWeight: '700' }}>Date cible</Text>
+            <Text style={{ color: theme.foreground, fontSize: 20, fontWeight: '700' }}>{title}</Text>
             <Pressable accessibilityLabel="Fermer" accessibilityRole="button" onPress={onCancel} style={{ padding: 7 }}>
               <Ionicons name="close-outline" size={23} color={theme.foreground}/>
             </Pressable>
           </View>
           <Text style={{ color: theme.muted, fontSize: 12, lineHeight: 19, marginBottom: 18 }}>
-            Le choix de cette date lancera la Croissance. Les ressources encore recherchées resteront enregistrées.
+            {explanation}
           </Text>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 13 }}>
             <Pressable accessibilityLabel="Mois précédent" accessibilityRole="button"
@@ -123,7 +131,7 @@ export function DreamGoalDatePicker({
               justifyContent: 'center', alignItems: 'center', paddingHorizontal: 12,
             }}>
             <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 12 }}>
-              Valider la date et faire pousser
+              {confirmationLabel}
             </Text>
           </Pressable>
           <Pressable accessibilityRole="button" onPress={onCancel}
