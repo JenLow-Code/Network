@@ -44,7 +44,7 @@ export function DreamPhaseHeader({
         {DREAM_PHASES.map((item, i) => {
           const reached = i <= DREAM_PHASES.indexOf(dream.phase);
           const selected = item === phase;
-          const personalFruit = selected && dream.phase === 'Témoignage' && item === 'Témoignage';
+          const personalFruit = dream.phase === 'Témoignage' && item === 'Témoignage';
           return (
             <Pressable key={item}
               accessibilityRole="button"
