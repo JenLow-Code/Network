@@ -56,6 +56,7 @@ export default function DreamExperience({ dream, viewPhase, onBack, onNavigate }
  const [resourceDescription, setResourceDescription] = useState('');
  const [toolsPublicationRequested, setToolsPublicationRequested] = useState(false);
  const [talentChoicesOpen, setTalentChoicesOpen] = useState(false);
+ const [resourceLevel,setResourceLevel]=useState('Quelques notions');
  const [selectedResourceId, setSelectedResourceId] = useState<string|null>(null);
  const [resourceAmount, setResourceAmount] = useState('');
  const [resourceCategory, setResourceCategory] = useState<DreamResource['category']>('person');
@@ -103,6 +104,7 @@ export default function DreamExperience({ dream, viewPhase, onBack, onNavigate }
      id:uid(),title:resourceTitle.trim(),category:resourceCategory,confirmed:false,
      description:resourceDescription.trim(),
      illustration:catalogTalent?.illustration,
+     requiredLevel:resourceCategory==='person'?resourceLevel:undefined,
      linkedBlockId:resourceLink||undefined,
      amount:amount&&Number.isFinite(amount)&&amount>0?amount:undefined,
      toolsPublicationRequested:resourceCategory==='practical'?toolsPublicationRequested:undefined,
@@ -367,6 +369,20 @@ export default function DreamExperience({ dream, viewPhase, onBack, onNavigate }
        </> : <Field
          label={resourceCategory==='financial'?'Objet du financement':'Ressource nécessaire'}
          value={resourceTitle} onChange={setResourceTitle} placeholder="Ex. Salle de répétition"/>}
+       {resourceCategory==='person'?<View style={{gap:9}}>
+         <Text style={{fontSize:12,color:theme.muted}}>Niveau recherché</Text>
+         <View style={{flexDirection:'row',flexWrap:'wrap',gap:7}}>
+           {['Grand débutant','Quelques notions','Intermédiaire','Avancé','Professionnel'].map(level=>(
+             <Pressable key={level} accessibilityRole="button"
+               accessibilityState={{selected:resourceLevel===level}} onPress={()=>setResourceLevel(level)}
+               style={{borderRadius:9,paddingHorizontal:12,paddingVertical:10,
+                 borderWidth:1,borderColor:resourceLevel===level?'#D71D77':theme.border,
+                 backgroundColor:resourceLevel===level?(theme.dark?'#47303A':'#FCE8F1'):theme.background}}>
+               <Text style={{color:theme.foreground,fontSize:11,fontWeight:resourceLevel===level?'700':'500'}}>{level}</Text>
+             </Pressable>
+           ))}
+         </View>
+       </View>:null}
        <Field label="Description précise du besoin" value={resourceDescription}
          onChange={setResourceDescription} placeholder="Décris le besoin, ses conditions et pourquoi il est important…" multiline/>
        {resourceCategory==='financial'?<Field label="Montant estimé en €"
