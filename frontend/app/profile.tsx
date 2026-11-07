@@ -58,7 +58,7 @@ export default function Profile() {
   const [loaded, setLoaded] = useState(false);
   const [newTalent, setNewTalent] = useState('');
   const [addTalentOpen,setAddTalentOpen]=useState(false);
-  const scrollRef=useRef<ScrollView>(null);
+  const scrollRef=useRef<any>(null);
   const talentY=useRef(0);
   const postsY=useRef(0);
   const scrollTo=(y:number)=>scrollRef.current?.scrollTo({y:Math.max(0,y-18),animated:true});
