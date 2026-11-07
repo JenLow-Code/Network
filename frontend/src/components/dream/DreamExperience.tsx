@@ -402,6 +402,9 @@ export default function DreamExperience({ dream, viewPhase, onBack, onNavigate }
          Choisis une date de reprise. Tu peux reprendre plus tôt, mais chaque rêve peut être gelé trois fois maximum.
          Il reste {Math.max(0,3-(dream.pauseCount||0))} pause(s).
        </Text>
+       <Text style={{color:'#397F9E',fontSize:11,fontWeight:'600'}}>
+         {(dream.pauseCount||0)}/3 pauses utilisées · date de reprise obligatoire
+       </Text>
        <Field label="Date limite (obligatoire)" value={pauseDeadline} onChange={setPauseDeadline} placeholder="AAAA-MM-JJ"/>
        <Action label="Confirmer la pause" onPress={freeze}/>
        <Pressable onPress={()=>setFreezeDialog(false)} style={{alignItems:'center',padding:10}}>
