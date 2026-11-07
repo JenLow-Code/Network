@@ -131,7 +131,7 @@ export default function DreamExperience({ dream, viewPhase, onBack, onNavigate }
    {!historical ? <Action label="Faire germer ce rêve" onPress={()=>confirm('Faire germer','Ton rêve deviendra public. Tu pourras toujours retrouver tes inspirations dans son histoire.',()=>{patch(dream.id,{visibility:'public'});advance(dream.id);})}/> : null}
   </> : null}
   {phase==='Initiation' ? <>
-   <DreamPhaseSection title="Préparer mon rêve">
+   <View style={{ marginTop: 3 }}>
     {dream.phase==='Initiation' && dream.paused ? <View style={{
       padding:14,backgroundColor:theme.dark?'#433D31':'#F5EAD3',borderRadius:11,marginBottom:14,gap:8,
     }}>
@@ -188,10 +188,12 @@ export default function DreamExperience({ dream, viewPhase, onBack, onNavigate }
           accessibilityLabel={category==='person'?'Ajouter un talent':category==='financial'?'Ajouter un financement':'Ajouter une ressource'}
           onPress={()=>{setResourceCategory(category);setResourceDialog(true);}}
           style={{width:96,height:96,borderRadius:10,borderWidth:1.5,borderStyle:'dashed',
-            borderColor:category==='person'?'#D71D77':'#387D9F',
-            backgroundColor:theme.dark?'#292B2E':'#FDFBF8',
+            borderColor:category==='person'?'#D71D77':category==='financial'?'#A1BA44':'#387D9F',
+            backgroundColor:category==='financial'
+              ? (theme.dark?'#303D29':'#F1F7E6')
+              : (theme.dark?'#292B2E':'#FDFBF8'),
             alignItems:'center',justifyContent:'center'}}>
-          <Ionicons name="add" size={26} color={category==='person'?'#D71D77':'#387D9F'}/>
+          <Ionicons name="add" size={26} color={category==='person'?'#D71D77':category==='financial'?'#86A73B':'#387D9F'}/>
         </Pressable>:null}
       </View>
       {category==='person' ? <Pressable onPress={()=>router.push('/discover?filter=Talents')}>
@@ -201,30 +203,7 @@ export default function DreamExperience({ dream, viewPhase, onBack, onNavigate }
        <Text style={{color:'#387D9F',fontSize:12,marginTop:6}}>Trouver des ressources sur JenLow Tools ↗</Text>
      </Pressable> : null}
     </View>)}
-    <View style={{marginTop:20,paddingTop:20,borderTopWidth:1,borderColor:theme.border,marginBottom:10}}>
-      <Text style={{color:theme.foreground,fontSize:17,fontWeight:'700',marginBottom:10}}>Date cible</Text>
-      {resourceEditable ? (
-        <Pressable accessibilityRole="button" accessibilityLabel="Choisir la date cible"
-          onPress={()=>setGoalDateDialog(true)} style={{
-            flexDirection:'row',alignItems:'center',justifyContent:'space-between',
-            minHeight:52,borderWidth:1,borderColor:theme.border,
-            backgroundColor:theme.surface,borderRadius:11,paddingHorizontal:15,gap:10,
-          }}>
-          <Text style={{color:dream.goalDate?theme.foreground:theme.muted,fontSize:14}}>
-            {dream.goalDate ? new Date(dream.goalDate+'T12:00:00').toLocaleDateString('fr-FR',
-              {day:'numeric',month:'long',year:'numeric'}) : 'Choisir une date'}
-          </Text>
-          <Ionicons name="calendar-outline" color={theme.foreground} size={21}/>
-        </Pressable>
-      ) : <Text style={{color:theme.muted,fontSize:13}}>
-        {dream.goalDate ? new Date(dream.goalDate+'T12:00:00').toLocaleDateString('fr-FR',
-          {day:'numeric',month:'long',year:'numeric'}) : 'Non définie'}
-      </Text>}
-      {resourceEditable ? <Text style={{color:theme.muted,fontSize:11,lineHeight:17,marginTop:9}}>
-        Valider cette date fait passer le rêve en Croissance, même si certains besoins restent à trouver.
-      </Text> : null}
     </View>
-    </DreamPhaseSection>
    {!historical && phase==='Initiation' ? (
      <View style={{gap:11,marginTop:12,marginBottom:21}}>
        {resourceEditable ? <>
