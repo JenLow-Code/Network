@@ -258,12 +258,21 @@ export default function Profile() {
           </View>
         ):null}
         {myPublicPosts.length?<ProfilePublicationFeed items={myPublicPosts} contentWidth={areaWidth} featuredId={featuredId} onFeature={feature}/>:<Text style={{color:theme.muted,fontSize:13}}>{myLocalDreams.length?'Aucune autre publication publique pour le moment.':'Aucune publication pour le moment.'}</Text>}
-        <Pressable
-          onPress={() => router.push('/settings')}
-          style={{ marginTop: 28, alignSelf: 'center', padding: 11 }}
-        >
-          <Text style={{ color: theme.muted, fontSize: 12 }}>Paramètres du compte</Text>
-        </Pressable>
+        <View style={{
+          marginTop: 31, paddingVertical: 16, borderTopWidth: 1, borderColor: theme.border,
+          flexDirection: 'row', justifyContent: 'center', gap: 23,
+        }}>
+          <Pressable onPress={()=>router.push('/prayers')} accessibilityRole="button"
+            style={{flexDirection:'row',alignItems:'center',gap:6,padding:9}}>
+            <Ionicons name="heart-outline" size={17} color={theme.foreground}/>
+            <Text style={{color:theme.foreground,fontSize:12,fontWeight:'600'}}>Mes prières</Text>
+          </Pressable>
+          <Pressable onPress={()=>router.push('/settings')} accessibilityRole="button"
+            style={{flexDirection:'row',alignItems:'center',gap:6,padding:9}}>
+            <Ionicons name="settings-outline" size={17} color={theme.foreground}/>
+            <Text style={{color:theme.foreground,fontSize:12,fontWeight:'600'}}>Paramètres</Text>
+          </Pressable>
+        </View>
       </ScrollView>
       <Modal visible={selectedTalent!==null} transparent animationType="fade" onRequestClose={()=>setSelectedTalent(null)}>
         <View style={{flex:1,backgroundColor:'rgba(0,0,0,0.6)',justifyContent:'center',padding:18}}>
