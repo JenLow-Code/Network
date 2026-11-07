@@ -82,6 +82,17 @@ export function DreamPhaseHeader({
           );
         })}
       </View>
+      {readOnly ? (
+        <View style={{
+          flexDirection:'row',alignItems:'center',gap:7,
+          paddingVertical:9,paddingHorizontal:11,marginBottom:15,
+          backgroundColor:theme.dark?'#303438':'#F1EFEA',
+          borderRadius:8,alignSelf:'flex-start',
+        }}>
+          <Ionicons name="lock-closed-outline" color={theme.muted} size={13}/>
+          <Text style={{color:theme.muted,fontSize:11,fontWeight:'600'}}>Étape passée · consultation uniquement</Text>
+        </View>
+      ) : null}
       {action ? <View style={{ alignItems: 'flex-end', marginTop: -8, marginBottom: 12 }}>{action}</View> : null}
     </View>
   );
