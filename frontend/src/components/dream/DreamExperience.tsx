@@ -154,47 +154,52 @@ export default function DreamExperience({ dream, viewPhase, onBack, onNavigate }
    <DreamPhaseSection title="Mes ressources" subtitle="Personnes, matériel et financement à réunir.">
    {(['person','practical','financial'] as const).map(category=><View key={category} style={{marginBottom:17}}>
       <Text style={{fontSize:17,fontWeight:'700',color:theme.foreground,marginBottom:9}}>{category==='person'?'Talents':category==='practical'?'Autres ressources':'Financement'}</Text>
-      {category === 'person' ? (
-        <View style={{flexDirection:'row',flexWrap:'wrap',gap:9,marginBottom:8}}>
-          {resources.filter(r=>r.category==='person').map(r=><DreamTalentSquare key={r.id} resource={r} size={100}
-            onToggle={resourceEditable ? ()=>checkResource(r) : undefined}
-            onRemove={resourceEditable ? ()=>setResources(dream.id,resources.filter(x=>x.id!==r.id)) : undefined}
-          />)}
-        </View>
-      ) : (
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 9, marginBottom: 8 }}>
-          {resources.filter(r=>r.category===category).map(r=>
-            <View key={r.id} style={{
-              width: 100, minHeight: 108, borderRadius: 10,
-              backgroundColor: theme.dark ? '#28343A' : '#EAF0F2',
-              borderWidth: 1, borderColor: theme.dark ? '#3C515C' : '#DCE5E9',
-              justifyContent: 'center', alignItems: 'center', position: 'relative', overflow: 'hidden',
-            }}>
-              <Pressable disabled={!resourceEditable} onPress={()=>checkResource(r)}
-                accessibilityRole="button" accessibilityLabel={r.title + ', ' + (r.confirmed?'trouvé':'à trouver')}
-                style={{ paddingHorizontal: 5, paddingVertical: 10, flex: 1, width: '100%', justifyContent: 'center', alignItems: 'center', gap: 5 }}>
-                <Ionicons
-                  name={r.confirmed ? 'checkmark-circle-outline' : category === 'financial' ? 'wallet-outline' : 'cube-outline'}
-                  size={23} color={r.confirmed ? '#43875B' : '#577E93'}
-                />
-                <Text numberOfLines={2} style={{
-                  color:theme.foreground, fontSize: 11, lineHeight: 14,
-                  fontWeight:'600', textAlign:'center',
-                }}>{r.title}</Text>
-                {r.amount ? <Text style={{ fontSize: 10, color: '#577E93' }}>{r.amount.toLocaleString('fr-FR')} €</Text> : null}
-                <Text style={{ fontSize: 9, color: r.confirmed ? '#43875B' : theme.muted }}>{r.confirmed?'Trouvé':'À trouver'}</Text>
-              </Pressable>
-              {resourceEditable ? (
-                <Pressable onPress={()=>setResources(dream.id,resources.filter(x=>x.id!==r.id))}
-                  accessibilityRole="button" accessibilityLabel={'Retirer ' + r.title}
-                  style={{ position:'absolute',right:1,top:1,padding:5 }}>
-                  <Ionicons name="close-outline" size={14} color={theme.muted}/>
+      <View style={{flexDirection:'row',flexWrap:'wrap',gap:9,marginBottom:8}}>
+        {category==='person'
+          ? resources.filter(r=>r.category===category).map(r=>
+              <DreamTalentSquare key={r.id} resource={r} size={100}
+                onToggle={resourceEditable?()=>checkResource(r):undefined}
+                onRemove={resourceEditable?()=>setResources(dream.id,resources.filter(x=>x.id!==r.id)):undefined}/>)
+          : resources.filter(r=>r.category===category).map(r=>
+              <View key={r.id} style={{
+                width:100,minHeight:108,borderRadius:10,overflow:'hidden',
+                position:'relative',borderWidth:1.6,
+                borderColor:r.confirmed?'#318656':'#D71D77',
+                backgroundColor:r.confirmed?(theme.dark?'#254635':'#E3F3E7')
+                  :(theme.dark?'#282F35':'#F9F6F2'),
+              }}>
+                <Pressable disabled={!resourceEditable} onPress={()=>checkResource(r)}
+                  accessibilityRole="button" accessibilityLabel={r.title+', '+(r.confirmed?'trouvé':'à trouver')}
+                  style={{flex:1,width:'100%',justifyContent:'center',alignItems:'center',
+                    gap:5,paddingHorizontal:6,paddingVertical:9}}>
+                  <Ionicons name={r.confirmed?'checkmark-circle-outline':category==='financial'?'wallet-outline':'cube-outline'}
+                    size={23} color={r.confirmed?'#318656':'#387D9F'}/>
+                  <Text numberOfLines={2} style={{color:theme.foreground,fontSize:11,
+                    lineHeight:15,fontWeight:'700',textAlign:'center'}}>{r.title}</Text>
+                  {r.amount?<Text style={{fontSize:10,color:theme.muted}}>
+                    {r.amount.toLocaleString('fr-FR')} €
+                  </Text>:null}
+                  <Text style={{fontSize:9,color:r.confirmed?'#318656':theme.muted}}>
+                    {r.confirmed?'Trouvé':'À trouver'}
+                  </Text>
                 </Pressable>
-              ) : null}
-            </View>
-          )}
-        </View>
-      )}
+                {resourceEditable?<Pressable
+                  onPress={()=>setResources(dream.id,resources.filter(x=>x.id!==r.id))}
+                  accessibilityLabel={'Retirer '+r.title}
+                  style={{position:'absolute',right:1,top:1,padding:5}}>
+                  <Ionicons name="close-outline" size={14} color={theme.muted}/>
+                </Pressable>:null}
+              </View>)}
+        {resourceEditable?<Pressable accessibilityRole="button"
+          accessibilityLabel={category==='person'?'Ajouter un talent':category==='financial'?'Ajouter un financement':'Ajouter une ressource'}
+          onPress={()=>{setResourceCategory(category);setResourceDialog(true);}}
+          style={{width:100,height:108,borderRadius:10,borderWidth:1.5,borderStyle:'dashed',
+            borderColor:category==='person'?'#D71D77':'#387D9F',
+            backgroundColor:theme.dark?'#292B2E':'#FDFBF8',
+            alignItems:'center',justifyContent:'center'}}>
+          <Ionicons name="add" size={26} color={category==='person'?'#D71D77':'#387D9F'}/>
+        </Pressable>:null}
+      </View>
       {category==='person' ? <Pressable onPress={()=>router.push('/discover?filter=Talents')}>
        <Text style={{color:pink,fontSize:12,marginTop:5}}>Trouver des talents sur JenLow ↗</Text>
      </Pressable> : category==='practical' ?
