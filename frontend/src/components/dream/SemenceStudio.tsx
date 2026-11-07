@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { Alert, Image, Linking, Modal, PanResponder, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import Svg, { Circle, Defs, Pattern, Rect } from 'react-native-svg';
 import { useDreams } from '@/domain/dreamRepository';
 import { router } from 'expo-router';
 import type { DreamBlock, DreamBlockKind, DreamEntry } from '@/domain/dreamWorkspace';
@@ -133,16 +134,24 @@ export default function SemenceStudio({dream,onBack,onNavigate}:{dream:DreamEntr
       borderWidth: 1, borderColor: theme.border, borderRadius: 16, overflow: 'hidden',
       backgroundColor: theme.dark ? '#292A2C' : '#FDFCF9',
       paddingHorizontal: 13, paddingTop: 14, paddingBottom: 17,
-      minHeight: 270,
+      minHeight: 330, position:'relative',
     }}>
+      <Svg pointerEvents="none" width="100%" height="100%" style={{position:'absolute',top:0,left:0,right:0,bottom:0}}>
+        <Defs>
+          <Pattern id="dream-canvas-dots" patternUnits="userSpaceOnUse" width="22" height="22">
+            <Circle cx="11" cy="11" r=".75" fill={theme.dark?'#66615D':'#DAD4CE'} opacity={0.5}/>
+          </Pattern>
+        </Defs>
+        <Rect width="100%" height="100%" fill="url(#dream-canvas-dots)"/>
+      </Svg>
       <View style={{
         flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
         borderBottomWidth: 1, borderColor: theme.border, paddingBottom: 12, marginBottom: 16,
       }}>
         <View style={{ flex: 1, gap: 4 }}>
-          <Text style={{ fontSize: 10, letterSpacing: 1.35, fontWeight: '700', color: theme.muted }}>MON CANVAS</Text>
+          <Text style={{ fontSize: 10, letterSpacing: 1.5, fontWeight: '700', color: '#B88962' }}>ATELIER D’INSPIRATION</Text>
           <Text style={{ fontSize: 12, color: theme.muted }}>
-            {editable ? (edit ? 'Composer · déplacer · ajuster' : 'Lecture de mon tableau') : 'Inspirations archivées'}
+            {editable ? (blocks.length ? blocks.length+' éléments · à composer librement' : 'Laisse tes idées prendre forme') : 'Inspirations archivées'}
           </Text>
         </View>
         {editable ? (
@@ -172,8 +181,8 @@ export default function SemenceStudio({dream,onBack,onNavigate}:{dream:DreamEntr
             key={x.kind} onPress={()=>quickAdd(x.kind)}
             accessibilityRole="button" accessibilityLabel={'Ajouter '+x.label}
             style={{
-              backgroundColor: theme.dark?'#333539':'#F3F0EA', borderWidth:1,borderColor:theme.border,
-              borderRadius:10, paddingHorizontal:11,paddingVertical:11,
+              backgroundColor: theme.dark?'#303234':'rgba(251,248,245,0.94)', borderWidth:1,borderColor:theme.border,
+              borderRadius:20, paddingHorizontal:10,paddingVertical:9,
               flexDirection:'row',alignItems:'center',gap:7,
             }}>
               <Ionicons name={x.icon} size={16} color={theme.foreground}/>
@@ -195,23 +204,42 @@ export default function SemenceStudio({dream,onBack,onNavigate}:{dream:DreamEntr
           </Text>
         </View>
       ) : blocks.length === 0 ? (
-        <View style={{
-          minHeight: editable ? 180 : 110, alignItems:'center', justifyContent:'center',
-          padding:18, gap:11, borderWidth:1, borderStyle:'dashed',
-          borderColor:theme.dark?'#5A5650':'#E0DAD1', borderRadius:12,
-        }}>
-          <Ionicons name={editable?'sparkles-outline':'archive-outline'} size={24} color={theme.muted}/>
-          <Text style={{color:theme.foreground,fontFamily:'serif',fontSize:22,textAlign:'center'}}>
-            {editable ? 'Tout commence par une idée.' : 'Aucun bloc conservé'}
-          </Text>
-          <Text style={{color:theme.muted,fontSize:12,lineHeight:20,textAlign:'center',maxWidth:270}}>
-            {editable ? 'Images, versets, croquis, mots, musique… compose ton univers à ta façon.'
-              : 'Les premières idées n’ont pas été enregistrées en blocs dans cette Semence.'}
-          </Text>
-          {editable ? <Pressable onPress={()=>{setEdit(true);chooser(null);}}
-            accessibilityRole="button" style={{paddingHorizontal:17,paddingVertical:11,borderRadius:9,borderWidth:1,borderColor:theme.border}}>
-            <Text style={{fontSize:12,color:theme.foreground,fontWeight:'700'}}>Explorer les blocs</Text>
-          </Pressable> : null}
+        <View style={{paddingVertical:10,gap:13}}>
+          {editable ? (
+            <View style={{flexDirection:'row',gap:11,alignItems:'stretch'}}>
+              <Pressable accessibilityRole="button" onPress={()=>quickAdd('image')}
+                style={{flex:1,minHeight:178,borderRadius:13,padding:14,
+                  backgroundColor:theme.dark?'#373739':'#EFE6DC',
+                  borderWidth:1,borderStyle:'dashed',borderColor:theme.border,
+                  justifyContent:'space-between'}}>
+                <Ionicons name="image-outline" size={23} color="#AD8F72"/>
+                <View style={{gap:4}}>
+                  <Text style={{fontFamily:'serif',fontSize:18,lineHeight:24,color:theme.foreground}}>Une image pour commencer</Text>
+                  <Text style={{fontSize:11,color:theme.muted}}>Ajouter une photo</Text>
+                </View>
+              </Pressable>
+              <View style={{flex:1,gap:11}}>
+                <Pressable accessibilityRole="button" onPress={()=>quickAdd('text')}
+                  style={{flex:1,minHeight:82,backgroundColor:theme.dark?'#34383A':'#E9EDE8',
+                    borderRadius:12,padding:12,justifyContent:'space-between'}}>
+                  <Ionicons name="pencil-outline" size={18} color="#69866C"/>
+                  <Text style={{fontSize:12,fontWeight:'700',color:theme.foreground}}>Une idée à noter</Text>
+                </Pressable>
+                <Pressable accessibilityRole="button" onPress={()=>quickAdd('quote')}
+                  style={{flex:1,minHeight:82,backgroundColor:theme.dark?'#36303A':'#EFE5ED',
+                    borderRadius:12,padding:12,justifyContent:'space-between'}}>
+                  <Ionicons name="chatbubble-ellipses-outline" size={18} color="#BE7193"/>
+                  <Text style={{fontSize:12,fontWeight:'700',color:theme.foreground}}>Une phrase inspirante</Text>
+                </Pressable>
+              </View>
+            </View>
+          ) : <View style={{minHeight:120,justifyContent:'center',alignItems:'center'}}>
+            <Ionicons name="archive-outline" size={23} color={theme.muted}/>
+            <Text style={{fontSize:12,color:theme.muted,marginTop:8}}>Aucun bloc conservé.</Text>
+          </View>}
+          {editable ? <Text style={{color:theme.muted,fontSize:11,lineHeight:19,textAlign:'center'}}>
+            Un tableau libre, sans modèle imposé. Choisis un élément pour commencer.
+          </Text> : null}
         </View>
       ) : (
         <View style={{flexDirection:'row',flexWrap:'wrap',justifyContent:'space-between',alignItems:'flex-start'}}>
