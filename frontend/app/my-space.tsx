@@ -17,7 +17,14 @@ const series: { phase: DreamPhase; title: string; sub: string }[] = [
   { phase: 'Initiation', title: 'En germination', sub: 'Les projets que je prépare.' },
   { phase: 'Croissance', title: 'En croissance', sub: 'Les rêves qui prennent vie.' },
 ];
-const open = (dream: DreamEntry) => router.push({ pathname: '/my-dream/[id]', params: { id: dream.id } });
+const open = (dream: DreamEntry) => {
+  if(dream.phase==='Croissance' &&
+     (dream.flowerStartedAt || dream.flowerDraft?.story?.trim() || dream.flowerDraft?.attachments?.length)) {
+    router.push({ pathname:'/my-dream/flower/[id]', params:{id:dream.id} });
+    return;
+  }
+  router.push({ pathname:'/my-dream/[id]', params:{id:dream.id} });
+};
 const frozen = (dream: DreamEntry) =>
   dream.phase === 'Initiation' && !!dream.paused && !!dream.pauseUntil &&
   dream.pauseUntil >= new Date().toISOString().slice(0, 10);
@@ -155,7 +162,7 @@ export default function MySpace() {
         ) : list ? (
           // List mode is a single flat list: no phase headings or category sections.
           <View style={{ paddingHorizontal: side }}>
-            {visible.filter(d=>!inFlower(d)).map(d => <DreamListRow key={d.id} dream={d} />)}
+            {visible.map(d => <DreamListRow key={d.id} dream={d} />)}
           </View>
         ) : (
           <>
@@ -221,18 +228,6 @@ export default function MySpace() {
                 <Text style={{fontSize:12,color:theme.muted,lineHeight:19}}>
                   Les fleurs que tu prépares apparaîtront ici, avant leur publication.
                 </Text>
-              </View>
-            ):view==='Liste' ? (
-              <View style={{paddingHorizontal:side}}>
-                {unfinished.map(d=><Pressable key={d.id} accessibilityRole="button"
-                  onPress={()=>router.push({pathname:'/my-dream/flower/[id]',params:{id:d.id}})}
-                  style={{flexDirection:'row',alignItems:'center',paddingVertical:12,gap:12,
-                    borderBottomWidth:1,borderColor:theme.border}}>
-                  <Image source={{uri:d.flowerDraft?.attachments?.find(m=>m.kind==='photo')?.uri || d.image}}
-                    style={{width:61,height:61,borderRadius:8}}/>
-                  <Text numberOfLines={2} style={{flex:1,color:theme.foreground,fontSize:14,fontWeight:'700'}}>{d.title}</Text>
-                  <Ionicons name="chevron-forward" size={18} color={theme.muted}/>
-                </Pressable>)}
               </View>
             ):(
               <ScrollView horizontal showsHorizontalScrollIndicator={false}
