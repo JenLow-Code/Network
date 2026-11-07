@@ -239,39 +239,16 @@ export default function Profile() {
         </Text>
         <View style={{flexDirection:'row',flexWrap:'wrap',gap:10,marginTop:16}}>
           {talents.map((t,index)=><ProfileTalentTile key={index} title={t.name} level={levels[t.level]?.name||'À définir'} art={talentArt(t.name)} width={cardWidth} onPress={()=>setSelectedTalent(index)}/>)}
-        </View>
-        <View style={{ flexDirection: 'row', gap: 8, marginTop: 18 }}>
-          <TextInput
-            value={newTalent}
-            onChangeText={setNewTalent}
-            placeholder="Ajouter un talent"
-            style={{
-              flex: 1,
-              borderWidth: 1,
-              borderColor: theme.border,
-              borderRadius: 9,
-              padding: 11,
-              color: theme.foreground,
-            }}
-          />
-          <Pressable
-            onPress={() => {
-              if (newTalent.trim()) {
-                setTalents(x => [...x, { name: newTalent.trim(), level: 0, interests: [] }]);
-                setNewTalent('');
-              }
-            }}
-            style={{
-              backgroundColor: '#222',
-              borderRadius: 9,
-              paddingHorizontal: 17,
-              justifyContent: 'center',
-            }}
-          >
-            <Ionicons name="add" size={23} color="#fff" />
+          <Pressable accessibilityRole="button" accessibilityLabel="Ajouter un talent" onPress={()=>setAddTalentOpen(true)}
+            style={{width:cardWidth,height:cardWidth,borderRadius:10,borderWidth:1.5,
+              borderStyle:'dashed',borderColor:'#27845B',backgroundColor:theme.surface,
+              alignItems:'center',justifyContent:'center'}}>
+            <Ionicons name="add" size={27} color="#27845B"/>
           </Pressable>
         </View>
-        <Text style={{fontSize:19,fontWeight:'800',color:theme.foreground,marginTop:25,marginBottom:14}}>Mes publications</Text>
+        <View onLayout={e=>{postsY.current=e.nativeEvent.layout.y;}}>
+          <Text style={{fontSize:19,fontWeight:'800',color:theme.foreground,marginTop:25,marginBottom:14}}>Mes publications</Text>
+        </View>
         {myLocalDreams.length>0 ? (
           <View style={{gap:10,marginBottom:19}}>
             {myLocalDreams.map(d=><Pressable key={d.id} onPress={()=>router.push({pathname:'/my-dream/[id]',params:{id:d.id}})} accessibilityRole="button" accessibilityLabel={d.title+(d.visibility==='public'?', public':', privé')+', ouvrir mon rêve'}
