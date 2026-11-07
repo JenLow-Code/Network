@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Nav } from '@/components/navigation/Nav';
-import { TopActions } from '@/components/navigation/TopActions';
+import { PageHeader } from '@/components/navigation/PageHeader';
 import { PrayerIcon } from '@/icons/PrayerIcon';
 import { useApp } from '@/context/AppContext';
 import { useLocale } from '@/i18n/locale';
@@ -60,13 +60,14 @@ export default function Agenda() {
         style={{ flex: 1 }}
         contentContainerStyle={{ paddingHorizontal: 18, paddingTop: 17, paddingBottom: 42 }}
       >
+        <PageHeader />
         <View
           style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
         >
           <Text style={{ fontSize: 30, fontWeight: '700', color: theme.foreground }}>
             {tr('agendaTitle')}
           </Text>
-          <TopActions />
+          
         </View>
         <Text style={{ color: '#888', fontSize: 12, marginTop: 3 }}>{tr('agendaSubtitle')}</Text>
         <View
