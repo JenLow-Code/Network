@@ -44,7 +44,6 @@ export function DreamPhaseHeader({
         {DREAM_PHASES.map((item, i) => {
           const reached = i <= DREAM_PHASES.indexOf(dream.phase);
           const selected = item === phase;
-          const personalFruit = dream.phase === 'Témoignage' && item === 'Témoignage';
           return (
             <Pressable key={item}
               accessibilityRole="button"
@@ -57,20 +56,21 @@ export function DreamPhaseHeader({
                 justifyContent: 'flex-end', alignItems: 'center',
                 paddingBottom: 2,
               }}>
-              {selected ? personalFruit ? (
-                <View style={{height:36,alignItems:'center',justifyContent:'center'}}>
-                  <Ionicons name="nutrition-outline" size={26} color="#B47736"/>
-                </View>
-              ) : (
+              {selected ? (
                 <Image source={{ uri: dreamPhaseImageUris[item] }} resizeMode="contain"
-                  style={{ width: 31, height: 31, marginBottom: 5 }}/>
+                  style={{
+                    width: item==='Rêve'?16:31,
+                    height: item==='Rêve'?16:31,
+                    marginBottom: item==='Rêve'?13:5,
+                    ...(item==='Croissance'?{tintColor:phaseAccent.Croissance}:{}),
+                  }}/>
               ) : <View style={{ height: 36 }} />}
               <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}
                 style={{
                   color: selected ? accent : reached ? theme.muted : theme.border,
                   fontSize: 10, fontWeight: selected ? '800' : '500',
                   textAlign: 'center',
-                }}>{personalFruit ? 'Fruit' : PHASE_LABELS[item]}</Text>
+                }}>{PHASE_LABELS[item]}</Text>
               <View style={{
                 width: '100%', height: selected ? 4 : 3,
                 marginTop: 11, borderRadius: 3,
