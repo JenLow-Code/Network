@@ -224,10 +224,10 @@ export default function DreamExperience({ dream, viewPhase, onBack, onNavigate }
       {(dream.milestones||[]).map(m=><View key={m.id} style={{flexDirection:'row',gap:10,alignItems:'center',paddingVertical:9}}><Ionicons name="checkmark-circle-outline" size={18} color="#27845B"/><Text style={{color:theme.foreground,fontSize:13}}>{m.title}</Text></View>)}
     </DreamPhaseSection>:null}
   </> : null}
- {!readOnly ? <Pressable
-    onPress={()=>confirm('Arracher ' + (phase === 'Croissance' ? 'cette plante' : 'ce germe') + ' ?', 'Cette action supprimera définitivement ce rêve et ses données enregistrées sur cet appareil.', ()=>{remove(dream.id);router.replace('/my-space');})}
+ {(!historical && phase !== 'Rêve') ? <Pressable
+    onPress={()=>confirm('Arracher ' + (phase === 'Initiation' ? 'ce germe' : 'cette plante') + ' ?', 'Cette action supprimera définitivement ce rêve et ses données enregistrées sur cet appareil.', ()=>{remove(dream.id);router.replace('/my-space');})}
     accessibilityRole="button" style={{alignItems:'center',marginTop:26,padding:15}}>
-      <Text style={{color:'#B24C59',fontSize:12}}>{phase === 'Croissance' ? 'Arracher cette plante' : 'Arracher ce germe'}</Text>
+      <Text style={{color:'#B24C59',fontSize:12}}>{phase === 'Initiation' ? 'Arracher ce germe' : 'Arracher cette plante'}</Text>
    </Pressable> : null}
  </ScrollView>;
 }
