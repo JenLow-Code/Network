@@ -34,8 +34,8 @@ export function DetailLayout({
 }) {
   const theme = useAppTheme();
   const { from } = useLocalSearchParams<{ from?: string }>();
-  // Music detail and saved Fire material are focused reading spaces.
-  const showRelated = item.type !== 'music' && from !== 'fire';
+  // Music opened from Discovery keeps related inspiration. Only the Music tab and Fire list are focused spaces.
+  const showRelated = from !== 'music-tab' && from !== 'fire';
   // Related stories use the same source and editorial order as Discovery.
   // This prevents detail pages from silently falling back to an obsolete mock-only feed.
   const relatedFeed = useDiscovery();
