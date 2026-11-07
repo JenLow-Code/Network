@@ -6,15 +6,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { biblePosts, psalm150 } from '@/mocks/publications';
 import { Nav } from '@/components/navigation/Nav';
+import { PageHeader } from '@/components/navigation/PageHeader';
 export default function VerseExport() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const item = biblePosts.find(p => p.id === id);
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
       <View style={{ flex: 1, padding: 23 }}>
-        <Pressable onPress={() => router.back()}>
-          <Ionicons name="chevron-back" size={26} />
-        </Pressable>
+        <PageHeader />
         <Text style={{ fontFamily: 'Caveat_700Bold', fontSize: 32, marginTop: 18 }}>
           Exporter un verset
         </Text>
