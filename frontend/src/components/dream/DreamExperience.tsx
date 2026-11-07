@@ -11,6 +11,8 @@ import { pickDreamImage } from '@/lib/pickDreamImage';
 import { DreamPhaseHeader, DreamPhaseSection, DreamPhaseButton, DreamPhaseField } from './DreamPhaseLayout';
 import { DreamTalentSquare } from './DreamTalentSquare';
 import { DreamGoalDatePicker } from './DreamGoalDatePicker';
+import { DreamResourceDetailsModal } from './DreamResourceDetailsModal';
+import { DREAM_TALENT_CHOICES } from './dreamTalentCatalog';
 
 const pink = '#D71D77';
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
@@ -51,6 +53,10 @@ export default function DreamExperience({ dream, viewPhase, onBack, onNavigate }
  const [blockTone, setBlockTone] = useState<DreamBlock['tone']>('neutral');
  const [blockSize, setBlockSize] = useState<DreamBlock['size']>('wide');
  const [resourceTitle, setResourceTitle] = useState('');
+ const [resourceDescription, setResourceDescription] = useState('');
+ const [toolsPublicationRequested, setToolsPublicationRequested] = useState(false);
+ const [talentChoicesOpen, setTalentChoicesOpen] = useState(false);
+ const [selectedResourceId, setSelectedResourceId] = useState<string|null>(null);
  const [resourceAmount, setResourceAmount] = useState('');
  const [resourceCategory, setResourceCategory] = useState<DreamResource['category']>('person');
  const [resourceLink, setResourceLink] = useState('');
@@ -80,7 +86,30 @@ export default function DreamExperience({ dream, viewPhase, onBack, onNavigate }
   patch(dream.id,{blocks:updated});
  };
  const editBlock=(block:DreamBlock)=>{setEditingBlock(block.id);setBlockText(block.content);setBlockTitle(block.title||'');setBlockTone(block.tone);setBlockSize(block.size);setBlockKind(block.kind);setPicker(true);};
- const addResource=()=>{if(!resourceTitle.trim())return;const amount=resourceCategory==='financial'?Number(resourceAmount.replace(',','.')):undefined;setResources(dream.id,[...resources,{id:uid(),title:resourceTitle.trim(),category:resourceCategory,confirmed:false,linkedBlockId:resourceLink||undefined,amount:amount&&Number.isFinite(amount)&&amount>0?amount:undefined}]);setResourceTitle('');setResourceAmount('');setResourceLink('');setResourceDialog(false);};
+ const addResource=()=>{
+   if(!resourceTitle.trim())return;
+   const catalogTalent=resourceCategory==='person'
+     ? DREAM_TALENT_CHOICES.find(x=>x.title===resourceTitle) : undefined;
+   if(resourceCategory==='person' && !catalogTalent){
+     Alert.alert('Talent requis','Choisis un talent dans la liste proposée.');
+     return;
+   }
+   const amount=resourceCategory==='financial'?Number(resourceAmount.replace(',','.')):undefined;
+   if(resourceCategory==='financial' && (!Number.isFinite(amount)||!amount||amount<=0)){
+     Alert.alert('Montant requis','Saisis un montant supérieur à zéro.');
+     return;
+   }
+   setResources(dream.id,[...resources,{
+     id:uid(),title:resourceTitle.trim(),category:resourceCategory,confirmed:false,
+     description:resourceDescription.trim(),
+     illustration:catalogTalent?.illustration,
+     linkedBlockId:resourceLink||undefined,
+     amount:amount&&Number.isFinite(amount)&&amount>0?amount:undefined,
+     toolsPublicationRequested:resourceCategory==='practical'?toolsPublicationRequested:undefined,
+   }]);
+   setResourceTitle('');setResourceDescription('');setResourceAmount('');setResourceLink('');
+   setToolsPublicationRequested(false);setTalentChoicesOpen(false);setResourceDialog(false);
+ };
  const checkResource = (resource: DreamResource) =>
    setResources(dream.id, resources.map(r => r.id===resource.id?{...r,confirmed:!r.confirmed}:r));
  const phase = viewPhase || dream.phase;
@@ -149,7 +178,8 @@ export default function DreamExperience({ dream, viewPhase, onBack, onNavigate }
           ? resources.filter(r=>r.category===category).map(r=>
               <DreamTalentSquare key={r.id} resource={r} size={96}
                 onToggle={resourceEditable?()=>checkResource(r):undefined}
-                onRemove={resourceEditable?()=>setResources(dream.id,resources.filter(x=>x.id!==r.id)):undefined}/>)
+                onRemove={resourceEditable?()=>setResources(dream.id,resources.filter(x=>x.id!==r.id)):undefined}
+                onEditRequest={resourceEditable?()=>setSelectedResourceId(r.id):undefined}/>)
           : resources.filter(r=>r.category===category).map(r=>
               <View key={r.id} style={{
                 width:96,height:96,borderRadius:10,overflow:'hidden',
@@ -158,8 +188,8 @@ export default function DreamExperience({ dream, viewPhase, onBack, onNavigate }
                 backgroundColor:r.confirmed?(theme.dark?'#254635':'#E3F3E7')
                   :(theme.dark?'#282F35':'#F9F6F2'),
               }}>
-                <Pressable disabled={!resourceEditable} onPress={()=>checkResource(r)}
-                  accessibilityRole="button" accessibilityLabel={r.title+', '+(r.confirmed?'trouvé':'à trouver')}
+                <Pressable onPress={()=>setSelectedResourceId(r.id)}
+                  accessibilityRole="button" accessibilityLabel={r.title+', consulter et modifier les détails'}
                   style={{flex:1,width:'100%',justifyContent:'center',alignItems:'center',
                     gap:5,paddingHorizontal:6,paddingVertical:9}}>
                   {category==='financial' ? (
@@ -189,9 +219,7 @@ export default function DreamExperience({ dream, viewPhase, onBack, onNavigate }
           onPress={()=>{setResourceCategory(category);setResourceDialog(true);}}
           style={{width:96,height:96,borderRadius:10,borderWidth:1.5,borderStyle:'dashed',
             borderColor:category==='person'?'#D71D77':category==='financial'?'#A1BA44':'#387D9F',
-            backgroundColor:category==='financial'
-              ? (theme.dark?'#303D29':'#F1F7E6')
-              : (theme.dark?'#292B2E':'#FDFBF8'),
+            backgroundColor:theme.dark?'#292B2E':'#FDFBF8',
             alignItems:'center',justifyContent:'center'}}>
           <Ionicons name="add" size={26} color={category==='person'?'#D71D77':category==='financial'?'#86A73B':'#387D9F'}/>
         </Pressable>:null}
@@ -227,9 +255,6 @@ export default function DreamExperience({ dream, viewPhase, onBack, onNavigate }
              alignItems:'center',justifyContent:'center',paddingHorizontal:16}}>
            <Text style={{color:'#FFFFFF',fontSize:13,fontWeight:'700'}}>Arracher</Text>
          </Pressable>
-         <Text style={{color:theme.muted,textAlign:'center',fontSize:11}}>
-           {(dream.pauseCount||0)}/3 pauses utilisées · date de reprise obligatoire
-         </Text>
        </>:null}
      </View>
    ):null}
@@ -281,6 +306,20 @@ export default function DreamExperience({ dream, viewPhase, onBack, onNavigate }
     accessibilityRole="button" style={{alignItems:'center',marginTop:26,padding:15}}>
       <Text style={{color:'#B24C59',fontSize:12}}>{'Arracher cette plante'}</Text>
    </Pressable> : null}
+ <DreamResourceDetailsModal
+   resource={resources.find(r=>r.id===selectedResourceId)||null}
+   editable={resourceEditable}
+   onClose={()=>setSelectedResourceId(null)}
+   onSave={updated=>{
+     if(resourceEditable)setResources(dream.id,resources.map(r=>r.id===updated.id?updated:r));
+   }}
+   onToggle={target=>{
+     if(resourceEditable)checkResource(target);
+   }}
+   onRemove={target=>{
+     if(resourceEditable)setResources(dream.id,resources.filter(r=>r.id!==target.id));
+   }}
+ />
  <DreamGoalDatePicker visible={goalDateDialog} initialDate={dream.goalDate}
    onCancel={()=>setGoalDateDialog(false)}
    onConfirm={date=>{setGoalDateDialog(false);setGoalAndGrow(dream.id,date);}}/>
@@ -296,7 +335,8 @@ export default function DreamExperience({ dream, viewPhase, onBack, onNavigate }
          </Pressable>
        </View>
        <View style={{flexDirection:'row',flexWrap:'wrap',gap:6}}>
-         {(['person','practical','financial'] as const).map(k=><Pressable key={k} onPress={()=>setResourceCategory(k)}
+         {(['person','practical','financial'] as const).map(k=><Pressable key={k}
+           onPress={()=>{setResourceCategory(k);setResourceTitle('');setTalentChoicesOpen(false);}}
            accessibilityRole="button" accessibilityState={{selected:resourceCategory===k}}
            style={{padding:10,borderRadius:9,backgroundColor:resourceCategory===k?'#242322':theme.background}}>
            <Text style={{color:resourceCategory===k?'#fff':theme.foreground,fontSize:12}}>
@@ -304,9 +344,51 @@ export default function DreamExperience({ dream, viewPhase, onBack, onNavigate }
            </Text>
          </Pressable>)}
        </View>
-       <Field label={resourceCategory==='person'?'Talent recherché':resourceCategory==='financial'?'Objet du financement':'Ressource nécessaire'}
-         value={resourceTitle} onChange={setResourceTitle} placeholder="Ex. Salle de répétition / Pianiste"/>
-       {resourceCategory==='financial'?<Field label="Montant estimé en €" value={resourceAmount} onChange={setResourceAmount} placeholder="Ex. 300"/>:null}
+       {resourceCategory==='person' ? <>
+         <Text style={{color:theme.muted,fontSize:12}}>Choisir un talent</Text>
+         <Pressable onPress={()=>setTalentChoicesOpen(!talentChoicesOpen)} accessibilityRole="button"
+           accessibilityState={{expanded:talentChoicesOpen}}
+           style={{paddingHorizontal:13,paddingVertical:14,borderWidth:1,borderColor:theme.border,
+             borderRadius:10,backgroundColor:theme.background,flexDirection:'row',
+             alignItems:'center',justifyContent:'space-between',gap:9}}>
+           <Text style={{color:resourceTitle?theme.foreground:theme.muted,fontSize:13}}>
+             {resourceTitle||'Sélectionner dans la liste'}
+           </Text>
+           <Ionicons name="chevron-down" size={18} color={theme.foreground}/>
+         </Pressable>
+         {talentChoicesOpen ? <View style={{borderWidth:1,borderColor:theme.border,borderRadius:10,overflow:'hidden'}}>
+           {DREAM_TALENT_CHOICES.map(choice=><Pressable key={choice.title}
+             onPress={()=>{setResourceTitle(choice.title);setTalentChoicesOpen(false);}}
+             accessibilityRole="button"
+             style={{padding:11,borderBottomWidth:.5,borderColor:theme.border}}>
+             <Text style={{color:theme.foreground,fontSize:13}}>{choice.title}</Text>
+           </Pressable>)}
+         </View> : null}
+       </> : <Field
+         label={resourceCategory==='financial'?'Objet du financement':'Ressource nécessaire'}
+         value={resourceTitle} onChange={setResourceTitle} placeholder="Ex. Salle de répétition"/>}
+       <Field label="Description précise du besoin" value={resourceDescription}
+         onChange={setResourceDescription} placeholder="Décris le besoin, ses conditions et pourquoi il est important…" multiline/>
+       {resourceCategory==='financial'?<Field label="Montant estimé en €"
+         value={resourceAmount} onChange={setResourceAmount} placeholder="Ex. 300"/>:null}
+       {resourceCategory==='practical'?(
+         <View style={{gap:5}}>
+           <Pressable accessibilityRole="checkbox" accessibilityState={{checked:toolsPublicationRequested}}
+             onPress={()=>setToolsPublicationRequested(!toolsPublicationRequested)}
+             style={{flexDirection:'row',gap:9,alignItems:'center',paddingVertical:10}}>
+             <Ionicons name={toolsPublicationRequested?'checkbox-outline':'square-outline'}
+               size={22} color={toolsPublicationRequested?'#387D9F':theme.muted}/>
+             <Text style={{flex:1,color:theme.foreground,fontSize:12,fontWeight:'600'}}>
+               Demander la publication sur JenLow Tools
+             </Text>
+           </Pressable>
+           {toolsPublicationRequested ? (
+             <Text style={{fontSize:11,color:theme.muted,lineHeight:18}}>
+               Préférence enregistrée ici. La demande ne sera pas publiée avant la connexion avec JenLow Tools.
+             </Text>
+           ) : null}
+         </View>
+       ):null}
        <Action label="Ajouter ce besoin" onPress={addResource}/>
      </ScrollView>
    </View>
