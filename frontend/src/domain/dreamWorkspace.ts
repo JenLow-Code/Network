@@ -54,7 +54,7 @@ export type DreamHabit = {
   frequency: 'daily' | 'weekly';
   completed: string[];
 };
-export type DreamMilestone = { id: string; title: string; date: string };
+export type DreamMilestone = { id: string; title: string; date: string; /** Local selection, not yet a public post. */ shareRequested?: boolean };
 export type DreamThought = { id: string; text: string; date: string };
 export type DreamChatMessage = { id: string; text: string; createdAt: string };
 export type DreamEntry = {
