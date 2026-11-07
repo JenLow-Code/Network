@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useDreams } from '@/domain/dreamRepository';
 import type { DreamEntry, DreamBlock, DreamResource, DreamHabit } from '@/domain/dreamWorkspace';
-import { PHASE_LABELS } from '@/domain/publication';
+import { PHASE_LABELS, type DreamPhase } from '@/domain/publication';
 import { useAppTheme } from '@/theme/AppTheme';
 import { HANDWRITING_FAMILY } from '@/theme/handwriting';
 import { pickDreamImage } from '@/lib/pickDreamImage';
@@ -38,7 +38,7 @@ function DreamBlockCard({ block, editable, onEdit, onMove }: {block:DreamBlock;e
   {editable ? <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 19, paddingTop: 6 }}><Pressable onPress={()=>onMove(-1)} accessibilityLabel="Déplacer avant"><Ionicons name="arrow-back" size={17} color="#777"/></Pressable><Pressable onPress={()=>onMove(1)} accessibilityLabel="Déplacer après"><Ionicons name="arrow-forward" size={17} color="#777"/></Pressable><Pressable onPress={onEdit} accessibilityLabel="Modifier"><Ionicons name="options-outline" size={17} color="#777"/></Pressable></View> : null}
  </View>;
 }
-export default function DreamExperience({ dream, viewPhase, onBack }: {dream:DreamEntry; viewPhase?: DreamEntry['phase']; onBack?: () => void}) {
+export default function DreamExperience({ dream, viewPhase, onBack, onNavigate }: {dream:DreamEntry; viewPhase?: DreamEntry['phase']; onBack?: () => void; onNavigate?: (phase: DreamPhase)=>void}) {
  const { patch, appendBlock, setResources, setHabits, transitionToGrowth, advance, remove } = useDreams();
  const theme = useAppTheme();
  const [editing, setEditing] = useState(false);
@@ -90,7 +90,7 @@ export default function DreamExperience({ dream, viewPhase, onBack }: {dream:Dre
  const readOnly = historical || dream.phase === 'Témoignage';
  const resourceEditable = phase === 'Initiation' && (dream.phase === 'Initiation' || dream.phase === 'Croissance');
  return <ScrollView style={{flex:1,backgroundColor:theme.background}} contentContainerStyle={{paddingHorizontal:19,paddingTop:10,paddingBottom:65,maxWidth:760,width:'100%',alignSelf:'center'}}>
-  <DreamPhaseHeader dream={dream} phase={phase} onBack={onBack || (()=>router.replace('/my-space'))} readOnly={historical}
+  <DreamPhaseHeader dream={dream} phase={phase} onBack={onBack || (()=>router.replace('/my-space'))} onNavigate={onNavigate} readOnly={historical}
     summary={phase==='Témoignage'?'Le rêve est devenu réalité. Voici ce qui a pris vie.':undefined}
     action={phase==='Rêve'&&!historical?<Pressable onPress={()=>setEditing(!editing)} style={{padding:8}}><Text style={{color:theme.foreground,fontWeight:'700',fontSize:12}}>{editing?'Terminer':'Composer'}</Text></Pressable>:undefined}
   />
@@ -180,7 +180,7 @@ export default function DreamExperience({ dream, viewPhase, onBack }: {dream:Dre
     {resourceCategory==='financial'?<Field label="Montant estimé en € (facultatif)" value={resourceAmount} onChange={setResourceAmount} placeholder="Ex. 300"/>:null}
     {blocks.length ? <><Text style={{fontSize:12,color:theme.muted,marginBottom:7}}>Lier une inspiration (facultatif)</Text><ScrollView horizontal style={{marginBottom:10}}>{blocks.map(b=><Pressable key={b.id} onPress={()=>setResourceLink(resourceLink===b.id?'':b.id)} style={{padding:9,marginRight:7,backgroundColor:resourceLink===b.id?'#FBD8E9':'#F1ECE5',borderRadius:9}}><Text style={{fontSize:11,color:theme.foreground}} numberOfLines={1}>{b.title||b.content.slice(0,24)||'Image'}</Text></Pressable>)}</ScrollView></>:null}
     <Action secondary label="+ Ajouter cette ressource" onPress={addResource}/>
-    {!historical ? <Action label={ready?'Confirmer et commencer la croissance':'Préparatifs en cours'} onPress={()=>{if(!ready){Alert.alert('Encore un peu','Définis la date et confirme les ressources nécessaires.');return;}confirmGrowth();}}/> : null}</DreamPhaseSection> : null}
+    {!historical ? <Action label={ready?'Faire grandir cette plante':'Préparatifs en cours'} onPress={()=>{if(!ready){Alert.alert('Encore un peu','Définis la date et confirme les ressources nécessaires.');return;}confirmGrowth();}}/> : null}</DreamPhaseSection> : null}
   </> : null}
   {phase==='Croissance' ? <>
    <DreamPhaseSection title="Mes habitudes" subtitle="Petits pas, grands changements.">
@@ -205,7 +205,7 @@ export default function DreamExperience({ dream, viewPhase, onBack }: {dream:Dre
    {(dream.thoughts||[]).map(t=><Text key={t.id} style={{fontFamily:HANDWRITING_FAMILY,fontSize:23,color:theme.foreground,padding:12,backgroundColor:theme.surface,marginBottom:7,borderRadius:10}}>{t.text}</Text>)}
    <Field label="Une pensée à garder" value={thought} onChange={setThought} multiline/>
    <Action secondary label="+ Ajouter ma pensée" onPress={()=>{if(thought.trim())patch(dream.id,{thoughts:[...(dream.thoughts||[]),{id:uid(),text:thought.trim(),date:day()}]});setThought('');}}/>
-   <Action label="Préparer ma floraison" onPress={()=>router.push({pathname:'/my-dream/flower/[id]',params:{id:dream.id}})}/></> : null}
+   <Action label="Admirer les fleurs de cette plante" onPress={()=>router.push({pathname:'/my-dream/flower/[id]',params:{id:dream.id}})}/></> : null}
    </DreamPhaseSection>
   </> : null}
   {phase==='Témoignage' ? <>
@@ -224,6 +224,10 @@ export default function DreamExperience({ dream, viewPhase, onBack }: {dream:Dre
       {(dream.milestones||[]).map(m=><View key={m.id} style={{flexDirection:'row',gap:10,alignItems:'center',paddingVertical:9}}><Ionicons name="checkmark-circle-outline" size={18} color="#27845B"/><Text style={{color:theme.foreground,fontSize:13}}>{m.title}</Text></View>)}
     </DreamPhaseSection>:null}
   </> : null}
- {!readOnly ? <Pressable onPress={()=>confirm('Supprimer ce rêve ?', 'Cette suppression effacera ce rêve et ses données locales.', ()=>{remove(dream.id);router.replace('/my-space');})} style={{alignItems:'center',marginTop:35,padding:15}}><Text style={{color:'#B24C59',fontSize:12}}>Supprimer ce rêve</Text></Pressable> : null}
+ {!readOnly ? <Pressable
+    onPress={()=>confirm('Arracher ' + (phase === 'Croissance' ? 'cette plante' : 'ce germe') + ' ?', 'Cette action supprimera définitivement ce rêve et ses données enregistrées sur cet appareil.', ()=>{remove(dream.id);router.replace('/my-space');})}
+    accessibilityRole="button" style={{alignItems:'center',marginTop:26,padding:15}}>
+      <Text style={{color:'#B24C59',fontSize:12}}>{phase === 'Croissance' ? 'Arracher cette plante' : 'Arracher ce germe'}</Text>
+   </Pressable> : null}
  </ScrollView>;
 }
