@@ -147,12 +147,12 @@ export default function DreamExperience({ dream, viewPhase, onBack, onNavigate }
       <View style={{flexDirection:'row',flexWrap:'wrap',gap:9,marginBottom:8}}>
         {category==='person'
           ? resources.filter(r=>r.category===category).map(r=>
-              <DreamTalentSquare key={r.id} resource={r} size={100}
+              <DreamTalentSquare key={r.id} resource={r} size={96}
                 onToggle={resourceEditable?()=>checkResource(r):undefined}
                 onRemove={resourceEditable?()=>setResources(dream.id,resources.filter(x=>x.id!==r.id)):undefined}/>)
           : resources.filter(r=>r.category===category).map(r=>
               <View key={r.id} style={{
-                width:100,minHeight:108,borderRadius:10,overflow:'hidden',
+                width:96,height:96,borderRadius:10,overflow:'hidden',
                 position:'relative',borderWidth:1.6,
                 borderColor:r.confirmed?'#318656':'#D71D77',
                 backgroundColor:r.confirmed?(theme.dark?'#254635':'#E3F3E7')
@@ -162,16 +162,20 @@ export default function DreamExperience({ dream, viewPhase, onBack, onNavigate }
                   accessibilityRole="button" accessibilityLabel={r.title+', '+(r.confirmed?'trouvé':'à trouver')}
                   style={{flex:1,width:'100%',justifyContent:'center',alignItems:'center',
                     gap:5,paddingHorizontal:6,paddingVertical:9}}>
-                  <Ionicons name={r.confirmed?'checkmark-circle-outline':category==='financial'?'wallet-outline':'cube-outline'}
-                    size={23} color={r.confirmed?'#318656':'#387D9F'}/>
-                  <Text numberOfLines={2} style={{color:theme.foreground,fontSize:11,
-                    lineHeight:15,fontWeight:'700',textAlign:'center'}}>{r.title}</Text>
-                  {r.amount?<Text style={{fontSize:10,color:theme.muted}}>
-                    {r.amount.toLocaleString('fr-FR')} €
-                  </Text>:null}
-                  <Text style={{fontSize:9,color:r.confirmed?'#318656':theme.muted}}>
-                    {r.confirmed?'Trouvé':'À trouver'}
-                  </Text>
+                  {category==='financial' ? (
+                    <Text adjustsFontSizeToFit minimumFontScale={0.72} numberOfLines={1}
+                      style={{fontSize:18,fontWeight:'800',color:r.confirmed?'#27845B':theme.foreground}}>
+                      {typeof r.amount==='number' && r.amount>0
+                        ? r.amount.toLocaleString('fr-FR')+' €' : 'Montant ?'}
+                    </Text>
+                  ) : (
+                    <Ionicons name={r.confirmed?'checkmark-circle-outline':'cube-outline'}
+                      size={22} color={r.confirmed?'#318656':'#387D9F'}/>
+                  )}
+                  <Text numberOfLines={2} style={{
+                    color:theme.foreground,fontSize:11,lineHeight:15,
+                    fontWeight:'700',textAlign:'center',
+                  }}>{r.title}</Text>
                 </Pressable>
                 {resourceEditable?<Pressable
                   onPress={()=>setResources(dream.id,resources.filter(x=>x.id!==r.id))}
@@ -183,7 +187,7 @@ export default function DreamExperience({ dream, viewPhase, onBack, onNavigate }
         {resourceEditable?<Pressable accessibilityRole="button"
           accessibilityLabel={category==='person'?'Ajouter un talent':category==='financial'?'Ajouter un financement':'Ajouter une ressource'}
           onPress={()=>{setResourceCategory(category);setResourceDialog(true);}}
-          style={{width:100,height:108,borderRadius:10,borderWidth:1.5,borderStyle:'dashed',
+          style={{width:96,height:96,borderRadius:10,borderWidth:1.5,borderStyle:'dashed',
             borderColor:category==='person'?'#D71D77':'#387D9F',
             backgroundColor:theme.dark?'#292B2E':'#FDFBF8',
             alignItems:'center',justifyContent:'center'}}>
