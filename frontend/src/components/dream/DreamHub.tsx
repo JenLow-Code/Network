@@ -9,14 +9,13 @@ import { PHASE_LABELS } from '@/domain/publication';
 import { useDreams } from '@/domain/dreamRepository';
 import { TopActions } from '@/components/navigation/TopActions';
 import { useAppTheme } from '@/theme/AppTheme';
-import { DreamTalentSquare } from './DreamTalentSquare';
 import DreamExperience from './DreamExperience';
 import SemenceStudio from './SemenceStudio';
 
 type Direction = 'top' | 'left' | 'bottom' | 'right';
 const stages: { phase: DreamPhase; position: Direction; color: string }[] = [
   { phase: 'Rêve', position: 'top', color: '#D0A77E' },
-  { phase: 'Initiation', position: 'left', color: '#83877F' },
+  { phase: 'Initiation', position: 'left', color: '#A1BA44' },
   { phase: 'Croissance', position: 'bottom', color: '#27845B' },
   { phase: 'Témoignage', position: 'right', color: '#D71D77' },
 ];
@@ -28,11 +27,12 @@ function phaseFromSwipe(dx: number, dy: number, threshold: number): DreamPhase |
  if (ay > ax * 1.2) return dy > threshold ? 'Rêve' : dy < -threshold ? 'Croissance' : null;
  return null;
 }
-function exitVector(phase: DreamPhase, width: number, height: number) {
- if (phase === 'Initiation') return { x: width, y: 0 };
- if (phase === 'Témoignage') return { x: -width, y: 0 };
- if (phase === 'Rêve') return { x: 0, y: height };
- return { x: 0, y: -height };
+/** An actual phase page enters from the edge of its corresponding handle. */
+function sheetPosition(phase: DreamPhase, width: number, height: number, distance = 0) {
+ if (phase === 'Initiation') return { x: -Math.max(0,width-distance), y: 0 };
+ if (phase === 'Témoignage') return { x: Math.max(0,width-distance), y: 0 };
+ if (phase === 'Rêve') return { x: 0, y: -Math.max(0,height-distance) };
+ return { x: 0, y: Math.max(0,height-distance) };
 }
 
 /**
@@ -110,52 +110,67 @@ export default function DreamHub({ dream }: { dream: DreamEntry }) {
   const compact = width < 720;
   const [open, setOpen] = useState<DreamPhase | null>(null);
   const [preview, setPreview] = useState<DreamPhase | null>(null);
-  const scene = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
+  const sheet = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
   const busy = useRef(false);
   const openRef = useRef(open);
   openRef.current = open;
+  const previewRef = useRef(preview);
+  previewRef.current = preview;
   const phaseRef = useRef(dream.phase);
   phaseRef.current = dream.phase;
   const canOpen = (phase: DreamPhase) => order.indexOf(phase) <= order.indexOf(dream.phase);
 
   const resetScene = useCallback(() => {
-    Animated.spring(scene, { toValue: { x: 0, y: 0 }, useNativeDriver: true, speed: 22, bounciness: 2 })
-      .start(() => setPreview(null));
-  }, [scene]);
+    const target = previewRef.current;
+    if (!target) return;
+    Animated.spring(sheet, {
+      toValue: sheetPosition(target, width, height),
+      speed: 24, bounciness: 0, useNativeDriver: true,
+    }).start(({ finished }) => {
+      if (finished && !busy.current && previewRef.current === target) {
+        previewRef.current = null;
+        setPreview(null);
+      }
+    });
+  }, [sheet, width, height]);
+
   const enter = useCallback((phase: DreamPhase) => {
     if (busy.current || openRef.current || order.indexOf(phase) > order.indexOf(phaseRef.current)) {
       resetScene();
       return;
     }
     busy.current = true;
-    setPreview(phase);
-    Animated.timing(scene, { toValue: exitVector(phase, width, height), duration: 270,
-      easing: Easing.out(Easing.cubic), useNativeDriver: true })
-      .start(({ finished }) => {
-        if (finished) setOpen(phase);
-        scene.setValue({ x: 0, y: 0 });
-        setPreview(null);
-        busy.current = false;
-      });
-  }, [scene, width, height, resetScene]);
-
-  const dragScene = useCallback((dx: number, dy: number) => {
-    if (busy.current || openRef.current) return;
-    const target = phaseFromSwipe(dx, dy, 10);
-    if (target && order.indexOf(target) <= order.indexOf(phaseRef.current)) {
-      scene.setValue({ x: dx, y: dy });
-      setPreview(previous => previous === target ? previous : target);
-    } else {
-      // A future phase resists movement instead of opening another phase.
-      scene.setValue({ x: dx * .13, y: dy * .13 });
-      setPreview(null);
+    if (previewRef.current !== phase) {
+      sheet.setValue(sheetPosition(phase, width, height));
+      previewRef.current = phase;
+      setPreview(phase);
     }
-  }, [scene]);
+    Animated.timing(sheet, {
+      toValue: { x: 0, y: 0 }, duration: 310,
+      easing: Easing.out(Easing.cubic), useNativeDriver: true,
+    }).start(({ finished }) => {
+      if (finished) setOpen(phase);
+      previewRef.current = null;
+      setPreview(null);
+      sheet.setValue({ x: 0, y: 0 });
+      busy.current = false;
+    });
+  }, [sheet, width, height, resetScene]);
+
+  const dragScene = useCallback((phase: DreamPhase, distance: number) => {
+    if (busy.current || openRef.current || order.indexOf(phase) > order.indexOf(phaseRef.current)) return;
+    if (previewRef.current !== phase) {
+      sheet.setValue(sheetPosition(phase, width, height));
+      previewRef.current = phase;
+      setPreview(phase);
+    }
+    sheet.setValue(sheetPosition(phase, width, height, Math.max(0, distance)));
+  }, [sheet, width, height]);
 
   const pullHandle = useCallback((phase: DreamPhase, distance: number) => {
-    const vector = exitVector(phase, 1, 1);
-    dragScene(vector.x * distance, vector.y * distance);
+    dragScene(phase, distance);
   }, [dragScene]);
+
   const enterRef = useRef(enter);
   enterRef.current = enter;
   const dragRef = useRef(dragScene);
@@ -164,21 +179,27 @@ export default function DreamHub({ dream }: { dream: DreamEntry }) {
   resetRef.current = resetScene;
   const responder = useMemo(() => PanResponder.create({
     onMoveShouldSetPanResponder: (_, g) =>
-      !openRef.current && !busy.current && (Math.abs(g.dx) > 11 || Math.abs(g.dy) > 11),
+      !openRef.current && !busy.current && (Math.abs(g.dx) > 13 || Math.abs(g.dy) > 13),
     onPanResponderTerminationRequest: () => false,
-    onPanResponderMove: (_, g) => dragRef.current(g.dx, g.dy),
+    onPanResponderMove: (_, g) => {
+      const target = phaseFromSwipe(g.dx, g.dy, 10);
+      if (target) dragRef.current(target, Math.max(Math.abs(g.dx), Math.abs(g.dy)));
+    },
     onPanResponderRelease: (_, g) => {
       if (openRef.current || busy.current) return;
-      const target = phaseFromSwipe(g.dx, g.dy, 68);
+      const target = phaseFromSwipe(g.dx, g.dy, 75);
       if (target && order.indexOf(target) <= order.indexOf(phaseRef.current)) enterRef.current(target);
       else resetRef.current();
     },
     onPanResponderTerminate: () => resetRef.current(),
   }), []);
+
   useEffect(() => {
     setOpen(null);
-    scene.setValue({ x: 0, y: 0 });
     setPreview(null);
+    previewRef.current = null;
+    sheet.stopAnimation();
+    sheet.setValue({ x: 0, y: 0 });
   }, [dream.phase]);
 
   const resources: DreamResource[] = dream.resources || (dream.needs || []).map((title, index) => ({
@@ -187,9 +208,10 @@ export default function DreamHub({ dream }: { dream: DreamEntry }) {
     confirmed: (dream.resolvedNeeds || []).includes(title),
     category: 'practical' as const,
   }));
-  const missing = resources.filter(item => !item.confirmed).length;
   const requestedTalents = resources.filter(item => item.category === 'person');
-  const confirmed = resources.length - missing;
+  const otherResources = resources.filter(item => item.category !== 'person');
+  const talentFound = requestedTalents.filter(item => item.confirmed).length;
+  const resourceFound = otherResources.filter(item => item.confirmed).length;
   const phaseIndex = order.indexOf(dream.phase);
   const currentLabel = PHASE_LABELS[dream.phase];
   const image = dream.phase === 'Témoignage'
@@ -208,7 +230,6 @@ export default function DreamHub({ dream }: { dream: DreamEntry }) {
     }
   }, [dream.id, dream.phase, !!dream.chat]);
 
-  const tileSize = width < 350 ? 51 : width < 390 ? 58 : compact ? 70 : 85;
   const activeAccent = stages.find(stage => stage.phase === dream.phase)?.color || '#242322';
   const activeButtonText = dream.phase === 'Rêve' || dream.phase === 'Initiation' ? '#242322' : '#FFFFFF';
 
@@ -222,21 +243,10 @@ export default function DreamHub({ dream }: { dream: DreamEntry }) {
           flex: 1, paddingHorizontal: compact ? 0 : 24,
           paddingVertical: compact ? 0 : 17, alignItems: 'center',
         }}>
-          {preview ? (
-            <View pointerEvents="none" style={{
-              position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, justifyContent: 'center', alignItems: 'center',
-            }}>
-              <Text style={{ fontFamily: 'serif', fontSize: compact ? 29 : 38, color: stages.find(stage => stage.phase === preview)?.color }}>
-                {PHASE_LABELS[preview]}
-              </Text>
-              <Text style={{ color: theme.muted, fontSize: 12, marginTop: 10 }}>Glisser pour ouvrir</Text>
-            </View>
-          ) : null}
-          <Animated.View style={{
+          <View style={{
             flex: 1, width: '100%', maxWidth: 1120,
             backgroundColor: theme.dark ? '#252725' : '#EEECE5',
             borderRadius: compact ? 0 : 15, overflow: 'hidden',
-            transform: scene.getTranslateTransform(),
           }} {...responder.panHandlers}>
             {hasImage ? <Image source={{ uri: image }} resizeMode="cover" style={StyleSheet.absoluteFill} /> : null}
             <View pointerEvents="none" style={[StyleSheet.absoluteFill, {
@@ -335,63 +345,74 @@ export default function DreamHub({ dream }: { dream: DreamEntry }) {
                     {dream.encouragementCount} encouragement{dream.encouragementCount === 1 ? '' : 's'}
                   </Text>
                 ) : null}
-
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={'Ouvrir ' + currentLabel}
-                  onPress={() => enter(dream.phase)}
-                  style={{
-                    minHeight: 44, marginTop: compact ? 18 : 24,
-                    paddingHorizontal: 26, paddingVertical: 12,
-                    borderRadius: 11, alignItems: 'center', justifyContent: 'center',
-                    backgroundColor: activeAccent,
-                  }}
-                >
-                  <Text style={{
-                    color: activeButtonText,
-                    fontSize: 12, fontWeight: '700', letterSpacing: .2,
-                  }}>{dream.phase === 'Témoignage' ? 'Voir ma Floraison' : 'Ouvrir ' + currentLabel}</Text>
-                </Pressable>
-
-                {phaseIndex >= 1 && requestedTalents.length > 0 ? (
-                  <View style={{ marginTop: compact ? 17 : 22, alignItems: 'center', gap: 8, width: '100%' }}>
-                    <Text style={{ fontSize: 10, color: muted, fontWeight: '700', letterSpacing: 1 }}>
-                      TALENTS NÉCESSAIRES
-                    </Text>
-                    <View style={{
-                      flexDirection: 'row', flexWrap: 'wrap',
-                      alignItems: 'center', justifyContent: 'center', gap: compact ? 7 : 10,
-                    }}>
-                      {requestedTalents.slice(0, 4).map(item => (
-                        <DreamTalentSquare key={item.id} resource={item} size={tileSize} />
-                      ))}
-                    </View>
-                    {requestedTalents.length > 4 ? (
-                      <Text style={{ fontSize: 11, color: muted }}>+ {requestedTalents.length - 4} autres talents</Text>
+                {phaseIndex >= 1 ? (
+                  <View style={{ marginTop: compact ? 17 : 25, alignItems: 'center', gap: 8 }}>
+                    {requestedTalents.length > 0 ? (
+                      <Text style={{ fontSize: 11, color: muted, textAlign: 'center' }}>
+                        <Text style={{ fontWeight: '700', letterSpacing: 0.7 }}>TALENTS NÉCESSAIRES  </Text>
+                        {talentFound}/{requestedTalents.length} trouvés
+                      </Text>
+                    ) : null}
+                    {otherResources.length > 0 ? (
+                      <Text style={{ fontSize: 11, color: muted, textAlign: 'center' }}>
+                        <Text style={{ fontWeight: '700', letterSpacing: 0.7 }}>RESSOURCES NÉCESSAIRES  </Text>
+                        {resourceFound}/{otherResources.length} trouvées
+                      </Text>
                     ) : null}
                   </View>
                 ) : null}
 
-                {phaseIndex >= 1 && resources.length > 0 ? (
-                  <Text style={{
-                    fontSize: 11, lineHeight: 17, marginTop: 12, color: muted, textAlign: 'center',
-                  }}>{confirmed} / {resources.length} ressources confirmées</Text>
-                ) : null}
-
-                {phaseIndex >= 2 ? (
-                  <Pressable
-                    onPress={() => router.push({ pathname: '/chat/[id]', params: { id: 'dream-' + dream.id } })}
-                    accessibilityRole="button"
-                    accessibilityLabel="Ouvrir la conversation du rêve"
-                    style={{ flexDirection: 'row', alignItems: 'center', gap: 7, marginTop: compact ? 10 : 17, padding: 8 }}
-                  >
-                    <Ionicons name="chatbubbles-outline" size={17} color={ink}/>
-                    <Text style={{ color: ink, fontSize: 12, textDecorationLine: 'underline' }}>Conversation du rêve</Text>
-                  </Pressable>
-                ) : null}
               </View>
             </View>
-          </Animated.View>
+            <View style={{
+              position: 'absolute', left: compact ? 26 : 40, right: compact ? 26 : 40,
+              bottom: compact ? 59 : 73,
+              zIndex: 5, alignItems: 'center',
+            }}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={'Ouvrir ' + currentLabel}
+                onPress={() => enter(dream.phase)}
+                style={{
+                  minHeight: 45, paddingHorizontal: 27, paddingVertical: 12,
+                  borderRadius: 11, alignItems: 'center', justifyContent: 'center',
+                  backgroundColor: activeAccent,
+                }}
+              >
+                <Text style={{
+                  color: activeButtonText, fontSize: 12, fontWeight: '700', letterSpacing: .2,
+                }}>{dream.phase === 'Témoignage' ? 'Voir ma Floraison' : 'Ouvrir ' + currentLabel}</Text>
+              </Pressable>
+              {phaseIndex >= 2 ? (
+                <Pressable
+                  onPress={() => router.push({ pathname: '/chat/[id]', params: { id: 'dream-' + dream.id } })}
+                  accessibilityRole="button" accessibilityLabel="Ouvrir la conversation du rêve"
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: 7, marginTop: 11, padding: 8 }}
+                >
+                  <Ionicons name="chatbubbles-outline" size={17} color={ink} />
+                  <Text style={{ color: ink, fontSize: 12, textDecorationLine: 'underline' }}>Conversation du rêve</Text>
+                </Pressable>
+              ) : null}
+            </View>
+          </View>
+          {preview ? (
+            <Animated.View pointerEvents="none" style={{
+              position: 'absolute',
+              left: compact ? 0 : 24, right: compact ? 0 : 24,
+              top: compact ? 0 : 17, bottom: compact ? 0 : 17,
+              maxWidth: 1120, alignSelf: 'center',
+              backgroundColor: theme.background,
+              borderRadius: compact ? 0 : 15, overflow: 'hidden',
+              zIndex: 10,
+              transform: sheet.getTranslateTransform(),
+            }}>
+              {preview === 'Rêve' ? (
+                <SemenceStudio dream={dream} onBack={resetScene} />
+              ) : (
+                <DreamExperience dream={dream} viewPhase={preview} onBack={resetScene} />
+              )}
+            </Animated.View>
+          ) : null}
         </View>
       )}
     </View>
