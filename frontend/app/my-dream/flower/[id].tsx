@@ -46,7 +46,9 @@ export default function FlowerPreparation() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 19, paddingTop: 10, paddingBottom: 65, maxWidth: 760, width: '100%', alignSelf: 'center' }}>
-        <DreamPhaseHeader dream={dream} phase="Témoignage" onBack={() => router.back()} summary="Il est temps de raconter ce que ce rêve a produit." />
+        <DreamPhaseHeader dream={dream} phase="Témoignage" onBack={() => router.back()}
+          onNavigate={phase => router.replace({pathname:'/my-dream/[id]',params:{id:dream.id,view:phase}})}
+          summary="Il est temps de raconter ce que ce rêve a produit." />
         <DreamPhaseSection title="Mon histoire" subtitle="Ce que tu as vécu, accompli et appris pendant ce chemin.">
           <DreamPhaseField label="Raconter ma floraison" value={draft.story} onChange={story => patch({ story })} placeholder="Raconte ce que ce rêve a produit…" multiline />
         </DreamPhaseSection>
