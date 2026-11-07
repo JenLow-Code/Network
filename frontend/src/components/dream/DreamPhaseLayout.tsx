@@ -35,7 +35,7 @@ export function DreamPhaseHeader({
         <Pressable onPress={onBack} accessibilityRole="button" accessibilityLabel="Retour au rêve" style={{ padding: 9, marginLeft: -9 }}>
           <Ionicons name="arrow-back-outline" size={22} color={theme.foreground} />
         </Pressable>
-        <Text style={{ fontSize: 10, fontWeight: '700', letterSpacing: 1.6, color: theme.muted, flex: 1, textAlign: 'center' }}>MON RÊVE</Text>
+        <View style={{ flex: 1 }}/>
         <TopActions />
       </View>
 
@@ -44,6 +44,7 @@ export function DreamPhaseHeader({
         {DREAM_PHASES.map((item, i) => {
           const reached = i <= DREAM_PHASES.indexOf(dream.phase);
           const selected = item === phase;
+          const personalFruit = selected && dream.phase === 'Témoignage' && item === 'Témoignage';
           return (
             <Pressable key={item}
               accessibilityRole="button"
@@ -56,7 +57,11 @@ export function DreamPhaseHeader({
                 justifyContent: 'flex-end', alignItems: 'center',
                 paddingBottom: 2,
               }}>
-              {selected ? (
+              {selected ? personalFruit ? (
+                <View style={{height:36,alignItems:'center',justifyContent:'center'}}>
+                  <Ionicons name="nutrition-outline" size={26} color="#B47736"/>
+                </View>
+              ) : (
                 <Image source={{ uri: dreamPhaseImageUris[item] }} resizeMode="contain"
                   style={{ width: 31, height: 31, marginBottom: 5 }}/>
               ) : <View style={{ height: 36 }} />}
@@ -65,7 +70,7 @@ export function DreamPhaseHeader({
                   color: selected ? accent : reached ? theme.muted : theme.border,
                   fontSize: 10, fontWeight: selected ? '800' : '500',
                   textAlign: 'center',
-                }}>{PHASE_LABELS[item]}</Text>
+                }}>{personalFruit ? 'Fruit' : PHASE_LABELS[item]}</Text>
               <View style={{
                 width: '100%', height: selected ? 4 : 3,
                 marginTop: 11, borderRadius: 3,
