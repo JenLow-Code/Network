@@ -7,12 +7,12 @@ import { useAppTheme } from '@/theme/AppTheme';
 import { useDreams } from '@/domain/dreamRepository';
 import DreamHub from '@/components/dream/DreamHub';
 export default function Workspace() {
- const { id } = useLocalSearchParams<{id:string}>();
+ const { id, compose } = useLocalSearchParams<{id:string;compose?:string}>();
  const { items } = useDreams();
  const theme = useAppTheme();
  const dream = items.find(d=>d.id===id);
  return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
-  {dream ? <DreamHub dream={dream}/> : <View style={{padding:20}}><Text style={{color:theme.foreground}}>Rêve introuvable.</Text></View>}
+  {dream ? <DreamHub dream={dream} startInSemence={compose === '1'}/> : <View style={{padding:20}}><Text style={{color:theme.foreground}}>Rêve introuvable.</Text></View>}
   <Nav/>
  </SafeAreaView>;
 }
