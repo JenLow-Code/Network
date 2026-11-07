@@ -29,7 +29,7 @@ export default function NewDream() {
       needs: [],
     });
     // All newly created dreams enter the same redesigned central DreamHub.
-    router.replace({ pathname: '/my-dream/[id]', params: { id } });
+    router.replace({ pathname: '/my-dream/[id]', params: { id, compose: '1' } });
   };
 
   return (
