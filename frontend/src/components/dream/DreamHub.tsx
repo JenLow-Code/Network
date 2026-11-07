@@ -201,7 +201,7 @@ export default function DreamHub({ dream, startInSemence = false, startPhase }: 
   const talentFound = requestedTalents.filter(item => item.confirmed).length;
   const resourceFound = otherResources.filter(item => item.confirmed).length;
   const phaseIndex = order.indexOf(dream.phase);
-  const currentLabel = PHASE_LABELS[dream.phase];
+  const currentLabel = dream.phase === 'Témoignage' ? 'Fruit' : PHASE_LABELS[dream.phase];
   const image = dream.phase === 'Témoignage'
     ? (dream.resultImage || dream.testimony?.mediaItems?.find(media => media.kind === 'photo')?.uri || dream.image)
     : dream.image;
@@ -364,7 +364,7 @@ export default function DreamHub({ dream, startInSemence = false, startPhase }: 
               >
                 <Text style={{
                   color: activeButtonText, fontSize: 12, fontWeight: '700', letterSpacing: .2,
-                }}>{dream.phase === 'Témoignage' ? 'Voir ma Floraison' : 'Ouvrir ' + currentLabel}</Text>
+                }}>{dream.phase === 'Témoignage' ? 'Voir mon fruit' : 'Ouvrir ' + currentLabel}</Text>
               </Pressable>
               {phaseIndex >= 2 ? (
                 <Pressable
