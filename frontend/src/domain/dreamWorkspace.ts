@@ -91,6 +91,8 @@ export type DreamEntry = {
   resolvedNeeds?: string[];
   /** Personal fruit milestone after finishing Floraison. Public phase stays Témoignage/Floraison. */
   fruitAt?: string;
+  /** The user entered the private Floraison editor; not yet public or completed. */
+  flowerStartedAt?: string;
   flowerDraft?: FlowerDraft;
   testimony?: {
     comment: string;
