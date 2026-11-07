@@ -87,7 +87,7 @@ export function DetailLayout({
                 and fades out just above the main participation buttons. */}
             <View style={{
               paddingTop: isDream ? 8 : 3,
-              marginTop: isFloraison ? -56 : 0,
+              marginTop: isFloraison ? -84 : 0,
               position: 'relative',
               zIndex: isFloraison ? 2 : 1,
             }}>
