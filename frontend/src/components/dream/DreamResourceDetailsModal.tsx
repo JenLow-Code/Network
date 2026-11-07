@@ -23,10 +23,12 @@ export function DreamResourceDetailsModal({
   const [selectedIllustration, setSelectedIllustration] = useState<DreamResource['illustration']>();
   const [toolsRequested, setToolsRequested] = useState(false);
   const [talentListOpen, setTalentListOpen] = useState(false);
+  const [requiredLevel,setRequiredLevel]=useState('Quelques notions');
 
   useEffect(() => {
     if (!resource) return;
     setTitle(resource.title);
+    setRequiredLevel(resource.requiredLevel||'Quelques notions');
     setDescription(resource.description || '');
     setAmount(typeof resource.amount === 'number' ? String(resource.amount) : '');
     setSelectedIllustration(resource.illustration);
@@ -48,6 +50,7 @@ export function DreamResourceDetailsModal({
       description: description.trim(),
       amount: financial ? parsedAmount : resource.amount,
       illustration: person ? selectedIllustration : resource.illustration,
+      requiredLevel:person?requiredLevel:resource.requiredLevel,
       toolsPublicationRequested: practical ? toolsRequested : resource.toolsPublicationRequested,
     });
     onClose();
@@ -102,6 +105,19 @@ export function DreamResourceDetailsModal({
                 <Text style={{ color: theme.foreground, fontSize: 16, fontWeight: '600' }}>{title}</Text>}
             </>
           )}
+          {person ? <View style={{gap:8}}>
+            <Text style={{color:theme.muted,fontSize:12}}>Niveau recherché</Text>
+            {editable ? <View style={{flexDirection:'row',flexWrap:'wrap',gap:7}}>
+              {['Grand débutant','Quelques notions','Intermédiaire','Avancé','Professionnel'].map(level=>
+                <Pressable key={level} accessibilityRole="button"
+                  accessibilityState={{selected:requiredLevel===level}} onPress={()=>setRequiredLevel(level)}
+                  style={{paddingHorizontal:10,paddingVertical:9,borderRadius:9,
+                    borderWidth:1,borderColor:requiredLevel===level?'#D71D77':theme.border}}>
+                  <Text style={{color:theme.foreground,fontSize:11,
+                    fontWeight:requiredLevel===level?'700':'500'}}>{level}</Text>
+                </Pressable>)}
+              </View> : <Text style={{color:theme.foreground,fontSize:13}}>{requiredLevel}</Text>}
+          </View>:null}
           <Text style={{ color: theme.muted, fontSize: 12 }}>Décris précisément ton besoin</Text>
           {editable ? <TextInput accessibilityLabel="Description de ce besoin"
             value={description} onChangeText={setDescription}
