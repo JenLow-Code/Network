@@ -472,18 +472,32 @@ export default function DreamExperience({
         </View>:null}
       </View>
     ):null}
-    <Pressable accessibilityRole="button"
-      accessibilityLabel="Ouvrir mes notes personnelles privées"
-      onPress={()=>router.push({pathname:'/my-dream/notes/[id]',params:{id:dream.id}})}
-      style={{marginTop:2,marginBottom:2,minHeight:40,
-        flexDirection:'row',alignItems:'center',justifyContent:'flex-end',
-        gap:6,paddingHorizontal:3}}>
-      <Ionicons name="lock-closed-outline" size={13} color="#27845B"/>
-      <Text style={{fontSize:13,fontWeight:'600',color:'#27845B'}}>
-        Ouvrir mes notes personnelles
-      </Text>
-      <Ionicons name="arrow-forward" size={17} color="#27845B"/>
-    </Pressable>
+    <View style={{marginTop:2,marginBottom:4,gap:0}}>
+      <Pressable accessibilityRole="button"
+        accessibilityLabel="Ouvrir mes notes personnelles privées"
+        onPress={()=>router.push({pathname:'/my-dream/notes/[id]',params:{id:dream.id}})}
+        style={{minHeight:39,flexDirection:'row',alignItems:'center',
+          justifyContent:'flex-end',gap:6,paddingHorizontal:3}}>
+        <Ionicons name="lock-closed-outline" size={13} color="#27845B"/>
+        <Text style={{fontSize:13,fontWeight:'600',color:'#27845B'}}>
+          Ouvrir mes notes personnelles
+        </Text>
+        <Ionicons name="arrow-forward" size={17} color="#27845B"/>
+      </Pressable>
+      <Pressable accessibilityRole="button"
+        accessibilityLabel="Ouvrir les inspirations et documents du rêve"
+        onPress={()=>router.push({
+          pathname:'/my-dream/library/[id]',params:{id:dream.id,tab:'documents'},
+        })}
+        style={{minHeight:39,flexDirection:'row',alignItems:'center',
+          justifyContent:'flex-end',gap:6,paddingHorizontal:3}}>
+        <Ionicons name="folder-open-outline" size={14} color="#397F9E"/>
+        <Text style={{fontSize:13,fontWeight:'600',color:'#397F9E'}}>
+          Inspirations / Documents{dream.documents?.length?' · '+dream.documents.length:''}
+        </Text>
+        <Ionicons name="arrow-forward" size={17} color="#397F9E"/>
+      </Pressable>
+    </View>
     {/* Une chronologie végétale légère, sans fond de carte ni statut permanent. */}
     <View style={{marginTop:2,marginBottom:16,paddingTop:0}}>
       {growthActive ? (
@@ -551,6 +565,8 @@ export default function DreamExperience({
         const history=habitHistory(h,new Date(),columns*6);
         const cell=Math.max(7,(available-(columns-1)*gap)/columns-0.07);
         const hue=h.color||HABIT_PALETTE[index%HABIT_PALETTE.length];
+        const streak=habitStreak(h);
+        const period=h.frequency==='daily'?'jours':'semaines';
         return <Pressable key={h.id} disabled={!growthActive}
           onLongPress={()=>openHabitEditor(h)}
           accessibilityRole="button" accessibilityLabel={
@@ -562,8 +578,19 @@ export default function DreamExperience({
               <Text style={{fontSize:21,lineHeight:27}}>{h.emoji||'🌱'}</Text>
             </View>
             <View style={{flex:1,gap:3}}>
-              <Text numberOfLines={2} style={{fontSize:15,color:theme.foreground,
-                fontWeight:'600'}}>{h.title}</Text>
+              <View style={{flexDirection:'row',alignItems:'center',
+                flexWrap:'wrap',gap:7}}>
+                <Text numberOfLines={2} style={{fontSize:15,color:theme.foreground,
+                  fontWeight:'600',flexShrink:1}}>{h.title}</Text>
+                {streak>0?<View style={{flexDirection:'row',alignItems:'center',
+                  gap:4,borderRadius:11,paddingHorizontal:7,paddingVertical:3,
+                  backgroundColor:theme.dark?'#353535':'#F3F0E9'}}>
+                  <Ionicons name="flame-outline" size={13} color={hue}/>
+                  <Text style={{fontSize:10,fontWeight:'700',color:theme.foreground}}>
+                    {streak} {period}
+                  </Text>
+                </View>:null}
+              </View>
               <Text style={{fontSize:11,color:theme.muted}}>
                 {h.frequency==='daily'?'Chaque jour':'Chaque semaine'}
                 {' · '+(h.target||1)+' '+(h.unit||'fois')}
@@ -589,6 +616,22 @@ export default function DreamExperience({
               accessibilityLabel={slot.key+(slot.completed?' : accompli':' : non accompli')}
               style={{width:cell,height:cell,borderRadius:Math.min(4,cell/3),
                 backgroundColor:hue,opacity:slot.completed?1:.24}}/>)}
+          </View>
+          <View style={{flexDirection:'row',alignItems:'center',
+            justifyContent:'space-between',flexWrap:'wrap',gap:8}}>
+            <Text style={{fontSize:10,color:theme.muted}}>
+              {history.length} derniers {period} · 1 carré = 1 {h.frequency==='daily'?'jour':'semaine'}
+            </Text>
+            <View style={{flexDirection:'row',alignItems:'center',gap:8}}>
+              <View style={{flexDirection:'row',alignItems:'center',gap:4}}>
+                <View style={{width:9,height:9,borderRadius:3,backgroundColor:hue}}/>
+                <Text style={{fontSize:10,color:theme.muted}}>Fait</Text>
+              </View>
+              <View style={{flexDirection:'row',alignItems:'center',gap:4}}>
+                <View style={{width:9,height:9,borderRadius:3,backgroundColor:hue,opacity:.24}}/>
+                <Text style={{fontSize:10,color:theme.muted}}>Non fait</Text>
+              </View>
+            </View>
           </View>
         </Pressable>;
       })}
