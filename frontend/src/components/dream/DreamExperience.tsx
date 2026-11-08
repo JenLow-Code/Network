@@ -5,7 +5,7 @@ import { Alert, Image, Linking, Modal, Platform, Pressable, ScrollView, Text, Te
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useDreams } from '@/domain/dreamRepository';
-import type { DreamEntry, DreamBlock, DreamResource, DreamHabit } from '@/domain/dreamWorkspace';
+import type { DreamEntry, DreamBlock, DreamResource, DreamHabit, DreamMilestone } from '@/domain/dreamWorkspace';
 import { PHASE_LABELS, type DreamPhase } from '@/domain/publication';
 import { useAppTheme } from '@/theme/AppTheme';
 import { HANDWRITING_FAMILY } from '@/theme/handwriting';
@@ -77,14 +77,14 @@ export default function DreamExperience({
  const [resourceDialog,setResourceDialog]=useState(false);
  const [freezeDialog,setFreezeDialog]=useState(false);
  const [goalDateDialog,setGoalDateDialog]=useState(false);
- const [growthDialog,setGrowthDialog]=useState<'habit'|'log'|'note'|null>(null);
+ const [growthDialog,setGrowthDialog]=useState<'habit'|'log'|null>(null);
  const [preparationOpen,setPreparationOpen]=useState(false);
  const [recoveryDialog,setRecoveryDialog]=useState(false);
  const [privateDiaryText,setPrivateDiaryText]=useState(dream.privateDiary||'');
  const [habitTitle, setHabitTitle] = useState('');
  const [frequency, setFrequency] = useState<DreamHabit['frequency']>('daily');
  const [milestone, setMilestone] = useState('');
- const [thought, setThought] = useState('');
+
  const blocks = dream.blocks || [];
  const resources: DreamResource[] = dream.resources || (dream.needs || []).map((n,i)=>({id:'legacy-'+i,title:n,category:'practical' as const,confirmed:(dream.resolvedNeeds||[]).includes(n)}));
  const habits = dream.habits || [];
@@ -149,6 +149,29 @@ export default function DreamExperience({
    person:'Talents',practical:'Ressources',financial:'Financement',
  };
 
+ const publishLog=async(log:DreamMilestone)=>{
+   if(!log.shareRequested || !dream.serverDreamId)return;
+   try{
+     const response=await api<{id:string}>(
+       '/api/dreams/'+encodeURIComponent(dream.serverDreamId)+'/entries',
+       {method:'POST',auth:'required',idempotencyKey:'growth-log-'+log.id,
+         body:{type:'progress',body:log.title,entryDate:log.date,visibility:'public'}});
+     setGrowthLogPublication(dream.id,log.id,'published',response.id);
+   }catch{
+     setGrowthLogPublication(dream.id,log.id,'failed');
+   }
+ };
+ const saveLog=()=>{
+   if(!milestone.trim())return;
+   const log:DreamMilestone={
+     id:uid(),title:milestone.trim(),date:day(),
+     shareRequested:true,publicationState:'pending',
+   };
+   addGrowthLog(dream.id,log);
+   setMilestone('');
+   setGrowthDialog(null);
+   void publishLog(log);
+ };
  const freezeAt=(date:string)=>{
    if(historical || dream.phase!=='Initiation' || frozen)return;
    if((dream.pauseCount||0)>=3){
@@ -391,6 +414,68 @@ export default function DreamExperience({
         </View>:null}
       </View>
     ):null}
+    <DreamPhaseSection title="Journal de croissance">
+      <View style={{gap:15}}>
+        {(dream.milestones||[]).length===0 ? (
+          <View style={{padding:20,borderRadius:12,borderWidth:1,
+            borderColor:theme.border,backgroundColor:theme.surface,gap:8,alignItems:'center'}}>
+            <Ionicons name="leaf-outline" size={24} color="#27845B"/>
+            <Text style={{color:theme.muted,textAlign:'center',fontSize:12,lineHeight:20}}>
+              Chaque avancée devient une nouvelle feuille de ton histoire.
+            </Text>
+          </View>
+        ):null}
+        {[...(dream.milestones||[])].reverse().map(log=>{
+          const publicIntent=log.shareRequested!==false;
+          const serverPublished=publicIntent&&log.publicationState==='published';
+          const failed=publicIntent&&log.publicationState==='failed';
+          return <View key={log.id} style={{flexDirection:'row',gap:11,alignItems:'stretch'}}>
+            <View style={{width:27,alignItems:'center',paddingTop:15,gap:6}}>
+              <Ionicons name="leaf" size={22} color="#27845B"/>
+              <View style={{width:1,flex:1,minHeight:18,backgroundColor:'#AECBAA'}}/>
+            </View>
+            <View style={{flex:1,padding:16,borderRadius:12,
+              borderTopLeftRadius:26,borderBottomRightRadius:26,
+              backgroundColor:theme.dark?'#29382D':'#F3F7ED',
+              borderWidth:1,borderColor:theme.dark?'#405844':'#E4EDDD',gap:9}}>
+              <Text style={{fontSize:11,color:'#27845B',fontWeight:'700',
+                letterSpacing:0.5}}>{log.date}</Text>
+              <Text style={{fontFamily:HANDWRITING_FAMILY,
+                fontSize:26,lineHeight:35,color:theme.foreground}}>
+                {log.title}
+              </Text>
+              <View style={{flexDirection:'row',alignItems:'center',gap:6,flexWrap:'wrap'}}>
+                <Ionicons name={serverPublished?'globe-outline':
+                  failed?'alert-circle-outline':'cloud-upload-outline'}
+                  size={14} color={failed?'#B55164':theme.muted}/>
+                <Text style={{color:failed?'#B55164':theme.muted,
+                  fontSize:10,flex:1,lineHeight:16}}>
+                  {!publicIntent?'Ancien log privé':
+                    serverPublished?'Public dans le rêve':
+                    failed?'Publication non aboutie':
+                    dream.serverDreamId?'Publication en attente':'À publier · rêve local'}
+                </Text>
+                {failed&&!historical ? (
+                  <Pressable accessibilityRole="button" onPress={()=>void publishLog(log)}
+                    style={{padding:7,borderWidth:1,borderColor:'#B55164',borderRadius:8}}>
+                    <Text style={{color:'#B55164',fontSize:11,fontWeight:'700'}}>Réessayer</Text>
+                  </Pressable>
+                ):null}
+              </View>
+            </View>
+          </View>;
+        })}
+        {!historical?<Pressable accessibilityRole="button" onPress={()=>setGrowthDialog('log')}
+          style={{minHeight:60,borderWidth:1,borderColor:'#27845B',
+            borderStyle:'dashed',borderRadius:12,flexDirection:'row',
+            alignItems:'center',justifyContent:'center',gap:8}}>
+          <Ionicons name="leaf-outline" size={20} color="#27845B"/>
+          <Text style={{fontSize:13,fontWeight:'700',color:theme.foreground}}>
+            Ajouter une feuille au journal
+          </Text>
+        </Pressable>:null}
+      </View>
+    </DreamPhaseSection>
     <DreamPhaseSection title="Mes habitudes" subtitle="Des petits gestes qui font avancer ton rêve.">
       <View style={{gap:10}}>
         {habits.length===0?<View style={{backgroundColor:theme.surface,borderRadius:13,
@@ -459,63 +544,37 @@ export default function DreamExperience({
         </Pressable>:null}
       </View>
     </DreamPhaseSection>
-    <DreamPhaseSection title="Journal de croissance"
-      subtitle="Conserve les avancées importantes et les moments qui marquent le chemin.">
-      <View style={{gap:10}}>
-        {(dream.milestones||[]).map(log=><View key={log.id}
-          style={{padding:16,borderRadius:13,backgroundColor:theme.surface,
-            borderWidth:1,borderColor:theme.border,gap:10}}>
-          <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',gap:8}}>
-            <Text style={{fontSize:10,color:'#27845B',fontWeight:'700',letterSpacing:1.0}}>
-              {log.date}
-            </Text>
-            {log.shareRequested?<View style={{flexDirection:'row',gap:4,alignItems:'center'}}>
-              <Ionicons name="paper-plane-outline" size={13} color="#D71D77"/>
-              <Text style={{fontSize:10,color:'#D71D77',fontWeight:'700'}}>À partager</Text>
-            </View>:null}
-          </View>
-          <Text style={{color:theme.foreground,fontSize:15,lineHeight:23}}>{log.title}</Text>
-          {!historical?<Pressable accessibilityRole="button"
-            onPress={()=>patch(dream.id,{milestones:(dream.milestones||[]).map(m=>({
-              ...m,shareRequested:m.id===log.id?!m.shareRequested:false
-            }))})}
-            style={{alignSelf:'flex-start',flexDirection:'row',alignItems:'center',gap:6,paddingVertical:6}}>
-            <Ionicons name={log.shareRequested?'bookmark':'bookmark-outline'}
-              size={16} color={log.shareRequested?'#D71D77':theme.muted}/>
-            <Text style={{fontSize:11,color:log.shareRequested?'#D71D77':theme.muted}}>
-              {log.shareRequested?'Retirer du partage':'Sélectionner pour publication'}
-            </Text>
-          </Pressable>:null}
-        </View>)}
-        {(dream.milestones||[]).some(m=>m.shareRequested)?<Text
-          style={{fontSize:11,lineHeight:18,color:theme.muted}}>
-          Un seul log est sélectionné pour le partage. Sa publication publique nécessite encore la synchronisation avec Network.
-        </Text>:null}
-        {!historical?<Pressable accessibilityRole="button" onPress={()=>setGrowthDialog('log')}
-          style={{minHeight:60,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:9,
-            borderWidth:1,borderStyle:'dashed',borderColor:theme.border,borderRadius:12}}>
-          <Ionicons name="add" size={22} color="#27845B"/>
-          <Text style={{color:theme.foreground,fontSize:13,fontWeight:'700'}}>Ajouter un log</Text>
-        </Pressable>:null}
+    <View style={{marginTop:23,marginBottom:16,
+      backgroundColor:theme.dark?'#2C2927':'#FCF9F4',
+      borderWidth:1,borderColor:theme.dark?'#4D473F':'#EFE9E0',
+      borderRadius:11,padding:17,minHeight:310}}>
+      {(dream.thoughts||[]).map(note=><Text key={note.id}
+        style={{fontFamily:HANDWRITING_FAMILY,
+          color:theme.foreground,fontSize:23,lineHeight:33,marginBottom:19}}>
+        {note.text}
+      </Text>)}
+      <TextInput value={historical?dream.privateDiary||'':privateDiaryText}
+        editable={!historical}
+        onChangeText={next=>{
+          setPrivateDiaryText(next);
+          patch(dream.id,{privateDiary:next});
+        }}
+        placeholder={historical?'':'Écris ici, librement…'}
+        placeholderTextColor={theme.muted}
+        multiline textAlignVertical="top"
+        accessibilityLabel="Mon journal intime privé"
+        style={{color:theme.foreground,fontFamily:HANDWRITING_FAMILY,
+          fontSize:25,lineHeight:36,minHeight:235,
+          backgroundColor:'transparent',padding:0}}
+      />
+      <View style={{flexDirection:'row',alignItems:'center',
+        justifyContent:'flex-end',gap:5,paddingTop:8}}>
+        <Ionicons name="lock-closed-outline" size={12} color={theme.muted}/>
+        <Text style={{color:theme.muted,fontSize:10}}>
+          Privé · enregistré dans ton espace
+        </Text>
       </View>
-    </DreamPhaseSection>
-    <DreamPhaseSection title="Notes personnelles"
-      subtitle="Des pensées et réflexions privées, rien que pour toi.">
-      <View style={{gap:9}}>
-        {(dream.thoughts||[]).map(note=><View key={note.id} style={{
-          backgroundColor:theme.dark?'#322F31':'#F4EEE6',borderRadius:12,padding:16,gap:8}}>
-          <Text style={{fontSize:10,fontWeight:'700',letterSpacing:1,color:theme.muted}}>NOTE · {note.date}</Text>
-          <Text style={{fontFamily:HANDWRITING_FAMILY,fontSize:23,lineHeight:31,
-            color:theme.foreground}}>{note.text}</Text>
-        </View>)}
-        {!historical?<Pressable accessibilityRole="button" onPress={()=>setGrowthDialog('note')}
-          style={{minHeight:61,borderWidth:1,borderColor:theme.border,borderStyle:'dashed',
-            borderRadius:12,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:8}}>
-          <Ionicons name="create-outline" size={21} color="#B88962"/>
-          <Text style={{color:theme.foreground,fontSize:13,fontWeight:'700'}}>Écrire une note</Text>
-        </Pressable>:null}
-      </View>
-    </DreamPhaseSection>
+    </View>
     {!historical?<View style={{marginVertical:16}}>
       <Action label="Admirer les fleurs de cette plante"
         onPress={()=>router.push({pathname:'/my-dream/flower/[id]',params:{id:dream.id}})}/>
@@ -551,8 +610,7 @@ export default function DreamExperience({
        maxWidth:440,width:'100%',alignSelf:'center',gap:13}}>
        <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
          <Text style={{color:theme.foreground,fontSize:20,fontWeight:'700'}}>
-           {growthDialog==='habit'?'Nouvelle habitude':
-             growthDialog==='log'?'Nouveau log':'Note personnelle'}
+           {growthDialog==='habit'?'Nouvelle habitude':'Nouvelle feuille'}
          </Text>
          <Pressable accessibilityLabel="Fermer" onPress={()=>setGrowthDialog(null)}>
            <Ionicons name="close-outline" color={theme.foreground} size={23}/>
@@ -580,22 +638,10 @@ export default function DreamExperience({
          <Field label="Une étape importante" value={milestone} onChange={setMilestone}
            placeholder="Qu’as-tu accompli aujourd’hui ?" multiline/>
          <Text style={{color:theme.muted,fontSize:11,lineHeight:18}}>
-           Le log reste dans ton journal. Tu peux ensuite le sélectionner pour un partage futur.
+           Public par défaut dans ton rêve. Si le rêve est encore local, le partage
+           nécessite sa synchronisation avec JenLow Network.
          </Text>
-         <Action label="Conserver ce log" onPress={()=>{
-           if(!milestone.trim())return;
-           patch(dream.id,{milestones:[...(dream.milestones||[]),
-             {id:uid(),title:milestone.trim(),date:day()}]});
-           setMilestone('');setGrowthDialog(null);
-         }}/>
-       </>:growthDialog==='note'?<>
-         <Field label="À garder pour moi" value={thought} onChange={setThought}
-           placeholder="Mes réflexions, découvertes, prières…" multiline/>
-         <Action label="Enregistrer ma note" onPress={()=>{
-           if(!thought.trim())return;
-           patch(dream.id,{thoughts:[...(dream.thoughts||[]),{id:uid(),text:thought.trim(),date:day()}]});
-           setThought('');setGrowthDialog(null);
-         }}/>
+         <Action label="Ajouter et publier cette feuille" onPress={saveLog}/>
        </>:null}
      </View>
    </View>
