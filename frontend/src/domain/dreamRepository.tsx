@@ -2,7 +2,8 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { dreams } from '@/mocks/publications';
 import { DreamPhase } from './publication';
-import { DreamEntry, DreamBlock, DreamResource, DreamHabit, FlowerDraft, fromDemo, canEditField, nextPhase } from './dreamWorkspace';
+import { DreamEntry, DreamBlock, DreamResource, DreamHabit, DreamMilestone, FlowerDraft, fromDemo, canEditField, nextPhase } from './dreamWorkspace';
+import { rememberFoundNeeds } from './dreamResourceRecovery';
 import { useApp } from '@/context/AppContext';
 type Repo = {
   items: DreamEntry[];
@@ -25,6 +26,8 @@ type Repo = {
   appendBlock: (id: string, block: DreamBlock) => void;
   setResources: (id: string, resources: DreamResource[]) => void;
   setHabits: (id: string, habits: DreamHabit[]) => void;
+  addGrowthLog: (dreamId: string, log: DreamMilestone) => void;
+  setGrowthLogPublication: (dreamId: string, logId: string, state: NonNullable<DreamMilestone['publicationState']>, serverEntryId?: string) => void;
   transitionToGrowth: (id: string) => void;
   /** Explicit calendar confirmation records the date and starts Growth atomically. */
   setGoalAndGrow: (id: string, date: string) => void;
@@ -50,11 +53,16 @@ export function DreamProvider({ children }: { children: React.ReactNode }) {
             const p = JSON.parse(v);
             if (Array.isArray(p)) setItems(p.map((stored: DreamEntry) => {
               const seed = initial.find(item => item.id === stored.id);
-              if (!seed) return stored;
+              if (!seed) return stored.phase === 'Croissance' && !stored.foundNeedHistory
+                ? { ...stored, foundNeedHistory: rememberFoundNeeds([], stored.resources ?? []) }
+                : stored;
               // Fill missing demo metadata without overwriting the person's saved edits.
               return {
                 ...stored,
                 resources: stored.resources ?? seed.resources,
+                foundNeedHistory: stored.foundNeedHistory ??
+                  (stored.phase === 'Croissance' ?
+                    rememberFoundNeeds([], stored.resources ?? seed.resources ?? []) : undefined),
                 goalDate: stored.goalDate ?? seed.goalDate,
                 motivation: stored.motivation ?? seed.motivation,
               };
@@ -133,14 +141,32 @@ export function DreamProvider({ children }: { children: React.ReactNode }) {
     );
   const patch: Repo['patch'] = (id, changes) => setItems(p => p.map(d => d.id === id ? { ...d, ...changes, id: d.id, title: d.title, phase: d.phase } : d));
   const appendBlock: Repo['appendBlock'] = (id, block) => setItems(p => p.map(d => d.id === id && d.phase === 'Rêve' ? { ...d, blocks: [...(d.blocks || []), block] } : d));
-  const setResources: Repo['setResources'] = (id, resources) => setItems(p => p.map(d => d.id === id && (d.phase === 'Initiation' || d.phase === 'Croissance') ? { ...d, resources } : d));
+  const setResources: Repo['setResources'] = (id, resources) => setItems(p => p.map(d =>
+    d.id === id && (d.phase === 'Initiation' || d.phase === 'Croissance')
+      ? {
+        ...d, resources,
+        foundNeedHistory: d.phase === 'Croissance'
+          ? rememberFoundNeeds(d.foundNeedHistory, resources)
+          : d.foundNeedHistory,
+      } : d
+  ));
   const setHabits: Repo['setHabits'] = (id, habits) => setItems(p => p.map(d => d.id === id && d.phase === 'Croissance' ? { ...d, habits } : d));
+  const addGrowthLog: Repo['addGrowthLog'] = (dreamId, log) => setItems(previous =>
+    previous.map(d => d.id === dreamId && d.phase === 'Croissance'
+      ? { ...d, milestones: [...(d.milestones || []), log] } : d));
+  const setGrowthLogPublication: Repo['setGrowthLogPublication'] = (dreamId, logId, state, serverEntryId) =>
+    setItems(previous => previous.map(d => d.id === dreamId ? {
+      ...d, milestones: (d.milestones || []).map(log =>
+        log.id === logId ? { ...log, publicationState: state, serverEntryId: serverEntryId ?? log.serverEntryId } : log),
+    } : d));
   const transitionToGrowth: Repo['transitionToGrowth'] = id => setItems(p => p.map(d => {
     if (d.id !== id || d.phase !== 'Initiation') return d;
     const resources = d.resources || [];
     const dateValid = !!d.goalDate && /^\d{4}-\d{2}-\d{2}$/.test(d.goalDate) && !Number.isNaN(Date.parse(d.goalDate));
     if (!dateValid || resources.some(r => !r.confirmed)) return d;
-    return { ...d, phase: 'Croissance', visibility: 'public', growthStartedAt: new Date().toISOString(), chat: d.chat || { id: 'dream-' + d.id, messages: [] } };
+    return { ...d, phase: 'Croissance', visibility: 'public',
+      foundNeedHistory: rememberFoundNeeds(d.foundNeedHistory, resources),
+      growthStartedAt: new Date().toISOString(), chat: d.chat || { id: 'dream-' + d.id, messages: [] } };
   }));
   const setGoalAndGrow: Repo['setGoalAndGrow'] = (id, date) => setItems(previous =>
     previous.map(d => {
@@ -159,6 +185,7 @@ export function DreamProvider({ children }: { children: React.ReactNode }) {
         goalDate: date,
         phase: 'Croissance' as const,
         visibility: 'public' as const,
+        foundNeedHistory: rememberFoundNeeds(d.foundNeedHistory, d.resources || []),
         growthStartedAt: new Date().toISOString(),
         chat: d.chat || { id: 'dream-' + d.id, messages: [] },
       };
@@ -167,7 +194,7 @@ export function DreamProvider({ children }: { children: React.ReactNode }) {
   const remove: Repo['remove'] = id => setItems(p => p.filter(d => d.id !== id));
   return (
     <Context.Provider
-      value={{ items, create, update, add, setFlowerDraft, advance, complete, remove, patch, appendBlock, setResources, setHabits, transitionToGrowth, setGoalAndGrow }}
+      value={{ items, create, update, add, setFlowerDraft, advance, complete, remove, patch, appendBlock, setResources, setHabits, transitionToGrowth, setGoalAndGrow, addGrowthLog, setGrowthLogPublication }}
     >
       {children}
     </Context.Provider>
