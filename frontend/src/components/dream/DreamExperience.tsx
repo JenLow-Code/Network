@@ -182,8 +182,7 @@ export default function DreamExperience({ dream, viewPhase, onBack, onNavigate }
         {category==='person'
           ? resources.filter(r=>r.category===category).map(r=>
               <DreamTalentSquare key={r.id} resource={r} size={96}
-                onToggle={resourceEditable?()=>checkResource(r):undefined}
-                onRemove={resourceEditable?()=>setResources(dream.id,resources.filter(x=>x.id!==r.id)):undefined}
+                onRemove={resourceEditable&&!r.serverNeedId?()=>setResources(dream.id,resources.filter(x=>x.id!==r.id)):undefined}
                 onEditRequest={resourceEditable?()=>setSelectedResourceId(r.id):undefined}/>)
           : resources.filter(r=>r.category===category).map(r=>
               <View key={r.id} style={{
@@ -538,6 +537,13 @@ export default function DreamExperience({ dream, viewPhase, onBack, onNavigate }
  </Modal>
  <DreamResourceDetailsModal
    resource={resources.find(r=>r.id===selectedResourceId)||null}
+   dreamServerId={dream.serverDreamId}
+   onServerVerified={(resourceId,confirmed)=>{
+     const existing=resources.find(r=>r.id===resourceId);
+     if(existing && existing.confirmed!==confirmed && existing.serverNeedId){
+       setResources(dream.id,resources.map(r=>r.id===resourceId?{...r,confirmed}:r));
+     }
+   }}
    editable={resourceEditable}
    onClose={()=>setSelectedResourceId(null)}
    onSave={updated=>{
