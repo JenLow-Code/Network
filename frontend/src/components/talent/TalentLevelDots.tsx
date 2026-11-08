@@ -12,7 +12,7 @@ function coloredDots(level: string) {
   if (value.includes('avanc') || value.includes('confirm')) return 4;
   if (value.includes('interm')) return 3;
   if (value.includes('notion')) return 2;
-  if (value.includes('début') || value.includes('debut')) return 2;
+  if (value.includes('début') || value.includes('debut')) return 1;
   return 1;
 }
 
