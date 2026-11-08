@@ -14,6 +14,7 @@ import { useAppTheme } from '@/theme/AppTheme';
 import { AgendaEntry, DEMO_AGENDA } from '@/domain/agendaTypes';
 import { publicationPath } from '@/components/publication/PublicationGallery';
 import { useDreams } from '@/domain/dreamRepository';
+import { habitKey } from '@/domain/habitProgress';
 const isoDay = (d: Date) =>
   [
     d.getFullYear(),
@@ -22,13 +23,15 @@ const isoDay = (d: Date) =>
   ].join('-');
 export default function Agenda() {
   const theme = useAppTheme();
-  const { items: trackedDreams } = useDreams();
+  const { items: trackedDreams, setHabits } = useDreams();
   const { language, tr } = useLocale();
   const { prayersForDate, togglePrayer } = useApp();
   // Future: show a weekly overview of scheduled service / volunteer duty, separately from personal events.
   const [day, setDay] = useState(new Date());
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [events, setEvents] = useState<AgendaEntry[]>(DEMO_AGENDA);
+  const activeHabitDreams = trackedDreams.filter(d =>
+    d.phase === 'Croissance' && !!d.habits?.length);
   const dateKey = isoDay(day),
     locale = { fr: 'fr-FR', en: 'en-US', de: 'de-DE', pt: 'pt-PT' }[language];
   // Until backend, current prayer saves are not date-scoped. Show them on today only.
@@ -212,6 +215,60 @@ export default function Agenda() {
                   : 'Today'}
           </Text>
         </Pressable>
+        {activeHabitDreams.length>0 ? (
+          <View style={{marginTop:20,marginBottom:10,gap:12}}>
+            <View style={{flexDirection:'row',alignItems:'center',gap:9}}>
+              <Ionicons name="leaf-outline" size={23} color="#27845B"/>
+              <View style={{flex:1,gap:3}}>
+                <Text style={{fontSize:17,fontWeight:'700',color:theme.foreground}}>
+                  Mes habitudes
+                </Text>
+                <Text style={{fontSize:11,color:theme.muted}}>
+                  Coche ici ce que tu as accompli, à la date sélectionnée.
+                </Text>
+              </View>
+            </View>
+            {activeHabitDreams.map(d=>(
+              <View key={d.id} style={{gap:9,padding:13,
+                borderWidth:1,borderColor:theme.border,borderRadius:12,
+                backgroundColor:theme.surface}}>
+                <Text numberOfLines={2} style={{fontSize:12,fontWeight:'700',
+                  color:theme.foreground}}>{d.title}</Text>
+                {(d.habits||[]).map(h=>{
+                  const key=habitKey(h.frequency,dateKey);
+                  const checked=h.completed.includes(key);
+                  const locked=dateKey>isoDay(new Date());
+                  return <Pressable key={h.id}
+                    onPress={()=>{
+                      if(locked)return;
+                      const updated=(d.habits||[]).map(x=>x.id!==h.id?x:{
+                        ...x,
+                        completed:checked?x.completed.filter(k=>k!==key):[...x.completed,key],
+                      });
+                      setHabits(d.id,updated);
+                    }}
+                    disabled={locked} accessibilityRole="checkbox"
+                    accessibilityState={{checked,disabled:locked}}
+                    accessibilityLabel={h.title+', '+(checked?'accompli':'non accompli')+
+                      (h.frequency==='weekly'?' cette semaine':' le '+dateKey)}
+                    style={{flexDirection:'row',alignItems:'center',gap:11,
+                      paddingVertical:10,paddingHorizontal:4,opacity:locked?.5:1}}>
+                    <Ionicons name={checked?'checkbox':'square-outline'}
+                      size={23} color={checked?'#27845B':theme.muted}/>
+                    <View style={{flex:1,gap:3}}>
+                      <Text style={{color:theme.foreground,fontSize:13,fontWeight:'600'}}>
+                        {h.title}
+                      </Text>
+                      <Text style={{color:theme.muted,fontSize:10}}>
+                        {h.frequency==='daily'?'Quotidienne':'Hebdomadaire'}
+                      </Text>
+                    </View>
+                  </Pressable>;
+                })}
+              </View>
+            ))}
+          </View>
+        ):null}
         <View
           style={{
             flexDirection: 'row',
