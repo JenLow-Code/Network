@@ -367,11 +367,11 @@ export default function DreamExperience({ dream, viewPhase, onBack, onNavigate }
                 </Text>
               </View>
             </View>
-            <View style={{flexDirection:'row',flexWrap:'wrap',gap:5,alignItems:'center'}}>
+            {/* Read-only 7-column raster; completion happens in Mon agenda only. */}
+            <View style={{width:164,flexDirection:'row',flexWrap:'wrap',gap:4,alignItems:'center'}}>
               {history.map(slot=><View key={slot.key} accessibilityLabel={
                 slot.key+(slot.completed?' : accompli':' : non accompli')}
-                style={{width:h.frequency==='weekly'?17:14,
-                  height:h.frequency==='weekly'?17:14,borderRadius:4,
+                style={{width:20,height:20,borderRadius:5,
                   backgroundColor:slot.completed?'#27845B':theme.dark?'#3A4140':'#E6EAE5',
                 }}/>)}
             </View>
