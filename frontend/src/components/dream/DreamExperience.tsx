@@ -16,7 +16,7 @@ import { DreamGoalDatePicker } from './DreamGoalDatePicker';
 import { DreamResourceDetailsModal } from './DreamResourceDetailsModal';
 import { DREAM_TALENT_CHOICES } from './dreamTalentCatalog';
 import { TalentLevelSelector } from '@/components/talent/TalentLevelSelector';
-import { habitHistory, habitStreak } from '@/domain/habitProgress';
+import { habitDayKey, habitHistory, habitKey } from '@/domain/habitProgress';
 
 const pink = '#D71D77';
 const HABIT_PALETTE = ['#C68FBF','#D7AE62','#80B8BC','#7DBA99','#D78C9F','#A1A0CF','#A9BF78'];
@@ -385,9 +385,8 @@ export default function DreamExperience({
    ):null}
   </> : null}
   {phase==='Croissance' ? <>
-    <View style={{flexDirection:'row',flexWrap:'wrap',justifyContent:'flex-end',
-      alignItems:'center',columnGap:18,rowGap:1,marginTop:0,marginBottom:10,
-      paddingHorizontal:3}}>
+    <View style={{flexDirection:'column',alignItems:'flex-end',
+      gap:0,marginTop:0,marginBottom:9,paddingHorizontal:3}}>
       <Pressable accessibilityRole="button"
         accessibilityLabel="Ouvrir mes notes personnelles"
         onPress={()=>router.push({pathname:'/my-dream/notes/[id]',params:{id:dream.id}})}
@@ -496,8 +495,10 @@ export default function DreamExperience({
         </View>:null}
       </View>
     ):null}
-    {/* Une chronologie végétale légère, sans fond de carte ni statut permanent. */}
-    <View style={{marginTop:2,marginBottom:16,paddingTop:0}}>
+    {/* Journal sans fond de carte, dans la continuité du rêve. */}
+    <Text style={{color:theme.foreground,fontSize:19,fontWeight:'700',
+      marginTop:13,marginBottom:11}}>Logbook</Text>
+    <View style={{marginTop:0,marginBottom:16,paddingTop:0}}>
       {growthActive ? (
         <Pressable accessibilityRole="button"
           accessibilityLabel="Ajouter une nouvelle feuille au journal"
@@ -566,8 +567,16 @@ export default function DreamExperience({
         const history=habitHistory(h,new Date(),columns*(h.frequency==='weekly'?1:3));
         const cell=Math.max(9,(available-(columns-1)*gap)/columns-0.12);
         const hue=h.color||HABIT_PALETTE[index%HABIT_PALETTE.length];
-        const streak=habitStreak(h);
         const period=h.frequency==='daily'?'jours':'semaines';
+        const target=h.target&&h.target>0?h.target:1;
+        const today=habitDayKey(new Date());
+        const key=habitKey(h.frequency,today);
+        const checked=h.completed.some(completedKey=>habitKey(h.frequency,completedKey)===key);
+        const measured=Math.max(0,h.measurements?.[key]??(checked?target:0));
+        const remaining=Math.max(0,Math.round((target-measured)*100)/100);
+        const progress=Math.min(1,measured/target);
+        const unit=h.unit||'fois';
+        const deadline=h.frequency==='daily'?"aujourd’hui":"cette semaine";
         return <Pressable key={h.id} disabled={!growthActive}
           onLongPress={()=>openHabitEditor(h)}
           accessibilityRole="button" accessibilityLabel={
@@ -579,22 +588,16 @@ export default function DreamExperience({
               <Text style={{fontSize:21,lineHeight:27}}>{h.emoji||'🌱'}</Text>
             </View>
             <View style={{flex:1,gap:3}}>
-              <View style={{flexDirection:'row',alignItems:'center',
-                flexWrap:'wrap',gap:7}}>
-                <Text numberOfLines={2} style={{fontSize:15,color:theme.foreground,
-                  fontWeight:'600',flexShrink:1}}>{h.title}</Text>
-                {streak>0?<View style={{flexDirection:'row',alignItems:'center',
-                  gap:4,borderRadius:11,paddingHorizontal:7,paddingVertical:3,
-                  backgroundColor:theme.dark?'#353535':'#F3F0E9'}}>
-                  <Ionicons name="flame-outline" size={13} color={hue}/>
-                  <Text style={{fontSize:10,fontWeight:'700',color:theme.foreground}}>
-                    {streak} {period}
-                  </Text>
-                </View>:null}
-              </View>
+              <Text numberOfLines={2} style={{fontSize:15,
+                color:theme.foreground,fontWeight:'600'}}>{h.title}</Text>
+              <Text accessibilityLabel={remaining===0?'Objectif atteint':
+                'Encore '+remaining+' '+unit+' à accomplir '+deadline}
+                style={{fontSize:13,color:hue,fontWeight:'700',lineHeight:20}}>
+                {remaining===0?'✓ Objectif atteint':
+                  'Encore '+remaining+' '+unit+' '+deadline}
+              </Text>
               <Text style={{fontSize:11,color:theme.muted}}>
-                {h.frequency==='daily'?'Chaque jour':'Chaque semaine'}
-                {' · '+(h.target||1)+' '+(h.unit||'fois')}
+                {measured} / {target} {unit} · {h.frequency==='daily'?'par jour':'par semaine'}
               </Text>
               <Pressable accessibilityRole="link"
                 accessibilityLabel={'Voir '+h.title+' dans le calendrier'}
