@@ -16,7 +16,7 @@ import { allows } from '../domain/actions';
 import { ENTRY_TYPES_BY_PHASE, toApiPhase } from '../domain/phases';
 import { levelLabel } from '../domain/talents';
 
-type NeedRow = { id: string; dream_id: string; label: string; slots_total: number; slots_filled: number; manual_confirmed: number; talent_id: string | null; required_level: number | null };
+type NeedRow = { id: string; dream_id: string; label: string; category: string; slots_total: number; slots_filled: number; manual_confirmed: number; talent_id: string | null; required_level: number | null };
 type OfferRow = { id: string; need_id: string; dream_id: string; offered_by: string; message: string | null; status: string; created_at: string; responded_at: string | null; talent_id: string | null };
 
 async function needWithDream(ctx: Ctx, needId: string) {
@@ -298,6 +298,7 @@ export function registerDreams(r: Router): void {
     const viewer = await ctx.user();
     const need = await needWithDream(ctx, ctx.param('id'));
     await requireDreamOwner(ctx.sql, need.dream_id, viewer);
+    if(need.category==='person') throw unprocessable('talent_requires_acceptance','Un talent ne peut être confirmé que par une personne ayant accepté.');
     let changed = 0;
     try {
       changed = await ctx.sql.run('UPDATE dream_needs SET manual_confirmed=manual_confirmed+1,slots_filled=slots_filled+1,updated_at=CURRENT_TIMESTAMP WHERE id=? AND slots_filled<slots_total', need.id);
@@ -310,6 +311,7 @@ export function registerDreams(r: Router): void {
     const viewer = await ctx.user();
     const need = await needWithDream(ctx, ctx.param('id'));
     await requireDreamOwner(ctx.sql, need.dream_id, viewer);
+    if(need.category==='person') throw unprocessable('talent_requires_acceptance','Un talent ne peut être retiré que par le circuit des invitations.');
     let changed = 0;
     try {
       changed = await ctx.sql.run('UPDATE dream_needs SET manual_confirmed=manual_confirmed-1,slots_filled=slots_filled-1,updated_at=CURRENT_TIMESTAMP WHERE id=? AND manual_confirmed>0', need.id);
