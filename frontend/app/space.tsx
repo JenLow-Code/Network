@@ -108,6 +108,16 @@ export default function Space() {
             <Text style={{ fontSize: 30, fontWeight: '700', color: '#101010' }}>{t('space')}</Text>
             
           </View>
+          <Pressable accessibilityRole="button" onPress={()=>router.push('/notifications')}
+            style={{marginHorizontal:16,marginBottom:10,borderRadius:11,borderWidth:1,borderColor:'#E7DFE2',
+              padding:14,flexDirection:'row',alignItems:'center',gap:11,backgroundColor:'#FCF7F8'}}>
+            <Ionicons name="notifications-outline" size={21} color="#CB245C"/>
+            <View style={{flex:1,gap:3}}>
+              <Text style={{fontSize:13,color:'#242322',fontWeight:'700'}}>Mes notifications</Text>
+              <Text style={{fontSize:11,color:'#747975'}}>Réponses à mes demandes et actualités de mes rêves</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color="#748477"/>
+          </Pressable>
           <Pressable accessibilityRole="button" onPress={()=>router.push('/talent-invitations')}
             style={{marginHorizontal:16,marginBottom:16,borderRadius:11,borderWidth:1,borderColor:'#D9DFD8',
               padding:14,flexDirection:'row',alignItems:'center',gap:11,backgroundColor:'#F4F7F2'}}>
