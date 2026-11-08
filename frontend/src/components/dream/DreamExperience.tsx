@@ -385,10 +385,7 @@ export default function DreamExperience({
           style={{flexDirection:'row',alignItems:'center',gap:11,
             minHeight:55,paddingHorizontal:15,paddingVertical:10}}>
           {missingResources.length ? (
-            <View style={{width:25,height:25,borderRadius:13,
-              borderWidth:1.5,borderColor:'#D71D77',alignItems:'center',justifyContent:'center'}}>
-              <Text style={{color:'#D71D77',fontSize:17,fontWeight:'800'}}>?</Text>
-            </View>
+            <Ionicons name="warning-outline" size={26} color="#D71D77"/>
           ) : (
             <View style={{width:13,height:13,borderRadius:7,
               backgroundColor:'#A1BA44',borderWidth:2,borderColor:'#668C2A'}}/>
@@ -852,10 +849,7 @@ export default function DreamExperience({
      <View style={{maxWidth:430,width:'100%',alignSelf:'center',padding:22,
        backgroundColor:theme.surface,borderRadius:15,gap:12}}>
        <View style={{flexDirection:'row',alignItems:'center',gap:9}}>
-         <View style={{width:25,height:25,borderWidth:1.5,borderColor:'#D71D77',
-           borderRadius:13,alignItems:'center',justifyContent:'center'}}>
-           <Text style={{color:'#D71D77',fontWeight:'800',fontSize:17}}>?</Text>
-         </View>
+         <Ionicons name="warning-outline" size={25} color="#D71D77"/>
          <Text style={{fontSize:19,color:theme.foreground,fontWeight:'700',flex:1}}>
            Des besoins restent à trouver
          </Text>
