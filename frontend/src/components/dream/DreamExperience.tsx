@@ -13,6 +13,7 @@ import { DreamTalentSquare } from './DreamTalentSquare';
 import { DreamGoalDatePicker } from './DreamGoalDatePicker';
 import { DreamResourceDetailsModal } from './DreamResourceDetailsModal';
 import { DREAM_TALENT_CHOICES } from './dreamTalentCatalog';
+import { TalentLevelSelector } from '@/components/talent/TalentLevelSelector';
 
 const pink = '#D71D77';
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
@@ -596,19 +597,9 @@ export default function DreamExperience({ dream, viewPhase, onBack, onNavigate }
        </> : <Field
          label={resourceCategory==='financial'?'Objet du financement':'Ressource nécessaire'}
          value={resourceTitle} onChange={setResourceTitle} placeholder="Ex. Salle de répétition"/>}
-       {resourceCategory==='person'?<View style={{gap:9}}>
+       {resourceCategory==='person'?<View style={{gap:8}}>
          <Text style={{fontSize:12,color:theme.muted}}>Niveau recherché</Text>
-         <View style={{flexDirection:'row',flexWrap:'wrap',gap:7}}>
-           {['Grand débutant','Quelques notions','Intermédiaire','Avancé','Professionnel'].map(level=>(
-             <Pressable key={level} accessibilityRole="button"
-               accessibilityState={{selected:resourceLevel===level}} onPress={()=>setResourceLevel(level)}
-               style={{borderRadius:9,paddingHorizontal:12,paddingVertical:10,
-                 borderWidth:1,borderColor:resourceLevel===level?'#D71D77':theme.border,
-                 backgroundColor:resourceLevel===level?(theme.dark?'#47303A':'#FCE8F1'):theme.background}}>
-               <Text style={{color:theme.foreground,fontSize:11,fontWeight:resourceLevel===level?'700':'500'}}>{level}</Text>
-             </Pressable>
-           ))}
-         </View>
+         <TalentLevelSelector value={resourceLevel} onChange={setResourceLevel}/>
        </View>:null}
        <Field label="Description précise du besoin" value={resourceDescription}
          onChange={setResourceDescription} placeholder="Décris le besoin, ses conditions et pourquoi il est important…" multiline/>
