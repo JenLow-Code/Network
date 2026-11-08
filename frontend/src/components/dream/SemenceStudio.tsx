@@ -116,6 +116,7 @@ export default function SemenceStudio({dream,onBack,onNavigate}:{dream:DreamEntr
  const [edit,setEdit]=useState(editable);const [library,setLibrary]=useState(false);const [query,setQuery]=useState('');
  const [draft,setDraft]=useState<DreamBlock|null>(null);const [insertAt,setInsertAt]=useState<number|null>(null);
  const [confirm,setConfirm]=useState(false);
+ const [activeTab,setActiveTab]=useState<'inspirations'|'notes'>('inspirations');
  const [advancedEditor,setAdvancedEditor]=useState(false);
  const [showAllBlocks,setShowAllBlocks]=useState(false);
  const [dragIndex,setDragIndex]=useState<number|null>(null);const [hoverIndex,setHoverIndex]=useState<number|null>(null);
@@ -145,7 +146,28 @@ export default function SemenceStudio({dream,onBack,onNavigate}:{dream:DreamEntr
        {editable?'Semence non répertoriée · publique dès la Germination':'Premières inspirations · archive en lecture seule'}
      </Text>
    </View>
-   <DreamPhaseSection title="Mon tableau d’inspiration" subtitle={compact?undefined:"Un espace libre pour imaginer, rassembler et composer ton rêve."}>
+   <View style={{flexDirection:'row',borderBottomWidth:1,borderColor:theme.border,
+     marginTop:9,marginBottom:12}}>
+     {([
+       {id:'inspirations',label:'Inspirations',icon:'sparkles-outline'},
+       {id:'notes',label:'Notes',icon:'create-outline'},
+     ] as const).map(item=><Pressable key={item.id} accessibilityRole="tab"
+       accessibilityState={{selected:activeTab===item.id}}
+       onPress={()=>setActiveTab(item.id)}
+       style={{flex:1,minHeight:45,alignItems:'center',justifyContent:'center',
+         flexDirection:'row',gap:7,borderBottomWidth:activeTab===item.id?2:0,
+         borderBottomColor:activeTab===item.id?'#B88962':'transparent'}}>
+       <Ionicons name={item.icon} size={16}
+         color={activeTab===item.id?'#B88962':theme.muted}/>
+       <Text style={{fontSize:13,fontWeight:activeTab===item.id?'700':'500',
+         color:activeTab===item.id?theme.foreground:theme.muted}}>
+         {item.label}
+       </Text>
+     </Pressable>)}
+   </View>
+   {activeTab==='inspirations'?(
+     <View style={{marginTop:6}}>
+
     <View style={{
       borderWidth: 1, borderColor: theme.border, borderRadius: 16, overflow: 'hidden',
       backgroundColor: theme.dark ? '#292A2C' : '#FDFCF9',
@@ -278,7 +300,49 @@ export default function SemenceStudio({dream,onBack,onNavigate}:{dream:DreamEntr
         Cette Semence reste consultable telle qu’elle a été composée, avant son passage en {dream.phase==='Initiation'?'Germination':dream.phase==='Croissance'?'Croissance':'Floraison'}.
       </Text>
     ) : null}
-  </DreamPhaseSection>
+     <Pressable accessibilityRole="button"
+       accessibilityLabel="Ouvrir mes documents"
+       onPress={()=>router.push({
+         pathname:'/my-dream/library/[id]',
+         params:{id:dream.id,tab:'documents'},
+       })}
+       style={{flexDirection:'row',alignItems:'center',justifyContent:'flex-end',
+         gap:7,marginTop:17,marginBottom:10,paddingVertical:10}}>
+       <Ionicons name="folder-open-outline" size={18} color="#397F9E"/>
+       <Text style={{fontSize:12,fontWeight:'700',color:'#397F9E'}}>
+         Ouvrir mes documents{dream.documents?.length?' · '+dream.documents.length:''}
+       </Text>
+       <Ionicons name="arrow-forward" size={16} color="#397F9E"/>
+     </Pressable>
+     </View>
+   ):(
+     <View style={{minHeight:300,paddingHorizontal:3,paddingTop:9,paddingBottom:18}}>
+       <View style={{flexDirection:'row',alignItems:'center',gap:7,marginBottom:14}}>
+         <Ionicons name="lock-closed-outline" size={13} color={theme.muted}/>
+         <Text style={{fontSize:11,color:theme.muted}}>
+           Mes réflexions privées · conservées avec mon rêve
+         </Text>
+       </View>
+       {dream.notes?.map((note,index)=><Text key={index}
+         style={{fontSize:14,lineHeight:23,color:theme.foreground,marginBottom:12}}>
+         {note}
+       </Text>)}
+       <TextInput value={dream.privateDiary||''} editable={editable}
+         onChangeText={text=>patch(dream.id,{privateDiary:text})}
+         multiline textAlignVertical="top"
+         accessibilityLabel="Notes personnelles de ma Semence"
+         placeholder={editable?'Écris ce que tu imagines, librement…':''}
+         placeholderTextColor={theme.muted}
+         style={{padding:0,minHeight:235,fontFamily:HANDWRITING_FAMILY,
+           color:theme.foreground,fontSize:24,lineHeight:35,
+           backgroundColor:'transparent'}}
+       />
+       {!editable?<Text style={{fontSize:11,color:theme.muted,lineHeight:18}}>
+         Les notes de cette étape sont conservées en lecture seule.
+         Tes notes personnelles restent disponibles pendant la Croissance.
+       </Text>:null}
+     </View>
+   )}
   <Modal visible={library || !!draft} animationType="slide" transparent={false} onRequestClose={()=>{setDraft(null);setLibrary(false);}}>
    <View style={{flex:1,backgroundColor:theme.background,paddingTop:Platform.OS==='web'?12:42}}>
     <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{padding:18,paddingBottom:90,maxWidth:720,width:'100%',alignSelf:'center'}}>
