@@ -385,6 +385,30 @@ export default function DreamExperience({
    ):null}
   </> : null}
   {phase==='Croissance' ? <>
+    <View style={{flexDirection:'row',flexWrap:'wrap',justifyContent:'flex-end',
+      alignItems:'center',columnGap:18,rowGap:1,marginTop:0,marginBottom:10,
+      paddingHorizontal:3}}>
+      <Pressable accessibilityRole="button"
+        accessibilityLabel="Ouvrir mes notes personnelles"
+        onPress={()=>router.push({pathname:'/my-dream/notes/[id]',params:{id:dream.id}})}
+        style={{flexDirection:'row',alignItems:'center',gap:5,minHeight:35}}>
+        <Ionicons name="lock-closed-outline" size={13} color={theme.foreground}/>
+        <Text style={{fontSize:12,fontWeight:'600',color:theme.foreground}}>
+          Notes personnelles
+        </Text>
+        <Ionicons name="arrow-forward" size={14} color={theme.foreground}/>
+      </Pressable>
+      <Pressable accessibilityRole="button"
+        accessibilityLabel="Ouvrir inspirations et documents"
+        onPress={()=>router.push({pathname:'/my-dream/library/[id]',params:{id:dream.id}})}
+        style={{flexDirection:'row',alignItems:'center',gap:5,minHeight:35}}>
+        <Ionicons name="folder-open-outline" size={14} color={theme.foreground}/>
+        <Text style={{fontSize:12,fontWeight:'600',color:theme.foreground}}>
+          Inspirations / Documents
+        </Text>
+        <Ionicons name="arrow-forward" size={14} color={theme.foreground}/>
+      </Pressable>
+    </View>
     {(resources.length>0 || !!dream.goalDate) ? (
       <View style={{
         borderRadius:12,
@@ -443,7 +467,7 @@ export default function DreamExperience({
                 </Text>
                 <Text style={{fontSize:12,lineHeight:18,
                   color:theme.foreground,flexShrink:1}}>
-                  {unfilled.map(need=>need.title).join(', ')} à trouver
+                  {unfilled.map(need=>need.title).join(', ')} {item.category==='financial'?'à payer':'à trouver'}
                 </Text>
               </View>
               <View style={{height:4,borderRadius:3,overflow:'hidden',
@@ -472,32 +496,6 @@ export default function DreamExperience({
         </View>:null}
       </View>
     ):null}
-    <View style={{marginTop:2,marginBottom:4,gap:0}}>
-      <Pressable accessibilityRole="button"
-        accessibilityLabel="Ouvrir mes notes personnelles privées"
-        onPress={()=>router.push({pathname:'/my-dream/notes/[id]',params:{id:dream.id}})}
-        style={{minHeight:39,flexDirection:'row',alignItems:'center',
-          justifyContent:'flex-end',gap:6,paddingHorizontal:3}}>
-        <Ionicons name="lock-closed-outline" size={13} color="#27845B"/>
-        <Text style={{fontSize:13,fontWeight:'600',color:'#27845B'}}>
-          Ouvrir mes notes personnelles
-        </Text>
-        <Ionicons name="arrow-forward" size={17} color="#27845B"/>
-      </Pressable>
-      <Pressable accessibilityRole="button"
-        accessibilityLabel="Ouvrir les inspirations et documents du rêve"
-        onPress={()=>router.push({
-          pathname:'/my-dream/library/[id]',params:{id:dream.id,tab:'documents'},
-        })}
-        style={{minHeight:39,flexDirection:'row',alignItems:'center',
-          justifyContent:'flex-end',gap:6,paddingHorizontal:3}}>
-        <Ionicons name="folder-open-outline" size={14} color="#397F9E"/>
-        <Text style={{fontSize:13,fontWeight:'600',color:'#397F9E'}}>
-          Inspirations / Documents{dream.documents?.length?' · '+dream.documents.length:''}
-        </Text>
-        <Ionicons name="arrow-forward" size={17} color="#397F9E"/>
-      </Pressable>
-    </View>
     {/* Une chronologie végétale légère, sans fond de carte ni statut permanent. */}
     <View style={{marginTop:2,marginBottom:16,paddingTop:0}}>
       {growthActive ? (
@@ -560,10 +558,13 @@ export default function DreamExperience({
       }}>
       {habits.map((h,index)=>{
         const available=Math.max(180,habitRasterWidth||Math.min(deviceWidth-38,722));
-        const gap=3;
-        const columns=Math.max(12,Math.floor((available+gap)/14));
-        const history=habitHistory(h,new Date(),columns*6);
-        const cell=Math.max(7,(available-(columns-1)*gap)/columns-0.07);
+        const gap=4;
+        // Keep the raster full width without burying the habit in 150 tiny squares.
+        // Daily: about six weeks over three rows. Weekly: twelve weeks in one row.
+        const columns=h.frequency==='weekly'?12:
+          Math.max(12,Math.min(28,Math.round(available/23)));
+        const history=habitHistory(h,new Date(),columns*(h.frequency==='weekly'?1:3));
+        const cell=Math.max(9,(available-(columns-1)*gap)/columns-0.12);
         const hue=h.color||HABIT_PALETTE[index%HABIT_PALETTE.length];
         const streak=habitStreak(h);
         const period=h.frequency==='daily'?'jours':'semaines';
@@ -617,22 +618,9 @@ export default function DreamExperience({
               style={{width:cell,height:cell,borderRadius:Math.min(4,cell/3),
                 backgroundColor:hue,opacity:slot.completed?1:.24}}/>)}
           </View>
-          <View style={{flexDirection:'row',alignItems:'center',
-            justifyContent:'space-between',flexWrap:'wrap',gap:8}}>
-            <Text style={{fontSize:10,color:theme.muted}}>
-              {history.length} derniers {period} · 1 carré = 1 {h.frequency==='daily'?'jour':'semaine'}
-            </Text>
-            <View style={{flexDirection:'row',alignItems:'center',gap:8}}>
-              <View style={{flexDirection:'row',alignItems:'center',gap:4}}>
-                <View style={{width:9,height:9,borderRadius:3,backgroundColor:hue}}/>
-                <Text style={{fontSize:10,color:theme.muted}}>Fait</Text>
-              </View>
-              <View style={{flexDirection:'row',alignItems:'center',gap:4}}>
-                <View style={{width:9,height:9,borderRadius:3,backgroundColor:hue,opacity:.24}}/>
-                <Text style={{fontSize:10,color:theme.muted}}>Non fait</Text>
-              </View>
-            </View>
-          </View>
+          <Text style={{fontSize:10,color:theme.muted}}>
+            {history.length} {period} affichés · case foncée = réalisé
+          </Text>
         </Pressable>;
       })}
       {growthActive?<Pressable accessibilityRole="button"
