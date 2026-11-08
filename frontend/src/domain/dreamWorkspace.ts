@@ -61,6 +61,9 @@ export type DreamHabit = {
   unit?: string;
   /** Quantity by local date/week; check marks still remain supported for legacy habits. */
   measurements?: Record<string, number>;
+  /** Chosen emoji and one of the calm habit palette colors. */
+  emoji?: string;
+  color?: string;
 };
 export type DreamMilestone = {
   id: string;
