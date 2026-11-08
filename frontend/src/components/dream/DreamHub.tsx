@@ -199,7 +199,7 @@ export default function DreamHub({ dream, startInSemence = false, startPhase }: 
   }));
   const requestedTalents = resources.filter(item => item.category === 'person');
   const otherResources = resources.filter(item => item.category !== 'person');
-  const talentFound = requestedTalents.filter(item => item.confirmed).length;
+  const talentFound = requestedTalents.filter(item => !!item.serverNeedId && item.confirmed).length;
   const resourceFound = otherResources.filter(item => item.confirmed).length;
   const phaseIndex = order.indexOf(dream.phase);
   const currentLabel = dream.phase === 'Témoignage' ? 'Fruit' : PHASE_LABELS[dream.phase];
