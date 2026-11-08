@@ -9,6 +9,7 @@ import * as legacy from './auth/legacyRoutes';
 import { registerMedia } from './modules/media';
 import { registerProfiles } from './modules/profiles';
 import { registerDreams } from './modules/dreams';
+import { registerNeedInvitations } from './modules/needInvitations';
 import { registerPublications } from './modules/publications';
 import { registerTalents } from './modules/talents';
 import { registerMusic } from './modules/music';
@@ -47,6 +48,7 @@ export function buildRouter(): Router {
 
   registerProfiles(r);
   registerDreams(r);
+  registerNeedInvitations(r);
   registerPublications(r);
   registerTalents(r);
   registerMusic(r);
