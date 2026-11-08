@@ -84,7 +84,6 @@ export default function DreamExperience({
  const [preparationOpen,setPreparationOpen]=useState(false);
  const [recoveryDialog,setRecoveryDialog]=useState(false);
  const [reportLostDialog,setReportLostDialog]=useState(false);
- const [privateDiaryText,setPrivateDiaryText]=useState(dream.privateDiary||'');
  const [habitTitle, setHabitTitle] = useState('');
  const [habitEmoji,setHabitEmoji]=useState('🌱');
  const [habitColor,setHabitColor]=useState(HABIT_PALETTE[0]);
@@ -148,6 +147,7 @@ export default function DreamExperience({
  const historical = phase !== dream.phase;
  const readOnly = historical || dream.phase === 'Témoignage';
  const frozen=!!dream.paused && !!dream.pauseUntil && dream.pauseUntil>=day();
+ const growthActive=phase==='Croissance' && !historical && !frozen;
  const recoverPastNeeds = phase==='Initiation' && dream.phase==='Croissance' && !!recoveryCategory;
  const resourceEditable=phase==='Initiation' && !frozen && (!historical || recoverPastNeeds);
  const canEditCategory=(category:DreamResource['category'])=>
@@ -221,9 +221,9 @@ export default function DreamExperience({
    void publishLog(log);
  };
  const freezeAt=(date:string)=>{
-   if(historical || dream.phase!=='Initiation' || frozen)return;
+   if(historical || (dream.phase!=='Initiation' && dream.phase!=='Croissance') || frozen)return;
    if((dream.pauseCount||0)>=3){
-     Alert.alert('Limite atteinte','Cette germination a déjà été congelée trois fois.');return;
+     Alert.alert('Limite atteinte','Ce rêve a déjà été congelé trois fois.');return;
    }
    if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||date<=day()||Number.isNaN(Date.parse(date))){
      Alert.alert('Date requise','Sélectionne une date future dans le calendrier.');return;
@@ -570,40 +570,74 @@ export default function DreamExperience({
         <Text style={{fontSize:12,color:theme.muted}}>Ajouter une habitude</Text>
       </Pressable>:null}
     </View>
-    <View style={{marginTop:23,marginBottom:16,
-      backgroundColor:theme.dark?'#2C2927':'#FCF9F4',
-      borderWidth:1,borderColor:theme.dark?'#4D473F':'#EFE9E0',
-      borderRadius:11,padding:17,minHeight:310}}>
-      {(dream.thoughts||[]).map(note=><Text key={note.id}
-        style={{fontFamily:HANDWRITING_FAMILY,
-          color:theme.foreground,fontSize:23,lineHeight:33,marginBottom:19}}>
-        {note.text}
-      </Text>)}
-      <TextInput value={historical?dream.privateDiary||'':privateDiaryText}
-        editable={!historical}
-        onChangeText={next=>{
-          setPrivateDiaryText(next);
-          patch(dream.id,{privateDiary:next});
-        }}
-        placeholder={historical?'':'Écris ici, librement…'}
-        placeholderTextColor={theme.muted}
-        multiline textAlignVertical="top"
-        accessibilityLabel="Mon journal intime privé"
-        style={{color:theme.foreground,fontFamily:HANDWRITING_FAMILY,
-          fontSize:25,lineHeight:36,minHeight:235,
-          backgroundColor:'transparent',padding:0}}
-      />
-      <View style={{flexDirection:'row',alignItems:'center',
-        justifyContent:'flex-end',gap:5,paddingTop:8}}>
-        <Ionicons name="lock-closed-outline" size={12} color={theme.muted}/>
-        <Text style={{color:theme.muted,fontSize:10}}>
-          Privé · enregistré dans ton espace
+    <Pressable accessibilityRole="button"
+      accessibilityLabel="Ouvrir mes notes personnelles privées"
+      onPress={()=>router.push({pathname:'/my-dream/notes/[id]',params:{id:dream.id}})}
+      style={{marginTop:22,marginBottom:16,minHeight:49,
+        flexDirection:'row',alignItems:'center',justifyContent:'space-between',gap:12,
+        paddingHorizontal:4}}>
+      <View style={{flexDirection:'row',alignItems:'center',gap:9}}>
+        <Ionicons name="book-outline" size={18} color={theme.muted}/>
+        <Text style={{fontSize:13,fontWeight:'600',color:theme.foreground}}>
+          Mes notes personnelles
         </Text>
+        <Ionicons name="lock-closed-outline" size={13} color={theme.muted}/>
       </View>
-    </View>
-    {!historical?<View style={{marginVertical:16}}>
-      <Action label="Admirer les fleurs de cette plante"
-        onPress={()=>router.push({pathname:'/my-dream/flower/[id]',params:{id:dream.id}})}/>
+      <View style={{flexDirection:'row',alignItems:'center',gap:4}}>
+        <Text style={{fontSize:12,color:theme.muted}}>Ouvrir</Text>
+        <Ionicons name="arrow-forward" size={17} color={theme.muted}/>
+      </View>
+    </Pressable>
+    {!historical?<View style={{gap:11,marginTop:11,marginBottom:22}}>
+      {frozen ? (
+        <View style={{gap:9,padding:14,borderWidth:1,
+          borderColor:'#397F9E',borderRadius:11}}>
+          <Text style={{color:'#397F9E',fontSize:12,fontWeight:'700'}}>
+            Croissance congelée jusqu’au {dream.pauseUntil}
+          </Text>
+          <Pressable accessibilityRole="button"
+            onPress={()=>confirm('Reprendre la croissance ?',
+              'Tu peux reprendre avant la date choisie. Cette congélation compte toujours parmi les trois pauses.',()=>{
+                patch(dream.id,{paused:false,pauseUntil:undefined});
+              })}
+            style={{paddingVertical:8,alignSelf:'flex-start'}}>
+            <Text style={{color:'#397F9E',fontWeight:'700',fontSize:12}}>
+              Reprendre maintenant
+            </Text>
+          </Pressable>
+        </View>
+      ):null}
+      <Pressable accessibilityRole="button"
+        disabled={frozen}
+        onPress={()=>router.push({pathname:'/my-dream/flower/[id]',params:{id:dream.id}})}
+        style={{minHeight:48,backgroundColor:frozen?'#A8ABA6':'#D71D77',
+          borderRadius:11,alignItems:'center',justifyContent:'center',paddingHorizontal:16}}>
+        <Text style={{color:'#FFFFFF',fontSize:13,fontWeight:'700'}}>Faire fleurir</Text>
+      </Pressable>
+      <Pressable accessibilityRole="button" disabled={frozen}
+        onPress={()=>{
+          if((dream.pauseCount||0)>=3){
+            Alert.alert('Limite atteinte','Ce rêve a déjà été congelé trois fois.');return;
+          }
+          setFreezeDialog(true);
+        }}
+        style={{minHeight:48,borderRadius:11,borderWidth:1.5,
+          borderColor:'#397F9E',alignItems:'center',justifyContent:'center',
+          paddingHorizontal:16,opacity:frozen?.5:1}}>
+        <Text style={{color:'#397F9E',fontSize:13,fontWeight:'700'}}>Congeler</Text>
+      </Pressable>
+      <Pressable accessibilityRole="button"
+        accessibilityLabel="Arracher cette plante"
+        onPress={()=>confirm('Arracher cette plante ?',
+          'Cette action supprimera définitivement ce rêve et ses données sur cet appareil.',
+          ()=>{remove(dream.id);router.replace('/my-space');})}
+        style={{minHeight:48,backgroundColor:'#242322',
+          borderRadius:11,alignItems:'center',justifyContent:'center',
+          paddingHorizontal:16}}>
+        <Text style={{color:'#FFFFFF',fontSize:13,fontWeight:'700'}}>
+          Arracher cette plante
+        </Text>
+      </Pressable>
     </View>:null}
   </>:null}
   {phase==='Témoignage' ? <>
@@ -622,7 +656,7 @@ export default function DreamExperience({
       {(dream.milestones||[]).map(m=><View key={m.id} style={{flexDirection:'row',gap:10,alignItems:'center',paddingVertical:9}}><Ionicons name="checkmark-circle-outline" size={18} color="#27845B"/><Text style={{color:theme.foreground,fontSize:13}}>{m.title}</Text></View>)}
     </DreamPhaseSection>:null}
   </> : null}
- {(!historical && phase !== 'Rêve' && phase !== 'Initiation') ? <Pressable
+ {(!historical && phase === 'Témoignage') ? <Pressable
     onPress={()=>confirm('Arracher ' + ('cette plante') + ' ?', 'Cette action supprimera définitivement ce rêve et ses données enregistrées sur cet appareil.', ()=>{remove(dream.id);router.replace('/my-space');})}
     accessibilityRole="button" style={{alignItems:'center',marginTop:26,padding:15}}>
       <Text style={{color:'#B24C59',fontSize:12}}>{'Arracher cette plante'}</Text>
@@ -949,7 +983,7 @@ export default function DreamExperience({
    visible={freezeDialog}
    onCancel={()=>setFreezeDialog(false)}
    title="Date de reprise"
-   explanation={`Choisis quand reprendre cette germination. ${dream.pauseCount||0}/3 pauses utilisées · date de reprise obligatoire. Tu peux reprendre plus tôt, mais trois congélations maximum.`}
+   explanation={`Choisis quand reprendre ${phase==='Croissance'?'cette croissance':'cette germination'}. ${dream.pauseCount||0}/3 pauses utilisées · date de reprise obligatoire. Trois congélations maximum.`}
    confirmationLabel="Confirmer la congélation"
    minDate={(()=>{
      const d=new Date();d.setDate(d.getDate()+1);
