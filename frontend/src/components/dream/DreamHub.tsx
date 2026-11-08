@@ -113,13 +113,17 @@ export default function DreamHub({ dream, startInSemence = false, startPhase }: 
   const { width, height } = useWindowDimensions();
   const compact = width < 720;
   const [resultOpen,setResultOpen]=useState(false);
+  const [recoveryCategory,setRecoveryCategory]=useState<DreamResource['category']|null>(null);
   const [open, setOpen] = useState<DreamPhase | null>(() =>
     startPhase && order.indexOf(startPhase) <= order.indexOf(dream.phase)
       ? startPhase : startInSemence && dream.phase === 'Rêve' ? 'Rêve' : null
   );
   const firstRender = useRef(true);
   const switchPhase = (next: DreamPhase) => {
-    if (order.indexOf(next) <= order.indexOf(dream.phase)) setOpen(next);
+    if (order.indexOf(next) <= order.indexOf(dream.phase)) {
+      setRecoveryCategory(null);
+      setOpen(next);
+    }
   };
   const [preview, setPreview] = useState<DreamPhase | null>(null);
   const sheet = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
@@ -260,7 +264,18 @@ export default function DreamHub({ dream, startInSemence = false, startPhase }: 
     <View style={{ flex: 1, backgroundColor: theme.background }}>
       {open ? (
         open === 'Rêve' ? <SemenceStudio dream={dream} onBack={() => setOpen(null)} onNavigate={switchPhase} />
-          : <DreamExperience dream={dream} viewPhase={open} onBack={() => setOpen(null)} onNavigate={switchPhase} />
+          : <DreamExperience dream={dream} viewPhase={open}
+            recoveryCategory={open==='Initiation'?recoveryCategory:null}
+            onRecoverResource={category=>{
+              setRecoveryCategory(category);
+              setOpen('Initiation');
+            }}
+            onBack={()=>{
+              if(open==='Initiation' && recoveryCategory){
+                setRecoveryCategory(null);setOpen('Croissance');
+              }else setOpen(null);
+            }}
+            onNavigate={switchPhase} />
       ) : (
         <View style={{
           flex: 1, paddingHorizontal: compact ? 0 : 24,
