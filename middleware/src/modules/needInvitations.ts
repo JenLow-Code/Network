@@ -2,7 +2,7 @@ import type { Router } from '../http/router';
 import type { Ctx } from '../http/context';
 import type { D1PreparedStatement } from '../platform/cf';
 import { V } from '../http/validate';
-import { conflict, forbidden, mapSqlError, notFound, unprocessable } from '../http/errors';
+import { conflict, mapSqlError, notFound, unprocessable } from '../http/errors';
 import { enforceLimit, LIMITS } from '../http/rateLimit';
 import { newId, iso } from '../lib/util';
 import { activeMemberByHandle, auditStmt, blockedBetween, requireDreamOwner } from '../services/access';
