@@ -56,7 +56,15 @@ export type DreamHabit = {
   frequency: 'daily' | 'weekly';
   completed: string[];
 };
-export type DreamMilestone = { id: string; title: string; date: string; /** Local selection, not yet a public post. */ shareRequested?: boolean };
+export type DreamMilestone = {
+  id: string;
+  title: string;
+  date: string;
+  /** New Growth logs are public by default, but local intent is not public delivery. */
+  shareRequested?: boolean;
+  serverEntryId?: string;
+  publicationState?: 'pending' | 'published' | 'failed';
+};
 export type DreamThought = { id: string; text: string; date: string };
 export type DreamChatMessage = { id: string; text: string; createdAt: string };
 export type DreamEntry = {
@@ -74,10 +82,16 @@ export type DreamEntry = {
   visibility?: 'private' | 'public';
   blocks?: DreamBlock[];
   resources?: DreamResource[];
+  /** Previously confirmed need IDs and categories. Used to spot loss during Croissance. */
+  foundNeedHistory?: { id:string; title:string; category:DreamResource['category'] }[];
+
   financialNeeded?: boolean;
   habits?: DreamHabit[];
   milestones?: DreamMilestone[];
   thoughts?: DreamThought[];
+  /** Owner-only freeform diary, stored in the private local Dream workspace. */
+  privateDiary?: string;
+
   growthStartedAt?: string;
   chat?: { id: string; messages: DreamChatMessage[] };
   summary: string;
