@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { lostFoundNeeds } from '@/domain/dreamResourceRecovery';
+import { api } from '@/lib/api/client';
 import { Alert, Image, Linking, Modal, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -43,8 +45,17 @@ function DreamBlockCard({ block, editable, onEdit, onMove }: {block:DreamBlock;e
   {editable ? <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 19, paddingTop: 6 }}><Pressable onPress={()=>onMove(-1)} accessibilityLabel="Déplacer avant"><Ionicons name="arrow-back" size={17} color="#777"/></Pressable><Pressable onPress={()=>onMove(1)} accessibilityLabel="Déplacer après"><Ionicons name="arrow-forward" size={17} color="#777"/></Pressable><Pressable onPress={onEdit} accessibilityLabel="Modifier"><Ionicons name="options-outline" size={17} color="#777"/></Pressable></View> : null}
  </View>;
 }
-export default function DreamExperience({ dream, viewPhase, onBack, onNavigate }: {dream:DreamEntry; viewPhase?: DreamEntry['phase']; onBack?: () => void; onNavigate?: (phase: DreamPhase)=>void}) {
- const { patch, appendBlock, setResources, setHabits, setGoalAndGrow, advance, remove } = useDreams();
+export default function DreamExperience({
+ dream,viewPhase,onBack,onNavigate,recoveryCategory,onRecoverResource,
+}:{
+ dream:DreamEntry;
+ viewPhase?:DreamEntry['phase'];
+ onBack?:()=>void;
+ onNavigate?:(phase:DreamPhase)=>void;
+ recoveryCategory?:DreamResource['category']|null;
+ onRecoverResource?:(category:DreamResource['category'])=>void;
+}) {
+ const { patch, appendBlock, setResources, setHabits, setGoalAndGrow, advance, remove, addGrowthLog, setGrowthLogPublication } = useDreams();
  const theme = useAppTheme();
  const [editing, setEditing] = useState(false);
  const [picker, setPicker] = useState(false);
@@ -68,6 +79,8 @@ export default function DreamExperience({ dream, viewPhase, onBack, onNavigate }
  const [goalDateDialog,setGoalDateDialog]=useState(false);
  const [growthDialog,setGrowthDialog]=useState<'habit'|'log'|'note'|null>(null);
  const [preparationOpen,setPreparationOpen]=useState(false);
+ const [recoveryDialog,setRecoveryDialog]=useState(false);
+ const [privateDiaryText,setPrivateDiaryText]=useState(dream.privateDiary||'');
  const [habitTitle, setHabitTitle] = useState('');
  const [frequency, setFrequency] = useState<DreamHabit['frequency']>('daily');
  const [milestone, setMilestone] = useState('');
@@ -125,7 +138,17 @@ export default function DreamExperience({ dream, viewPhase, onBack, onNavigate }
  const historical = phase !== dream.phase;
  const readOnly = historical || dream.phase === 'Témoignage';
  const frozen=!!dream.paused && !!dream.pauseUntil && dream.pauseUntil>=day();
- const resourceEditable=phase==='Initiation' && !historical && !frozen;
+ const recoverPastNeeds = phase==='Initiation' && dream.phase==='Croissance' && !!recoveryCategory;
+ const resourceEditable=phase==='Initiation' && !frozen && (!historical || recoverPastNeeds);
+ const canEditCategory=(category:DreamResource['category'])=>
+   resourceEditable && (!recoverPastNeeds || recoveryCategory===category);
+ const lostResources = dream.phase==='Croissance'?lostFoundNeeds(dream):[];
+ const lostCategories = Array.from(new Set(lostResources.map(need=>need.category)));
+ const recapExpanded = preparationOpen || lostResources.length>0;
+ const categoryNames: Record<DreamResource['category'],string> = {
+   person:'Talents',practical:'Ressources',financial:'Financement',
+ };
+
  const freezeAt=(date:string)=>{
    if(historical || dream.phase!=='Initiation' || frozen)return;
    if((dream.pauseCount||0)>=3){
@@ -138,7 +161,7 @@ export default function DreamExperience({ dream, viewPhase, onBack, onNavigate }
    setFreezeDialog(false);
  };
  return <ScrollView style={{flex:1,backgroundColor:theme.background}} contentContainerStyle={{paddingHorizontal:19,paddingTop:10,paddingBottom:65,maxWidth:760,width:'100%',alignSelf:'center'}}>
-  <DreamPhaseHeader dream={dream} phase={phase} onBack={onBack || (()=>router.replace('/my-space'))} onNavigate={onNavigate} readOnly={historical}
+  <DreamPhaseHeader dream={dream} phase={phase} onBack={onBack || (()=>router.replace('/my-space'))} onNavigate={onNavigate} readOnly={historical&&!recoverPastNeeds}
     summary={phase==='Témoignage'?'Le rêve est devenu réalité. Voici ce qui a pris vie.':undefined}
     action={phase==='Rêve'&&!historical?<Pressable onPress={()=>setEditing(!editing)} style={{padding:8}}><Text style={{color:theme.foreground,fontWeight:'700',fontSize:12}}>{editing?'Terminer':'Composer'}</Text></Pressable>:undefined}
   />
@@ -170,6 +193,13 @@ export default function DreamExperience({ dream, viewPhase, onBack, onNavigate }
    {!historical ? <Action label="Faire germer ce rêve" onPress={()=>confirm('Faire germer','Ton rêve deviendra public. Tu pourras toujours retrouver tes inspirations dans son histoire.',()=>{patch(dream.id,{visibility:'public'});advance(dream.id);})}/> : null}
   </> : null}
   {phase==='Initiation' ? <>
+   {recoverPastNeeds?<View style={{padding:12,borderRadius:10,borderWidth:1,
+     borderColor:'#D71D77',marginBottom:11,backgroundColor:theme.surface,gap:4}}>
+     <Text style={{color:'#D71D77',fontSize:12,fontWeight:'700'}}>Besoin perdu · {categoryNames[recoveryCategory!]}</Text>
+     <Text style={{color:theme.muted,fontSize:11,lineHeight:17}}>
+       Tu peux modifier cette catégorie pour retrouver une ressource. Les autres éléments de Germination restent verrouillés.
+     </Text>
+   </View>:null}
    <View style={{ marginTop: 3 }}>
     {dream.phase==='Initiation' && dream.paused ? <View style={{
       padding:14,backgroundColor:theme.dark?'#433D31':'#F5EAD3',borderRadius:11,marginBottom:14,gap:8,
@@ -187,8 +217,8 @@ export default function DreamExperience({ dream, viewPhase, onBack, onNavigate }
         {category==='person'
           ? resources.filter(r=>r.category===category).map(r=>
               <DreamTalentSquare key={r.id} resource={r} size={96}
-                onRemove={resourceEditable&&!r.serverNeedId?()=>setResources(dream.id,resources.filter(x=>x.id!==r.id)):undefined}
-                onEditRequest={resourceEditable?()=>setSelectedResourceId(r.id):undefined}/>)
+                onRemove={canEditCategory(category)&&!r.serverNeedId?()=>setResources(dream.id,resources.filter(x=>x.id!==r.id)):undefined}
+                onEditRequest={canEditCategory(category)?()=>setSelectedResourceId(r.id):undefined}/>)
           : resources.filter(r=>r.category===category).map(r=>
               <View key={r.id} style={{
                 width:96,height:96,borderRadius:10,overflow:'hidden',
@@ -216,14 +246,14 @@ export default function DreamExperience({ dream, viewPhase, onBack, onNavigate }
                     fontWeight:'700',textAlign:'center',
                   }}>{r.title}</Text>
                 </Pressable>
-                {resourceEditable?<Pressable
+                {canEditCategory(category)?<Pressable
                   onPress={()=>setResources(dream.id,resources.filter(x=>x.id!==r.id))}
                   accessibilityLabel={'Retirer '+r.title}
                   style={{position:'absolute',right:1,top:1,padding:5}}>
                   <Ionicons name="close-outline" size={14} color={theme.muted}/>
                 </Pressable>:null}
               </View>)}
-        {resourceEditable?<Pressable accessibilityRole="button"
+        {canEditCategory(category)?<Pressable accessibilityRole="button"
           accessibilityLabel={category==='person'?'Ajouter un talent':category==='financial'?'Ajouter un financement':'Ajouter une ressource'}
           onPress={()=>{setResourceCategory(category);setResourceDialog(true);}}
           style={{width:96,height:96,borderRadius:10,borderWidth:1.5,borderStyle:'dashed',
@@ -240,7 +270,7 @@ export default function DreamExperience({ dream, viewPhase, onBack, onNavigate }
        <Text style={{color:'#387D9F',fontSize:12,marginTop:6}}>Trouver des ressources sur JenLow Tools ↗</Text>
      </Pressable> : null}
     </View>)}
-    {resources.length===0 && resourceEditable ? (
+    {resources.length===0 && resourceEditable && !recoverPastNeeds ? (
       <View style={{gap:9,paddingBottom:16}}>
         <Text style={{fontSize:12,color:theme.muted,lineHeight:20}}>
           Ajoute seulement les talents, le matériel ou le financement dont tu as besoin.
@@ -546,16 +576,16 @@ export default function DreamExperience({ dream, viewPhase, onBack, onNavigate }
        setResources(dream.id,resources.map(r=>r.id===resourceId?{...r,confirmed}:r));
      }
    }}
-   editable={resourceEditable}
+   editable={!!resources.find(r=>r.id===selectedResourceId&&canEditCategory(r.category))}
    onClose={()=>setSelectedResourceId(null)}
    onSave={updated=>{
-     if(resourceEditable)setResources(dream.id,resources.map(r=>r.id===updated.id?updated:r));
+     if(canEditCategory(updated.category))setResources(dream.id,resources.map(r=>r.id===updated.id?updated:r));
    }}
    onToggle={target=>{
-     if(resourceEditable)checkResource(target);
+     if(canEditCategory(target.category))checkResource(target);
    }}
    onRemove={target=>{
-     if(resourceEditable)setResources(dream.id,resources.filter(r=>r.id!==target.id));
+     if(canEditCategory(target.category))setResources(dream.id,resources.filter(r=>r.id!==target.id));
    }}
  />
  <DreamGoalDatePicker visible={goalDateDialog} initialDate={dream.goalDate}
