@@ -17,9 +17,18 @@ const series: { phase: DreamPhase; title: string; sub: string }[] = [
   { phase: 'Initiation', title: 'En germination', sub: 'Les projets que je prépare.' },
   { phase: 'Croissance', title: 'En croissance', sub: 'Les rêves qui prennent vie.' },
 ];
-/** Image cards lead to the immersive cover; only flat list rows skip it. */
-const open = (dream: DreamEntry) =>
-  router.push({pathname:'/my-dream/[id]',params:{id:dream.id}});
+/** In "Tout", active dreams open their current workspace directly.
+ * Published Fruit remains the intentional immersive result cover. */
+const open = (dream: DreamEntry) => {
+  if (dream.phase === 'Témoignage') {
+    router.push({pathname:'/my-dream/[id]',params:{id:dream.id}});
+  } else if (dream.phase === 'Croissance' &&
+    (dream.flowerStartedAt || dream.flowerDraft?.story?.trim() || dream.flowerDraft?.attachments?.length)) {
+    router.push({pathname:'/my-dream/flower/[id]',params:{id:dream.id}});
+  } else {
+    router.push({pathname:'/my-dream/[id]',params:{id:dream.id,view:dream.phase}});
+  }
+};
 const frozen = (dream: DreamEntry) =>
   dream.phase === 'Initiation' && !!dream.paused && !!dream.pauseUntil &&
   dream.pauseUntil >= new Date().toISOString().slice(0, 10);
