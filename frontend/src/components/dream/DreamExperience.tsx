@@ -389,7 +389,7 @@ export default function DreamExperience({
       <View style={{
         borderRadius:12,
         backgroundColor:theme.dark?'#432D38':'#FCECF4',
-        overflow:'hidden',marginTop:10,marginBottom:15,
+        overflow:'hidden',marginTop:10,marginBottom:6,
       }}>
         <Pressable accessibilityRole="button"
           accessibilityState={{expanded:recapExpanded}}
@@ -475,7 +475,7 @@ export default function DreamExperience({
     <Pressable accessibilityRole="button"
       accessibilityLabel="Ouvrir mes notes personnelles privées"
       onPress={()=>router.push({pathname:'/my-dream/notes/[id]',params:{id:dream.id}})}
-      style={{marginTop:19,marginBottom:15,minHeight:46,
+      style={{marginTop:2,marginBottom:2,minHeight:40,
         flexDirection:'row',alignItems:'center',justifyContent:'flex-end',
         gap:6,paddingHorizontal:3}}>
       <Ionicons name="lock-closed-outline" size={13} color="#27845B"/>
@@ -485,7 +485,7 @@ export default function DreamExperience({
       <Ionicons name="arrow-forward" size={17} color="#27845B"/>
     </Pressable>
     {/* Une chronologie végétale légère, sans fond de carte ni statut permanent. */}
-    <View style={{marginTop:18,marginBottom:16,paddingTop:0}}>
+    <View style={{marginTop:2,marginBottom:16,paddingTop:0}}>
       {growthActive ? (
         <Pressable accessibilityRole="button"
           accessibilityLabel="Ajouter une nouvelle feuille au journal"
