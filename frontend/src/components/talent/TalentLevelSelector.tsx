@@ -23,7 +23,7 @@ export function TalentLevelSelector({
   const selected = Math.max(0,TALENT_LEVELS.findIndex(level => level === value));
   return (
     <View style={{gap:10,alignItems:'flex-start'}}>
-      <View style={{flexDirection:'row',alignItems:'center',gap:11}}>
+      <View style={{flexDirection:'row',alignItems:'center',gap:6}}>
         {TALENT_LEVELS.map((level,index)=>(
           <Pressable key={level}
             accessibilityRole="radio" accessibilityState={{selected:index===selected,disabled}}
@@ -32,10 +32,10 @@ export function TalentLevelSelector({
             onPress={()=>onChange(level)}
             style={{minWidth:38,minHeight:38,alignItems:'center',justifyContent:'center'}}>
             <View style={{
-              width:index===selected?17:14,height:index===selected?17:14,borderRadius:10,
+              width:24,height:24,borderRadius:12,
               backgroundColor:index<=selected?COLORS[index]:(theme.dark?'#64676C':'#E6E6E6'),
               borderWidth:index===selected?2:0,
-              borderColor:theme.background,
+              borderColor:theme.foreground,
             }}/>
           </Pressable>
         ))}
