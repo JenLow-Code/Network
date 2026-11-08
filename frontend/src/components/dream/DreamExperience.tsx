@@ -19,6 +19,8 @@ import { TalentLevelSelector } from '@/components/talent/TalentLevelSelector';
 import { habitHistory, habitStreak } from '@/domain/habitProgress';
 
 const pink = '#D71D77';
+const HABIT_PALETTE = ['#C68FBF','#D7AE62','#80B8BC','#7DBA99','#D78C9F','#A1A0CF','#A9BF78'];
+const HABIT_EMOJIS = ['🌱','🙏','🎹','🎸','🎼','📖','🎨','📷','🧘','🏃','💧','✍️','🏡','❤️','☀️','🎯'];
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 const day = () => new Date().toISOString().slice(0, 10);
 const tones: Record<DreamBlock['tone'], string> = { neutral: '#F1ECE5', pink: '#FCE4EF', sage: '#E3EEDB', sand: '#F4DEC7', lavender: '#E9E1F4', blue: '#E0EBF5', peach: '#F8E5DA', charcoal: '#292B30', clear: 'transparent' };
@@ -84,6 +86,8 @@ export default function DreamExperience({
  const [reportLostDialog,setReportLostDialog]=useState(false);
  const [privateDiaryText,setPrivateDiaryText]=useState(dream.privateDiary||'');
  const [habitTitle, setHabitTitle] = useState('');
+ const [habitEmoji,setHabitEmoji]=useState('🌱');
+ const [habitColor,setHabitColor]=useState(HABIT_PALETTE[0]);
  const [habitDescription,setHabitDescription]=useState('');
  const [habitUnit,setHabitUnit]=useState('fois');
  const [habitTarget,setHabitTarget]=useState('1');
@@ -169,6 +173,17 @@ export default function DreamExperience({
      setGrowthLogPublication(dream.id,log.id,'failed');
    }
  };
+ const openHabitEditor=(habit?:DreamHabit)=>{
+   setEditingHabitId(habit?.id||null);
+   setHabitTitle(habit?.title||'');
+   setHabitDescription(habit?.description||'');
+   setHabitTarget(String(habit?.target&&habit.target>0?habit.target:1));
+   setHabitUnit(habit?.unit||'fois');
+   setFrequency(habit?.frequency||'daily');
+   setHabitEmoji(habit?.emoji||'🌱');
+   setHabitColor(habit?.color||HABIT_PALETTE[0]);
+   setGrowthDialog('habit');
+ };
  const saveHabit=()=>{
    if(!habitTitle.trim())return;
    const target=Number(habitTarget.replace(',','.'));
@@ -186,6 +201,7 @@ export default function DreamExperience({
      frequency,completed:existing?.completed||[],
      measurements:existing?.measurements,
      target,unit:habitUnit.trim().slice(0,35),
+     emoji:habitEmoji,color:habitColor,
    };
    setHabits(dream.id,existing
      ? habits.map(h=>h.id===existing.id?entry:h)
@@ -500,119 +516,59 @@ export default function DreamExperience({
       ))}
 
     </View>
-    {/* Tableau de constance inspiré d'un raster, sans interaction de cochage ici. */}
-    <View style={{marginTop:20,paddingTop:20,borderTopWidth:1,
-      borderColor:theme.border,marginBottom:10,gap:15}}>
-      <Text style={{fontSize:17,fontWeight:'600',lineHeight:24,
-        color:theme.foreground}}>
-        Fais grandir les habitudes qui feront avancer ton rêve.
+    <View style={{marginTop:21,marginBottom:13,gap:17}}>
+      <Text style={{fontSize:13,color:theme.muted,lineHeight:20}}>
+        Fais grandir une habitude pour réaliser ton rêve.
       </Text>
       {habits.map((h,index)=>{
         const columns=deviceWidth<480?22:28;
         const history=habitHistory(h,new Date(),columns*6);
-        const streak=habitStreak(h);
-        const target=h.target&&h.target>0?h.target:1;
-        const unit=h.unit||'fois';
         const cell=Math.max(8,Math.min(13,
-          Math.floor((Math.min(deviceWidth-91,550)-(columns-1)*3)/columns)));
-        const themes=theme.dark?[
-          {bg:'#343039',soft:'#4F4555',fill:'#AD83B9'},
-          {bg:'#36352F',soft:'#514D40',fill:'#D9B87B'},
-          {bg:'#293A3B',soft:'#3C5050',fill:'#82B6BD'},
-        ]:[
-          {bg:'#F3EDF3',soft:'#E7D9E9',fill:'#CB9BC6'},
-          {bg:'#F4F0E8',soft:'#E7DDCC',fill:'#D5AF68'},
-          {bg:'#EDF3F4',soft:'#D8E6E8',fill:'#8CBAC1'},
-        ];
-        const colors=themes[index%themes.length];
-        return <Pressable key={h.id}
-          disabled={historical}
-          onLongPress={()=>{
-            setEditingHabitId(h.id);setHabitTitle(h.title);
-            setHabitDescription(h.description||'');
-            setHabitTarget(String(target));setHabitUnit(unit);
-            setFrequency(h.frequency);setGrowthDialog('habit');
-          }}
-          accessibilityRole="button"
-          accessibilityLabel={h.title+', appui long pour modifier'}
-          style={{backgroundColor:colors.bg,borderRadius:22,
-            padding:15,gap:13}}>
+          Math.floor((Math.min(deviceWidth-94,550)-(columns-1)*3)/columns)));
+        const hue=h.color||HABIT_PALETTE[index%HABIT_PALETTE.length];
+        return <Pressable key={h.id} disabled={historical}
+          onLongPress={()=>openHabitEditor(h)}
+          accessibilityRole="button" accessibilityLabel={
+            h.title+', appui long pour modifier ou supprimer'}
+          style={{paddingVertical:6,gap:13}}>
           <View style={{flexDirection:'row',alignItems:'center',gap:11}}>
-            <View style={{width:39,height:39,borderRadius:22,
-              borderWidth:5,borderColor:theme.dark?'#424649':'#E5E3E4',
-              backgroundColor:theme.dark?'#444348':'#F6F3F4',
-              alignItems:'center',justifyContent:'center'}}>
-              <Ionicons name="leaf-outline" size={18} color={theme.foreground}/>
+            <View style={{width:41,height:41,borderRadius:22,borderWidth:3,
+              borderColor:hue,alignItems:'center',justifyContent:'center'}}>
+              <Text style={{fontSize:21,lineHeight:27}}>{h.emoji||'🌱'}</Text>
             </View>
             <View style={{flex:1,gap:3}}>
               <Text numberOfLines={2} style={{fontSize:15,color:theme.foreground,
                 fontWeight:'600'}}>{h.title}</Text>
               <Text style={{fontSize:11,color:theme.muted}}>
                 {h.frequency==='daily'?'Chaque jour':'Chaque semaine'}
-                {' · '+target+' '+unit}
+                {' · '+(h.target||1)+' '+(h.unit||'fois')}
               </Text>
-              {h.description ? <Text numberOfLines={2}
-                style={{fontSize:11,color:theme.muted,lineHeight:16}}>
-                {h.description}
-              </Text> : null}
+              {h.description?<Text numberOfLines={2}
+                style={{fontSize:11,lineHeight:17,color:theme.muted}}>{h.description}</Text>:null}
             </View>
-            <Pressable accessibilityRole="button"
-              accessibilityLabel={'Modifier ou supprimer '+h.title}
-              disabled={historical}
-              onPress={()=>{
-                setEditingHabitId(h.id);setHabitTitle(h.title);
-                setHabitDescription(h.description||'');
-                setHabitTarget(String(target));setHabitUnit(unit);
-                setFrequency(h.frequency);setGrowthDialog('habit');
-              }}
-              style={{padding:9}}>
-              <Ionicons name="ellipsis-horizontal" size={21} color={theme.muted}/>
-            </Pressable>
+            {!historical?<Pressable accessibilityRole="button" onPress={()=>openHabitEditor(h)}
+              accessibilityLabel={'Modifier '+h.title}
+              style={{padding:9,alignItems:'center',justifyContent:'center'}}>
+              <Ionicons name="ellipsis-horizontal" size={19} color={theme.muted}/>
+            </Pressable>:null}
           </View>
           <View style={{flexDirection:'row',flexWrap:'wrap',
-            gap:3,width:columns*(cell+3)-3}}>
-            {history.map(slot=>{
-              const measured=h.measurements?.[slot.key]??0;
-              const partial=measured>0&&!slot.completed;
-              return <View key={slot.key}
-                accessibilityLabel={slot.key+(slot.completed?' : accompli':partial?' : en cours':' : non accompli')}
-                style={{width:cell,height:cell,borderRadius:Math.min(4,cell/3),
-                  backgroundColor:slot.completed?colors.fill:
-                    partial?colors.fill:colors.soft,
-                  opacity:partial?.6:1,
-                }}/>;
-            })}
-          </View>
-          <View style={{flexDirection:'row',alignItems:'center',
-            justifyContent:'space-between',gap:8}}>
-            <Text style={{fontSize:11,color:theme.muted}}>
-              {streak} {h.frequency==='daily'?'jours':'semaines'} de suite
-            </Text>
-            <Pressable onPress={()=>router.push('/agenda')}
-              accessibilityRole="link"
-              style={{flexDirection:'row',alignItems:'center',gap:5,paddingVertical:3}}>
-              <Ionicons name="calendar-outline" size={15} color={theme.foreground}/>
-              <Text style={{fontSize:11,color:theme.foreground}}>
-                Calendrier
-              </Text>
-            </Pressable>
+            width:columns*(cell+3)-3,gap:3}}>
+            {history.map(slot=><View key={slot.key}
+              accessibilityLabel={slot.key+(slot.completed?' : accompli':' : non accompli')}
+              style={{width:cell,height:cell,borderRadius:Math.min(4,cell/3),
+                backgroundColor:hue,opacity:slot.completed?1:.24}}/>)}
           </View>
         </Pressable>;
       })}
-      {!historical ? <Pressable accessibilityRole="button"
-        onPress={()=>{
-          setEditingHabitId(null);setHabitTitle('');setHabitDescription('');
-          setHabitUnit('fois');setHabitTarget('1');setFrequency('daily');
-          setGrowthDialog('habit');
-        }}
-        style={{alignSelf:'flex-end',flexDirection:'row',alignItems:'center',
-          gap:8,padding:12,borderRadius:11,
-          backgroundColor:theme.dark?'#343735':'#F0F0EC'}}>
-        <Ionicons name="add" size={21} color={theme.foreground}/>
-        <Text style={{fontSize:12,fontWeight:'700',color:theme.foreground}}>
-          Ajouter une habitude
-        </Text>
-      </Pressable> : null}
+      {!historical?<Pressable accessibilityRole="button"
+        accessibilityLabel="Ajouter une habitude"
+        onPress={()=>openHabitEditor()}
+        style={{alignSelf:'flex-start',flexDirection:'row',alignItems:'center',
+          gap:6,paddingVertical:8,paddingHorizontal:2}}>
+        <Ionicons name="add-circle-outline" size={19} color={theme.muted}/>
+        <Text style={{fontSize:12,color:theme.muted}}>Ajouter une habitude</Text>
+      </Pressable>:null}
     </View>
     <View style={{marginTop:23,marginBottom:16,
       backgroundColor:theme.dark?'#2C2927':'#FCF9F4',
