@@ -32,8 +32,7 @@ export function habitStreak(habit: DreamHabit, now: Date = new Date()): number {
   return count;
 }
 
-export const habitHistory = (habit: DreamHabit, now: Date = new Date()) => {
-  const total = habit.frequency === 'weekly' ? 12 : 28;
+export const habitHistory = (habit: DreamHabit, now: Date = new Date(), total = habit.frequency === 'weekly' ? 12 : 28) => {
   const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12);
   if (habit.frequency === 'weekly') {
     start.setDate(start.getDate() - ((start.getDay() + 6) % 7));
