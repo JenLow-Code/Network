@@ -20,6 +20,10 @@ export function DreamTalentSquare({
   const [detailsOpen, setDetailsOpen] = useState(false);
   const illustrationSize = Math.min(49, size * 0.49);
   const role = resource.title;
+  // A locally checked talent is not proof of anybody's consent.
+  const verified = resource.category==='person'
+    ? !!resource.serverNeedId && !!resource.confirmed
+    : !!resource.confirmed;
   return (
     <>
       <Pressable
@@ -31,11 +35,11 @@ export function DreamTalentSquare({
           padding: Math.max(5, size * .08),
           alignItems: 'center', justifyContent: 'center',
           gap: Math.max(3, size * .045),
-          backgroundColor: resource.confirmed
+          backgroundColor: verified
             ? (theme.dark ? '#254635' : '#E3F3E7')
             : (theme.dark ? '#2A2B2C' : '#F9F6F2'),
-          borderWidth: resource.confirmed ? 1.5 : 1.6,
-          borderColor: resource.confirmed ? '#318656' : '#D71D77',
+          borderWidth: verified ? 1.5 : 1.6,
+          borderColor: verified ? '#318656' : '#D71D77',
         }}
       >
         {resource.illustration
@@ -76,9 +80,9 @@ export function DreamTalentSquare({
               ) : null}
               {resource.description ? <Text style={{ color: theme.foreground, lineHeight: 23, fontSize: 14, marginBottom: 18 }}>{resource.description}</Text> : null}
               <Text style={{ color: theme.muted, fontSize: 12, lineHeight: 20, marginBottom: 15 }}>
-                {resource.confirmed ? 'Cette ressource est marquée comme confirmée dans la préparation du rêve.' : 'Cette ressource reste à trouver pour faire avancer ce rêve.'}
+                {verified ? 'Cette personne a accepté de rejoindre le rêve.' : 'Ce talent reste à trouver. Seule l’acceptation de la personne invitée le confirmera.'}
               </Text>
-              {onToggle ? (
+              {onToggle && resource.category!=='person' ? (
                 <Pressable onPress={() => { onToggle(); setDetailsOpen(false); }}
                   accessibilityRole="button"
                   style={{ backgroundColor: theme.dark ? '#ECE9E4' : '#242322', padding: 14, borderRadius: 10, marginBottom: 8, alignItems: 'center' }}>
