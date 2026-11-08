@@ -50,6 +50,10 @@ export async function notify(sql: Sql, n: NotifyInput): Promise<void> {
 type Catalog = Record<string, { title: string; body: string }>;
 const FR: Catalog = {
   'dream.offer.received': { title: 'Nouvelle proposition d’aide', body: '{actor} propose son aide pour « {need} » dans {dream}.' },
+  'dream.talent_invitation.received': { title: 'Invitation à rejoindre un rêve', body: '{actor} te propose de participer à « {dream} » comme {need}. Accepter ou refuser ?' },
+  'dream.talent_invitation.accepted': { title: 'Invitation acceptée', body: '{actor} a accepté ta demande pour « {need} » dans {dream}.' },
+  'dream.talent_invitation.declined': { title: 'Invitation refusée', body: '{actor} n’a pas accepté la demande pour « {need} » dans {dream}.' },
+  'dream.talent_invitation.removed': { title: 'Participation retirée', body: 'Tu as été retiré(e) du projet « {dream} » pour le talent « {need} ».' },
   'dream.offer.accepted': { title: 'Ton aide est acceptée', body: 'Ta proposition pour « {need} » dans {dream} a été acceptée.' },
   'dream.offer.declined': { title: 'Proposition non retenue', body: 'Ta proposition pour « {need} » dans {dream} n’a pas été retenue.' },
   'dream.offer.released': { title: 'Participation terminée', body: 'Ta participation à « {need} » dans {dream} a pris fin.' },
@@ -82,6 +86,10 @@ const FR: Catalog = {
 };
 const EN: Catalog = {
   'dream.offer.received': { title: 'New offer of help', body: '{actor} offered help with “{need}” on {dream}.' },
+  'dream.talent_invitation.received': { title: 'Dream invitation', body: '{actor} invited you to join “{dream}” as {need}. Accept or decline?' },
+  'dream.talent_invitation.accepted': { title: 'Invitation accepted', body: '{actor} accepted your invitation for “{need}” on {dream}.' },
+  'dream.talent_invitation.declined': { title: 'Invitation declined', body: '{actor} declined the invitation for “{need}” on {dream}.' },
+  'dream.talent_invitation.removed': { title: 'Removed from the project', body: 'You were removed from the “{dream}” project for the “{need}” talent.' },
   'dream.offer.accepted': { title: 'Your help was accepted', body: 'Your offer for “{need}” on {dream} was accepted.' },
   'dream.offer.declined': { title: 'Offer not selected', body: 'Your offer for “{need}” on {dream} was not selected.' },
   'dream.offer.released': { title: 'Participation ended', body: 'Your participation in “{need}” on {dream} has ended.' },
