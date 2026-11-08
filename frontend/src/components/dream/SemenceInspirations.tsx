@@ -179,7 +179,7 @@ export default function SemenceInspirations({dream,editable}:{dream:DreamEntry;e
   const openReference=()=>{
     if(!draft)return;
     if(draft.kind==='publication-ref'){
-      if(currentPub.item)router.push(publicationPath(currentPub.item) as any);
+      if(currentPub.item?.id===draft.content.trim())router.push(publicationPath(currentPub.item) as any);
     } else if(isRemote(draft.content)){
       void Linking.openURL(draft.content).catch(()=>showError('Impossible d’ouvrir ce lien.'));
     }else if(draft.content.startsWith('data:')&&Platform.OS==='web'&&typeof document!=='undefined'){
@@ -300,11 +300,11 @@ export default function SemenceInspirations({dream,editable}:{dream:DreamEntry;e
                   'Petite légende personnelle (facultative)')}
                 {draft.content.trim()?<View style={{gap:4}}>
                   <Text style={{fontSize:12,color:theme.muted}}>
-                    {currentPub.item?'Publication trouvée : '+currentPub.item.title:
+                    {currentPub.item?.id===draft.content.trim()?'Publication trouvée : '+currentPub.item.title:
                       currentPub.state==='error'?'Publication introuvable pour le moment':
                       'Recherche de la publication…'}
                   </Text>
-                  {currentPub.item?<Pressable onPress={openReference}
+                  {currentPub.item?.id===draft.content.trim()?<Pressable onPress={openReference}
                     accessibilityRole="button" style={{paddingVertical:9}}>
                     <Text style={{fontSize:13,color:palette,fontWeight:'700'}}>
                       Ouvrir la publication
