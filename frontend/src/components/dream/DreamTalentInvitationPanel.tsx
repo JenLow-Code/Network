@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Platform, Pressable, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { api, ApiRequestError } from '@/lib/api/client';
@@ -25,6 +25,8 @@ export function DreamTalentInvitationPanel({
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState('');
   const connected=!!(dreamServerId&&resource.serverNeedId);
+  const verifiedRef=useRef(onVerified);
+  useEffect(()=>{verifiedRef.current=onVerified;},[onVerified]);
   const load=useCallback(async()=>{
     if(!dreamServerId||!resource.serverNeedId)return;
     try{
@@ -32,13 +34,13 @@ export function DreamTalentInvitationPanel({
         '/api/dreams/'+encodeURIComponent(dreamServerId)+'/need-invitations',{auth:'required'});
       const relevant=r.items.filter(item=>item.needId===resource.serverNeedId);
       setOutgoing(relevant);
-      onVerified?.(relevant.some(item=>item.status==='accepted'));
+      verifiedRef.current?.(relevant.some(item=>item.status==='accepted'));
     }catch(e){
       setError(e instanceof ApiRequestError && e.status===401
         ? 'Connecte-toi avec un compte JenLow Network pour gérer les demandes.'
         : 'Impossible de charger les réponses aux invitations.');
     }
-  },[dreamServerId,resource.serverNeedId,onVerified]);
+  },[dreamServerId,resource.serverNeedId]);
   useEffect(()=>{void load();},[load]);
   if(!connected) return <View style={{padding:13,borderRadius:10,borderWidth:1,borderColor:theme.border,
     backgroundColor:theme.background,gap:7}}>
