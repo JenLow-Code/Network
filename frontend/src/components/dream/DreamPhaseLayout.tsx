@@ -39,8 +39,17 @@ export function DreamPhaseHeader({
         <TopActions />
       </View>
 
+      <Text style={{
+        color: theme.foreground, fontFamily: 'serif', fontSize: 33, lineHeight: 41,
+        letterSpacing: -0.5, marginBottom: description ? 10 : 18,
+      }}>{dream.title}</Text>
+      {description ? (
+        <Text style={{ color: theme.muted, fontSize: 14, lineHeight: 22, marginBottom: 20 }}>
+          {description}
+        </Text>
+      ) : null}
       {/* The phase progression is the single botanical header, preceding the dream identity. */}
-      <View style={{ flexDirection: 'row', gap: 6, marginBottom: 24 }}>
+      <View style={{ flexDirection: 'row', gap: 6, marginBottom: 19 }}>
         {DREAM_PHASES.map((item, i) => {
           const reached = i <= DREAM_PHASES.indexOf(dream.phase);
           const selected = item === phase;
@@ -83,15 +92,6 @@ export function DreamPhaseHeader({
           );
         })}
       </View>
-      <Text style={{
-        color: theme.foreground, fontFamily: 'serif', fontSize: 33, lineHeight: 41,
-        letterSpacing: -0.5, marginBottom: description ? 10 : 19,
-      }}>{dream.title}</Text>
-      {description ? (
-        <Text style={{ color: theme.muted, fontSize: 14, lineHeight: 22, marginBottom: 19 }}>
-          {description}
-        </Text>
-      ) : null}
       {readOnly ? (
         <View style={{
           flexDirection:'row',alignItems:'center',gap:7,
