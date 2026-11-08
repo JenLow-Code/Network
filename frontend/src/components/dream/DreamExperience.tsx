@@ -305,7 +305,7 @@ export default function DreamExperience({ dream, viewPhase, onBack, onNavigate }
           ] as const).map(item=>{
             const subset=resources.filter(r=>r.category===item.category);
             if(!subset.length)return null;
-            const found=subset.filter(r=>r.confirmed).length;
+            const found=subset.filter(r=>r.confirmed && (r.category!=='person'||!!r.serverNeedId)).length;
             return <View key={item.category} style={{gap:6}}>
               <View style={{flexDirection:'row',justifyContent:'space-between',gap:8}}>
                 <Text style={{fontSize:12,color:theme.foreground,fontWeight:'600'}}>{item.title}</Text>
