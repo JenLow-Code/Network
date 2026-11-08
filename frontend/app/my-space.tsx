@@ -72,7 +72,15 @@ function DreamListRow({ dream }: { dream: DreamEntry }) {
   const theme = useAppTheme();
   const photo = coverImage(dream);
   return (
-    <Pressable accessibilityRole="button" onPress={() => open(dream)}
+    <Pressable accessibilityRole="button" onPress={() => {
+      if(dream.phase==='Témoignage') { open(dream); return; }
+      if(dream.phase==='Croissance' &&
+        (dream.flowerStartedAt||dream.flowerDraft?.story?.trim()||dream.flowerDraft?.attachments?.length)){
+        router.push({pathname:'/my-dream/flower/[id]',params:{id:dream.id}});
+        return;
+      }
+      router.push({pathname:'/my-dream/[id]',params:{id:dream.id,view:dream.phase}});
+    }}
       style={{ flexDirection: 'row', alignItems: 'center', gap: 13,
         paddingVertical: 12, borderBottomWidth: 1, borderColor: theme.border }}>
       {photo ? <Image source={{ uri: photo }} style={{ width: 61, height: 61, borderRadius: 8 }} /> :
