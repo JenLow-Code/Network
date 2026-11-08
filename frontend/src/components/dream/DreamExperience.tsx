@@ -466,7 +466,7 @@ export default function DreamExperience({
     {/* Une chronologie végétale légère, sans fond de carte ni statut permanent. */}
     <View style={{marginTop:20,marginBottom:16,borderTopWidth:1,
       borderColor:theme.border,paddingTop:21}}>
-      {!historical ? (
+      {growthActive ? (
         <Pressable accessibilityRole="button"
           accessibilityLabel="Ajouter une nouvelle feuille au journal"
           onPress={()=>setGrowthDialog('log')}
@@ -501,7 +501,7 @@ export default function DreamExperience({
               letterSpacing:0.35,color:'#27845B'}}>{log.date}</Text>
             <Text style={{fontFamily:HANDWRITING_FAMILY,fontSize:20,lineHeight:28,
               color:theme.foreground}}>{log.title}</Text>
-            {log.publicationState==='failed'&&!historical ? (
+            {log.publicationState==='failed'&&growthActive ? (
               <Pressable accessibilityRole="button"
                 accessibilityLabel="Réessayer de publier cette entrée"
                 onPress={()=>void publishLog({...log,shareRequested:true})}
@@ -526,7 +526,7 @@ export default function DreamExperience({
         const cell=Math.max(8,Math.min(13,
           Math.floor((Math.min(deviceWidth-94,550)-(columns-1)*3)/columns)));
         const hue=h.color||HABIT_PALETTE[index%HABIT_PALETTE.length];
-        return <Pressable key={h.id} disabled={historical}
+        return <Pressable key={h.id} disabled={!growthActive}
           onLongPress={()=>openHabitEditor(h)}
           accessibilityRole="button" accessibilityLabel={
             h.title+', appui long pour modifier ou supprimer'}
@@ -546,7 +546,7 @@ export default function DreamExperience({
               {h.description?<Text numberOfLines={2}
                 style={{fontSize:11,lineHeight:17,color:theme.muted}}>{h.description}</Text>:null}
             </View>
-            {!historical?<Pressable accessibilityRole="button" onPress={()=>openHabitEditor(h)}
+            {growthActive?<Pressable accessibilityRole="button" onPress={()=>openHabitEditor(h)}
               accessibilityLabel={'Modifier '+h.title}
               style={{padding:9,alignItems:'center',justifyContent:'center'}}>
               <Ionicons name="ellipsis-horizontal" size={19} color={theme.muted}/>
@@ -561,7 +561,7 @@ export default function DreamExperience({
           </View>
         </Pressable>;
       })}
-      {!historical?<Pressable accessibilityRole="button"
+      {growthActive?<Pressable accessibilityRole="button"
         accessibilityLabel="Ajouter une habitude"
         onPress={()=>openHabitEditor()}
         style={{alignSelf:'flex-start',flexDirection:'row',alignItems:'center',
