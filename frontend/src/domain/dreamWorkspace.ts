@@ -50,6 +50,22 @@ export type DreamResource = {
   /** Local intent to request listing in Tools; not a published listing until synced. */
   toolsPublicationRequested?: boolean;
 };
+/** Documents stay with one dream across its phases.
+ * A repeated name adds a revision, never replaces a prior version. */
+export type DreamDocumentVersion = {
+  id: string;
+  uri: string;
+  addedAt: string;
+  name: string;
+  mimeType?: string;
+  size?: number;
+  source: 'file' | 'link';
+};
+export type DreamDocument = {
+  id: string;
+  name: string;
+  versions: DreamDocumentVersion[];
+};
 export type DreamHabit = {
   id: string;
   title: string;
@@ -90,6 +106,8 @@ export type DreamEntry = {
   resultImage?: string;
   visibility?: 'private' | 'public';
   blocks?: DreamBlock[];
+  /** Private, local-first document library, separate from Semence inspiration blocks. */
+  documents?: DreamDocument[];
   resources?: DreamResource[];
   /** Previously confirmed need IDs and categories. Used to spot loss during Croissance. */
   foundNeedHistory?: { id:string; title:string; category:DreamResource['category'] }[];
