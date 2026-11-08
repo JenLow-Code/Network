@@ -450,6 +450,22 @@ export default function DreamExperience({
     {/* Une chronologie végétale légère, sans fond de carte ni statut permanent. */}
     <View style={{marginTop:20,marginBottom:16,borderTopWidth:1,
       borderColor:theme.border,paddingTop:21}}>
+      {!historical ? (
+        <Pressable accessibilityRole="button"
+          accessibilityLabel="Ajouter une nouvelle feuille au journal"
+          onPress={()=>setGrowthDialog('log')}
+          style={{flexDirection:'row',gap:9,minHeight:75}}>
+          <View style={{width:24,alignItems:'center'}}>
+            <Ionicons name="leaf-outline" size={21} color="#27845B" style={{opacity:.42,marginTop:4}}/>
+            <Ionicons name="add" size={13} color="#27845B" style={{marginTop:0,opacity:.70}}/>
+            <View style={{flex:1,marginTop:4,borderLeftWidth:1.5,
+              borderStyle:'dashed',borderColor:'#A5B8A4'}}/>
+          </View>
+          <Text style={{fontSize:12,color:theme.muted,paddingTop:7}}>
+            Ajouter une feuille
+          </Text>
+        </Pressable>
+      ):null}
       {(dream.milestones||[]).length===0 ? (
         <Text style={{fontSize:12,color:theme.muted,lineHeight:19,
           marginBottom:14,paddingLeft:44}}>
@@ -482,33 +498,7 @@ export default function DreamExperience({
           </View>
         </View>
       ))}
-      {!historical ? (
-        <View style={{flexDirection:'row',gap:9,alignItems:'center'}}>
-          <View style={{width:24,alignItems:'center'}}>
-            <View style={{height:24,borderLeftWidth:1.5,borderStyle:'dashed',
-              borderColor:'#A5B8A4'}}/>
-            <Pressable accessibilityRole="button"
-              accessibilityLabel="Ajouter une feuille au journal"
-              onPress={()=>setGrowthDialog('log')}
-              style={{width:35,height:35,borderRadius:18,
-                alignItems:'center',justifyContent:'center',marginTop:2,
-                backgroundColor:theme.dark?'rgba(56,111,71,.13)':'rgba(100,160,105,.09)'}}>
-              <Ionicons name="leaf-outline" size={30} color="#5C9B73"/>
-              <View style={{position:'absolute',top:7,right:3,borderRadius:9,
-                backgroundColor:theme.background,width:15,height:15,
-                alignItems:'center',justifyContent:'center'}}>
-                <Ionicons name="add" size={13} color="#27845B"/>
-              </View>
-            </Pressable>
-          </View>
-          <Pressable accessibilityRole="button" onPress={()=>setGrowthDialog('log')}
-            style={{paddingLeft:3,flex:1,minHeight:52,justifyContent:'center'}}>
-            <Text style={{fontSize:13,color:'#27845B',fontWeight:'600'}}>
-              Ajouter une feuille
-            </Text>
-          </Pressable>
-        </View>
-      ):null}
+
     </View>
     {/* Tableau de constance inspiré d'un raster, sans interaction de cochage ici. */}
     <View style={{marginTop:20,paddingTop:20,borderTopWidth:1,
