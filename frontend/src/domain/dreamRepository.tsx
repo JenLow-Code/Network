@@ -34,7 +34,11 @@ type Repo = {
   remove: (id: string) => void;
 };
 const Context = createContext<Repo | null>(null);
-const initial = dreams.map(fromDemo);
+const initial = dreams.map(fromDemo).map(d =>
+  d.phase === 'Croissance'
+    ? { ...d, foundNeedHistory: rememberFoundNeeds([], d.resources ?? []) }
+    : d
+);
 const KEY_BASE = 'jenlow.network.demo.dream.workspace.v1.';
 export const dreamStorageKey = (email: string) => KEY_BASE + (email || 'guest').toLowerCase();
 export function DreamProvider({ children }: { children: React.ReactNode }) {
@@ -146,7 +150,7 @@ export function DreamProvider({ children }: { children: React.ReactNode }) {
       ? {
         ...d, resources,
         foundNeedHistory: d.phase === 'Croissance'
-          ? rememberFoundNeeds(d.foundNeedHistory, resources)
+          ? rememberFoundNeeds(rememberFoundNeeds(d.foundNeedHistory, d.resources || []), resources)
           : d.foundNeedHistory,
       } : d
   ));
