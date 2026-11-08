@@ -47,12 +47,10 @@ function inspirationIcon(kind:DreamBlock['kind']): keyof typeof Ionicons.glyphMa
   return 'sparkles-outline';
 }
 export default function DreamLibrary(){
-  const {id,tab}=useLocalSearchParams<{id:string;tab?:string}>();
+  const {id}=useLocalSearchParams<{id:string}>();
   const theme=useAppTheme();
   const {items,patch}=useDreams();
   const dream=items.find(d=>d.id===id);
-  const [active,setActive]=useState<'inspirations'|'documents'>(
-    tab==='inspirations'?'inspirations':'documents');
   const [expanded,setExpanded]=useState<string|null>(null);
   const [addingLink,setAddingLink]=useState(false);
   const [linkName,setLinkName]=useState('');
@@ -121,10 +119,6 @@ export default function DreamLibrary(){
       maxWidth:780,width:'100%',alignSelf:'center',minHeight:'100%',
     }}>
       <PageHeader/>
-      <Text style={{fontSize:11,fontWeight:'700',letterSpacing:1.1,
-        color:theme.muted,marginTop:19,marginBottom:5}}>
-        MON RÊVE
-      </Text>
       <Text style={{fontFamily:'serif',fontSize:30,lineHeight:39,
         color:theme.foreground,marginBottom:7}}>
         Inspirations & documents
@@ -132,67 +126,11 @@ export default function DreamLibrary(){
       <Text style={{color:theme.muted,fontSize:12,lineHeight:19,marginBottom:19}}>
         {dream?.title||'Rêve'} · Tes références et fichiers au même endroit.
       </Text>
-      <View style={{flexDirection:'row',borderBottomWidth:1,borderColor:theme.border,marginBottom:18}}>
-        {([
-          {id:'inspirations',label:'Inspirations'},
-          {id:'documents',label:'Documents'},
-        ] as const).map(item=>(
-          <Pressable key={item.id} accessibilityRole="tab"
-            accessibilityState={{selected:active===item.id}}
-            onPress={()=>setActive(item.id)}
-            style={{flex:1,minHeight:44,alignItems:'center',
-              justifyContent:'center',borderBottomWidth:active===item.id?2:0,
-              borderBottomColor:active===item.id?'#27845B':'transparent'}}>
-            <Text style={{fontSize:13,fontWeight:active===item.id?'700':'500',
-              color:active===item.id?theme.foreground:theme.muted}}>
-              {item.label}{item.id==='documents'&&docs.length?' · '+docs.length:''}
-            </Text>
-          </Pressable>
-        ))}
-      </View>
-      {active==='inspirations'?(
+      <Text style={{fontSize:11,color:theme.muted,marginBottom:16,lineHeight:18}}>
+        Une seule bibliothèque pour tes documents et les inspirations de Semence.
+      </Text>
         <View style={{gap:11}}>
-          <Text style={{fontSize:11,color:theme.muted,lineHeight:19,marginBottom:4}}>
-            Les inspirations de Semence sont conservées comme référence.
-            Elles se modifient uniquement dans la Semence lorsqu’elle est active.
-          </Text>
-          {inspirations.length===0?<View style={{paddingVertical:25,alignItems:'center',gap:9}}>
-            <Ionicons name="images-outline" size={29} color={theme.muted}/>
-            <Text style={{color:theme.muted,fontSize:12,textAlign:'center'}}>
-              Aucune inspiration conservée pour ce rêve.
-            </Text>
-          </View>:null}
-          {inspirations.map(block=>{
-            const media=block.media?.[0]||block.content;
-            const visual=['image','gallery'].includes(block.kind)&&/^(data:|https?:|file:)/.test(media);
-            const remote=/^https?:\/\//i.test(block.content);
-            return <Pressable key={block.id}
-              disabled={!remote}
-              onPress={()=>{if(remote)void Linking.openURL(block.content).catch(()=>{});}}
-              style={{padding:13,borderWidth:1,borderColor:theme.border,
-                borderRadius:11,flexDirection:'row',gap:12,alignItems:'center'}}>
-              {visual?<Image source={{uri:media}} resizeMode="cover"
-                style={{width:64,height:64,borderRadius:8}}/>:
-                <View style={{width:46,height:48,alignItems:'center',justifyContent:'center',
-                  backgroundColor:theme.surface,borderRadius:9}}>
-                  <Ionicons name={inspirationIcon(block.kind)} color="#B88962" size={22}/>
-                </View>}
-              <View style={{flex:1,gap:5}}>
-                <Text numberOfLines={2} style={{fontSize:14,
-                  fontWeight:'600',color:theme.foreground}}>
-                  {block.title||block.content.slice(0,100)||'Inspiration'}
-                </Text>
-                {!!block.title&&!!block.content?<Text numberOfLines={2}
-                  style={{fontSize:12,color:theme.muted,lineHeight:18}}>
-                  {block.content.startsWith('data:')?'Média conservé':block.content}
-                </Text>:null}
-              </View>
-              {remote?<Ionicons name="open-outline" size={18} color={theme.muted}/>:null}
-            </Pressable>;
-          })}
-        </View>
-      ):(
-        <View style={{gap:11}}>
+          <Text style={{color:theme.foreground,fontSize:17,fontWeight:'700',marginBottom:5}}>Documents</Text>
           {editable?<View style={{flexDirection:'row',flexWrap:'wrap',gap:9,marginBottom:4}}>
             <Pressable accessibilityRole="button" onPress={importFiles}
               style={{flexDirection:'row',alignItems:'center',gap:7,
@@ -319,7 +257,47 @@ export default function DreamLibrary(){
             Ils ne sont pas encore synchronisés entre tes appareils.
           </Text>
         </View>
-      )}
+        <View style={{gap:11,marginTop:22}}>
+          <Text style={{color:theme.foreground,fontSize:17,fontWeight:'700',marginBottom:4}}>Inspirations</Text>
+          <Text style={{fontSize:11,color:theme.muted,lineHeight:19,marginBottom:4}}>
+            Les inspirations de Semence sont conservées comme référence.
+            Elles se modifient uniquement dans la Semence lorsqu’elle est active.
+          </Text>
+          {inspirations.length===0?<View style={{paddingVertical:25,alignItems:'center',gap:9}}>
+            <Ionicons name="images-outline" size={29} color={theme.muted}/>
+            <Text style={{color:theme.muted,fontSize:12,textAlign:'center'}}>
+              Aucune inspiration conservée pour ce rêve.
+            </Text>
+          </View>:null}
+          {inspirations.map(block=>{
+            const media=block.media?.[0]||block.content;
+            const visual=['image','gallery'].includes(block.kind)&&/^(data:|https?:|file:)/.test(media);
+            const remote=/^https?:\/\//i.test(block.content);
+            return <Pressable key={block.id}
+              disabled={!remote}
+              onPress={()=>{if(remote)void Linking.openURL(block.content).catch(()=>{});}}
+              style={{padding:13,borderWidth:1,borderColor:theme.border,
+                borderRadius:11,flexDirection:'row',gap:12,alignItems:'center'}}>
+              {visual?<Image source={{uri:media}} resizeMode="cover"
+                style={{width:64,height:64,borderRadius:8}}/>:
+                <View style={{width:46,height:48,alignItems:'center',justifyContent:'center',
+                  backgroundColor:theme.surface,borderRadius:9}}>
+                  <Ionicons name={inspirationIcon(block.kind)} color="#B88962" size={22}/>
+                </View>}
+              <View style={{flex:1,gap:5}}>
+                <Text numberOfLines={2} style={{fontSize:14,
+                  fontWeight:'600',color:theme.foreground}}>
+                  {block.title||block.content.slice(0,100)||'Inspiration'}
+                </Text>
+                {!!block.title&&!!block.content?<Text numberOfLines={2}
+                  style={{fontSize:12,color:theme.muted,lineHeight:18}}>
+                  {block.content.startsWith('data:')?'Média conservé':block.content}
+                </Text>:null}
+              </View>
+              {remote?<Ionicons name="open-outline" size={18} color={theme.muted}/>:null}
+            </Pressable>;
+          })}
+        </View>
     </ScrollView>
     <Nav/>
   </SafeAreaView>;
