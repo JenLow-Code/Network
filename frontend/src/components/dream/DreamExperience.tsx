@@ -85,6 +85,7 @@ export default function DreamExperience({
  const [recoveryDialog,setRecoveryDialog]=useState(false);
  const [reportLostDialog,setReportLostDialog]=useState(false);
  const [habitTitle, setHabitTitle] = useState('');
+ const [habitRasterWidth,setHabitRasterWidth]=useState<number|null>(null);
  const [habitEmoji,setHabitEmoji]=useState('🌱');
  const [habitColor,setHabitColor]=useState(HABIT_PALETTE[0]);
  const [habitDescription,setHabitDescription]=useState('');
@@ -523,15 +524,20 @@ export default function DreamExperience({
       ))}
 
     </View>
-    <View style={{marginTop:21,marginBottom:13,gap:17}}>
+    <View style={{marginTop:21,marginBottom:13,gap:17,width:'100%'}}
+      onLayout={e=>{
+        const next=e.nativeEvent.layout.width;
+        if(next>0 && Math.abs(next-(habitRasterWidth||0))>1)setHabitRasterWidth(next);
+      }}>
       <Text style={{fontSize:13,color:theme.muted,lineHeight:20}}>
         Fais grandir une habitude pour réaliser ton rêve.
       </Text>
       {habits.map((h,index)=>{
-        const columns=deviceWidth<480?22:28;
+        const available=Math.max(180,habitRasterWidth||Math.min(deviceWidth-38,722));
+        const gap=3;
+        const columns=Math.max(12,Math.floor((available+gap)/14));
         const history=habitHistory(h,new Date(),columns*6);
-        const cell=Math.max(8,Math.min(13,
-          Math.floor((Math.min(deviceWidth-94,550)-(columns-1)*3)/columns)));
+        const cell=Math.max(7,(available-(columns-1)*gap)/columns-0.07);
         const hue=h.color||HABIT_PALETTE[index%HABIT_PALETTE.length];
         return <Pressable key={h.id} disabled={!growthActive}
           onLongPress={()=>openHabitEditor(h)}
@@ -550,8 +556,14 @@ export default function DreamExperience({
                 {h.frequency==='daily'?'Chaque jour':'Chaque semaine'}
                 {' · '+(h.target||1)+' '+(h.unit||'fois')}
               </Text>
-              {h.description?<Text numberOfLines={2}
-                style={{fontSize:11,lineHeight:17,color:theme.muted}}>{h.description}</Text>:null}
+              <Pressable accessibilityRole="link"
+                accessibilityLabel={'Voir '+h.title+' dans le calendrier'}
+                onPress={()=>router.push('/agenda')}
+                style={{alignSelf:'flex-start',paddingVertical:3}}>
+                <Text style={{fontSize:11,fontWeight:'700',color:hue}}>
+                  Voir dans le calendrier
+                </Text>
+              </Pressable>
             </View>
             {growthActive?<Pressable accessibilityRole="button" onPress={()=>openHabitEditor(h)}
               accessibilityLabel={'Modifier '+h.title}
@@ -560,7 +572,7 @@ export default function DreamExperience({
             </Pressable>:null}
           </View>
           <View style={{flexDirection:'row',flexWrap:'wrap',
-            width:columns*(cell+3)-3,gap:3}}>
+            width:'100%',gap}}>
             {history.map(slot=><View key={slot.key}
               accessibilityLabel={slot.key+(slot.completed?' : accompli':' : non accompli')}
               style={{width:cell,height:cell,borderRadius:Math.min(4,cell/3),
