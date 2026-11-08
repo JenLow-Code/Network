@@ -169,6 +169,30 @@ export default function DreamExperience({
      setGrowthLogPublication(dream.id,log.id,'failed');
    }
  };
+ const saveHabit=()=>{
+   if(!habitTitle.trim())return;
+   const target=Number(habitTarget.replace(',','.'));
+   if(!Number.isFinite(target)||target<=0||target>100000){
+     Alert.alert('Mesure invalide','Indique un objectif supérieur à zéro.');return;
+   }
+   if(!habitUnit.trim()){
+     Alert.alert('Unité requise','Choisis une unité de mesure.');return;
+   }
+   const existing=habits.find(h=>h.id===editingHabitId);
+   const entry:DreamHabit={
+     id:existing?.id||uid(),
+     title:habitTitle.trim().slice(0,120),
+     description:habitDescription.trim().slice(0,500),
+     frequency,completed:existing?.completed||[],
+     measurements:existing?.measurements,
+     target,unit:habitUnit.trim().slice(0,35),
+   };
+   setHabits(dream.id,existing
+     ? habits.map(h=>h.id===existing.id?entry:h)
+     : [...habits,entry]);
+   setEditingHabitId(null);
+   setGrowthDialog(null);
+ };
  const saveLog=()=>{
    if(!milestone.trim())return;
    const log:DreamMilestone={
@@ -671,34 +695,86 @@ export default function DreamExperience({
    <View style={{flex:1,backgroundColor:'rgba(0,0,0,.54)',justifyContent:'center',padding:18}}>
      <Pressable style={{position:'absolute',top:0,left:0,bottom:0,right:0}}
        onPress={()=>setGrowthDialog(null)}/>
-     <View style={{backgroundColor:theme.surface,borderRadius:15,padding:21,
-       maxWidth:440,width:'100%',alignSelf:'center',gap:13}}>
+     <ScrollView keyboardShouldPersistTaps="handled"
+       style={{backgroundColor:theme.surface,borderRadius:15,
+         maxHeight:'84%',maxWidth:440,width:'100%',alignSelf:'center'}}
+       contentContainerStyle={{padding:21,gap:13}}>
        <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
          <Text style={{color:theme.foreground,fontSize:20,fontWeight:'700'}}>
-           {growthDialog==='habit'?'Nouvelle habitude':'Nouvelle feuille'}
+           {growthDialog==='habit'
+             ? editingHabitId?'Modifier l’habitude':'Nouvelle habitude'
+             : 'Nouvelle feuille'}
          </Text>
          <Pressable accessibilityLabel="Fermer" onPress={()=>setGrowthDialog(null)}>
            <Ionicons name="close-outline" color={theme.foreground} size={23}/>
          </Pressable>
        </View>
        {growthDialog==='habit'?<>
-         <Field label="Ce que je veux pratiquer" value={habitTitle}
-           onChange={setHabitTitle} placeholder="Ex. Répéter 20 minutes"/>
+         <Field label="Nom de l’habitude" value={habitTitle}
+           onChange={setHabitTitle} placeholder="Ex. Apprendre la guitare"/>
+         <Field label="Description (facultative)" value={habitDescription}
+           onChange={setHabitDescription} multiline
+           placeholder="Pourquoi, quand et comment pratiquer cette habitude…"/>
+         <Text style={{fontSize:12,fontWeight:'700',color:theme.foreground}}>
+           Fréquence
+         </Text>
          <View style={{flexDirection:'row',gap:8}}>
            {(['daily','weekly'] as const).map(f=><Pressable key={f}
              onPress={()=>setFrequency(f)}
+             accessibilityRole="button" accessibilityState={{selected:frequency===f}}
              style={{flex:1,padding:12,borderRadius:10,alignItems:'center',
-               borderWidth:1,borderColor:frequency===f?'#27845B':theme.border}}>
+               borderWidth:1.5,borderColor:frequency===f?'#27845B':theme.border,
+               backgroundColor:frequency===f?(theme.dark?'#304438':'#EDF4EB'):'transparent'}}>
              <Text style={{color:theme.foreground,fontSize:12,fontWeight:'600'}}>
-               {f==='daily'?'Quotidienne':'Hebdomadaire'}
+               {f==='daily'?'Chaque jour':'Chaque semaine'}
              </Text>
            </Pressable>)}
          </View>
-         <Action label="Créer l’habitude" onPress={()=>{
-           if(!habitTitle.trim())return;
-           setHabits(dream.id,[...habits,{id:uid(),title:habitTitle.trim(),frequency,completed:[]}]);
-           setHabitTitle('');setGrowthDialog(null);
-         }}/>
+         <Text style={{fontSize:12,fontWeight:'700',color:theme.foreground}}>
+           Comment mesurer la réussite ?
+         </Text>
+         <View style={{flexDirection:'row',gap:9,alignItems:'center'}}>
+           <TextInput value={habitTarget} onChangeText={setHabitTarget}
+             keyboardType="decimal-pad" accessibilityLabel="Objectif mesuré"
+             placeholder="1" placeholderTextColor={theme.muted}
+             style={{width:95,borderWidth:1,borderColor:theme.border,borderRadius:10,
+               padding:12,color:theme.foreground,fontSize:15}}/>
+           <TextInput value={habitUnit} onChangeText={setHabitUnit}
+             accessibilityLabel="Unité de l’objectif" maxLength={35}
+             placeholder="fois, minutes…" placeholderTextColor={theme.muted}
+             style={{flex:1,borderWidth:1,borderColor:theme.border,borderRadius:10,
+               padding:12,color:theme.foreground,fontSize:14}}/>
+         </View>
+         <View style={{flexDirection:'row',flexWrap:'wrap',gap:7}}>
+           {['fois','minutes','heures','pages','km','séances'].map(unit=>
+             <Pressable key={unit} onPress={()=>setHabitUnit(unit)}
+               accessibilityRole="button" accessibilityState={{selected:habitUnit===unit}}
+               style={{borderWidth:1,borderColor:habitUnit===unit?'#27845B':theme.border,
+                 borderRadius:9,paddingHorizontal:11,paddingVertical:8}}>
+               <Text style={{fontSize:11,color:habitUnit===unit?'#27845B':theme.muted,
+                 fontWeight:habitUnit===unit?'700':'500'}}>{unit}</Text>
+             </Pressable>)}
+         </View>
+         <Text style={{fontSize:11,color:theme.muted,lineHeight:18}}>
+           Les réalisations se renseignent dans Mon agenda.
+           Appui long sur une carte pour modifier ou supprimer l’habitude.
+         </Text>
+         <Action label={editingHabitId?'Enregistrer les modifications':'Créer l’habitude'}
+           onPress={saveHabit}/>
+         {editingHabitId ? <Pressable accessibilityRole="button"
+           onPress={()=>{
+             const id=editingHabitId;
+             confirm('Supprimer cette habitude ?',
+               'Le suivi et l’historique de cette habitude seront retirés du rêve.',()=>{
+                 setHabits(dream.id,habits.filter(h=>h.id!==id));
+                 setGrowthDialog(null);setEditingHabitId(null);
+               });
+           }}
+           style={{alignSelf:'center',padding:11}}>
+           <Text style={{color:'#B55164',fontSize:12,fontWeight:'700'}}>
+             Supprimer cette habitude
+           </Text>
+         </Pressable> : null}
        </>:growthDialog==='log'?<>
          <TextInput value={milestone} onChangeText={setMilestone}
            accessibilityLabel="Écrire une feuille du journal"
@@ -715,7 +791,7 @@ export default function DreamExperience({
          </Text>
          <Action label="Ajouter et publier cette feuille" onPress={saveLog}/>
        </>:null}
-     </View>
+     </ScrollView>
    </View>
  </Modal>
  <Modal transparent visible={reportLostDialog} animationType="fade"
