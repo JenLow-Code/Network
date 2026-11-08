@@ -386,9 +386,8 @@ export default function DreamExperience({
   {phase==='Croissance' ? <>
     {(resources.length>0 || !!dream.goalDate) ? (
       <View style={{
-        borderWidth:missingResources.length?1.4:1,
-        borderColor:missingResources.length?'#D71D77':theme.border,
-        borderRadius:12,backgroundColor:theme.surface,
+        borderRadius:12,
+        backgroundColor:theme.dark?'#432D38':'#FCECF4',
         overflow:'hidden',marginTop:10,marginBottom:15,
       }}>
         <Pressable accessibilityRole="button"
@@ -408,40 +407,49 @@ export default function DreamExperience({
           )}
           <View style={{flex:1,gap:4}}>
             <Text style={{fontSize:12,fontWeight:'700',
-              color:missingResources.length?'#D71D77':theme.foreground}}>
+              color:theme.foreground}}>
               {missingResources.length
                 ? `${missingResources.length} besoin${missingResources.length>1?'s':''} à compléter`
                 : 'Depuis la Germination'}
             </Text>
-            <Text style={{fontSize:11,color:theme.muted}}>
+            <Text style={{fontSize:11,color:theme.foreground,opacity:.7}}>
               {dream.goalDate?'Objectif · '+dream.goalDate:'Préparatifs et besoins'}
             </Text>
           </View>
           {missingResources.length ? (
-            <Text style={{color:'#D71D77',fontSize:11,fontWeight:'700'}}>Gérer</Text>
+            <Text style={{color:theme.foreground,fontSize:11,fontWeight:'700'}}>Gérer</Text>
           ) : <Ionicons name={recapExpanded?'chevron-up':'chevron-down'}
             color={theme.muted} size={18}/>}
         </Pressable>
-        {recapExpanded?<View style={{paddingHorizontal:15,paddingBottom:14,gap:9,
-          borderTopWidth:1,borderColor:theme.border,paddingTop:12}}>
+        {recapExpanded?<View style={{paddingHorizontal:15,paddingBottom:14,gap:11,
+          paddingTop:12}}>
           {([
-            {category:'person',title:'Talents'},
-            {category:'practical',title:'Ressources'},
-            {category:'financial',title:'Financement'},
+            {category:'person',title:'Talents',color:'#D71D77',track:'#F5C5DA'},
+            {category:'practical',title:'Ressources',color:'#397F9E',track:'#D2E6ED'},
+            {category:'financial',title:'Financement',color:'#A1BA44',track:'#E4ECC4'},
           ] as const).map(item=>{
-            const unfilled=missingResources.filter(need=>need.category===item.category);
+            const subset=resources.filter(need=>need.category===item.category);
+            const unfilled=subset.filter(need=>!isNeedFound(need));
             if(!unfilled.length)return null;
+            const foundCount=subset.length-unfilled.length;
             return <Pressable key={item.category} accessibilityRole="button"
               accessibilityLabel={'Gérer '+item.title.toLowerCase()+' manquants'}
               onPress={()=>onRecoverResource?.(item.category)}
-              style={{flexDirection:'row',flexWrap:'wrap',gap:5,alignItems:'flex-start',paddingVertical:3}}>
-              <Text style={{fontSize:12,color:'#D71D77',fontWeight:'700'}}>
-                {item.title} ·
-              </Text>
-              <Text style={{fontSize:12,color:theme.foreground,
-                flex:1,lineHeight:18}}>
-                {unfilled.map(need=>need.title).join(', ')} à trouver
-              </Text>
+              style={{gap:7,paddingVertical:2}}>
+              <View style={{flexDirection:'row',flexWrap:'wrap',alignItems:'baseline',gap:5}}>
+                <Text style={{fontSize:12,fontWeight:'700',color:item.color}}>
+                  {item.title} ·
+                </Text>
+                <Text style={{fontSize:12,lineHeight:18,
+                  color:theme.foreground,flexShrink:1}}>
+                  {unfilled.map(need=>need.title).join(', ')} à trouver
+                </Text>
+              </View>
+              <View style={{height:4,borderRadius:3,overflow:'hidden',
+                backgroundColor:theme.dark?theme.border:item.track}}>
+                <View style={{height:'100%',width:(foundCount/subset.length*100)+'%',
+                  backgroundColor:item.color,borderRadius:3}}/>
+              </View>
             </Pressable>;
           })}
           {missingResources.length===0 ? (
@@ -464,8 +472,7 @@ export default function DreamExperience({
       </View>
     ):null}
     {/* Une chronologie végétale légère, sans fond de carte ni statut permanent. */}
-    <View style={{marginTop:20,marginBottom:16,borderTopWidth:1,
-      borderColor:theme.border,paddingTop:21}}>
+    <View style={{marginTop:18,marginBottom:16,paddingTop:0}}>
       {growthActive ? (
         <Pressable accessibilityRole="button"
           accessibilityLabel="Ajouter une nouvelle feuille au journal"
@@ -494,7 +501,7 @@ export default function DreamExperience({
             <Ionicons name="leaf-outline" size={21} color="#27845B"
               style={{marginTop:4}}/>
             <View style={{flex:1,marginTop:9,marginBottom:0,
-              borderLeftWidth:1.5,borderStyle:'dashed',borderColor:'#A5B8A4'}}/>
+              borderLeftWidth:1.5,borderStyle:'solid',borderColor:'#A5B8A4'}}/>
           </View>
           <View style={{flex:1,paddingLeft:0,paddingBottom:24,gap:7}}>
             <Text style={{fontSize:11,fontWeight:'700',
@@ -573,20 +580,14 @@ export default function DreamExperience({
     <Pressable accessibilityRole="button"
       accessibilityLabel="Ouvrir mes notes personnelles privées"
       onPress={()=>router.push({pathname:'/my-dream/notes/[id]',params:{id:dream.id}})}
-      style={{marginTop:22,marginBottom:16,minHeight:49,
-        flexDirection:'row',alignItems:'center',justifyContent:'space-between',gap:12,
-        paddingHorizontal:4}}>
-      <View style={{flexDirection:'row',alignItems:'center',gap:9}}>
-        <Ionicons name="book-outline" size={18} color={theme.muted}/>
-        <Text style={{fontSize:13,fontWeight:'600',color:theme.foreground}}>
-          Mes notes personnelles
-        </Text>
-        <Ionicons name="lock-closed-outline" size={13} color={theme.muted}/>
-      </View>
-      <View style={{flexDirection:'row',alignItems:'center',gap:4}}>
-        <Text style={{fontSize:12,color:theme.muted}}>Ouvrir</Text>
-        <Ionicons name="arrow-forward" size={17} color={theme.muted}/>
-      </View>
+      style={{marginTop:19,marginBottom:15,minHeight:46,
+        flexDirection:'row',alignItems:'center',justifyContent:'flex-end',
+        gap:6,paddingHorizontal:3}}>
+      <Ionicons name="lock-closed-outline" size={13} color="#27845B"/>
+      <Text style={{fontSize:13,fontWeight:'600',color:'#27845B'}}>
+        Ouvrir mes notes personnelles
+      </Text>
+      <Ionicons name="arrow-forward" size={17} color="#27845B"/>
     </Pressable>
     {!historical?<View style={{gap:11,marginTop:11,marginBottom:22}}>
       {frozen ? (
