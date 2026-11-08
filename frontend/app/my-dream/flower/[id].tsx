@@ -39,7 +39,9 @@ export default function FlowerPreparation() {
   const publish = () => {
     const finalPhoto = draft.attachments.find(item => item.kind === 'photo');
     if (!draft.story.trim() || !finalPhoto) {
-      Alert.alert('Floraison', 'Pour publier, ajoute au moins une photographie et raconte ton histoire.');
+      const message='Pour publier, ajoute au moins une photographie et raconte ton histoire.';
+      if(Platform.OS==='web' && typeof window!=='undefined') window.alert(message);
+      else Alert.alert('Floraison',message);
       return;
     }
     complete(
@@ -86,7 +88,7 @@ export default function FlowerPreparation() {
               </Pressable>
             </View>
           ))}
-          <Text style={{ fontSize: 12, lineHeight: 19, color: theme.muted, marginTop: 8 }}>Une photographie est nécessaire pour la couverture Discovery. Les médias sont encore conservés localement sur cet appareil (2 Mo maximum par fichier).</Text>
+          <Text style={{ fontSize: 12, lineHeight: 19, color: theme.muted, marginTop: 8 }}>Les médias sont actuellement conservés sur cet appareil (2 Mo maximum par fichier).</Text>
         </DreamPhaseSection>
 
         <DreamPhaseSection title="La floraison" subtitle="Tu peux revenir sur ton histoire, la publier ou abandonner ce rêve.">
