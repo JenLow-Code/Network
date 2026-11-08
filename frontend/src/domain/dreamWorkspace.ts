@@ -36,6 +36,8 @@ export type DreamBlock = {
 };
 export type DreamResource = {
   id: string;
+  /** ID of a real server-side need; undefined for local demo dreams. */
+  serverNeedId?: string;
   title: string;
   category: 'person' | 'practical' | 'financial';
   confirmed: boolean;
@@ -59,6 +61,8 @@ export type DreamThought = { id: string; text: string; date: string };
 export type DreamChatMessage = { id: string; text: string; createdAt: string };
 export type DreamEntry = {
   id: string;
+  /** ID of a synchronized server dream; undefined for local workspaces. */
+  serverDreamId?: string;
   title: string;
   phase: DreamPhase;
   /** Accepted co-owner names only; never display raw account IDs as names. */
