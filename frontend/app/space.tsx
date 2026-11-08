@@ -108,6 +108,16 @@ export default function Space() {
             <Text style={{ fontSize: 30, fontWeight: '700', color: '#101010' }}>{t('space')}</Text>
             
           </View>
+          <Pressable accessibilityRole="button" onPress={()=>router.push('/talent-invitations')}
+            style={{marginHorizontal:16,marginBottom:16,borderRadius:11,borderWidth:1,borderColor:'#D9DFD8',
+              padding:14,flexDirection:'row',alignItems:'center',gap:11,backgroundColor:'#F4F7F2'}}>
+            <Ionicons name="people-outline" size={21} color="#27845B"/>
+            <View style={{flex:1,gap:3}}>
+              <Text style={{fontSize:13,color:'#242322',fontWeight:'700'}}>Invitations de talents</Text>
+              <Text style={{fontSize:11,color:'#747975'}}>Accepter ou refuser une invitation à participer à un rêve</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color="#748477"/>
+          </Pressable>
           <View style={{ flexDirection: 'row', gap: 6, marginHorizontal: 15, marginBottom: 20 }}>
             {(['All', 'Chats', 'Collabs', 'Lessons'] as Kind[]).map(t => (
               <Pill key={t} text={t} active={tab === t} onPress={() => setTab(t)} />
