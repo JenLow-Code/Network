@@ -26,6 +26,7 @@ export default function SemenceNotes({dream,editable}:{dream:DreamEntry;editable
   const [selectedId,setSelectedId]=useState<string|null>(null);
   const [typesOpen,setTypesOpen]=useState(false);
   const [colorsOpen,setColorsOpen]=useState(false);
+  const [readOnlyExpanded,setReadOnlyExpanded]=useState<Record<string,boolean>>({});
   // Read legacy notebooks without erasing their saved content.
   const legacy: DreamNoteBlock[] = [
     ...(dream.privateDiary?.trim()?[{id:'legacy-diary',type:'text' as const,text:dream.privateDiary}]:[]),
@@ -146,6 +147,7 @@ export default function SemenceNotes({dream,editable}:{dream:DreamEntry;editable
         <Text style={{fontSize:13,color:theme.muted,paddingVertical:20}}>Aucune note pour le moment.</Text>
       ):items.map((b,index)=>{
         const ink=b.color&&b.color!=='default'?accent[b.color]:theme.foreground;
+        const collapsed=editable?!!b.collapsed:(readOnlyExpanded[b.id]??!!b.collapsed);
         const fontSize=b.type==='heading'?24:b.type==='quote'?19:16;
         const style={color:ink,fontSize,lineHeight:fontSize*1.45,
           fontWeight:(b.bold||b.type==='heading'?'700':'400') as '700'|'400',
@@ -178,15 +180,16 @@ export default function SemenceNotes({dream,editable}:{dream:DreamEntry;editable
               color={b.checked?'#3C795E':theme.muted}/>
           </Pressable>:null}
           {b.type==='toggle'?<Pressable accessibilityRole="button"
-            accessibilityLabel={b.collapsed?'Déplier':'Replier'}
-            onPress={()=>modify(b.id,{collapsed:!b.collapsed})}
+            accessibilityLabel={collapsed?'Déplier':'Replier'}
+            onPress={()=>editable?modify(b.id,{collapsed:!collapsed}):
+              setReadOnlyExpanded(previous=>({...previous,[b.id]:!collapsed}))}
             style={{padding:2,marginTop:2}}>
-            <Ionicons name={b.collapsed?'chevron-forward':'chevron-down'} size={20} color={theme.muted}/>
+            <Ionicons name={collapsed?'chevron-forward':'chevron-down'} size={20} color={theme.muted}/>
           </Pressable>:null}
           <View style={{flex:1,gap:5}}>
             {b.type==='toggle'?<>
               {textField(b.title||'',title=>modify(b.id,{title}), 'Titre de la section',false)}
-              {!b.collapsed?textField(b.text,text=>modify(b.id,{text}),'Écris le contenu de cette section…'):null}
+              {!collapsed?textField(b.text,text=>modify(b.id,{text}),'Écris le contenu de cette section…'):null}
             </>:textField(b.text,text=>modify(b.id,{text}),
               b.type==='heading'?'Écris ton titre…':
               b.type==='quote'?'Écris une citation…':
