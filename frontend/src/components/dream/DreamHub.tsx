@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Image, PanResponder, Modal, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import type { DreamEntry, DreamResource } from '@/domain/dreamWorkspace';
 import type { DreamPhase } from '@/domain/publication';
 import { PHASE_LABELS } from '@/domain/publication';
@@ -192,9 +192,13 @@ export default function DreamHub({ dream, startInSemence = false, startPhase }: 
     sheet.setValue({ x: 0, y: 0 });
   }, [dream.phase]);
 
-  // Reconcile owner-facing talent slots against accepted server invitations.
-  // Never trust a locally toggled “found” flag for a person.
-  useEffect(()=>{
+  // Refresh accepted talent participants whenever the dream screen regains focus,
+  // including a return from Notifications. Only real server responses can confirm them.
+  const resourcesRef = useRef(dream.resources || []);
+  const setResourcesRef = useRef(setResources);
+  resourcesRef.current = dream.resources || [];
+  setResourcesRef.current = setResources;
+  useFocusEffect(useCallback(()=>{
     if(!dream.serverDreamId || dream.phase==='Témoignage')return;
     let live=true;
     void api<{items:{needId:string;status:string}[]}>(
@@ -202,18 +206,19 @@ export default function DreamHub({ dream, startInSemence = false, startPhase }: 
       {auth:'required'},
     ).then(({items})=>{
       if(!live)return;
-      const existing=dream.resources||[];
+      const existing=resourcesRef.current;
       const next=existing.map(r=>{
         if(r.category!=='person'||!r.serverNeedId)return r;
         const accepted=items.some(inv=>inv.needId===r.serverNeedId&&inv.status==='accepted');
-        return {...r,confirmed:accepted};
+        return r.confirmed===accepted?r:{...r,confirmed:accepted};
       });
-      if(next.some((r,i)=>r.confirmed!==existing[i]?.confirmed)){
-        setResources(dream.id,next);
+      if(next.some((r,i)=>r!==existing[i])){
+        setResourcesRef.current(dream.id,next);
       }
-    }).catch(()=>{ /* Offline or unauthenticated: do not invent any acceptance. */ });
+    }).catch(()=>{ /* Missing auth or offline: never guess a participant's acceptance. */ });
     return()=>{live=false;};
-  },[dream.id,dream.serverDreamId,dream.phase]);
+  },[dream.id,dream.serverDreamId,dream.phase]));
+
   const resources: DreamResource[] = dream.resources || (dream.needs || []).map((title, index) => ({
     id: 'legacy-' + index,
     title,
