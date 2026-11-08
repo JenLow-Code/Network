@@ -12,7 +12,7 @@ export type DreamBlockKind =
   | 'image' | 'gallery' | 'audio' | 'music' | 'video'
   | 'document' | 'pdf' | 'bookmark' | 'link' | 'embed'
   | 'code' | 'equation' | 'table' | 'toc' | 'date'
-  | 'columns' | 'collection';
+  | 'columns' | 'collection' | 'bible-verse' | 'publication-ref';
 export type DreamBlock = {
   id: string;
   kind: DreamBlockKind;
@@ -33,6 +33,18 @@ export type DreamBlock = {
   media?: string[];
   checked?: boolean;
   // Text and styling are stored locally in the dream; no external page is created.
+};
+/** Private, structured notebook. Formatting belongs to each text block. */
+export type DreamNoteBlock = {
+  id: string;
+  type: 'text' | 'heading' | 'bullet' | 'numbered' | 'checklist' | 'toggle' | 'quote';
+  text: string;
+  title?: string;
+  bold?: boolean;
+  italic?: boolean;
+  color?: 'default' | 'pink' | 'blue' | 'green' | 'sand';
+  checked?: boolean;
+  collapsed?: boolean;
 };
 export type DreamResource = {
   id: string;
@@ -118,6 +130,9 @@ export type DreamEntry = {
   thoughts?: DreamThought[];
   /** Owner-only freeform diary, stored in the private local Dream workspace. */
   privateDiary?: string;
+  /** Owner-only notebook title and rich text blocks, retained across phases. */
+  privateNotesTitle?: string;
+  privateNotesBlocks?: DreamNoteBlock[];
 
   growthStartedAt?: string;
   chat?: { id: string; messages: DreamChatMessage[] };
