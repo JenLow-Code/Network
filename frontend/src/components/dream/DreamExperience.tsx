@@ -406,50 +406,44 @@ export default function DreamExperience({
           ) : <Ionicons name={recapExpanded?'chevron-up':'chevron-down'}
             color={theme.muted} size={18}/>}
         </Pressable>
-        {recapExpanded?<View style={{paddingHorizontal:15,paddingBottom:15,gap:13,
-          borderTopWidth:1,borderColor:theme.border,paddingTop:13}}>
+        {recapExpanded?<View style={{paddingHorizontal:15,paddingBottom:14,gap:9,
+          borderTopWidth:1,borderColor:theme.border,paddingTop:12}}>
           {([
-            {category:'person',title:'Talents',color:'#D71D77'},
-            {category:'practical',title:'Ressources',color:'#397F9E'},
-            {category:'financial',title:'Financement',color:'#A1BA44'},
+            {category:'person',title:'Talents'},
+            {category:'practical',title:'Ressources'},
+            {category:'financial',title:'Financement'},
           ] as const).map(item=>{
-            const subset=resources.filter(r=>r.category===item.category);
-            if(!subset.length)return null;
-            const found=subset.filter(r=>r.confirmed&&(r.category!=='person'||!!r.serverNeedId)).length;
             const unfilled=missingResources.filter(need=>need.category===item.category);
-            return <View key={item.category} style={{gap:6}}>
-              <View style={{flexDirection:'row',justifyContent:'space-between',gap:8}}>
-                <Text style={{fontSize:12,color:unfilled.length?'#D71D77':theme.foreground,
-                  fontWeight:'600'}}>{item.title}
-                  {unfilled.length ? ' · à compléter' : ''}
-                </Text>
-                <Text style={{fontSize:11,color:theme.muted}}>{found}/{subset.length} trouvés</Text>
-              </View>
-              <View style={{height:4,borderRadius:3,
-                backgroundColor:theme.border,overflow:'hidden'}}>
-                <View style={{height:4,width:(found/subset.length*100)+'%',
-                  backgroundColor:item.color,borderRadius:3}}/>
-              </View>
-            </View>;
+            if(!unfilled.length)return null;
+            return <Pressable key={item.category} accessibilityRole="button"
+              accessibilityLabel={'Gérer '+item.title.toLowerCase()+' manquants'}
+              onPress={()=>onRecoverResource?.(item.category)}
+              style={{flexDirection:'row',flexWrap:'wrap',gap:5,alignItems:'flex-start',paddingVertical:3}}>
+              <Text style={{fontSize:12,color:'#D71D77',fontWeight:'700'}}>
+                {item.title} ·
+              </Text>
+              <Text style={{fontSize:12,color:theme.foreground,
+                flex:1,lineHeight:18}}>
+                {unfilled.map(need=>need.title).join(', ')} à trouver
+              </Text>
+            </Pressable>;
           })}
-          {missingResources.length ? (
-            <Text style={{fontSize:11,color:'#D71D77',lineHeight:18}}>
-              {missingResources.map(need=>need.title).join(' · ')}
+          {missingResources.length===0 ? (
+            <Text style={{fontSize:12,color:theme.muted}}>
+              Tous les besoins de Germination sont remplis.
             </Text>
-          ) : null}
+          ):null}
           {dream.phase==='Croissance' && !historical &&
-             resources.some(resource=>isNeedFound(resource)) ? (
+            resources.some(resource=>isNeedFound(resource)) ? (
             <Pressable accessibilityRole="button"
               onPress={()=>setReportLostDialog(true)}
-              style={{alignSelf:'flex-start',paddingVertical:8,
-                flexDirection:'row',alignItems:'center',gap:7}}>
-              <Ionicons name="help-circle-outline" size={16} color={theme.muted}/>
-              <Text style={{fontSize:11,color:theme.muted,fontWeight:'600'}}>
+              style={{alignSelf:'flex-start',paddingTop:7,flexDirection:'row',alignItems:'center',gap:6}}>
+              <Ionicons name="help-circle-outline" size={15} color={theme.muted}/>
+              <Text style={{fontSize:11,color:theme.muted}}>
                 Une ressource n’est plus disponible ?
               </Text>
             </Pressable>
-          ) : null}
-
+          ):null}
         </View>:null}
       </View>
     ):null}
