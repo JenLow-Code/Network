@@ -39,7 +39,7 @@ export default function FlowerPreparation() {
   const publish = () => {
     const finalPhoto = draft.attachments.find(item => item.kind === 'photo');
     if (!draft.story.trim() || !finalPhoto) {
-      Alert.alert('Floraison', 'Une histoire et une photographie sont nécessaires pour finaliser ce rêve.');
+      Alert.alert('Floraison', 'Pour publier, ajoute au moins une photographie et raconte ton histoire.');
       return;
     }
     complete(
@@ -105,9 +105,6 @@ export default function FlowerPreparation() {
                 Afficher (publier) cette fleur
               </Text>
             </Pressable>
-            {!ready?<Text style={{fontSize:11,color:theme.muted,textAlign:'center',lineHeight:18}}>
-              Pour publier, ajoute au moins une photographie et raconte ton histoire.
-            </Text>:null}
             <Pressable onPress={uproot} accessibilityRole="button"
               style={{minHeight:48,alignItems:'center',justifyContent:'center',paddingHorizontal:14,
                 borderRadius:11,backgroundColor:'#242322'}}>
