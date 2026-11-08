@@ -17,14 +17,9 @@ const series: { phase: DreamPhase; title: string; sub: string }[] = [
   { phase: 'Initiation', title: 'En germination', sub: 'Les projets que je prépare.' },
   { phase: 'Croissance', title: 'En croissance', sub: 'Les rêves qui prennent vie.' },
 ];
-const open = (dream: DreamEntry) => {
-  if(dream.phase==='Croissance' &&
-     (dream.flowerStartedAt || dream.flowerDraft?.story?.trim() || dream.flowerDraft?.attachments?.length)) {
-    router.push({ pathname:'/my-dream/flower/[id]', params:{id:dream.id} });
-    return;
-  }
-  router.push({ pathname:'/my-dream/[id]', params:{id:dream.id} });
-};
+/** Image cards lead to the immersive cover; only flat list rows skip it. */
+const open = (dream: DreamEntry) =>
+  router.push({pathname:'/my-dream/[id]',params:{id:dream.id}});
 const frozen = (dream: DreamEntry) =>
   dream.phase === 'Initiation' && !!dream.paused && !!dream.pauseUntil &&
   dream.pauseUntil >= new Date().toISOString().slice(0, 10);
@@ -242,7 +237,7 @@ export default function MySpace() {
                 contentContainerStyle={{paddingHorizontal:side,gap:11}}>
                 {unfinished.map(d=><Pressable key={d.id} accessibilityRole="button"
                   accessibilityLabel={'Reprendre ma Floraison : '+d.title}
-                  onPress={()=>router.push({pathname:'/my-dream/flower/[id]',params:{id:d.id}})}
+                  onPress={()=>open(d)}
                   style={{width:tileWidth,height:compact?137:165,borderRadius:11,overflow:'hidden'}}>
                   <Image source={{uri:d.flowerDraft?.attachments?.find(m=>m.kind==='photo')?.uri||d.image}}
                     resizeMode="cover" style={{width:'100%',height:'100%'}}/>
