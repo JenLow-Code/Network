@@ -692,6 +692,37 @@ export default function DreamExperience({
                  fontWeight:habitUnit===unit?'700':'500'}}>{unit}</Text>
              </Pressable>)}
          </View>
+         <Text style={{color:theme.foreground,fontSize:12,fontWeight:'700'}}>
+           Icône de l’habitude
+         </Text>
+         <View style={{flexDirection:'row',flexWrap:'wrap',gap:9}}>
+           {HABIT_EMOJIS.map(emoji=>(
+             <Pressable key={emoji} accessibilityRole="button"
+               accessibilityLabel={'Choisir '+emoji} accessibilityState={{selected:habitEmoji===emoji}}
+               onPress={()=>setHabitEmoji(emoji)}
+               style={{width:43,height:43,borderRadius:22,borderWidth:2,
+                 borderColor:habitEmoji===emoji?habitColor:theme.border,
+                 alignItems:'center',justifyContent:'center'}}>
+               <Text style={{fontSize:22,lineHeight:29}}>{emoji}</Text>
+             </Pressable>
+           ))}
+         </View>
+         <Text style={{color:theme.foreground,fontSize:12,fontWeight:'700'}}>
+           Couleur de l’habitude
+         </Text>
+         <View style={{flexDirection:'row',flexWrap:'wrap',gap:11,marginBottom:5}}>
+           {HABIT_PALETTE.map(color=>(
+             <Pressable key={color} accessibilityRole="button"
+               accessibilityLabel={'Choisir la couleur '+color}
+               accessibilityState={{selected:habitColor===color}}
+               onPress={()=>setHabitColor(color)}
+               style={{width:34,height:34,borderRadius:17,
+                 backgroundColor:color,alignItems:'center',justifyContent:'center',
+                 borderWidth:habitColor===color?2:0,borderColor:theme.foreground}}>
+               {habitColor===color?<Ionicons name="checkmark" color="#FFFFFF" size={17}/>:null}
+             </Pressable>
+           ))}
+         </View>
          <Text style={{fontSize:11,color:theme.muted,lineHeight:18}}>
            Les réalisations se renseignent dans Mon agenda.
            Appui long sur une carte pour modifier ou supprimer l’habitude.
