@@ -144,8 +144,10 @@ export default function DreamExperience({
  const canEditCategory=(category:DreamResource['category'])=>
    resourceEditable && (!recoverPastNeeds || recoveryCategory===category);
  const lostResources = dream.phase==='Croissance'?lostFoundNeeds(dream):[];
- const lostCategories = Array.from(new Set(lostResources.map(need=>need.category)));
- const recapExpanded = preparationOpen || lostResources.length>0;
+ const missingResources = dream.phase==='Croissance'
+   ? resources.filter(resource=>!isNeedFound(resource)) : [];
+ const missingCategories = Array.from(new Set(missingResources.map(need=>need.category)));
+ const recapExpanded = preparationOpen || missingResources.length>0;
  const categoryNames: Record<DreamResource['category'],string> = {
    person:'Talents',practical:'Ressources',financial:'Financement',
  };
@@ -339,21 +341,21 @@ export default function DreamExperience({
   {phase==='Croissance' ? <>
     {(resources.length>0 || !!dream.goalDate) ? (
       <View style={{
-        borderWidth:lostResources.length?1.4:1,
-        borderColor:lostResources.length?'#D71D77':theme.border,
+        borderWidth:missingResources.length?1.4:1,
+        borderColor:missingResources.length?'#D71D77':theme.border,
         borderRadius:12,backgroundColor:theme.surface,
         overflow:'hidden',marginTop:10,marginBottom:15,
       }}>
         <Pressable accessibilityRole="button"
           accessibilityState={{expanded:recapExpanded}}
-          accessibilityLabel={lostResources.length
-            ? 'Une ressource précédemment trouvée a été perdue. Gérer les besoins de Germination.'
+          accessibilityLabel={missingResources.length
+            ? 'Des ressources nécessaires restent à trouver. Gérer les besoins de Germination.'
             : 'Afficher les préparatifs de Germination'}
-          onPress={()=>lostResources.length
+          onPress={()=>missingResources.length
             ? setRecoveryDialog(true) : setPreparationOpen(!preparationOpen)}
           style={{flexDirection:'row',alignItems:'center',gap:11,
             minHeight:55,paddingHorizontal:15,paddingVertical:10}}>
-          {lostResources.length ? (
+          {missingResources.length ? (
             <View style={{width:25,height:25,borderRadius:13,
               borderWidth:1.5,borderColor:'#D71D77',alignItems:'center',justifyContent:'center'}}>
               <Text style={{color:'#D71D77',fontSize:17,fontWeight:'800'}}>?</Text>
@@ -364,16 +366,16 @@ export default function DreamExperience({
           )}
           <View style={{flex:1,gap:4}}>
             <Text style={{fontSize:12,fontWeight:'700',
-              color:lostResources.length?'#D71D77':theme.foreground}}>
-              {lostResources.length
-                ? `${lostResources.length} besoin${lostResources.length>1?'s':''} à retrouver`
+              color:missingResources.length?'#D71D77':theme.foreground}}>
+              {missingResources.length
+                ? `${missingResources.length} besoin${missingResources.length>1?'s':''} à compléter`
                 : 'Depuis la Germination'}
             </Text>
             <Text style={{fontSize:11,color:theme.muted}}>
               {dream.goalDate?'Objectif · '+dream.goalDate:'Préparatifs et besoins'}
             </Text>
           </View>
-          {lostResources.length ? (
+          {missingResources.length ? (
             <Text style={{color:'#D71D77',fontSize:11,fontWeight:'700'}}>Gérer</Text>
           ) : <Ionicons name={recapExpanded?'chevron-up':'chevron-down'}
             color={theme.muted} size={18}/>}
@@ -388,12 +390,12 @@ export default function DreamExperience({
             const subset=resources.filter(r=>r.category===item.category);
             if(!subset.length)return null;
             const found=subset.filter(r=>r.confirmed&&(r.category!=='person'||!!r.serverNeedId)).length;
-            const losses=lostResources.filter(need=>need.category===item.category);
+            const unfilled=missingResources.filter(need=>need.category===item.category);
             return <View key={item.category} style={{gap:6}}>
               <View style={{flexDirection:'row',justifyContent:'space-between',gap:8}}>
-                <Text style={{fontSize:12,color:losses.length?'#D71D77':theme.foreground,
+                <Text style={{fontSize:12,color:unfilled.length?'#D71D77':theme.foreground,
                   fontWeight:'600'}}>{item.title}
-                  {losses.length ? ' · à retrouver' : ''}
+                  {unfilled.length ? ' · à compléter' : ''}
                 </Text>
                 <Text style={{fontSize:11,color:theme.muted}}>{found}/{subset.length} trouvés</Text>
               </View>
@@ -404,9 +406,9 @@ export default function DreamExperience({
               </View>
             </View>;
           })}
-          {lostResources.length ? (
+          {missingResources.length ? (
             <Text style={{fontSize:11,color:'#D71D77',lineHeight:18}}>
-              {lostResources.map(need=>need.title).join(' · ')}
+              {missingResources.map(need=>need.title).join(' · ')}
             </Text>
           ) : null}
           {dream.phase==='Croissance' && !historical &&
@@ -421,9 +423,7 @@ export default function DreamExperience({
               </Text>
             </Pressable>
           ) : null}
-          <Text style={{fontSize:11,color:theme.muted,lineHeight:18}}>
-            Les ressources restent liées à ta Germination.
-          </Text>
+
         </View>:null}
       </View>
     ):null}
@@ -731,13 +731,13 @@ export default function DreamExperience({
            <Text style={{color:'#D71D77',fontWeight:'800',fontSize:17}}>?</Text>
          </View>
          <Text style={{fontSize:19,color:theme.foreground,fontWeight:'700',flex:1}}>
-           Un besoin a été perdu
+           Des besoins restent à trouver
          </Text>
        </View>
        <Text style={{fontSize:13,color:theme.muted,lineHeight:20,marginBottom:4}}>
-         Veux-tu gérer cette ressource dans l’étape précédente, Germination ?
+         Veux-tu gérer les ressources nécessaires dans l’étape précédente, Germination ?
        </Text>
-       {lostCategories.map(category=><Pressable key={category}
+       {missingCategories.map(category=><Pressable key={category}
          accessibilityRole="button"
          onPress={()=>{
            setRecoveryDialog(false);
