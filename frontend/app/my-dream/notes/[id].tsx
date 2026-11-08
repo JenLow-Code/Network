@@ -20,7 +20,7 @@ export default function PrivateDreamNotebook() {
   useEffect(()=>{setText(dream?.privateDiary||'');},[dream?.id]);
   const today=new Date().toISOString().slice(0,10);
   const frozen=!!dream?.paused && !!dream.pauseUntil && dream.pauseUntil>=today;
-  const editable=dream?.phase==='Croissance' && !frozen;
+  const editable=(dream?.phase==='Initiation'||dream?.phase==='Croissance') && !frozen;
   const checklist=(dream?.blocks||[]).filter(block=>block.kind==='todo');
   return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
     <ScrollView keyboardShouldPersistTaps="handled"
