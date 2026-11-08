@@ -427,70 +427,69 @@ export default function DreamExperience({
         </View>:null}
       </View>
     ):null}
-    <DreamPhaseSection title="Journal de croissance">
-      <View style={{gap:15}}>
-        {(dream.milestones||[]).length===0 ? (
-          <View style={{padding:20,borderRadius:12,borderWidth:1,
-            borderColor:theme.border,backgroundColor:theme.surface,gap:8,alignItems:'center'}}>
-            <Ionicons name="leaf-outline" size={24} color="#27845B"/>
-            <Text style={{color:theme.muted,textAlign:'center',fontSize:12,lineHeight:20}}>
-              Chaque avancée devient une nouvelle feuille de ton histoire.
-            </Text>
+    {/* Une chronologie végétale légère, sans fond de carte ni statut permanent. */}
+    <View style={{marginTop:20,marginBottom:16,borderTopWidth:1,
+      borderColor:theme.border,paddingTop:21}}>
+      {(dream.milestones||[]).length===0 ? (
+        <Text style={{fontSize:12,color:theme.muted,lineHeight:19,
+          marginBottom:14,paddingLeft:44}}>
+          Une petite avancée, puis une autre…
+        </Text>
+      ):null}
+      {[...(dream.milestones||[])].reverse().map((log,index)=>(
+        <View key={log.id} style={{flexDirection:'row',gap:9,minHeight:94}}>
+          <View style={{width:24,alignItems:'center'}}>
+            <Ionicons name="leaf-outline" size={21} color="#27845B"
+              style={{marginTop:4}}/>
+            <View style={{flex:1,marginTop:9,marginBottom:0,
+              borderLeftWidth:1.5,borderStyle:'dashed',borderColor:'#A5B8A4'}}/>
           </View>
-        ):null}
-        {[...(dream.milestones||[])].reverse().map(log=>{
-          const publicIntent=log.shareRequested!==false;
-          const serverPublished=publicIntent&&log.publicationState==='published';
-          const failed=publicIntent&&log.publicationState==='failed';
-          return <View key={log.id} style={{flexDirection:'row',gap:11,alignItems:'stretch'}}>
-            <View style={{width:27,alignItems:'center',paddingTop:15,gap:6}}>
-              <Ionicons name="leaf" size={22} color="#27845B"/>
-              <View style={{width:1,flex:1,minHeight:18,backgroundColor:'#AECBAA'}}/>
-            </View>
-            <View style={{flex:1,padding:16,borderRadius:12,
-              borderTopLeftRadius:26,borderBottomRightRadius:26,
-              backgroundColor:theme.dark?'#29382D':'#F3F7ED',
-              borderWidth:1,borderColor:theme.dark?'#405844':'#E4EDDD',gap:9}}>
-              <Text style={{fontSize:11,color:'#27845B',fontWeight:'700',
-                letterSpacing:0.5}}>{log.date}</Text>
-              <Text style={{fontFamily:HANDWRITING_FAMILY,
-                fontSize:26,lineHeight:35,color:theme.foreground}}>
-                {log.title}
-              </Text>
-              <View style={{flexDirection:'row',alignItems:'center',gap:6,flexWrap:'wrap'}}>
-                <Ionicons name={serverPublished?'globe-outline':
-                  failed?'alert-circle-outline':'cloud-upload-outline'}
-                  size={14} color={failed?'#B55164':theme.muted}/>
-                <Text style={{color:failed?'#B55164':theme.muted,
-                  fontSize:10,flex:1,lineHeight:16}}>
-                  {!publicIntent?'Ancien log privé':
-                    serverPublished?'Public dans le rêve':
-                    failed?'Publication non aboutie':
-                    dream.serverDreamId ? (log.publicationState==='pending'?'Publication en cours':'À publier') : 'À publier · rêve local'}
-                </Text>
-                {(failed || (!log.publicationState && publicIntent && !!dream.serverDreamId))&&!historical ? (
-                  <Pressable accessibilityRole="button" onPress={()=>void publishLog({...log,shareRequested:true})}
-                    style={{padding:7,borderWidth:1,borderColor:'#B55164',borderRadius:8}}>
-                    <Text style={{color:'#B55164',fontSize:11,fontWeight:'700'}}>
-                      {failed?'Réessayer':'Publier'}
-                    </Text>
-                  </Pressable>
-                ):null}
+          <View style={{flex:1,paddingLeft:0,paddingBottom:24,gap:7}}>
+            <Text style={{fontSize:11,fontWeight:'700',
+              letterSpacing:0.35,color:'#27845B'}}>{log.date}</Text>
+            <Text style={{fontFamily:HANDWRITING_FAMILY,fontSize:20,lineHeight:28,
+              color:theme.foreground}}>{log.title}</Text>
+            {log.publicationState==='failed'&&!historical ? (
+              <Pressable accessibilityRole="button"
+                accessibilityLabel="Réessayer de publier cette entrée"
+                onPress={()=>void publishLog({...log,shareRequested:true})}
+                style={{alignSelf:'flex-start',paddingVertical:5,
+                  flexDirection:'row',alignItems:'center',gap:5}}>
+                <Ionicons name="refresh-outline" size={15} color="#D71D77"/>
+                <Text style={{color:'#D71D77',fontSize:11}}>Réessayer</Text>
+              </Pressable>
+            ):null}
+          </View>
+        </View>
+      ))}
+      {!historical ? (
+        <View style={{flexDirection:'row',gap:9,alignItems:'center'}}>
+          <View style={{width:24,alignItems:'center'}}>
+            <View style={{height:24,borderLeftWidth:1.5,borderStyle:'dashed',
+              borderColor:'#A5B8A4'}}/>
+            <Pressable accessibilityRole="button"
+              accessibilityLabel="Ajouter une feuille au journal"
+              onPress={()=>setGrowthDialog('log')}
+              style={{width:35,height:35,borderRadius:18,
+                alignItems:'center',justifyContent:'center',marginTop:2,
+                backgroundColor:theme.dark?'rgba(56,111,71,.13)':'rgba(100,160,105,.09)'}}>
+              <Ionicons name="leaf-outline" size={30} color="#5C9B73"/>
+              <View style={{position:'absolute',top:7,right:3,borderRadius:9,
+                backgroundColor:theme.background,width:15,height:15,
+                alignItems:'center',justifyContent:'center'}}>
+                <Ionicons name="add" size={13} color="#27845B"/>
               </View>
-            </View>
-          </View>;
-        })}
-        {!historical?<Pressable accessibilityRole="button" onPress={()=>setGrowthDialog('log')}
-          style={{minHeight:60,borderWidth:1,borderColor:'#27845B',
-            borderStyle:'dashed',borderRadius:12,flexDirection:'row',
-            alignItems:'center',justifyContent:'center',gap:8}}>
-          <Ionicons name="leaf-outline" size={20} color="#27845B"/>
-          <Text style={{fontSize:13,fontWeight:'700',color:theme.foreground}}>
-            Ajouter une feuille au journal
-          </Text>
-        </Pressable>:null}
-      </View>
-    </DreamPhaseSection>
+            </Pressable>
+          </View>
+          <Pressable accessibilityRole="button" onPress={()=>setGrowthDialog('log')}
+            style={{paddingLeft:3,flex:1,minHeight:52,justifyContent:'center'}}>
+            <Text style={{fontSize:13,color:'#27845B',fontWeight:'600'}}>
+              Ajouter une feuille
+            </Text>
+          </Pressable>
+        </View>
+      ):null}
+    </View>
     <DreamPhaseSection title="Mes habitudes" subtitle="Des petits gestes qui font avancer ton rêve.">
       <View style={{gap:10}}>
         {habits.length===0?<View style={{backgroundColor:theme.surface,borderRadius:13,
