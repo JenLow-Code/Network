@@ -225,7 +225,10 @@ export default function DreamHub({ dream, startInSemence = false, startPhase }: 
   const talentFound = requestedTalents.filter(item => !!item.serverNeedId && item.confirmed).length;
   const resourceFound = otherResources.filter(item => item.confirmed).length;
   const phaseIndex = order.indexOf(dream.phase);
-  const currentLabel = dream.phase === 'Témoignage' ? 'Fruit' : PHASE_LABELS[dream.phase];
+  const preparingFlower = dream.phase === 'Croissance' &&
+    (!!dream.flowerStartedAt || !!dream.flowerDraft?.story?.trim() || !!dream.flowerDraft?.attachments?.length);
+  const currentLabel = dream.phase === 'Témoignage'
+    ? 'Fruit' : preparingFlower ? 'Floraison' : PHASE_LABELS[dream.phase];
   const image = dream.phase === 'Témoignage'
     ? (dream.resultImage || dream.testimony?.mediaItems?.find(media => media.kind === 'photo')?.uri || dream.image)
     : dream.image;
@@ -403,7 +406,7 @@ export default function DreamHub({ dream, startInSemence = false, startPhase }: 
                 </Pressable>
               ):(
                 <Pressable accessibilityRole="button" accessibilityLabel={'Ouvrir '+currentLabel}
-                  onPress={()=>enter(dream.phase)}
+                  onPress={()=>preparingFlower ? router.push({pathname:'/my-dream/flower/[id]',params:{id:dream.id}}) : enter(dream.phase)}
                   style={{minHeight:45,paddingHorizontal:27,paddingVertical:12,
                     borderRadius:11,alignItems:'center',justifyContent:'center',backgroundColor:activeAccent}}>
                   <Text style={{color:activeButtonText,fontSize:12,fontWeight:'700',letterSpacing:.2}}>
