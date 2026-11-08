@@ -574,7 +574,6 @@ export default function DreamExperience({
         const checked=h.completed.some(completedKey=>habitKey(h.frequency,completedKey)===key);
         const measured=Math.max(0,h.measurements?.[key]??(checked?target:0));
         const remaining=Math.max(0,Math.round((target-measured)*100)/100);
-        const progress=Math.min(1,measured/target);
         const unit=h.unit||'fois';
         const deadline=h.frequency==='daily'?"aujourd’hui":"cette semaine";
         return <Pressable key={h.id} disabled={!growthActive}
