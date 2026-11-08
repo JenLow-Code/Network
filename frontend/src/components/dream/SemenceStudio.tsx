@@ -109,10 +109,53 @@ function CanvasTile({block,index,editable,compact,theme,onEdit,onMove,onResize,o
   </View>:null}
  </View>;
 }
+
+/** Mobile inspirations are previews, not a miniature page editor. Tap to open one item. */
+function InspirationPreview({block,editable,onEdit,theme}:{
+ block:DreamBlock;editable:boolean;onEdit:()=>void;
+ theme:{foreground:string;muted:string;dark:boolean};
+}) {
+ const media=block.media?.[0]||block.content.split('\n')[0];
+ const visual=(block.kind==='image'||block.kind==='gallery')&&isUrl(media?.trim()||'');
+ const featured=block.size==='featured'&&visual;
+ const ink=theme.foreground;
+ const bg=theme.dark?'#302F30':block.kind==='quote'?'#F7F0EB':'#F3EFEA';
+ const icon: keyof typeof Ionicons.glyphMap =
+   block.kind==='quote'?'chatbubble-outline':
+   block.kind==='link'||block.kind==='bookmark'||block.kind==='embed'?'link-outline':
+   block.kind==='video'?'videocam-outline':
+   block.kind==='audio'||block.kind==='music'?'musical-notes-outline':
+   'bulb-outline';
+ const open=()=>editable?onEdit():linkOpen(block.content);
+ return <Pressable accessibilityRole="button"
+   accessibilityLabel={(editable?'Modifier ':'Consulter ')+(block.title||'cette inspiration')}
+   onPress={open}
+   style={{width:featured?'100%':'48.5%',marginBottom:11,borderRadius:13,
+     overflow:'hidden',backgroundColor:bg}}>
+   {visual?<Image source={{uri:media.trim()}} resizeMode="cover"
+     style={{width:'100%',height:featured?210:147,backgroundColor:bg}}/>:
+   <View style={{minHeight:147,padding:13,justifyContent:'space-between',gap:12}}>
+     <Ionicons name={icon} size={17} color={theme.muted}/>
+     <Text numberOfLines={5} style={{
+       color:ink,fontFamily:block.kind==='quote'?'serif':undefined,
+       fontStyle:block.kind==='quote'?'italic':'normal',
+       fontSize:block.kind==='quote'?16:14,lineHeight:block.kind==='quote'?23:20,
+       fontWeight:block.kind==='quote'?'400':'500',
+     }}>{block.kind==='quote'?'“'+block.content+'”':block.title||block.content||'Inspiration'}</Text>
+   </View>}
+   {visual&&!!block.title?<Text numberOfLines={2} style={{
+     paddingHorizontal:11,paddingVertical:10,fontSize:12,fontWeight:'600',
+     color:ink}}>{block.title}</Text>:null}
+ </Pressable>;
+}
+
 export default function SemenceStudio({dream,onBack,onNavigate}:{dream:DreamEntry;onBack:()=>void;onNavigate?:(phase:DreamPhase)=>void}){
  const theme=useAppTheme();const {width:viewportWidth}=useWindowDimensions();const compact=viewportWidth<520;
  const {patch,advance,remove}=useDreams();const editable=dream.phase==='Rêve';
  const blocks=dream.blocks||[];
+ // A checklist belongs to the private notebook, never to the inspiration gallery.
+ const noteBlocks=blocks.filter(block=>block.kind==='todo');
+ const inspirationBlocks=blocks.filter(block=>block.kind!=='todo');
  const [edit,setEdit]=useState(editable);const [library,setLibrary]=useState(false);const [query,setQuery]=useState('');
  const [draft,setDraft]=useState<DreamBlock|null>(null);const [insertAt,setInsertAt]=useState<number|null>(null);
  const [confirm,setConfirm]=useState(false);
@@ -120,7 +163,7 @@ export default function SemenceStudio({dream,onBack,onNavigate}:{dream:DreamEntr
  const [advancedEditor,setAdvancedEditor]=useState(false);
  const [showAllBlocks,setShowAllBlocks]=useState(false);
  const [dragIndex,setDragIndex]=useState<number|null>(null);const [hoverIndex,setHoverIndex]=useState<number|null>(null);
- const base=(kind:DreamBlockKind):DreamBlock=>({id:newId(),kind,title:'',content:'',size:'wide',tone:'clear',font:'sans',align:'left',frame:'none'});
+ const base=(kind:DreamBlockKind):DreamBlock=>({id:newId(),kind,title:'',content:'',size:compact?'small':'wide',tone:'clear',font:'sans',align:'left',frame:'none'});
  const change=(field:Partial<DreamBlock>)=>setDraft(prev=>prev?{...prev,...field}:prev);
  const save=()=>{if(!draft)return;const updated=[...blocks];const i=updated.findIndex(x=>x.id===draft.id);if(i>=0)updated[i]=draft;else updated.splice(insertAt===null?updated.length:insertAt,0,draft);patch(dream.id,{blocks:updated});setDraft(null);setLibrary(false);setInsertAt(null);};
  const reorder=(from:number,to:number)=>{if(from===to)return;const a=[...blocks];if(from<0||from>=a.length)return;const [item]=a.splice(from,1);a.splice(Math.min(Math.max(0,to),a.length),0,item);patch(dream.id,{blocks:a});};
@@ -136,213 +179,165 @@ export default function SemenceStudio({dream,onBack,onNavigate}:{dream:DreamEntr
    if(Platform.OS==='web'){if(typeof window!=='undefined' && window.confirm('Arracher cette semence ?\n'+message))run();}
    else Alert.alert('Arracher cette semence ?',message,[{text:'Annuler',style:'cancel'},{text:'Arracher',style:'destructive',onPress:run}]);
  };
- return <ScrollView style={{flex:1,backgroundColor:theme.background}} contentContainerStyle={{paddingHorizontal:compact?15:19,paddingTop:10,paddingBottom:100,maxWidth:760,width:'100%',alignSelf:'center'}}>
-   <DreamPhaseHeader dream={dream} phase="Rêve" onBack={draft?()=>setDraft(null):onBack}
-      onNavigate={onNavigate} readOnly={!editable}
-   />
-   <View style={{flexDirection:'row',alignItems:'center',gap:7,marginBottom:10}}>
-     <Ionicons name={editable?'link-outline':'lock-closed-outline'} size={16} color={theme.muted}/>
-     <Text style={{color:theme.muted,fontSize:12}}>
-       {editable?'Semence non répertoriée · publique dès la Germination':'Premières inspirations · archive en lecture seule'}
+ return <ScrollView style={{flex:1,backgroundColor:theme.background}}
+   keyboardShouldPersistTaps="handled"
+   contentContainerStyle={{paddingHorizontal:compact?16:19,paddingTop:10,paddingBottom:100,
+     maxWidth:760,width:'100%',alignSelf:'center'}}>
+   <DreamPhaseHeader dream={dream} phase="Rêve"
+     onBack={draft?()=>setDraft(null):onBack}
+     onNavigate={onNavigate} readOnly={!editable}/>
+   <View style={{flexDirection:'row',alignItems:'center',gap:7,marginBottom:9}}>
+     <Ionicons name={editable?'link-outline':'lock-closed-outline'} size={14} color={theme.muted}/>
+     <Text style={{color:theme.muted,fontSize:11,flex:1}}>
+       {editable?'Semence accessible par lien · publique dès la Germination':'Semence archivée · en lecture seule'}
      </Text>
    </View>
-   <View style={{flexDirection:'row',borderBottomWidth:1,borderColor:theme.border,
-     marginTop:9,marginBottom:12}}>
-     {([
-       {id:'inspirations',label:'Inspirations',icon:'sparkles-outline'},
-       {id:'notes',label:'Notes',icon:'create-outline'},
-     ] as const).map(item=><Pressable key={item.id} accessibilityRole="tab"
-       accessibilityState={{selected:activeTab===item.id}}
-       onPress={()=>setActiveTab(item.id)}
-       style={{flex:1,minHeight:45,alignItems:'center',justifyContent:'center',
-         flexDirection:'row',gap:7,borderBottomWidth:activeTab===item.id?2:0,
-         borderBottomColor:activeTab===item.id?'#B88962':'transparent'}}>
-       <Ionicons name={item.icon} size={16}
-         color={activeTab===item.id?'#B88962':theme.muted}/>
-       <Text style={{fontSize:13,fontWeight:activeTab===item.id?'700':'500',
-         color:activeTab===item.id?theme.foreground:theme.muted}}>
-         {item.label}
-       </Text>
-     </Pressable>)}
+
+   {/* Two destinations, one add action. The plus changes purpose with the active tab. */}
+   <View style={{flexDirection:'row',alignItems:'center',gap:8,marginTop:8,marginBottom:20}}>
+     <View style={{flex:1,flexDirection:'row',borderBottomWidth:1,borderColor:theme.border}}>
+       {([
+         {id:'inspirations',label:'Inspirations'},
+         {id:'notes',label:'Notes'},
+       ] as const).map(item=><Pressable key={item.id}
+         accessibilityRole="tab" accessibilityState={{selected:activeTab===item.id}}
+         onPress={()=>setActiveTab(item.id)}
+         style={{flex:1,minHeight:45,alignItems:'center',justifyContent:'center',
+           borderBottomWidth:activeTab===item.id?2:0,
+           borderBottomColor:activeTab===item.id?'#B88962':'transparent'}}>
+         <Text style={{color:activeTab===item.id?theme.foreground:theme.muted,
+           fontSize:14,fontWeight:activeTab===item.id?'700':'500'}}>
+           {item.label}
+         </Text>
+       </Pressable>)}
+     </View>
+     {editable?<Pressable accessibilityRole="button"
+       accessibilityLabel={activeTab==='notes'?'Ajouter une case à cocher':'Ajouter une inspiration'}
+       onPress={()=>activeTab==='notes'?quickAdd('todo'):chooser(null)}
+       style={{width:36,height:36,borderRadius:18,backgroundColor:theme.surface,
+         alignItems:'center',justifyContent:'center',borderWidth:1,borderColor:theme.border}}>
+       <Ionicons name="add" size={21} color={theme.foreground}/>
+     </Pressable>:null}
    </View>
+
    {activeTab==='inspirations'?(
-     <View style={{marginTop:6}}>
-
-    <View style={{
-      borderWidth: 1, borderColor: theme.border, borderRadius: 16, overflow: 'hidden',
-      backgroundColor: theme.dark ? '#292A2C' : '#FDFCF9',
-      paddingHorizontal: compact?10:13, paddingTop: compact?12:14, paddingBottom: 17,
-      minHeight: compact?220:330, position:'relative',
-    }}>
-      {!compact?<Svg pointerEvents="none" width="100%" height="100%" style={{position:'absolute',top:0,left:0,right:0,bottom:0}}>
-        <Defs>
-          <Pattern id="dream-canvas-dots" patternUnits="userSpaceOnUse" width="22" height="22">
-            <Circle cx="11" cy="11" r=".75" fill={theme.dark?'#66615D':'#DAD4CE'} opacity={0.5}/>
-          </Pattern>
-        </Defs>
-        <Rect width="100%" height="100%" fill="url(#dream-canvas-dots)"/>
-      </Svg>:null}
-      <View style={{
-        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-        borderBottomWidth: 1, borderColor: theme.border, paddingBottom: 12, marginBottom: 16,
-      }}>
-        <View style={{ flex: 1, gap: 4 }}>
-          <Text style={{ fontSize: 10, letterSpacing: 1.5, fontWeight: '700', color: '#B88962' }}>ATELIER D’INSPIRATION</Text>
-          <Text style={{ fontSize: 12, color: theme.muted }}>
-            {editable ? (blocks.length ? blocks.length+' éléments · à composer librement' : 'Laisse tes idées prendre forme') : 'Inspirations archivées'}
-          </Text>
-        </View>
-        {editable ? (
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-            {!compact?<Pressable onPress={()=>{setEdit(!edit);setLibrary(false);setDraft(null);}}
-              accessibilityRole="button" accessibilityLabel={edit?'Terminer la composition':'Modifier le tableau'}
-              style={{paddingHorizontal:11,paddingVertical:10,borderRadius:9}}>
-              <Text style={{color:theme.foreground,fontSize:12,fontWeight:'700'}}>{edit?'Terminer':'Modifier'}</Text>
-            </Pressable>:null}
-            <Pressable onPress={()=>{setEdit(true);chooser(null);}}
-              accessibilityRole="button" accessibilityLabel="Ajouter un bloc"
-              style={{padding:9,backgroundColor:PINK,borderRadius:9}}>
-              <Ionicons name="add" size={19} color="#fff" />
-            </Pressable>
-          </View>
-        ) : <Ionicons name="lock-closed-outline" size={18} color={theme.muted}/>}
-      </View>
-
-      {editable && edit && !compact && (
-        <View style={{flexDirection:'row',flexWrap:'wrap',gap:7,marginBottom:blocks.length ? 20 : 26}}>
-          {([
-            { kind:'text', label:'Une idée', icon:'text-outline' },
-            { kind:'image', label:'Une image', icon:'image-outline' },
-            { kind:'quote', label:'Une citation', icon:'chatbubble-outline' },
-            { kind:'columns', label:'Deux colonnes', icon:'grid-outline' },
-          ] as const).map(x=><Pressable
-            key={x.kind} onPress={()=>quickAdd(x.kind)}
-            accessibilityRole="button" accessibilityLabel={'Ajouter '+x.label}
-            style={{
-              backgroundColor: theme.dark?'#303234':'rgba(251,248,245,0.94)', borderWidth:1,borderColor:theme.border,
-              borderRadius:20, paddingHorizontal:10,paddingVertical:9,
-              flexDirection:'row',alignItems:'center',gap:7,
-            }}>
-              <Ionicons name={x.icon} size={16} color={theme.foreground}/>
-              <Text style={{color:theme.foreground,fontSize:11,fontWeight:'600'}}>{x.label}</Text>
-          </Pressable>)}
-        </View>
-      )}
-
-      {blocks.length === 0 && !editable && (dream.image || dream.summary) ? (
-        <View style={{gap:14,marginBottom:9}}>
-          {dream.image ? <Image source={{uri:dream.image}} resizeMode="cover"
-            style={{width:'100%',height:230,borderRadius:10,backgroundColor:theme.surface}}/> : null}
-          {dream.summary ? <View style={{padding:15,backgroundColor:theme.dark?'#353334':'#F5F0EA',borderRadius:10}}>
-            <Text style={{fontSize:10,fontWeight:'700',letterSpacing:1.2,color:theme.muted,marginBottom:9}}>L'INTENTION DE DÉPART</Text>
-            <Text style={{fontSize:17,fontFamily:'serif',lineHeight:26,color:theme.foreground}}>{dream.summary}</Text>
-          </View> : null}
-          <Text style={{color:theme.muted,fontSize:11,lineHeight:18}}>
-            Cette Semence n'a pas de blocs d'inspiration enregistrés. Son image et son intention initiale restent ici.
-          </Text>
-        </View>
-      ) : blocks.length === 0 ? (
-        <View style={{paddingVertical:10,gap:13}}>
-          {editable ? (
-            <View style={{flexDirection:compact?'column':'row',gap:compact?9:11,alignItems:'stretch'}}>
-              <Pressable accessibilityRole="button" onPress={()=>quickAdd('image')}
-                style={{flex:1,minHeight:compact?108:178,borderRadius:13,padding:14,
-                  backgroundColor:theme.dark?'#373739':'#EFE6DC',
-                  borderWidth:1,borderStyle:'dashed',borderColor:theme.border,
-                  justifyContent:'space-between'}}>
-                <Ionicons name="image-outline" size={23} color="#AD8F72"/>
-                <View style={{gap:4}}>
-                  <Text style={{fontFamily:'serif',fontSize:18,lineHeight:24,color:theme.foreground}}>Une image pour commencer</Text>
-                  <Text style={{fontSize:11,color:theme.muted}}>Ajouter une photo</Text>
-                </View>
-              </Pressable>
-              <View style={{flex:1,flexDirection:compact?'row':'column',gap:compact?9:11}}>
-                <Pressable accessibilityRole="button" onPress={()=>quickAdd('text')}
-                  style={{flex:1,minHeight:82,backgroundColor:theme.dark?'#34383A':'#E9EDE8',
-                    borderRadius:12,padding:12,justifyContent:'space-between'}}>
-                  <Ionicons name="pencil-outline" size={18} color="#69866C"/>
-                  <Text style={{fontSize:12,fontWeight:'700',color:theme.foreground}}>Une idée à noter</Text>
-                </Pressable>
-                <Pressable accessibilityRole="button" onPress={()=>quickAdd('quote')}
-                  style={{flex:1,minHeight:82,backgroundColor:theme.dark?'#36303A':'#EFE5ED',
-                    borderRadius:12,padding:12,justifyContent:'space-between'}}>
-                  <Ionicons name="chatbubble-ellipses-outline" size={18} color="#BE7193"/>
-                  <Text style={{fontSize:12,fontWeight:'700',color:theme.foreground}}>Une phrase inspirante</Text>
-                </Pressable>
-              </View>
-            </View>
-          ) : <View style={{minHeight:120,justifyContent:'center',alignItems:'center'}}>
-            <Ionicons name="archive-outline" size={23} color={theme.muted}/>
-            <Text style={{fontSize:12,color:theme.muted,marginTop:8}}>Aucun bloc conservé.</Text>
-          </View>}
-          {editable ? <Text style={{color:theme.muted,fontSize:11,lineHeight:19,textAlign:'center'}}>
-            Un tableau libre, sans modèle imposé. Choisis un élément pour commencer.
-          </Text> : null}
-        </View>
-      ) : (
-        <View style={{flexDirection:'row',flexWrap:'wrap',justifyContent:'space-between',alignItems:'flex-start'}}>
-          {blocks.map((b,i)=><CanvasTile key={b.id} block={b} index={i} compact={compact} editable={editable&&edit&&!library&&!draft}
-            theme={theme} onEdit={()=>{setDraft({...b});setLibrary(false);}} onMove={reorder} onResize={resizeBlock}
-            onStart={setDragIndex} onFinish={()=>{setDragIndex(null);setHoverIndex(null);}}
-            onHover={setHoverIndex} dragging={dragIndex===i} highlight={hoverIndex===i&&dragIndex!==i}/>)}
-        </View>
-      )}
-      {dragIndex !== null ? <Text style={{fontSize:11,color:PINK,marginTop:8}}>Déplace le bloc et relâche pour le placer.</Text> : null}
-      {blocks.length > 0 && editable && edit && !draft && !library ? (
-        <Pressable onPress={()=>chooser(null)} accessibilityRole="button"
-          style={{paddingVertical:15,alignItems:'center',borderTopWidth:1,borderColor:theme.border,marginTop:11}}>
-          <Text style={{color:PINK,fontWeight:'700',fontSize:12}}>＋ Ajouter un bloc</Text>
-        </Pressable>
-      ) : null}
-    </View>
-    {!editable ? (
-      <Text style={{color:theme.muted,fontSize:12,lineHeight:20,marginTop:14}}>
-        Cette Semence reste consultable telle qu’elle a été composée, avant son passage en {dream.phase==='Initiation'?'Germination':dream.phase==='Croissance'?'Croissance':'Floraison'}.
-      </Text>
-    ) : null}
-     <Pressable accessibilityRole="button"
-       accessibilityLabel="Ouvrir mes documents"
-       onPress={()=>router.push({
-         pathname:'/my-dream/library/[id]',
-         params:{id:dream.id,tab:'documents'},
-       })}
-       style={{flexDirection:'row',alignItems:'center',justifyContent:'flex-end',
-         gap:7,marginTop:17,marginBottom:10,paddingVertical:10}}>
-       <Ionicons name="folder-open-outline" size={18} color="#397F9E"/>
-       <Text style={{fontSize:12,fontWeight:'700',color:'#397F9E'}}>
-         Ouvrir mes documents{dream.documents?.length?' · '+dream.documents.length:''}
+     <View style={{paddingBottom:12}}>
+       <Text style={{fontSize:11,color:theme.muted,lineHeight:18,marginBottom:16}}>
+         Images, liens, citations et idées qui nourrissent ton rêve.
        </Text>
-       <Ionicons name="arrow-forward" size={16} color="#397F9E"/>
-     </Pressable>
+       {inspirationBlocks.length?(
+         compact?<View style={{flexDirection:'row',flexWrap:'wrap',
+           justifyContent:'space-between',alignItems:'flex-start'}}>
+           {inspirationBlocks.map(block=><InspirationPreview key={block.id}
+             block={block} editable={editable}
+             onEdit={()=>{setDraft({...block});setLibrary(false);setAdvancedEditor(false);}}
+             theme={theme}/>)}
+         </View>:
+         <View style={{borderRadius:15,backgroundColor:theme.dark?'#292A2C':'#FDFCF9',
+           padding:13,minHeight:185}}>
+           <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',
+             marginBottom:15}}>
+             <Text style={{color:theme.muted,fontSize:11}}>
+               {inspirationBlocks.length} inspiration{inspirationBlocks.length>1?'s':''}
+             </Text>
+             {editable?<Pressable onPress={()=>setEdit(!edit)}
+               accessibilityRole="button" accessibilityLabel={edit?'Terminer la composition':'Modifier le tableau'}
+               style={{padding:9}}>
+               <Text style={{color:theme.foreground,fontSize:12,fontWeight:'700'}}>
+                 {edit?'Terminer':'Réorganiser'}
+               </Text>
+             </Pressable>:null}
+           </View>
+           <View style={{flexDirection:'row',flexWrap:'wrap',justifyContent:'space-between',alignItems:'flex-start'}}>
+             {inspirationBlocks.map(block=>{
+               const index=blocks.findIndex(item=>item.id===block.id);
+               return <CanvasTile key={block.id} block={block} index={index} compact={false}
+                 editable={editable&&edit&&!library&&!draft} theme={theme}
+                 onEdit={()=>{setDraft({...block});setLibrary(false);setAdvancedEditor(false);}}
+                 onMove={reorder} onResize={resizeBlock}
+                 onStart={setDragIndex} onFinish={()=>{setDragIndex(null);setHoverIndex(null);}}
+                 onHover={setHoverIndex} dragging={dragIndex===index}
+                 highlight={hoverIndex===index&&dragIndex!==index}/>;
+             })}
+           </View>
+         </View>
+       ):(
+         <View style={{minHeight:166,justifyContent:'center',alignItems:'center',
+           paddingHorizontal:30,gap:10}}>
+           {!editable&&dream.image?
+             <Image source={{uri:dream.image}} resizeMode="cover"
+               style={{width:'100%',height:155,borderRadius:12}}/>:
+             <Ionicons name="images-outline" size={29} color={theme.muted}/>}
+           <Text style={{color:theme.muted,fontSize:13,lineHeight:21,textAlign:'center'}}>
+             {editable?'Une image, une phrase, un lien…\nCommence par ce qui t’inspire.':
+               'Aucune inspiration enregistrée pendant cette étape.'}
+           </Text>
+         </View>
+       )}
+       {!editable&&inspirationBlocks.length===0&&!!dream.summary?
+         <Text style={{color:theme.foreground,fontSize:14,lineHeight:23,
+           marginTop:8,fontFamily:'serif'}}>{dream.summary}</Text>:null}
      </View>
    ):(
-     <View style={{minHeight:300,paddingHorizontal:3,paddingTop:9,paddingBottom:18}}>
-       <View style={{flexDirection:'row',alignItems:'center',gap:7,marginBottom:14}}>
-         <Ionicons name="lock-closed-outline" size={13} color={theme.muted}/>
-         <Text style={{fontSize:11,color:theme.muted}}>
-           Mes réflexions privées · conservées avec mon rêve
+     <View style={{paddingBottom:20,gap:17}}>
+       <View style={{flexDirection:'row',alignItems:'center',gap:7}}>
+         <Ionicons name="lock-closed-outline" size={14} color={theme.muted}/>
+         <Text style={{fontSize:11,color:theme.muted,flex:1}}>
+           Tes réflexions restent personnelles.
          </Text>
        </View>
-       {dream.notes?.map((note,index)=><Text key={index}
-         style={{fontSize:14,lineHeight:23,color:theme.foreground,marginBottom:12}}>
-         {note}
-       </Text>)}
-       <TextInput value={dream.privateDiary||''} editable={editable}
-         onChangeText={text=>patch(dream.id,{privateDiary:text})}
-         multiline textAlignVertical="top"
-         accessibilityLabel="Notes personnelles de ma Semence"
-         placeholder={editable?'Écris ce que tu imagines, librement…':''}
-         placeholderTextColor={theme.muted}
-         style={{padding:0,minHeight:235,fontFamily:HANDWRITING_FAMILY,
-           color:theme.foreground,fontSize:24,lineHeight:35,
-           backgroundColor:'transparent'}}
-       />
-       {!editable?<Text style={{fontSize:11,color:theme.muted,lineHeight:18}}>
-         Les notes de cette étape sont conservées en lecture seule.
-         Tes notes personnelles restent disponibles pendant la Croissance.
+       {(dream.notes||[]).map((note,index)=><Text key={index}
+         style={{color:theme.foreground,fontSize:14,lineHeight:23}}>{note}</Text>)}
+       <View style={{paddingBottom:11,borderBottomWidth:1,borderColor:theme.border}}>
+         <TextInput value={dream.privateDiary||''} editable={editable}
+           onChangeText={text=>patch(dream.id,{privateDiary:text})}
+           multiline textAlignVertical="top"
+           accessibilityLabel="Écrire mes notes personnelles"
+           placeholder={editable?'Écris tes pensées ici, librement…':'Aucune note personnelle'}
+           placeholderTextColor={theme.muted}
+           style={{padding:0,minHeight:compact?146:220,
+             fontFamily:HANDWRITING_FAMILY,fontSize:24,lineHeight:35,
+             color:theme.foreground,backgroundColor:'transparent'}}/>
+       </View>
+       {noteBlocks.length?(
+         <View style={{gap:9}}>
+           <Text style={{fontSize:12,fontWeight:'700',color:theme.foreground,marginBottom:4}}>
+             Ma checklist
+           </Text>
+           {noteBlocks.map(block=><View key={block.id}
+             style={{flexDirection:'row',alignItems:'center',gap:11,
+               paddingVertical:7,minHeight:43}}>
+             <Pressable accessibilityRole="checkbox"
+               accessibilityLabel={'Cocher '+(block.content||'cette tâche')}
+               accessibilityState={{checked:!!block.checked,disabled:!editable}}
+               disabled={!editable}
+               onPress={()=>patch(dream.id,{blocks:blocks.map(item=>item.id===block.id?
+                 {...item,checked:!item.checked}:item)})}
+               style={{padding:3}}>
+               <Ionicons name={block.checked?'checkbox':'square-outline'}
+                 size={23} color={block.checked?'#B88962':theme.muted}/>
+             </Pressable>
+             <Pressable style={{flex:1}} disabled={!editable}
+               onPress={()=>{setDraft({...block});setLibrary(false);setAdvancedEditor(false);}}>
+               <Text style={{fontSize:14,lineHeight:22,
+                 color:block.checked?theme.muted:theme.foreground,
+                 textDecorationLine:block.checked?'line-through':'none'}}>
+                 {block.content||'Nouvelle tâche'}
+               </Text>
+             </Pressable>
+           </View>)}
+         </View>
+       ):(
+         editable?<Text style={{fontSize:11,color:theme.muted,lineHeight:18}}>
+           Pour une liste à cocher, utilise le + en haut.
+         </Text>:null
+       )}
+       {!editable?<Text style={{fontSize:11,color:theme.muted}}>
+         Ces notes sont conservées avec ton rêve.
        </Text>:null}
      </View>
    )}
+
   <Modal visible={library || !!draft} animationType="slide" transparent={false} onRequestClose={()=>{setDraft(null);setLibrary(false);}}>
    <View style={{flex:1,backgroundColor:theme.background,paddingTop:Platform.OS==='web'?12:42}}>
     <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{padding:18,paddingBottom:90,maxWidth:720,width:'100%',alignSelf:'center'}}>
@@ -353,7 +348,7 @@ export default function SemenceStudio({dream,onBack,onNavigate}:{dream:DreamEntr
       </Pressable>
      </View>
   {edit&&library&&!draft?<View style={{padding:14,backgroundColor:theme.surface,borderRadius:14,borderWidth:1,borderColor:theme.border}}>
-   <Text style={{fontSize:18,color:theme.foreground,fontWeight:'700',marginBottom:13}}>Ajouter à mon rêve</Text>
+   <Text style={{fontSize:18,color:theme.foreground,fontWeight:'700',marginBottom:13}}>Ajouter une inspiration</Text>
    <TextInput value={query} onChangeText={setQuery} placeholder="Rechercher un bloc…" style={{padding:12,backgroundColor:theme.dark?'#34363B':'#F5F1EB',borderRadius:10,color:theme.foreground,marginBottom:12}}/>
    {compact && !showAllBlocks && !query.trim() ? (
      <View style={{gap:8,marginBottom:15}}>
@@ -361,7 +356,7 @@ export default function SemenceStudio({dream,onBack,onNavigate}:{dream:DreamEntr
          {kind:'text',title:'Écrire une idée',icon:'create-outline'},
          {kind:'image',title:'Ajouter une photo',icon:'image-outline'},
          {kind:'quote',title:'Garder une citation',icon:'chatbubble-outline'},
-         {kind:'todo',title:'Créer une liste',icon:'checkbox-outline'},
+         {kind:'video',title:'Garder une vidéo',icon:'videocam-outline'},
          {kind:'link',title:'Ajouter un lien',icon:'link-outline'},
        ] as const).map(choice=><Pressable key={choice.kind} accessibilityRole="button"
          onPress={()=>{setDraft(base(choice.kind));setLibrary(false);setAdvancedEditor(false);}}
@@ -374,7 +369,7 @@ export default function SemenceStudio({dream,onBack,onNavigate}:{dream:DreamEntr
        </Pressable>)}
      </View>
    ):null}
-   {(!compact||showAllBlocks||!!query.trim()) ? (groups.map(g=>{const kinds=g.kinds.filter(x=>x.title.toLowerCase().includes(query.toLowerCase())||x.kind.includes(query.toLowerCase()));return kinds.length?<View key={g.title} style={{marginBottom:14}}><Text style={{fontWeight:'700',fontSize:11,color:theme.muted,marginBottom:7,letterSpacing:1}}>{g.title.toUpperCase()}</Text><View style={{flexDirection:'row',flexWrap:'wrap',gap:7}}>{kinds.map(x=><Pressable key={x.kind} onPress={()=>{setDraft(base(x.kind));setLibrary(false);}} style={{width:'47.8%',padding:12,borderRadius:9,backgroundColor:theme.dark?'#28292D':'#F5F1EB',flexDirection:'row',alignItems:'center',gap:9}}><Ionicons name={x.icon} size={18} color={theme.foreground}/><Text style={{fontSize:12,color:theme.foreground,flex:1}}>{x.title}</Text></Pressable>)}</View></View>:null})) : null}
+   {(!compact||showAllBlocks||!!query.trim()) ? (groups.map(g=>{const kinds=g.kinds.filter(x=>!['todo','document','pdf','bullet','numbered'].includes(x.kind) && (x.title.toLowerCase().includes(query.toLowerCase())||x.kind.includes(query.toLowerCase())));return kinds.length?<View key={g.title} style={{marginBottom:14}}><Text style={{fontWeight:'700',fontSize:11,color:theme.muted,marginBottom:7,letterSpacing:1}}>{g.title.toUpperCase()}</Text><View style={{flexDirection:'row',flexWrap:'wrap',gap:7}}>{kinds.map(x=><Pressable key={x.kind} onPress={()=>{setDraft(base(x.kind));setLibrary(false);}} style={{width:'47.8%',padding:12,borderRadius:9,backgroundColor:theme.dark?'#28292D':'#F5F1EB',flexDirection:'row',alignItems:'center',gap:9}}><Ionicons name={x.icon} size={18} color={theme.foreground}/><Text style={{fontSize:12,color:theme.foreground,flex:1}}>{x.title}</Text></Pressable>)}</View></View>:null})) : null}
    {compact && !query.trim() ? <Pressable accessibilityRole="button"
      onPress={()=>setShowAllBlocks(!showAllBlocks)}
      style={{padding:13,alignItems:'center',borderTopWidth:1,borderColor:theme.border}}>
@@ -385,24 +380,24 @@ export default function SemenceStudio({dream,onBack,onNavigate}:{dream:DreamEntr
    <Pressable onPress={()=>setLibrary(false)}><Text style={{color:theme.muted,textAlign:'center',padding:13}}>Annuler</Text></Pressable>
   </View>:null}
   {draft?<View style={{backgroundColor:theme.surface,padding:15,borderRadius:14,borderWidth:1,borderColor:theme.border,gap:12}}>
-   <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}><Text style={{fontWeight:'700',fontSize:18,color:theme.foreground}}>Personnaliser le bloc</Text><Pressable onPress={()=>setDraft(null)}><Ionicons name="close" color={theme.muted} size={22}/></Pressable></View>
-   {!compact ? (<ScrollView horizontal showsHorizontalScrollIndicator={false}>{groups.flatMap(g=>g.kinds).map(x=><Pressable key={x.kind} onPress={()=>change({kind:x.kind})} style={{padding:9,borderRadius:8,backgroundColor:draft.kind===x.kind?PINK:(theme.dark?'#303137':'#F0ECE8'),marginRight:5}}><Text style={{fontSize:11,color:draft.kind===x.kind?'#fff':theme.foreground}}>{x.title}</Text></Pressable>)}</ScrollView>) : (
+   <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}><Text style={{fontWeight:'700',fontSize:18,color:theme.foreground}}>{draft.kind==='todo'?'Ajouter à ma checklist':'Mon inspiration'}</Text><Pressable onPress={()=>setDraft(null)}><Ionicons name="close" color={theme.muted} size={22}/></Pressable></View>
+   {!compact ? (<ScrollView horizontal showsHorizontalScrollIndicator={false}>{groups.flatMap(g=>g.kinds).filter(x=>!['todo','document','pdf','bullet','numbered'].includes(x.kind)).map(x=><Pressable key={x.kind} onPress={()=>change({kind:x.kind})} style={{padding:9,borderRadius:8,backgroundColor:draft.kind===x.kind?PINK:(theme.dark?'#303137':'#F0ECE8'),marginRight:5}}><Text style={{fontSize:11,color:draft.kind===x.kind?'#fff':theme.foreground}}>{x.title}</Text></Pressable>)}</ScrollView>) : (
      <Text style={{fontSize:11,color:theme.muted,fontWeight:'700'}}>
        BLOC · {groups.flatMap(g=>g.kinds).find(k=>k.kind===draft.kind)?.title||draft.kind}
      </Text>
    )}
-   <TextInput value={draft.title||''} onChangeText={title=>change({title})} placeholder="Titre / légende (facultatif)" style={{backgroundColor:theme.dark?'#303137':'#F5F1EB',color:theme.foreground,padding:12,borderRadius:8}}/>
-   {!['divider','spacer'].includes(draft.kind)?<TextInput value={draft.content} multiline onChangeText={content=>change({content})} placeholder={mediaKinds.includes(draft.kind)?'Colle un lien ou importe un média…':draft.kind==='table'?'Une ligne par rangée, colonnes séparées par |':draft.kind==='columns'?'Colonne gauche | colonne droite':'Écris librement…'} style={{backgroundColor:theme.dark?'#303137':'#F5F1EB',color:theme.foreground,padding:12,borderRadius:8,minHeight:95,textAlignVertical:'top'}}/>:null}
+   {draft.kind!=='todo'?<TextInput value={draft.title||''} onChangeText={title=>change({title})} placeholder="Titre / légende (facultatif)" style={{backgroundColor:theme.dark?'#303137':'#F5F1EB',color:theme.foreground,padding:12,borderRadius:8}}/>:null}
+   {!['divider','spacer'].includes(draft.kind)?<TextInput value={draft.content} multiline onChangeText={content=>change({content})} placeholder={mediaKinds.includes(draft.kind)?'Colle un lien ou importe un média…':draft.kind==='table'?'Une ligne par rangée, colonnes séparées par |':draft.kind==='columns'?'Colonne gauche | colonne droite':draft.kind==='todo'?'Une tâche à cocher…':'Écris librement…'} style={{backgroundColor:theme.dark?'#303137':'#F5F1EB',color:theme.foreground,padding:12,borderRadius:8,minHeight:95,textAlignVertical:'top'}}/>:null}
    {mediaKinds.includes(draft.kind)?<Pressable onPress={chooseMedia} style={{borderWidth:1,borderStyle:'dashed',borderColor:theme.border,padding:13,borderRadius:10,alignItems:'center'}}><Text style={{color:theme.foreground}}>＋ Importer une photo / un média</Text></Pressable>:null}
    {draft.kind==='image'?<Pressable onPress={()=>pickDreamImage(content=>change({content}),alert)} style={{padding:10}}><Text style={{color:PINK}}>Choisir une photo</Text></Pressable>:null}
-   {compact?<Pressable accessibilityRole="button" accessibilityState={{expanded:advancedEditor}}
+   {compact&&draft.kind!=='todo'?<Pressable accessibilityRole="button" accessibilityState={{expanded:advancedEditor}}
      onPress={()=>setAdvancedEditor(!advancedEditor)}
      style={{paddingVertical:12,borderTopWidth:1,borderBottomWidth:1,borderColor:theme.border,
        flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
      <Text style={{fontSize:12,fontWeight:'700',color:theme.foreground}}>Personnalisation avancée</Text>
      <Ionicons name={advancedEditor?'chevron-up':'chevron-down'} size={19} color={theme.muted}/>
    </Pressable>:null}
-   {(!compact || advancedEditor) ? <>
+   {draft.kind!=='todo'&&(!compact || advancedEditor) ? <>
    <Text style={{color:theme.muted,fontSize:11,fontWeight:'700'}}>PROPORTIONS</Text>
    <View style={{flexDirection:'row',gap:7}}>{(['small','wide','featured'] as const).map(size=><Pressable key={size} onPress={()=>change({size})} style={{padding:9,backgroundColor:draft.size===size?PINK:(theme.dark?'#303137':'#F1EDE8'),borderRadius:8}}><Text style={{color:draft.size===size?'#fff':theme.foreground,fontSize:12}}>{size==='small'?'Petit':size==='wide'?'Large':'Vedette'}</Text></Pressable>)}</View>
    <Text style={{color:theme.muted,fontSize:11,fontWeight:'700'}}>TYPOGRAPHIE</Text>

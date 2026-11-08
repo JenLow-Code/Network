@@ -113,7 +113,8 @@ export default function DreamLibrary(){
     .slice().reverse();
   const archive=(dream?.blocks||[]).filter(block=>block.content||block.media?.length);
   const legacyDocs=archive.filter(block=>['document','pdf'].includes(block.kind));
-  const inspirations=archive.filter(block=>!['document','pdf'].includes(block.kind));
+  // Checklists belong to the private Notes tab, not the inspiration archive.
+  const inspirations=archive.filter(block=>!['document','pdf','todo'].includes(block.kind));
   return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
     <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{
       paddingHorizontal:18,paddingTop:10,paddingBottom:110,
