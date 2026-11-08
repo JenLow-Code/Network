@@ -14,6 +14,7 @@ import { DreamGoalDatePicker } from './DreamGoalDatePicker';
 import { DreamResourceDetailsModal } from './DreamResourceDetailsModal';
 import { DREAM_TALENT_CHOICES } from './dreamTalentCatalog';
 import { TalentLevelSelector } from '@/components/talent/TalentLevelSelector';
+import { habitHistory, habitStreak } from '@/domain/habitProgress';
 
 const pink = '#D71D77';
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
@@ -114,8 +115,12 @@ export default function DreamExperience({ dream, viewPhase, onBack, onNavigate }
    setResourceTitle('');setResourceDescription('');setResourceAmount('');setResourceLink('');
    setToolsPublicationRequested(false);setTalentChoicesOpen(false);setResourceDialog(false);
  };
- const checkResource = (resource: DreamResource) =>
-   setResources(dream.id, resources.map(r => r.id===resource.id?{...r,confirmed:!r.confirmed}:r));
+ const checkResource = (resource: DreamResource) => {
+   // A person's participation is never locally toggled: only server-confirmed consent.
+   if(resource.category === 'person')return;
+   setResources(dream.id, resources.map(r =>
+     r.id===resource.id?{...r,confirmed:!r.confirmed}:r));
+ };
  const phase = viewPhase || dream.phase;
  const historical = phase !== dream.phase;
  const readOnly = historical || dream.phase === 'Témoignage';
@@ -336,53 +341,50 @@ export default function DreamExperience({ dream, viewPhase, onBack, onNavigate }
           </Text>
         </View>:null}
         {habits.map(h=>{
-          const now=new Date();
-          now.setHours(12,0,0,0);
-          const start=new Date(now);
-          start.setDate(now.getDate()-((now.getDay()+6)%7));
-          const dates=Array.from({length:7},(_,i)=>{
-            const d=new Date(start);d.setDate(start.getDate()+i);
-            const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-            return {key,number:d.getDate(),label:['L','M','M','J','V','S','D'][i]};
-          });
-          const displayed=h.frequency==='weekly'?[dates[0]]:dates;
-          return <View key={h.id} style={{backgroundColor:theme.surface,
-            borderWidth:1,borderColor:theme.border,borderRadius:13,padding:16,gap:13}}>
+          const history=habitHistory(h);
+          const streak=habitStreak(h);
+          const completed=h.completed.length;
+          return <View key={h.id} style={{
+            backgroundColor:theme.surface,borderWidth:1,borderColor:theme.border,
+            borderRadius:13,padding:15,gap:11,
+          }}>
             <View style={{flexDirection:'row',alignItems:'center',gap:10}}>
-              <View style={{width:34,height:34,borderRadius:10,backgroundColor:theme.dark?'#334C3D':'#E6F0E8',
-                justifyContent:'center',alignItems:'center'}}>
-                <Ionicons name="leaf-outline" size={19} color="#27845B"/>
+              <View style={{width:33,height:33,borderRadius:9,
+                backgroundColor:theme.dark?'#334C3D':'#E6F0E8',
+                alignItems:'center',justifyContent:'center'}}>
+                <Ionicons name="leaf-outline" size={18} color="#27845B"/>
               </View>
-              <View style={{flex:1,gap:3}}>
+              <View style={{flex:1,gap:4}}>
                 <Text style={{color:theme.foreground,fontSize:14,fontWeight:'700'}}>{h.title}</Text>
                 <Text style={{color:theme.muted,fontSize:11}}>
-                  {h.frequency==='daily'?'Chaque jour':'Chaque semaine'} · {h.completed.length} accomplissement(s)
+                  {h.frequency==='daily'?'Chaque jour':'Chaque semaine'} · {completed} réalisation{completed>1?'s':''}
+                </Text>
+              </View>
+              <View style={{alignItems:'flex-end',gap:3}}>
+                <Text style={{fontSize:15,color:'#27845B',fontWeight:'800'}}>{streak}</Text>
+                <Text style={{fontSize:10,color:theme.muted}}>
+                  {h.frequency==='daily'?'jours de suite':'semaines de suite'}
                 </Text>
               </View>
             </View>
-            <View style={{flexDirection:'row',gap:7,alignItems:'center',justifyContent:'space-between'}}>
-              {displayed.map((d,i)=>{
-                const checked=h.completed.includes(d.key);
-                const disabled=historical||d.key>day();
-                return <Pressable key={d.key} disabled={disabled} accessibilityRole="checkbox"
-                  accessibilityState={{checked,disabled}}
-                  accessibilityLabel={h.title+', '+(h.frequency==='weekly'?'Cette semaine':d.key)}
-                  onPress={()=>setHabits(dream.id,habits.map(x=>x.id===h.id?{
-                    ...x,completed:checked?x.completed.filter(v=>v!==d.key):[...x.completed,d.key]
-                  }:x))}
-                  style={{flex:1,minHeight:57,borderRadius:9,
-                    borderWidth:1,borderColor:checked?'#27845B':theme.border,
-                    backgroundColor:checked?(theme.dark?'#2A513B':'#E4F0E5'):theme.background,
-                    alignItems:'center',justifyContent:'center',gap:5,opacity:disabled&&!checked?.45:1}}>
-                  <Text style={{fontSize:10,color:checked?'#27845B':theme.muted,fontWeight:'600'}}>
-                    {h.frequency==='weekly'?'Semaine':d.label}
-                  </Text>
-                  {checked?<Ionicons name="checkmark" size={17} color="#27845B"/>:
-                    <Text style={{fontSize:12,color:theme.foreground,fontWeight:'600'}}>
-                      {h.frequency==='weekly'?'✓':d.number}
-                    </Text>}
-                </Pressable>;
-              })}
+            <View style={{flexDirection:'row',flexWrap:'wrap',gap:5,alignItems:'center'}}>
+              {history.map(slot=><View key={slot.key} accessibilityLabel={
+                slot.key+(slot.completed?' : accompli':' : non accompli')}
+                style={{width:h.frequency==='weekly'?17:14,
+                  height:h.frequency==='weekly'?17:14,borderRadius:4,
+                  backgroundColor:slot.completed?'#27845B':theme.dark?'#3A4140':'#E6EAE5',
+                }}/>)}
+            </View>
+            <View style={{flexDirection:'row',alignItems:'center',
+              justifyContent:'space-between',gap:8}}>
+              <Text style={{fontSize:10,color:theme.muted}}>
+                {h.frequency==='daily'?'28 derniers jours':'12 dernières semaines'}
+              </Text>
+              <Pressable onPress={()=>router.push('/agenda')}
+                accessibilityRole="link" style={{flexDirection:'row',alignItems:'center',gap:4,paddingVertical:5}}>
+                <Ionicons name="calendar-outline" size={15} color="#27845B"/>
+                <Text style={{fontSize:11,color:'#27845B',fontWeight:'700'}}>Suivre dans l’agenda</Text>
+              </Pressable>
             </View>
           </View>;
         })}
