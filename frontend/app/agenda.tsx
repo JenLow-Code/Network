@@ -1,6 +1,6 @@
 import { Text } from '@/i18n/LocalizedText';
 import React, { useMemo, useState } from 'react';
-import { Pressable, ScrollView, Share, View } from 'react-native';
+import { Modal, Pressable, ScrollView, Share, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -29,6 +29,10 @@ export default function Agenda() {
   // Future: show a weekly overview of scheduled service / volunteer duty, separately from personal events.
   const [day, setDay] = useState(new Date());
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const [measureEdit,setMeasureEdit]=useState<{
+    dreamId:string;habitId:string;dateKey:string;title:string;unit:string;target:number;
+  }|null>(null);
+  const [measureValue,setMeasureValue]=useState('');
   const [events, setEvents] = useState<AgendaEntry[]>(DEMO_AGENDA);
   const activeHabitDreams = trackedDreams.filter(d =>
     d.phase === 'Croissance' && !!d.habits?.length);
@@ -224,7 +228,7 @@ export default function Agenda() {
                   Mes habitudes
                 </Text>
                 <Text style={{fontSize:11,color:theme.muted}}>
-                  Coche ici ce que tu as accompli, à la date sélectionnée.
+                  Marque tes réalisations à la date sélectionnée.
                 </Text>
               </View>
             </View>
@@ -236,33 +240,47 @@ export default function Agenda() {
                   color:theme.foreground}}>{d.title}</Text>
                 {(d.habits||[]).map(h=>{
                   const key=habitKey(h.frequency,dateKey);
-                  const checked=h.completed.includes(key);
+                  const target=h.target&&h.target>0?h.target:1;
+                  const unit=h.unit||'fois';
+                  const measured=h.measurements?.[key]??(h.completed.includes(key)?target:0);
+                  const checked=measured>=target;
                   const locked=dateKey>isoDay(new Date());
+                  const requiresMeasure=target!==1||unit!=='fois';
                   return <Pressable key={h.id}
                     onPress={()=>{
                       if(locked)return;
+                      if(requiresMeasure){
+                        setMeasureEdit({dreamId:d.id,habitId:h.id,dateKey:key,
+                          title:h.title,unit,target});
+                        setMeasureValue(measured?String(measured):'');
+                        return;
+                      }
                       const updated=(d.habits||[]).map(x=>x.id!==h.id?x:{
                         ...x,
                         completed:checked?x.completed.filter(k=>k!==key):[...x.completed,key],
+                        measurements:{...x.measurements,[key]:checked?0:target},
                       });
                       setHabits(d.id,updated);
                     }}
-                    disabled={locked} accessibilityRole="checkbox"
-                    accessibilityState={{checked,disabled:locked}}
-                    accessibilityLabel={h.title+', '+(checked?'accompli':'non accompli')+
+                    disabled={locked} accessibilityRole="button"
+                    accessibilityState={{disabled:locked}}
+                    accessibilityLabel={h.title+', '+measured+' sur '+target+' '+unit+
                       (h.frequency==='weekly'?' cette semaine':' le '+dateKey)}
                     style={{flexDirection:'row',alignItems:'center',gap:11,
                       paddingVertical:10,paddingHorizontal:4,opacity:locked?.5:1}}>
-                    <Ionicons name={checked?'checkbox':'square-outline'}
+                    <Ionicons name={checked?'checkbox':
+                      measured>0?'ellipse-outline':'square-outline'}
                       size={23} color={checked?'#27845B':theme.muted}/>
                     <View style={{flex:1,gap:3}}>
                       <Text style={{color:theme.foreground,fontSize:13,fontWeight:'600'}}>
                         {h.title}
                       </Text>
                       <Text style={{color:theme.muted,fontSize:10}}>
-                        {h.frequency==='daily'?'Quotidienne':'Hebdomadaire'}
+                        {measured} / {target} {unit}
+                        {' · '+(h.frequency==='daily'?'par jour':'par semaine')}
                       </Text>
                     </View>
+                    {requiresMeasure?<Ionicons name="create-outline" color={theme.muted} size={18}/>:null}
                   </Pressable>;
                 })}
               </View>
@@ -379,6 +397,54 @@ export default function Agenda() {
           private ICS feed. Google and Outlook OAuth sync requires separate consent.
         </Text>
       </ScrollView>
+      <Modal visible={measureEdit!==null} transparent animationType="fade"
+        onRequestClose={()=>setMeasureEdit(null)}>
+        <View style={{flex:1,justifyContent:'center',padding:19,
+          backgroundColor:'rgba(0,0,0,.54)'}}>
+          <Pressable onPress={()=>setMeasureEdit(null)}
+            style={{position:'absolute',top:0,right:0,left:0,bottom:0}}/>
+          <View style={{padding:20,borderRadius:15,backgroundColor:theme.surface,
+            width:'100%',maxWidth:420,alignSelf:'center',gap:12}}>
+            <Text style={{fontSize:19,fontWeight:'700',color:theme.foreground}}>
+              {measureEdit?.title}
+            </Text>
+            <Text style={{fontSize:12,color:theme.muted}}>
+              Objectif : {measureEdit?.target} {measureEdit?.unit}
+            </Text>
+            <TextInput value={measureValue} onChangeText={setMeasureValue}
+              accessibilityLabel="Quantité accomplie"
+              autoFocus keyboardType="decimal-pad"
+              placeholder="Quantité accomplie" placeholderTextColor={theme.muted}
+              style={{padding:13,borderWidth:1,borderColor:theme.border,
+                borderRadius:10,color:theme.foreground,fontSize:16}}/>
+            <Pressable accessibilityRole="button" onPress={()=>{
+              if(!measureEdit)return;
+              const amount=Number(measureValue.replace(',','.'));
+              if(!Number.isFinite(amount)||amount<0||amount>100000)return;
+              const d=trackedDreams.find(x=>x.id===measureEdit.dreamId);
+              if(!d)return;
+              setHabits(d.id,(d.habits||[]).map(h=>{
+                if(h.id!==measureEdit.habitId)return h;
+                const checked=amount>=measureEdit.target;
+                return {...h,measurements:{...h.measurements,[measureEdit.dateKey]:amount},
+                  completed:checked
+                    ? Array.from(new Set([...h.completed,measureEdit.dateKey]))
+                    : h.completed.filter(k=>k!==measureEdit.dateKey)};
+              }));
+              setMeasureEdit(null);
+            }} style={{backgroundColor:'#242322',minHeight:47,borderRadius:10,
+              alignItems:'center',justifyContent:'center'}}>
+              <Text style={{color:'#FFFFFF',fontWeight:'700',fontSize:13}}>
+                Enregistrer
+              </Text>
+            </Pressable>
+            <Pressable accessibilityRole="button" onPress={()=>setMeasureEdit(null)}
+              style={{alignItems:'center',padding:7}}>
+              <Text style={{fontSize:12,color:theme.muted}}>Annuler</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
       <Nav />
     </SafeAreaView>
   );
