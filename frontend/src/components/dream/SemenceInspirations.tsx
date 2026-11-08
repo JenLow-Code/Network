@@ -265,7 +265,7 @@ export default function SemenceInspirations({dream,editable}:{dream:DreamEntry;e
             </Pressable>):null}
             {draft?<>
               {draft.kind==='image'||draft.kind==='gallery'?<>
-                <Pressable accessibilityRole="button" onPress={pickMedia}
+                <Pressable accessibilityRole="button" onPress={pickMedia} disabled={!editable} disabled={!editable}
                   style={{height:105,borderRadius:12,borderWidth:1,borderColor:theme.border,
                     alignItems:'center',justifyContent:'center',gap:9,
                     backgroundColor:theme.background}}>
@@ -313,7 +313,7 @@ export default function SemenceInspirations({dream,editable}:{dream:DreamEntry;e
                 </View>:null}
               </>:null}
               {draft.kind==='document'||draft.kind==='pdf'?<>
-                <Pressable onPress={pickDocument} accessibilityRole="button"
+                <Pressable onPress={pickDocument} disabled={!editable} accessibilityRole="button"
                   style={{borderRadius:11,borderWidth:1,borderColor:theme.border,
                     padding:14,flexDirection:'row',alignItems:'center',gap:11}}>
                   <Ionicons name="document-attach-outline" size={23} color={palette}/>
