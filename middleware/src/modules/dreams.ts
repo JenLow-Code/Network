@@ -281,6 +281,8 @@ export function registerDreams(r: Router): void {
     const viewer = await ctx.user();
     const need = await needWithDream(ctx, ctx.param('id'));
     const { dream } = await requireDreamOwner(ctx.sql, need.dream_id, viewer);
+    if(await ctx.sql.exists("SELECT 1 FROM dream_need_invitations WHERE need_id=? AND status IN ('pending','accepted')",need.id))
+      throw conflict('active_talent_invitation','Retire d’abord les personnes invitées ; chacune doit être prévenue.');
     const pending = await ctx.sql.all<{ offered_by: string }>("SELECT offered_by FROM dream_help_offers WHERE need_id=? AND status='pending'", need.id);
     try {
       await ctx.sql.batch([
@@ -585,6 +587,9 @@ export function registerDreams(r: Router): void {
     const { dream, role } = await loadVisibleDream(ctx.sql, id, viewer);
     if (target.id !== viewer.id && !role.isOwner) throw forbidden('owner_only');
     if (toApiPhase(dream.phase) === 'floraison') throw unprocessable('floraison_locked', 'Credits of a completed Dream are preserved.');
+    if(await ctx.sql.exists("SELECT 1 FROM dream_need_invitations WHERE dream_id=? AND invited_user_id=? AND status IN ('pending','accepted')",id,target.id))
+      throw conflict('active_talent_invitation','Retire cette personne depuis sa demande de talent pour lui envoyer une notification.');
+
     try {
       await ctx.sql.batch([
         ctx.sql.stmt("UPDATE dream_help_offers SET status='declined',responded_at=CURRENT_TIMESTAMP,responded_by=? WHERE dream_id=? AND offered_by=? AND status='accepted'", viewer.id, id, target.id),
