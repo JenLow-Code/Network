@@ -143,6 +143,11 @@ export function registerNeedInvitations(r: Router): void {
       const inv=await load(ctx,ctx.param('id'));
       if(inv.invited_user_id!==viewer.id) throw notFound();
       if(inv.status!=='pending') throw conflict('invitation_not_pending');
+      if(!(await ctx.sql.exists(
+        "SELECT 1 FROM dream_owners WHERE dream_id=? AND user_id=? AND status='accepted'",
+        inv.dream_id,inv.invited_by,
+      ))) throw conflict('inviter_no_longer_owner');
+
       const v=new V(await ctx.body());
       const accept=v.bool('accept',{required:true});v.done();
       const dream=await ctx.sql.first<{phase:string;deleted_at:string|null}>(
