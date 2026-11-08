@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { lostFoundNeeds, isNeedFound } from '@/domain/dreamResourceRecovery';
 import { api } from '@/lib/api/client';
-import { Alert, Image, Linking, Modal, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Alert, Image, Linking, Modal, Platform, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useDreams } from '@/domain/dreamRepository';
@@ -57,6 +57,7 @@ export default function DreamExperience({
 }) {
  const { patch, appendBlock, setResources, setHabits, setGoalAndGrow, advance, remove, addGrowthLog, setGrowthLogPublication } = useDreams();
  const theme = useAppTheme();
+ const {width:deviceWidth}=useWindowDimensions();
  const [editing, setEditing] = useState(false);
  const [picker, setPicker] = useState(false);
  const [editingBlock, setEditingBlock] = useState<string | null>(null);
@@ -83,6 +84,10 @@ export default function DreamExperience({
  const [reportLostDialog,setReportLostDialog]=useState(false);
  const [privateDiaryText,setPrivateDiaryText]=useState(dream.privateDiary||'');
  const [habitTitle, setHabitTitle] = useState('');
+ const [habitDescription,setHabitDescription]=useState('');
+ const [habitUnit,setHabitUnit]=useState('fois');
+ const [habitTarget,setHabitTarget]=useState('1');
+ const [editingHabitId,setEditingHabitId]=useState<string|null>(null);
  const [frequency, setFrequency] = useState<DreamHabit['frequency']>('daily');
  const [milestone, setMilestone] = useState('');
 
@@ -490,74 +495,120 @@ export default function DreamExperience({
         </View>
       ):null}
     </View>
-    <DreamPhaseSection title="Mes habitudes" subtitle="Des petits gestes qui font avancer ton rêve.">
-      <View style={{gap:10}}>
-        {habits.length===0?<View style={{backgroundColor:theme.surface,borderRadius:13,
-          padding:20,borderWidth:1,borderColor:theme.border,alignItems:'center',gap:8}}>
-          <Ionicons name="leaf-outline" size={24} color="#27845B"/>
-          <Text style={{fontFamily:'serif',color:theme.foreground,fontSize:20,textAlign:'center'}}>
-            Faire grandir ce qui compte
-          </Text>
-          <Text style={{color:theme.muted,fontSize:12,textAlign:'center',lineHeight:19}}>
-            Une habitude concrète suffit pour commencer.
-          </Text>
-        </View>:null}
-        {habits.map(h=>{
-          const history=habitHistory(h);
-          const streak=habitStreak(h);
-          const completed=h.completed.length;
-          return <View key={h.id} style={{
-            backgroundColor:theme.surface,borderWidth:1,borderColor:theme.border,
-            borderRadius:13,padding:15,gap:11,
-          }}>
-            <View style={{flexDirection:'row',alignItems:'center',gap:10}}>
-              <View style={{width:33,height:33,borderRadius:9,
-                backgroundColor:theme.dark?'#334C3D':'#E6F0E8',
-                alignItems:'center',justifyContent:'center'}}>
-                <Ionicons name="leaf-outline" size={18} color="#27845B"/>
-              </View>
-              <View style={{flex:1,gap:4}}>
-                <Text style={{color:theme.foreground,fontSize:14,fontWeight:'700'}}>{h.title}</Text>
-                <Text style={{color:theme.muted,fontSize:11}}>
-                  {h.frequency==='daily'?'Chaque jour':'Chaque semaine'} · {completed} réalisation{completed>1?'s':''}
-                </Text>
-              </View>
-              <View style={{alignItems:'flex-end',gap:3}}>
-                <Text style={{fontSize:15,color:'#27845B',fontWeight:'800'}}>{streak}</Text>
-                <Text style={{fontSize:10,color:theme.muted}}>
-                  {h.frequency==='daily'?'jours de suite':'semaines de suite'}
-                </Text>
-              </View>
+    {/* Tableau de constance inspiré d'un raster, sans interaction de cochage ici. */}
+    <View style={{marginTop:20,paddingTop:20,borderTopWidth:1,
+      borderColor:theme.border,marginBottom:10,gap:15}}>
+      <Text style={{fontSize:17,fontWeight:'600',lineHeight:24,
+        color:theme.foreground}}>
+        Fais grandir les habitudes qui feront avancer ton rêve.
+      </Text>
+      {habits.map((h,index)=>{
+        const columns=deviceWidth<480?22:28;
+        const history=habitHistory(h,new Date(),columns*6);
+        const streak=habitStreak(h);
+        const target=h.target&&h.target>0?h.target:1;
+        const unit=h.unit||'fois';
+        const cell=Math.max(8,Math.min(13,
+          Math.floor((Math.min(deviceWidth-91,550)-(columns-1)*3)/columns)));
+        const themes=theme.dark?[
+          {bg:'#343039',soft:'#4F4555',fill:'#AD83B9'},
+          {bg:'#36352F',soft:'#514D40',fill:'#D9B87B'},
+          {bg:'#293A3B',soft:'#3C5050',fill:'#82B6BD'},
+        ]:[
+          {bg:'#F3EDF3',soft:'#E7D9E9',fill:'#CB9BC6'},
+          {bg:'#F4F0E8',soft:'#E7DDCC',fill:'#D5AF68'},
+          {bg:'#EDF3F4',soft:'#D8E6E8',fill:'#8CBAC1'},
+        ];
+        const colors=themes[index%themes.length];
+        return <Pressable key={h.id}
+          disabled={historical}
+          onLongPress={()=>{
+            setEditingHabitId(h.id);setHabitTitle(h.title);
+            setHabitDescription(h.description||'');
+            setHabitTarget(String(target));setHabitUnit(unit);
+            setFrequency(h.frequency);setGrowthDialog('habit');
+          }}
+          accessibilityRole="button"
+          accessibilityLabel={h.title+', appui long pour modifier'}
+          style={{backgroundColor:colors.bg,borderRadius:22,
+            padding:15,gap:13}}>
+          <View style={{flexDirection:'row',alignItems:'center',gap:11}}>
+            <View style={{width:39,height:39,borderRadius:22,
+              borderWidth:5,borderColor:theme.dark?'#424649':'#E5E3E4',
+              backgroundColor:theme.dark?'#444348':'#F6F3F4',
+              alignItems:'center',justifyContent:'center'}}>
+              <Ionicons name="leaf-outline" size={18} color={theme.foreground}/>
             </View>
-            {/* Read-only 7-column raster; completion happens in Mon agenda only. */}
-            <View style={{width:164,flexDirection:'row',flexWrap:'wrap',gap:4,alignItems:'center'}}>
-              {history.map(slot=><View key={slot.key} accessibilityLabel={
-                slot.key+(slot.completed?' : accompli':' : non accompli')}
-                style={{width:20,height:20,borderRadius:5,
-                  backgroundColor:slot.completed?'#27845B':theme.dark?'#3A4140':'#E6EAE5',
-                }}/>)}
-            </View>
-            <View style={{flexDirection:'row',alignItems:'center',
-              justifyContent:'space-between',gap:8}}>
-              <Text style={{fontSize:10,color:theme.muted}}>
-                {h.frequency==='daily'?'28 derniers jours':'12 dernières semaines'}
+            <View style={{flex:1,gap:3}}>
+              <Text numberOfLines={2} style={{fontSize:15,color:theme.foreground,
+                fontWeight:'600'}}>{h.title}</Text>
+              <Text style={{fontSize:11,color:theme.muted}}>
+                {h.frequency==='daily'?'Chaque jour':'Chaque semaine'}
+                {' · '+target+' '+unit}
               </Text>
-              <Pressable onPress={()=>router.push('/agenda')}
-                accessibilityRole="link" style={{flexDirection:'row',alignItems:'center',gap:4,paddingVertical:5}}>
-                <Ionicons name="calendar-outline" size={15} color="#27845B"/>
-                <Text style={{fontSize:11,color:'#27845B',fontWeight:'700'}}>Suivre dans l’agenda</Text>
-              </Pressable>
+              {h.description ? <Text numberOfLines={2}
+                style={{fontSize:11,color:theme.muted,lineHeight:16}}>
+                {h.description}
+              </Text> : null}
             </View>
-          </View>;
-        })}
-        {!historical?<Pressable accessibilityRole="button" onPress={()=>setGrowthDialog('habit')}
-          style={{minHeight:60,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:9,
-            borderWidth:1,borderStyle:'dashed',borderColor:'#27845B',borderRadius:12}}>
-          <Ionicons name="add" size={22} color="#27845B"/>
-          <Text style={{color:theme.foreground,fontSize:13,fontWeight:'700'}}>Ajouter une habitude</Text>
-        </Pressable>:null}
-      </View>
-    </DreamPhaseSection>
+            <Pressable accessibilityRole="button"
+              accessibilityLabel={'Modifier ou supprimer '+h.title}
+              disabled={historical}
+              onPress={()=>{
+                setEditingHabitId(h.id);setHabitTitle(h.title);
+                setHabitDescription(h.description||'');
+                setHabitTarget(String(target));setHabitUnit(unit);
+                setFrequency(h.frequency);setGrowthDialog('habit');
+              }}
+              style={{padding:9}}>
+              <Ionicons name="ellipsis-horizontal" size={21} color={theme.muted}/>
+            </Pressable>
+          </View>
+          <View style={{flexDirection:'row',flexWrap:'wrap',
+            gap:3,width:columns*(cell+3)-3}}>
+            {history.map(slot=>{
+              const measured=h.measurements?.[slot.key]??0;
+              const partial=measured>0&&!slot.completed;
+              return <View key={slot.key}
+                accessibilityLabel={slot.key+(slot.completed?' : accompli':partial?' : en cours':' : non accompli')}
+                style={{width:cell,height:cell,borderRadius:Math.min(4,cell/3),
+                  backgroundColor:slot.completed?colors.fill:
+                    partial?colors.fill:colors.soft,
+                  opacity:partial?.6:1,
+                }}/>;
+            })}
+          </View>
+          <View style={{flexDirection:'row',alignItems:'center',
+            justifyContent:'space-between',gap:8}}>
+            <Text style={{fontSize:11,color:theme.muted}}>
+              {streak} {h.frequency==='daily'?'jours':'semaines'} de suite
+            </Text>
+            <Pressable onPress={()=>router.push('/agenda')}
+              accessibilityRole="link"
+              style={{flexDirection:'row',alignItems:'center',gap:5,paddingVertical:3}}>
+              <Ionicons name="calendar-outline" size={15} color={theme.foreground}/>
+              <Text style={{fontSize:11,color:theme.foreground}}>
+                Calendrier
+              </Text>
+            </Pressable>
+          </View>
+        </Pressable>;
+      })}
+      {!historical ? <Pressable accessibilityRole="button"
+        onPress={()=>{
+          setEditingHabitId(null);setHabitTitle('');setHabitDescription('');
+          setHabitUnit('fois');setHabitTarget('1');setFrequency('daily');
+          setGrowthDialog('habit');
+        }}
+        style={{alignSelf:'flex-end',flexDirection:'row',alignItems:'center',
+          gap:8,padding:12,borderRadius:11,
+          backgroundColor:theme.dark?'#343735':'#F0F0EC'}}>
+        <Ionicons name="add" size={21} color={theme.foreground}/>
+        <Text style={{fontSize:12,fontWeight:'700',color:theme.foreground}}>
+          Ajouter une habitude
+        </Text>
+      </Pressable> : null}
+    </View>
     <View style={{marginTop:23,marginBottom:16,
       backgroundColor:theme.dark?'#2C2927':'#FCF9F4',
       borderWidth:1,borderColor:theme.dark?'#4D473F':'#EFE9E0',
