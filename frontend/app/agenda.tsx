@@ -35,7 +35,8 @@ export default function Agenda() {
   const [measureValue,setMeasureValue]=useState('');
   const [events, setEvents] = useState<AgendaEntry[]>(DEMO_AGENDA);
   const activeHabitDreams = trackedDreams.filter(d =>
-    d.phase === 'Croissance' && !!d.habits?.length);
+    d.phase === 'Croissance' && !!d.habits?.length &&
+    !(d.paused && d.pauseUntil && d.pauseUntil >= isoDay(new Date())));
   const dateKey = isoDay(day),
     locale = { fr: 'fr-FR', en: 'en-US', de: 'de-DE', pt: 'pt-PT' }[language];
   // Until backend, current prayer saves are not date-scoped. Show them on today only.
