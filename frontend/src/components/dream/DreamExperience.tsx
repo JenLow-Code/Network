@@ -466,12 +466,14 @@ export default function DreamExperience({
                   {!publicIntent?'Ancien log privé':
                     serverPublished?'Public dans le rêve':
                     failed?'Publication non aboutie':
-                    dream.serverDreamId?'Publication en attente':'À publier · rêve local'}
+                    dream.serverDreamId ? (log.publicationState==='pending'?'Publication en cours':'À publier') : 'À publier · rêve local'}
                 </Text>
-                {failed&&!historical ? (
-                  <Pressable accessibilityRole="button" onPress={()=>void publishLog(log)}
+                {(failed || (!log.publicationState && publicIntent && !!dream.serverDreamId))&&!historical ? (
+                  <Pressable accessibilityRole="button" onPress={()=>void publishLog({...log,shareRequested:true})}
                     style={{padding:7,borderWidth:1,borderColor:'#B55164',borderRadius:8}}>
-                    <Text style={{color:'#B55164',fontSize:11,fontWeight:'700'}}>Réessayer</Text>
+                    <Text style={{color:'#B55164',fontSize:11,fontWeight:'700'}}>
+                      {failed?'Réessayer':'Publier'}
+                    </Text>
                   </Pressable>
                 ):null}
               </View>
@@ -648,8 +650,15 @@ export default function DreamExperience({
            setHabitTitle('');setGrowthDialog(null);
          }}/>
        </>:growthDialog==='log'?<>
-         <Field label="Une étape importante" value={milestone} onChange={setMilestone}
-           placeholder="Qu’as-tu accompli aujourd’hui ?" multiline/>
+         <TextInput value={milestone} onChangeText={setMilestone}
+           accessibilityLabel="Écrire une feuille du journal"
+           placeholder="Qu’est-ce qui a grandi aujourd’hui ?"
+           placeholderTextColor={theme.muted} multiline textAlignVertical="top"
+           maxLength={5000}
+           style={{fontFamily:HANDWRITING_FAMILY,fontSize:26,lineHeight:36,
+             minHeight:154,paddingHorizontal:14,paddingVertical:13,
+             borderWidth:1,borderColor:theme.border,borderRadius:10,
+             color:theme.foreground,backgroundColor:theme.background}}/>
          <Text style={{color:theme.muted,fontSize:11,lineHeight:18}}>
            Public par défaut dans ton rêve. Si le rêve est encore local, le partage
            nécessite sa synchronisation avec JenLow Network.
