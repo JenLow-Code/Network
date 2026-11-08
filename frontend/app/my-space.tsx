@@ -30,7 +30,8 @@ const open = (dream: DreamEntry) => {
   }
 };
 const frozen = (dream: DreamEntry) =>
-  dream.phase === 'Initiation' && !!dream.paused && !!dream.pauseUntil &&
+  (dream.phase === 'Initiation' || dream.phase === 'Croissance') &&
+  !!dream.paused && !!dream.pauseUntil &&
   dream.pauseUntil >= new Date().toISOString().slice(0, 10);
 const coverImage = (d: DreamEntry) => d.phase === 'Témoignage' ? d.resultImage || d.image : d.image;
 
