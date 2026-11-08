@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import type { DreamResource } from '@/domain/dreamWorkspace';
 import { useAppTheme } from '@/theme/AppTheme';
 import { DREAM_TALENT_CHOICES } from './dreamTalentCatalog';
+import { TalentLevelSelector } from '@/components/talent/TalentLevelSelector';
 
 /** Edits the exact saved wording of a dream need. No remote Tools publication is implied. */
 export function DreamResourceDetailsModal({
@@ -107,16 +108,7 @@ export function DreamResourceDetailsModal({
           )}
           {person ? <View style={{gap:8}}>
             <Text style={{color:theme.muted,fontSize:12}}>Niveau recherché</Text>
-            {editable ? <View style={{flexDirection:'row',flexWrap:'wrap',gap:7}}>
-              {['Grand débutant','Quelques notions','Intermédiaire','Avancé','Professionnel'].map(level=>
-                <Pressable key={level} accessibilityRole="button"
-                  accessibilityState={{selected:requiredLevel===level}} onPress={()=>setRequiredLevel(level)}
-                  style={{paddingHorizontal:10,paddingVertical:9,borderRadius:9,
-                    borderWidth:1,borderColor:requiredLevel===level?'#D71D77':theme.border}}>
-                  <Text style={{color:theme.foreground,fontSize:11,
-                    fontWeight:requiredLevel===level?'700':'500'}}>{level}</Text>
-                </Pressable>)}
-              </View> : <Text style={{color:theme.foreground,fontSize:13}}>{requiredLevel}</Text>}
+            <TalentLevelSelector value={requiredLevel} onChange={setRequiredLevel} disabled={!editable}/>
           </View>:null}
           <Text style={{ color: theme.muted, fontSize: 12 }}>Décris précisément ton besoin</Text>
           {editable ? <TextInput accessibilityLabel="Description de ce besoin"
@@ -158,13 +150,15 @@ export function DreamResourceDetailsModal({
                 alignItems: 'center', justifyContent: 'center', backgroundColor: '#242322' }}>
               <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 13 }}>Enregistrer les modifications</Text>
             </Pressable>
-            <Pressable accessibilityRole="button" onPress={() => { onToggle(resource); onClose(); }}
+            {!person ? <Pressable accessibilityRole="button" onPress={() => { onToggle(resource); onClose(); }}
               style={{ borderWidth: 1, borderColor: theme.border, borderRadius: 10,
                 minHeight: 45, alignItems: 'center', justifyContent: 'center' }}>
               <Text style={{ color: theme.foreground, fontWeight: '600', fontSize: 12 }}>
                 {resource.confirmed ? 'Marquer comme encore recherché' : 'Marquer comme trouvé'}
               </Text>
-            </Pressable>
+            </Pressable> : <Text style={{fontSize:12,color:theme.muted,lineHeight:19}}>
+              Un talent ne peut être marqué comme trouvé qu'après l'acceptation de la personne invitée. Aucune validation manuelle.
+            </Text>}
             <Pressable accessibilityRole="button" onPress={() => { onRemove(resource); onClose(); }}
               style={{ padding: 11, alignItems: 'center' }}>
               <Text style={{ color: '#B55164', fontSize: 12 }}>Retirer ce besoin</Text>
