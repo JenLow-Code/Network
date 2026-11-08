@@ -7,6 +7,7 @@ import type { DreamEntry, DreamResource } from '@/domain/dreamWorkspace';
 import type { DreamPhase } from '@/domain/publication';
 import { PHASE_LABELS } from '@/domain/publication';
 import { useDreams } from '@/domain/dreamRepository';
+import { api } from '@/lib/api/client';
 import { TopActions } from '@/components/navigation/TopActions';
 import { useAppTheme } from '@/theme/AppTheme';
 import DreamExperience from './DreamExperience';
@@ -108,7 +109,7 @@ export default function DreamHub({ dream, startInSemence = false, startPhase }: 
   dream: DreamEntry; startInSemence?: boolean; startPhase?: DreamPhase;
 }) {
   const theme = useAppTheme();
-  const { patch } = useDreams();
+  const { patch, setResources } = useDreams();
   const { width, height } = useWindowDimensions();
   const compact = width < 720;
   const [resultOpen,setResultOpen]=useState(false);
@@ -191,6 +192,28 @@ export default function DreamHub({ dream, startInSemence = false, startPhase }: 
     sheet.setValue({ x: 0, y: 0 });
   }, [dream.phase]);
 
+  // Reconcile owner-facing talent slots against accepted server invitations.
+  // Never trust a locally toggled “found” flag for a person.
+  useEffect(()=>{
+    if(!dream.serverDreamId || dream.phase==='Témoignage')return;
+    let live=true;
+    void api<{items:{needId:string;status:string}[]}>(
+      '/api/dreams/'+encodeURIComponent(dream.serverDreamId)+'/need-invitations',
+      {auth:'required'},
+    ).then(({items})=>{
+      if(!live)return;
+      const existing=dream.resources||[];
+      const next=existing.map(r=>{
+        if(r.category!=='person'||!r.serverNeedId)return r;
+        const accepted=items.some(inv=>inv.needId===r.serverNeedId&&inv.status==='accepted');
+        return {...r,confirmed:accepted};
+      });
+      if(next.some((r,i)=>r.confirmed!==existing[i]?.confirmed)){
+        setResources(dream.id,next);
+      }
+    }).catch(()=>{ /* Offline or unauthenticated: do not invent any acceptance. */ });
+    return()=>{live=false;};
+  },[dream.id,dream.serverDreamId,dream.phase]);
   const resources: DreamResource[] = dream.resources || (dream.needs || []).map((title, index) => ({
     id: 'legacy-' + index,
     title,
