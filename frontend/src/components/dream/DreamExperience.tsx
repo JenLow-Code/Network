@@ -472,6 +472,18 @@ export default function DreamExperience({
         </View>:null}
       </View>
     ):null}
+    <Pressable accessibilityRole="button"
+      accessibilityLabel="Ouvrir mes notes personnelles privées"
+      onPress={()=>router.push({pathname:'/my-dream/notes/[id]',params:{id:dream.id}})}
+      style={{marginTop:19,marginBottom:15,minHeight:46,
+        flexDirection:'row',alignItems:'center',justifyContent:'flex-end',
+        gap:6,paddingHorizontal:3}}>
+      <Ionicons name="lock-closed-outline" size={13} color="#27845B"/>
+      <Text style={{fontSize:13,fontWeight:'600',color:'#27845B'}}>
+        Ouvrir mes notes personnelles
+      </Text>
+      <Ionicons name="arrow-forward" size={17} color="#27845B"/>
+    </Pressable>
     {/* Une chronologie végétale légère, sans fond de carte ni statut permanent. */}
     <View style={{marginTop:18,marginBottom:16,paddingTop:0}}>
       {growthActive ? (
@@ -480,9 +492,9 @@ export default function DreamExperience({
           onPress={()=>setGrowthDialog('log')}
           style={{flexDirection:'row',gap:9,minHeight:75}}>
           <View style={{width:24,alignItems:'center'}}>
-            <Ionicons name="leaf-outline" size={21} color="#27845B" style={{opacity:.42,marginTop:4}}/>
-            <Ionicons name="add" size={13} color="#27845B" style={{marginTop:0,opacity:.70}}/>
-            <View style={{flex:1,marginTop:4,borderLeftWidth:1.5,
+            <Ionicons name="leaf-outline" size={21} color="#27845B"
+              style={{opacity:.38,marginTop:0}}/>
+            <View style={{flex:1,marginTop:0,borderLeftWidth:1.5,
               borderStyle:'dashed',borderColor:'#A5B8A4'}}/>
           </View>
           <Text style={{fontSize:12,color:theme.muted,paddingTop:7}}>
@@ -498,14 +510,17 @@ export default function DreamExperience({
       ):null}
       {[...(dream.milestones||[])].reverse().map((log,index)=>(
         <View key={log.id} style={{flexDirection:'row',gap:9,minHeight:94}}>
-          <View style={{width:24,alignItems:'center'}}>
+          <View style={{width:24,alignItems:'center',position:'relative'}}>
+            <View pointerEvents="none" style={{position:'absolute',top:0,height:11,
+              left:11,borderLeftWidth:1.5,
+              borderStyle:index===0&&growthActive?'dashed':'solid',borderColor:'#A5B8A4'}}/>
             <Ionicons name="leaf-outline" size={21} color="#27845B"
-              style={{marginTop:4}}/>
-            <View style={{flex:1,marginTop:9,marginBottom:0,
+              style={{marginTop:0,backgroundColor:theme.background}}/>
+            <View style={{flex:1,marginTop:0,marginBottom:0,
               borderLeftWidth:1.5,borderStyle:'solid',borderColor:'#A5B8A4'}}/>
           </View>
           <View style={{flex:1,paddingLeft:0,paddingBottom:24,gap:7}}>
-            <Text style={{fontSize:11,fontWeight:'700',
+            <Text style={{fontSize:11,lineHeight:21,fontWeight:'700',
               letterSpacing:0.35,color:'#27845B'}}>{log.date}</Text>
             <Text style={{fontFamily:HANDWRITING_FAMILY,fontSize:20,lineHeight:28,
               color:theme.foreground}}>{log.title}</Text>
@@ -529,9 +544,6 @@ export default function DreamExperience({
         const next=e.nativeEvent.layout.width;
         if(next>0 && Math.abs(next-(habitRasterWidth||0))>1)setHabitRasterWidth(next);
       }}>
-      <Text style={{fontSize:13,color:theme.muted,lineHeight:20}}>
-        Fais grandir une habitude pour réaliser ton rêve.
-      </Text>
       {habits.map((h,index)=>{
         const available=Math.max(180,habitRasterWidth||Math.min(deviceWidth-38,722));
         const gap=3;
@@ -589,18 +601,6 @@ export default function DreamExperience({
         <Text style={{fontSize:12,color:theme.muted}}>Ajouter une habitude</Text>
       </Pressable>:null}
     </View>
-    <Pressable accessibilityRole="button"
-      accessibilityLabel="Ouvrir mes notes personnelles privées"
-      onPress={()=>router.push({pathname:'/my-dream/notes/[id]',params:{id:dream.id}})}
-      style={{marginTop:19,marginBottom:15,minHeight:46,
-        flexDirection:'row',alignItems:'center',justifyContent:'flex-end',
-        gap:6,paddingHorizontal:3}}>
-      <Ionicons name="lock-closed-outline" size={13} color="#27845B"/>
-      <Text style={{fontSize:13,fontWeight:'600',color:'#27845B'}}>
-        Ouvrir mes notes personnelles
-      </Text>
-      <Ionicons name="arrow-forward" size={17} color="#27845B"/>
-    </Pressable>
     {!historical?<View style={{gap:11,marginTop:11,marginBottom:22}}>
       {frozen ? (
         <View style={{gap:9,padding:14,borderWidth:1,
