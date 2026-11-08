@@ -265,7 +265,7 @@ export default function SemenceInspirations({dream,editable}:{dream:DreamEntry;e
             </Pressable>):null}
             {draft?<>
               {draft.kind==='image'||draft.kind==='gallery'?<>
-                <Pressable accessibilityRole="button" onPress={pickMedia} disabled={!editable} disabled={!editable}
+                <Pressable accessibilityRole="button" onPress={pickMedia} disabled={!editable}
                   style={{height:105,borderRadius:12,borderWidth:1,borderColor:theme.border,
                     alignItems:'center',justifyContent:'center',gap:9,
                     backgroundColor:theme.background}}>
