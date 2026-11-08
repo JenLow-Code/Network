@@ -55,6 +55,12 @@ export type DreamHabit = {
   title: string;
   frequency: 'daily' | 'weekly';
   completed: string[];
+  /** Optional measurable target per daily or weekly period. */
+  description?: string;
+  target?: number;
+  unit?: string;
+  /** Quantity by local date/week; check marks still remain supported for legacy habits. */
+  measurements?: Record<string, number>;
 };
 export type DreamMilestone = {
   id: string;
