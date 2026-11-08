@@ -5,10 +5,12 @@ import type { DreamResource } from '@/domain/dreamWorkspace';
 import { useAppTheme } from '@/theme/AppTheme';
 import { DREAM_TALENT_CHOICES } from './dreamTalentCatalog';
 import { TalentLevelSelector } from '@/components/talent/TalentLevelSelector';
+import { DreamTalentInvitationPanel } from './DreamTalentInvitationPanel';
 
 /** Edits the exact saved wording of a dream need. No remote Tools publication is implied. */
 export function DreamResourceDetailsModal({
   resource, editable, onClose, onSave, onToggle, onRemove,
+  dreamServerId, onServerVerified,
 }: {
   resource?: DreamResource | null;
   editable: boolean;
@@ -16,6 +18,8 @@ export function DreamResourceDetailsModal({
   onSave: (resource: DreamResource) => void;
   onToggle: (resource: DreamResource) => void;
   onRemove: (resource: DreamResource) => void;
+  dreamServerId?: string;
+  onServerVerified?: (resourceId: string, confirmed: boolean) => void;
 }) {
   const theme = useAppTheme();
   const [title, setTitle] = useState('');
@@ -144,6 +148,9 @@ export function DreamResourceDetailsModal({
               </Text> : null}
             </View>
           ) : null}
+          {person ? <DreamTalentInvitationPanel
+            resource={resource} dreamServerId={dreamServerId} editable={editable}
+            onVerified={confirmed=>onServerVerified?.(resource.id,confirmed)}/> : null}
           {editable ? <>
             <Pressable accessibilityRole="button" onPress={save}
               style={{ minHeight: 47, borderRadius: 10, marginTop: 8,
@@ -159,10 +166,14 @@ export function DreamResourceDetailsModal({
             </Pressable> : <Text style={{fontSize:12,color:theme.muted,lineHeight:19}}>
               Un talent ne peut être marqué comme trouvé qu'après l'acceptation de la personne invitée. Aucune validation manuelle.
             </Text>}
-            <Pressable accessibilityRole="button" onPress={() => { onRemove(resource); onClose(); }}
+            {(!person || !resource.serverNeedId)?<Pressable accessibilityRole="button"
+              onPress={() => { onRemove(resource); onClose(); }}
               style={{ padding: 11, alignItems: 'center' }}>
               <Text style={{ color: '#B55164', fontSize: 12 }}>Retirer ce besoin</Text>
-            </Pressable>
+            </Pressable>:
+            <Text style={{fontSize:11,color:theme.muted,textAlign:'center',lineHeight:18}}>
+              Pour retirer une personne d’un besoin synchronisé, utilise « Retirer cette personne du projet » ci-dessus : elle recevra une notification.
+            </Text>}
           </> : null}
         </ScrollView>
       </View>
