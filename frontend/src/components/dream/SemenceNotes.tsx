@@ -149,14 +149,14 @@ export default function SemenceNotes({dream,editable}:{dream:DreamEntry;editable
               style={{minWidth:107,maxWidth:166,minHeight:48,
                 paddingHorizontal:4,justifyContent:'flex-end',alignItems:'stretch'}}>
               <Text numberOfLines={1} style={{
-                color:tabColor,opacity:current?1:0.68,
-                fontSize:12,fontWeight:current?'800':'600',
+                color:tabColor,opacity:current?0.92:0.60,
+                fontSize:12,fontWeight:current?'700':'500',
                 textAlign:'center'}}>
                 {book.title}
               </Text>
-              <View style={{width:'100%',height:current?4:3,
-                marginTop:11,borderRadius:3,
-                backgroundColor:tabColor,opacity:current?1:0.30}}/>
+              <View style={{width:'100%',height:current?2:1,
+                marginTop:10,borderRadius:2,
+                backgroundColor:tabColor,opacity:current?0.88:0.23}}/>
             </Pressable>;
           })}
         </ScrollView>
