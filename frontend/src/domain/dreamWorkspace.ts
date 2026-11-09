@@ -47,9 +47,12 @@ export type DreamNoteBlock = {
   collapsed?: boolean;
 };
 /** A private notebook belonging to a dream. Blocks never overlap across books. */
+/** Each notebook has a personal color; labels and progression lines share this color. */
+export type DreamNotebookColor = 'sand' | 'pink' | 'blue' | 'green' | 'violet' | 'coral';
 export type DreamNotebook = {
   id: string;
   title: string;
+  color?: DreamNotebookColor;
   blocks: DreamNoteBlock[];
 };
 export type DreamResource = {
