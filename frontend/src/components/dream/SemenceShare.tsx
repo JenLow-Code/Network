@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Alert, Image, Modal, Platform, Pressable, ScrollView, Share, Text, View } from 'react-native';
+import { Image, Modal, Platform, Pressable, ScrollView, Share, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/theme/AppTheme';
 import type { DreamBlock, DreamEntry } from '@/domain/dreamWorkspace';
@@ -88,7 +88,22 @@ export default function SemenceShare({dream,initialIds,onClose}:{
  };
  const shareExternal=()=>{
    if(!picked.length)return;
-   void Share.share({message:textFor(dream,picked),title:dream.title}).catch(()=>
+   const message=textFor(dream,picked);
+   if(Platform.OS==='web'&&typeof navigator!=='undefined'){
+     const web=navigator as Navigator&{share?:(data:{title?:string;text?:string})=>Promise<void>};
+     if(web.share){
+       void web.share({title:dream.title,text:message}).catch(()=>
+         setNotice('Partage annulé ou indisponible.'));
+     }else if(navigator.clipboard?.writeText){
+       void navigator.clipboard.writeText(message)
+         .then(()=>setNotice('Texte copié. Tu peux maintenant le transmettre.'))
+         .catch(()=>setNotice('La copie a échoué sur ce navigateur.'));
+     }else{
+       setNotice('Le partage direct n’est pas disponible ici. Utilise les exports PDF ou Word.');
+     }
+     return;
+   }
+   void Share.share({message,title:dream.title}).catch(()=>
      setNotice('Impossible d’ouvrir le partage de cet appareil.'));
  };
  return <Modal visible transparent animationType="slide" onRequestClose={onClose}>
