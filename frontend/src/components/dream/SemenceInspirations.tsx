@@ -204,12 +204,7 @@ export default function SemenceInspirations({dream,editable}:{dream:DreamEntry;e
         borderRadius:11,backgroundColor:theme.background}}/>;
 
   return <View style={{paddingBottom:12,gap:12}}>
-    <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',gap:8}}>
-      <View style={{flex:1,gap:3}}>
-        <Text style={{color:theme.muted,fontSize:12,lineHeight:19}}>
-          Des images, des citations et des références pour nourrir ton rêve.
-        </Text>
-      </View>
+    <View style={{flexDirection:'row',alignItems:'center',justifyContent:'flex-end',gap:8}}>
       {editable?<Pressable accessibilityRole="button" accessibilityLabel="Ajouter une inspiration"
         onPress={()=>{setChoosing(true);setMessage('');}}
         style={{width:36,height:36,alignItems:'center',justifyContent:'center',
