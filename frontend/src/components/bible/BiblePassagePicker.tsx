@@ -51,7 +51,7 @@ export default function BiblePassagePicker({onSelect,title='Choisir un verset',c
   }).catch(()=>{if(active)setMatches([]);}).finally(()=>{if(active)setSearching(false);});
   return ()=>{active=false;};
  },[search]);
- const referenceMatch=search.trim().match(/^(.+?)\\s+(\\d{1,3})\\s*[:.,]\\s*(\\d{1,3})$/);
+ const referenceMatch=search.trim().match(/^(.+?)\s+(\d{1,3})\s*[:.,]\s*(\d{1,3})$/);
  const foundBook=referenceMatch?BIBLE_BOOKS.find(([code,name])=>
    normalize(name)===normalize(referenceMatch[1])||
    normalize(code)===normalize(referenceMatch[1])||
