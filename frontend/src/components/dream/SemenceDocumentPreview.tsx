@@ -3,6 +3,7 @@ import { Image, Linking, Platform, Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/theme/AppTheme';
 import type { DreamBlock } from '@/domain/dreamWorkspace';
+import { textFromDocx } from '@/lib/docxPreview';
 
 type Format='pdf'|'text'|'image'|'word'|'other';
 function detect(block:DreamBlock):Format{
@@ -34,6 +35,11 @@ export function SemenceDocumentPreview({block}: {block:DreamBlock}){
    void fetch(content).then(response=>response.text()).then(text=>{
      if(live)setTextPreview(text.slice(0,24000));
    }).catch(()=>{if(live)setFailed(true);});
+  }
+  if(format==='word'&&/\.docx($|[?#])/i.test(block.title||'')&&content.startsWith('data:')){
+   void fetch(content).then(response=>response.arrayBuffer())
+     .then(textFromDocx).then(text=>{if(live)setTextPreview(text);})
+     .catch(()=>{if(live)setFailed(true);});
   }
   if(format==='pdf'&&content.startsWith('data:')){
    void fetch(content).then(response=>response.blob()).then(blob=>{
@@ -89,11 +95,13 @@ export function SemenceDocumentPreview({block}: {block:DreamBlock}){
    {format==='image'&&/^(https?:|data:image\/)/i.test(content)?
      <Image source={{uri:content}} resizeMode="contain"
        style={{height:270,width:'100%'}}/>:null}
-   {format==='text'&&!!textPreview?<Text selectable
+   {(format==='text'||format==='word')&&!!textPreview?<Text selectable
      style={{fontSize:13,lineHeight:21,color:theme.foreground,
        borderWidth:1,borderColor:theme.border,borderRadius:11,
        padding:13,maxHeight:350}}>{textPreview}</Text>:null}
-   {(format==='word'||format==='other'||Platform.OS!=='web')?
+   {format==='word'&&!!textPreview?<Text style={{fontSize:11,
+     color:theme.muted}}>Aperçu du texte · mise en forme Word non reproduite</Text>:null}
+   {((format==='word'&&!textPreview)||format==='other'||Platform.OS!=='web')?
      <Text style={{color:theme.muted,fontSize:12,lineHeight:18}}>
        {format==='word'?'Les documents Word s’ouvrent dans une application compatible.':
         'L’aperçu intégré de ce format n’est pas disponible ici.'}
