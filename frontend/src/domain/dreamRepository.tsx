@@ -4,6 +4,7 @@ import { dreams } from '@/mocks/publications';
 import { DreamPhase } from './publication';
 import { DreamEntry, DreamBlock, DreamResource, DreamHabit, DreamMilestone, FlowerDraft, fromDemo, canEditField, nextPhase } from './dreamWorkspace';
 import { rememberFoundNeeds } from './dreamResourceRecovery';
+import { growthResourceEvents } from './growthTimeline';
 import { useApp } from '@/context/AppContext';
 type Repo = {
   items: DreamEntry[];
@@ -145,15 +146,22 @@ export function DreamProvider({ children }: { children: React.ReactNode }) {
     );
   const patch: Repo['patch'] = (id, changes) => setItems(p => p.map(d => d.id === id ? { ...d, ...changes, id: d.id, title: d.title, phase: d.phase } : d));
   const appendBlock: Repo['appendBlock'] = (id, block) => setItems(p => p.map(d => d.id === id && d.phase === 'Rêve' ? { ...d, blocks: [...(d.blocks || []), block] } : d));
-  const setResources: Repo['setResources'] = (id, resources) => setItems(p => p.map(d =>
-    d.id === id && (d.phase === 'Initiation' || d.phase === 'Croissance')
-      ? {
-        ...d, resources,
-        foundNeedHistory: d.phase === 'Croissance'
-          ? rememberFoundNeeds(rememberFoundNeeds(d.foundNeedHistory, d.resources || []), resources)
-          : d.foundNeedHistory,
-      } : d
-  ));
+  const setResources: Repo['setResources'] = (id, resources) => setItems(p => p.map(d => {
+    if(d.id !== id || (d.phase !== 'Initiation' && d.phase !== 'Croissance')) return d;
+    const changes = d.phase==='Croissance'
+      ? growthResourceEvents(d.resources || [], resources) : [];
+    const nextEvents = changes.map((change,i)=>({
+      ...change,
+      id: change.date+':'+change.needId+':'+change.kind+':'+((d.growthEvents||[]).length+i),
+    }));
+    return {
+      ...d, resources,
+      growthEvents: nextEvents.length?[...(d.growthEvents||[]),...nextEvents]:d.growthEvents,
+      foundNeedHistory: d.phase === 'Croissance'
+        ? rememberFoundNeeds(rememberFoundNeeds(d.foundNeedHistory, d.resources || []), resources)
+        : d.foundNeedHistory,
+    };
+  }));
   const setHabits: Repo['setHabits'] = (id, habits) => setItems(p => p.map(d => d.id === id && d.phase === 'Croissance' ? { ...d, habits } : d));
   const addGrowthLog: Repo['addGrowthLog'] = (dreamId, log) => setItems(previous =>
     previous.map(d => d.id === dreamId && d.phase === 'Croissance'
