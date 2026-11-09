@@ -18,6 +18,7 @@ import { DREAM_TALENT_CHOICES } from './dreamTalentCatalog';
 import { TalentLevelSelector } from '@/components/talent/TalentLevelSelector';
 import { habitDayKey, habitKey } from '@/domain/habitProgress';
 import { GrowthLogbook } from './GrowthLogbook';
+import { canEditGrowthLog } from '@/domain/growthTimeline';
 
 const pink = '#D71D77';
 const HABIT_PALETTE = ['#C68FBF','#D7AE62','#80B8BC','#7DBA99','#D78C9F','#A1A0CF','#A9BF78'];
@@ -93,6 +94,7 @@ export default function DreamExperience({
  const [editingHabitId,setEditingHabitId]=useState<string|null>(null);
  const [frequency, setFrequency] = useState<DreamHabit['frequency']>('daily');
  const [milestone, setMilestone] = useState('');
+ const [editingLogId,setEditingLogId]=useState<string|null>(null);
 
  const blocks = dream.blocks || [];
  const resources: DreamResource[] = dream.resources || (dream.needs || []).map((n,i)=>({id:'legacy-'+i,title:n,category:'practical' as const,confirmed:(dream.resolvedNeeds||[]).includes(n)}));
@@ -217,26 +219,41 @@ export default function DreamExperience({
    setGrowthDialog(null);
  };
  const saveLog=()=>{
+   if(!growthActive)return;
    const content=milestone.trim();
    if(!content)return;
-   const today=habitDayKey(new Date());
-   const existing=(dream.milestones||[]).filter(log=>log.date===today).slice(-1)[0];
+   const now=new Date();
+   const today=habitDayKey(now);
+   const logs=dream.milestones||[];
+   const existing=editingLogId
+     ?logs.find(log=>log.id===editingLogId)
+     :logs.filter(log=>log.date===today).slice(-1)[0];
+   if(editingLogId&&!existing){
+     Alert.alert('Feuille introuvable','Cette feuille n’est plus disponible.');
+     return;
+   }
+   if(existing&&!canEditGrowthLog(existing,now)){
+     Alert.alert('Feuille définitive','Cette feuille ne peut plus être modifiée après 24 heures.');
+     return;
+   }
    if(existing){
      const updated:DreamMilestone={
        ...existing,title:content,shareRequested:true,
        publicationState:dream.serverDreamId?'pending':existing.publicationState,
      };
-     patch(dream.id,{milestones:(dream.milestones||[]).map(log=>
+     patch(dream.id,{milestones:logs.map(log=>
        log.id===existing.id?updated:log)});
      void publishLog(updated);
    }else{
      const log:DreamMilestone={
-       id:uid(),title:content,date:today,shareRequested:true,publicationState:'pending',
+       id:uid(),title:content,date:today,createdAt:now.toISOString(),
+       shareRequested:true,publicationState:'pending',
      };
      addGrowthLog(dream.id,log);
      void publishLog(log);
    }
    setMilestone('');
+   setEditingLogId(null);
    setGrowthDialog(null);
  };
  const freezeAt=(date:string)=>{
@@ -519,9 +536,21 @@ export default function DreamExperience({
     ):null}
     <GrowthLogbook dream={dream} editable={growthActive}
       onWrite={()=>{
+        if(!growthActive)return;
         const current=(dream.milestones||[]).filter(
           log=>log.date===habitDayKey(new Date())).slice(-1)[0];
+        if(current&&!canEditGrowthLog(current)){
+          Alert.alert('Feuille définitive','Cette entrée ne peut plus être modifiée.');
+          return;
+        }
+        setEditingLogId(current?.id||null);
         setMilestone(current?.title||'');
+        setGrowthDialog('log');
+      }}
+      onEditLog={log=>{
+        if(!growthActive||!canEditGrowthLog(log))return;
+        setEditingLogId(log.id);
+        setMilestone(log.title);
         setGrowthDialog('log');
       }}
       onRetry={log=>void publishLog({...log,shareRequested:true})}
@@ -649,7 +678,7 @@ export default function DreamExperience({
          <Text style={{color:theme.foreground,fontSize:20,fontWeight:'700'}}>
            {growthDialog==='habit'
              ? editingHabitId?'Modifier l’habitude':'Nouvelle habitude'
-             : growthDialog==='habits'?'Mes habitudes':'Feuille du jour'}
+             : growthDialog==='habits'?'Mes habitudes':editingLogId?'Modifier ma feuille':'Nouvelle feuille'}
          </Text>
          <Pressable accessibilityLabel="Fermer" onPress={()=>setGrowthDialog(null)}>
            <Ionicons name="close-outline" color={theme.foreground} size={23}/>
@@ -790,17 +819,17 @@ export default function DreamExperience({
            placeholder="Qu’est-ce qui a grandi aujourd’hui ?"
            placeholderTextColor={theme.muted} multiline textAlignVertical="top"
            maxLength={5000}
-           style={{fontFamily:HANDWRITING_FAMILY,fontSize:26,lineHeight:36,
+           style={{fontSize:16,lineHeight:25,
              minHeight:154,paddingHorizontal:14,paddingVertical:13,
              borderWidth:1,borderColor:theme.border,borderRadius:10,
              color:theme.foreground,backgroundColor:theme.background}}/>
          <Text style={{color:theme.muted,fontSize:11,lineHeight:18}}>
-           Public par défaut dans ton rêve. Si le rêve est encore local, le partage
-           nécessite sa synchronisation avec JenLow Network.
+           Modifiable pendant 24 heures après sa création, puis définitive.
+           L’écriture Biro apparaît uniquement dans le Logbook.
+           Publique par défaut une fois synchronisée.
          </Text>
-         <Action label={(dream.milestones||[]).some(log=>log.date===habitDayKey(new Date()))
-           ? 'Enregistrer la feuille du jour'
-           : dream.serverDreamId?'Publier cette feuille':'Enregistrer cette feuille'}
+         <Action label={editingLogId?'Enregistrer les modifications':
+           dream.serverDreamId?'Publier cette feuille':'Enregistrer cette feuille'}
            onPress={saveLog}/>
        </>:null}
      </ScrollView>
