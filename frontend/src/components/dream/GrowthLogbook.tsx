@@ -3,7 +3,7 @@ import { Modal, Pressable, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import type { DreamEntry, DreamGrowthEvent, DreamHabit, DreamMilestone, DreamResource } from '@/domain/dreamWorkspace';
-import { buildGrowthDays, countVerifiedPrayers, type GrowthDay } from '@/domain/growthTimeline';
+import { buildGrowthDays, canEditGrowthLog, countVerifiedPrayers, type GrowthDay } from '@/domain/growthTimeline';
 import { habitDayKey, habitDreamProgress, habitKey } from '@/domain/habitProgress';
 import { canPreviewGrowth, isSeedGrowthPreview, sampleGrowthPreview } from '@/domain/mockGrowthPreview';
 import { useAppTheme } from '@/theme/AppTheme';
@@ -13,6 +13,7 @@ import { HabitSquareGrid } from './HabitSquareGrid';
 
 const GREEN = '#27845B';
 const PINK = '#D71D77';
+const SEED_BROWN = '#B88962';
 const BLUE = '#397F9E';
 const LIME = '#A1BA44';
 
@@ -46,13 +47,11 @@ function SocialLine({title,icon,color,value}:{
   const delta=positiveCount(value.delta)?'+'+value.delta:null;
   const total=validCount(value.total)?String(value.total):null;
   if(!delta&&!total)return null;
-  return <View style={{flex:1,minWidth:0,flexDirection:'row',
-    alignItems:'center',gap:4,minHeight:25}}>
+  return <View style={{flexDirection:'row',alignItems:'center',gap:9,minHeight:24}}>
     {icon==='prayer'?<PrayerIcon size={13} color={color}/>:
       <Ionicons name="heart-outline" size={14} color={color}/>}
-    <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={.8}
-      style={{fontSize:10,color:theme.foreground,flex:1}}>{title}</Text>
-    <Text numberOfLines={1} style={{fontSize:10,fontWeight:'700',
+    <Text numberOfLines={1} style={{fontSize:11,color:theme.foreground,flex:1}}>{title}</Text>
+    <Text numberOfLines={1} style={{fontSize:11,fontWeight:'700',
       color:color}}>{delta||''}{delta&&total?' / ':''}{total||''}</Text>
   </View>;
 }
@@ -113,15 +112,21 @@ function CurrentHabitSummary({
             borderRadius:15,alignItems:'center',justifyContent:'center'}}>
             <Text style={{fontSize:14,lineHeight:19}}>{habit.emoji||'🌱'}</Text>
           </View>
-          <Text numberOfLines={1} style={{flex:1,color:theme.foreground,
-            fontSize:12,fontWeight:'600'}}>{habit.title}</Text>
+          <View style={{flex:1,gap:2,minWidth:0}}>
+            <Text numberOfLines={1} style={{color:theme.foreground,
+              fontSize:12,fontWeight:'600'}}>{habit.title}</Text>
+            <Pressable accessibilityRole="link" onPress={()=>router.push('/agenda')}
+              style={{alignSelf:'flex-start',paddingVertical:3}}>
+              <Text style={{color,fontSize:10,fontWeight:'600'}}>Voir dans le calendrier</Text>
+            </Pressable>
+          </View>
           <Text style={{fontSize:11,fontWeight:'700',color}}>
             {progress.planned===null?progress.completed:
               progress.completed+' / '+progress.planned}
           </Text>
           {progress.streak>0?<View style={{flexDirection:'row',
             alignItems:'center',gap:2}}>
-            <Ionicons name="flame-outline" size={12} color={color}/>
+            <Ionicons name="flame" size={14} color={color}/>
             <Text style={{fontSize:10,fontWeight:'700',color}}>{progress.streak}</Text>
           </View>:null}
           {editable?<Pressable accessibilityRole="button"
@@ -134,11 +139,6 @@ function CurrentHabitSummary({
         <HabitSquareGrid habit={habit} goalDate={dream.goalDate}
           color={color} editable={editable}
           onTodayPress={()=>openCheckIn(habit)}/>
-        <Pressable accessibilityRole="link"
-          onPress={()=>router.push('/agenda')}
-          style={{alignSelf:'flex-end',paddingVertical:3}}>
-          <Text style={{color,fontSize:10,fontWeight:'600'}}>Voir dans le calendrier</Text>
-        </Pressable>
       </View>;
     })}
     {habits.length>visible.length?<Pressable accessibilityRole="button"
@@ -280,12 +280,13 @@ function CurrentHabitSummary({
 }
 
 export function GrowthLogbook({
-  dream, editable, onWrite, onRetry, onManageHabits,
+  dream, editable, onWrite, onEditLog, onRetry, onManageHabits,
   onEditHabit,onDeleteHabit,onDetachHabit,onCheckIn,
 }: {
   dream: DreamEntry;
   editable: boolean;
   onWrite: () => void;
+  onEditLog: (log: DreamMilestone) => void;
   onRetry: (log: DreamMilestone) => void;
   onManageHabits: () => void;
   onEditHabit: (habit:DreamHabit) => void;
@@ -418,23 +419,33 @@ export function GrowthLogbook({
             fontSize: 9, color: theme.muted,
           }}>DÉMO</Text> : null}
         </View>
-        {group.notes.map(log => <View key={log.id} style={{ gap: 7 }}>
-          <Text style={{
-            color: theme.foreground, fontFamily: HANDWRITING_FAMILY, fontSize: 22, lineHeight: 31,
-          }}>{log.title}</Text>
-          {log.publicationState === 'failed' && editable ? <Pressable accessibilityRole="button"
-            onPress={() => onRetry(log)}
-            style={{ alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-            <Ionicons name="refresh-outline" size={13} color={PINK} />
-            <Text style={{ color: PINK, fontSize: 11 }}>Réessayer la publication</Text>
-          </Pressable> : null}
-        </View>)}
+        {group.notes.map(log => {
+          const canModify=editable&&canEditGrowthLog(log);
+          return <View key={log.id} style={{gap:6}}>
+            <Pressable disabled={!canModify} accessibilityRole={canModify?'button':undefined}
+              accessibilityLabel={canModify?'Modifier la feuille du journal':undefined}
+              onPress={()=>onEditLog(log)}
+              style={{flexDirection:'row',alignItems:'flex-start',gap:7}}>
+              <Text style={{flex:1,color:theme.foreground,
+                fontFamily:HANDWRITING_FAMILY,fontSize:22,lineHeight:31}}>
+                {log.title}
+              </Text>
+              {canModify?<Ionicons name="pencil-outline" size={14}
+                color={theme.muted} style={{marginTop:5}}/>:null}
+            </Pressable>
+            {log.publicationState === 'failed' && editable ? <Pressable accessibilityRole="button"
+              onPress={() => onRetry(log)}
+              style={{alignSelf:'flex-start',flexDirection:'row',alignItems:'center',gap:5}}>
+              <Ionicons name="refresh-outline" size={13} color={PINK}/>
+              <Text style={{color:PINK,fontSize:11}}>Réessayer la publication</Text>
+            </Pressable> : null}
+          </View>;
+        })}
         {(group.social?.prayers||group.social?.encouragements)?<View
-          style={{flexDirection:'row',alignItems:'center',gap:10,
-            justifyContent:'space-between',width:'100%'}}>
-          {group.social.prayers?<SocialLine title="Prières" icon="prayer" color={PINK}
+          style={{gap:3,width:'100%'}}>
+          {group.social.prayers?<SocialLine title="Prières" icon="prayer" color={SEED_BROWN}
             value={group.social.prayers}/>:null}
-          {group.social.encouragements?<SocialLine title="Encouragements" icon="heart" color={GREEN}
+          {group.social.encouragements?<SocialLine title="Encouragements" icon="heart" color={PINK}
             value={group.social.encouragements}/>:null}
         </View>:null}
         {/* One compact habit grid in today's meaningful leaf only; older days never repeat it. */}
