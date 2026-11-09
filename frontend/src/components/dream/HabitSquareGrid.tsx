@@ -103,9 +103,16 @@ export function HabitSquareGrid({
             </Pressable>;
           }
           return <View key={period.key} accessibilityLabel={
-            period.key+' · '+(period.future?'à venir':period.completed?'accompli':'non accompli')
-          } style={{...size,backgroundColor:color,
-            opacity:period.completed ? 1 : (period.future ? .12 : .22)}}/>;
+            period.key+' · '+(period.future?'à venir':period.completed?'accompli':'manqué')
+          } style={{...size,
+            backgroundColor:color,
+            opacity:period.completed?1:period.future ? .12 : .57,
+            alignItems:'center',justifyContent:'center'}}>
+            {!period.future&&!period.completed
+              ?<Ionicons name="close" color="#FFFFFF"
+                size={Math.max(9,Math.round(cellSize*.79))}/>
+              :null}
+          </View>;
         })}
       </View>
       {canExpand?<Pressable accessibilityRole="button"
