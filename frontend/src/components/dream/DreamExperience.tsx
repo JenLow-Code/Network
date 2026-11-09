@@ -164,6 +164,12 @@ export default function DreamExperience({
  const publishLog=async(log:DreamMilestone)=>{
    if(!log.shareRequested || !dream.serverDreamId)return;
    try{
+     if(log.serverEntryId){
+       await api('/api/entries/'+encodeURIComponent(log.serverEntryId),
+         {method:'PATCH',auth:'required',body:{body:log.title}});
+       setGrowthLogPublication(dream.id,log.id,'published',log.serverEntryId);
+       return;
+     }
      const response=await api<{id:string}>(
        '/api/dreams/'+encodeURIComponent(dream.serverDreamId)+'/entries',
        {method:'POST',auth:'required',idempotencyKey:'growth-log-'+log.id,
@@ -210,15 +216,27 @@ export default function DreamExperience({
    setGrowthDialog(null);
  };
  const saveLog=()=>{
-   if(!milestone.trim())return;
-   const log:DreamMilestone={
-     id:uid(),title:milestone.trim(),date:day(),
-     shareRequested:true,publicationState:'pending',
-   };
-   addGrowthLog(dream.id,log);
+   const content=milestone.trim();
+   if(!content)return;
+   const today=habitDayKey(new Date());
+   const existing=(dream.milestones||[]).filter(log=>log.date===today).slice(-1)[0];
+   if(existing){
+     const updated:DreamMilestone={
+       ...existing,title:content,shareRequested:true,
+       publicationState:dream.serverDreamId?'pending':existing.publicationState,
+     };
+     patch(dream.id,{milestones:(dream.milestones||[]).map(log=>
+       log.id===existing.id?updated:log)});
+     void publishLog(updated);
+   }else{
+     const log:DreamMilestone={
+       id:uid(),title:content,date:today,shareRequested:true,publicationState:'pending',
+     };
+     addGrowthLog(dream.id,log);
+     void publishLog(log);
+   }
    setMilestone('');
    setGrowthDialog(null);
-   void publishLog(log);
  };
  const freezeAt=(date:string)=>{
    if(historical || (dream.phase!=='Initiation' && dream.phase!=='Croissance') || frozen)return;
@@ -590,7 +608,7 @@ export default function DreamExperience({
          <Text style={{color:theme.foreground,fontSize:20,fontWeight:'700'}}>
            {growthDialog==='habit'
              ? editingHabitId?'Modifier l’habitude':'Nouvelle habitude'
-             : 'Nouvelle feuille'}
+             : growthDialog==='habits'?'Mes habitudes':'Feuille du jour'}
          </Text>
          <Pressable accessibilityLabel="Fermer" onPress={()=>setGrowthDialog(null)}>
            <Ionicons name="close-outline" color={theme.foreground} size={23}/>
@@ -693,6 +711,38 @@ export default function DreamExperience({
              Supprimer cette habitude
            </Text>
          </Pressable> : null}
+       </>:growthDialog==='habits'?<>
+         <Text style={{fontSize:12,color:theme.muted,lineHeight:19}}>
+           Les habitudes se cochent dans Mon agenda.
+         </Text>
+         {(dream.habits||[]).map(h=>(
+           <Pressable key={h.id} accessibilityRole="button" onPress={()=>openHabitEditor(h)}
+             style={{flexDirection:'row',alignItems:'center',gap:11,
+               paddingVertical:12,borderBottomWidth:1,borderColor:theme.border}}>
+             <View style={{width:38,height:38,borderRadius:21,
+               borderWidth:2,borderColor:h.color||'#27845B',
+               alignItems:'center',justifyContent:'center'}}>
+               <Text style={{fontSize:19}}>{h.emoji||'🌱'}</Text>
+             </View>
+             <View style={{flex:1,gap:3}}>
+               <Text style={{fontWeight:'700',color:theme.foreground,fontSize:13}}>
+                 {h.title}
+               </Text>
+               <Text style={{fontSize:11,color:theme.muted}}>
+                 {(h.target||1)+' '+(h.unit||'fois')} ·
+                 {h.frequency==='daily'?' chaque jour':' chaque semaine'}
+               </Text>
+             </View>
+             <Ionicons name="pencil-outline" color={theme.muted} size={18}/>
+           </Pressable>
+         ))}
+         <Pressable accessibilityRole="button" onPress={()=>openHabitEditor()}
+           style={{flexDirection:'row',alignItems:'center',justifyContent:'center',
+             gap:8,padding:13,borderWidth:1,borderColor:'#27845B',
+             borderRadius:10,marginTop:8}}>
+           <Ionicons name="add" size={18} color="#27845B"/>
+           <Text style={{color:'#27845B',fontSize:12,fontWeight:'700'}}>Ajouter une habitude</Text>
+         </Pressable>
        </>:growthDialog==='log'?<>
          <TextInput value={milestone} onChangeText={setMilestone}
            accessibilityLabel="Écrire une feuille du journal"
@@ -707,7 +757,9 @@ export default function DreamExperience({
            Public par défaut dans ton rêve. Si le rêve est encore local, le partage
            nécessite sa synchronisation avec JenLow Network.
          </Text>
-         <Action label="Ajouter et publier cette feuille" onPress={saveLog}/>
+         <Action label={(dream.milestones||[]).some(log=>log.date===habitDayKey(new Date()))
+           ? 'Enregistrer la feuille du jour' : 'Publier cette feuille'}
+           onPress={saveLog}/>
        </>:null}
      </ScrollView>
    </View>
