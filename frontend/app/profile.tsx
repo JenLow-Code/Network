@@ -16,6 +16,9 @@ import { ProfilePublicationFeed } from '@/components/publication/PublicationGall
 import { useDreams } from '@/domain/dreamRepository';
 import { PHASE_LABELS, PHASE_COLORS } from '@/domain/publication';
 import { publications } from '@/mocks/publications';
+import { api } from '@/lib/api/client';
+import { toPublications, type ApiFeedItem } from '@/lib/api/adapters';
+import type { Publication } from '@/domain/publication';
 import type { TalentIllustration } from '@/components/talent/TalentArt';
 type Talent = { name: string; level: number; interests: string[]; description?: string };
 const initial: Talent[] = [
@@ -64,6 +67,15 @@ export default function Profile() {
   const scrollTo=(y:number)=>scrollRef.current?.scrollTo({y:Math.max(0,y-18),animated:true});
   const [selectedTalent, setSelectedTalent] = useState<number | null>(null);
   const [featuredId, setFeaturedId] = useState<string | null>(null);
+  const [serverPublications, setServerPublications] = useState<Publication[]>([]);
+  useEffect(()=>{
+    let active=true;
+    setServerPublications([]);
+    void api<{items:ApiFeedItem[]}>('/api/me/publications?limit=100',{auth:'required'})
+      .then(result=>{if(active)setServerPublications(toPublications(result.items||[]));})
+      .catch(()=>{ /* Keep existing locally visible profile items when API is disconnected. */ });
+    return ()=>{active=false;};
+  },[app.email]);
   const pinKey='jenlow.public-profile.featured.v1.'+app.name;
   useEffect(()=>{let active=true;void AsyncStorage.getItem(pinKey).then(x=>{if(active)setFeaturedId(x);}).catch(()=>{});return ()=>{active=false;};},[pinKey]);
   const feature=(id:string|null)=>{setFeaturedId(id);if(id)void AsyncStorage.setItem(pinKey,id).catch(()=>{});else void AsyncStorage.removeItem(pinKey).catch(()=>{});};
@@ -147,7 +159,10 @@ export default function Profile() {
   const areaWidth=Math.min(width-36,860);
   const columns=areaWidth<350?2:3;
   const cardWidth=Math.floor((areaWidth-10*(columns-1))/columns);
-  const myPublicPosts=publications.filter(p=>p.author===app.name);
+  const myPublicPosts=[
+    ...serverPublications,
+    ...publications.filter(p=>p.author===app.name && !serverPublications.some(remote=>remote.id===p.id)),
+  ];
   const myLocalDreams=workspaceDreams.filter(d=>d.id.startsWith('local-') && d.ownerIds?.includes('demo-user'));
   const privateDreams=myLocalDreams.filter(d=>d.visibility!=='public');
   return (

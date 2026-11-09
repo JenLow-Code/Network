@@ -13,7 +13,7 @@ import { json } from '../http/respond';
 /**
  * Scripture is one publication type among others. Only editions whose licence allows import
  * hold verses here; nothing assumes every translation is public domain. The seeded edition is
- * Louis Segond 1910 (public domain), Psalm 150 only, until a licensed source is imported.
+ * Louis Segond 1910; missing chapters are fetched from a fixed public-domain source on first publication.
  */
 type Edition = { id: string; code: string; name: string; language_code: string; copyright_notice: string | null; source_url: string | null; redistribution_license: string | null; import_allowed: number; export_allowed: number };
 type Book = { id: string; book_code: string; name: string; sort_order: number; chapter_count: number };
@@ -63,9 +63,55 @@ async function validateRange(ctx: Ctx, e: Edition, b: Book, chapter: number, sta
   if ((n?.n ?? 0) !== end - start + 1) throw unprocessable('verses_not_available', 'These verses are not available in this edition.');
 }
 
+
+/**
+ * On first publication of an unseeded Louis Segond 1910 chapter, import its
+ * public-domain text from the same fixed source already used by the reader.
+ * Only the known public-domain edition is eligible; caller-supplied URLs or
+ * text are never accepted as canonical Scripture.
+ */
+const LSG_BOOK_FILES = ["Gen","Exod","Lev","Num","Deut","Josh","Judg","Ruth","1Sam","2Sam","1Kgs","2Kgs","1Chr","2Chr","Ezra","Neh","Esth","Job","Ps","Prov","Eccl","Song","Isa","Jer","Lam","Ezek","Dan","Hos","Joel","Amos","Obad","Jonah","Mic","Nah","Hab","Zeph","Hag","Zech","Mal","Matt","Mark","Luke","John","Acts","Rom","1Cor","2Cor","Gal","Eph","Phil","Col","1Thess","2Thess","1Tim","2Tim","Titus","Phlm","Heb","Jas","1Pet","2Pet","1John","2John","3John","Jude","Rev"] as const;
+type SourceChapter = {chapter:number;verses:{number:number;text:string}[]};
+type SourceBook = {book:string;chapters:SourceChapter[]};
+async function ensurePublicDomainChapter(
+  ctx:Ctx, e:Edition, b:Book, chapter:number, start:number, end:number,
+):Promise<void>{
+  if(e.code!=='LSG1910'||e.import_allowed!==1||chapter<1||chapter>b.chapter_count||
+     start<1||end<start||end-start>30)return;
+  const existing=await ctx.sql.first<{n:number}>(
+    'SELECT count(*) AS n FROM bible_verses WHERE edition_id=? AND book_id=? AND chapter=? AND verse BETWEEN ? AND ?',
+    e.id,b.id,chapter,start,end,
+  );
+  if(existing?.n===end-start+1)return;
+  const sourceCode=LSG_BOOK_FILES[b.sort_order-1];
+  if(!sourceCode)return;
+  let source:SourceBook;
+  try{
+    const response=await fetch('https://raw.githubusercontent.com/midvash/bible-data/main/versions/fr/lsg/books/'+sourceCode+'.json');
+    if(!response.ok)throw new Error('Bible source unavailable');
+    source=await response.json() as SourceBook;
+  }catch{
+    throw unprocessable('verses_not_available','Bible source unavailable for publication.');
+  }
+  if(source?.book!==sourceCode||!Array.isArray(source.chapters))
+    throw unprocessable('verses_not_available','Bible source format invalid.');
+  const found=source.chapters.find(c=>c?.chapter===chapter&&Array.isArray(c.verses));
+  if(!found)throw unprocessable('verses_not_available','This chapter is not available.');
+  const verses=found.verses.filter(v=>Number.isInteger(v?.number)&&
+    v.number>0&&v.number<=200&&typeof v.text==='string'&&v.text.trim().length>0);
+  const available=new Set(verses.map(v=>v.number));
+  for(let number=start;number<=end;number++)
+    if(!available.has(number))throw unprocessable('verses_not_available','The selected verse is not available.');
+  if(verses.length>0)await ctx.sql.batch(verses.map(v=>ctx.sql.stmt(
+    'INSERT OR IGNORE INTO bible_verses(edition_id,book_id,chapter,verse,text) VALUES(?,?,?,?,?)',
+    e.id,b.id,chapter,v.number,v.text.trim(),
+  )));
+}
+
 async function createBiblePost(ctx: Ctx, viewer: Viewer, input: { editionCode: string; bookCode: string; chapter: number; startVerse: number; endVerse: number; caption?: string | null; imageMediaId?: string | null; sourceUri?: string | null; importedFromApp?: string | null; visibility: string }): Promise<string> {
   const e = await edition(ctx, input.editionCode);
   const b = await book(ctx, input.bookCode);
+  await ensurePublicDomainChapter(ctx, e, b, input.chapter, input.startVerse, input.endVerse);
   await validateRange(ctx, e, b, input.chapter, input.startVerse, input.endVerse);
   if (input.imageMediaId) await requireOwnedMedia(ctx.sql, input.imageMediaId, viewer.id, ['image']);
   const pubId = newId();

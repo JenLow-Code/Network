@@ -119,9 +119,9 @@ export function toPublication(item: ApiFeedItem): Publication | null {
         type: 'bible',
         title: item.title ?? ref.label,
         reference: ref.label,
-        // The in-app reader currently renders Psalm 150 (the only chapter in the seeded edition).
-        referenceId: 'psalm-150',
+        referenceId: ref.book.code.toLowerCase()+'-'+ref.chapter,
         highlightedVerse: ref.startVerse,
+        excerpt: item.excerpt ?? undefined,
         image: url(item.image),
         imageAlt: ref.label,
       };

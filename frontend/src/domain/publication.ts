@@ -73,8 +73,9 @@ export type MusicPublication = PublicationBase & {
 export type BiblePublication = PublicationBase & {
   type: 'bible';
   reference: string;
-  referenceId: 'psalm-150';
+  referenceId: string;
   highlightedVerse: number;
+  excerpt?: string;
 };
 
 export type PersonPublication = PublicationBase & {

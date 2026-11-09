@@ -23,7 +23,7 @@ export default function BibleLibraryScreen(){
  const [selected,setSelected]=useState<BiblePassage|null>(null);
  const [notice,setNotice]=useState('');
  const [saveOpen,setSaveOpen]=useState(false);
- const [savedTarget,setSavedTarget]=useState<{kind:'fire'|'dream';id?:string}|null>(null);
+ const [savedTarget,setSavedTarget]=useState<{kind:'fire'|'dream'|'publication';id?:string}|null>(null);
  useEffect(()=>{
   let live=true;
   void bibleDownloadState().then(status=>{
@@ -51,7 +51,7 @@ export default function BibleLibraryScreen(){
   if(!selected)return;
   void Share.share({message:selected.text+'\n\n'+bibleReference(selected)+' — '+BIBLE_EDITION});
  };
- const onSaved=(message:string,target:{kind:'fire'|'dream';id?:string})=>{
+ const onSaved=(message:string,target:{kind:'fire'|'dream'|'publication';id?:string})=>{
   setSaveOpen(false);setNotice(message);setSavedTarget(target);
  };
  return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
@@ -131,7 +131,7 @@ export default function BibleLibraryScreen(){
      </Pressable>
      <Pressable onPress={()=>setSaveOpen(true)}
        accessibilityRole="button"
-       accessibilityLabel="Ajouter le verset à un rêve ou à ma liste Fire"
+       accessibilityLabel="Ajouter le verset à un rêve, à ma liste Fire ou le publier sur JenLow"
        style={{padding:13,backgroundColor:'#D71D77',
          borderRadius:10,alignItems:'center',flexDirection:'row',
          justifyContent:'center',gap:8}}>
@@ -145,11 +145,14 @@ export default function BibleLibraryScreen(){
      </Text>
      {savedTarget?<Pressable accessibilityRole="button"
        onPress={()=>savedTarget.kind==='fire'?router.push('/fire'):
-         router.push({pathname:'/my-dream/[id]',params:{id:savedTarget.id||''}})}
+         savedTarget.kind==='publication'?router.push({
+           pathname:'/bible/[reference]',
+           params:{reference:'publication',id:savedTarget.id||''},
+         }):router.push({pathname:'/my-dream/[id]',params:{id:savedTarget.id||''}})}
        style={{alignSelf:'flex-start',paddingVertical:8,paddingHorizontal:12,
          borderRadius:9,borderWidth:1,borderColor:theme.border}}>
        <Text style={{fontSize:12,fontWeight:'700',color:theme.foreground}}>
-         {savedTarget.kind==='fire'?'Ouvrir ma liste Fire':'Ouvrir ce rêve'}
+         {savedTarget.kind==='fire'?'Ouvrir ma liste Fire':savedTarget.kind==='publication'?'Voir ma publication':'Ouvrir ce rêve'}
        </Text>
      </Pressable>:null}
    </View>:null}

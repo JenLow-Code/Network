@@ -194,7 +194,7 @@ export const biblePosts = publications.filter((p): p is BiblePublication => p.ty
 export const findPublication = (id: string) => publications.find(item => item.id === id);
 export const verseText = 'Que tout ce qui respire loue l’Éternel ! Louez l’Éternel !';
 export const verseExcerpt = (p: BiblePublication) =>
-  p.highlightedVerse === 1 ? psalm150[0] : psalm150[5];
+  p.excerpt || (p.highlightedVerse === 1 ? psalm150[0] : psalm150[5]);
 export const psalm150 = [
   'Louez l’Éternel ! Louez Dieu dans son sanctuaire ! Louez-le dans l’étendue, où éclate sa puissance !',
   'Louez-le pour ses hauts faits ! Louez-le selon l’immensité de sa grandeur !',
