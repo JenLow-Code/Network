@@ -6,7 +6,9 @@ import { useAppTheme } from '@/theme/AppTheme';
 import { useDreams } from '@/domain/dreamRepository';
 import { pickDreamImage } from '@/lib/pickDreamImage';
 import { pickFlowerMedia } from '@/lib/pickFlowerMedia';
-import { usePublication } from '@/lib/api/hooks';
+import { useDiscovery, usePublication } from '@/lib/api/hooks';
+import BiblePassagePicker from '@/components/bible/BiblePassagePicker';
+import { bibleReference } from '@/domain/bibleLibrary';
 import { publicationPath } from '@/components/publication/PublicationGallery';
 import type { DreamBlock, DreamBlockKind, DreamEntry } from '@/domain/dreamWorkspace';
 
@@ -103,6 +105,9 @@ export default function SemenceInspirations({dream,editable}:{dream:DreamEntry;e
   const [choosing,setChoosing]=useState(false);
   const [draft,setDraft]=useState<DreamBlock|null>(null);
   const [message,setMessage]=useState('');
+  const [picker,setPicker]=useState<'bible'|'publication'|null>(null);
+  const [publicationSearch,setPublicationSearch]=useState('');
+  const discovery=useDiscovery({q:publicationSearch.trim()});
   const canShow=choosing||!!draft;
   const patchBlock=(updates:Partial<DreamBlock>)=>
     setDraft(current=>current?{...current,...updates}:current);
@@ -110,8 +115,9 @@ export default function SemenceInspirations({dream,editable}:{dream:DreamEntry;e
     const base:DreamBlock={id:freshId(),kind,title:'',content:'',size:'small',
       tone:'clear',font:'sans',align:'left',frame:'none'};
     setDraft(base);setChoosing(false);setMessage('');
+    setPicker(kind==='bible-verse'?'bible':kind==='publication-ref'?'publication':null);
   };
-  const close=()=>{setChoosing(false);setDraft(null);setMessage('');};
+  const close=()=>{setChoosing(false);setDraft(null);setPicker(null);setMessage('');};
   const showError=(msg:string)=>{setMessage(msg);};
   const save=()=>{
     if(!draft||!editable)return;
@@ -240,7 +246,7 @@ export default function SemenceInspirations({dream,editable}:{dream:DreamEntry;e
           <View style={{flexDirection:'row',alignItems:'center',
             justifyContent:'space-between',marginBottom:16}}>
             <Text style={{fontFamily:'serif',fontSize:23,color:theme.foreground}}>
-              {choosing?'Ajouter une inspiration':draft?typeLabel(draft.kind):'Inspiration'}
+              {choosing?'Ajouter une inspiration':picker==='publication'?'Trouver une publication':picker==='bible'?'Dans ma Bible':draft?typeLabel(draft.kind):'Inspiration'}
             </Text>
             <Pressable accessibilityRole="button" accessibilityLabel="Fermer"
               onPress={close} style={{padding:7}}>
@@ -263,7 +269,75 @@ export default function SemenceInspirations({dream,editable}:{dream:DreamEntry;e
               </View>
               <Ionicons name="chevron-forward" size={17} color={theme.muted}/>
             </Pressable>):null}
-            {draft?<>
+
+            {draft&&picker==='bible'?<BiblePassagePicker compact
+              title="Chercher un passage dans la Bible"
+              onSelect={verse=>{patchBlock({
+                title:bibleReference(verse),content:verse.text,
+                caption:'Louis Segond 1910',
+              });setPicker(null);}}/>:null}
+            {draft&&picker==='publication'?<View style={{gap:11}}>
+              <View style={{flexDirection:'row',alignItems:'center',gap:8,
+                borderWidth:1,borderColor:theme.border,borderRadius:10,
+                paddingHorizontal:11,backgroundColor:theme.background}}>
+                <Ionicons name="search-outline" size={18} color={theme.muted}/>
+                <TextInput value={publicationSearch} onChangeText={setPublicationSearch}
+                  accessibilityLabel="Rechercher les publications JenLow"
+                  placeholder="Rechercher comme dans Découverte…"
+                  placeholderTextColor={theme.muted}
+                  style={{color:theme.foreground,flex:1,minHeight:46,
+                    paddingVertical:10,fontSize:13}}/>
+              </View>
+              <Text style={{fontSize:11,lineHeight:18,color:theme.muted}}>
+                Choisis une publication dans les résultats, ou saisis son identifiant.
+              </Text>
+              <View style={{flexDirection:'row',flexWrap:'wrap',
+                justifyContent:'space-between',alignItems:'flex-start',gap:8}}>
+                {discovery.items.slice(0,18).map(item=>
+                  <Pressable key={item.id} onPress={()=>{patchBlock({
+                      content:item.id,title:item.title,
+                    });setPicker(null);setPublicationSearch('');}}
+                    accessibilityRole="button" accessibilityLabel={'Sélectionner '+item.title}
+                    style={{width:'48.5%',borderRadius:11,overflow:'hidden',
+                      backgroundColor:theme.dark?'#303238':'#F3F0EC',minHeight:143}}>
+                    {item.image?<Image source={{uri:item.image}}
+                      resizeMode="cover" style={{height:91,width:'100%'}}/>:
+                      <View style={{height:91,alignItems:'center',justifyContent:'center'}}>
+                        <Ionicons name="albums-outline" color={theme.muted} size={22}/>
+                      </View>}
+                    <View style={{padding:9,gap:3}}>
+                      <Text numberOfLines={2} style={{fontSize:12,fontWeight:'700',
+                        color:theme.foreground}}>{item.title}</Text>
+                      <Text numberOfLines={1} style={{fontSize:10,color:theme.muted}}>
+                        {item.type==='dream'?'Rêve':item.type==='music'?'Musique':
+                          item.type==='bible'?'Bible':'Talent'}
+                      </Text>
+                    </View>
+                  </Pressable>)}
+              </View>
+              {discovery.state==='loading'?<Text style={{fontSize:12,color:theme.muted}}>
+                Recherche en cours…
+              </Text>:null}
+              {discovery.state==='error'?<Text style={{fontSize:12,color:theme.muted}}>
+                Impossible de charger les publications. Utilise leur ID.
+              </Text>:null}
+              {!discovery.items.length&&discovery.state==='ready'?
+                <Text style={{fontSize:12,color:theme.muted}}>Aucune publication trouvée.</Text>:null}
+              <TextInput value={draft.content} onChangeText={content=>patchBlock({content})}
+                placeholder="Ou saisir l’ID exact de la publication"
+                placeholderTextColor={theme.muted} accessibilityLabel="ID de publication"
+                autoCapitalize="none"
+                style={{color:theme.foreground,borderWidth:1,borderColor:theme.border,
+                  borderRadius:10,padding:12,fontSize:13}}/>
+              <Pressable accessibilityRole="button"
+                onPress={()=>setPicker(null)}
+                style={{backgroundColor:theme.foreground,borderRadius:10,padding:13,alignItems:'center'}}>
+                <Text style={{color:theme.background,fontWeight:'700',fontSize:13}}>
+                  Continuer
+                </Text>
+              </Pressable>
+            </View>:null}
+            {draft&&!picker?<>
               {draft.kind==='image'||draft.kind==='gallery'?<>
                 <Pressable accessibilityRole="button" onPress={pickMedia} disabled={!editable}
                   style={{height:105,borderRadius:12,borderWidth:1,borderColor:theme.border,
@@ -285,19 +359,36 @@ export default function SemenceInspirations({dream,editable}:{dream:DreamEntry;e
                   'Auteur ou source (facultatif)')}
               </>:null}
               {draft.kind==='bible-verse'?<>
-                {input(draft.title||'',title=>patchBlock({title}),
-                  'Référence (ex. Jean 3:16)')}
-                {input(draft.content,content=>patchBlock({content}),
-                  'Texte du verset (facultatif)',true)}
-                <Text style={{fontSize:11,color:theme.muted,lineHeight:18}}>
-                  Cette référence est conservée telle que tu la saisis. Aucun texte biblique n’est inventé automatiquement.
-                </Text>
+                <View style={{padding:12,borderWidth:1,borderColor:theme.border,
+                  borderRadius:10,gap:7}}>
+                  <Text style={{fontWeight:'700',fontSize:13,color:theme.foreground}}>
+                    {draft.title||'Verset non sélectionné'}
+                  </Text>
+                  <Text style={{fontFamily:'serif',fontSize:16,lineHeight:25,
+                    color:theme.foreground}}>{draft.content||'Cherche un verset dans la Bible intégrée.'}</Text>
+                </View>
+                <Pressable onPress={()=>setPicker('bible')} accessibilityRole="button"
+                  style={{flexDirection:'row',alignItems:'center',justifyContent:'center',
+                    gap:8,padding:12,borderWidth:1,borderColor:theme.border,borderRadius:9}}>
+                  <Ionicons name="book-outline" size={16} color={theme.foreground}/>
+                  <Text style={{fontSize:12,fontWeight:'700',color:theme.foreground}}>
+                    {draft.title?'Choisir un autre verset':'Chercher dans la Bible'}
+                  </Text>
+                </Pressable>
               </>:null}
               {draft.kind==='publication-ref'?<>
+                <Pressable onPress={()=>setPicker('publication')} accessibilityRole="button"
+                  style={{flexDirection:'row',gap:9,alignItems:'center',padding:12,
+                    borderRadius:10,borderWidth:1,borderColor:theme.border}}>
+                  <Ionicons name="search-outline" size={18} color={theme.foreground}/>
+                  <Text style={{fontSize:13,fontWeight:'700',color:theme.foreground}}>
+                    Rechercher dans Découverte
+                  </Text>
+                </Pressable>
                 {input(draft.content,content=>patchBlock({content}),
-                  'ID exact de la publication')}
+                  'ID de publication')}
                 {input(draft.title||'',title=>patchBlock({title}),
-                  'Petite légende personnelle (facultative)')}
+                  'Titre / légende (facultatif)')}
                 {draft.content.trim()?<View style={{gap:4}}>
                   <Text style={{fontSize:12,color:theme.muted}}>
                     {currentPub.item?.id===draft.content.trim()?'Publication trouvée : '+currentPub.item.title:
