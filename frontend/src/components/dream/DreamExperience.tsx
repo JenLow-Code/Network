@@ -16,7 +16,7 @@ import { DreamGoalDatePicker } from './DreamGoalDatePicker';
 import { DreamResourceDetailsModal } from './DreamResourceDetailsModal';
 import { DREAM_TALENT_CHOICES } from './dreamTalentCatalog';
 import { TalentLevelSelector } from '@/components/talent/TalentLevelSelector';
-import { habitDayKey } from '@/domain/habitProgress';
+import { habitDayKey, habitKey } from '@/domain/habitProgress';
 import { GrowthLogbook } from './GrowthLogbook';
 
 const pink = '#D71D77';
