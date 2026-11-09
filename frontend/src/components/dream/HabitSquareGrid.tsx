@@ -68,8 +68,10 @@ export function HabitSquareGrid({
   const periods=chronologicalPeriods(habit,goalDate);
   const todayIndex=periods.findIndex(period=>period.isToday);
   const canExpand=periods.length>columns;
+  // The single-row preview ends at today, so the preceding successful days
+  // remain visible even when today sits at a grid row boundary.
   const previewStart=canExpand&&todayIndex>=0
-    ?Math.floor(todayIndex/columns)*columns
+    ?Math.max(0,Math.min(periods.length-columns,todayIndex-columns+1))
     :Math.max(0,periods.length-columns);
   const visible=expanded||!canExpand?periods:periods.slice(previewStart,previewStart+columns);
   const periodType=habit.frequency==='weekly'?'semaine':'jour';
@@ -103,7 +105,7 @@ export function HabitSquareGrid({
           return <View key={period.key} accessibilityLabel={
             period.key+' · '+(period.future?'à venir':period.completed?'accompli':'non accompli')
           } style={{...size,backgroundColor:color,
-            opacity:period.completed?1:period.future?.12:.22}}/>;
+            opacity:period.completed ? 1 : (period.future ? .12 : .22)}}/>;
         })}
       </View>
       {canExpand?<Pressable accessibilityRole="button"
