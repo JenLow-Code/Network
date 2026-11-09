@@ -74,7 +74,8 @@ async function fetchBibleBook(book:BibleBookCode):Promise<StoredBibleBook>{
  if(!Object.keys(chapters).length)throw new Error('Livre vide');
  const result:StoredBibleBook={book,chapters};
  // Reading a book automatically caches it; download-all explicitly fills every book.
- await AsyncStorage.setItem(key(book),JSON.stringify(result));
+ try{await AsyncStorage.setItem(key(book),JSON.stringify(result));}
+ catch{/* Online reading remains possible when local storage is full. */}
  return result;
 }
 export async function getBibleBook(book:BibleBookCode):Promise<StoredBibleBook>{
@@ -105,6 +106,8 @@ export async function downloadBible(onProgress?:(loaded:number,total:number)=>vo
   }
  };
  await Promise.all(Array.from({length:4},worker));
+ const state=await bibleDownloadState();
+ if(state.cached!==BIBLE_BOOKS.length)throw new Error('Insufficient offline storage');
  await AsyncStorage.setItem(INSTALLED,'yes');
 }
 export async function removeDownloadedBible(){
