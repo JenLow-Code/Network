@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Modal, Pressable, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import type { DreamEntry, DreamGrowthEvent, DreamMilestone, DreamResource } from '@/domain/dreamWorkspace';
+import type { DreamEntry, DreamGrowthEvent, DreamHabit, DreamMilestone, DreamResource } from '@/domain/dreamWorkspace';
 import { buildGrowthDays, countVerifiedPrayers, type GrowthDay } from '@/domain/growthTimeline';
-import { habitDayKey, habitDreamProgress } from '@/domain/habitProgress';
+import { habitDayKey, habitDreamProgress, habitKey } from '@/domain/habitProgress';
 import { canPreviewGrowth, isSeedGrowthPreview, sampleGrowthPreview } from '@/domain/mockGrowthPreview';
 import { useAppTheme } from '@/theme/AppTheme';
 import { HANDWRITING_FAMILY } from '@/theme/handwriting';
@@ -39,77 +39,224 @@ const positiveCount = (value: unknown): value is number =>
   validCount(value) && value > 0;
 const validDay = (date: string) => /^\d{4}-\d{2}-\d{2}$/.test(date);
 
-function SocialLine({ title, icon, color, value }: {
-  title: string; icon: 'prayer' | 'heart'; color: string; value: ActivityCount;
-}) {
-  const theme = useAppTheme();
-  const delta = positiveCount(value.delta) ? '+' + value.delta : null;
-  const total = validCount(value.total) ? String(value.total) : null;
-  if (!delta && !total) return null;
-  return <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 27 }}>
-    {icon === 'prayer' ? <PrayerIcon size={16} color={color} /> :
-      <Ionicons name="heart-outline" size={17} color={color} />}
-    <Text style={{ flex: 1, fontSize: 12, color: theme.foreground }}>{title}</Text>
-    <Text style={{ fontSize: 12, fontWeight: '700', color: theme.foreground }}>
-      {delta || ''}{delta && total ? ' / ' : ''}{total || ''}
-    </Text>
-    {!delta && total ? <Text style={{ color: theme.muted, fontSize: 10 }}>au total</Text> : null}
+function SocialLine({title,icon,color,value}:{
+  title:string;icon:'prayer'|'heart';color:string;value:ActivityCount;
+}){
+  const theme=useAppTheme();
+  const delta=positiveCount(value.delta)?'+'+value.delta:null;
+  const total=validCount(value.total)?String(value.total):null;
+  if(!delta&&!total)return null;
+  return <View style={{flex:1,minWidth:0,flexDirection:'row',
+    alignItems:'center',gap:4,minHeight:25}}>
+    {icon==='prayer'?<PrayerIcon size={13} color={color}/>:
+      <Ionicons name="heart-outline" size={14} color={color}/>}
+    <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={.8}
+      style={{fontSize:10,color:theme.foreground,flex:1}}>{title}</Text>
+    <Text numberOfLines={1} style={{fontSize:10,fontWeight:'700',
+      color:color}}>{delta||''}{delta&&total?' / ':''}{total||''}</Text>
   </View>;
 }
 
-/** Compact habit progress belongs to TODAY only, without a daily duplicate.
- * The grid stays one row high until its owner explicitly expands it. */
-function CurrentHabitSummary({ dream, onManage }: {
-  dream: DreamEntry; onManage: () => void;
-}) {
-  const theme = useAppTheme();
-  const habits = dream.habits || [];
-  if (!habits.length) return null;
-  const visible = habits.slice(0, 3);
-  return <View style={{ marginTop: 2, gap: 11 }}>
-    {visible.map(habit => {
-      const progress = habitDreamProgress(habit, dream.goalDate, dream.growthStartedAt);
-      const color = habit.color || GREEN;
-      return <View key={habit.id} style={{ gap: 5 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
-          <View style={{
-            width: 26, height: 26, borderWidth: 1.5, borderColor: color,
-            borderRadius: 15, alignItems: 'center', justifyContent: 'center',
-          }}>
-            <Text style={{ fontSize: 14, lineHeight: 19 }}>{habit.emoji || '🌱'}</Text>
+/** Each habit is a compact line and one row of its own colored squares. */
+function CurrentHabitSummary({
+  dream,editable,onManage,onEdit,onDelete,onDetach,onCheckIn,
+}:{
+  dream:DreamEntry;editable:boolean;onManage:()=>void;
+  onEdit:(habit:DreamHabit)=>void;
+  onDelete:(habit:DreamHabit)=>void;
+  onDetach:(habit:DreamHabit)=>void;
+  onCheckIn:(habit:DreamHabit,quantity:number)=>void;
+}){
+  const theme=useAppTheme();
+  const habits=dream.habits||[];
+  const [menuHabit,setMenuHabit]=useState<DreamHabit|null>(null);
+  const [checkHabit,setCheckHabit]=useState<DreamHabit|null>(null);
+  const [measureValue,setMeasureValue]=useState('');
+  const [invalid,setInvalid]=useState(false);
+  if(!habits.length)return null;
+  const visible=habits.slice(0,3);
+  const today=habitDayKey(new Date());
+  const currentQuantity=(habit:DreamHabit)=>{
+    const key=habitKey(habit.frequency,today);
+    const target=habit.target&&habit.target>0?habit.target:1;
+    const measured=habit.measurements?.[key];
+    const marked=(habit.completed||[]).some(d=>habitKey(habit.frequency,d)===key);
+    return Math.max(0,measured??(marked?target:0));
+  };
+  const openCheckIn=(habit:DreamHabit)=>{
+    if(!editable)return;
+    const target=habit.target&&habit.target>0?habit.target:1;
+    setCheckHabit(habit);
+    setMeasureValue(String(currentQuantity(habit)||target));
+    setInvalid(false);
+  };
+  const confirmCheckIn=()=>{
+    if(!checkHabit)return;
+    const amount=Number(measureValue.replace(',','.'));
+    if(!Number.isFinite(amount)||amount<0||amount>100000){
+      setInvalid(true);return;
+    }
+    onCheckIn(checkHabit,amount);
+    setCheckHabit(null);
+  };
+  const selectedTarget=checkHabit?.target&&checkHabit.target>0?checkHabit.target:1;
+  const selectedQuantity=checkHabit?currentQuantity(checkHabit):0;
+  return <View style={{marginTop:2,gap:11}}>
+    {visible.map(habit=>{
+      const progress=habitDreamProgress(habit,dream.goalDate,dream.growthStartedAt);
+      const color=habit.color||GREEN;
+      const target=habit.target&&habit.target>0?habit.target:1;
+      const todayDone=currentQuantity(habit)>=target;
+      return <View key={habit.id} style={{gap:4}}>
+        <View style={{flexDirection:'row',alignItems:'center',gap:7}}>
+          <View style={{width:26,height:26,borderWidth:1.5,borderColor:color,
+            borderRadius:15,alignItems:'center',justifyContent:'center'}}>
+            <Text style={{fontSize:14,lineHeight:19}}>{habit.emoji||'🌱'}</Text>
           </View>
-          <Text style={{
-            flex: 1, color: theme.foreground, fontSize: 12, fontWeight: '600',
-          }} numberOfLines={1}>{habit.title}</Text>
-          <Text style={{ fontSize: 11, fontWeight: '700', color }}>
-            {progress.planned === null ? progress.completed : progress.completed + ' / ' + progress.planned}
+          <Text numberOfLines={1} style={{flex:1,color:theme.foreground,
+            fontSize:12,fontWeight:'600'}}>{habit.title}</Text>
+          <Text style={{fontSize:11,fontWeight:'700',color}}>
+            {progress.planned===null?progress.completed:
+              progress.completed+' / '+progress.planned}
           </Text>
-          {progress.streak > 0 ? <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
-            <Ionicons name="flame-outline" size={12} color={color} />
-            <Text style={{ fontSize: 10, fontWeight: '700', color }}>{progress.streak}</Text>
-          </View> : null}
+          {progress.streak>0?<View style={{flexDirection:'row',
+            alignItems:'center',gap:2}}>
+            <Ionicons name="flame-outline" size={12} color={color}/>
+            <Text style={{fontSize:10,fontWeight:'700',color}}>{progress.streak}</Text>
+          </View>:null}
+          {editable?<Pressable accessibilityRole="button"
+            accessibilityLabel={'Options pour '+habit.title}
+            onPress={()=>setMenuHabit(habit)}
+            style={{paddingHorizontal:4,paddingVertical:8}}>
+            <Ionicons name="ellipsis-horizontal" size={17} color={theme.foreground}/>
+          </Pressable>:null}
         </View>
         <HabitSquareGrid habit={habit} planned={progress.planned}
-          completed={progress.completed} color={color} />
+          completed={progress.completed} color={color}
+          todayDone={todayDone} editable={editable}
+          onTodayPress={()=>openCheckIn(habit)}/>
+        <Pressable accessibilityRole="link"
+          onPress={()=>router.push('/agenda')}
+          style={{alignSelf:'flex-end',paddingVertical:3}}>
+          <Text style={{color,fontSize:10,fontWeight:'600'}}>Voir dans le calendrier</Text>
+        </Pressable>
       </View>;
     })}
-    {habits.length > visible.length ? <Pressable accessibilityRole="button"
-      onPress={onManage} style={{ alignSelf: 'flex-end', paddingVertical: 5 }}>
-      <Text style={{ color: GREEN, fontSize: 11 }}>
-        Voir les {habits.length - visible.length} autres habitudes
+    {habits.length>visible.length?<Pressable accessibilityRole="button"
+      onPress={onManage} style={{alignSelf:'flex-end',paddingVertical:5}}>
+      <Text style={{color:GREEN,fontSize:11}}>
+        Voir les {habits.length-visible.length} autres habitudes
       </Text>
-    </Pressable> : null}
+    </Pressable>:null}
+    <Modal visible={menuHabit!==null} transparent animationType="fade"
+      onRequestClose={()=>setMenuHabit(null)}>
+      <View style={{flex:1,justifyContent:'center',padding:20,
+        backgroundColor:'rgba(0,0,0,.48)'}}>
+        <Pressable onPress={()=>setMenuHabit(null)}
+          style={{position:'absolute',top:0,bottom:0,left:0,right:0}}/>
+        <View style={{backgroundColor:theme.surface,borderRadius:14,padding:18,
+          maxWidth:400,width:'100%',alignSelf:'center',gap:4}}>
+          <Text style={{fontSize:17,fontWeight:'700',
+            color:theme.foreground,marginBottom:6}}>{menuHabit?.title}</Text>
+          {([
+            {label:'Modifier l’habitude',icon:'pencil-outline',action:onEdit},
+            {label:'Détacher du rêve (garder dans l’agenda)',
+              icon:'unlink-outline',action:onDetach},
+            {label:'Supprimer l’habitude',icon:'trash-outline',action:onDelete},
+          ] as const).map(option=>(
+            <Pressable key={option.label} accessibilityRole="button"
+              onPress={()=>{
+                const target=menuHabit;setMenuHabit(null);
+                if(target)option.action(target);
+              }}
+              style={{flexDirection:'row',alignItems:'center',
+                gap:11,minHeight:46,paddingHorizontal:7}}>
+              <Ionicons name={option.icon} size={18}
+                color={option.label.startsWith('Supprimer')?'#B55164':theme.foreground}/>
+              <Text style={{fontSize:12,color:option.label.startsWith('Supprimer')
+                ?'#B55164':theme.foreground,flex:1}}>{option.label}</Text>
+            </Pressable>
+          ))}
+          <Pressable accessibilityRole="button" onPress={()=>setMenuHabit(null)}
+            style={{alignSelf:'center',padding:10}}>
+            <Text style={{fontSize:12,color:theme.muted}}>Annuler</Text>
+          </Pressable>
+        </View>
+      </View>
+    </Modal>
+    <Modal visible={checkHabit!==null} transparent animationType="fade"
+      onRequestClose={()=>setCheckHabit(null)}>
+      <View style={{flex:1,justifyContent:'center',padding:20,
+        backgroundColor:'rgba(0,0,0,.48)'}}>
+        <Pressable onPress={()=>setCheckHabit(null)}
+          style={{position:'absolute',top:0,bottom:0,left:0,right:0}}/>
+        <View style={{backgroundColor:theme.surface,borderRadius:14,padding:19,
+          maxWidth:400,width:'100%',alignSelf:'center',gap:12}}>
+          <Text style={{fontSize:18,fontWeight:'700',color:theme.foreground}}>
+            {checkHabit?.title}
+          </Text>
+          <Text style={{fontSize:12,color:theme.muted,lineHeight:19}}>
+            {selectedQuantity>=selectedTarget
+              ? 'Objectif déjà atteint pour cette période.'
+              : 'Marquer cette habitude comme accomplie '+(checkHabit?.frequency==='weekly'
+                ?'cette semaine':'aujourd’hui')+' ?'}
+          </Text>
+          {(selectedTarget!==1||checkHabit?.unit!=='fois')?
+            <View style={{gap:6}}>
+              <Text style={{fontSize:12,color:theme.foreground}}>
+                Quantité accomplie ({checkHabit?.unit||'fois'})
+              </Text>
+              <TextInput value={measureValue} onChangeText={v=>{
+                setMeasureValue(v);setInvalid(false);
+              }} keyboardType="decimal-pad"
+                accessibilityLabel="Quantité accomplie"
+                placeholder="0" placeholderTextColor={theme.muted}
+                style={{borderWidth:1,borderColor:invalid?'#D71D77':theme.border,
+                  padding:12,borderRadius:9,color:theme.foreground,fontSize:16}}/>
+              {invalid?<Text style={{color:'#D71D77',fontSize:11}}>
+                Indique une quantité valide.
+              </Text>:null}
+            </View>:null}
+          <Pressable accessibilityRole="button" onPress={()=>{
+            if(checkHabit?.unit==='fois'&&selectedTarget===1){
+              onCheckIn(checkHabit,1);
+              setCheckHabit(null);
+            }else confirmCheckIn();
+          }}
+            style={{minHeight:46,borderRadius:10,backgroundColor:GREEN,
+              alignItems:'center',justifyContent:'center'}}>
+            <Text style={{fontWeight:'700',fontSize:13,color:'#FFFFFF'}}>
+              {selectedQuantity>=selectedTarget?'Enregistrer la réalisation':'Marquer comme accompli'}
+            </Text>
+          </Pressable>
+          {selectedQuantity>0?<Pressable accessibilityRole="button"
+            onPress={()=>{if(checkHabit)onCheckIn(checkHabit,0);setCheckHabit(null);}}
+            style={{padding:10,alignSelf:'center'}}>
+            <Text style={{fontSize:12,color:'#B55164'}}>Annuler la réalisation</Text>
+          </Pressable>:null}
+          <Pressable accessibilityRole="button" onPress={()=>setCheckHabit(null)}
+            style={{padding:9,alignSelf:'center'}}>
+            <Text style={{fontSize:12,color:theme.muted}}>Fermer</Text>
+          </Pressable>
+        </View>
+      </View>
+    </Modal>
   </View>;
 }
 
 export function GrowthLogbook({
   dream, editable, onWrite, onRetry, onManageHabits,
+  onEditHabit,onDeleteHabit,onDetachHabit,onCheckIn,
 }: {
   dream: DreamEntry;
   editable: boolean;
   onWrite: () => void;
   onRetry: (log: DreamMilestone) => void;
   onManageHabits: () => void;
+  onEditHabit: (habit:DreamHabit) => void;
+  onDeleteHabit: (habit:DreamHabit) => void;
+  onDetachHabit: (habit:DreamHabit) => void;
+  onCheckIn: (habit:DreamHabit,quantity:number) => void;
 }) {
   const theme = useAppTheme();
   const [allOpen, setAllOpen] = useState(false);
@@ -249,13 +396,20 @@ export function GrowthLogbook({
             <Text style={{ color: PINK, fontSize: 11 }}>Réessayer la publication</Text>
           </Pressable> : null}
         </View>)}
-        {group.social?.prayers ? <SocialLine title="Prières" icon="prayer" color={PINK}
-          value={group.social.prayers} /> : null}
-        {group.social?.encouragements ? <SocialLine title="Encouragements" icon="heart" color={GREEN}
-          value={group.social.encouragements} /> : null}
+        {(group.social?.prayers||group.social?.encouragements)?<View
+          style={{flexDirection:'row',alignItems:'center',gap:10,
+            justifyContent:'space-between',width:'100%'}}>
+          {group.social.prayers?<SocialLine title="Prières" icon="prayer" color={PINK}
+            value={group.social.prayers}/>:null}
+          {group.social.encouragements?<SocialLine title="Encouragements" icon="heart" color={GREEN}
+            value={group.social.encouragements}/>:null}
+        </View>:null}
         {/* One compact habit grid in today's meaningful leaf only; older days never repeat it. */}
         {group.date === today && todayHasActivity && (dream.habits || []).length > 0 ?
-          <CurrentHabitSummary dream={dream} onManage={onManageHabits} /> : null}
+          <CurrentHabitSummary dream={dream} editable={editable}
+            onManage={onManageHabits}
+            onEdit={onEditHabit} onDelete={onDeleteHabit}
+            onDetach={onDetachHabit} onCheckIn={onCheckIn}/> : null}
         {group.changes.map((event: DreamGrowthEvent) => {
           const color = colorFor(event.category);
           const icon = event.category === 'person' ? 'people-outline' :
