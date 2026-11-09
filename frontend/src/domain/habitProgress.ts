@@ -15,10 +15,11 @@ export const habitWeekStart = (date: string): string => {
 export const habitKey = (frequency: DreamHabit['frequency'], date: string): string =>
   frequency === 'weekly' ? habitWeekStart(date) : date;
 
-/** Canonical start of a habit schedule, shared by counters and chronological squares.
- * Always prefer the user's explicit habit start, then the dream's Growth start.
- * Old completions are retained for their actual counts but do not silently extend
- * the schedule and create more squares than the stated goal. */
+/** Canonical schedule start shared by the progress counter and the dated grid.
+ * If recorded activity predates the saved habit start (e.g. a legacy migration),
+ * start at the oldest recorded period. Otherwise the badge would count completed
+ * work outside the grid and all its squares would misleadingly remain pale.
+ * Both the badge's target and the grid's length follow the same date range. */
 export function habitScheduleStart(
   habit:DreamHabit,
   dreamStartedAt?:string,
@@ -34,7 +35,8 @@ export function habitScheduleStart(
   const started=valid(habit.startedAt)?habit.startedAt:
     valid(dreamStartedAt?.slice(0,10))?dreamStartedAt!.slice(0,10):
     firstRecorded||habitDayKey(now);
-  return habitKey(habit.frequency,started);
+  const startKey=habitKey(habit.frequency,started);
+  return firstRecorded&&firstRecorded<startKey?firstRecorded:startKey;
 }
 
 /** Current run of consecutive completions. Today's incomplete slot doesn't break the run yet. */
