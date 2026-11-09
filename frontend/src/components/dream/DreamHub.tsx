@@ -260,6 +260,28 @@ export default function DreamHub({ dream, startInSemence = false, startPhase }: 
   const activeAccent = stages.find(stage => stage.phase === dream.phase)?.color || '#242322';
   const activeButtonText = dream.phase === 'Rêve' || dream.phase === 'Initiation' ? '#242322' : '#FFFFFF';
 
+  // Level 2 is the special result cover for a potential fruit only.
+  // Active dreams switch directly between Level 1 (My Space) and Level 3.
+  if (!fruit) {
+    const shownPhase = open || dream.phase;
+    return <View style={{flex:1,backgroundColor:theme.background}}>
+      {shownPhase==='Rêve'
+        ? <SemenceStudio dream={dream} onBack={()=>router.back()}
+            onNavigate={switchPhase}/>
+        : <DreamExperience dream={dream} viewPhase={shownPhase}
+            recoveryCategory={shownPhase==='Initiation'?recoveryCategory:null}
+            onRecoverResource={category=>{
+              setRecoveryCategory(category);setOpen('Initiation');
+            }}
+            onBack={()=>{
+              if(shownPhase==='Initiation'&&recoveryCategory){
+                setRecoveryCategory(null);setOpen('Croissance');
+              }else router.back();
+            }}
+            onNavigate={switchPhase}/>}
+    </View>;
+  }
+
   return (
     <View style={{ flex: 1, backgroundColor: theme.background }}>
       {open ? (
