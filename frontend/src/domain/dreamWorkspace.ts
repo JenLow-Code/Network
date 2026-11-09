@@ -93,6 +93,15 @@ export type DreamHabit = {
   emoji?: string;
   color?: string;
 };
+/** Local audit events produced exclusively by actual Dream resource state changes. */
+export type DreamGrowthEvent = {
+  id: string;
+  date: string;
+  kind: 'need_added' | 'need_found' | 'need_lost';
+  category: DreamResource['category'];
+  title: string;
+  needId: string;
+};
 export type DreamMilestone = {
   id: string;
   title: string;
@@ -127,6 +136,10 @@ export type DreamEntry = {
   financialNeeded?: boolean;
   habits?: DreamHabit[];
   milestones?: DreamMilestone[];
+  /** Dated events from confirmed state transitions, never illustrative activity. */
+  growthEvents?: DreamGrowthEvent[];
+  /** Trusted total of prayers for this dream, only when provided by a connected source. */
+  prayerCount?: number;
   thoughts?: DreamThought[];
   /** Owner-only freeform diary, stored in the private local Dream workspace. */
   privateDiary?: string;
