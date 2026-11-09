@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Alert, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/theme/AppTheme';
 import { useDreams } from '@/domain/dreamRepository';
 import type { DreamEntry, DreamNoteBlock } from '@/domain/dreamWorkspace';
+import { dreamNotebooks, editDreamNotebook } from '@/domain/dreamNotebooks';
 
 const id = () => 'note-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 const accent: Record<NonNullable<DreamNoteBlock['color']>, string> = {
@@ -24,28 +25,78 @@ export default function SemenceNotes({dream,editable}:{dream:DreamEntry;editable
   const theme=useAppTheme();
   const {patch}=useDreams();
   const [selectedId,setSelectedId]=useState<string|null>(null);
+  const [activeBookId,setActiveBookId]=useState('notebook-main');
+  const [bookMenuOpen,setBookMenuOpen]=useState(false);
+  const [nameMode,setNameMode]=useState<'new'|'rename'|null>(null);
+  const [nameDraft,setNameDraft]=useState('');
+  const [nameError,setNameError]=useState('');
   const [typesOpen,setTypesOpen]=useState(false);
   const [colorsOpen,setColorsOpen]=useState(false);
   const [readOnlyExpanded,setReadOnlyExpanded]=useState<Record<string,boolean>>({});
   const [contentHeights,setContentHeights]=useState<Record<string,number>>({});
-  // Read legacy notebooks without erasing their saved content.
-  const legacy: DreamNoteBlock[] = [
-    ...(dream.privateDiary?.trim()?[{id:'legacy-diary',type:'text' as const,text:dream.privateDiary}]:[]),
-    ...(dream.blocks||[]).filter(b=>b.kind==='todo').map(b=>({
-      id:'legacy-todo-'+b.id,type:'checklist' as const,text:b.content,checked:!!b.checked,
-    })),
-  ];
-  const items = dream.privateNotesBlocks ?? legacy;
+  const notebooks = dreamNotebooks(dream);
+  const notebook = notebooks.find(book=>book.id===activeBookId) ?? notebooks[0];
+  const items = notebook.blocks;
   const selected=items.find(b=>b.id===selectedId)||items[items.length-1];
   const selectedKey=selected?.id;
+
+  const selectNotebook=(next:string)=>{
+    setActiveBookId(next);
+    setSelectedId(null);setTypesOpen(false);setColorsOpen(false);
+    setBookMenuOpen(false);setNameMode(null);setNameError('');
+    setReadOnlyExpanded({});
+  };
+  const saveNotebooks=(next:typeof notebooks)=>{
+    if(!editable)return;
+    patch(dream.id,{privateNotebooks:next});
+  };
   const persist=(next:DreamNoteBlock[])=>{
     if(!editable)return;
-    patch(dream.id,{
-      privateNotesBlocks:next,
-      // All legacy content is carried into the structured notebook on first edit.
-      privateDiary:'',
-      blocks:(dream.blocks||[]).filter(b=>b.kind!=='todo'),
-    });
+    saveNotebooks(editDreamNotebook(notebooks,notebook.id,{blocks:next}));
+  };
+  const startName=(mode:'new'|'rename')=>{
+    if(!editable)return;
+    setNameMode(mode);
+    setNameDraft(mode==='rename'?notebook.title:'');
+    setNameError('');setBookMenuOpen(false);
+  };
+  const confirmName=()=>{
+    if(!editable||!nameMode)return;
+    const title=nameDraft.trim().slice(0,48);
+    if(!title){setNameError('Donne un nom à ce carnet.');return;}
+    if(nameMode==='new'){
+      const created={id:'notebook-'+id(),title,blocks:[] as DreamNoteBlock[]};
+      saveNotebooks([...notebooks,created]);
+      selectNotebook(created.id);
+    }else{
+      saveNotebooks(editDreamNotebook(notebooks,notebook.id,{title}));
+      setNameMode(null);setNameError('');
+    }
+  };
+  const moveNotebook=(delta:number)=>{
+    const from=notebooks.findIndex(book=>book.id===notebook.id),to=from+delta;
+    if(!editable||from<0||to<0||to>=notebooks.length)return;
+    const reordered=[...notebooks];
+    [reordered[from],reordered[to]]=[reordered[to],reordered[from]];
+    saveNotebooks(reordered);setBookMenuOpen(false);
+  };
+  const deleteNotebook=()=>{
+    if(!editable||notebooks.length<=1)return;
+    const proceed=()=>{
+      const remaining=notebooks.filter(book=>book.id!==notebook.id);
+      saveNotebooks(remaining);
+      selectNotebook(remaining[Math.max(0,Math.min(
+        notebooks.findIndex(b=>b.id===notebook.id)-1,remaining.length-1))].id);
+    };
+    const prompt=notebook.blocks.length
+      ?'Ce carnet contient '+notebook.blocks.length+' bloc(s). Sa suppression effacera son contenu.'
+      :'Supprimer ce carnet vide ?';
+    if(Platform.OS==='web'&&typeof window!=='undefined'){
+      if(window.confirm(prompt))proceed();
+    }else Alert.alert('Supprimer '+notebook.title+' ?',prompt,[
+      {text:'Annuler',style:'cancel'},{text:'Supprimer',style:'destructive',onPress:proceed},
+    ]);
+    setBookMenuOpen(false);
   };
   const modify=(blockId:string,changes:Partial<DreamNoteBlock>)=>
     persist(items.map(b=>b.id===blockId?{...b,...changes}:b));
@@ -73,6 +124,104 @@ export default function SemenceNotes({dream,editable}:{dream:DreamEntry;editable
     </Pressable>;
 
   return <View style={{gap:15,paddingBottom:15}}>
+    {/* Notebook selector lives INSIDE Notes, not in the dream's main navigation. */}
+    <View style={{gap:9}}>
+      <View style={{flexDirection:'row',alignItems:'center',gap:5}}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}
+          keyboardShouldPersistTaps="always" style={{flex:1}}
+          contentContainerStyle={{gap:6,alignItems:'center',paddingRight:8}}>
+          {notebooks.map(book=><Pressable key={book.id}
+            accessibilityRole="tab"
+            accessibilityLabel={'Ouvrir le carnet '+book.title}
+            accessibilityState={{selected:book.id===notebook.id}}
+            onPress={()=>selectNotebook(book.id)}
+            style={{paddingHorizontal:12,minHeight:35,maxWidth:156,
+              justifyContent:'center',borderRadius:9,
+              borderWidth:1,
+              borderColor:book.id===notebook.id?theme.border:'transparent',
+              backgroundColor:book.id===notebook.id?theme.surface:'transparent'}}>
+            <Text numberOfLines={1} style={{
+              color:book.id===notebook.id?theme.foreground:theme.muted,
+              fontSize:12,fontWeight:book.id===notebook.id?'700':'500'}}>
+              {book.title}
+            </Text>
+          </Pressable>)}
+        </ScrollView>
+        {editable?<Pressable accessibilityRole="button"
+          accessibilityLabel="Créer un carnet"
+          onPress={()=>startName('new')}
+          style={{width:34,height:35,alignItems:'center',justifyContent:'center'}}>
+          <Ionicons name="add" size={21} color={theme.muted}/>
+        </Pressable>:null}
+        {editable?<Pressable accessibilityRole="button"
+          accessibilityLabel={'Options du carnet '+notebook.title}
+          accessibilityState={{expanded:bookMenuOpen}}
+          onPress={()=>{setBookMenuOpen(!bookMenuOpen);setNameMode(null);}}
+          style={{width:31,height:35,alignItems:'center',justifyContent:'center'}}>
+          <Ionicons name="ellipsis-horizontal" size={19} color={theme.muted}/>
+        </Pressable>:null}
+      </View>
+      {nameMode?<View style={{gap:8,padding:11,borderRadius:10,
+        borderWidth:1,borderColor:theme.border,backgroundColor:theme.surface}}>
+        <Text style={{color:theme.foreground,fontSize:12,fontWeight:'700'}}>
+          {nameMode==='new'?'Nouveau carnet':'Renommer le carnet'}
+        </Text>
+        <TextInput autoFocus value={nameDraft} onChangeText={setNameDraft}
+          onSubmitEditing={confirmName} maxLength={48}
+          returnKeyType="done" accessibilityLabel="Nom du carnet"
+          placeholder="Ex. Paroles, Idées, Journal…"
+          placeholderTextColor={theme.muted}
+          style={{color:theme.foreground,fontSize:14,
+            backgroundColor:theme.background,borderRadius:8,
+            borderWidth:1,borderColor:theme.border,minHeight:42,paddingHorizontal:10}}/>
+        {nameError?<Text style={{fontSize:11,color:'#B44656'}}>{nameError}</Text>:null}
+        <View style={{flexDirection:'row',gap:10,justifyContent:'flex-end'}}>
+          <Pressable accessibilityRole="button"
+            onPress={()=>{setNameMode(null);setNameError('');}}
+            style={{padding:10}}>
+            <Text style={{color:theme.muted,fontSize:12}}>Annuler</Text>
+          </Pressable>
+          <Pressable accessibilityRole="button" onPress={confirmName}
+            style={{borderRadius:8,paddingVertical:10,paddingHorizontal:15,
+              backgroundColor:theme.foreground}}>
+            <Text style={{color:theme.background,fontWeight:'700',fontSize:12}}>
+              {nameMode==='new'?'Créer':'Enregistrer'}
+            </Text>
+          </Pressable>
+        </View>
+      </View>:null}
+      {bookMenuOpen?<View style={{flexDirection:'row',flexWrap:'wrap',gap:5,
+        padding:7,borderRadius:10,borderWidth:1,
+        borderColor:theme.border,backgroundColor:theme.surface}}>
+        <Pressable accessibilityRole="button" onPress={()=>startName('rename')}
+          style={{flexDirection:'row',gap:5,alignItems:'center',padding:9}}>
+          <Ionicons name="pencil-outline" color={theme.muted} size={15}/>
+          <Text style={{color:theme.foreground,fontSize:12}}>Renommer</Text>
+        </Pressable>
+        <Pressable accessibilityRole="button"
+          disabled={notebooks[0].id===notebook.id}
+          onPress={()=>moveNotebook(-1)}
+          style={{flexDirection:'row',gap:4,alignItems:'center',
+            padding:9,opacity:notebooks[0].id===notebook.id?.45:1}}>
+          <Ionicons name="arrow-back-outline" color={theme.muted} size={15}/>
+          <Text style={{color:theme.foreground,fontSize:12}}>Avant</Text>
+        </Pressable>
+        <Pressable accessibilityRole="button"
+          disabled={notebooks[notebooks.length-1].id===notebook.id}
+          onPress={()=>moveNotebook(1)}
+          style={{flexDirection:'row',gap:4,alignItems:'center',
+            padding:9,opacity:notebooks[notebooks.length-1].id===notebook.id?.45:1}}>
+          <Ionicons name="arrow-forward-outline" color={theme.muted} size={15}/>
+          <Text style={{color:theme.foreground,fontSize:12}}>Après</Text>
+        </Pressable>
+        {notebooks.length>1?<Pressable accessibilityRole="button"
+          onPress={deleteNotebook}
+          style={{flexDirection:'row',gap:4,alignItems:'center',padding:9}}>
+          <Ionicons name="trash-outline" color="#AF5560" size={15}/>
+          <Text style={{color:'#AF5560',fontSize:12}}>Supprimer</Text>
+        </Pressable>:null}
+      </View>:null}
+    </View>
     <View style={{gap:5}}>
       <View style={{flexDirection:'row',alignItems:'center',gap:7}}>
         <Ionicons name="lock-closed-outline" size={13} color={theme.muted}/>
@@ -212,7 +361,7 @@ export default function SemenceNotes({dream,editable}:{dream:DreamEntry;editable
         <Ionicons name="add" size={19} color={theme.muted}/>
         <Text style={{fontSize:12,color:theme.muted}}>Ajouter un bloc</Text>
       </Pressable>:null}
-      {(dream.notes||[]).length? <View style={{marginTop:9,gap:12}}>
+      {notebook.id===notebooks[0].id&&(dream.notes||[]).length? <View style={{marginTop:9,gap:12}}>
         {(dream.notes||[]).map((n,i)=><Text key={i}
           style={{color:theme.foreground,fontSize:15,lineHeight:24}}>{n}</Text>)}
       </View>:null}
