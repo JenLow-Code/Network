@@ -52,8 +52,8 @@ function SocialLine({title,icon,color,value}:{
     alignItems:'center',gap:7,minHeight:28,
     borderRadius:15,paddingHorizontal:10,paddingVertical:5,
     backgroundColor:theme.dark?theme.surface:bg}}>
-    {icon==='prayer'?<PrayerIcon size={14} color={color}/>:
-      <Ionicons name="heart-outline" size={15} color={color}/>}
+    {icon==='prayer'?<PrayerIcon size={14} color={color} filled/>:
+      <Ionicons name="heart" size={15} color={color}/>}
     <Text numberOfLines={1} style={{fontSize:11,
       color:theme.foreground}}>{title}</Text>
     <Text numberOfLines={1} style={{fontSize:11,fontWeight:'700',
