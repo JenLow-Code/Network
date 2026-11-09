@@ -7,6 +7,9 @@ import { useDreams } from '@/domain/dreamRepository';
 import { pickDreamImage } from '@/lib/pickDreamImage';
 import { pickFlowerMedia } from '@/lib/pickFlowerMedia';
 import { usePublication } from '@/lib/api/hooks';
+import PublicationSearchPicker from './PublicationSearchPicker';
+import BiblePassagePicker from '@/components/bible/BiblePassagePicker';
+import { bibleReference } from '@/domain/bibleLibrary';
 import { publicationPath } from '@/components/publication/PublicationGallery';
 import type { DreamBlock, DreamBlockKind, DreamEntry } from '@/domain/dreamWorkspace';
 
@@ -103,6 +106,7 @@ export default function SemenceInspirations({dream,editable}:{dream:DreamEntry;e
   const [choosing,setChoosing]=useState(false);
   const [draft,setDraft]=useState<DreamBlock|null>(null);
   const [message,setMessage]=useState('');
+  const [picker,setPicker]=useState<'bible'|'publication'|null>(null);
   const canShow=choosing||!!draft;
   const patchBlock=(updates:Partial<DreamBlock>)=>
     setDraft(current=>current?{...current,...updates}:current);
@@ -110,8 +114,9 @@ export default function SemenceInspirations({dream,editable}:{dream:DreamEntry;e
     const base:DreamBlock={id:freshId(),kind,title:'',content:'',size:'small',
       tone:'clear',font:'sans',align:'left',frame:'none'};
     setDraft(base);setChoosing(false);setMessage('');
+    setPicker(kind==='bible-verse'?'bible':kind==='publication-ref'?'publication':null);
   };
-  const close=()=>{setChoosing(false);setDraft(null);setMessage('');};
+  const close=()=>{setChoosing(false);setDraft(null);setPicker(null);setMessage('');};
   const showError=(msg:string)=>{setMessage(msg);};
   const save=()=>{
     if(!draft||!editable)return;
@@ -240,7 +245,7 @@ export default function SemenceInspirations({dream,editable}:{dream:DreamEntry;e
           <View style={{flexDirection:'row',alignItems:'center',
             justifyContent:'space-between',marginBottom:16}}>
             <Text style={{fontFamily:'serif',fontSize:23,color:theme.foreground}}>
-              {choosing?'Ajouter une inspiration':draft?typeLabel(draft.kind):'Inspiration'}
+              {choosing?'Ajouter une inspiration':picker==='publication'?'Trouver une publication':picker==='bible'?'Dans ma Bible':draft?typeLabel(draft.kind):'Inspiration'}
             </Text>
             <Pressable accessibilityRole="button" accessibilityLabel="Fermer"
               onPress={close} style={{padding:7}}>
@@ -263,7 +268,19 @@ export default function SemenceInspirations({dream,editable}:{dream:DreamEntry;e
               </View>
               <Ionicons name="chevron-forward" size={17} color={theme.muted}/>
             </Pressable>):null}
-            {draft?<>
+
+            {draft&&picker==='bible'?<BiblePassagePicker compact
+              title="Chercher un passage dans la Bible"
+              onSelect={verse=>{patchBlock({
+                title:bibleReference(verse),content:verse.text,
+                caption:'Louis Segond 1910',
+              });setPicker(null);}}/>:null}
+            {draft&&picker==='publication'?<PublicationSearchPicker
+              selectedId={draft.content}
+              onManual={content=>patchBlock({content})}
+              onSelect={item=>{patchBlock({content:item.id,title:item.title});setPicker(null);}}
+              onDone={()=>setPicker(null)}/>:null}
+            {draft&&!picker?<>
               {draft.kind==='image'||draft.kind==='gallery'?<>
                 <Pressable accessibilityRole="button" onPress={pickMedia} disabled={!editable}
                   style={{height:105,borderRadius:12,borderWidth:1,borderColor:theme.border,
@@ -285,19 +302,36 @@ export default function SemenceInspirations({dream,editable}:{dream:DreamEntry;e
                   'Auteur ou source (facultatif)')}
               </>:null}
               {draft.kind==='bible-verse'?<>
-                {input(draft.title||'',title=>patchBlock({title}),
-                  'Référence (ex. Jean 3:16)')}
-                {input(draft.content,content=>patchBlock({content}),
-                  'Texte du verset (facultatif)',true)}
-                <Text style={{fontSize:11,color:theme.muted,lineHeight:18}}>
-                  Cette référence est conservée telle que tu la saisis. Aucun texte biblique n’est inventé automatiquement.
-                </Text>
+                <View style={{padding:12,borderWidth:1,borderColor:theme.border,
+                  borderRadius:10,gap:7}}>
+                  <Text style={{fontWeight:'700',fontSize:13,color:theme.foreground}}>
+                    {draft.title||'Verset non sélectionné'}
+                  </Text>
+                  <Text style={{fontFamily:'serif',fontSize:16,lineHeight:25,
+                    color:theme.foreground}}>{draft.content||'Cherche un verset dans la Bible intégrée.'}</Text>
+                </View>
+                <Pressable onPress={()=>setPicker('bible')} accessibilityRole="button"
+                  style={{flexDirection:'row',alignItems:'center',justifyContent:'center',
+                    gap:8,padding:12,borderWidth:1,borderColor:theme.border,borderRadius:9}}>
+                  <Ionicons name="book-outline" size={16} color={theme.foreground}/>
+                  <Text style={{fontSize:12,fontWeight:'700',color:theme.foreground}}>
+                    {draft.title?'Choisir un autre verset':'Chercher dans la Bible'}
+                  </Text>
+                </Pressable>
               </>:null}
               {draft.kind==='publication-ref'?<>
+                <Pressable onPress={()=>setPicker('publication')} accessibilityRole="button"
+                  style={{flexDirection:'row',gap:9,alignItems:'center',padding:12,
+                    borderRadius:10,borderWidth:1,borderColor:theme.border}}>
+                  <Ionicons name="search-outline" size={18} color={theme.foreground}/>
+                  <Text style={{fontSize:13,fontWeight:'700',color:theme.foreground}}>
+                    Rechercher dans Découverte
+                  </Text>
+                </Pressable>
                 {input(draft.content,content=>patchBlock({content}),
-                  'ID exact de la publication')}
+                  'ID de publication')}
                 {input(draft.title||'',title=>patchBlock({title}),
-                  'Petite légende personnelle (facultative)')}
+                  'Titre / légende (facultatif)')}
                 {draft.content.trim()?<View style={{gap:4}}>
                   <Text style={{fontSize:12,color:theme.muted}}>
                     {currentPub.item?.id===draft.content.trim()?'Publication trouvée : '+currentPub.item.title:

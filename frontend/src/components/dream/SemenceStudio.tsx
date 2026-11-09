@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Alert, Platform, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
+import { Alert, Platform, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useAppTheme } from '@/theme/AppTheme';
@@ -19,6 +19,7 @@ export default function SemenceStudio({dream,onBack,onNavigate}:{
   const {patch,advance,remove}=useDreams();
   const [tab,setTab]=useState<'inspirations'|'notes'>('inspirations');
   const [confirm,setConfirm]=useState(false);
+  const [renamingNotes,setRenamingNotes]=useState(false);
   const editable=dream.phase==='Rêve';
   const accent='#B88962';
 
@@ -51,18 +52,39 @@ export default function SemenceStudio({dream,onBack,onNavigate}:{
       marginTop:6,marginBottom:19}}>
       {([
         {key:'inspirations',label:'Inspirations'},
-        {key:'notes',label:'Notes'},
+        {key:'notes',label:dream.privateNotesTitle?.trim()||'Notes'},
       ] as const).map(item=>
-        <Pressable key={item.key} onPress={()=>setTab(item.key)}
-          accessibilityRole="tab" accessibilityState={{selected:tab===item.key}}
-          style={{flex:1,minHeight:47,alignItems:'center',justifyContent:'center',
-            borderBottomWidth:tab===item.key?2:0,
-            borderBottomColor:tab===item.key?accent:'transparent'}}>
-          <Text style={{color:tab===item.key?theme.foreground:theme.muted,
-            fontSize:14,fontWeight:tab===item.key?'700':'500'}}>
-            {item.label}
-          </Text>
-        </Pressable>
+        <View key={item.key} style={{flex:1,minHeight:47,flexDirection:'row',
+          alignItems:'center',justifyContent:'center',gap:5,
+          borderBottomWidth:tab===item.key?2:0,
+          borderBottomColor:tab===item.key?accent:'transparent'}}>
+          {item.key==='notes'&&renamingNotes?(
+            <TextInput autoFocus
+              accessibilityLabel="Renommer l’onglet Notes"
+              value={dream.privateNotesTitle??'Notes'}
+              onChangeText={privateNotesTitle=>patch(dream.id,{privateNotesTitle})}
+              onBlur={()=>setRenamingNotes(false)}
+              onSubmitEditing={()=>setRenamingNotes(false)}
+              style={{flex:1,minHeight:40,color:theme.foreground,fontSize:14,
+                fontWeight:'700',textAlign:'center',paddingHorizontal:4}}/>
+          ):(
+            <Pressable onPress={()=>setTab(item.key)}
+              accessibilityRole="tab" accessibilityState={{selected:tab===item.key}}
+              style={{minHeight:46,justifyContent:'center',alignItems:'center',
+                flex:item.key==='inspirations'?1:undefined}}>
+              <Text numberOfLines={1} style={{color:tab===item.key?theme.foreground:theme.muted,
+                fontSize:14,fontWeight:tab===item.key?'700':'500'}}>
+                {item.label}
+              </Text>
+            </Pressable>
+          )}
+          {item.key==='notes'&&editable&&!renamingNotes&&tab==='notes'?(
+            <Pressable accessibilityRole="button" accessibilityLabel="Renommer Notes"
+              onPress={()=>setRenamingNotes(true)} style={{padding:5}}>
+              <Ionicons name="pencil-outline" color={theme.muted} size={14}/>
+            </Pressable>
+          ):null}
+        </View>
       )}
     </View>
     {tab==='inspirations'
