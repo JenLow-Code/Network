@@ -91,10 +91,12 @@ export default function BibleLibraryScreen(){
    }else setNotice('Le serveur n’a pas confirmé la publication.');
   }catch(e){
    if(e instanceof ApiRequestError){
-    setNotice(e.code==='not_authenticated'?'Connecte-toi à ton compte JenLow pour publier.':
-      e.code==='verses_not_available'||e.code==='chapter_not_available'?
+    setNotice(e.status===401||e.code==='not_authenticated'?
+      'Connecte-toi à ton compte JenLow pour publier.':
+      e.code==='verses_not_available'||e.code==='chapter_not_available'||e.status===404?
       'Ce passage est consultable, mais la base de publication du serveur ne contient pas encore ce chapitre.':
-      'Publication impossible : '+e.code+'. Aucun verset n’a été publié.');
+      e.status===403?'Ton compte ne possède pas encore l’autorisation de publier ce verset.':
+      'La publication n’a pas pu être enregistrée. Aucun verset n’a été publié.');
    }else setNotice('Impossible de joindre le service de publication. Aucun verset n’a été publié.');
   }finally{setPublishing(false);}
  };
