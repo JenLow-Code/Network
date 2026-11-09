@@ -15,6 +15,28 @@ export const habitWeekStart = (date: string): string => {
 export const habitKey = (frequency: DreamHabit['frequency'], date: string): string =>
   frequency === 'weekly' ? habitWeekStart(date) : date;
 
+/** Canonical start of a habit schedule, shared by counters and chronological squares.
+ * Always prefer the user's explicit habit start, then the dream's Growth start.
+ * Old completions are retained for their actual counts but do not silently extend
+ * the schedule and create more squares than the stated goal. */
+export function habitScheduleStart(
+  habit:DreamHabit,
+  dreamStartedAt?:string,
+  now:Date=new Date(),
+):string {
+  const valid=(value?:string):value is string=>
+    !!value&&/^\d{4}-\d{2}-\d{2}$/.test(value)&&
+    !Number.isNaN(new Date(value+'T12:00:00').getTime());
+  const firstRecorded=[
+    ...(habit.completed||[]),
+    ...Object.keys(habit.measurements||{}),
+  ].filter(valid).map(value=>habitKey(habit.frequency,value)).sort()[0];
+  const started=valid(habit.startedAt)?habit.startedAt:
+    valid(dreamStartedAt?.slice(0,10))?dreamStartedAt!.slice(0,10):
+    firstRecorded||habitDayKey(now);
+  return habitKey(habit.frequency,started);
+}
+
 /** Current run of consecutive completions. Today's incomplete slot doesn't break the run yet. */
 export function habitStreak(habit: DreamHabit, now: Date = new Date()): number {
   const completed = new Set(habit.completed.map(key => habitKey(habit.frequency, key)));
@@ -72,11 +94,7 @@ export function habitDreamProgress(
   const valid=(value?:string)=>!!value&&/^\d{4}-\d{2}-\d{2}$/.test(value)&&
     !Number.isNaN(new Date(value+'T12:00:00').getTime());
   if(!valid(goalDate))return {completed,planned:null,remaining:null,unit,streak:habitStreak(habit,now)};
-  const firstKnown=[...keys].sort()[0];
-  const started=valid(habit.startedAt)?habit.startedAt!:
-    valid(dreamStartedAt?.slice(0,10))?dreamStartedAt!.slice(0,10):
-    firstKnown||today;
-  const startKey=habitKey(habit.frequency,started);
+  const startKey=habitScheduleStart(habit,dreamStartedAt,now);
   const endKey=habitKey(habit.frequency,goalDate!);
   if(startKey>endKey)return {completed,planned:0,remaining:0,unit,streak:habitStreak(habit,now)};
   const start=new Date(startKey+'T12:00:00');
