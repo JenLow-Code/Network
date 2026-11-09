@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
 import { Alert, Platform, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useAppTheme } from '@/theme/AppTheme';
 import { useDreams } from '@/domain/dreamRepository';
 import type { DreamEntry } from '@/domain/dreamWorkspace';
 import type { DreamPhase } from '@/domain/publication';
-import { DreamPhaseHeader, DreamPhaseButton } from './DreamPhaseLayout';
+import { DreamPhaseHeader } from './DreamPhaseLayout';
 import SemenceInspirations from './SemenceInspirations';
 import SemenceNotes from './SemenceNotes';
 
@@ -39,14 +38,7 @@ export default function SemenceStudio({dream,onBack,onNavigate}:{
       paddingBottom:100,maxWidth:760,width:'100%',alignSelf:'center'}}>
     <DreamPhaseHeader dream={dream} phase="Rêve" onBack={onBack}
       onNavigate={onNavigate} readOnly={!editable}/>
-    <View style={{flexDirection:'row',alignItems:'center',gap:7,marginBottom:13}}>
-      <Ionicons name={editable?'link-outline':'lock-closed-outline'}
-        size={14} color={theme.muted}/>
-      <Text style={{fontSize:11,color:theme.muted,flex:1}}>
-        {editable?'Semence non répertoriée · accessible par lien direct':
-          'Semence archivée · consultation uniquement'}
-      </Text>
-    </View>
+
     <View style={{flexDirection:'row',borderBottomWidth:1,borderColor:theme.border,
       marginTop:6,marginBottom:19}}>
       {([
@@ -69,8 +61,15 @@ export default function SemenceStudio({dream,onBack,onNavigate}:{
       :<SemenceNotes dream={dream} editable={editable}/>}
 
     {editable?<View style={{marginTop:25}}>
-      <DreamPhaseButton label="Faire grandir cette semence"
-        onPress={()=>setConfirm(true)}/>
+      <Pressable accessibilityRole="button" accessibilityLabel="Faire germer cette semence"
+        onPress={()=>setConfirm(true)}
+        style={{minHeight:48,marginTop:12,paddingHorizontal:17,paddingVertical:12,
+          borderRadius:12,alignItems:'center',justifyContent:'center',
+          backgroundColor:'#A1BA44'}}>
+        <Text style={{color:'#242322',fontSize:13,fontWeight:'700',textAlign:'center'}}>
+          Faire germer cette semence
+        </Text>
+      </Pressable>
       {confirm?<View style={{backgroundColor:theme.surface,padding:16,marginTop:12,
         borderRadius:12,borderWidth:1,borderColor:theme.border,gap:8}}>
         <Text style={{color:theme.foreground,fontWeight:'700',fontSize:16}}>
@@ -79,17 +78,29 @@ export default function SemenceStudio({dream,onBack,onNavigate}:{
         <Text style={{fontSize:13,color:theme.muted,lineHeight:20}}>
           En Germination, ton rêve devient public. Tes notes personnelles restent privées et tes inspirations sont conservées.
         </Text>
-        <DreamPhaseButton label="Confirmer le passage en Germination"
+        <Pressable accessibilityRole="button"
           onPress={()=>{patch(dream.id,{visibility:'public'});
-            advance(dream.id);setConfirm(false);onBack();}}/>
+            advance(dream.id);setConfirm(false);onBack();}}
+          style={{minHeight:48,marginTop:12,paddingHorizontal:17,paddingVertical:12,
+            borderRadius:12,alignItems:'center',justifyContent:'center',
+            backgroundColor:'#A1BA44'}}>
+          <Text style={{color:'#242322',fontSize:13,fontWeight:'700',textAlign:'center'}}>
+            Confirmer la germination
+          </Text>
+        </Pressable>
         <Pressable accessibilityRole="button" onPress={()=>setConfirm(false)}
           style={{paddingVertical:11}}>
           <Text style={{color:theme.muted,textAlign:'center'}}>Pas encore</Text>
         </Pressable>
       </View>:null}
       <Pressable onPress={uproot} accessibilityRole="button"
-        style={{alignItems:'center',marginTop:22,padding:13}}>
-        <Text style={{color:'#A95760',fontSize:12}}>Arracher cette semence</Text>
+        accessibilityLabel="Arracher cette semence"
+        style={{alignItems:'center',justifyContent:'center',minHeight:44,
+          borderRadius:12,marginTop:13,paddingHorizontal:17,paddingVertical:11,
+          backgroundColor:theme.dark?'#18191B':'#242322'}}>
+        <Text style={{color:'#FFFFFF',fontSize:12,fontWeight:'700'}}>
+          Arracher cette semence
+        </Text>
       </Pressable>
     </View>:null}
   </ScrollView>;
