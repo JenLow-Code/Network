@@ -758,7 +758,8 @@ export default function DreamExperience({
            nécessite sa synchronisation avec JenLow Network.
          </Text>
          <Action label={(dream.milestones||[]).some(log=>log.date===habitDayKey(new Date()))
-           ? 'Enregistrer la feuille du jour' : 'Publier cette feuille'}
+           ? 'Enregistrer la feuille du jour'
+           : dream.serverDreamId?'Publier cette feuille':'Enregistrer cette feuille'}
            onPress={saveLog}/>
        </>:null}
      </ScrollView>
