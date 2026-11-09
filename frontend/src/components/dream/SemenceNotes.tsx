@@ -80,12 +80,6 @@ export default function SemenceNotes({dream,editable}:{dream:DreamEntry;editable
         </Text>
         {editable?<Text style={{fontSize:10,color:theme.muted}}>Enregistrement auto</Text>:null}
       </View>
-      <TextInput value={dream.privateNotesTitle||''}
-        editable={editable} onChangeText={privateNotesTitle=>patch(dream.id,{privateNotesTitle})}
-        accessibilityLabel="Titre du carnet"
-        placeholder="Mon carnet" placeholderTextColor={theme.muted}
-        style={{color:theme.foreground,fontFamily:'serif',fontSize:25,
-          lineHeight:34,fontWeight:'600',paddingHorizontal:0,paddingVertical:8}}/>
     </View>
 
     {editable?<View style={{gap:7}}>
