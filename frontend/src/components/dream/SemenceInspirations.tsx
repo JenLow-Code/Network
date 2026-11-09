@@ -8,6 +8,7 @@ import { pickDreamImage } from '@/lib/pickDreamImage';
 import { pickFlowerMedia } from '@/lib/pickFlowerMedia';
 import { usePublication } from '@/lib/api/hooks';
 import PublicationSearchPicker from './PublicationSearchPicker';
+import SemenceInspirationDetail from './SemenceInspirationDetail';
 import BiblePassagePicker from '@/components/bible/BiblePassagePicker';
 import { bibleReference } from '@/domain/bibleLibrary';
 import { publicationPath } from '@/components/publication/PublicationGallery';
@@ -43,8 +44,8 @@ function typeIcon(kind:DreamBlockKind):keyof typeof Ionicons.glyphMap{
   if(kind==='image'||kind==='gallery')return 'image-outline';
   return 'sparkles-outline';
 }
-function InspirationTile({block,onPress}:{
-  block:DreamBlock;onPress:()=>void;
+function InspirationTile({block,onPress,onLongPress}:{
+  block:DreamBlock;onPress:()=>void;onLongPress:()=>void;
 }) {
   const theme=useAppTheme();
   const remote=usePublication(block.kind==='publication-ref'?block.content.trim():undefined);
@@ -61,7 +62,11 @@ function InspirationTile({block,onPress}:{
     displayTitle||((block.kind==='document'||block.kind==='pdf')&&block.content.startsWith('data:')?'Document joint':block.content);
   return <Pressable accessibilityRole="button"
     accessibilityLabel={'Ouvrir '+typeLabel(block.kind)+': '+String(label).slice(0,70)}
-    onPress={onPress}
+    onPress={onPress} onLongPress={onLongPress} delayLongPress={460}
+    accessibilityHint="Appui long ou clic droit pour les options"
+    {...(Platform.OS==='web'?{onContextMenu:(event:any)=>{
+      event.preventDefault();onLongPress();
+    }} as any:{})}
     style={{width:wide?'100%':'48.5%',minHeight:150,marginBottom:11,
       backgroundColor:bg,borderRadius:13,overflow:'hidden'}}>
     {image?<Image source={{uri:block.media?.[0]||block.content}}
@@ -72,7 +77,7 @@ function InspirationTile({block,onPress}:{
           <Ionicons name={typeIcon(block.kind)} size={17} color={palette}/>
           <Text numberOfLines={1} style={{fontSize:9,letterSpacing:.6,
             fontWeight:'700',color:theme.muted,flex:1}}>
-            {typeLabel(block.kind).toUpperCase()}
+            {(block.kind==='quote'&&block.title?.trim()?block.title:typeLabel(block.kind)).toUpperCase()}
           </Text>
         </View>
         <View style={{gap:6}}>
@@ -98,13 +103,17 @@ function InspirationTile({block,onPress}:{
 }
 
 /** Inspiration references, not a second note editor. */
-export default function SemenceInspirations({dream,editable}:{dream:DreamEntry;editable:boolean}) {
+export default function SemenceInspirations({dream,editable,onShareInspiration}:{
+  dream:DreamEntry;editable:boolean;onShareInspiration?:(id:string)=>void;
+}) {
   const theme=useAppTheme();
   const {width}=useWindowDimensions();
   const {patch}=useDreams();
   const blocks=(dream.blocks||[]).filter(b=>b.kind!=='todo');
   const [choosing,setChoosing]=useState(false);
   const [draft,setDraft]=useState<DreamBlock|null>(null);
+  const [selectedBlock,setSelectedBlock]=useState<DreamBlock|null>(null);
+  const [selectedMenu,setSelectedMenu]=useState(false);
   const [message,setMessage]=useState('');
   const [picker,setPicker]=useState<'bible'|'publication'|null>(null);
   const canShow=choosing||!!draft;
@@ -216,7 +225,8 @@ export default function SemenceInspirations({dream,editable}:{dream:DreamEntry;e
     {blocks.length?<View style={{flexDirection:'row',flexWrap:'wrap',
       justifyContent:'space-between',alignItems:'flex-start'}}>
       {blocks.map(b=><InspirationTile key={b.id} block={b}
-        onPress={()=>{setDraft({...b});setMessage('');}}/>)}
+        onPress={()=>{setSelectedBlock({...b});setSelectedMenu(false);setMessage('');}}
+        onLongPress={()=>{setSelectedBlock({...b});setSelectedMenu(true);setMessage('');}}/>)}
     </View>:<View style={{minHeight:142,alignItems:'center',justifyContent:'center',
       gap:12,paddingHorizontal:20}}>
       <Ionicons name="images-outline" size={26} color={theme.muted}/>
@@ -225,6 +235,28 @@ export default function SemenceInspirations({dream,editable}:{dream:DreamEntry;e
           'Aucune inspiration conservée.'}
       </Text>
     </View>}
+    {selectedBlock?<SemenceInspirationDetail
+      key={selectedBlock.id+String(selectedMenu)}
+      block={selectedBlock} editable={editable} initialMenu={selectedMenu}
+      onClose={()=>setSelectedBlock(null)}
+      onEdit={()=>{setDraft({...selectedBlock});setSelectedBlock(null);setMessage('');}}
+      onDelete={()=>{
+        const block=selectedBlock;
+        setSelectedBlock(null);
+        const doDelete=()=>patch(dream.id,{
+          blocks:(dream.blocks||[]).filter(item=>item.id!==block.id),
+        });
+        if(Platform.OS==='web'&&typeof window!=='undefined'){
+          if(window.confirm('Supprimer cette inspiration ?'))doDelete();
+        }else Alert.alert('Supprimer cette inspiration ?',
+          'Elle sera retirée de ce rêve.',[
+            {text:'Annuler',style:'cancel'},
+            {text:'Supprimer',style:'destructive',onPress:doDelete},
+          ]);
+      }}
+      onShare={()=>{const id=selectedBlock.id;setSelectedBlock(null);
+        onShareInspiration?.(id);}}
+    />:null}
     <Modal visible={canShow} transparent animationType="slide" onRequestClose={close}>
       <View style={{flex:1,justifyContent:'flex-end'}}>
         <Pressable onPress={close} accessibilityRole="button"
