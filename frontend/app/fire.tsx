@@ -11,7 +11,7 @@ import { PublicationGallery } from '@/components/publication/PublicationGallery'
 import { useAppTheme } from '@/theme/AppTheme';
 export default function FireList() {
   const theme = useAppTheme();
-  const { fireIds, fireFolders, createFireFolder, renameFireFolder, deleteFireFolder, toggleFireFolderItem } = useApp();
+  const { fireIds, fireFolders, fireBibleVerses, removeBibleVerseFromFire, toggleFireFolderVerse, createFireFolder, renameFireFolder, deleteFireFolder, toggleFireFolderItem } = useApp();
   const [folderName, setFolderName] = useState('');
   const [createFolderOpen, setCreateFolderOpen] = useState(false);
   const submitFolder = () => { const name = folderName.trim(); if (!name) return; createFireFolder(name); setFolderName(''); setCreateFolderOpen(false); };
@@ -19,6 +19,10 @@ export default function FireList() {
   const [renaming, setRenaming] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [query, setQuery] = useState('');
+  const verses = fireBibleVerses.filter(verse =>
+    (!selectedFolder || (fireFolders.find(folder => folder.id === selectedFolder)?.verseIds || []).includes(verse.id)) &&
+    (verse.reference + ' ' + verse.text).toLowerCase().includes(query.trim().toLowerCase()),
+  );
   const items = publications.filter(
     p =>
       fireIds.includes(p.id) &&
@@ -101,7 +105,7 @@ export default function FireList() {
             <Pressable key={folder.id} onPress={() => setSelectedFolder(folder.id)} onLongPress={() => { setRenaming(folder.id); setEditName(folder.name); }}
               style={{ flexDirection: 'row', gap: 5, alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, backgroundColor: selectedFolder === folder.id ? '#F4DCE6' : theme.surface }}>
               <Ionicons name="folder-outline" size={14} color={theme.foreground}/>
-              <Text style={{ color: theme.foreground, fontSize: 12 }}>{folder.name} ({folder.publicationIds.filter(id => fireIds.includes(id)).length})</Text>
+              <Text style={{ color: theme.foreground, fontSize: 12 }}>{folder.name} ({folder.publicationIds.filter(id => fireIds.includes(id)).length + (folder.verseIds || []).filter(id => fireBibleVerses.some(verse => verse.id === id)).length})</Text>
             </Pressable>
           ))}
         </ScrollView>
@@ -141,14 +145,52 @@ export default function FireList() {
             ))}
           </View>
         )}
-        {items.length ? (
-          <PublicationGallery origin="fire" items={items} />
-        ) : (
-          <View style={{ marginTop: 70, alignItems: 'center', gap: 10 }}>
-            <Ionicons name="flame-outline" size={45} color="#aaa" />
-            <Text style={{ color: '#888' }}>Aucune publication dans cette liste.</Text>
-          </View>
-        )}
+        {items.length ? <PublicationGallery origin="fire" items={items} /> : null}
+        {verses.length ? <View style={{marginTop:items.length?19:5,gap:11,marginBottom:18}}>
+          <Text style={{fontFamily:'serif',fontSize:21,color:theme.foreground}}>
+            Versets enregistrés
+          </Text>
+          {verses.map(verse=><View key={verse.id}
+            style={{borderWidth:1,borderColor:theme.border,borderRadius:13,
+              backgroundColor:theme.surface,padding:15,gap:10}}>
+            <View style={{flexDirection:'row',alignItems:'center',gap:9}}>
+              <Ionicons name="book-outline" size={17} color="#B88962"/>
+              <Text style={{fontSize:14,fontWeight:'700',color:theme.foreground,flex:1}}>
+                {verse.reference}
+              </Text>
+              <Pressable accessibilityRole="button"
+                accessibilityLabel={'Retirer '+verse.reference+' de ma liste Fire'}
+                onPress={()=>removeBibleVerseFromFire(verse.id)} style={{padding:5}}>
+                <Ionicons name="trash-outline" color={theme.muted} size={18}/>
+              </Pressable>
+            </View>
+            <Text style={{fontSize:16,lineHeight:25,fontFamily:'serif',color:theme.foreground}}>
+              {verse.text}
+            </Text>
+            <Text style={{fontSize:11,color:theme.muted}}>{verse.edition}</Text>
+            {!selectedFolder&&fireFolders.length ? <ScrollView horizontal
+              showsHorizontalScrollIndicator={false} contentContainerStyle={{gap:7}}>
+              {fireFolders.map(folder=>{
+                const belongs=(folder.verseIds||[]).includes(verse.id);
+                return <Pressable key={folder.id}
+                  accessibilityRole="button"
+                  accessibilityLabel={(belongs?'Retirer de ':'Ajouter à ')+folder.name}
+                  onPress={()=>toggleFireFolderVerse(folder.id,verse.id)}
+                  style={{paddingHorizontal:10,paddingVertical:7,borderRadius:16,
+                    flexDirection:'row',gap:5,alignItems:'center',
+                    backgroundColor:belongs?'#F4DCE6':theme.background}}>
+                  <Ionicons name={belongs?'checkmark-circle':'folder-outline'}
+                    size={14} color={belongs?'#CB245C':theme.muted}/>
+                  <Text style={{fontSize:11,color:theme.foreground}}>{folder.name}</Text>
+                </Pressable>;
+              })}
+            </ScrollView> : null}
+          </View>)}
+        </View> : null}
+        {!items.length&&!verses.length ? <View style={{ marginTop: 70, alignItems: 'center', gap: 10 }}>
+          <Ionicons name="flame-outline" size={45} color="#aaa" />
+          <Text style={{ color: '#888' }}>Aucun élément dans cette liste.</Text>
+        </View> : null}
       </ScrollView>
       <Modal visible={createFolderOpen} transparent animationType="fade"
         onRequestClose={() => { setCreateFolderOpen(false); setFolderName(''); }}>

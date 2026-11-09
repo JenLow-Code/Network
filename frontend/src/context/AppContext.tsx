@@ -3,7 +3,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from './AuthProvider';
 
 type Message = { id: string; text: string; fromMe: boolean };
-export type FireFolder = { id: string; name: string; publicationIds: string[] };
+export type FireFolder = { id: string; name: string; publicationIds: string[]; verseIds?: string[] };
+export type FireBibleVerse = {
+  id: string; reference: string; edition: string; text: string; addedAt: string;
+};
 type ProfileChanges = { name: string; bio: string; city: string; church: string };
 type AppState = {
   rejectedContacts: string[];
@@ -21,6 +24,10 @@ type AppState = {
   send: (text: string) => void;
   fireIds: string[];
   fireFolders: FireFolder[];
+  fireBibleVerses: FireBibleVerse[];
+  saveBibleVerseToFire: (verse: FireBibleVerse, folderId?: string) => void;
+  removeBibleVerseFromFire: (verseId: string) => void;
+  toggleFireFolderVerse: (folderId: string, verseId: string) => void;
   createFireFolder: (name: string) => void;
   renameFireFolder: (folderId: string, name: string) => void;
   deleteFireFolder: (folderId: string) => void;
@@ -54,6 +61,7 @@ const todayKey = () => {
 };
 const FIRE_KEY = (email: string) => 'jenlow.network.fire.v1.' + email.toLowerCase();
 const FIRE_FOLDERS_KEY = (email: string) => 'jenlow.network.fire.folders.v1.' + email.toLowerCase();
+const FIRE_BIBLE_VERSES_KEY = (email: string) => 'jenlow.network.fire.bible.v1.' + email.toLowerCase();
 const DREAM_KEY = (email: string) => 'jenlow.network.inspirations.v1.' + email.toLowerCase();
 
 export function Provider({ children }: { children: React.ReactNode }) {
@@ -76,6 +84,7 @@ export function Provider({ children }: { children: React.ReactNode }) {
   ]);
   const [fireIds, setFireIds] = useState<string[]>([]);
   const [fireFolders, setFireFolders] = useState<FireFolder[]>([]);
+  const [fireBibleVerses, setFireBibleVerses] = useState<FireBibleVerse[]>([]);
   const [dreamInspirations, setDreamInspirations] = useState<Record<string, string[]>>({});
   const [myDreamIds, setMyDreamIds] = useState<string[]>([]);
   const [encouragementIds, setEncouragementIds] = useState<string[]>([]);
@@ -92,6 +101,7 @@ export function Provider({ children }: { children: React.ReactNode }) {
     if (!email) {
       setFireIds([]);
       setFireFolders([]);
+      setFireBibleVerses([]);
       setDreamInspirations({});
       setEncouragementIds([]);
       setMusicProposalIds([]);
@@ -111,8 +121,9 @@ export function Provider({ children }: { children: React.ReactNode }) {
       AsyncStorage.getItem('jenlow.encouragement.' + email),
       AsyncStorage.getItem('jenlow.proposals.' + email),
       AsyncStorage.getItem('jenlow.prayer.repeats.' + email),
+      AsyncStorage.getItem(FIRE_BIBLE_VERSES_KEY(email)),
     ])
-      .then(([fire, folders, dreams, mine, prayers, encouragement, proposals, repeats]) => {
+      .then(([fire, folders, dreams, mine, prayers, encouragement, proposals, repeats, bibleVerses]) => {
         if (canceled) return;
         let ids: string[] = [];
         let links: Record<string, string[]> = {};
@@ -131,8 +142,17 @@ export function Provider({ children }: { children: React.ReactNode }) {
         setFireIds(ids);
         try {
           const parsed = folders ? JSON.parse(folders) : [];
-          setFireFolders(Array.isArray(parsed) ? parsed.filter((x: any) => x && typeof x.id === 'string' && typeof x.name === 'string' && Array.isArray(x.publicationIds)).map((x: any) => ({ id: x.id, name: x.name, publicationIds: x.publicationIds.filter((v: any) => typeof v === 'string') })) : []);
+          setFireFolders(Array.isArray(parsed) ? parsed.filter((x: any) => x && typeof x.id === 'string' && typeof x.name === 'string' && Array.isArray(x.publicationIds)).map((x: any) => ({ id: x.id, name: x.name, publicationIds: x.publicationIds.filter((v: any) => typeof v === 'string'), verseIds: Array.isArray(x.verseIds) ? x.verseIds.filter((v: unknown) => typeof v === 'string') : [] })) : []);
         } catch { setFireFolders([]); }
+        try {
+          const parsed: unknown = bibleVerses ? JSON.parse(bibleVerses) : [];
+          setFireBibleVerses(Array.isArray(parsed) ? parsed.filter(
+            (v: any): v is FireBibleVerse =>
+              !!v && typeof v.id === 'string' && typeof v.reference === 'string' &&
+              typeof v.edition === 'string' && typeof v.text === 'string' &&
+              typeof v.addedAt === 'string',
+          ) : []);
+        } catch { setFireBibleVerses([]); }
         setDreamInspirations(links);
         try {
           setMyDreamIds(mine ? JSON.parse(mine) : []);
@@ -228,10 +248,36 @@ export function Provider({ children }: { children: React.ReactNode }) {
       void AsyncStorage.setItem(FIRE_FOLDERS_KEY(email), JSON.stringify(fireFolders)).catch(() => {});
     }
   }, [fireFolders, email, readyFor]);
+  useEffect(() => {
+    if (email && readyFor === email)
+      void AsyncStorage.setItem(FIRE_BIBLE_VERSES_KEY(email), JSON.stringify(fireBibleVerses)).catch(() => {});
+  }, [fireBibleVerses, email, readyFor]);
+  const saveBibleVerseToFire = useCallback((verse: FireBibleVerse, folderId?: string) => {
+    setFireBibleVerses(previous => previous.some(item => item.id === verse.id)
+      ? previous : [...previous, verse]);
+    if (folderId) setFireFolders(previous => previous.map(folder => {
+      if (folder.id !== folderId || (folder.verseIds || []).includes(verse.id)) return folder;
+      return { ...folder, verseIds: [...(folder.verseIds || []), verse.id] };
+    }));
+  }, []);
+  const removeBibleVerseFromFire = useCallback((verseId: string) => {
+    setFireBibleVerses(previous => previous.filter(item => item.id !== verseId));
+    setFireFolders(previous => previous.map(folder => ({
+      ...folder, verseIds: (folder.verseIds || []).filter(id => id !== verseId),
+    })));
+  }, []);
+  const toggleFireFolderVerse = useCallback((folderId: string, verseId: string) => {
+    setFireFolders(previous => previous.map(folder => {
+      if (folder.id !== folderId) return folder;
+      const current = folder.verseIds || [];
+      return { ...folder, verseIds: current.includes(verseId)
+        ? current.filter(id => id !== verseId) : [...current, verseId] };
+    }));
+  }, []);
   const createFireFolder = useCallback((name: string) => {
     const clean = name.trim().slice(0, 60);
     if (!clean) return;
-    setFireFolders(prev => [...prev, { id: 'folder-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7), name: clean, publicationIds: [] }]);
+    setFireFolders(prev => [...prev, { id: 'folder-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7), name: clean, publicationIds: [], verseIds: [] }]);
   }, []);
   const renameFireFolder = useCallback((id: string, name: string) => {
     const clean = name.trim().slice(0, 60);
@@ -356,6 +402,10 @@ export function Provider({ children }: { children: React.ReactNode }) {
       isPraying: (id: string) => prayerIds.includes(id),
       fireIds,
       fireFolders,
+      fireBibleVerses,
+      saveBibleVerseToFire,
+      removeBibleVerseFromFire,
+      toggleFireFolderVerse,
       createFireFolder,
       renameFireFolder,
       deleteFireFolder,
@@ -377,6 +427,10 @@ export function Provider({ children }: { children: React.ReactNode }) {
       messages,
       fireIds,
       fireFolders,
+      fireBibleVerses,
+      saveBibleVerseToFire,
+      removeBibleVerseFromFire,
+      toggleFireFolderVerse,
       createFireFolder,
       renameFireFolder,
       deleteFireFolder,
