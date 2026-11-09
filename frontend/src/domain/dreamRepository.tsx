@@ -8,6 +8,9 @@ import { growthResourceEvents } from './growthTimeline';
 import { useApp } from '@/context/AppContext';
 type Repo = {
   items: DreamEntry[];
+  personalHabits: DreamHabit[];
+  setPersonalHabits: (habits: DreamHabit[]) => void;
+  detachHabit: (dreamId: string, habitId: string) => void;
   create: (data: { title: string; summary: string; image: string; needs: string[] }) => string;
   update: (
     id: string,
@@ -45,8 +48,11 @@ export const dreamStorageKey = (email: string) => KEY_BASE + (email || 'guest').
 export function DreamProvider({ children }: { children: React.ReactNode }) {
   const { email } = useApp();
   const key = dreamStorageKey(email);
+  const personalKey = key + '.personal-habits';
   const [items, setItems] = useState<DreamEntry[]>(initial);
   const [hydrated, setHydrated] = useState(false);
+  const [personalHabits,setPersonalHabitsState] = useState<DreamHabit[]>([]);
+  const [personalHydrated,setPersonalHydrated] = useState(false);
   useEffect(() => {
     let live = true;
     setHydrated(false);
@@ -85,6 +91,37 @@ export function DreamProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (hydrated) void AsyncStorage.setItem(key, JSON.stringify(items)).catch(() => {});
   }, [items, hydrated, key]);
+  useEffect(() => {
+    let live = true;
+    setPersonalHydrated(false);
+    setPersonalHabitsState([]);
+    AsyncStorage.getItem(personalKey).then(value=>{
+      if (!live || !value)return;
+      try {
+        const stored=JSON.parse(value);
+        if(Array.isArray(stored))setPersonalHabitsState(
+          stored.filter((h:unknown): h is DreamHabit =>
+            !!h && typeof h==='object' && 'id' in h && 'title' in h));
+      } catch {}
+    }).finally(()=>{if(live)setPersonalHydrated(true);});
+    return ()=>{live=false;};
+  },[personalKey]);
+  useEffect(()=>{
+    if(personalHydrated)void AsyncStorage.setItem(personalKey,JSON.stringify(personalHabits)).catch(()=>{});
+  },[personalKey,personalHabits,personalHydrated]);
+  const setPersonalHabits:Repo['setPersonalHabits']=habits=>setPersonalHabitsState(habits);
+  const detachHabit:Repo['detachHabit']=(dreamId,habitId)=>{
+    const source=items.find(d=>d.id===dreamId&&d.phase==='Croissance');
+    const habit=source?.habits?.find(h=>h.id===habitId);
+    if(!habit)return;
+    // Persist as a standalone personal habit before dropping its dream association.
+    setPersonalHabitsState(previous=>[
+      ...previous.filter(h=>h.id!==habit.id),habit,
+    ]);
+    setItems(previous=>previous.map(d=>d.id===dreamId?{
+      ...d,habits:(d.habits||[]).filter(h=>h.id!==habitId),
+    }:d));
+  };
   const create: Repo['create'] = data => {
     const id = 'local-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
     setItems(p => [
@@ -206,7 +243,7 @@ export function DreamProvider({ children }: { children: React.ReactNode }) {
   const remove: Repo['remove'] = id => setItems(p => p.filter(d => d.id !== id));
   return (
     <Context.Provider
-      value={{ items, create, update, add, setFlowerDraft, advance, complete, remove, patch, appendBlock, setResources, setHabits, transitionToGrowth, setGoalAndGrow, addGrowthLog, setGrowthLogPublication }}
+      value={{ items, personalHabits, setPersonalHabits, detachHabit, create, update, add, setFlowerDraft, advance, complete, remove, patch, appendBlock, setResources, setHabits, transitionToGrowth, setGoalAndGrow, addGrowthLog, setGrowthLogPublication }}
     >
       {children}
     </Context.Provider>
