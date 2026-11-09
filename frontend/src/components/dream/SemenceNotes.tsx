@@ -202,7 +202,7 @@ export default function SemenceNotes({dream,editable}:{dream:DreamEntry;editable
           disabled={notebooks[0].id===notebook.id}
           onPress={()=>moveNotebook(-1)}
           style={{flexDirection:'row',gap:4,alignItems:'center',
-            padding:9,opacity:notebooks[0].id===notebook.id?.45:1}}>
+            padding:9,opacity:notebooks[0].id===notebook.id ? 0.45 : 1}}>
           <Ionicons name="arrow-back-outline" color={theme.muted} size={15}/>
           <Text style={{color:theme.foreground,fontSize:12}}>Avant</Text>
         </Pressable>
@@ -210,7 +210,7 @@ export default function SemenceNotes({dream,editable}:{dream:DreamEntry;editable
           disabled={notebooks[notebooks.length-1].id===notebook.id}
           onPress={()=>moveNotebook(1)}
           style={{flexDirection:'row',gap:4,alignItems:'center',
-            padding:9,opacity:notebooks[notebooks.length-1].id===notebook.id?.45:1}}>
+            padding:9,opacity:notebooks[notebooks.length-1].id===notebook.id ? 0.45 : 1}}>
           <Ionicons name="arrow-forward-outline" color={theme.muted} size={15}/>
           <Text style={{color:theme.foreground,fontSize:12}}>Après</Text>
         </Pressable>
