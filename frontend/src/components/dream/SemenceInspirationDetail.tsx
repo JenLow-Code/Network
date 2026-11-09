@@ -5,6 +5,9 @@ import { router } from 'expo-router';
 import { useAppTheme } from '@/theme/AppTheme';
 import { usePublication } from '@/lib/api/hooks';
 import { publicationPath } from '@/components/publication/PublicationGallery';
+import SemencePublicationCover from './SemencePublicationCover';
+import SemenceLinkPreview from './SemenceLinkPreview';
+import { SemenceDocumentPreview } from './SemenceDocumentPreview';
 import type { DreamBlock } from '@/domain/dreamWorkspace';
 
 const brown='#B88962';
@@ -13,7 +16,8 @@ const isImage=(b:DreamBlock)=>['image','gallery'].includes(b.kind)
 const kindName=(b:DreamBlock):string=>
   b.kind==='quote'?'Citation':b.kind==='bible-verse'?'Verset biblique':
   b.kind==='publication-ref'?'Publication':
-  b.kind==='image'?'Photo':b.kind==='document'?'Document':'Inspiration';
+  b.kind==='image'?'Photo':b.kind==='document'?'Document':
+  b.kind==='poem'?'Poème / texte court':'Inspiration';
 
 export default function SemenceInspirationDetail({block,initialMenu,editable,onClose,onEdit,onDelete,onShare}:{
  block:DreamBlock;initialMenu:boolean;editable:boolean;
@@ -53,7 +57,7 @@ export default function SemenceInspirationDetail({block,initialMenu,editable,onC
        <View style={{flexDirection:'row',alignItems:'center',gap:9}}>
          <Text numberOfLines={2} style={{fontSize:23,fontFamily:'serif',
            color:theme.foreground,flex:1}}>
-           {block.title||kindName(block)}
+           {block.kind==='quote'?'Citation':block.title||kindName(block)}
          </Text>
          <Pressable accessibilityRole="button" accessibilityLabel="Options de cette inspiration"
            accessibilityState={{expanded:menuOpen}}
@@ -89,30 +93,54 @@ export default function SemenceInspirationDetail({block,initialMenu,editable,onC
          {isImage(block)?<>
            <Image source={{uri:block.media?.[0]||block.content}}
              resizeMode="contain" style={{height:310,width:'100%'}}/>
-           {block.title?<Text style={{fontSize:13,color:theme.muted}}>{block.title}</Text>:null}
-         </>:block.kind==='quote'?<>
+           {!!block.title?<Text style={{fontSize:13,color:theme.muted}}>{block.title}</Text>:null}
+         </>:block.kind==='quote'?<View style={{gap:8}}>
            <Text style={{fontSize:22,lineHeight:34,fontFamily:'serif',
              fontStyle:'italic',color:theme.foreground}}>{'“'+block.content+'”'}</Text>
            {!!block.title?<Text style={{fontSize:13,color:theme.muted}}>
              — {block.title}
            </Text>:null}
-         </>:<>
-           <Text style={{fontSize:16,lineHeight:26,color:theme.foreground,
-             fontFamily:block.kind==='bible-verse'?'serif':undefined}}>
-             {block.kind==='document'&&block.content.startsWith('data:')
-               ?'Document joint':block.content}
+         </View>:block.kind==='poem'?<View style={{gap:8}}>
+           <Text selectable style={{fontSize:19,lineHeight:30,
+             fontFamily:'serif',color:theme.foreground}}>
+             {block.content}
            </Text>
-           {block.kind==='bible-verse'?<Text style={{fontSize:11,color:theme.muted}}>
-             Louis Segond 1910
-           </Text>:null}
+         </View>:block.kind==='bible-verse'?<View style={{gap:12}}>
+           <Text style={{fontSize:14,letterSpacing:.6,fontWeight:'700',
+             color:theme.foreground}}>
+             {(block.title||'VERSET BIBLIQUE').toUpperCase()}
+           </Text>
+           <Text selectable style={{fontSize:19,lineHeight:30,fontFamily:'serif',
+             color:'#C02772'}}>{block.content}</Text>
+           <Text style={{fontSize:11,color:theme.muted}}>
+             {block.caption||'Louis Segond 1910'}
+           </Text>
+         </View>:block.kind==='publication-ref'?<>
+           <SemencePublicationCover publicationId={block.content}
+             fallbackTitle={block.title} large/>
+           <Pressable onPress={openSource} accessibilityRole="button"
+             style={{alignItems:'center',borderRadius:10,borderWidth:1,
+               borderColor:brown,padding:12}}>
+             <Text style={{fontSize:13,fontWeight:'700',color:brown}}>
+               Ouvrir la publication
+             </Text>
+           </Pressable>
+         </>:['link','bookmark','embed'].includes(block.kind)?<
+           SemenceLinkPreview block={block}
+         />:block.kind==='document'||block.kind==='pdf'?<
+           SemenceDocumentPreview block={block}
+         />:<>
+           <Text selectable style={{fontSize:16,lineHeight:26,
+             color:theme.foreground}}>{block.content}</Text>
+           {hasSource?<Pressable onPress={openSource} accessibilityRole="button"
+             style={{alignItems:'center',borderRadius:10,borderWidth:1,
+               borderColor:brown,padding:12}}>
+             <Text style={{fontSize:13,fontWeight:'700',color:brown}}>
+               Ouvrir la référence
+             </Text>
+           </Pressable>:null}
          </>}
-         {hasSource?<Pressable onPress={openSource} accessibilityRole="button"
-           style={{alignItems:'center',borderRadius:10,borderWidth:1,
-             borderColor:brown,padding:12}}>
-           <Text style={{fontSize:13,fontWeight:'700',color:brown}}>
-             Ouvrir la référence
-           </Text>
-         </Pressable>:null}
+
          {!!error?<Text accessibilityRole="alert"
            style={{fontSize:12,color:'#B04E5A'}}>{error}</Text>:null}
        </ScrollView>
