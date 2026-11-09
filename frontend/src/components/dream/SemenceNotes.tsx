@@ -3,7 +3,7 @@ import { Alert, Platform, Pressable, ScrollView, Text, TextInput, View } from 'r
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/theme/AppTheme';
 import { useDreams } from '@/domain/dreamRepository';
-import type { DreamEntry, DreamNoteBlock, DreamNotebookColor } from '@/domain/dreamWorkspace';
+import type { DreamEntry, DreamNoteBlock } from '@/domain/dreamWorkspace';
 import { defaultNotebookColor, NOTEBOOK_COLORS, NOTEBOOK_COLOR_ORDER, dreamNotebooks, editDreamNotebook } from '@/domain/dreamNotebooks';
 
 const id = () => 'note-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
