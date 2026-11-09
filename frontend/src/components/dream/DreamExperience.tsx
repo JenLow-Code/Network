@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { lostFoundNeeds, isNeedFound } from '@/domain/dreamResourceRecovery';
 import { api } from '@/lib/api/client';
-import { Alert, Image, Linking, Modal, Platform, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from 'react-native';
+import { Alert, Image, Linking, Modal, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useDreams } from '@/domain/dreamRepository';
@@ -16,7 +16,8 @@ import { DreamGoalDatePicker } from './DreamGoalDatePicker';
 import { DreamResourceDetailsModal } from './DreamResourceDetailsModal';
 import { DREAM_TALENT_CHOICES } from './dreamTalentCatalog';
 import { TalentLevelSelector } from '@/components/talent/TalentLevelSelector';
-import { habitDayKey, habitHistory, habitKey } from '@/domain/habitProgress';
+import { habitDayKey } from '@/domain/habitProgress';
+import { GrowthLogbook } from './GrowthLogbook';
 
 const pink = '#D71D77';
 const HABIT_PALETTE = ['#C68FBF','#D7AE62','#80B8BC','#7DBA99','#D78C9F','#A1A0CF','#A9BF78'];
@@ -59,7 +60,6 @@ export default function DreamExperience({
 }) {
  const { patch, appendBlock, setResources, setHabits, setGoalAndGrow, advance, remove, addGrowthLog, setGrowthLogPublication } = useDreams();
  const theme = useAppTheme();
- const {width:deviceWidth}=useWindowDimensions();
  const [editing, setEditing] = useState(false);
  const [picker, setPicker] = useState(false);
  const [editingBlock, setEditingBlock] = useState<string | null>(null);
@@ -80,12 +80,11 @@ export default function DreamExperience({
  const [resourceDialog,setResourceDialog]=useState(false);
  const [freezeDialog,setFreezeDialog]=useState(false);
  const [goalDateDialog,setGoalDateDialog]=useState(false);
- const [growthDialog,setGrowthDialog]=useState<'habit'|'log'|null>(null);
+ const [growthDialog,setGrowthDialog]=useState<'habit'|'habits'|'log'|null>(null);
  const [preparationOpen,setPreparationOpen]=useState(false);
  const [recoveryDialog,setRecoveryDialog]=useState(false);
  const [reportLostDialog,setReportLostDialog]=useState(false);
  const [habitTitle, setHabitTitle] = useState('');
- const [habitRasterWidth,setHabitRasterWidth]=useState<number|null>(null);
  const [habitEmoji,setHabitEmoji]=useState('🌱');
  const [habitColor,setHabitColor]=useState(HABIT_PALETTE[0]);
  const [habitDescription,setHabitDescription]=useState('');
@@ -495,145 +494,16 @@ export default function DreamExperience({
         </View>:null}
       </View>
     ):null}
-    {/* Journal sans fond de carte, dans la continuité du rêve. */}
-    <Text style={{color:theme.foreground,fontSize:19,fontWeight:'700',
-      marginTop:13,marginBottom:11}}>Logbook</Text>
-    <View style={{marginTop:0,marginBottom:16,paddingTop:0}}>
-      {growthActive ? (
-        <Pressable accessibilityRole="button"
-          accessibilityLabel="Ajouter une nouvelle feuille au journal"
-          onPress={()=>setGrowthDialog('log')}
-          style={{flexDirection:'row',gap:9,minHeight:75}}>
-          <View style={{width:24,alignItems:'center'}}>
-            <Ionicons name="leaf-outline" size={21} color="#27845B"
-              style={{opacity:.38,marginTop:0}}/>
-            <View style={{flex:1,marginTop:0,borderLeftWidth:1.5,
-              borderStyle:'dashed',borderColor:'#A5B8A4'}}/>
-          </View>
-          <Text style={{fontSize:12,color:theme.muted,paddingTop:7}}>
-            Ajouter une feuille
-          </Text>
-        </Pressable>
-      ):null}
-      {(dream.milestones||[]).length===0 ? (
-        <Text style={{fontSize:12,color:theme.muted,lineHeight:19,
-          marginBottom:14,paddingLeft:44}}>
-          Une petite avancée, puis une autre…
-        </Text>
-      ):null}
-      {[...(dream.milestones||[])].reverse().map((log,index)=>(
-        <View key={log.id} style={{flexDirection:'row',gap:9,minHeight:94}}>
-          <View style={{width:24,alignItems:'center',position:'relative'}}>
-            <View pointerEvents="none" style={{position:'absolute',top:0,height:11,
-              left:11,borderLeftWidth:1.5,
-              borderStyle:index===0&&growthActive?'dashed':'solid',borderColor:'#A5B8A4'}}/>
-            <Ionicons name="leaf-outline" size={21} color="#27845B"
-              style={{marginTop:0,backgroundColor:theme.background}}/>
-            <View style={{flex:1,marginTop:0,marginBottom:0,
-              borderLeftWidth:1.5,borderStyle:'solid',borderColor:'#A5B8A4'}}/>
-          </View>
-          <View style={{flex:1,paddingLeft:0,paddingBottom:24,gap:7}}>
-            <Text style={{fontSize:11,lineHeight:21,fontWeight:'700',
-              letterSpacing:0.35,color:'#27845B'}}>{log.date}</Text>
-            <Text style={{fontFamily:HANDWRITING_FAMILY,fontSize:20,lineHeight:28,
-              color:theme.foreground}}>{log.title}</Text>
-            {log.publicationState==='failed'&&growthActive ? (
-              <Pressable accessibilityRole="button"
-                accessibilityLabel="Réessayer de publier cette entrée"
-                onPress={()=>void publishLog({...log,shareRequested:true})}
-                style={{alignSelf:'flex-start',paddingVertical:5,
-                  flexDirection:'row',alignItems:'center',gap:5}}>
-                <Ionicons name="refresh-outline" size={15} color="#D71D77"/>
-                <Text style={{color:'#D71D77',fontSize:11}}>Réessayer</Text>
-              </Pressable>
-            ):null}
-          </View>
-        </View>
-      ))}
-
-    </View>
-    <View style={{marginTop:21,marginBottom:13,gap:17,width:'100%'}}
-      onLayout={e=>{
-        const next=e.nativeEvent.layout.width;
-        if(next>0 && Math.abs(next-(habitRasterWidth||0))>1)setHabitRasterWidth(next);
-      }}>
-      {habits.map((h,index)=>{
-        const available=Math.max(180,habitRasterWidth||Math.min(deviceWidth-38,722));
-        const gap=4;
-        // Keep the raster full width without burying the habit in 150 tiny squares.
-        // Daily: about six weeks over three rows. Weekly: twelve weeks in one row.
-        const columns=h.frequency==='weekly'?12:
-          Math.max(12,Math.min(28,Math.round(available/23)));
-        const history=habitHistory(h,new Date(),columns*(h.frequency==='weekly'?1:3));
-        const cell=Math.max(9,(available-(columns-1)*gap)/columns-0.12);
-        const hue=h.color||HABIT_PALETTE[index%HABIT_PALETTE.length];
-        const period=h.frequency==='daily'?'jours':'semaines';
-        const target=h.target&&h.target>0?h.target:1;
-        const today=habitDayKey(new Date());
-        const key=habitKey(h.frequency,today);
-        const checked=h.completed.some(completedKey=>habitKey(h.frequency,completedKey)===key);
-        const measured=Math.max(0,h.measurements?.[key]??(checked?target:0));
-        const remaining=Math.max(0,Math.round((target-measured)*100)/100);
-        const unit=h.unit||'fois';
-        const deadline=h.frequency==='daily'?"aujourd’hui":"cette semaine";
-        return <Pressable key={h.id} disabled={!growthActive}
-          onLongPress={()=>openHabitEditor(h)}
-          accessibilityRole="button" accessibilityLabel={
-            h.title+', appui long pour modifier ou supprimer'}
-          style={{paddingVertical:6,gap:13}}>
-          <View style={{flexDirection:'row',alignItems:'center',gap:11}}>
-            <View style={{width:41,height:41,borderRadius:22,borderWidth:3,
-              borderColor:hue,alignItems:'center',justifyContent:'center'}}>
-              <Text style={{fontSize:21,lineHeight:27}}>{h.emoji||'🌱'}</Text>
-            </View>
-            <View style={{flex:1,gap:3}}>
-              <Text numberOfLines={2} style={{fontSize:15,
-                color:theme.foreground,fontWeight:'600'}}>{h.title}</Text>
-              <Text accessibilityLabel={remaining===0?'Objectif atteint':
-                'Encore '+remaining+' '+unit+' à accomplir '+deadline}
-                style={{fontSize:13,color:hue,fontWeight:'700',lineHeight:20}}>
-                {remaining===0?'✓ Objectif atteint':
-                  'Encore '+remaining+' '+unit+' '+deadline}
-              </Text>
-              <Text style={{fontSize:11,color:theme.muted}}>
-                {measured} / {target} {unit} · {h.frequency==='daily'?'par jour':'par semaine'}
-              </Text>
-              <Pressable accessibilityRole="link"
-                accessibilityLabel={'Voir '+h.title+' dans le calendrier'}
-                onPress={()=>router.push('/agenda')}
-                style={{alignSelf:'flex-start',paddingVertical:3}}>
-                <Text style={{fontSize:11,fontWeight:'700',color:hue}}>
-                  Voir dans le calendrier
-                </Text>
-              </Pressable>
-            </View>
-            {growthActive?<Pressable accessibilityRole="button" onPress={()=>openHabitEditor(h)}
-              accessibilityLabel={'Modifier '+h.title}
-              style={{padding:9,alignItems:'center',justifyContent:'center'}}>
-              <Ionicons name="ellipsis-horizontal" size={19} color={theme.muted}/>
-            </Pressable>:null}
-          </View>
-          <View style={{flexDirection:'row',flexWrap:'wrap',
-            width:'100%',gap}}>
-            {history.map(slot=><View key={slot.key}
-              accessibilityLabel={slot.key+(slot.completed?' : accompli':' : non accompli')}
-              style={{width:cell,height:cell,borderRadius:Math.min(4,cell/3),
-                backgroundColor:hue,opacity:slot.completed?1:.24}}/>)}
-          </View>
-          <Text style={{fontSize:10,color:theme.muted}}>
-            {history.length} {period} affichés · case foncée = réalisé
-          </Text>
-        </Pressable>;
-      })}
-      {growthActive?<Pressable accessibilityRole="button"
-        accessibilityLabel="Ajouter une habitude"
-        onPress={()=>openHabitEditor()}
-        style={{alignSelf:'flex-start',flexDirection:'row',alignItems:'center',
-          gap:6,paddingVertical:8,paddingHorizontal:2}}>
-        <Ionicons name="add-circle-outline" size={19} color={theme.muted}/>
-        <Text style={{fontSize:12,color:theme.muted}}>Ajouter une habitude</Text>
-      </Pressable>:null}
-    </View>
+    <GrowthLogbook dream={dream} editable={growthActive}
+      onWrite={()=>{
+        const current=(dream.milestones||[]).filter(
+          log=>log.date===habitDayKey(new Date())).slice(-1)[0];
+        setMilestone(current?.title||'');
+        setGrowthDialog('log');
+      }}
+      onRetry={log=>void publishLog({...log,shareRequested:true})}
+      onManageHabits={()=>setGrowthDialog('habits')}
+    />
     {!historical?<View style={{gap:11,marginTop:11,marginBottom:22}}>
       {frozen ? (
         <View style={{gap:9,padding:14,borderWidth:1,
