@@ -2,22 +2,20 @@ import React, { useState } from 'react';
 import { Pressable, Text, View, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { DreamHabit } from '@/domain/dreamWorkspace';
-import { habitDayKey, habitKey } from '@/domain/habitProgress';
+import { habitDayKey, habitKey, habitScheduleStart } from '@/domain/habitProgress';
 import { useAppTheme } from '@/theme/AppTheme';
 
 type Period = { key:string; completed:boolean; isToday:boolean; future:boolean };
 
-function chronologicalPeriods(habit:DreamHabit, goalDate?:string, now:Date=new Date()): Period[] {
+function chronologicalPeriods(habit:DreamHabit, goalDate?:string,
+  dreamStartedAt?:string, now:Date=new Date()): Period[] {
   const today=habitDayKey(now);
   const periodToday=habitKey(habit.frequency,today);
+  // Use precisely the same schedule start as the "4 / 83" progress counter.
+  // Historical completions must not silently add extra calendar squares.
+  const start=habitScheduleStart(habit,dreamStartedAt,now);
   const validDate=(value?:string)=>!!value && /^\d{4}-\d{2}-\d{2}$/.test(value) &&
     !Number.isNaN(new Date(value+'T12:00:00').getTime());
-  const earliest=[...(habit.completed||[]),...Object.keys(habit.measurements||{})]
-    .filter(validDate).map(key=>habitKey(habit.frequency,key)).sort()[0];
-  const habitStart=validDate(habit.startedAt)?habitKey(habit.frequency,habit.startedAt!):undefined;
-  // Never conceal an existing earlier completion if a stored start date was later.
-  const start=earliest && habitStart ? (earliest<habitStart?earliest:habitStart):
-    earliest||habitStart||periodToday;
   const finish=validDate(goalDate)?habitKey(habit.frequency,goalDate!):periodToday;
   const first=new Date(start+'T12:00:00');
   const last=new Date(finish+'T12:00:00');
@@ -49,10 +47,11 @@ function chronologicalPeriods(habit:DreamHabit, goalDate?:string, now:Date=new D
  * Session totals remain separately visible as e.g. "4 / 83".
  */
 export function HabitSquareGrid({
-  habit, goalDate, color, editable, onTodayPress,
+  habit, goalDate, dreamStartedAt, color, editable, onTodayPress,
 }: {
   habit:DreamHabit;
   goalDate?:string;
+  dreamStartedAt?:string;
   color:string;
   editable:boolean;
   onTodayPress:()=>void;
@@ -65,7 +64,7 @@ export function HabitSquareGrid({
   const available=Math.max(160,measuredWidth||Math.min(screenWidth-130,500));
   const columns=Math.max(8,Math.min(30,Math.floor((available+gap)/18)));
   const cellSize=Math.max(8,(available-(columns-1)*gap)/columns);
-  const periods=chronologicalPeriods(habit,goalDate);
+  const periods=chronologicalPeriods(habit,goalDate,dreamStartedAt);
   const todayIndex=periods.findIndex(period=>period.isToday);
   const canExpand=periods.length>columns;
   // The single-row preview ends at today, so the preceding successful days
