@@ -20,7 +20,6 @@ type ApiBook={code:string;name:string};
 export default function BibleLibraryScreen(){
  const theme=useAppTheme();
  const [complete,setComplete]=useState(false);
- const [cached,setCached]=useState(0);
  const [progress,setProgress]=useState<number|null>(null);
  const [busy,setBusy]=useState(false);
  const [checkingDownload,setCheckingDownload]=useState(true);
@@ -32,13 +31,13 @@ export default function BibleLibraryScreen(){
  useEffect(()=>{
   let live=true;
   void bibleDownloadState().then(status=>{
-   if(live){setComplete(status.complete);setCached(status.cached);}
+   if(live)setComplete(status.complete);
   }).catch(()=>{}).finally(()=>{if(live)setCheckingDownload(false);});
   return ()=>{live=false;};
  },[]);
  const refresh=async()=>{
   const state=await bibleDownloadState();
-  setComplete(state.complete);setCached(state.cached);
+  setComplete(state.complete);
  };
  const download=async()=>{
   if(busy)return;
