@@ -350,6 +350,7 @@ export function GrowthLogbook({
           <Text style={{ color: GREEN, fontSize: 12, fontWeight: '600' }}>
             {todayWritten ? 'Compléter aujourd’hui' : 'Écrire aujourd’hui'}
           </Text>
+          <Ionicons name="add" size={14} color={GREEN}/>
         </Pressable> : null}
       </View>
     </View>
