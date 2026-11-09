@@ -1,23 +1,23 @@
-import type { DreamEntry, DreamGrowthEvent, DreamHabit, DreamMilestone, DreamResource } from './dreamWorkspace';
-import { habitDayKey, habitKey } from './habitProgress';
+import type { DreamEntry, DreamGrowthEvent, DreamMilestone, DreamResource } from './dreamWorkspace';
+import { habitDayKey } from './habitProgress';
 import { isNeedFound } from './dreamResourceRecovery';
 
-export type TimelineHabit = Pick<DreamHabit, 'id' | 'title' | 'color' | 'emoji'>;
+export type TimelineDocument = { id:string; title:string; version:number };
 export type GrowthDay = {
   date: string;
   notes: DreamMilestone[];
-  habits: TimelineHabit[];
+  documents: TimelineDocument[];
   changes: DreamGrowthEvent[];
 };
 const validDay = (value: string): boolean => /^\d{4}-\d{2}-\d{2}$/.test(value);
 
-/** Derived from actual workspace state. Historical activity is never simulated. */
+/** Derived exclusively from actual workspace data; demo previews are separate. */
 export function buildGrowthDays(dream: DreamEntry): GrowthDay[] {
   const byDate = new Map<string, GrowthDay>();
   const get = (date: string): GrowthDay => {
     let entry=byDate.get(date);
     if (!entry) {
-      entry={date,notes:[],habits:[],changes:[]};
+      entry={date,notes:[],documents:[],changes:[]};
       byDate.set(date,entry);
     }
     return entry;
@@ -28,21 +28,17 @@ export function buildGrowthDays(dream: DreamEntry): GrowthDay[] {
   for (const event of dream.growthEvents || []) {
     if (validDay(event.date)) get(event.date).changes.push(event);
   }
-  for (const habit of dream.habits || []) {
-    for (const rawDay of new Set(habit.completed)) {
-      if (!validDay(rawDay)) continue;
-      // A weekly period key is *not* the date on which the person completed
-      // the habit. Use the real calendar date when present; otherwise omit it.
-      const completedOn = habit.frequency === 'weekly'
-        ? habit.achievedOn?.[habitKey('weekly',rawDay)]
-        : rawDay;
-      if (completedOn && validDay(completedOn)) {
-        const day=get(completedOn);
-        if (!day.habits.some(h=>h.id===habit.id)) {
-          day.habits.push({id:habit.id,title:habit.title,color:habit.color,emoji:habit.emoji});
-        }
-      }
-    }
+  // Document uploads are meaningful dated milestones; routine habit check-ins
+  // update one ongoing progress summary rather than creating daily leaf entries.
+  for (const doc of dream.documents || []) {
+    doc.versions.forEach((version, index) => {
+      const dateValue = new Date(version.addedAt);
+      if (Number.isNaN(dateValue.getTime())) return;
+      const date=habitDayKey(dateValue);
+      get(date).documents.push({
+        id:version.id, title:doc.name, version:index+1,
+      });
+    });
   }
   return Array.from(byDate.values())
     .sort((a,b)=>b.date.localeCompare(a.date));
