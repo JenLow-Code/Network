@@ -156,7 +156,7 @@ export default function DreamExperience({
  const missingResources = dream.phase==='Croissance'
    ? resources.filter(resource=>!isNeedFound(resource)) : [];
  const missingCategories = Array.from(new Set(missingResources.map(need=>need.category)));
- const recapExpanded = preparationOpen || missingResources.length>0;
+ const recapExpanded = preparationOpen;
  const categoryNames: Record<DreamResource['category'],string> = {
    person:'Talents',practical:'Ressources',financial:'Financement',
  };
@@ -434,13 +434,12 @@ export default function DreamExperience({
       }}>
         <Pressable accessibilityRole="button"
           accessibilityState={{expanded:recapExpanded}}
-          accessibilityLabel={missingResources.length
-            ? 'Des ressources nécessaires restent à trouver. Gérer les besoins de Germination.'
-            : 'Afficher les préparatifs de Germination'}
-          onPress={()=>missingResources.length
-            ? setRecoveryDialog(true) : setPreparationOpen(!preparationOpen)}
-          style={{flexDirection:'row',alignItems:'center',gap:11,
-            minHeight:55,paddingHorizontal:15,paddingVertical:10}}>
+          accessibilityLabel={recapExpanded
+            ? 'Réduire le résumé des besoins de Germination'
+            : 'Développer le résumé des besoins de Germination'}
+          onPress={()=>setPreparationOpen(open=>!open)}
+          style={{flexDirection:'row',alignItems:'center',gap:10,
+            minHeight:49,paddingHorizontal:13,paddingVertical:7}}>
           {missingResources.length ? (
             <Ionicons name="warning-outline" size={26} color="#D71D77"/>
           ) : (
@@ -458,10 +457,8 @@ export default function DreamExperience({
               {dream.goalDate?'Objectif · '+dream.goalDate:'Préparatifs et besoins'}
             </Text>
           </View>
-          {missingResources.length ? (
-            <Text style={{color:theme.foreground,fontSize:11,fontWeight:'700'}}>Gérer</Text>
-          ) : <Ionicons name={recapExpanded?'chevron-up':'chevron-down'}
-            color={theme.muted} size={18}/>}
+          <Ionicons name={recapExpanded?'chevron-up':'chevron-down'}
+            color={theme.foreground} size={18}/>
         </Pressable>
         {recapExpanded?<View style={{paddingHorizontal:15,paddingBottom:14,gap:11,
           paddingTop:12}}>
@@ -498,7 +495,14 @@ export default function DreamExperience({
             <Text style={{fontSize:12,color:theme.muted}}>
               Tous les besoins de Germination sont remplis.
             </Text>
-          ):null}
+          ) : <Pressable accessibilityRole="button"
+              accessibilityLabel="Gérer les besoins de Germination"
+              onPress={()=>setRecoveryDialog(true)}
+              style={{alignSelf:'flex-end',paddingVertical:5,paddingHorizontal:2,
+                flexDirection:'row',alignItems:'center',gap:5}}>
+              <Text style={{fontSize:11,fontWeight:'700',color:theme.foreground}}>Gérer</Text>
+              <Ionicons name="arrow-forward" size={14} color={theme.foreground}/>
+            </Pressable>}
           {dream.phase==='Croissance' && !historical &&
             resources.some(resource=>isNeedFound(resource)) ? (
             <Pressable accessibilityRole="button"
