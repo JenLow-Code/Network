@@ -65,7 +65,10 @@ export function GrowthLogbook({
   const prayerCount=countVerifiedPrayers(dream);
   const relevantToday=new Set(habits.filter(h=>{
     const key=habitKey(h.frequency,today);
-    return h.completed.some(done=>habitKey(h.frequency,done)===key);
+    return h.frequency==='weekly'
+      ? h.completed.some(done=>habitKey('weekly',done)===key)
+        && h.achievedOn?.[key]===today
+      : h.completed.includes(today);
   }).map(h=>h.id));
 
   return <View style={{gap:12,marginTop:10,marginBottom:22}}>
@@ -162,8 +165,10 @@ export function GrowthLogbook({
               <Ionicons name="checkbox-outline" size={18} color={GREEN}/>
               <View style={{flex:1,gap:5}}>
                 <Text style={{fontSize:12,color:theme.foreground}}>
-                  Habitudes · {completed.size}{isToday?'/'+habits.length:''}
-                  {isToday&&completed.size===habits.length?' · toutes accomplies':''}
+                  Habitudes · {completed.size}
+                  {isToday ? completed.size===0?' · à faire aujourd’hui'
+                    : ' accomplie'+(completed.size>1?'s':'')+' aujourd’hui'
+                    : ' accomplie'+(completed.size>1?'s':'')}
                 </Text>
                 <HabitMarks habits={visibleHabits as DreamHabit[]} completed={completed}/>
               </View>
