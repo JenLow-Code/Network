@@ -8,6 +8,7 @@ import type { DreamPhase } from '@/domain/publication';
 import { DreamPhaseHeader } from './DreamPhaseLayout';
 import SemenceInspirations from './SemenceInspirations';
 import SemenceNotes from './SemenceNotes';
+import SemenceShare from './SemenceShare';
 
 /** Semence Level 3: two simple places, with separate, focused editors. */
 export default function SemenceStudio({dream,onBack,onNavigate}:{
@@ -18,6 +19,8 @@ export default function SemenceStudio({dream,onBack,onNavigate}:{
   const {patch,advance,remove}=useDreams();
   const [tab,setTab]=useState<'inspirations'|'notes'>('inspirations');
   const [confirm,setConfirm]=useState(false);
+  const [shareIds,setShareIds]=useState<string[]|null>(null);
+  const [shareOpen,setShareOpen]=useState(false);
   const editable=dream.phase==='Rêve';
   const accent='#B88962';
 
@@ -57,7 +60,8 @@ export default function SemenceStudio({dream,onBack,onNavigate}:{
       </Pressable>)}
     </View>
     {tab==='inspirations'
-      ?<SemenceInspirations dream={dream} editable={editable}/>
+      ?<SemenceInspirations dream={dream} editable={editable}
+          onShareInspiration={id=>{setShareIds([id]);setShareOpen(true);}}/>
       :<SemenceNotes dream={dream} editable={editable}/>}
 
     {editable?<View style={{marginTop:25}}>
@@ -93,6 +97,15 @@ export default function SemenceStudio({dream,onBack,onNavigate}:{
           <Text style={{color:theme.muted,textAlign:'center'}}>Pas encore</Text>
         </Pressable>
       </View>:null}
+      <Pressable onPress={()=>{setShareIds(null);setShareOpen(true);}}
+        accessibilityRole="button" accessibilityLabel="Publier cette semence"
+        style={{minHeight:48,marginTop:13,paddingVertical:12,paddingHorizontal:17,
+          alignItems:'center',justifyContent:'center',borderRadius:12,
+          borderWidth:1.5,borderColor:accent,backgroundColor:'transparent'}}>
+        <Text style={{fontSize:13,fontWeight:'700',color:accent,textAlign:'center'}}>
+          Publier cette semence
+        </Text>
+      </Pressable>
       <Pressable onPress={uproot} accessibilityRole="button"
         accessibilityLabel="Arracher cette semence"
         style={{alignItems:'center',justifyContent:'center',minHeight:44,
@@ -103,5 +116,7 @@ export default function SemenceStudio({dream,onBack,onNavigate}:{
         </Text>
       </Pressable>
     </View>:null}
+    {shareOpen?<SemenceShare key={(shareIds||[]).join('-')||'all'}
+      dream={dream} initialIds={shareIds} onClose={()=>{setShareOpen(false);setShareIds(null);}}/>:null}
   </ScrollView>;
 }

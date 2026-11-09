@@ -27,6 +27,7 @@ export default function SemenceNotes({dream,editable}:{dream:DreamEntry;editable
   const [selectedId,setSelectedId]=useState<string|null>(null);
   const [activeBookId,setActiveBookId]=useState('notebook-main');
   const [bookMenuOpen,setBookMenuOpen]=useState(false);
+  const [bookSelectorOpen,setBookSelectorOpen]=useState(false);
   const [bookColorsOpen,setBookColorsOpen]=useState(false);
   const [nameMode,setNameMode]=useState<'new'|'rename'|null>(null);
   const [nameDraft,setNameDraft]=useState('');
@@ -44,7 +45,7 @@ export default function SemenceNotes({dream,editable}:{dream:DreamEntry;editable
   const selectNotebook=(next:string)=>{
     setActiveBookId(next);
     setSelectedId(null);setTypesOpen(false);setColorsOpen(false);
-    setBookMenuOpen(false);setBookColorsOpen(false);setNameMode(null);setNameError('');
+    setBookMenuOpen(false);setBookColorsOpen(false);setBookSelectorOpen(false);setNameMode(null);setNameError('');
     setReadOnlyExpanded({});
   };
   const saveNotebooks=(next:typeof notebooks)=>{
@@ -66,7 +67,7 @@ export default function SemenceNotes({dream,editable}:{dream:DreamEntry;editable
     if(!editable)return;
     setNameMode(mode);
     setNameDraft(mode==='rename'?notebook.title:'');
-    setNameError('');setBookMenuOpen(false);setBookColorsOpen(false);
+    setNameError('');setBookMenuOpen(false);setBookColorsOpen(false);setBookSelectorOpen(false);
   };
   const confirmName=()=>{
     if(!editable||!nameMode)return;
@@ -134,46 +135,56 @@ export default function SemenceNotes({dream,editable}:{dream:DreamEntry;editable
   return <View style={{gap:15,paddingBottom:15}}>
     {/* Notebook selector lives INSIDE Notes, not in the dream's main navigation. */}
     <View style={{gap:9}}>
-      <View style={{flexDirection:'row',alignItems:'flex-end',gap:5}}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}
-          keyboardShouldPersistTaps="always" style={{flex:1}}
-          contentContainerStyle={{gap:7,alignItems:'flex-end',paddingRight:9}}>
-          {notebooks.map((book,index)=>{
-            const current=book.id===notebook.id;
-            const tabColor=NOTEBOOK_COLORS[book.color??defaultNotebookColor(index)].hex;
-            return <Pressable key={book.id}
-              accessibilityRole="tab"
-              accessibilityLabel={'Ouvrir le carnet '+book.title}
-              accessibilityState={{selected:current}}
-              onPress={()=>selectNotebook(book.id)}
-              style={{minWidth:107,maxWidth:166,minHeight:48,
-                paddingHorizontal:4,justifyContent:'flex-end',alignItems:'stretch'}}>
-              <Text numberOfLines={1} style={{
-                color:tabColor,opacity:current?0.92:0.60,
-                fontSize:12,fontWeight:current?'700':'500',
-                textAlign:'center'}}>
-                {book.title}
-              </Text>
-              <View style={{width:'100%',height:current?2:1,
-                marginTop:10,borderRadius:2,
-                backgroundColor:tabColor,opacity:current?0.88:0.23}}/>
-            </Pressable>;
-          })}
-        </ScrollView>
-        {editable?<Pressable accessibilityRole="button"
-          accessibilityLabel="Créer un carnet"
+      <View style={{flexDirection:'row',alignItems:'center',gap:8,minHeight:49}}>
+        <Pressable accessibilityRole="button"
+          accessibilityLabel={'Choisir un carnet. Actuel : '+notebook.title}
+          accessibilityState={{expanded:bookSelectorOpen}}
+          onPress={()=>{setBookSelectorOpen(!bookSelectorOpen);setBookMenuOpen(false);setBookColorsOpen(false);setNameMode(null);}}
+          style={{flex:1,minHeight:44,flexDirection:'row',alignItems:'center',gap:10}}>
+          <View style={{width:10,height:10,borderRadius:5,
+            backgroundColor:NOTEBOOK_COLORS[notebook.color??defaultNotebookColor(
+              notebooks.findIndex(b=>b.id===notebook.id))].hex}}/>
+          <Text numberOfLines={1} style={{fontSize:20,fontWeight:'600',
+            fontFamily:'serif',color:theme.foreground,flexShrink:1}}>{notebook.title}</Text>
+          <Ionicons name={bookSelectorOpen?'chevron-up':'chevron-down'}
+            size={17} color={theme.muted}/>
+        </Pressable>
+        {editable?<Pressable accessibilityRole="button" accessibilityLabel="Créer un carnet"
           onPress={()=>startName('new')}
-          style={{width:34,height:43,alignItems:'center',justifyContent:'center'}}>
+          style={{width:35,height:42,alignItems:'center',justifyContent:'center'}}>
           <Ionicons name="add" size={21} color={theme.muted}/>
         </Pressable>:null}
         {editable?<Pressable accessibilityRole="button"
           accessibilityLabel={'Options du carnet '+notebook.title}
           accessibilityState={{expanded:bookMenuOpen}}
-          onPress={()=>{setBookMenuOpen(!bookMenuOpen);setBookColorsOpen(false);setNameMode(null);}}
-          style={{width:31,height:43,alignItems:'center',justifyContent:'center'}}>
+          onPress={()=>{setBookMenuOpen(!bookMenuOpen);setBookSelectorOpen(false);setBookColorsOpen(false);setNameMode(null);}}
+          style={{width:35,height:42,alignItems:'center',justifyContent:'center'}}>
           <Ionicons name="ellipsis-horizontal" size={19} color={theme.muted}/>
         </Pressable>:null}
       </View>
+      {bookSelectorOpen?<View style={{backgroundColor:theme.surface,
+        borderRadius:12,borderWidth:1,borderColor:theme.border,
+        paddingVertical:5,overflow:'hidden'}}>
+        <ScrollView nestedScrollEnabled style={{maxHeight:245}}
+          contentContainerStyle={{gap:1}}>
+          {notebooks.map((book,index)=>{
+            const selectedBook=book.id===notebook.id;
+            return <Pressable key={book.id} accessibilityRole="button"
+              accessibilityLabel={'Ouvrir le carnet '+book.title}
+              accessibilityState={{selected:selectedBook}}
+              onPress={()=>selectNotebook(book.id)}
+              style={{paddingHorizontal:14,minHeight:45,
+                flexDirection:'row',alignItems:'center',gap:12}}>
+              <View style={{width:9,height:9,borderRadius:5,
+                backgroundColor:NOTEBOOK_COLORS[book.color??defaultNotebookColor(index)].hex}}/>
+              <Text numberOfLines={1} style={{fontSize:14,
+                color:theme.foreground,fontWeight:selectedBook?'700':'400',
+                flex:1}}>{book.title}</Text>
+              {selectedBook?<Ionicons name="checkmark" size={17} color={theme.muted}/>:null}
+            </Pressable>;
+          })}
+        </ScrollView>
+      </View>:null}
       {nameMode?<View style={{gap:8,padding:11,borderRadius:10,
         borderWidth:1,borderColor:theme.border,backgroundColor:theme.surface}}>
         <Text style={{color:theme.foreground,fontSize:12,fontWeight:'700'}}>
