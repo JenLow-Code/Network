@@ -6,7 +6,8 @@ import { useAppTheme } from '@/theme/AppTheme';
 import { useDreams } from '@/domain/dreamRepository';
 import { pickDreamImage } from '@/lib/pickDreamImage';
 import { pickFlowerMedia } from '@/lib/pickFlowerMedia';
-import { useDiscovery, usePublication } from '@/lib/api/hooks';
+import { usePublication } from '@/lib/api/hooks';
+import PublicationSearchPicker from './PublicationSearchPicker';
 import BiblePassagePicker from '@/components/bible/BiblePassagePicker';
 import { bibleReference } from '@/domain/bibleLibrary';
 import { publicationPath } from '@/components/publication/PublicationGallery';
@@ -106,8 +107,6 @@ export default function SemenceInspirations({dream,editable}:{dream:DreamEntry;e
   const [draft,setDraft]=useState<DreamBlock|null>(null);
   const [message,setMessage]=useState('');
   const [picker,setPicker]=useState<'bible'|'publication'|null>(null);
-  const [publicationSearch,setPublicationSearch]=useState('');
-  const discovery=useDiscovery({q:publicationSearch.trim()});
   const canShow=choosing||!!draft;
   const patchBlock=(updates:Partial<DreamBlock>)=>
     setDraft(current=>current?{...current,...updates}:current);
@@ -276,67 +275,11 @@ export default function SemenceInspirations({dream,editable}:{dream:DreamEntry;e
                 title:bibleReference(verse),content:verse.text,
                 caption:'Louis Segond 1910',
               });setPicker(null);}}/>:null}
-            {draft&&picker==='publication'?<View style={{gap:11}}>
-              <View style={{flexDirection:'row',alignItems:'center',gap:8,
-                borderWidth:1,borderColor:theme.border,borderRadius:10,
-                paddingHorizontal:11,backgroundColor:theme.background}}>
-                <Ionicons name="search-outline" size={18} color={theme.muted}/>
-                <TextInput value={publicationSearch} onChangeText={setPublicationSearch}
-                  accessibilityLabel="Rechercher les publications JenLow"
-                  placeholder="Rechercher comme dans Découverte…"
-                  placeholderTextColor={theme.muted}
-                  style={{color:theme.foreground,flex:1,minHeight:46,
-                    paddingVertical:10,fontSize:13}}/>
-              </View>
-              <Text style={{fontSize:11,lineHeight:18,color:theme.muted}}>
-                Choisis une publication dans les résultats, ou saisis son identifiant.
-              </Text>
-              <View style={{flexDirection:'row',flexWrap:'wrap',
-                justifyContent:'space-between',alignItems:'flex-start',gap:8}}>
-                {discovery.items.slice(0,18).map(item=>
-                  <Pressable key={item.id} onPress={()=>{patchBlock({
-                      content:item.id,title:item.title,
-                    });setPicker(null);setPublicationSearch('');}}
-                    accessibilityRole="button" accessibilityLabel={'Sélectionner '+item.title}
-                    style={{width:'48.5%',borderRadius:11,overflow:'hidden',
-                      backgroundColor:theme.dark?'#303238':'#F3F0EC',minHeight:143}}>
-                    {item.image?<Image source={{uri:item.image}}
-                      resizeMode="cover" style={{height:91,width:'100%'}}/>:
-                      <View style={{height:91,alignItems:'center',justifyContent:'center'}}>
-                        <Ionicons name="albums-outline" color={theme.muted} size={22}/>
-                      </View>}
-                    <View style={{padding:9,gap:3}}>
-                      <Text numberOfLines={2} style={{fontSize:12,fontWeight:'700',
-                        color:theme.foreground}}>{item.title}</Text>
-                      <Text numberOfLines={1} style={{fontSize:10,color:theme.muted}}>
-                        {item.type==='dream'?'Rêve':item.type==='music'?'Musique':
-                          item.type==='bible'?'Bible':'Talent'}
-                      </Text>
-                    </View>
-                  </Pressable>)}
-              </View>
-              {discovery.state==='loading'?<Text style={{fontSize:12,color:theme.muted}}>
-                Recherche en cours…
-              </Text>:null}
-              {discovery.state==='error'?<Text style={{fontSize:12,color:theme.muted}}>
-                Impossible de charger les publications. Utilise leur ID.
-              </Text>:null}
-              {!discovery.items.length&&discovery.state==='ready'?
-                <Text style={{fontSize:12,color:theme.muted}}>Aucune publication trouvée.</Text>:null}
-              <TextInput value={draft.content} onChangeText={content=>patchBlock({content})}
-                placeholder="Ou saisir l’ID exact de la publication"
-                placeholderTextColor={theme.muted} accessibilityLabel="ID de publication"
-                autoCapitalize="none"
-                style={{color:theme.foreground,borderWidth:1,borderColor:theme.border,
-                  borderRadius:10,padding:12,fontSize:13}}/>
-              <Pressable accessibilityRole="button"
-                onPress={()=>setPicker(null)}
-                style={{backgroundColor:theme.foreground,borderRadius:10,padding:13,alignItems:'center'}}>
-                <Text style={{color:theme.background,fontWeight:'700',fontSize:13}}>
-                  Continuer
-                </Text>
-              </Pressable>
-            </View>:null}
+            {draft&&picker==='publication'?<PublicationSearchPicker
+              selectedId={draft.content}
+              onManual={content=>patchBlock({content})}
+              onSelect={item=>{patchBlock({content:item.id,title:item.title});setPicker(null);}}
+              onDone={()=>setPicker(null)}/>:null}
             {draft&&!picker?<>
               {draft.kind==='image'||draft.kind==='gallery'?<>
                 <Pressable accessibilityRole="button" onPress={pickMedia} disabled={!editable}
