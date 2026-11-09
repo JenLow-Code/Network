@@ -46,6 +46,12 @@ export type DreamNoteBlock = {
   checked?: boolean;
   collapsed?: boolean;
 };
+/** A private notebook belonging to a dream. Blocks never overlap across books. */
+export type DreamNotebook = {
+  id: string;
+  title: string;
+  blocks: DreamNoteBlock[];
+};
 export type DreamResource = {
   id: string;
   /** ID of a real server-side need; undefined for local demo dreams. */
@@ -158,6 +164,8 @@ export type DreamEntry = {
   /** Owner-only notebook title and rich text blocks, retained across phases. */
   privateNotesTitle?: string;
   privateNotesBlocks?: DreamNoteBlock[];
+  /** Private notebook collection. Legacy notes are used as the first notebook until first edit. */
+  privateNotebooks?: DreamNotebook[];
 
   growthStartedAt?: string;
   chat?: { id: string; messages: DreamChatMessage[] };
