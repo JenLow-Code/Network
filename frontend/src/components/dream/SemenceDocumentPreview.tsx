@@ -95,10 +95,14 @@ export function SemenceDocumentPreview({block}: {block:DreamBlock}){
    {format==='image'&&/^(https?:|data:image\/)/i.test(content)?
      <Image source={{uri:content}} resizeMode="contain"
        style={{height:270,width:'100%'}}/>:null}
-   {(format==='text'||format==='word')&&!!textPreview?<Text selectable
-     style={{fontSize:13,lineHeight:21,color:theme.foreground,
+   {(format==='text'||format==='word')&&!!textPreview?<View style={{gap:7}}>
+     <Text selectable style={{fontSize:13,lineHeight:21,color:theme.foreground,
        borderWidth:1,borderColor:theme.border,borderRadius:11,
-       padding:13,maxHeight:350}}>{textPreview}</Text>:null}
+       padding:13}}>{textPreview.slice(0,2800)}</Text>
+     {textPreview.length>2800?<Text style={{fontSize:11,color:theme.muted}}>
+       Aperçu partiel · ouvre le document pour lire la suite.
+     </Text>:null}
+   </View>:null}
    {format==='word'&&!!textPreview?<Text style={{fontSize:11,
      color:theme.muted}}>Aperçu du texte · mise en forme Word non reproduite</Text>:null}
    {((format==='word'&&!textPreview)||format==='other'||Platform.OS!=='web')?
