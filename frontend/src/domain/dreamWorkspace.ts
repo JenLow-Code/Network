@@ -82,6 +82,8 @@ export type DreamHabit = {
   id: string;
   title: string;
   frequency: 'daily' | 'weekly';
+  /** Start of the habit's own schedule, as a calendar-local YYYY-MM-DD. */
+  startedAt?: string;
   completed: string[];
   /** Optional measurable target per daily or weekly period. */
   description?: string;
