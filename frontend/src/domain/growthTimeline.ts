@@ -44,6 +44,17 @@ export function buildGrowthDays(dream: DreamEntry): GrowthDay[] {
     .sort((a,b)=>b.date.localeCompare(a.date));
 }
 
+/** Logs become immutable 24 hours after creation.
+ * Legacy logs without creation timestamps are only editable on their dated calendar day. */
+export function canEditGrowthLog(log:DreamMilestone, now:Date=new Date()):boolean {
+  if(log.createdAt) {
+    const created=Date.parse(log.createdAt);
+    const elapsed=now.getTime()-created;
+    return Number.isFinite(created)&&elapsed>=0&&elapsed<24*60*60*1000;
+  }
+  return log.date===habitDayKey(now);
+}
+
 export const countVerifiedPrayers = (dream: DreamEntry): number | null =>
   typeof dream.prayerCount === 'number' && Number.isInteger(dream.prayerCount) &&
   dream.prayerCount >= 0 ? dream.prayerCount : null;
