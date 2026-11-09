@@ -1,11 +1,13 @@
-import React from 'react';
-import { Image, Pressable, Text, TextInput, View } from 'react-native';
+import React, { useState } from 'react';
+import { ActivityIndicator, Image, Pressable, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/theme/AppTheme';
 import type { DreamEntry } from '@/domain/dreamWorkspace';
 import { DREAM_PHASES, PHASE_LABELS, type DreamPhase } from '@/domain/publication';
 import { dreamPhaseImageUris } from '../../../assets/dreamPhaseImages';
 import { TopActions } from '@/components/navigation/TopActions';
+import { pickDreamImage } from '@/lib/pickDreamImage';
+import { useDreams } from '@/domain/dreamRepository';
 
 /** One editorial design language for all four dream phases. */
 export const phaseAccent: Record<DreamPhase, string> = {
@@ -29,6 +31,24 @@ export function DreamPhaseHeader({
   const theme = useAppTheme();
   const accent = phaseAccent[phase];
   const description = summary === undefined ? dream.summary : summary;
+  const {setCoverImage,ready}=useDreams();
+  const [savingCover,setSavingCover]=useState(false);
+  const [coverError,setCoverError]=useState('');
+  const canChangeCover=phase===dream.phase && phase!=='Témoignage' && !readOnly;
+  const chooseCover=()=>{
+    if(!canChangeCover||savingCover||!ready)return;
+    setCoverError('');
+    pickDreamImage(
+      uri=>{
+        setSavingCover(true);
+        void setCoverImage(dream.id,uri)
+          .catch(error=>setCoverError(error instanceof Error?error.message:
+            "Impossible d'enregistrer cette image. Réessaie."))
+          .finally(()=>setSavingCover(false));
+      },
+      message=>setCoverError(message),
+    );
+  };
   return (
     <View style={{ marginBottom: 13 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 44, marginBottom: 23 }}>
@@ -48,6 +68,35 @@ export function DreamPhaseHeader({
           {description}
         </Text>
       ) : null}
+      {canChangeCover ? <View style={{marginBottom:16}}>
+        <Pressable onPress={chooseCover} disabled={savingCover||!ready}
+          accessibilityRole="button"
+          accessibilityLabel={dream.image?"Changer l'image de couverture du rêve":
+            "Ajouter une image de couverture au rêve"}
+          accessibilityState={{disabled:savingCover||!ready}}
+          style={{flexDirection:'row',alignItems:'center',gap:10,alignSelf:'flex-start',
+            paddingVertical:5,paddingRight:12,borderRadius:10}}>
+          <View style={{width:45,height:45,borderRadius:8,overflow:'hidden',
+            backgroundColor:theme.surface,borderColor:theme.border,borderWidth:1,
+            alignItems:'center',justifyContent:'center'}}>
+            {dream.image?<Image source={{uri:dream.image}}
+              resizeMode="cover" style={{width:'100%',height:'100%'}}/>:
+              <Ionicons name="image-outline" size={19} color={theme.muted}/>}
+          </View>
+          <View style={{gap:3}}>
+            <Text style={{fontSize:10,color:theme.muted}}>Image de couverture</Text>
+            <Text style={{fontSize:12,fontWeight:'600',color:theme.foreground}}>
+              {savingCover?'Enregistrement…':dream.image?"Changer l’image":"Ajouter une image"}
+            </Text>
+          </View>
+          {savingCover?<ActivityIndicator size="small" color={accent}/>:
+            <Ionicons name="create-outline" size={15} color={theme.muted}/>}
+        </Pressable>
+        {coverError?<Text accessibilityRole="alert"
+          style={{fontSize:11,color:'#B24753',lineHeight:17,marginTop:7}}>
+          {coverError}
+        </Text>:null}
+      </View> : null}
       {/* The phase progression is the single botanical header, preceding the dream identity. */}
       <View style={{ flexDirection: 'row', gap: 6, marginBottom: 19 }}>
         {DREAM_PHASES.map((item, i) => {

@@ -14,6 +14,8 @@ type Repo = {
   storageError: string | null;
   /** Durable, confirmed creation for screens that immediately navigate away. */
   createPersisted: (data: { title: string; summary: string; image: string; needs: string[] }) => Promise<string>;
+  /** Saves a new cover only if the account workspace confirms the write. */
+  setCoverImage: (dreamId: string, image: string) => Promise<void>;
   personalHabits: DreamHabit[];
   setPersonalHabits: (habits: DreamHabit[]) => void;
   detachHabit: (dreamId: string, habitId: string) => void;
@@ -148,6 +150,23 @@ export function DreamProvider({ children }: { children: React.ReactNode }) {
     setItems(previous=>[entry,...previous]);
     return id;
   };
+  const setCoverImage:Repo['setCoverImage']=async(dreamId,image)=>{
+    if(hydratedKey!==key)throw new Error(
+      'Les rêves de ce compte ne sont pas encore chargés.',
+    );
+    const existing=items.find(d=>d.id===dreamId);
+    if(!existing)throw new Error('Ce rêve est introuvable.');
+    if(existing.phase==='Témoignage')throw new Error(
+      "L'image d'un rêve en Floraison est définitive.",
+    );
+    if(!image.startsWith('data:image/')&&!/^https:\/\//.test(image))
+      throw new Error("Format d'image invalide.");
+    const changed=items.map(d=>d.id===dreamId?{...d,image}:d);
+    // The cover only changes on screen after the browser confirms persistence.
+    await persistDreamWorkspace(key,JSON.stringify(changed));
+    setStorageError(null);
+    setItems(previous=>previous.map(d=>d.id===dreamId?{...d,image}:d));
+  };
   const create: Repo['create'] = data => {
     const id = 'local-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
     setItems(p => [
@@ -269,7 +288,7 @@ export function DreamProvider({ children }: { children: React.ReactNode }) {
   const remove: Repo['remove'] = id => setItems(p => p.filter(d => d.id !== id));
   return (
     <Context.Provider
-      value={{ items, ready:hydratedKey===key, storageError, createPersisted, personalHabits, setPersonalHabits, detachHabit, create, update, add, setFlowerDraft, advance, complete, remove, patch, appendBlock, setResources, setHabits, transitionToGrowth, setGoalAndGrow, addGrowthLog, setGrowthLogPublication }}
+      value={{ items, ready:hydratedKey===key, storageError, createPersisted, setCoverImage, personalHabits, setPersonalHabits, detachHabit, create, update, add, setFlowerDraft, advance, complete, remove, patch, appendBlock, setResources, setHabits, transitionToGrowth, setGoalAndGrow, addGrowthLog, setGrowthLogPublication }}
     >
       {children}
     </Context.Provider>
