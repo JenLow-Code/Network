@@ -47,12 +47,19 @@ function SocialLine({title,icon,color,value}:{
   const delta=positiveCount(value.delta)?'+'+value.delta:null;
   const total=validCount(value.total)?String(value.total):null;
   if(!delta&&!total)return null;
-  return <View style={{flexDirection:'row',alignItems:'center',gap:9,minHeight:24}}>
-    {icon==='prayer'?<PrayerIcon size={13} color={color}/>:
-      <Ionicons name="heart-outline" size={14} color={color}/>}
+  const bg = color===SEED_BROWN?'#F6EFE7':'#FCEBF3';
+  return <View style={{flexDirection:'row',alignItems:'center',gap:9,minHeight:27}}>
+    {icon==='prayer'?<PrayerIcon size={14} color={color}/>:
+      <Ionicons name="heart-outline" size={15} color={color}/>}
     <Text numberOfLines={1} style={{fontSize:11,color:theme.foreground,flex:1}}>{title}</Text>
-    <Text numberOfLines={1} style={{fontSize:11,fontWeight:'700',
-      color:color}}>{delta||''}{delta&&total?' / ':''}{total||''}</Text>
+    <View style={{backgroundColor:theme.dark?theme.surface:bg,
+      borderRadius:14,paddingHorizontal:9,paddingVertical:5,minWidth:51,
+      alignItems:'center',justifyContent:'center'}}>
+      <Text numberOfLines={1} style={{fontSize:11,fontWeight:'700',
+        color:color,fontVariant:['tabular-nums']}}>
+        {delta||''}{delta&&total?' / ':''}{total||''}
+      </Text>
+    </View>
   </View>;
 }
 
@@ -112,7 +119,7 @@ function CurrentHabitSummary({
             borderRadius:15,alignItems:'center',justifyContent:'center'}}>
             <Text style={{fontSize:14,lineHeight:19}}>{habit.emoji||'🌱'}</Text>
           </View>
-          <View style={{flex:1,gap:2,minWidth:0}}>
+          <View style={{flex:1,gap:2,minWidth:0,marginLeft:4}}>
             <Text numberOfLines={1} style={{color:theme.foreground,
               fontSize:12,fontWeight:'600'}}>{habit.title}</Text>
             <Pressable accessibilityRole="link" onPress={()=>router.push('/agenda')}
@@ -120,14 +127,21 @@ function CurrentHabitSummary({
               <Text style={{color,fontSize:10,fontWeight:'600'}}>Voir dans le calendrier</Text>
             </Pressable>
           </View>
-          <Text style={{fontSize:11,fontWeight:'700',color}}>
-            {progress.planned===null?progress.completed:
-              progress.completed+' / '+progress.planned}
-          </Text>
+          <View style={{backgroundColor:theme.dark?theme.surface:'#EDF5F2',
+            borderRadius:14,paddingVertical:5,paddingHorizontal:8,alignItems:'center',
+            justifyContent:'center'}}>
+            <Text style={{fontSize:11,fontWeight:'700',color,
+              fontVariant:['tabular-nums']}}>
+              {progress.planned===null?progress.completed:
+                progress.completed+' / '+progress.planned}
+            </Text>
+          </View>
           {progress.streak>0?<View style={{flexDirection:'row',
-            alignItems:'center',gap:2}}>
-            <Ionicons name="flame" size={14} color={color}/>
-            <Text style={{fontSize:10,fontWeight:'700',color}}>{progress.streak}</Text>
+            alignItems:'center',gap:2}} accessibilityLabel={'Série de '+progress.streak}>
+            <Text style={{fontSize:15,lineHeight:19}}>🔥</Text>
+            <Text style={{fontSize:11,fontWeight:'700',color:theme.foreground}}>
+              {progress.streak}
+            </Text>
           </View>:null}
           {editable?<Pressable accessibilityRole="button"
             accessibilityLabel={'Options pour '+habit.title}
@@ -137,6 +151,7 @@ function CurrentHabitSummary({
           </Pressable>:null}
         </View>
         <HabitSquareGrid habit={habit} goalDate={dream.goalDate}
+          dreamStartedAt={dream.growthStartedAt}
           color={color} editable={editable}
           onTodayPress={()=>openCheckIn(habit)}/>
       </View>;
