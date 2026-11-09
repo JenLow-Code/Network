@@ -260,6 +260,9 @@ export default function Agenda() {
                         ...x,
                         completed:checked?x.completed.filter(k=>k!==key):[...x.completed,key],
                         measurements:{...x.measurements,[key]:checked?0:target},
+                        achievedOn:x.frequency==='weekly' ? {
+                          ...x.achievedOn,[key]:checked?'':dateKey,
+                        } : x.achievedOn,
                       });
                       setHabits(d.id,updated);
                     }}
@@ -430,7 +433,12 @@ export default function Agenda() {
                 return {...h,measurements:{...h.measurements,[measureEdit.dateKey]:amount},
                   completed:checked
                     ? Array.from(new Set([...h.completed,measureEdit.dateKey]))
-                    : h.completed.filter(k=>k!==measureEdit.dateKey)};
+                    : h.completed.filter(k=>k!==measureEdit.dateKey),
+                  achievedOn:h.frequency==='weekly'
+                    ? {...h.achievedOn,[measureEdit.dateKey]:checked
+                      ? h.achievedOn?.[measureEdit.dateKey] || dateKey : ''}
+                    : h.achievedOn,
+                };
               }));
               setMeasureEdit(null);
             }} style={{backgroundColor:'#242322',minHeight:47,borderRadius:10,
