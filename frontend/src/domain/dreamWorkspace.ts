@@ -89,6 +89,8 @@ export type DreamHabit = {
   unit?: string;
   /** Quantity by local date/week; check marks still remain supported for legacy habits. */
   measurements?: Record<string, number>;
+  /** Actual local day when a weekly goal was reached, keyed by week start. */
+  achievedOn?: Record<string,string>;
   /** Chosen emoji and one of the calm habit palette colors. */
   emoji?: string;
   color?: string;
