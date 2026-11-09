@@ -27,6 +27,7 @@ export default function SemenceNotes({dream,editable}:{dream:DreamEntry;editable
   const [typesOpen,setTypesOpen]=useState(false);
   const [colorsOpen,setColorsOpen]=useState(false);
   const [readOnlyExpanded,setReadOnlyExpanded]=useState<Record<string,boolean>>({});
+  const [contentHeights,setContentHeights]=useState<Record<string,number>>({});
   // Read legacy notebooks without erasing their saved content.
   const legacy: DreamNoteBlock[] = [
     ...(dream.privateDiary?.trim()?[{id:'legacy-diary',type:'text' as const,text:dream.privateDiary}]:[]),
@@ -150,12 +151,19 @@ export default function SemenceNotes({dream,editable}:{dream:DreamEntry;editable
           padding:0,margin:0,flex:1};
         const textField=(value:string,change:(v:string)=>void,placeholder:string,multiline=true)=>
           <TextInput value={value} editable={editable} multiline={multiline}
+            scrollEnabled={false}
+            onContentSizeChange={event=>{
+              const next=Math.ceil(event.nativeEvent.contentSize.height);
+              if(Number.isFinite(next)&&next>0&&next!==contentHeights[b.id])
+                setContentHeights(prev=>({...prev,[b.id]:next}));
+            }}
             autoFocus={editable&&selectedId===b.id&&(b.type!=='toggle'||placeholder==='Titre de la section')}
             onFocus={()=>setSelectedId(b.id)} onChangeText={change}
             textAlignVertical="top" placeholder={placeholder}
             placeholderTextColor={theme.muted}
             accessibilityLabel={placeholder}
-            style={{...style,minHeight:b.type==='heading'?40:27}}/>;
+            style={{...style,minHeight:b.type==='heading'?40:27,
+              height:Math.max(b.type==='heading'?40:27,contentHeights[b.id]||0)}}/>;
         return <View key={b.id} style={{flexDirection:'row',alignItems:'flex-start',gap:9,
           paddingVertical:8,
           paddingLeft:b.type==='quote'?12:0,
