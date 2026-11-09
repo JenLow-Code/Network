@@ -45,3 +45,44 @@ export const habitHistory = (habit: DreamHabit, now: Date = new Date(), total = 
     return { key, completed: set.has(key) };
   });
 };
+
+
+// Sum goal-period quantities without double counting completed periods and measurements.
+// A period with a legacy completion but no measurement contributes its configured target.
+export function habitDreamProgress(
+  habit: DreamHabit,
+  goalDate?: string,
+  dreamStartedAt?: string,
+  now: Date = new Date(),
+): {completed:number;planned:number|null;remaining:number|null;unit:string;streak:number} {
+  const target=habit.target&&habit.target>0?habit.target:1;
+  const unit=habit.unit||'fois';
+  const today=habitDayKey(now);
+  const keys=new Set([
+    ...habit.completed.map(key=>habitKey(habit.frequency,key)),
+    ...Object.keys(habit.measurements||{}).map(key=>habitKey(habit.frequency,key)),
+  ]);
+  let completed=0;
+  for(const key of keys){
+    if(key>today)continue;
+    const measured=habit.measurements?.[key];
+    completed+=Math.max(0,measured??(habit.completed.some(done=>habitKey(habit.frequency,done)===key)?target:0));
+  }
+  completed=Math.round(completed*100)/100;
+  const valid=(value?:string)=>!!value&&/^\d{4}-\d{2}-\d{2}$/.test(value)&&
+    !Number.isNaN(new Date(value+'T12:00:00').getTime());
+  if(!valid(goalDate))return {completed,planned:null,remaining:null,unit,streak:habitStreak(habit,now)};
+  const firstKnown=[...keys].sort()[0];
+  const started=valid(habit.startedAt)?habit.startedAt!:
+    valid(dreamStartedAt)?dreamStartedAt!.slice(0,10):
+    firstKnown||today;
+  const startKey=habitKey(habit.frequency,started);
+  const endKey=habitKey(habit.frequency,goalDate!);
+  if(startKey>endKey)return {completed,planned:0,remaining:0,unit,streak:habitStreak(habit,now)};
+  const start=new Date(startKey+'T12:00:00');
+  const end=new Date(endKey+'T12:00:00');
+  const periods=1+Math.round((end.getTime()-start.getTime())/(habit.frequency==='weekly'?7:1)/86400000);
+  const planned=Math.round(Math.max(0,periods*target)*100)/100;
+  const remaining=Math.max(0,Math.round((planned-completed)*100)/100);
+  return {completed,planned,remaining,unit,streak:habitStreak(habit,now)};
+}
