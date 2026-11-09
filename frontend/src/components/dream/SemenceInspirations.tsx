@@ -9,6 +9,9 @@ import { pickFlowerMedia } from '@/lib/pickFlowerMedia';
 import { usePublication } from '@/lib/api/hooks';
 import PublicationSearchPicker from './PublicationSearchPicker';
 import SemenceInspirationDetail from './SemenceInspirationDetail';
+import SemencePublicationCover from './SemencePublicationCover';
+import { documentKind, documentLabel } from './SemenceDocumentPreview';
+import { linkHost } from './SemenceLinkPreview';
 import BiblePassagePicker from '@/components/bible/BiblePassagePicker';
 import { bibleReference } from '@/domain/bibleLibrary';
 import { publicationPath } from '@/components/publication/PublicationGallery';
@@ -23,6 +26,7 @@ type Option={kind:DreamBlockKind;label:string;sub:string;icon:keyof typeof Ionic
 const options:Option[]=[
   {kind:'image',label:'Photo',sub:'Une image qui t’inspire',icon:'image-outline'},
   {kind:'quote',label:'Citation',sub:'Une phrase, une parole',icon:'chatbubble-ellipses-outline'},
+  {kind:'poem',label:'Poème / texte court',sub:'Un poème ou un texte original à lire ici',icon:'book-outline'},
   {kind:'bible-verse',label:'Verset biblique',sub:'Référence et passage',icon:'book-outline'},
   {kind:'publication-ref',label:'Publication',sub:'Retrouver une publication par ID',icon:'albums-outline'},
   {kind:'document',label:'Document',sub:'PDF, texte, fichier de référence',icon:'document-attach-outline'},
@@ -35,6 +39,7 @@ function typeLabel(kind:DreamBlockKind) {
 }
 function typeIcon(kind:DreamBlockKind):keyof typeof Ionicons.glyphMap{
   if(kind==='pdf'||kind==='document')return 'document-text-outline';
+  if(kind==='poem')return 'book-outline';
   if(kind==='publication-ref')return 'albums-outline';
   if(kind==='bible-verse')return 'book-outline';
   if(kind==='video')return 'videocam-outline';
@@ -45,61 +50,96 @@ function typeIcon(kind:DreamBlockKind):keyof typeof Ionicons.glyphMap{
   return 'sparkles-outline';
 }
 function InspirationTile({block,onPress,onLongPress}:{
-  block:DreamBlock;onPress:()=>void;onLongPress:()=>void;
+ block:DreamBlock;onPress:()=>void;onLongPress:()=>void;
 }) {
-  const theme=useAppTheme();
-  const remote=usePublication(block.kind==='publication-ref'?block.content.trim():undefined);
-  const displayTitle=block.kind==='publication-ref'&&remote.item?
-    remote.item.title||block.title||'Publication liée':block.title;
-  const bg=theme.dark?'#26282B':
-    block.kind==='bible-verse'?'#F4F0E7':
-    block.kind==='quote'?'#F6F0EE':'#F3F0EB';
-  const image=hasImage(block);
-  const wide=block.size==='featured'&&image;
-  const label=block.kind==='bible-verse'?block.title||'Verset biblique':
-    block.kind==='publication-ref'?displayTitle||'Publication #'+block.content:
-    block.kind==='quote'?block.content:
-    displayTitle||((block.kind==='document'||block.kind==='pdf')&&block.content.startsWith('data:')?'Document joint':block.content);
-  return <Pressable accessibilityRole="button"
-    accessibilityLabel={'Ouvrir '+typeLabel(block.kind)+': '+String(label).slice(0,70)}
-    onPress={onPress} onLongPress={onLongPress} delayLongPress={460}
-    accessibilityHint="Appui long ou clic droit pour les options"
-    {...(Platform.OS==='web'?{onContextMenu:(event:any)=>{
-      event.preventDefault();onLongPress();
-    }} as any:{})}
-    style={{width:wide?'100%':'48.5%',minHeight:150,marginBottom:11,
-      backgroundColor:bg,borderRadius:13,overflow:'hidden'}}>
-    {image?<Image source={{uri:block.media?.[0]||block.content}}
-      style={{width:'100%',height:wide?220:150}}
-      resizeMode="cover"/>:
-      <View style={{padding:13,minHeight:154,justifyContent:'space-between',gap:10}}>
-        <View style={{flexDirection:'row',alignItems:'center',gap:5}}>
-          <Ionicons name={typeIcon(block.kind)} size={17} color={palette}/>
-          <Text numberOfLines={1} style={{fontSize:9,letterSpacing:.6,
-            fontWeight:'700',color:theme.muted,flex:1}}>
-            {(block.kind==='quote'&&block.title?.trim()?block.title:typeLabel(block.kind)).toUpperCase()}
-          </Text>
-        </View>
-        <View style={{gap:6}}>
-          <Text numberOfLines={4} style={{
-            color:theme.foreground,fontSize:block.kind==='quote'?17:14,
-            fontFamily:block.kind==='quote'||block.kind==='bible-verse'?'serif':undefined,
-            fontStyle:block.kind==='quote'?'italic':'normal',
-            lineHeight:block.kind==='quote'?24:20,fontWeight:'500'}}>
-            {block.kind==='quote'?'“'+block.content+'”':label}
-          </Text>
-          {block.kind==='bible-verse'&&!!block.content?
-            <Text numberOfLines={2} style={{fontSize:11,color:theme.muted,lineHeight:16}}>
-              {block.content}
-            </Text>:null}
-          {block.kind==='publication-ref'&&remote.state==='error'?
-            <Text style={{fontSize:10,color:theme.muted}}>ID enregistré · aperçu indisponible</Text>:null}
-        </View>
-      </View>}
-    {image&&!!block.title?<Text numberOfLines={2}
-      style={{paddingHorizontal:11,paddingVertical:10,
-        fontSize:12,fontWeight:'600',color:theme.foreground}}>{block.title}</Text>:null}
-  </Pressable>;
+ const theme=useAppTheme();
+ const image=hasImage(block);
+ const isDoc=block.kind==='document'||block.kind==='pdf';
+ const isPub=block.kind==='publication-ref';
+ const isBible=block.kind==='bible-verse';
+ const isLink=['link','bookmark','embed'].includes(block.kind);
+ const isQuote=block.kind==='quote';
+ const isPoem=block.kind==='poem';
+ const wide=isDoc||(block.size==='featured'&&image);
+ const bg=theme.dark?'#26282B':
+   isBible?'#F7F1E9':isQuote||isPoem?'#F6F0EE':'#F3F0EB';
+ const fullLabel=isBible?block.title||'Verset biblique':
+   isQuote?block.title||'Citation':block.title||typeLabel(block.kind);
+ return <Pressable accessibilityRole="button"
+   accessibilityLabel={'Ouvrir '+typeLabel(block.kind)+': '+fullLabel}
+   accessibilityHint="Appui long ou clic droit pour modifier, supprimer ou partager"
+   onPress={onPress} onLongPress={onLongPress} delayLongPress={460}
+   {...(Platform.OS==='web'?{onContextMenu:(event:any)=>{
+     event.preventDefault();onLongPress();
+   }} as any:{})}
+   style={{width:wide?'100%':'48.5%',marginBottom:11,
+     borderRadius:13,overflow:'hidden',backgroundColor:bg,
+     minHeight:isDoc?176:isPub?192:image?146:150}}>
+   {isPub?<SemencePublicationCover publicationId={block.content}
+     fallbackTitle={block.title}/>:image?<Image
+       source={{uri:block.media?.[0]||block.content}}
+       style={{width:'100%',height:wide?215:151}} resizeMode="cover"/>:
+   isDoc?<View style={{padding:18,flexDirection:'row',alignItems:'center',
+     minHeight:176,gap:17}}>
+     <View style={{width:65,height:80,borderRadius:10,
+       backgroundColor:theme.dark?'#38383A':'#ECE1D7',
+       alignItems:'center',justifyContent:'center',gap:5}}>
+       <Ionicons name="document-text-outline" size={29} color="#A5713D"/>
+       <Text style={{fontSize:9,color:'#A5713D',fontWeight:'700'}}>
+         {documentKind(block).toUpperCase()}
+       </Text>
+     </View>
+     <View style={{flex:1,gap:9}}>
+       <Text style={{fontSize:10,color:theme.muted,
+         letterSpacing:.8,fontWeight:'700'}}>DOCUMENT</Text>
+       <Text numberOfLines={3} style={{fontSize:16,lineHeight:22,
+         fontWeight:'700',color:theme.foreground}}>
+         {documentLabel(block)}
+       </Text>
+       <Text style={{fontSize:11,color:theme.muted}}>
+         Toucher pour voir l’aperçu
+       </Text>
+     </View>
+     <Ionicons name="chevron-forward" size={18} color={theme.muted}/>
+   </View>:
+   <View style={{minHeight:150,padding:14,gap:11,
+     justifyContent:'flex-start'}}>
+     <View style={{flexDirection:'row',alignItems:'center',gap:7}}>
+       <Ionicons name={typeIcon(block.kind)} size={16} color="#B88962"/>
+       <Text numberOfLines={1}
+         style={{fontSize:10,letterSpacing:.6,fontWeight:'700',
+           color:isBible?theme.foreground:theme.muted,flex:1}}>
+         {(isBible?block.title||'VERSET BIBLIQUE':
+           isQuote?block.title?.trim()||'CITATION':
+           isPoem?block.title?.trim()||'POÈME':typeLabel(block.kind)).toUpperCase()}
+       </Text>
+     </View>
+     {isLink?<View style={{gap:6}}>
+       {!!block.title?<Text numberOfLines={2} style={{fontSize:15,
+         lineHeight:20,fontWeight:'600',color:theme.foreground}}>
+         {block.title}
+       </Text>:null}
+       <Text numberOfLines={2} style={{fontSize:12,lineHeight:18,
+         color:'#A5713D',textDecorationLine:'underline'}}>
+         {block.content}
+       </Text>
+       <Text numberOfLines={1} style={{fontSize:10,color:theme.muted}}>
+         {linkHost(block.content)}
+       </Text>
+     </View>:
+     <Text numberOfLines={isPoem?7:5}
+       style={{fontSize:isQuote?17:isPoem?15:isBible?14:14,
+         lineHeight:isQuote?24:21,
+         fontFamily:isQuote||isPoem||isBible?'serif':undefined,
+         fontStyle:isQuote?'italic':'normal',
+         color:isBible?'#C02772':theme.foreground}}>
+       {isQuote?'“'+block.content+'”':block.content}
+     </Text>}
+   </View>}
+   {image&&!!block.title?<Text numberOfLines={2}
+     style={{paddingHorizontal:11,paddingVertical:9,
+       fontSize:12,fontWeight:'600',color:theme.foreground}}>{block.title}</Text>:null}
+ </Pressable>;
 }
 
 /** Inspiration references, not a second note editor. */
@@ -132,6 +172,8 @@ export default function SemenceInspirations({dream,editable,onShareInspiration}:
     const title=draft.title?.trim()||'';
     const content=draft.content.trim();
     if(draft.kind==='quote'&&!content)return showError('Écris la citation à conserver.');
+    if(draft.kind==='poem'&&!content)return showError('Écris ton poème ou ton texte.');
+    if(draft.kind==='poem'&&content.length>2000)return showError('Pour un texte plus long, ajoute-le comme document.');
     if(draft.kind==='bible-verse'&&!title)return showError('Ajoute la référence du verset (par ex. Jean 3:16).');
     if(draft.kind==='publication-ref'&&!content)return showError('Saisis l’ID de la publication.');
     if(['link','bookmark','embed'].includes(draft.kind)&&!isRemote(content))
@@ -328,6 +370,14 @@ export default function SemenceInspirations({dream,editable,onShareInspiration}:
                 {input(draft.title||'',title=>patchBlock({title}),
                   'Auteur ou source (facultatif)')}
               </>:null}
+              {draft.kind==='poem'?<>
+                {input(draft.title||'',title=>patchBlock({title}),'Titre (facultatif)')}
+                {input(draft.content,content=>patchBlock({content}),
+                  'Écris ton poème ou ton court texte…',true)}
+                <Text style={{fontSize:11,color:theme.muted}}>
+                  Texte court, jusqu’à 2 000 caractères. Pour un travail plus long ou versionné, utilise un document.
+                </Text>
+              </>:null}
               {draft.kind==='bible-verse'?<>
                 <View style={{padding:12,borderWidth:1,borderColor:theme.border,
                   borderRadius:10,gap:7}}>
@@ -401,7 +451,7 @@ export default function SemenceInspirations({dream,editable,onShareInspiration}:
                 {input(draft.content.startsWith('data:')?'':draft.content,
                   content=>patchBlock({content,media:[]}), 'Ou coller un lien vers le média')}
               </>:null}
-              {!['image','gallery','quote','bible-verse','publication-ref','document','pdf','link','bookmark','embed','video','audio','music'].includes(draft.kind)?<>
+              {!['image','gallery','quote','poem','bible-verse','publication-ref','document','pdf','link','bookmark','embed','video','audio','music'].includes(draft.kind)?<>
                 <Text style={{fontSize:11,color:theme.muted}}>
                   Ancien bloc conservé pour ne pas perdre tes idées.
                 </Text>

@@ -39,7 +39,7 @@ export default function PublicationSearchPicker({selectedId,onSelect,onManual,on
          style={{width:'48.5%',borderRadius:11,overflow:'hidden',
            backgroundColor:item.type==='dream'?'#606260':'#68646A',
            height:175,justifyContent:'flex-end'}}>
-         {item.image?<Image source={{uri:item.image}}
+         {(item.type==='talent'?item.avatar:item.image)?<Image source={{uri:(item.type==='talent'?item.avatar:item.image)!}}
            resizeMode="cover" style={{position:'absolute',left:0,right:0,
              top:0,bottom:0,width:'100%',height:'100%'}}/>:null}
          <Svg pointerEvents="none" width="100%" height="100%"
