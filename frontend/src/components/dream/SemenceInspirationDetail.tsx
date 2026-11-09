@@ -125,11 +125,7 @@ export default function SemenceInspirationDetail({block,initialMenu,editable,onC
                Ouvrir la publication
              </Text>
            </Pressable>
-         </>:['link','bookmark','embed'].includes(block.kind)?<
-           SemenceLinkPreview block={block}
-         />:block.kind==='document'||block.kind==='pdf'?<
-           SemenceDocumentPreview block={block}
-         />:<>
+         </>:['link','bookmark','embed'].includes(block.kind)?<SemenceLinkPreview block={block}/>:block.kind==='document'||block.kind==='pdf'?<SemenceDocumentPreview block={block}/>:<>
            <Text selectable style={{fontSize:16,lineHeight:26,
              color:theme.foreground}}>{block.content}</Text>
            {hasSource?<Pressable onPress={openSource} accessibilityRole="button"
