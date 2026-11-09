@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Image, Pressable, Text, TextInput, View } from 'react-native';
+import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/theme/AppTheme';
 import { useDiscovery } from '@/lib/api/hooks';
@@ -32,23 +33,34 @@ export default function PublicationSearchPicker({selectedId,onSelect,onManual,on
    </Text>
    <View style={{flexDirection:'row',flexWrap:'wrap',
      justifyContent:'space-between',alignItems:'flex-start',gap:8}}>
-     {discovery.items.slice(0,18).map(item=>
+     {discovery.items.slice(0,18).map((item,index)=>
        <Pressable key={item.id} onPress={()=>onSelect(item)}
          accessibilityRole="button" accessibilityLabel={'Sélectionner '+item.title}
          style={{width:'48.5%',borderRadius:11,overflow:'hidden',
-           backgroundColor:theme.dark?'#303238':'#F3F0EC',minHeight:143}}>
+           backgroundColor:item.type==='dream'?'#606260':'#68646A',
+           height:175,justifyContent:'flex-end'}}>
          {item.image?<Image source={{uri:item.image}}
-           resizeMode="cover" style={{height:91,width:'100%'}}/>:
-           <View style={{height:91,alignItems:'center',justifyContent:'center'}}>
-             <Ionicons name="albums-outline" color={theme.muted} size={22}/>
-           </View>}
-         <View style={{padding:9,gap:3}}>
-           <Text numberOfLines={2} style={{fontSize:12,fontWeight:'700',
-             color:theme.foreground}}>{item.title}</Text>
-           <Text numberOfLines={1} style={{fontSize:10,color:theme.muted}}>
-             {item.type==='dream'?'Rêve':item.type==='music'?'Musique':
-               item.type==='bible'?'Bible':'Talent'}
+           resizeMode="cover" style={{position:'absolute',left:0,right:0,
+             top:0,bottom:0,width:'100%',height:'100%'}}/>:null}
+         <Svg pointerEvents="none" width="100%" height="100%"
+           style={{position:'absolute',top:0,left:0,right:0,bottom:0}}>
+           <Defs>
+             <LinearGradient id={'pub-pick-'+index} x1="0%" y1="0%" x2="0%" y2="100%">
+               <Stop offset="0%" stopColor="#080808" stopOpacity={0.04}/>
+               <Stop offset="48%" stopColor="#080808" stopOpacity={0.30}/>
+               <Stop offset="100%" stopColor="#080808" stopOpacity={0.86}/>
+             </LinearGradient>
+           </Defs>
+           <Rect width="100%" height="100%" fill={'url(#pub-pick-'+index+')'}/>
+         </Svg>
+         <View style={{padding:12,gap:5}}>
+           <Text numberOfLines={1} style={{fontSize:9,fontWeight:'700',
+             letterSpacing:1,color:'#ECE5E3'}}>
+             {item.type==='dream'?'RÊVE':item.type==='music'?'MUSIQUE':
+               item.type==='bible'?'BIBLE':'TALENT'}
            </Text>
+           <Text numberOfLines={3} style={{fontSize:14,fontWeight:'700',
+             lineHeight:19,color:'#FFFFFF'}}>{item.title}</Text>
          </View>
        </Pressable>)}
    </View>
