@@ -48,18 +48,18 @@ function SocialLine({title,icon,color,value}:{
   const total=validCount(value.total)?String(value.total):null;
   if(!delta&&!total)return null;
   const bg = color===SEED_BROWN?'#F6EFE7':'#FCEBF3';
-  return <View style={{flexDirection:'row',alignItems:'center',gap:9,minHeight:27}}>
+  return <View style={{alignSelf:'flex-start',flexDirection:'row',
+    alignItems:'center',gap:7,minHeight:28,
+    borderRadius:15,paddingHorizontal:10,paddingVertical:5,
+    backgroundColor:theme.dark?theme.surface:bg}}>
     {icon==='prayer'?<PrayerIcon size={14} color={color}/>:
       <Ionicons name="heart-outline" size={15} color={color}/>}
-    <Text numberOfLines={1} style={{fontSize:11,color:theme.foreground,flex:1}}>{title}</Text>
-    <View style={{backgroundColor:theme.dark?theme.surface:bg,
-      borderRadius:14,paddingHorizontal:9,paddingVertical:5,minWidth:51,
-      alignItems:'center',justifyContent:'center'}}>
-      <Text numberOfLines={1} style={{fontSize:11,fontWeight:'700',
-        color:color,fontVariant:['tabular-nums']}}>
-        {delta||''}{delta&&total?' / ':''}{total||''}
-      </Text>
-    </View>
+    <Text numberOfLines={1} style={{fontSize:11,
+      color:theme.foreground}}>{title}</Text>
+    <Text numberOfLines={1} style={{fontSize:11,fontWeight:'700',
+      color:color,fontVariant:['tabular-nums'],marginLeft:5}}>
+      {delta||''}{delta&&total?' / ':''}{total||''}
+    </Text>
   </View>;
 }
 
@@ -119,12 +119,13 @@ function CurrentHabitSummary({
             borderRadius:15,alignItems:'center',justifyContent:'center'}}>
             <Text style={{fontSize:14,lineHeight:19}}>{habit.emoji||'🌱'}</Text>
           </View>
-          <View style={{flex:1,gap:2,minWidth:0,marginLeft:4}}>
+          <View style={{flex:1,gap:0,minWidth:0,marginLeft:4}}>
             <Text numberOfLines={1} style={{color:theme.foreground,
-              fontSize:12,fontWeight:'600'}}>{habit.title}</Text>
+              fontSize:12,lineHeight:16,fontWeight:'600'}}>{habit.title}</Text>
             <Pressable accessibilityRole="link" onPress={()=>router.push('/agenda')}
-              style={{alignSelf:'flex-start',paddingVertical:3}}>
-              <Text style={{color,fontSize:10,fontWeight:'600'}}>Voir dans le calendrier</Text>
+              style={{alignSelf:'flex-start',paddingVertical:0}}>
+              <Text style={{color,fontSize:10,lineHeight:14,
+                fontWeight:'600'}}>Voir dans le calendrier</Text>
             </Pressable>
           </View>
           <View style={{backgroundColor:theme.dark?theme.surface:'#EDF5F2',
