@@ -59,44 +59,32 @@ export function DreamPhaseHeader({
         <TopActions />
       </View>
 
-      <Text style={{
-        color: theme.foreground, fontFamily: 'serif', fontSize: 33, lineHeight: 41,
-        letterSpacing: -0.5, marginBottom: description ? 10 : 18,
-      }}>{dream.title}</Text>
+      <View style={{flexDirection:'row',alignItems:'flex-start',gap:4,
+        marginBottom:description?10:18}}>
+        <Text style={{flex:1,color:theme.foreground,fontFamily:'serif',
+          fontSize:33,lineHeight:41,letterSpacing:-0.5}}>{dream.title}</Text>
+        {canChangeCover?<Pressable onPress={chooseCover}
+          disabled={savingCover||!ready}
+          accessibilityRole="button"
+          accessibilityLabel={dream.image?"Changer l'image de couverture du rêve":
+            "Ajouter une image de couverture au rêve"}
+          accessibilityHint="Ouvre le sélecteur d'image"
+          accessibilityState={{disabled:savingCover||!ready}}
+          style={{width:34,height:34,alignItems:'center',justifyContent:'center',
+            marginTop:5}}>
+          {savingCover?<ActivityIndicator size="small" color={theme.muted}/>:
+            <Ionicons name="image-outline" size={15} color={theme.muted}/>}
+        </Pressable>:null}
+      </View>
       {description ? (
         <Text style={{ color: theme.muted, fontSize: 14, lineHeight: 22, marginBottom: 20 }}>
           {description}
         </Text>
       ) : null}
-      {canChangeCover ? <View style={{marginBottom:16}}>
-        <Pressable onPress={chooseCover} disabled={savingCover||!ready}
-          accessibilityRole="button"
-          accessibilityLabel={dream.image?"Changer l'image de couverture du rêve":
-            "Ajouter une image de couverture au rêve"}
-          accessibilityState={{disabled:savingCover||!ready}}
-          style={{flexDirection:'row',alignItems:'center',gap:10,alignSelf:'flex-start',
-            paddingVertical:5,paddingRight:12,borderRadius:10}}>
-          <View style={{width:45,height:45,borderRadius:8,overflow:'hidden',
-            backgroundColor:theme.surface,borderColor:theme.border,borderWidth:1,
-            alignItems:'center',justifyContent:'center'}}>
-            {dream.image?<Image source={{uri:dream.image}}
-              resizeMode="cover" style={{width:'100%',height:'100%'}}/>:
-              <Ionicons name="image-outline" size={19} color={theme.muted}/>}
-          </View>
-          <View style={{gap:3}}>
-            <Text style={{fontSize:10,color:theme.muted}}>Image de couverture</Text>
-            <Text style={{fontSize:12,fontWeight:'600',color:theme.foreground}}>
-              {savingCover?'Enregistrement…':dream.image?"Changer l’image":"Ajouter une image"}
-            </Text>
-          </View>
-          {savingCover?<ActivityIndicator size="small" color={accent}/>:
-            <Ionicons name="create-outline" size={15} color={theme.muted}/>}
-        </Pressable>
-        {coverError?<Text accessibilityRole="alert"
-          style={{fontSize:11,color:'#B24753',lineHeight:17,marginTop:7}}>
-          {coverError}
-        </Text>:null}
-      </View> : null}
+      {coverError?<Text accessibilityRole="alert"
+        style={{fontSize:11,color:'#B24753',lineHeight:17,marginBottom:10}}>
+        {coverError}
+      </Text>:null}
       {/* The phase progression is the single botanical header, preceding the dream identity. */}
       <View style={{ flexDirection: 'row', gap: 6, marginBottom: 19 }}>
         {DREAM_PHASES.map((item, i) => {
