@@ -116,7 +116,8 @@ export default function DreamHub({ dream, startInSemence = false, startPhase }: 
   const [recoveryCategory,setRecoveryCategory]=useState<DreamResource['category']|null>(null);
   const [open, setOpen] = useState<DreamPhase | null>(() =>
     startPhase && order.indexOf(startPhase) <= order.indexOf(dream.phase)
-      ? startPhase : startInSemence && dream.phase === 'Rêve' ? 'Rêve' : null
+      ? startPhase : startInSemence && dream.phase === 'Rêve' ? 'Rêve' :
+        dream.phase !== 'Témoignage' ? dream.phase : null
   );
   const firstRender = useRef(true);
   const switchPhase = (next: DreamPhase) => {
@@ -260,32 +261,15 @@ export default function DreamHub({ dream, startInSemence = false, startPhase }: 
   const activeAccent = stages.find(stage => stage.phase === dream.phase)?.color || '#242322';
   const activeButtonText = dream.phase === 'Rêve' || dream.phase === 'Initiation' ? '#242322' : '#FFFFFF';
 
-  // Level 2 is the special result cover for a potential fruit only.
-  // Active dreams switch directly between Level 1 (My Space) and Level 3.
-  if (!fruit) {
-    const shownPhase = open || dream.phase;
-    return <View style={{flex:1,backgroundColor:theme.background}}>
-      {shownPhase==='Rêve'
-        ? <SemenceStudio dream={dream} onBack={()=>router.back()}
-            onNavigate={switchPhase}/>
-        : <DreamExperience dream={dream} viewPhase={shownPhase}
-            recoveryCategory={shownPhase==='Initiation'?recoveryCategory:null}
-            onRecoverResource={category=>{
-              setRecoveryCategory(category);setOpen('Initiation');
-            }}
-            onBack={()=>{
-              if(shownPhase==='Initiation'&&recoveryCategory){
-                setRecoveryCategory(null);setOpen('Croissance');
-              }else router.back();
-            }}
-            onNavigate={switchPhase}/>}
-    </View>;
-  }
+  // Keep a single, proven rendering/navigation path for Level 3.
+  // Fruit alone uses Level 2; active dreams enter Level 3 immediately.
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.background }}>
       {open ? (
-        open === 'Rêve' ? <SemenceStudio dream={dream} onBack={() => setOpen(null)} onNavigate={switchPhase} />
+        open === 'Rêve' ? <SemenceStudio dream={dream}
+          onBack={() => fruit ? setOpen(null) : router.replace('/my-space')}
+          onNavigate={switchPhase} />
           : <DreamExperience dream={dream} viewPhase={open}
             recoveryCategory={open==='Initiation'?recoveryCategory:null}
             onRecoverResource={category=>{
@@ -295,7 +279,8 @@ export default function DreamHub({ dream, startInSemence = false, startPhase }: 
             onBack={()=>{
               if(open==='Initiation' && recoveryCategory){
                 setRecoveryCategory(null);setOpen('Croissance');
-              }else setOpen(null);
+              }else if(fruit){setOpen(null);}
+              else router.replace('/my-space');
             }}
             onNavigate={switchPhase} />
       ) : (
