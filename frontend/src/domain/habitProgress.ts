@@ -74,7 +74,7 @@ export function habitDreamProgress(
   if(!valid(goalDate))return {completed,planned:null,remaining:null,unit,streak:habitStreak(habit,now)};
   const firstKnown=[...keys].sort()[0];
   const started=valid(habit.startedAt)?habit.startedAt!:
-    valid(dreamStartedAt)?dreamStartedAt!.slice(0,10):
+    valid(dreamStartedAt?.slice(0,10))?dreamStartedAt!.slice(0,10):
     firstKnown||today;
   const startKey=habitKey(habit.frequency,started);
   const endKey=habitKey(habit.frequency,goalDate!);
