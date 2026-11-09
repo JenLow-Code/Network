@@ -3,17 +3,20 @@ import Svg, { Path } from 'react-native-svg';
 
 /**
  * A quiet Latin cross for the prayer reaction:
- * outlined when inactive, filled with JenLow magenta when selected.
+ * outlined by default, filled with JenLow magenta when selected.
+ * The optional filled prop allows a non-magenta filled cross in static counters.
  */
 export function PrayerIcon({
   size = 24,
   muted = false,
   active = false,
+  filled = false,
   color,
 }: {
   size?: number;
   muted?: boolean;
   active?: boolean;
+  filled?: boolean;
   color?: string;
 }) {
   const ink = active ? '#CB245C' : muted ? '#999' : (color || '#252525');
@@ -24,7 +27,7 @@ export function PrayerIcon({
         stroke={ink}
         strokeWidth="1.55"
         strokeLinejoin="round"
-        fill={active ? '#CB245C' : 'none'}
+        fill={active ? '#CB245C' : filled ? ink : 'none'}
       />
     </Svg>
   );
