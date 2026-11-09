@@ -9,6 +9,7 @@ import { canPreviewGrowth, isSeedGrowthPreview, sampleGrowthPreview } from '@/do
 import { useAppTheme } from '@/theme/AppTheme';
 import { HANDWRITING_FAMILY } from '@/theme/handwriting';
 import { PrayerIcon } from '@/icons/PrayerIcon';
+import { HabitSquareGrid } from './HabitSquareGrid';
 
 const GREEN = '#27845B';
 const PINK = '#D71D77';
@@ -56,32 +57,20 @@ function SocialLine({ title, icon, color, value }: {
   </View>;
 }
 
-/** Current dream-long progress is displayed once: only inside an active TODAY leaf. */
-function CurrentHabitSummary({ dream, onManage }: { dream: DreamEntry; onManage: () => void }) {
+/** Compact habit progress belongs to TODAY only, without a daily duplicate.
+ * The grid stays one row high until its owner explicitly expands it. */
+function CurrentHabitSummary({ dream, onManage }: {
+  dream: DreamEntry; onManage: () => void;
+}) {
   const theme = useAppTheme();
   const habits = dream.habits || [];
   if (!habits.length) return null;
   const visible = habits.slice(0, 3);
-  return <View style={{
-    marginTop: 4, paddingTop: 10, borderTopWidth: 1,
-    borderColor: theme.border, gap: 10,
-  }}>
-    <Pressable accessibilityRole="button" onPress={onManage}
-      style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
-      <Ionicons name="calendar-outline" color={GREEN} size={16} />
-      <Text style={{ color: theme.foreground, flex: 1, fontSize: 12, fontWeight: '700' }}>
-        Habitudes · progression du rêve
-      </Text>
-      <Ionicons name="chevron-forward" color={GREEN} size={15} />
-    </Pressable>
+  return <View style={{ marginTop: 2, gap: 11 }}>
     {visible.map(habit => {
       const progress = habitDreamProgress(habit, dream.goalDate, dream.growthStartedAt);
       const color = habit.color || GREEN;
-      const cells = 12;
-      const filled = progress.planned && progress.planned > 0
-        ? Math.round(Math.min(1, progress.completed / progress.planned) * cells) : 0;
-      return <Pressable key={habit.id} accessibilityRole="button" onPress={onManage}
-        style={{ gap: 6 }}>
+      return <View key={habit.id} style={{ gap: 5 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
           <View style={{
             width: 26, height: 26, borderWidth: 1.5, borderColor: color,
@@ -90,38 +79,26 @@ function CurrentHabitSummary({ dream, onManage }: { dream: DreamEntry; onManage:
             <Text style={{ fontSize: 14, lineHeight: 19 }}>{habit.emoji || '🌱'}</Text>
           </View>
           <Text style={{
-            flex: 1, color: theme.foreground, fontSize: 12,
-            fontWeight: '600',
+            flex: 1, color: theme.foreground, fontSize: 12, fontWeight: '600',
           }} numberOfLines={1}>{habit.title}</Text>
           <Text style={{ fontSize: 11, fontWeight: '700', color }}>
-            {progress.planned === null ? progress.completed + ' ' + progress.unit :
-              progress.completed + ' / ' + progress.planned + ' ' + progress.unit}
+            {progress.planned === null ? progress.completed : progress.completed + ' / ' + progress.planned}
           </Text>
           {progress.streak > 0 ? <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
             <Ionicons name="flame-outline" size={12} color={color} />
             <Text style={{ fontSize: 10, fontWeight: '700', color }}>{progress.streak}</Text>
           </View> : null}
         </View>
-        <View style={{ flexDirection: 'row', gap: 4, paddingLeft: 33 }}>
-          {Array.from({ length: cells }, (_, i) => <View key={i} style={{
-            flex: 1, height: 8, borderRadius: 3, backgroundColor: color,
-            opacity: i < filled ? 1 : .20,
-          }} />)}
-        </View>
-      </Pressable>;
+        <HabitSquareGrid habit={habit} planned={progress.planned}
+          completed={progress.completed} color={color} />
+      </View>;
     })}
     {habits.length > visible.length ? <Pressable accessibilityRole="button"
       onPress={onManage} style={{ alignSelf: 'flex-end', paddingVertical: 5 }}>
       <Text style={{ color: GREEN, fontSize: 11 }}>
-        + {habits.length - visible.length} autres habitudes
+        Voir les {habits.length - visible.length} autres habitudes
       </Text>
     </Pressable> : null}
-    <Pressable accessibilityRole="link" onPress={() => router.push('/agenda')}
-      style={{ alignSelf: 'flex-end', paddingVertical: 4 }}>
-      <Text style={{ color: GREEN, fontSize: 11, fontWeight: '600' }}>
-        Voir dans le calendrier
-      </Text>
-    </Pressable>
   </View>;
 }
 
@@ -141,9 +118,6 @@ export function GrowthLogbook({
   const example = showPreview ? sampleGrowthPreview() : null;
   const now = new Date();
   const today = habitDayKey(now);
-  const yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12);
-  yesterday.setDate(yesterday.getDate() - 1);
-  const yesterdayKey = habitDayKey(yesterday);
   const todayWritten = (dream.milestones || []).some(log => log.date === today);
 
   // Leaves are generated only by actual dated events or explicitly labelled demo activity.
@@ -166,11 +140,6 @@ export function GrowthLogbook({
       encouragements: { delta: example.encouragements.today, total: example.encouragements.total },
       fictitious: true,
     };
-    getDay(yesterdayKey).social = {
-      prayers: { delta: example.prayers.yesterday, total: example.prayers.yesterday },
-      encouragements: { delta: example.encouragements.yesterday, total: example.encouragements.yesterday },
-      fictitious: true,
-    };
     for (const event of example.events) {
       getDay(event.date).previewEvents.push(event);
     }
@@ -178,7 +147,9 @@ export function GrowthLogbook({
     // These optional records can only come from trusted dated source events.
     // The all-time totals alone are NOT evidence that something happened today.
     for (const stats of dream.socialDailyActivity || []) {
-      if (!validDay(stats.date) ||
+      // Historical prayer/encouragement changes never spawn repetitive leaves.
+      // Only today's currently verified activity belongs in the current leaf.
+      if (stats.date !== today || !validDay(stats.date) ||
         (!positiveCount(stats.prayers) && !positiveCount(stats.encouragements))) continue;
       const day = getDay(stats.date);
       const previous = day.social || {};
@@ -282,7 +253,7 @@ export function GrowthLogbook({
           value={group.social.prayers} /> : null}
         {group.social?.encouragements ? <SocialLine title="Encouragements" icon="heart" color={GREEN}
           value={group.social.encouragements} /> : null}
-        {/* The current habits are one living snapshot, never copied to yesterday's leaf. */}
+        {/* One compact habit grid in today's meaningful leaf only; older days never repeat it. */}
         {group.date === today && todayHasActivity && (dream.habits || []).length > 0 ?
           <CurrentHabitSummary dream={dream} onManage={onManageHabits} /> : null}
         {group.changes.map((event: DreamGrowthEvent) => {
