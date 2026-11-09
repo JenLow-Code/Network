@@ -23,7 +23,7 @@ const isoDay = (d: Date) =>
   ].join('-');
 export default function Agenda() {
   const theme = useAppTheme();
-  const { items: trackedDreams, setHabits } = useDreams();
+  const { items: trackedDreams, personalHabits, setPersonalHabits, setHabits } = useDreams();
   const { language, tr } = useLocale();
   const { prayersForDate, togglePrayer } = useApp();
   // Future: show a weekly overview of scheduled service / volunteer duty, separately from personal events.
@@ -34,9 +34,18 @@ export default function Agenda() {
   }|null>(null);
   const [measureValue,setMeasureValue]=useState('');
   const [events, setEvents] = useState<AgendaEntry[]>(DEMO_AGENDA);
-  const activeHabitDreams = trackedDreams.filter(d =>
-    d.phase === 'Croissance' && !!d.habits?.length &&
-    !(d.paused && d.pauseUntil && d.pauseUntil >= isoDay(new Date())));
+  const activeHabitDreams = [
+    ...trackedDreams.filter(d =>
+      d.phase === 'Croissance' && !!d.habits?.length &&
+      !(d.paused && d.pauseUntil && d.pauseUntil >= isoDay(new Date()))),
+    ...(personalHabits.length?[{
+      id:'__personal__',title:'Mes habitudes personnelles',habits:personalHabits,
+    }]:[]),
+  ];
+  const updateGroupHabits=(dreamId:string,updated:typeof personalHabits)=>{
+    if(dreamId==='__personal__')setPersonalHabits(updated);
+    else setHabits(dreamId,updated);
+  };
   const dateKey = isoDay(day),
     locale = { fr: 'fr-FR', en: 'en-US', de: 'de-DE', pt: 'pt-PT' }[language];
   // Until backend, current prayer saves are not date-scoped. Show them on today only.
@@ -264,7 +273,7 @@ export default function Agenda() {
                           ...x.achievedOn,[key]:checked?'':dateKey,
                         } : x.achievedOn,
                       });
-                      setHabits(d.id,updated);
+                      updateGroupHabits(d.id,updated);
                     }}
                     disabled={locked} accessibilityRole="button"
                     accessibilityState={{disabled:locked}}
@@ -425,9 +434,9 @@ export default function Agenda() {
               if(!measureEdit)return;
               const amount=Number(measureValue.replace(',','.'));
               if(!Number.isFinite(amount)||amount<0||amount>100000)return;
-              const d=trackedDreams.find(x=>x.id===measureEdit.dreamId);
+              const d=activeHabitDreams.find(x=>x.id===measureEdit.dreamId);
               if(!d)return;
-              setHabits(d.id,(d.habits||[]).map(h=>{
+              updateGroupHabits(d.id,(d.habits||[]).map(h=>{
                 if(h.id!==measureEdit.habitId)return h;
                 const checked=amount>=measureEdit.target;
                 return {...h,measurements:{...h.measurements,[measureEdit.dateKey]:amount},
