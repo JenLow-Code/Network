@@ -131,9 +131,8 @@ function CurrentHabitSummary({
             <Ionicons name="ellipsis-horizontal" size={17} color={theme.foreground}/>
           </Pressable>:null}
         </View>
-        <HabitSquareGrid habit={habit} planned={progress.planned}
-          completed={progress.completed} color={color}
-          todayDone={todayDone} editable={editable}
+        <HabitSquareGrid habit={habit} goalDate={dream.goalDate}
+          color={color} editable={editable}
           onTodayPress={()=>openCheckIn(habit)}/>
         <Pressable accessibilityRole="link"
           onPress={()=>router.push('/agenda')}
@@ -184,60 +183,96 @@ function CurrentHabitSummary({
         </View>
       </View>
     </Modal>
-    <Modal visible={checkHabit!==null} transparent animationType="fade"
-      onRequestClose={()=>setCheckHabit(null)}>
-      <View style={{flex:1,justifyContent:'center',padding:20,
-        backgroundColor:'rgba(0,0,0,.48)'}}>
+    <Modal visible={checkHabit!==null} transparent animationType="slide"
+      statusBarTranslucent onRequestClose={()=>setCheckHabit(null)}>
+      <View style={{flex:1,justifyContent:'flex-end',
+        backgroundColor:'rgba(20,26,23,0.36)'}}>
         <Pressable onPress={()=>setCheckHabit(null)}
+          accessibilityLabel="Fermer la validation"
           style={{position:'absolute',top:0,bottom:0,left:0,right:0}}/>
-        <View style={{backgroundColor:theme.surface,borderRadius:14,padding:19,
-          maxWidth:400,width:'100%',alignSelf:'center',gap:12}}>
-          <Text style={{fontSize:18,fontWeight:'700',color:theme.foreground}}>
-            {checkHabit?.title}
-          </Text>
-          <Text style={{fontSize:12,color:theme.muted,lineHeight:19}}>
-            {selectedQuantity>=selectedTarget
-              ? 'Objectif déjà atteint pour cette période.'
-              : 'Marquer cette habitude comme accomplie '+(checkHabit?.frequency==='weekly'
-                ?'cette semaine':'aujourd’hui')+' ?'}
-          </Text>
-          {(selectedTarget!==1||checkHabit?.unit!=='fois')?
-            <View style={{gap:6}}>
-              <Text style={{fontSize:12,color:theme.foreground}}>
-                Quantité accomplie ({checkHabit?.unit||'fois'})
+        <View style={{backgroundColor:theme.background,
+          borderTopLeftRadius:27,borderTopRightRadius:27,
+          paddingHorizontal:24,paddingTop:12,paddingBottom:40,
+          width:'100%',alignSelf:'center',maxWidth:520,
+          borderWidth:1,borderColor:theme.border,gap:17}}>
+          <View style={{width:38,height:4,borderRadius:3,alignSelf:'center',
+            backgroundColor:theme.border,marginBottom:7}}/>
+          <View style={{flexDirection:'row',alignItems:'center',gap:13}}>
+            <View style={{height:48,width:48,borderRadius:25,
+              borderWidth:2,borderColor:checkHabit?.color||GREEN,
+              alignItems:'center',justifyContent:'center'}}>
+              <Text style={{fontSize:24,lineHeight:33}}>
+                {checkHabit?.emoji||'🌱'}
               </Text>
-              <TextInput value={measureValue} onChangeText={v=>{
-                setMeasureValue(v);setInvalid(false);
-              }} keyboardType="decimal-pad"
-                accessibilityLabel="Quantité accomplie"
-                placeholder="0" placeholderTextColor={theme.muted}
-                style={{borderWidth:1,borderColor:invalid?'#D71D77':theme.border,
-                  padding:12,borderRadius:9,color:theme.foreground,fontSize:16}}/>
-              {invalid?<Text style={{color:'#D71D77',fontSize:11}}>
+            </View>
+            <View style={{flex:1,gap:3}}>
+              <Text style={{fontSize:10,letterSpacing:1.4,fontWeight:'700',
+                color:checkHabit?.color||GREEN}}>MON HABITUDE</Text>
+              <Text style={{fontSize:22,lineHeight:28,fontFamily:'serif',
+                color:theme.foreground}}>{checkHabit?.title}</Text>
+            </View>
+            <Pressable accessibilityRole="button"
+              accessibilityLabel="Fermer"
+              onPress={()=>setCheckHabit(null)}
+              style={{alignSelf:'flex-start',padding:6}}>
+              <Ionicons name="close" size={21} color={theme.muted}/>
+            </Pressable>
+          </View>
+          <View style={{height:1,backgroundColor:theme.border}}/>
+          <View style={{gap:6}}>
+            <Text style={{fontSize:13,fontWeight:'600',color:theme.foreground}}>
+              {checkHabit?.frequency==='weekly'?'Cette semaine':'Aujourd’hui'}
+            </Text>
+            <Text style={{fontSize:12,lineHeight:20,color:theme.muted}}>
+              {selectedQuantity>=selectedTarget
+                ?'Cette habitude est déjà accomplie pour cette période. Tu peux ajuster ou annuler ta réalisation.'
+                :'Un petit pas de plus vers ton rêve.'}
+            </Text>
+          </View>
+          {(selectedTarget!==1||checkHabit?.unit!=='fois')?
+            <View style={{gap:8}}>
+              <Text style={{fontSize:11,fontWeight:'600',color:theme.muted}}>
+                QUANTITÉ RÉALISÉE · {checkHabit?.unit||'fois'}
+              </Text>
+              <View style={{flexDirection:'row',alignItems:'center',
+                borderBottomWidth:1.5,borderColor:invalid?'#D71D77':checkHabit?.color||GREEN,
+                paddingVertical:4,gap:8}}>
+                <TextInput value={measureValue} onChangeText={value=>{
+                  setMeasureValue(value);setInvalid(false);
+                }} keyboardType="decimal-pad"
+                  selectTextOnFocus accessibilityLabel="Quantité accomplie"
+                  placeholder="0" placeholderTextColor={theme.muted}
+                  style={{minWidth:92,flex:1,paddingVertical:6,
+                    color:theme.foreground,fontSize:29,fontWeight:'600'}}/>
+                <Text style={{fontSize:13,color:theme.muted}}>
+                  / {selectedTarget} {checkHabit?.unit||'fois'}
+                </Text>
+              </View>
+              {invalid?<Text style={{fontSize:11,color:'#D71D77'}}>
                 Indique une quantité valide.
               </Text>:null}
             </View>:null}
-          <Pressable accessibilityRole="button" onPress={()=>{
-            if(checkHabit?.unit==='fois'&&selectedTarget===1){
-              onCheckIn(checkHabit,1);
-              setCheckHabit(null);
-            }else confirmCheckIn();
-          }}
-            style={{minHeight:46,borderRadius:10,backgroundColor:GREEN,
-              alignItems:'center',justifyContent:'center'}}>
+          <Pressable accessibilityRole="button"
+            onPress={()=>{
+              if(checkHabit?.unit==='fois'&&selectedTarget===1){
+                onCheckIn(checkHabit,1);setCheckHabit(null);
+              }else confirmCheckIn();
+            }}
+            style={{minHeight:52,borderRadius:13,backgroundColor:checkHabit?.color||GREEN,
+              alignItems:'center',justifyContent:'center',
+              flexDirection:'row',gap:9}}>
+            <Ionicons name="checkmark" size={19} color="#FFFFFF"/>
             <Text style={{fontWeight:'700',fontSize:13,color:'#FFFFFF'}}>
               {selectedQuantity>=selectedTarget?'Enregistrer la réalisation':'Marquer comme accompli'}
             </Text>
           </Pressable>
           {selectedQuantity>0?<Pressable accessibilityRole="button"
             onPress={()=>{if(checkHabit)onCheckIn(checkHabit,0);setCheckHabit(null);}}
-            style={{padding:10,alignSelf:'center'}}>
-            <Text style={{fontSize:12,color:'#B55164'}}>Annuler la réalisation</Text>
+            style={{alignSelf:'center',padding:7}}>
+            <Text style={{fontSize:12,color:theme.muted}}>
+              Annuler la réalisation
+            </Text>
           </Pressable>:null}
-          <Pressable accessibilityRole="button" onPress={()=>setCheckHabit(null)}
-            style={{padding:9,alignSelf:'center'}}>
-            <Text style={{fontSize:12,color:theme.muted}}>Fermer</Text>
-          </Pressable>
         </View>
       </View>
     </Modal>
@@ -335,24 +370,14 @@ export function GrowthLogbook({
   const todayHasActivity = byDate.has(today);
 
   return <View style={{ gap: 11, marginTop: 10, marginBottom: 22 }}>
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, justifyContent: 'space-between' }}>
-      <Text style={{ color: theme.foreground, fontSize: 21, fontWeight: '700' }}>Logbook</Text>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-        <Pressable accessibilityRole="button" onPress={onManageHabits}
-          accessibilityLabel="Gérer les habitudes"
-          style={{ paddingVertical: 8, paddingHorizontal: 4 }}>
-          <Ionicons name="calendar-outline" color={GREEN} size={19} />
-        </Pressable>
-        {editable ? <Pressable onPress={onWrite} accessibilityRole="button"
-          accessibilityLabel={todayWritten ? 'Compléter la feuille du jour' : 'Écrire une feuille aujourd’hui'}
-          style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 8, paddingHorizontal: 4 }}>
-          <Ionicons name="leaf-outline" color={GREEN} size={18} />
-          <Text style={{ color: GREEN, fontSize: 12, fontWeight: '600' }}>
-            {todayWritten ? 'Compléter aujourd’hui' : 'Écrire aujourd’hui'}
-          </Text>
-          <Ionicons name="add" size={14} color={GREEN}/>
-        </Pressable> : null}
-      </View>
+    <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
+      <Text style={{color:theme.foreground,fontSize:21,fontWeight:'700'}}>Logbook</Text>
+      {editable && !byDate.has(today) ? <Pressable accessibilityRole="button"
+        accessibilityLabel="Ajouter une note aujourd’hui"
+        onPress={onWrite} hitSlop={9}
+        style={{padding:8}}>
+        <Ionicons name="add" size={20} color={GREEN}/>
+      </Pressable>:null}
     </View>
     {canPreviewGrowth(dream) ? <Pressable accessibilityRole="button"
       onPress={() => setPreview(!preview)}
@@ -379,9 +404,16 @@ export function GrowthLogbook({
       </View>
       <View style={{ flex: 1, paddingBottom: 18, gap: 10 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
-          <Text style={{ color: GREEN, fontWeight: '700', fontSize: 11, letterSpacing: .4, lineHeight: 23 }}>
-            {localLabel(group.date, today)}
+          <Text style={{color:GREEN,fontWeight:'700',fontSize:11,
+            letterSpacing:.4,lineHeight:23}}>
+            {localLabel(group.date,today)}
           </Text>
+          {group.date===today && editable?<Pressable accessibilityRole="button"
+            accessibilityLabel="Ajouter une note au journal aujourd’hui"
+            onPress={onWrite} hitSlop={9}
+            style={{paddingHorizontal:7,paddingVertical:4}}>
+            <Ionicons name="add" size={16} color={GREEN}/>
+          </Pressable>:null}
           {group.social?.fictitious ? <Text style={{
             fontSize: 9, color: theme.muted,
           }}>DÉMO</Text> : null}
