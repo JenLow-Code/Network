@@ -197,7 +197,7 @@ export default function MySpace() {
                   contentContainerStyle={{ paddingHorizontal: side }}>
                   {testimonies.map(d => (
                     <View key={d.id} style={{ width: innerWidth }}>
-                      <PictureCard dream={d} width={innerWidth - 7} height={compact ? 183 : 257} />
+                      <PictureCard dream={d} width={innerWidth - 7} height={compact ? 183 : 257} onLongPress={()=>setLongDream(d)} />
                     </View>
                   ))}
                 </ScrollView>
