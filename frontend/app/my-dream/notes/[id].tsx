@@ -24,7 +24,7 @@ export default function PrivateDreamNotebook(){
       <PageHeader/>
       <View style={{marginTop:24,marginBottom:17}}>
         <Text style={{fontSize:12,color:theme.muted}}>
-          Mon rêve · Mes notes personnelles
+          Mon rêve · ${dream?.privateNotesTitle?.trim()||'Mes notes personnelles'}
         </Text>
       </View>
       {dream?<SemenceNotes dream={dream} editable={editable}/>:
