@@ -58,7 +58,7 @@ export default function DreamExperience({
  recoveryCategory?:DreamResource['category']|null;
  onRecoverResource?:(category:DreamResource['category'])=>void;
 }) {
- const { patch, appendBlock, setResources, setHabits, setGoalAndGrow, advance, remove, addGrowthLog, setGrowthLogPublication } = useDreams();
+ const { patch, appendBlock, setResources, setHabits, detachHabit, setGoalAndGrow, advance, remove, addGrowthLog, setGrowthLogPublication } = useDreams();
  const theme = useAppTheme();
  const [editing, setEditing] = useState(false);
  const [picker, setPicker] = useState(false);
@@ -526,6 +526,42 @@ export default function DreamExperience({
       }}
       onRetry={log=>void publishLog({...log,shareRequested:true})}
       onManageHabits={()=>setGrowthDialog('habits')}
+      onEditHabit={habit=>{if(growthActive)openHabitEditor(habit);}}
+      onDeleteHabit={habit=>{
+        if(!growthActive)return;
+        confirm('Supprimer cette habitude ?',
+          'Cette habitude et son historique seront supprimés définitivement.',()=>{
+            setHabits(dream.id,habits.filter(h=>h.id!==habit.id));
+          });
+      }}
+      onDetachHabit={habit=>{
+        if(!growthActive)return;
+        confirm('Détacher cette habitude du rêve ?',
+          'Elle restera dans Mon agenda comme habitude personnelle, avec son historique.',()=>{
+            detachHabit(dream.id,habit.id);
+          });
+      }}
+      onCheckIn={(habit,quantity)=>{
+        if(!growthActive)return;
+        const today=habitDayKey(new Date());
+        const key=habitKey(habit.frequency,today);
+        const target=habit.target&&habit.target>0?habit.target:1;
+        const next=habits.map(h=>{
+          if(h.id!==habit.id)return h;
+          const checked=quantity>=target;
+          const oldCompleted=h.completed||[];
+          return {...h,
+            measurements:{...h.measurements,[key]:quantity},
+            completed:checked
+              ?Array.from(new Set([...oldCompleted,key]))
+              :oldCompleted.filter(k=>habitKey(h.frequency,k)!==key),
+            achievedOn:h.frequency==='weekly'?{
+              ...h.achievedOn,[key]:checked?today:'',
+            }:h.achievedOn,
+          };
+        });
+        setHabits(dream.id,next);
+      }}
     />
     {!historical?<View style={{gap:11,marginTop:11,marginBottom:22}}>
       {frozen ? (
