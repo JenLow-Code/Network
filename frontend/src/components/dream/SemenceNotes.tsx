@@ -154,8 +154,8 @@ export default function SemenceNotes({dream,editable}:{dream:DreamEntry;editable
             scrollEnabled={false}
             onContentSizeChange={event=>{
               const next=Math.ceil(event.nativeEvent.contentSize.height);
-              if(Number.isFinite(next)&&next>0&&next!==contentHeights[b.id])
-                setContentHeights(prev=>({...prev,[b.id]:next}));
+              if(Number.isFinite(next)&&next>0&&next!==contentHeights[b.id+placeholder])
+                setContentHeights(prev=>({...prev,[b.id+placeholder]:next}));
             }}
             autoFocus={editable&&selectedId===b.id&&(b.type!=='toggle'||placeholder==='Titre de la section')}
             onFocus={()=>setSelectedId(b.id)} onChangeText={change}
@@ -163,7 +163,7 @@ export default function SemenceNotes({dream,editable}:{dream:DreamEntry;editable
             placeholderTextColor={theme.muted}
             accessibilityLabel={placeholder}
             style={{...style,minHeight:b.type==='heading'?40:27,
-              height:Math.max(b.type==='heading'?40:27,contentHeights[b.id]||0)}}/>;
+              height:Math.max(b.type==='heading'?40:27,contentHeights[b.id+placeholder]||0)}}/>;
         return <View key={b.id} style={{flexDirection:'row',alignItems:'flex-start',gap:9,
           paddingVertical:8,
           paddingLeft:b.type==='quote'?12:0,
