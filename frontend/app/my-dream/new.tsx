@@ -4,6 +4,8 @@ import { Alert, Image, Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useDreams } from '@/domain/dreamRepository';
+import { useAuth } from '@/context/AuthProvider';
+import { useApp } from '@/context/AppContext';
 import { Nav } from '@/components/navigation/Nav';
 import { PageHeader } from '@/components/navigation/PageHeader';
 import { pickDreamImage } from '@/lib/pickDreamImage';
@@ -12,23 +14,40 @@ import { DreamPhaseButton, DreamPhaseField } from '@/components/dream/DreamPhase
 
 export default function NewDream() {
   const { inspiration } = useLocalSearchParams<{ inspiration?: string }>();
-  const { create } = useDreams();
+  const { createPersisted, ready, storageError } = useDreams();
+  const { user, initialized } = useAuth();
+  const { email } = useApp();
+  // Avoid storing a signed-in user's new Dream under the temporary guest key.
+  const accountReady = initialized && (!user ||
+    (typeof user.email === 'string' && user.email.toLowerCase() === email.toLowerCase()));
+  const canSave = ready && accountReady;
   const theme = useAppTheme();
   const [title, setTitle] = useState(inspiration ? 'Autour de ' + inspiration : '');
   const [summary, setSummary] = useState(inspiration ? 'Cette inspiration me donne envie de créer quelque chose de nouveau.' : '');
   const [image, setImage] = useState('');
+  const [saving,setSaving] = useState(false);
+  const [saveError,setSaveError] = useState('');
   const valid = title.trim().length > 2;
 
-  const save = () => {
-    if (!valid) return;
-    const id = create({
-      title: title.trim(),
-      summary: summary.trim(),
-      image: image.trim(),
-      needs: [],
-    });
-    // All newly created dreams enter the same redesigned central DreamHub.
-    router.replace({ pathname: '/my-dream/[id]', params: { id, compose: '1' } });
+  const save = async () => {
+    if (!valid || !canSave || saving) return;
+    setSaving(true);
+    setSaveError('');
+    try {
+      const id = await createPersisted({
+        title: title.trim(),
+        summary: summary.trim(),
+        image: image.trim(),
+        needs: [],
+      });
+      router.replace({ pathname: '/my-dream/[id]', params: { id, compose: '1' } });
+    } catch (error) {
+      setSaveError(error instanceof Error && error.message.includes('chargés')
+        ? error.message
+        : "Le rêve et son image n'ont pas pu être enregistrés. Réessaie ou vérifie le stockage de ton navigateur.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -61,7 +80,8 @@ export default function NewDream() {
               Facultative. Tu peux choisir une image maintenant ou plus tard.
             </Text>
             <Pressable
-              onPress={() => pickDreamImage(setImage, message => Alert.alert('Image', message))}
+              onPress={() => pickDreamImage(uri=>{setImage(uri);setSaveError('');},
+                message=>{setSaveError(message);Alert.alert('Image', message);})}
               accessibilityRole="button"
               style={{
                 borderWidth: 1, borderStyle: 'dashed', borderColor: theme.border,
@@ -83,7 +103,15 @@ export default function NewDream() {
             </Pressable>
           </View>
           <View style={{ marginTop: 28 }}>
-            <DreamPhaseButton label="Planter cette semence" onPress={save} disabled={!valid}/>
+            <DreamPhaseButton label={saving?'Enregistrement…':'Planter cette semence'}
+              onPress={()=>{void save();}} disabled={!valid||!canSave||saving}/>
+            {!canSave&&!storageError?<Text style={{color:theme.muted,fontSize:12,marginTop:10}}>
+              Chargement de tes rêves…
+            </Text>:null}
+            {(saveError||storageError)?<Text accessibilityRole="alert"
+              style={{fontSize:12,lineHeight:19,marginTop:10,color:'#B24753'}}>
+              {saveError||storageError}
+            </Text>:null}
           </View>
           <Text style={{ color: theme.muted, fontSize: 11, lineHeight: 18, marginTop: 15, textAlign: 'center' }}>
             Ta Semence ne figure pas dans Discovery. Elle reste accessible par un lien direct jusqu'à la Germination.

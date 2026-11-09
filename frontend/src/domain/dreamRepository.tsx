@@ -6,8 +6,14 @@ import { DreamEntry, DreamBlock, DreamResource, DreamHabit, DreamMilestone, Flow
 import { rememberFoundNeeds } from './dreamResourceRecovery';
 import { growthResourceEvents } from './growthTimeline';
 import { useApp } from '@/context/AppContext';
+import { readDreamWorkspace, persistDreamWorkspace } from './dreamPersistence';
 type Repo = {
   items: DreamEntry[];
+  /** True only after this account's local workspace has finished loading. */
+  ready: boolean;
+  storageError: string | null;
+  /** Durable, confirmed creation for screens that immediately navigate away. */
+  createPersisted: (data: { title: string; summary: string; image: string; needs: string[] }) => Promise<string>;
   personalHabits: DreamHabit[];
   setPersonalHabits: (habits: DreamHabit[]) => void;
   detachHabit: (dreamId: string, habitId: string) => void;
@@ -50,14 +56,16 @@ export function DreamProvider({ children }: { children: React.ReactNode }) {
   const key = dreamStorageKey(email);
   const personalKey = key + '.personal-habits';
   const [items, setItems] = useState<DreamEntry[]>(initial);
-  const [hydrated, setHydrated] = useState(false);
+  const [hydratedKey, setHydratedKey] = useState<string | null>(null);
+  const [storageError,setStorageError]=useState<string|null>(null);
   const [personalHabits,setPersonalHabitsState] = useState<DreamHabit[]>([]);
   const [personalHydrated,setPersonalHydrated] = useState(false);
   useEffect(() => {
     let live = true;
-    setHydrated(false);
+    setHydratedKey(null);
+    setStorageError(null);
     setItems(initial);
-    AsyncStorage.getItem(key)
+    readDreamWorkspace(key)
       .then(v => {
         if (live && v) {
           try {
@@ -81,16 +89,18 @@ export function DreamProvider({ children }: { children: React.ReactNode }) {
           } catch {}
         }
       })
-      .finally(() => {
-        if (live) setHydrated(true);
-      });
+      .then(()=>{if(live)setHydratedKey(key);})
+      .catch(()=>{if(live)setStorageError('Impossible de charger les rêves enregistrés sur cet appareil. Vérifie le stockage du navigateur.');});
     return () => {
       live = false;
     };
   }, [key]);
   useEffect(() => {
-    if (hydrated) void AsyncStorage.setItem(key, JSON.stringify(items)).catch(() => {});
-  }, [items, hydrated, key]);
+    if (hydratedKey !== key) return;
+    void persistDreamWorkspace(key, JSON.stringify(items))
+      .then(()=>setStorageError(null))
+      .catch(()=>setStorageError('Enregistrement impossible : espace local indisponible. Les dernières modifications ne sont pas sauvegardées.'));
+  }, [items, hydratedKey, key]);
   useEffect(() => {
     let live = true;
     setPersonalHydrated(false);
@@ -121,6 +131,22 @@ export function DreamProvider({ children }: { children: React.ReactNode }) {
     setItems(previous=>previous.map(d=>d.id===dreamId?{
       ...d,habits:(d.habits||[]).filter(h=>h.id!==habitId),
     }:d));
+  };
+  const createPersisted:Repo['createPersisted']=async data=>{
+    if(hydratedKey!==key)throw new Error(
+      storageError || 'Les rêves de ce compte ne sont pas encore chargés.',
+    );
+    const id='local-'+Date.now()+'-'+Math.random().toString(36).slice(2,6);
+    const entry:DreamEntry={
+      ...data,id,phase:'Rêve',visibility:'private',blocks:[],resources:[],
+      habits:[],milestones:[],thoughts:[],notes:[],additions:[],
+      createdAt:new Date().toISOString(),ownerIds:['demo-user'],
+    };
+    // Confirm a durable write before navigating away from the creation form.
+    await persistDreamWorkspace(key,JSON.stringify([entry,...items]));
+    setStorageError(null);
+    setItems(previous=>[entry,...previous]);
+    return id;
   };
   const create: Repo['create'] = data => {
     const id = 'local-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
@@ -243,7 +269,7 @@ export function DreamProvider({ children }: { children: React.ReactNode }) {
   const remove: Repo['remove'] = id => setItems(p => p.filter(d => d.id !== id));
   return (
     <Context.Provider
-      value={{ items, personalHabits, setPersonalHabits, detachHabit, create, update, add, setFlowerDraft, advance, complete, remove, patch, appendBlock, setResources, setHabits, transitionToGrowth, setGoalAndGrow, addGrowthLog, setGrowthLogPublication }}
+      value={{ items, ready:hydratedKey===key, storageError, createPersisted, personalHabits, setPersonalHabits, detachHabit, create, update, add, setFlowerDraft, advance, complete, remove, patch, appendBlock, setResources, setHabits, transitionToGrowth, setGoalAndGrow, addGrowthLog, setGrowthLogPublication }}
     >
       {children}
     </Context.Provider>
