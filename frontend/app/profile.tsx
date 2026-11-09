@@ -208,10 +208,11 @@ export default function Profile() {
               {title:'Mes publications',subtitle:'Ce que je partage',icon:'albums-outline',path:'publications',color:'#CB245C'},
               {title:'Mes musiques',subtitle:'Mes morceaux',icon:'musical-note-outline',path:'music',color:'#7364A6'},
               {title:'Mes prières',subtitle:'Intentions & suivis',icon:'heart-outline',path:'/prayers',color:'#C83D77'},
+              {title:'Ma Bible',subtitle:'Lire, télécharger, partager',icon:'book-outline',path:'/bible-library',color:'#B88962'},
               {title:'Paramètres',subtitle:'Compte & préférences',icon:'settings-outline',path:'/settings',color:'#647A8D'},
             ] as const).map(link => (
               <Pressable key={link.path} accessibilityRole="button" accessibilityLabel={link.title}
-                onPress={()=>link.path==='talents'?scrollTo(talentY.current):link.path==='publications'?scrollTo(postsY.current):link.path==='music'?router.push({pathname:'/music-hub',params:{mine:'1'}}):router.push(link.path as '/prayers' | '/settings')}
+                onPress={()=>link.path==='talents'?scrollTo(talentY.current):link.path==='publications'?scrollTo(postsY.current):link.path==='music'?router.push({pathname:'/music-hub',params:{mine:'1'}}):router.push(link.path as '/prayers' | '/settings' | '/bible-library')}
                 style={{
                   width:width<570?'100%':'31.8%',padding:13,borderWidth:1,borderColor:theme.border,
                   borderRadius:12,backgroundColor:theme.surface,flexDirection:'row',alignItems:'center',gap:13,
