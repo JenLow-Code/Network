@@ -73,7 +73,8 @@ export default function BibleLibraryScreen(){
    const books=await api<{items:ApiBook[]}>('/api/bible/books',{auth:'none'});
    const edition=editions.items.find(e=>norm(e.name)===norm(BIBLE_EDITION))
      ?? editions.items.find(e=>norm(e.code).includes('lsg'));
-   const book=books.items.find(b=>norm(b.name)===norm(selected.bookName));
+   const book=books.items.find(b=>norm(b.name)===norm(selected.bookName))
+     ?? books.items.find(b=>selected.bookCode==='Ps'&&b.code.toUpperCase()==='PSA');
    if(!edition||!book){
     setNotice('Cette édition ou ce livre n’est pas encore disponible pour la publication sur JenLow.');
     return;
