@@ -2,106 +2,125 @@ import React, { useState } from 'react';
 import { Pressable, Text, View, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { DreamHabit } from '@/domain/dreamWorkspace';
-import { habitHistory } from '@/domain/habitProgress';
+import { habitDayKey, habitKey } from '@/domain/habitProgress';
 import { useAppTheme } from '@/theme/AppTheme';
 
+type Period = { key:string; completed:boolean; isToday:boolean; future:boolean };
+
+function chronologicalPeriods(habit:DreamHabit, goalDate?:string, now:Date=new Date()): Period[] {
+  const today=habitDayKey(now);
+  const periodToday=habitKey(habit.frequency,today);
+  const validDate=(value?:string)=>!!value && /^\d{4}-\d{2}-\d{2}$/.test(value) &&
+    !Number.isNaN(new Date(value+'T12:00:00').getTime());
+  const earliest=[...(habit.completed||[]),...Object.keys(habit.measurements||{})]
+    .filter(validDate).map(key=>habitKey(habit.frequency,key)).sort()[0];
+  const habitStart=validDate(habit.startedAt)?habitKey(habit.frequency,habit.startedAt!):undefined;
+  // Never conceal an existing earlier completion if a stored start date was later.
+  const start=earliest && habitStart ? (earliest<habitStart?earliest:habitStart):
+    earliest||habitStart||periodToday;
+  const finish=validDate(goalDate)?habitKey(habit.frequency,goalDate!):periodToday;
+  const first=new Date(start+'T12:00:00');
+  const last=new Date(finish+'T12:00:00');
+  if(last.getTime()<first.getTime())return [];
+  const target=habit.target&&habit.target>0?habit.target:1;
+  const done=new Set((habit.completed||[]).map(key=>habitKey(habit.frequency,key)));
+  const result:Period[]=[];
+  const step=habit.frequency==='weekly'?7:1;
+  for(let date=new Date(first);date<=last&&result.length<1000;date.setDate(date.getDate()+step)){
+    const key=habitDayKey(date);
+    const amount=habit.measurements?.[key];
+    result.push({key,completed:amount!==undefined?amount>=target:done.has(key),
+      isToday:key===periodToday,future:key>periodToday});
+  }
+  // Huge plans display the most recent/future segment rather than falsely
+  // implying a dense history of completions.
+  if(result.length>336){
+    const todayIndex=result.findIndex(period=>period.isToday);
+    const center=Math.max(0,todayIndex<0?result.length-1:todayIndex);
+    const from=Math.max(0,Math.min(result.length-336,center-125));
+    return result.slice(from,from+336);
+  }
+  return result;
+}
+
 /**
- * One compact row until expanded, with today's actionable next session outlined.
- * These squares visualize cumulative sessions, not consecutive completed dates:
- * the streak is a separate indicator.
+ * Each square represents an actual calendar period (a day or week).
+ * This makes adjacent completed squares consistent with a consecutive-period streak.
+ * Session totals remain separately visible as e.g. "4 / 83".
  */
 export function HabitSquareGrid({
-  habit, planned, completed, color, todayDone, editable, onTodayPress,
+  habit, goalDate, color, editable, onTodayPress,
 }: {
-  habit: DreamHabit;
-  planned: number | null;
-  completed: number;
-  color: string;
-  todayDone: boolean;
-  editable: boolean;
-  onTodayPress: () => void;
+  habit:DreamHabit;
+  goalDate?:string;
+  color:string;
+  editable:boolean;
+  onTodayPress:()=>void;
 }) {
-  const theme = useAppTheme();
-  const { width: screenWidth } = useWindowDimensions();
-  const [expanded, setExpanded] = useState(false);
-  const [measuredWidth, setMeasuredWidth] = useState(0);
-  const gap = 4;
-  const available = Math.max(160, measuredWidth || Math.min(screenWidth - 130, 500));
-  const columns = Math.max(8, Math.min(30, Math.floor((available + gap) / 18)));
-  const cellSize = Math.max(8, (available - (columns - 1) * gap) / columns);
-  const total = planned !== null && Number.isFinite(planned) && planned > 0
-    ? Math.ceil(planned) : null;
-  // Use a proportional sample only for very large goals.
-  const count = total === null ? 28 : Math.min(total, 336);
-  const filled = total !== null
-    ? Math.min(count, Math.max(0, Math.round(completed / (planned || 1) * count)))
-    : 0;
-  const previous = total === null ? habitHistory(habit, new Date(), 28) : [];
-  const tiles = Array.from({ length: count }, (_, index) => ({
-    key: String(index),
-    done: total === null ? Boolean(previous[index]?.completed) : index < filled,
-  }));
-  // Highlight the next session the owner can complete today, *not* a claim that
-  // earlier goal squares represent actual historical calendar dates.
-  const todayIndex = total === null
-    ? count - 1
-    : Math.min(count - 1, Math.max(0, todayDone
-      ? Math.min(count, filled) - 1 : filled));
-  const canExpand = tiles.length > columns;
-  const previewStart = canExpand ? Math.floor(todayIndex / columns) * columns : 0;
-  const shown = expanded || !canExpand ? tiles : tiles.slice(previewStart, previewStart + columns);
-
-  return <View style={{ width: '100%' }}
-    onLayout={event => {
-      const next = event.nativeEvent.layout.width;
-      if (next > 0 && Math.abs(next - measuredWidth) > 1) setMeasuredWidth(next);
-    }}>
-    <View style={{ gap: 4, paddingVertical: 4 }}>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap, width: '100%' }}>
-        {shown.map(tile => {
-          const current=Number(tile.key)===todayIndex;
-          const square={
+  const theme=useAppTheme();
+  const {width:screenWidth}=useWindowDimensions();
+  const [expanded,setExpanded]=useState(false);
+  const [measuredWidth,setMeasuredWidth]=useState(0);
+  const gap=4;
+  const available=Math.max(160,measuredWidth||Math.min(screenWidth-130,500));
+  const columns=Math.max(8,Math.min(30,Math.floor((available+gap)/18)));
+  const cellSize=Math.max(8,(available-(columns-1)*gap)/columns);
+  const periods=chronologicalPeriods(habit,goalDate);
+  const todayIndex=periods.findIndex(period=>period.isToday);
+  const canExpand=periods.length>columns;
+  const previewStart=canExpand&&todayIndex>=0
+    ?Math.floor(todayIndex/columns)*columns
+    :Math.max(0,periods.length-columns);
+  const visible=expanded||!canExpand?periods:periods.slice(previewStart,previewStart+columns);
+  const periodType=habit.frequency==='weekly'?'semaine':'jour';
+  return <View style={{width:'100%'}} onLayout={event=>{
+    const width=event.nativeEvent.layout.width;
+    if(width>0&&Math.abs(width-measuredWidth)>1)setMeasuredWidth(width);
+  }}>
+    <View style={{gap:4,paddingVertical:4}}>
+      <View style={{flexDirection:'row',flexWrap:'wrap',gap,width:'100%'}}>
+        {visible.map(period=>{
+          const size={
             width:cellSize,height:cellSize,
             borderRadius:Math.min(4,cellSize/3),
-            backgroundColor:color,opacity:tile.done?1:.20,
-          } as const;
-          return current ? <Pressable key={tile.key} accessibilityRole="button"
-            disabled={!editable}
-            accessibilityLabel={todayDone
-              ? 'Réalisation du jour déjà effectuée. Modifier '+habit.title
-              : 'Marquer '+habit.title+' comme fait aujourd’hui'}
-            onPress={onTodayPress}
-            hitSlop={5}
-            style={{
-              width:cellSize,height:cellSize,borderRadius:Math.min(4,cellSize/3),
-              borderWidth:1.8,borderColor:theme.foreground,
-              backgroundColor:tile.done?color:'transparent',
-              alignItems:'center',justifyContent:'center',
-            }}>
-            <View style={{
-              width:Math.max(3,cellSize-6),height:Math.max(3,cellSize-6),
-              borderRadius:Math.min(2,cellSize/4),
-              backgroundColor:color,opacity:tile.done?1:.24,
-            }}/>
-          </Pressable>:
-          <View key={tile.key} style={square}/>;
+          };
+          if(period.isToday){
+            return <Pressable key={period.key} accessibilityRole="button"
+              disabled={!editable}
+              accessibilityLabel={habit.title+', '+(period.completed?'réalisé':'à faire')+
+                ' '+(habit.frequency==='weekly'?'cette semaine':"aujourd'hui")+
+                '. Appuyer pour enregistrer.'}
+              onPress={onTodayPress} hitSlop={6}
+              style={{...size,borderWidth:1.7,borderColor:color,
+                backgroundColor:period.completed?color:'transparent',
+                alignItems:'center',justifyContent:'center'}}>
+              {!period.completed?<View style={{
+                width:Math.max(2,cellSize-6),height:Math.max(2,cellSize-6),
+                borderRadius:2,backgroundColor:color,opacity:.17,
+              }}/>:null}
+            </Pressable>;
+          }
+          return <View key={period.key} accessibilityLabel={
+            period.key+' · '+(period.future?'à venir':period.completed?'accompli':'non accompli')
+          } style={{...size,backgroundColor:color,
+            opacity:period.completed?1:period.future?.12:.22}}/>;
         })}
       </View>
-      {canExpand ? <Pressable accessibilityRole="button"
-        accessibilityLabel={expanded?'Réduire les carrés':'Afficher toutes les séances'}
+      {canExpand?<Pressable accessibilityRole="button"
         accessibilityState={{expanded}}
-        onPress={() => setExpanded(open => !open)}
-        style={{flexDirection:'row',alignSelf:'flex-end',alignItems:'center',gap:4,
-          paddingVertical:5,paddingHorizontal:3}}>
+        accessibilityLabel={expanded?'Réduire la chronologie':'Voir toute la chronologie'}
+        onPress={()=>setExpanded(value=>!value)}
+        style={{alignSelf:'flex-end',flexDirection:'row',alignItems:'center',
+          gap:4,paddingVertical:5,paddingHorizontal:3}}>
         <Text style={{fontSize:10,color:theme.muted}}>
           {expanded?'Réduire':'Voir tous les carrés'}
         </Text>
-        <Ionicons name={expanded?'chevron-up':'chevron-down'}
-          size={13} color={theme.muted}/>
+        <Ionicons name={expanded?'chevron-up':'chevron-down'} size={13} color={theme.muted}/>
       </Pressable>:null}
-      {expanded && total!==null && count<total ? <Text style={{
-        fontSize:10,lineHeight:15,color:theme.muted,
-      }}>Aperçu proportionnel : {count} carrés pour {planned} {habit.unit||'réalisations'}</Text>:null}
+      {expanded?<Text style={{fontSize:10,color:theme.muted,lineHeight:16}}>
+        1 carré = 1 {periodType} · carré entouré = {habit.frequency==='weekly'?'cette semaine':"aujourd'hui"}
+        {periods.length===336?' · affichage limité à 336 périodes':''}
+      </Text>:null}
     </View>
   </View>;
 }
