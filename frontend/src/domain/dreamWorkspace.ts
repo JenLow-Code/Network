@@ -144,6 +144,14 @@ export type DreamEntry = {
   growthEvents?: DreamGrowthEvent[];
   /** Trusted total of prayers for this dream, only when provided by a connected source. */
   prayerCount?: number;
+  /** Dated counts from real server events. Never derive a day's activity from totals. */
+  socialDailyActivity?: {
+    date: string;
+    prayers?: number;
+    encouragements?: number;
+    prayerTotal?: number;
+    encouragementTotal?: number;
+  }[];
   thoughts?: DreamThought[];
   /** Owner-only freeform diary, stored in the private local Dream workspace. */
   privateDiary?: string;
