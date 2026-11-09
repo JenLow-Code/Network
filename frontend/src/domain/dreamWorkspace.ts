@@ -119,6 +119,8 @@ export type DreamMilestone = {
   id: string;
   title: string;
   date: string;
+  /** Exact creation moment for a strict 24-hour edit window. */
+  createdAt?: string;
   /** New Growth logs are public by default, but local intent is not public delivery. */
   shareRequested?: boolean;
   serverEntryId?: string;
