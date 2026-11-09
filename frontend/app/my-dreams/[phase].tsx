@@ -1,5 +1,5 @@
 import { Text } from '@/i18n/LocalizedText';
-import React from 'react';
+import React, { useState } from 'react';
 import { Image, Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -9,10 +9,13 @@ import { TopActions } from '@/components/navigation/TopActions';
 import { OfflineDreamImage } from '@/components/publication/OfflineDreamImage';
 import { DREAM_PHASES, DreamPhase, PHASE_COLORS } from '@/domain/publication';
 import { useDreams } from '@/domain/dreamRepository';
+import DreamQuickActions from '@/components/dream/DreamQuickActions';
+import type { DreamEntry } from '@/domain/dreamWorkspace';
 export default function Stage() {
   const { phase } = useLocalSearchParams<{ phase: string }>();
   const current = DREAM_PHASES.find(x => x === phase) as DreamPhase | undefined;
   const { items } = useDreams();
+  const [longDream,setLongDream]=useState<DreamEntry|null>(null);
   const filtered = items.filter(x => x.phase === current);
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
@@ -41,8 +44,9 @@ export default function Stage() {
         </View>
         {filtered.map(d => (
           <Pressable
-            key={d.id}
-            onPress={() => router.push({ pathname: '/my-dream/[id]', params: { id: d.id } })}
+            key={d.id} onLongPress={()=>setLongDream(d)} delayLongPress={460}
+            accessibilityHint="Maintenir pour accéder aux options du rêve"
+            onPress={() => router.push({ pathname: '/my-dream/[id]', params: { id: d.id, ...(d.phase==='Témoignage'?{}:{view:d.phase}) } })}
             style={{
               borderWidth: 1,
               borderColor: '#eee',
@@ -70,6 +74,7 @@ export default function Stage() {
           </Text>
         ) : null}
       </ScrollView>
+      <DreamQuickActions dream={longDream} onClose={()=>setLongDream(null)}/>
       <Nav />
     </SafeAreaView>
   );
