@@ -51,6 +51,22 @@ export default function BiblePassagePicker({onSelect,title='Choisir un verset',c
   }).catch(()=>{if(active)setMatches([]);}).finally(()=>{if(active)setSearching(false);});
   return ()=>{active=false;};
  },[search]);
+ const referenceMatch=search.trim().match(/^(.+?)\\s+(\\d{1,3})\\s*[:.,]\\s*(\\d{1,3})$/);
+ const foundBook=referenceMatch?BIBLE_BOOKS.find(([code,name])=>
+   normalize(name)===normalize(referenceMatch[1])||
+   normalize(code)===normalize(referenceMatch[1])||
+   (normalize(referenceMatch[1])==='psaume'&&code==='Ps')):undefined;
+ const refSuggestion=referenceMatch&&foundBook?{
+   bookCode:foundBook[0],chapter:Number(referenceMatch[2]),verse:Number(referenceMatch[3]),
+ }:null;
+ useEffect(()=>{
+  if(!versePreview||!data||data.book!==bookCode)return;
+  const text=data.chapters[String(chapter)]?.[versePreview-1];
+  if(text){
+   onSelect({bookCode,bookName:bibleBookName(bookCode),chapter,verse:versePreview,text});
+   setVersePreview(null);
+  }
+ },[versePreview,data,bookCode,chapter]);
  const chapters=data?Object.keys(data.chapters).map(Number).sort((a,b)=>a-b):[];
  const verses=data?.chapters[String(chapter)]||[];
  const bookNames=BIBLE_BOOKS.filter(([code,name])=>(
@@ -85,6 +101,18 @@ export default function BiblePassagePicker({onSelect,title='Choisir un verset',c
    {search.trim()?<View style={{maxHeight:210,backgroundColor:theme.surface,
      borderRadius:10,overflow:'hidden',borderWidth:1,borderColor:theme.border}}>
      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{padding:7,gap:5}}>
+       {refSuggestion?<Pressable accessibilityRole="button"
+         onPress={()=>{setBookCode(refSuggestion.bookCode);
+           setChapter(refSuggestion.chapter);setVersePreview(refSuggestion.verse);
+           setSearch('');setBooksOpen(false);}}
+         style={{padding:12,flexDirection:'row',alignItems:'center',gap:9,
+           borderBottomWidth:1,borderColor:theme.border}}>
+         <Ionicons name="book-outline" color="#B88962" size={17}/>
+         <Text style={{fontSize:13,fontWeight:'700',color,flex:1}}>
+           Ouvrir {bibleBookName(refSuggestion.bookCode)} {refSuggestion.chapter}:{refSuggestion.verse}
+         </Text>
+         <Ionicons name="chevron-forward" size={15} color={theme.muted}/>
+       </Pressable>:null}
        {bookNames.map(([code,name])=><Pressable key={code} accessibilityRole="button"
          onPress={()=>{setBookCode(code);setChapter(1);setSearch('');setBooksOpen(false);}}
          style={{padding:10,flexDirection:'row',alignItems:'center',gap:8}}>
