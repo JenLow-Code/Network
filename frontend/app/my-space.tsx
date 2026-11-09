@@ -9,6 +9,7 @@ import type { DreamEntry } from '@/domain/dreamWorkspace';
 import type { DreamPhase } from '@/domain/publication';
 import { useDreams } from '@/domain/dreamRepository';
 import { useAppTheme } from '@/theme/AppTheme';
+import DreamQuickActions from '@/components/dream/DreamQuickActions';
 
 type ViewFilter = 'Tout' | 'Liste' | 'Congelés';
 const series: { phase: DreamPhase; title: string; sub: string }[] = [
@@ -35,12 +36,14 @@ const frozen = (dream: DreamEntry) =>
   dream.pauseUntil >= new Date().toISOString().slice(0, 10);
 const coverImage = (d: DreamEntry) => d.phase === 'Témoignage' ? d.resultImage || d.image : d.image;
 
-function PictureCard({ dream, width, height }: { dream: DreamEntry; width: number; height: number }) {
+function PictureCard({ dream, width, height, onLongPress }: { dream: DreamEntry; width: number; height: number; onLongPress:()=>void }) {
   const theme = useAppTheme();
   const photo = coverImage(dream);
   return (
     <Pressable accessibilityRole="button" accessibilityLabel={'Ouvrir ' + dream.title}
-      onPress={() => open(dream)} style={{ width, height, borderRadius: 11, overflow: 'hidden', backgroundColor: theme.surface }}>
+      onPress={() => open(dream)} onLongPress={onLongPress} delayLongPress={460}
+      accessibilityHint="Maintenir pour voir les actions et la date objectif"
+      style={{ width, height, borderRadius: 11, overflow: 'hidden', backgroundColor: theme.surface }}>
       {photo ? <Image source={{ uri: photo }} resizeMode="cover" style={{ width: '100%', height: '100%' }} /> : null}
       <View pointerEvents="none" style={{
         position: 'absolute', top: 0, bottom: 0, left: 0, right: 0,
@@ -73,11 +76,12 @@ function PictureCard({ dream, width, height }: { dream: DreamEntry; width: numbe
   );
 }
 
-function DreamListRow({ dream }: { dream: DreamEntry }) {
+function DreamListRow({ dream, onLongPress }: { dream: DreamEntry; onLongPress:()=>void }) {
   const theme = useAppTheme();
   const photo = coverImage(dream);
   return (
-    <Pressable accessibilityRole="button" onPress={() => {
+    <Pressable accessibilityRole="button" onLongPress={onLongPress} delayLongPress={460}
+      accessibilityHint="Maintenir pour voir les actions du rêve" onPress={() => {
       if(dream.phase==='Témoignage') { open(dream); return; }
       if(dream.phase==='Croissance' &&
         (dream.flowerStartedAt||dream.flowerDraft?.story?.trim()||dream.flowerDraft?.attachments?.length)){
@@ -110,6 +114,7 @@ export default function MySpace() {
   const { items } = useDreams();
   const [view, setView] = useState<ViewFilter>('Tout');
   const [activeTestimony, setActiveTestimony] = useState(0);
+  const [longDream,setLongDream]=useState<DreamEntry|null>(null);
   const side = compact ? 18 : 28;
   const contentWidth = Math.min(windowWidth, 900);
   const innerWidth = contentWidth - side * 2;
@@ -175,7 +180,7 @@ export default function MySpace() {
         ) : list ? (
           // List mode is a single flat list: no phase headings or category sections.
           <View style={{ paddingHorizontal: side }}>
-            {visible.map(d => <DreamListRow key={d.id} dream={d} />)}
+            {visible.map(d => <DreamListRow key={d.id} dream={d} onLongPress={()=>setLongDream(d)}/>)}
           </View>
         ) : (
           <>
@@ -222,7 +227,7 @@ export default function MySpace() {
                   </View>
                   <ScrollView horizontal showsHorizontalScrollIndicator={false}
                     contentContainerStyle={{ paddingHorizontal: side, gap: 11 }}>
-                    {dreams.map(d => <PictureCard key={d.id} dream={d} width={tileWidth} height={compact ? 137 : 165} />)}
+                    {dreams.map(d => <PictureCard key={d.id} dream={d} width={tileWidth} height={compact ? 137 : 165} onLongPress={()=>setLongDream(d)}/>)}
                   </ScrollView>
                 </View>
               );
@@ -246,6 +251,8 @@ export default function MySpace() {
               <ScrollView horizontal showsHorizontalScrollIndicator={false}
                 contentContainerStyle={{paddingHorizontal:side,gap:11}}>
                 {unfinished.map(d=><Pressable key={d.id} accessibilityRole="button"
+                  onLongPress={()=>setLongDream(d)} delayLongPress={460}
+                  accessibilityHint="Maintenir pour voir les actions du rêve"
                   accessibilityLabel={'Reprendre ma Floraison : '+d.title}
                   onPress={()=>open(d)}
                   style={{width:tileWidth,height:compact?137:165,borderRadius:11,overflow:'hidden'}}>
@@ -261,6 +268,7 @@ export default function MySpace() {
           </View>
         ):null}
       </ScrollView>
+      <DreamQuickActions dream={longDream} onClose={()=>setLongDream(null)}/>
       <Nav />
     </SafeAreaView>
   );
