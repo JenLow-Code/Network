@@ -25,6 +25,7 @@ export default function SemencePublicationCover({
   publicationId:string;fallbackTitle?:string;large?:boolean;
 }){
  const theme=useAppTheme();
+ const gradientId='semencePublicationFade'+React.useId().replace(/[^A-Za-z0-9]/g,'');
  const {item,state}=usePublication(publicationId.trim()||undefined);
  const talent=item?.type==='talent';
  const artwork=talent?item.avatar:
@@ -49,12 +50,12 @@ export default function SemencePublicationCover({
      </View>}
    <Svg pointerEvents="none" style={{position:'absolute',left:0,right:0,top:0,bottom:0}}
      width="100%" height="100%">
-     <Defs><LinearGradient id="semencePublicationFade" x1="0%" y1="0%" x2="0%" y2="100%">
+     <Defs><LinearGradient id={gradientId} x1="0%" y1="0%" x2="0%" y2="100%">
        <Stop offset="0%" stopColor="#0C0A0C" stopOpacity="0"/>
        <Stop offset="42%" stopColor="#0C0A0C" stopOpacity="0.28"/>
        <Stop offset="100%" stopColor="#0C0A0C" stopOpacity="0.86"/>
      </LinearGradient></Defs>
-     <Rect width="100%" height="100%" fill="url(#semencePublicationFade)"/>
+     <Rect width="100%" height="100%" fill={"url(#"+gradientId+")"}/>
    </Svg>
    <View style={{padding:large?17:13,gap:5}}>
      <Text style={{fontSize:10,letterSpacing:.9,fontWeight:'700',
