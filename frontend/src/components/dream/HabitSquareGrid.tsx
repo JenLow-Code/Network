@@ -73,7 +73,6 @@ export function HabitSquareGrid({
     ?Math.max(0,Math.min(periods.length-columns,todayIndex-columns+1))
     :Math.max(0,periods.length-columns);
   const visible=expanded||!canExpand?periods:periods.slice(previewStart,previewStart+columns);
-  const periodType=habit.frequency==='weekly'?'semaine':'jour';
   return <View style={{width:'100%'}} onLayout={event=>{
     const width=event.nativeEvent.layout.width;
     if(width>0&&Math.abs(width-measuredWidth)>1)setMeasuredWidth(width);
@@ -105,7 +104,9 @@ export function HabitSquareGrid({
             period.key+' · '+(period.future?'à venir':period.completed?'accompli':'manqué')
           } style={{...size,
             backgroundColor:color,
-            opacity:period.completed?1:period.future ? .12 : .57,
+            // Completed = full chosen color. Missed = colored square with a
+            // clearly visible white cross. Future = very faint chosen color.
+            opacity:period.future ? .14 : 1,
             alignItems:'center',justifyContent:'center'}}>
             {!period.future&&!period.completed
               ?<Ionicons name="close" color="#FFFFFF"
@@ -125,10 +126,7 @@ export function HabitSquareGrid({
         </Text>
         <Ionicons name={expanded?'chevron-up':'chevron-down'} size={13} color={theme.muted}/>
       </Pressable>:null}
-      {expanded?<Text style={{fontSize:10,color:theme.muted,lineHeight:16}}>
-        1 carré = 1 {periodType} · carré entouré = {habit.frequency==='weekly'?'cette semaine':"aujourd'hui"}
-        {periods.length===336?' · affichage limité à 336 périodes':''}
-      </Text>:null}
+
     </View>
   </View>;
 }
