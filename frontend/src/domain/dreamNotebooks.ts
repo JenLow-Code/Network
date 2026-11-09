@@ -1,4 +1,18 @@
-import type { DreamEntry, DreamNotebook, DreamNoteBlock } from './dreamWorkspace';
+import type { DreamEntry, DreamNotebook, DreamNoteBlock, DreamNotebookColor } from './dreamWorkspace';
+
+export const NOTEBOOK_COLORS: Record<DreamNotebookColor,{label:string;hex:string}> = {
+  sand: {label:'Sable',hex:'#A5713D'},
+  pink: {label:'Magenta',hex:'#BD3477'},
+  blue: {label:'Bleu',hex:'#34769F'},
+  green: {label:'Vert',hex:'#337D5F'},
+  violet: {label:'Violet',hex:'#8366A6'},
+  coral: {label:'Corail',hex:'#B85D50'},
+};
+export const NOTEBOOK_COLOR_ORDER: DreamNotebookColor[] =
+  ['sand','pink','blue','green','violet','coral'];
+export const defaultNotebookColor = (index:number):DreamNotebookColor =>
+  NOTEBOOK_COLOR_ORDER[index % NOTEBOOK_COLOR_ORDER.length];
+
 
 export const FIRST_NOTEBOOK_ID = 'notebook-main';
 
