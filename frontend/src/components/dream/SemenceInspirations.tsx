@@ -10,6 +10,8 @@ import { usePublication } from '@/lib/api/hooks';
 import PublicationSearchPicker from './PublicationSearchPicker';
 import SemenceInspirationDetail from './SemenceInspirationDetail';
 import SemencePublicationCover from './SemencePublicationCover';
+import SemenceProfileCover from './SemenceProfileCover';
+import SemenceProfilePicker from './SemenceProfilePicker';
 import { documentKind, documentLabel } from './SemenceDocumentPreview';
 import { linkHost } from './SemenceLinkPreview';
 import { layoutInspirations, isTallTile, isWideTile } from '@/domain/inspirationLayout';
@@ -31,7 +33,8 @@ const options:Option[]=[
   {kind:'poem',label:'Poème / texte court',sub:'Un poème ou un texte original à lire ici',icon:'book-outline'},
   {kind:'note',label:'Note',sub:'Une note avec listes, cases à cocher et sections',icon:'create-outline'},
   {kind:'bible-verse',label:'Verset biblique',sub:'Référence et passage',icon:'book-outline'},
-  {kind:'publication-ref',label:'Publication',sub:'Retrouver une publication par ID',icon:'albums-outline'},
+  {kind:'publication-ref',label:'Publication',sub:'Une publication partagée sur JenLow',icon:'albums-outline'},
+  {kind:'profile-ref',label:'Profil',sub:'Une personne JenLow qui t’inspire',icon:'person-outline'},
   {kind:'document',label:'Document',sub:'PDF, texte, fichier de référence',icon:'document-attach-outline'},
   {kind:'link',label:'Lien',sub:'Article ou site inspirant',icon:'link-outline'},
   {kind:'video',label:'Vidéo / audio',sub:'Une référence à écouter ou regarder',icon:'play-circle-outline'},
@@ -45,6 +48,7 @@ function typeIcon(kind:DreamBlockKind):keyof typeof Ionicons.glyphMap{
   if(kind==='poem')return 'book-outline';
   if(kind==='note')return 'create-outline';
   if(kind==='publication-ref')return 'albums-outline';
+  if(kind==='profile-ref')return 'person-outline';
   if(kind==='bible-verse')return 'book-outline';
   if(kind==='video')return 'videocam-outline';
   if(kind==='audio'||kind==='music')return 'musical-notes-outline';
@@ -61,6 +65,7 @@ export function InspirationTile({block,onPress,onLongPress}:{
  const image=hasImage(block);
  const document=block.kind==='document'||block.kind==='pdf';
  const publication=block.kind==='publication-ref';
+ const profile=block.kind==='profile-ref';
  const verse=block.kind==='bible-verse';
  const link=['link','bookmark','embed'].includes(block.kind);
  const quote=block.kind==='quote';
@@ -88,7 +93,9 @@ export function InspirationTile({block,onPress,onLongPress}:{
    }} as any:{})}
    style={{width:'100%',borderRadius:12,overflow:'hidden',
      backgroundColor:surface,minHeight:tall?300:110}}>
-   {publication?<SemencePublicationCover publicationId={block.content}
+   {profile?<SemenceProfileCover handle={block.content} name={block.title}
+     avatar={block.media?.[0]} height={tall?305:wide?190:165}/>:
+    publication?<SemencePublicationCover publicationId={block.content}
      fallbackTitle={block.title} fallbackImage={block.media?.[0]}
      fallbackType={block.icon?.replace(/^publication-/,'')}
      tileHeight={tall?wide?315:305:wide?190:165}/>:
@@ -162,7 +169,7 @@ export default function SemenceInspirations({dream,editable,onShareInspiration,a
   const [selectedBlock,setSelectedBlock]=useState<DreamBlock|null>(null);
   const [selectedMenu,setSelectedMenu]=useState(false);
   const [message,setMessage]=useState('');
-  const [picker,setPicker]=useState<'bible'|'publication'|null>(null);
+  const [picker,setPicker]=useState<'bible'|'publication'|'profile'|null>(null);
   const canShow=choosing||!!draft;
   useEffect(()=>{if(addRequestToken>0&&editable){setChoosing(true);setMessage('');}},[addRequestToken]);
   const patchBlock=(updates:Partial<DreamBlock>)=>
@@ -172,7 +179,7 @@ export default function SemenceInspirations({dream,editable,onShareInspiration,a
       tileSize:'1x1',noteBlocks:kind==='note'?[]:undefined,
       tone:'clear',font:'sans',align:'left',frame:'none'};
     setDraft(base);setChoosing(false);setMessage('');
-    setPicker(kind==='bible-verse'?'bible':kind==='publication-ref'?'publication':null);
+    setPicker(kind==='bible-verse'?'bible':kind==='publication-ref'?'publication':kind==='profile-ref'?'profile':null);
   };
   const close=()=>{setChoosing(false);setDraft(null);setPicker(null);setMessage('');};
   const showError=(msg:string)=>{setMessage(msg);};
@@ -186,6 +193,8 @@ export default function SemenceInspirations({dream,editable,onShareInspiration,a
     if(draft.kind==='poem'&&content.length>2000)return showError('Pour un texte plus long, ajoute-le comme document.');
     if(draft.kind==='bible-verse'&&!title)return showError('Ajoute la référence du verset (par ex. Jean 3:16).');
     if(draft.kind==='publication-ref'&&!content)return showError('Saisis l’ID de la publication.');
+    if(draft.kind==='profile-ref'&&!/^[a-zA-Z0-9_.-]{2,80}$/.test(content.replace(/^@/,'')))
+      return showError('Sélectionne un profil JenLow valide.');
     if(['link','bookmark','embed'].includes(draft.kind)&&!isRemote(content))
       return showError('Utilise un lien qui commence par https:// ou http://.');
     if(['image','gallery','document','pdf','video','audio','music'].includes(draft.kind)&&!content)
@@ -344,7 +353,7 @@ export default function SemenceInspirations({dream,editable,onShareInspiration,a
           <View style={{flexDirection:'row',alignItems:'center',
             justifyContent:'space-between',marginBottom:16}}>
             <Text style={{fontFamily:'serif',fontSize:23,color:theme.foreground}}>
-              {choosing?'Ajouter une inspiration':picker==='publication'?'Trouver une publication':picker==='bible'?'Dans ma Bible':draft?typeLabel(draft.kind):'Inspiration'}
+              {choosing?'Ajouter une inspiration':picker==='publication'?'Trouver une publication':picker==='profile'?'Trouver un profil':picker==='bible'?'Dans ma Bible':draft?typeLabel(draft.kind):'Inspiration'}
             </Text>
             <Pressable accessibilityRole="button" accessibilityLabel="Fermer"
               onPress={close} style={{padding:7}}>
@@ -374,13 +383,24 @@ export default function SemenceInspirations({dream,editable,onShareInspiration,a
                 title:bibleReference(verse),content:verse.text,
                 caption:'Louis Segond 1910',
               });setPicker(null);}}/>:null}
+            {draft&&picker==='profile'?<SemenceProfilePicker
+              onSelect={member=>{patchBlock({content:member.handle,
+                title:member.displayName,media:member.avatarUrl?[member.avatarUrl]:[]});
+                setPicker(null);}}
+              onBack={()=>setPicker(null)}/>:null}
             {draft&&picker==='publication'?<PublicationSearchPicker
               selectedId={draft.content}
               onManual={content=>patchBlock({content})}
               onSelect={item=>{const image=item.type==='talent'?item.avatar:
                 item.type==='music'?(item.coverArt||item.image):item.image;
-                patchBlock({content:item.id,title:item.title,
-                  media:image?[image]:[],icon:'publication-'+item.type});setPicker(null);}}
+                if(item.type==='talent'&&item.authorHandle){
+                  patchBlock({kind:'profile-ref',content:item.authorHandle,
+                    title:item.author,media:image?[image]:[],icon:undefined});
+                }else{
+                  patchBlock({content:item.id,title:item.title,
+                    media:image?[image]:[],icon:'publication-'+item.type});
+                }
+                setPicker(null);}}
               onDone={()=>setPicker(null)}/>:null}
             {draft&&!picker?<>
               {draft.kind==='image'||draft.kind==='gallery'?<>
@@ -434,6 +454,18 @@ export default function SemenceInspirations({dream,editable,onShareInspiration,a
                     {draft.title?'Choisir un autre verset':'Chercher dans la Bible'}
                   </Text>
                 </Pressable>
+              </>:null}
+              {draft.kind==='profile-ref'?<>
+                <Pressable onPress={()=>setPicker('profile')} accessibilityRole="button"
+                  style={{flexDirection:'row',alignItems:'center',gap:10,
+                    padding:12,borderWidth:1,borderColor:theme.border,borderRadius:10}}>
+                  <Ionicons name="person-outline" size={19} color={palette}/>
+                  <Text style={{fontSize:13,color:theme.foreground,fontWeight:'600'}}>
+                    {draft.content?'Changer de profil':'Rechercher un profil'}
+                  </Text>
+                </Pressable>
+                {!!draft.content?<SemenceProfileCover handle={draft.content}
+                  name={draft.title} avatar={draft.media?.[0]} height={205}/>:null}
               </>:null}
               {draft.kind==='publication-ref'?<>
                 <Pressable onPress={()=>setPicker('publication')} accessibilityRole="button"
@@ -490,7 +522,7 @@ export default function SemenceInspirations({dream,editable,onShareInspiration,a
                 {input(draft.content.startsWith('data:')?'':draft.content,
                   content=>patchBlock({content,media:[]}), 'Ou coller un lien vers le média')}
               </>:null}
-              {!['image','gallery','quote','poem','note','bible-verse','publication-ref','document','pdf','link','bookmark','embed','video','audio','music'].includes(draft.kind)?<>
+              {!['image','gallery','quote','poem','note','bible-verse','publication-ref','profile-ref','document','pdf','link','bookmark','embed','video','audio','music'].includes(draft.kind)?<>
                 <Text style={{fontSize:11,color:theme.muted}}>
                   Ancien bloc conservé pour ne pas perdre tes idées.
                 </Text>
