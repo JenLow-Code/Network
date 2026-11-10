@@ -81,6 +81,19 @@ export function DreamResourceDetailsModal({
             <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Fermer"
               style={{ padding: 7 }}><Ionicons name="close-outline" size={22} color={theme.foreground}/></Pressable>
           </View>
+          {resource.addedDuringPhase==='Croissance'?(
+            <View style={{alignSelf:'flex-start',gap:2,paddingVertical:4}}>
+              <Text style={{fontSize:11,color:theme.muted,fontWeight:'600'}}>
+                Ajouté pendant la Croissance
+              </Text>
+              {resource.addedAt && !Number.isNaN(Date.parse(resource.addedAt))?(
+                <Text style={{fontSize:10,color:theme.muted}}>
+                  {new Date(resource.addedAt).toLocaleDateString('fr-FR',
+                    {day:'numeric',month:'long',year:'numeric'})}
+                </Text>
+              ):null}
+            </View>
+          ):null}
           {person && editable ? (
             <>
               <Text style={{ color: theme.muted, fontSize: 12 }}>Talent recherché</Text>
