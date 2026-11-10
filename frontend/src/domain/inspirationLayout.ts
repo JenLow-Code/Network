@@ -6,7 +6,7 @@ export type InspirationLayoutGroup =
  | {type:'wide';block:DreamBlock};
 
 export const tileSizeOf=(block:DreamBlock):TileSize=>
- block.tileSize??(block.size==='featured'?'2x1':'1x1');
+ block.tileSize??'1x1';
 export const isWideTile=(block:DreamBlock):boolean=>
  tileSizeOf(block).startsWith('2');
 export const isTallTile=(block:DreamBlock):boolean=>
