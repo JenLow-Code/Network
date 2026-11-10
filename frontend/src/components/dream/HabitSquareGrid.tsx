@@ -68,68 +68,98 @@ export function HabitSquareGrid({
   const {width:screenWidth}=useWindowDimensions();
   const [expanded,setExpanded]=useState(false);
   const [measuredWidth,setMeasuredWidth]=useState(0);
-  const gap=4;
-  const available=Math.max(160,measuredWidth||Math.min(screenWidth-130,500));
-  const columns=Math.max(8,Math.min(30,Math.floor((available+gap)/18)));
-  const cellSize=Math.max(8,(available-(columns-1)*gap)/columns);
+  const gap=5;
+  // A day-based habit is a calendar: precisely seven slots, Monday to Sunday.
+  // Weekly habits retain seven periods per row (one slot = one week).
+  const columns=7;
+  const available=Math.max(156,measuredWidth||Math.min(screenWidth-130,500));
+  const cellSize=Math.max(16,Math.min(22,(available-(columns-1)*gap)/columns));
   const periods=chronologicalPeriods(habit,goalDate,dreamStartedAt,plannedSessions);
-  const todayIndex=periods.findIndex(period=>period.isToday);
-  const canExpand=periods.length>columns;
-  // The single-row preview ends at today, so the preceding successful days
-  // remain visible even when today sits at a grid row boundary.
-  const previewStart=canExpand&&todayIndex>=0
-    ?Math.max(0,Math.min(periods.length-columns,todayIndex-columns+1))
-    :Math.max(0,periods.length-columns);
-  const visible=expanded||!canExpand?periods:periods.slice(previewStart,previewStart+columns);
+  const mondayKey=(dateKey:string):string=>{
+    const date=new Date(dateKey+'T12:00:00');
+    date.setDate(date.getDate()-((date.getDay()+6)%7));
+    return habitDayKey(date);
+  };
+  type WeekRow={key:string;slots:(Period|null)[]};
+  const rows:WeekRow[]=[];
+  if(habit.frequency==='daily'){
+    for(const period of periods){
+      const monday=mondayKey(period.key);
+      let week=rows[rows.length-1];
+      if(!week||week.key!==monday){
+        week={key:monday,slots:Array<Period|null>(columns).fill(null)};
+        rows.push(week);
+      }
+      const weekday=(new Date(period.key+'T12:00:00').getDay()+6)%7;
+      week.slots[weekday]=period;
+    }
+  }else{
+    for(let i=0;i<periods.length;i+=columns){
+      rows.push({key:'week-periods-'+i,slots:periods.slice(i,i+columns)});
+    }
+  }
+  const nowKey=habitDayKey(new Date());
+  const thisWeek=mondayKey(nowKey);
+  const activeIndex=rows.findIndex(row=>habit.frequency==='daily'
+    ?row.key===thisWeek:row.slots.some(period=>period?.isToday));
+  // Preview the current calendar week, not the first week of the entire goal.
+  const previewIndex=activeIndex>=0?activeIndex:
+    (rows.findIndex(row=>row.slots.some(period=>period?.future))>=0
+      ?rows.findIndex(row=>row.slots.some(period=>period?.future))
+      :Math.max(0,rows.length-1));
+  const canExpand=rows.length>1;
+  const shown=expanded||!canExpand?rows:rows.slice(previewIndex,previewIndex+1);
+  const renderSquare=(period:Period)=>{
+    const size={width:cellSize,height:cellSize,
+      borderRadius:Math.min(4,cellSize/3)};
+    if(period.isToday){
+      return <Pressable key={period.key} accessibilityRole="button"
+        disabled={!editable}
+        accessibilityLabel={habit.title+', '+(period.completed?'réalisé':'à faire')+
+          ' '+(habit.frequency==='weekly'?'cette semaine':"aujourd'hui")+
+          '. Appuyer pour enregistrer.'}
+        onPress={onTodayPress} hitSlop={6}
+        style={{...size,borderWidth:1.7,borderColor:color,
+          backgroundColor:period.completed?color:'transparent',
+          alignItems:'center',justifyContent:'center'}}>
+        {!period.completed?<View style={{
+          width:Math.max(2,cellSize-6),height:Math.max(2,cellSize-6),
+          borderRadius:2,backgroundColor:color,opacity:.17,
+        }}/>:null}
+      </Pressable>;
+    }
+    if(period.completed){
+      return <View key={period.key} accessibilityLabel={period.key+' · accompli'}
+        style={{...size,backgroundColor:color}}/>;
+    }
+    if(period.future){
+      return <View key={period.key} accessibilityLabel={period.key+' · à venir'}
+        style={{...size,backgroundColor:theme.dark?'#444B48':'#E8EBE9'}}/>;
+    }
+    return <View key={period.key} accessibilityLabel={period.key+' · manqué'}
+      style={{...size,backgroundColor:theme.background,
+        alignItems:'center',justifyContent:'center',overflow:'hidden'}}>
+      <View style={{position:'absolute',top:0,bottom:0,left:0,right:0,
+        backgroundColor:color,opacity:.40,borderRadius:size.borderRadius}}/>
+      <Ionicons name="close" color={theme.background}
+        size={Math.max(10,Math.round(cellSize*.82))}/>
+    </View>;
+  };
   return <View style={{width:'100%'}} onLayout={event=>{
     const width=event.nativeEvent.layout.width;
     if(width>0&&Math.abs(width-measuredWidth)>1)setMeasuredWidth(width);
   }}>
-    <View style={{gap:4,paddingVertical:4}}>
-      <View style={{flexDirection:'row',flexWrap:'wrap',gap,width:'100%'}}>
-        {visible.map(period=>{
-          const size={
-            width:cellSize,height:cellSize,
-            borderRadius:Math.min(4,cellSize/3),
-          };
-          if(period.isToday){
-            return <Pressable key={period.key} accessibilityRole="button"
-              disabled={!editable}
-              accessibilityLabel={habit.title+', '+(period.completed?'réalisé':'à faire')+
-                ' '+(habit.frequency==='weekly'?'cette semaine':"aujourd'hui")+
-                '. Appuyer pour enregistrer.'}
-              onPress={onTodayPress} hitSlop={6}
-              style={{...size,borderWidth:1.7,borderColor:color,
-                backgroundColor:period.completed?color:'transparent',
-                alignItems:'center',justifyContent:'center'}}>
-              {!period.completed?<View style={{
-                width:Math.max(2,cellSize-6),height:Math.max(2,cellSize-6),
-                borderRadius:2,backgroundColor:color,opacity:.17,
-              }}/>:null}
-            </Pressable>;
-          }
-          if(period.completed){
-            // Only a successful day receives the fully saturated habit color.
-            return <View key={period.key} accessibilityLabel={period.key+' · accompli'}
-              style={{...size,backgroundColor:color}}/>;
-          }
-          if(period.future){
-            // Not attempted: neutral grey, independent of the habit's chosen color.
-            return <View key={period.key} accessibilityLabel={period.key+' · à venir'}
-              style={{...size,backgroundColor:theme.dark?'#444B48':'#E8EBE9'}}/>;
-          }
-          // Missed: a LIGHT tint of the habit color, with a knock-out cross
-          // in the page background color (visually transparent, never a dark X).
-          return <View key={period.key} accessibilityLabel={period.key+' · manqué'}
-            style={{...size,backgroundColor:theme.background,
-              alignItems:'center',justifyContent:'center',overflow:'hidden'}}>
-            <View style={{position:'absolute',top:0,bottom:0,left:0,right:0,
-              backgroundColor:color,opacity:.40,borderRadius:size.borderRadius}}/>
-            <Ionicons name="close" color={theme.background}
-              size={Math.max(10,Math.round(cellSize*.82))}/>
-          </View>;
-        })}
-      </View>
+    <View style={{gap:5,paddingVertical:4}}>
+      {shown.map(row=><View key={row.key}
+        style={{flexDirection:'row',gap,alignItems:'center'}}>
+        {row.slots.map((period,index)=>period?(
+          <React.Fragment key={period.key}>{renderSquare(period)}</React.Fragment>
+        ):(
+          // Empty alignment slots are not goal squares. They just preserve
+          // Monday–Sunday alignment for partial first/last weeks.
+          <View key={'empty-'+index} style={{width:cellSize,height:cellSize}}/>
+        ))}
+      </View>)}
       {canExpand?<Pressable accessibilityRole="button"
         accessibilityState={{expanded}}
         accessibilityLabel={expanded?'Réduire la chronologie':'Voir toute la chronologie'}
@@ -139,9 +169,9 @@ export function HabitSquareGrid({
         <Text style={{fontSize:10,color:theme.muted}}>
           {expanded?'Réduire':'Voir tous les carrés'}
         </Text>
-        <Ionicons name={expanded?'chevron-up':'chevron-down'} size={13} color={theme.muted}/>
+        <Ionicons name={expanded?'chevron-up':'chevron-down'}
+          size={13} color={theme.muted}/>
       </Pressable>:null}
-
     </View>
   </View>;
 }
