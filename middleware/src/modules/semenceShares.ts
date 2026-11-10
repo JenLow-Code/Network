@@ -69,6 +69,7 @@ function block(raw:unknown,index:number){
  return {
    id:str(b.id,80)||'block-'+index,kind,content,title:str(b.title,160),
    tileSize:SIZES.has(String(b.tileSize))?b.tileSize:'1x1',
+   masonryLane:b.masonryLane==='left'||b.masonryLane==='right'?b.masonryLane:undefined,
    media:savedMedia,icon:str(b.icon,60),caption:str(b.caption,140),
    ...(noteBlocks?{noteBlocks}:{}),
  };
