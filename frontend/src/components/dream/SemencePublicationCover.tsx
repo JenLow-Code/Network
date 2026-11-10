@@ -41,7 +41,7 @@ export default function SemencePublicationCover({
  const profileName=talent?(item?.author||fallbackTitle||''):'';
  const initials=profileName.split(/\s+/).slice(0,2)
    .map(part=>part[0]||'').join('').toUpperCase();
- const height=large?268:178;
+ const height=large?268:168;
  return <View style={{height,width:'100%',overflow:'hidden',
    backgroundColor:hasArt?theme.dark?'#343336':'#696460':
       theme.dark?'#2A2B2D':'#F5F1ED',
