@@ -330,11 +330,19 @@ export default function DreamExperience({
       <View style={{flexDirection:'row',flexWrap:'wrap',gap:9,marginBottom:8}}>
         {category==='person'
           ? resources.filter(r=>r.category===category).map(r=>
-              <DreamTalentSquare key={r.id} resource={r} size={96}
+              <View key={r.id} style={{width:96,gap:4}}>
+              <DreamTalentSquare resource={r} size={96}
                 onRemove={canEditCategory(category)&&!r.serverNeedId?()=>setResources(dream.id,resources.filter(x=>x.id!==r.id)):undefined}
-                onEditRequest={canEditCategory(category)?()=>setSelectedResourceId(r.id):undefined}/>)
+                onEditRequest={canEditCategory(category)?()=>setSelectedResourceId(r.id):undefined}/>
+              {r.addedDuringPhase==='Croissance'?(
+                <Text style={{fontSize:9,lineHeight:12,color:theme.muted,textAlign:'center'}}>
+                  Ajouté en Croissance
+                </Text>
+              ):null}
+              </View>)
           : resources.filter(r=>r.category===category).map(r=>
-              <View key={r.id} style={{
+              <View key={r.id} style={{width:96,gap:4}}>
+              <View style={{
                 width:96,height:96,borderRadius:10,overflow:'hidden',
                 position:'relative',borderWidth:1.6,
                 borderColor:r.confirmed?'#318656':'#D71D77',
@@ -366,6 +374,12 @@ export default function DreamExperience({
                   style={{position:'absolute',right:1,top:1,padding:5}}>
                   <Ionicons name="close-outline" size={14} color={theme.muted}/>
                 </Pressable>:null}
+              </View>
+              {r.addedDuringPhase==='Croissance'?(
+                <Text style={{fontSize:9,lineHeight:12,color:theme.muted,textAlign:'center'}}>
+                  Ajouté en Croissance
+                </Text>
+              ):null}
               </View>)}
         {canEditCategory(category)?<Pressable accessibilityRole="button"
           accessibilityLabel={category==='person'?'Ajouter un talent':category==='financial'?'Ajouter un financement':'Ajouter une ressource'}
