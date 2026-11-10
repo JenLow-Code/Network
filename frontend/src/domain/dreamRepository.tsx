@@ -27,6 +27,8 @@ type Repo = {
   ) => void;
   add: (id: string, text: string, kind: 'notes' | 'additions') => void;
   setFlowerDraft: (id: string, draft: FlowerDraft) => void;
+  /** Irreversible transition; achievement can precede the public testimony. */
+  confirmFlower: (id: string, achievedOn: string) => void;
   advance: (id: string) => void;
   complete: (
     id: string,
@@ -196,9 +198,25 @@ export function DreamProvider({ children }: { children: React.ReactNode }) {
       ),
     );
   const setFlowerDraft: Repo['setFlowerDraft'] = (id, draft) =>
-    setItems(p =>
-      p.map(d => (d.id === id && d.phase === 'Croissance' ? { ...d, flowerDraft: draft, flowerStartedAt: d.flowerStartedAt || new Date().toISOString() } : d)),
-    );
+    setItems(p => p.map(d =>
+      d.id === id && !!d.flowerStartedAt && !d.testimony
+        ? { ...d, flowerDraft: draft } : d,
+    ));
+  const confirmFlower: Repo['confirmFlower'] = (id, achievedOn) =>
+    setItems(p => p.map(d =>
+      d.id === id && d.phase === 'Croissance' && !d.testimony
+        ? {
+            ...d,
+            phase: 'Témoignage',
+            // Croissance is frozen while the flower remains unpublished.
+            visibility: 'private',
+            flowerStartedAt: d.flowerStartedAt || new Date().toISOString(),
+            flowerDraft: {
+              ...(d.flowerDraft || { story: '', attachments: [] }),
+              achievedOn,
+            },
+          } : d,
+    ));
   const advance: Repo['advance'] = id =>
     setItems(p =>
       p.map(d => {
@@ -209,7 +227,7 @@ export function DreamProvider({ children }: { children: React.ReactNode }) {
   const complete: Repo['complete'] = (id, comment, mediaType, mediaUrl) =>
     setItems(p =>
       p.map(d =>
-        d.id === id && d.phase === 'Croissance' && !!d.flowerDraft?.achievedOn && !!d.flowerDraft?.attachments?.some(a => a.kind === 'photo')
+        d.id === id && d.phase === 'Témoignage' && !d.testimony && !!d.flowerDraft?.achievedOn && !!d.flowerDraft?.attachments?.some(a => a.kind === 'photo')
           ? {
               ...d,
               phase: 'Témoignage',
@@ -310,7 +328,7 @@ export function DreamProvider({ children }: { children: React.ReactNode }) {
   const remove: Repo['remove'] = id => setItems(p => p.filter(d => d.id !== id));
   return (
     <Context.Provider
-      value={{ items, ready:hydratedKey===key, storageError, createPersisted, setCoverImage, personalHabits, setPersonalHabits, detachHabit, create, update, add, setFlowerDraft, advance, complete, remove, patch, appendBlock, setResources, setHabits, transitionToGrowth, setGoalAndGrow, addGrowthLog, setGrowthLogPublication }}
+      value={{ items, ready:hydratedKey===key, storageError, createPersisted, setCoverImage, personalHabits, setPersonalHabits, detachHabit, create, update, add, setFlowerDraft, confirmFlower, advance, complete, remove, patch, appendBlock, setResources, setHabits, transitionToGrowth, setGoalAndGrow, addGrowthLog, setGrowthLogPublication }}
     >
       {children}
     </Context.Provider>
