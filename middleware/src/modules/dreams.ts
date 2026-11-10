@@ -678,6 +678,12 @@ export function registerDreams(r: Router): void {
     const entry = await ctx.sql.first<{ id: string; dream_id: string; author_id: string; entry_type: string; phase: string }>('SELECT e.id,e.dream_id,e.author_id,e.entry_type,d.phase FROM dream_entries e JOIN dreams d ON d.id=e.dream_id WHERE e.id=? AND e.deleted_at IS NULL', ctx.param('id'));
     if (!entry || entry.author_id !== viewer.id) throw notFound();
     if (entry.phase === 'testimony' || entry.entry_type === 'testimony') throw unprocessable('floraison_locked');
+    // Growth Logbook leaves are definitive 24 hours after creation.
+    // Enforce this server-side too; the mobile/web read-only state is not authorization.
+    if (entry.entry_type === 'progress_comment' && await ctx.sql.exists(
+      "SELECT 1 FROM dream_entries WHERE id=? AND created_at<=datetime('now','-24 hours')",
+      entry.id,
+    )) throw unprocessable('journal_edit_window_closed');
     const v = new V(await ctx.body());
     const body = v.str('body', { max: 5000, min: 1 });
     const entryDate = v.date('entryDate', { nullable: true });
