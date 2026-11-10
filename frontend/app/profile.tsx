@@ -14,7 +14,6 @@ import { useAppTheme } from '@/theme/AppTheme';
 import { ProfileTalentTile } from '@/components/talent/ProfileTalentTile';
 import { ProfilePublicationFeed } from '@/components/publication/PublicationGallery';
 import SemenceSharesFeed from '@/components/dream/SemenceSharesFeed';
-import { useDreams } from '@/domain/dreamRepository';
 import { PHASE_LABELS, PHASE_COLORS } from '@/domain/publication';
 import { publications } from '@/mocks/publications';
 import { api } from '@/lib/api/client';
@@ -55,7 +54,6 @@ export default function Profile() {
     auth = useAuth(),
     theme = useAppTheme();
   const { width } = useWindowDimensions();
-  const { items: workspaceDreams } = useDreams();
   const [edit, setEdit] = useState<'bio' | 'city' | 'church' | null>(null);
   const [draft, setDraft] = useState('');
   const [talents, setTalents] = useState<Talent[]>(initial);
@@ -69,11 +67,13 @@ export default function Profile() {
   const [selectedTalent, setSelectedTalent] = useState<number | null>(null);
   const [featuredId, setFeaturedId] = useState<string | null>(null);
   const [serverPublications, setServerPublications] = useState<Publication[]>([]);
+  const [semenceCount,setSemenceCount]=useState(0);
   useEffect(()=>{
     let active=true;
     setServerPublications([]);
     void api<{items:ApiFeedItem[]}>('/api/me/publications?limit=100',{auth:'required'})
-      .then(result=>{if(active)setServerPublications(toPublications(result.items||[]));})
+      .then(result=>{if(active)setServerPublications(toPublications(
+         (result.items||[]).filter(item=>item.visibility==='public')));})
       .catch(()=>{ /* Keep existing locally visible profile items when API is disconnected. */ });
     return ()=>{active=false;};
   },[app.email]);
@@ -164,8 +164,6 @@ export default function Profile() {
     ...serverPublications,
     ...publications.filter(p=>p.author===app.name && !serverPublications.some(remote=>remote.id===p.id)),
   ];
-  const myLocalDreams=workspaceDreams.filter(d=>d.id.startsWith('local-') && d.ownerIds?.includes('demo-user'));
-  const privateDreams=myLocalDreams.filter(d=>d.visibility!=='public');
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
       <ScrollView ref={scrollRef}
@@ -264,30 +262,16 @@ export default function Profile() {
           </Pressable>
         </View>
         <View onLayout={e=>{postsY.current=e.nativeEvent.layout.y;}}>
-          <SemenceSharesFeed mine/>
-          <Text style={{fontSize:19,fontWeight:'800',color:theme.foreground,marginTop:25,marginBottom:14}}>Mes publications</Text>
+          <Text style={{fontSize:19,fontWeight:'800',color:theme.foreground,
+            marginTop:25,marginBottom:14}}>Mes publications</Text>
         </View>
-        {myLocalDreams.length>0 ? (
-          <View style={{flexDirection:'row',flexWrap:'wrap',gap:10,marginBottom:18}}>
-            {myLocalDreams.map(d=><Pressable key={d.id}
-              onPress={()=>router.push({pathname:'/my-dream/[id]',params:{id:d.id}})}
-              accessibilityRole="button" accessibilityLabel={d.title+(d.visibility==='public'?', public':', privé')}
-              style={{width:cardWidth,height:Math.max(145,Math.round(cardWidth*1.10)),
-                borderRadius:10,overflow:'hidden',backgroundColor:theme.surface}}>
-              {d.image?<Image source={{uri:d.resultImage||d.image}} resizeMode="cover"
-                style={{position:'absolute',width:'100%',height:'100%'}}/>:null}
-              <View style={{position:'absolute',top:0,bottom:0,left:0,right:0,
-                backgroundColor:'rgba(0,0,0,.39)'}}/>
-              <View style={{position:'absolute',top:9,right:9}}>
-                <Ionicons name={d.visibility==='public'?'globe-outline':'lock-closed'}
-                  size={16} color="#FFFFFF"/>
-              </View>
-              <Text numberOfLines={3} style={{color:'#FFFFFF',fontWeight:'700',fontSize:13,
-                position:'absolute',bottom:12,left:10,right:10}}>{d.title}</Text>
-            </Pressable>)}
-          </View>
-        ):null}
-        {myPublicPosts.length?<ProfilePublicationFeed grid items={myPublicPosts} contentWidth={areaWidth} featuredId={featuredId} onFeature={feature}/>:<Text style={{color:theme.muted,fontSize:13}}>{myLocalDreams.length?'Aucune autre publication publique pour le moment.':'Aucune publication pour le moment.'}</Text>}
+        <SemenceSharesFeed mine onCountChange={setSemenceCount}/>
+        {myPublicPosts.length
+          ?<ProfilePublicationFeed grid items={myPublicPosts} contentWidth={areaWidth}
+            featuredId={featuredId} onFeature={feature}/>
+          :semenceCount===0?<Text style={{color:theme.muted,fontSize:13}}>
+             Aucune publication pour le moment.
+           </Text>:null}
       </ScrollView>
       <Modal visible={addTalentOpen} transparent animationType="fade"
         onRequestClose={()=>setAddTalentOpen(false)}>
