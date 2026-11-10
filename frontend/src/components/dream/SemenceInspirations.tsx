@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { Alert, Image, Linking, Modal, Platform, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from 'react-native';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Alert, Animated, Image, Linking, Modal, PanResponder, Platform, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useAppTheme } from '@/theme/AppTheme';
@@ -14,7 +14,7 @@ import SemenceProfileCover from './SemenceProfileCover';
 import SemenceProfilePicker from './SemenceProfilePicker';
 import { documentKind, documentLabel } from './SemenceDocumentPreview';
 import { linkHost } from './SemenceLinkPreview';
-import { layoutInspirations, isTallTile, isWideTile } from '@/domain/inspirationLayout';
+import { layoutInspirations, isTallTile, isWideTile, reorderInspiration, tileSizeOf, type TileSize } from '@/domain/inspirationLayout';
 import RichInspirationNote from './RichInspirationNote';
 import BiblePassagePicker from '@/components/bible/BiblePassagePicker';
 import { bibleReference } from '@/domain/bibleLibrary';
@@ -153,6 +153,122 @@ export function InspirationTile({block,onPress,onLongPress}:{
       </Text>}
     </View>}
  </Pressable>;
+}
+
+
+/** Separate handles keep tap-to-preview and long-press-to-edit intact.
+ * PanResponder provides true touch dragging on mobile; on a simple tap,
+ * arrows offer keyboard/screen-reader-friendly reordering.
+ */
+function SortableInspirationCard({block,editable,onOpen,onMenu,onResize,onMeasure,
+ registerRef,onStartDrag,onFinishDrag,onDrop,onStep}:{
+ block:DreamBlock;editable:boolean;onOpen:()=>void;onMenu:()=>void;
+ onResize:(size:TileSize)=>void;onMeasure:(id:string,height:number)=>void;
+ registerRef:(id:string,view:View|null)=>void;
+ onStartDrag:(id:string)=>void;onFinishDrag:()=>void;
+ onDrop:(id:string,x:number,y:number)=>void;
+ onStep:(id:string,direction:-1|1)=>void;
+}){
+ const theme=useAppTheme();
+ const [sizeOpen,setSizeOpen]=useState(false);
+ const [moveOpen,setMoveOpen]=useState(false);
+ const [moving,setMoving]=useState(false);
+ const moved=useRef(false);
+ const offset=useRef(new Animated.ValueXY({x:0,y:0})).current;
+ const callbacks=useRef({onStartDrag,onFinishDrag,onDrop});
+ callbacks.current={onStartDrag,onFinishDrag,onDrop};
+ const responder=useMemo(()=>PanResponder.create({
+   onStartShouldSetPanResponder:()=>true,
+   onMoveShouldSetPanResponder:()=>true,
+   onPanResponderTerminationRequest:()=>false,
+   onPanResponderGrant:()=>{
+     moved.current=false;
+     callbacks.current.onStartDrag(block.id);
+   },
+   onPanResponderMove:(_,gesture)=>{
+     if(Math.abs(gesture.dx)+Math.abs(gesture.dy)>8){
+       if(!moved.current){moved.current=true;setMoving(true);}
+       offset.setValue({x:gesture.dx,y:gesture.dy});
+     }
+   },
+   onPanResponderRelease:(_,gesture)=>{
+     const actuallyMoved=moved.current;
+     offset.setValue({x:0,y:0});setMoving(false);
+     callbacks.current.onFinishDrag();
+     if(actuallyMoved)callbacks.current.onDrop(block.id,gesture.moveX,gesture.moveY);
+     else setMoveOpen(open=>!open);
+     moved.current=false;
+   },
+   onPanResponderTerminate:()=>{
+     offset.setValue({x:0,y:0});setMoving(false);moved.current=false;
+     callbacks.current.onFinishDrag();
+   },
+ }),[block.id,offset]);
+ const resizeChoices:{size:TileSize;icon:keyof typeof Ionicons.glyphMap}[]=[
+   {size:'1x1',icon:'square-outline'},
+   {size:'2x1',icon:'tablet-landscape-outline'},
+   {size:'1x2',icon:'tablet-portrait-outline'},
+   {size:'2x2',icon:'grid-outline'},
+ ];
+ return <Animated.View
+   ref={ref=>registerRef(block.id,ref as unknown as View|null)}
+   onLayout={event=>onMeasure(block.id,event.nativeEvent.layout.height)}
+   style={{position:'relative',zIndex:moving||sizeOpen||moveOpen?30:1,
+     elevation:moving?14:0,opacity:moving?0.88:1,
+     transform:offset.getTranslateTransform()}}>
+   <InspirationTile block={block} onPress={onOpen} onLongPress={onMenu}/>
+   {editable?<View style={{position:'absolute',right:7,bottom:7,
+     flexDirection:'row',alignItems:'center',gap:4}}>
+     <Pressable accessibilityRole="button"
+       accessibilityLabel={'Changer la taille de '+(block.title||'cette inspiration')}
+       accessibilityState={{expanded:sizeOpen}}
+       onPress={()=>{setSizeOpen(value=>!value);setMoveOpen(false);}}
+       style={{height:30,width:30,borderRadius:9,alignItems:'center',
+         justifyContent:'center',borderWidth:0.6,borderColor:theme.border,
+         backgroundColor:theme.dark?'rgba(35,35,35,.9)':'rgba(255,252,247,.92)'}}>
+       <Ionicons name="resize-outline" size={15} color="#9D6C43"/>
+     </Pressable>
+     <View {...responder.panHandlers}
+       accessible accessibilityRole="button"
+       accessibilityLabel={'Glisser pour déplacer '+(block.title||'cette inspiration')}
+       accessibilityHint="Maintenir et déplacer pour réorganiser les cartes, ou toucher pour les flèches"
+       style={{width:30,height:30,borderRadius:9,alignItems:'center',
+         justifyContent:'center',borderWidth:0.6,borderColor:theme.border,
+         backgroundColor:theme.dark?'rgba(35,35,35,.9)':'rgba(255,252,247,.92)'}}>
+       <Ionicons name="reorder-three-outline" size={20} color="#9D6C43"/>
+     </View>
+   </View>:null}
+   {editable&&sizeOpen?<View style={{position:'absolute',right:6,bottom:41,
+     flexDirection:'row',gap:4,padding:5,borderRadius:10,
+     backgroundColor:theme.background,borderWidth:1,borderColor:theme.border,
+     elevation:6,zIndex:75,shadowColor:'#332619',shadowOpacity:.12,shadowRadius:8}}>
+     {resizeChoices.map(choice=><Pressable key={choice.size}
+       accessibilityRole="button"
+       accessibilityLabel={'Carte '+choice.size.replace('x',' par ')}
+       accessibilityState={{selected:tileSizeOf(block)===choice.size}}
+       onPress={()=>{onResize(choice.size);setSizeOpen(false);}}
+       style={{width:37,height:44,borderRadius:7,
+         justifyContent:'center',alignItems:'center',gap:2,
+         backgroundColor:tileSizeOf(block)===choice.size?
+           (theme.dark?'#4C3C30':'#F0E5D9'):'transparent'}}>
+       <Ionicons name={choice.icon} color="#9D6C43" size={16}/>
+       <Text style={{fontSize:9,color:theme.foreground}}>{choice.size.replace('x','×')}</Text>
+     </Pressable>)}
+   </View>:null}
+   {editable&&moveOpen?<View style={{position:'absolute',right:7,bottom:41,
+     flexDirection:'row',gap:6,padding:5,borderRadius:10,
+     backgroundColor:theme.background,borderWidth:1,borderColor:theme.border,
+     zIndex:75,elevation:6}}>
+     {([-1,1] as const).map(direction=><Pressable key={direction}
+       accessibilityRole="button"
+       accessibilityLabel={direction===-1?'Déplacer avant':'Déplacer après'}
+       onPress={()=>{onStep(block.id,direction);setMoveOpen(false);}}
+       style={{width:42,height:39,alignItems:'center',justifyContent:'center'}}>
+       <Ionicons name={direction===-1?'arrow-up':'arrow-down'}
+         color="#9D6C43" size={21}/>
+     </Pressable>)}
+   </View>:null}
+ </Animated.View>;
 }
 
 /** Inspiration references, not a second note editor. */
