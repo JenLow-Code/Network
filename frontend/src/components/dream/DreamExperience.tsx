@@ -176,16 +176,16 @@ export default function DreamExperience({
  };
 
  /** An opt-in publication stays reversible within the note's edit window.
-  * Owner-only visibility is used when a previously public post is unchecked.
+  * Participants-only visibility is used when a public post is unchecked.
   */
  const syncLog=async(log:DreamMilestone)=>{
    if(!dream.serverDreamId)return;
-   if(!log.shareRequested && !log.serverEntryId)return;
+
    try{
      if(log.serverEntryId){
        await api('/api/entries/'+encodeURIComponent(log.serverEntryId),
          {method:'PATCH',auth:'required',body:{
-           body:log.title,visibility:log.shareRequested?'public':'owners',
+           body:log.title,visibility:log.shareRequested?'public':'participants',
          }});
        setGrowthLogPublication(dream.id,log.id,'published',log.serverEntryId);
        return;
@@ -193,7 +193,8 @@ export default function DreamExperience({
      const response=await api<{id:string}>(
        '/api/dreams/'+encodeURIComponent(dream.serverDreamId)+'/entries',
        {method:'POST',auth:'required',idempotencyKey:'growth-log-'+log.id,
-         body:{type:'progress',body:log.title,entryDate:log.date,visibility:'public'}});
+         body:{type:'progress',body:log.title,entryDate:log.date,
+           visibility:log.shareRequested?'public':'participants'}});
      setGrowthLogPublication(dream.id,log.id,'published',response.id);
    }catch{
      const wasPublic=(dream.milestones||[]).find(item=>item.id===log.id)?.shareRequested===true;
@@ -268,7 +269,7 @@ export default function DreamExperience({
    if(existing){
      const updated:DreamMilestone={
        ...existing,title:content,shareRequested:shareLogAsPost,
-       publicationState:shareLogAsPost||existing.serverEntryId?'pending':undefined,
+       publicationState:dream.serverDreamId?'pending':undefined,
      };
      patch(dream.id,{milestones:logs.map(log=>
        log.id===existing.id?updated:log)});
@@ -277,7 +278,7 @@ export default function DreamExperience({
      const log:DreamMilestone={
        id:uid(),title:content,date:today,createdAt:now.toISOString(),
        shareRequested:shareLogAsPost,
-       publicationState:shareLogAsPost?'pending':undefined,
+       publicationState:dream.serverDreamId?'pending':undefined,
      };
      addGrowthLog(dream.id,log);
      void syncLog(log);
@@ -609,7 +610,7 @@ export default function DreamExperience({
         setShareLogAsPost(!!log.shareRequested);
         setGrowthDialog('log');
       }}
-      onRetry={log=>{if(growthActive&&log.shareRequested)void syncLog(log);}}
+      onRetry={log=>{if(growthActive)void syncLog(log);}}
       onManageHabits={()=>setGrowthDialog('habits')}
       onAddHabit={()=>{if(growthActive)openHabitEditor();}}
       onEditHabit={habit=>{if(growthActive)openHabitEditor(habit);}}
@@ -938,7 +939,7 @@ export default function DreamExperience({
              <Text style={{fontSize:11,lineHeight:16,color:theme.muted}}>
                {shareLogAsPost
                  ?'Visible publiquement dans JenLow.'
-                 :'Sinon, cette note reste uniquement dans le rêve.'}
+                 :'Sinon, cette note reste uniquement dans le rêve partagé.'}
              </Text>
            </View>
          </Pressable>
