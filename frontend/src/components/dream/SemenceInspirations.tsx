@@ -49,97 +49,98 @@ function typeIcon(kind:DreamBlockKind):keyof typeof Ionicons.glyphMap{
   if(kind==='image'||kind==='gallery')return 'image-outline';
   return 'sparkles-outline';
 }
+/** A shared compact card rhythm: same height and typography across reference types. */
 function InspirationTile({block,onPress,onLongPress}:{
- block:DreamBlock;onPress:()=>void;onLongPress:()=>void;
+  block:DreamBlock;onPress:()=>void;onLongPress:()=>void;
 }) {
- const theme=useAppTheme();
- const image=hasImage(block);
- const isDoc=block.kind==='document'||block.kind==='pdf';
- const isPub=block.kind==='publication-ref';
- const isBible=block.kind==='bible-verse';
- const isLink=['link','bookmark','embed'].includes(block.kind);
- const isQuote=block.kind==='quote';
- const isPoem=block.kind==='poem';
- const wide=isDoc||(block.size==='featured'&&image);
- const bg=theme.dark?'#26282B':
-   isBible?'#F7F1E9':isQuote||isPoem?'#F6F0EE':'#F3F0EB';
- const fullLabel=isBible?block.title||'Verset biblique':
-   isQuote?block.title||'Citation':block.title||typeLabel(block.kind);
- return <Pressable accessibilityRole="button"
-   accessibilityLabel={'Ouvrir '+typeLabel(block.kind)+': '+fullLabel}
-   accessibilityHint="Appui long ou clic droit pour modifier, supprimer ou partager"
-   onPress={onPress} onLongPress={onLongPress} delayLongPress={460}
-   {...(Platform.OS==='web'?{onContextMenu:(event:any)=>{
-     event.preventDefault();onLongPress();
-   }} as any:{})}
-   style={{width:wide?'100%':'48.5%',marginBottom:11,
-     borderRadius:13,overflow:'hidden',backgroundColor:bg,
-     minHeight:isDoc?176:isPub?192:image?146:150}}>
-   {isPub?<SemencePublicationCover publicationId={block.content}
-     fallbackTitle={block.title}/>:image?<Image
-       source={{uri:block.media?.[0]||block.content}}
-       style={{width:'100%',height:wide?215:151}} resizeMode="cover"/>:
-   isDoc?<View style={{padding:18,flexDirection:'row',alignItems:'center',
-     minHeight:176,gap:17}}>
-     <View style={{width:65,height:80,borderRadius:10,
-       backgroundColor:theme.dark?'#38383A':'#ECE1D7',
-       alignItems:'center',justifyContent:'center',gap:5}}>
-       <Ionicons name="document-text-outline" size={29} color="#A5713D"/>
-       <Text style={{fontSize:9,color:'#A5713D',fontWeight:'700'}}>
-         {documentKind(block).toUpperCase()}
-       </Text>
-     </View>
-     <View style={{flex:1,gap:9}}>
-       <Text style={{fontSize:10,color:theme.muted,
-         letterSpacing:.8,fontWeight:'700'}}>DOCUMENT</Text>
-       <Text numberOfLines={3} style={{fontSize:16,lineHeight:22,
-         fontWeight:'700',color:theme.foreground}}>
-         {documentLabel(block)}
-       </Text>
-       <Text style={{fontSize:11,color:theme.muted}}>
-         Toucher pour voir l’aperçu
-       </Text>
-     </View>
-     <Ionicons name="chevron-forward" size={18} color={theme.muted}/>
-   </View>:
-   <View style={{minHeight:150,padding:14,gap:11,
-     justifyContent:'flex-start'}}>
-     <View style={{flexDirection:'row',alignItems:'center',gap:7}}>
-       <Ionicons name={typeIcon(block.kind)} size={16} color="#B88962"/>
-       <Text numberOfLines={1}
-         style={{fontSize:10,letterSpacing:.6,fontWeight:'700',
-           color:isBible?theme.foreground:theme.muted,flex:1}}>
-         {(isBible?block.title||'VERSET BIBLIQUE':
-           isQuote?block.title?.trim()||'CITATION':
-           isPoem?block.title?.trim()||'POÈME':typeLabel(block.kind)).toUpperCase()}
-       </Text>
-     </View>
-     {isLink?<View style={{gap:6}}>
-       {!!block.title?<Text numberOfLines={2} style={{fontSize:15,
-         lineHeight:20,fontWeight:'600',color:theme.foreground}}>
-         {block.title}
-       </Text>:null}
-       <Text numberOfLines={2} style={{fontSize:12,lineHeight:18,
-         color:'#A5713D',textDecorationLine:'underline'}}>
-         {block.content}
-       </Text>
-       <Text numberOfLines={1} style={{fontSize:10,color:theme.muted}}>
-         {linkHost(block.content)}
-       </Text>
-     </View>:
-     <Text numberOfLines={isPoem?7:5}
-       style={{fontSize:isQuote?17:isPoem?15:isBible?14:14,
-         lineHeight:isQuote?24:21,
-         fontFamily:isQuote||isPoem||isBible?'serif':undefined,
-         fontStyle:isQuote?'italic':'normal',
-         color:isBible?'#C02772':theme.foreground}}>
-       {isQuote?'“'+block.content+'”':block.content}
-     </Text>}
-   </View>}
-   {image&&!!block.title?<Text numberOfLines={2}
-     style={{paddingHorizontal:11,paddingVertical:9,
-       fontSize:12,fontWeight:'600',color:theme.foreground}}>{block.title}</Text>:null}
- </Pressable>;
+  const theme=useAppTheme();
+  const image=hasImage(block);
+  const document=block.kind==='document'||block.kind==='pdf';
+  const publication=block.kind==='publication-ref';
+  const verse=block.kind==='bible-verse';
+  const link=['link','bookmark','embed'].includes(block.kind);
+  const quote=block.kind==='quote';
+  const poem=block.kind==='poem';
+  const wide=document||(block.size==='featured'&&image);
+  const surface=theme.dark?'#2A2B2D':'#F5F1ED';
+  const fullLabel=verse?block.title||'Verset biblique':
+    quote?block.title||'Citation':block.title||typeLabel(block.kind);
+  const label=(verse?block.title||'VERSET BIBLIQUE':
+    quote?block.title?.trim()||'CITATION':
+    poem?block.title?.trim()||'POÈME':typeLabel(block.kind)).toUpperCase();
+  return <Pressable accessibilityRole="button"
+    accessibilityLabel={'Ouvrir '+typeLabel(block.kind)+': '+fullLabel}
+    accessibilityHint="Appui long ou clic droit pour modifier, supprimer ou partager"
+    onPress={onPress} onLongPress={onLongPress} delayLongPress={460}
+    {...(Platform.OS==='web'?{onContextMenu:(event:any)=>{
+      event.preventDefault();onLongPress();
+    }} as any:{})}
+    style={{width:wide?'100%':'48.5%',marginBottom:12,
+      borderRadius:12,overflow:'hidden',backgroundColor:surface,
+      height:document?118:wide&&image?210:168}}>
+    {publication?
+      <SemencePublicationCover publicationId={block.content}
+        fallbackTitle={block.title} fallbackImage={block.media?.[0]}
+        fallbackType={block.icon?.replace(/^publication-/, '')}/>:
+    image?<>
+      <Image source={{uri:block.media?.[0]||block.content}}
+        style={{width:'100%',height:wide?183:block.title?139:168}}
+        resizeMode="cover"/>
+      {!!block.title?<Text numberOfLines={1}
+        style={{paddingHorizontal:10,paddingVertical:7,fontSize:11,
+          fontWeight:'600',color:theme.foreground}}>{block.title}</Text>:null}
+    </>:
+    document?<View style={{paddingHorizontal:14,paddingVertical:13,
+      flexDirection:'row',alignItems:'center',gap:13,height:118}}>
+      <View style={{width:52,height:67,borderRadius:9,
+        backgroundColor:theme.dark?'#38383A':'#EDE3D9',
+        justifyContent:'center',alignItems:'center',gap:3}}>
+        <Ionicons name="document-text-outline" size={24} color="#A5713D"/>
+        <Text style={{fontSize:9,color:'#A5713D',fontWeight:'700'}}>
+          {documentKind(block).toUpperCase()}
+        </Text>
+      </View>
+      <View style={{flex:1,gap:5,justifyContent:'center'}}>
+        <Text style={{fontSize:10,letterSpacing:.7,fontWeight:'700',
+          color:theme.muted}}>DOCUMENT</Text>
+        <Text numberOfLines={2} style={{fontSize:14,lineHeight:20,
+          color:theme.foreground,fontWeight:'600'}}>
+          {documentLabel(block)}
+        </Text>
+        <Text style={{fontSize:11,color:theme.muted}}>Voir l’aperçu</Text>
+      </View>
+      <Ionicons name="chevron-forward" size={17} color={theme.muted}/>
+    </View>:
+    <View style={{paddingHorizontal:12,paddingTop:13,paddingBottom:12,
+      gap:10,height:168,justifyContent:'flex-start'}}>
+      <View style={{flexDirection:'row',alignItems:'center',gap:6}}>
+        <Ionicons name={typeIcon(block.kind)} size={14} color="#A5713D"/>
+        <Text numberOfLines={1} style={{fontSize:9,letterSpacing:.55,
+          fontWeight:'700',color:verse?theme.foreground:theme.muted,
+          flex:1}}>{label}</Text>
+      </View>
+      {link?<View style={{gap:7}}>
+        {!!block.title?<Text numberOfLines={2} style={{fontSize:13,
+          lineHeight:18,fontWeight:'600',color:theme.foreground}}>
+          {block.title}
+        </Text>:null}
+        <Text numberOfLines={2} ellipsizeMode="middle"
+          style={{fontSize:11,lineHeight:17,color:'#A5713D',
+            textDecorationLine:'underline'}}>
+          {block.content}
+        </Text>
+      </View>:
+      <Text numberOfLines={quote?4:poem?5:verse?5:4}
+        ellipsizeMode="tail" style={{
+          fontFamily:quote||verse||poem?'serif':undefined,
+          fontSize:quote?15:poem?13:verse?13:13,
+          lineHeight:quote?22:19,
+          fontStyle:quote?'italic':'normal',
+          color:verse?'#C02772':theme.foreground}}>
+        {quote?'“'+block.content+'”':block.content}
+      </Text>}
+    </View>}
+  </Pressable>;
 }
 
 /** Inspiration references, not a second note editor. */
@@ -347,7 +348,10 @@ export default function SemenceInspirations({dream,editable,onShareInspiration}:
             {draft&&picker==='publication'?<PublicationSearchPicker
               selectedId={draft.content}
               onManual={content=>patchBlock({content})}
-              onSelect={item=>{patchBlock({content:item.id,title:item.title});setPicker(null);}}
+              onSelect={item=>{const image=item.type==='talent'?item.avatar:
+                item.type==='music'?(item.coverArt||item.image):item.image;
+                patchBlock({content:item.id,title:item.title,
+                  media:image?[image]:[],icon:'publication-'+item.type});setPicker(null);}}
               onDone={()=>setPicker(null)}/>:null}
             {draft&&!picker?<>
               {draft.kind==='image'||draft.kind==='gallery'?<>
