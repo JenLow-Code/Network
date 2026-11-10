@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Alert, Image, Linking, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Alert, Linking, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,6 +9,7 @@ import { appendDocumentVersion, isSafeDocumentUrl } from '@/domain/dreamDocument
 import type { DreamBlock, DreamDocument, DreamDocumentVersion } from '@/domain/dreamWorkspace';
 import { PageHeader } from '@/components/navigation/PageHeader';
 import { Nav } from '@/components/navigation/Nav';
+import SemenceInspirations from '@/components/dream/SemenceInspirations';
 
 const MAX_LOCAL_FILE = 1_000_000;
 const readableDate = (iso: string) => {
@@ -38,14 +39,6 @@ function openStoredDocument(version:DreamDocumentVersion) {
     inform('Fichier local','Ce fichier est enregistré dans ce navigateur. Ouvre la bibliothèque depuis la version web pour le consulter.');
   }
 }
-function inspirationIcon(kind:DreamBlock['kind']): keyof typeof Ionicons.glyphMap {
-  if(kind==='image'||kind==='gallery')return 'image-outline';
-  if(kind==='audio'||kind==='music')return 'musical-notes-outline';
-  if(kind==='video')return 'videocam-outline';
-  if(kind==='pdf'||kind==='document')return 'document-text-outline';
-  if(kind==='link'||kind==='bookmark')return 'link-outline';
-  return 'sparkles-outline';
-}
 export default function DreamLibrary(){
   const {id}=useLocalSearchParams<{id:string}>();
   const theme=useAppTheme();
@@ -56,6 +49,7 @@ export default function DreamLibrary(){
   const [linkName,setLinkName]=useState('');
   const [linkUrl,setLinkUrl]=useState('');
   const [search,setSearch]=useState('');
+  const [addRequestToken,setAddRequestToken]=useState(0);
   const docs=dream?.documents||[];
   const paused=!!dream?.paused&&!!dream.pauseUntil&&dream.pauseUntil>=new Date().toISOString().slice(0,10);
   const editable=!!dream&&dream.phase!=='Témoignage'&&!paused;
@@ -112,7 +106,7 @@ export default function DreamLibrary(){
   const archive=(dream?.blocks||[]).filter(block=>block.content||block.media?.length);
   const legacyDocs=archive.filter(block=>['document','pdf'].includes(block.kind));
   // Checklists belong to the private Notes tab, not the inspiration archive.
-  const inspirations=archive.filter(block=>!['document','pdf','todo'].includes(block.kind));
+  // The shared Inspirations editor is available in Germination and Croissance.
   return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
     <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{
       paddingHorizontal:18,paddingTop:10,paddingBottom:110,
@@ -258,45 +252,21 @@ export default function DreamLibrary(){
           </Text>
         </View>
         <View style={{gap:11,marginTop:22}}>
-          <Text style={{color:theme.foreground,fontSize:17,fontWeight:'700',marginBottom:4}}>Inspirations</Text>
-          <Text style={{fontSize:11,color:theme.muted,lineHeight:19,marginBottom:4}}>
-            Les inspirations de Semence sont conservées comme référence.
-            Elles se modifient uniquement dans la Semence lorsqu’elle est active.
-          </Text>
-          {inspirations.length===0?<View style={{paddingVertical:25,alignItems:'center',gap:9}}>
-            <Ionicons name="images-outline" size={29} color={theme.muted}/>
-            <Text style={{color:theme.muted,fontSize:12,textAlign:'center'}}>
-              Aucune inspiration conservée pour ce rêve.
-            </Text>
-          </View>:null}
-          {inspirations.map(block=>{
-            const media=block.media?.[0]||block.content;
-            const visual=['image','gallery'].includes(block.kind)&&/^(data:|https?:|file:)/.test(media);
-            const remote=/^https?:\/\//i.test(block.content);
-            return <Pressable key={block.id}
-              disabled={!remote}
-              onPress={()=>{if(remote)void Linking.openURL(block.content).catch(()=>{});}}
-              style={{padding:13,borderWidth:1,borderColor:theme.border,
-                borderRadius:11,flexDirection:'row',gap:12,alignItems:'center'}}>
-              {visual?<Image source={{uri:media}} resizeMode="cover"
-                style={{width:64,height:64,borderRadius:8}}/>:
-                <View style={{width:46,height:48,alignItems:'center',justifyContent:'center',
-                  backgroundColor:theme.surface,borderRadius:9}}>
-                  <Ionicons name={inspirationIcon(block.kind)} color="#B88962" size={22}/>
-                </View>}
-              <View style={{flex:1,gap:5}}>
-                <Text numberOfLines={2} style={{fontSize:14,
-                  fontWeight:'600',color:theme.foreground}}>
-                  {block.title||block.content.slice(0,100)||'Inspiration'}
-                </Text>
-                {!!block.title&&!!block.content?<Text numberOfLines={2}
-                  style={{fontSize:12,color:theme.muted,lineHeight:18}}>
-                  {block.content.startsWith('data:')?'Média conservé':block.content}
-                </Text>:null}
-              </View>
-              {remote?<Ionicons name="open-outline" size={18} color={theme.muted}/>:null}
-            </Pressable>;
-          })}
+          <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}>
+            <Text style={{color:theme.foreground,fontSize:17,fontWeight:'700'}}>Inspirations</Text>
+            {editable?<Pressable accessibilityRole="button"
+              accessibilityLabel="Ajouter une inspiration"
+              onPress={()=>setAddRequestToken(v=>v+1)}
+              style={{flexDirection:'row',alignItems:'center',gap:5,
+                minHeight:38,paddingHorizontal:9,borderRadius:9,
+                borderWidth:1,borderColor:theme.border}}>
+              <Ionicons name="add" size={16} color="#A5713D"/>
+              <Text style={{color:theme.foreground,fontSize:12}}>Ajouter</Text>
+            </Pressable>:null}
+          </View>
+          {!!dream?<SemenceInspirations dream={dream} editable={editable}
+            addRequestToken={addRequestToken}/>:null}
+          {!dream?<Text style={{fontSize:12,color:theme.muted}}>Rêve introuvable.</Text>:null}
         </View>
     </ScrollView>
     <Nav/>
