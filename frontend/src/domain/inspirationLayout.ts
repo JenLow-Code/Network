@@ -27,34 +27,44 @@ function estimateHeight(block:DreamBlock):number{
 function balancedColumns(blocks:DreamBlock[],measurements:Record<string,number>):{
  left:DreamBlock[];right:DreamBlock[];
 }{
- // Content is measured on the actual device rather than assumed to fit a row.
- // Discretized subset-sum balances the *total heights* of both columns, even
- // with text wrapping, different files and manually enlarged cards.
+ // Measure after layout on this device, then balance the remaining cards.
+ // Manual drag preferences are respected instead of being undone by balancing.
  const heights=blocks.map(b=>Math.max(1,Math.round(
    (measurements[b.id]??estimateHeight(b)+11)/12)));
+ const unfixed:number[]=[];
+ let fixedLeft=0;
+ const isLeft=new Array<boolean>(blocks.length).fill(false);
+ for(let i=0;i<blocks.length;i++){
+   if(blocks[i].masonryLane==='left'){
+     isLeft[i]=true;fixedLeft+=heights[i];
+   }else if(blocks[i].masonryLane!=='right')unfixed.push(i);
+ }
+ // Discretized subset-sum gives an even height split for unpinned cards,
+ // including very different text, portraits and manual tile sizes.
  const stages:Array<Map<number,{previous:number;left:boolean}>>=[];
  let reachable=new Map<number,{previous:number;left:boolean}>([[0,{previous:0,left:false}]]);
- for(const height of heights){
+ for(const i of unfixed){
    const next=new Map<number,{previous:number;left:boolean}>();
    for(const sum of reachable.keys()){
      if(!next.has(sum))next.set(sum,{previous:sum,left:false});
-     if(!next.has(sum+height))next.set(sum+height,{previous:sum,left:true});
+     if(!next.has(sum+heights[i]))next.set(sum+heights[i],
+       {previous:sum,left:true});
    }
    stages.push(next);reachable=next;
  }
  const total=heights.reduce((a,b)=>a+b,0);
  let best=0;
  for(const sum of reachable.keys()){
-   if(Math.abs(total-2*sum)<Math.abs(total-2*best))best=sum;
+   if(Math.abs(total-2*(fixedLeft+sum))<
+      Math.abs(total-2*(fixedLeft+best)))best=sum;
  }
- const isLeft=new Array<boolean>(blocks.length).fill(false);
- for(let i=blocks.length-1;i>=0;i--){
-   const decision=stages[i].get(best);
+ for(let j=unfixed.length-1;j>=0;j--){
+   const decision=stages[j].get(best);
    if(!decision)break;
-   isLeft[i]=decision.left;
+   isLeft[unfixed[j]]=decision.left;
    best=decision.previous;
  }
- // Preserve the author's canonical order within each vertical column.
+ // Keep the canonical order inside each lane (so drag/drop is predictable).
  return {
    left:blocks.filter((_,i)=>isLeft[i]),
    right:blocks.filter((_,i)=>!isLeft[i]),
