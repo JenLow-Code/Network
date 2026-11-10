@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Image, Modal, Platform, Pressable, ScrollView, Share, Text, View } from 'react-native';
+import { Image, Modal, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/theme/AppTheme';
 import type { DreamBlock, DreamEntry } from '@/domain/dreamWorkspace';
+import SemencePublishActions from './SemencePublishActions';
 
 const BROWN='#A5713D';
 const escapeHtml=(s:string)=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;')
@@ -26,7 +27,22 @@ const htmlFor=(dream:DreamEntry,blocks:DreamBlock[])=>{
    const src=imageSrc(b);
    if(isImage(b)&&src)return '<section>'+(b.title?heading:'')+
      '<img src="'+escapeHtml(src)+'" alt="'+escapeHtml(b.title||'Inspiration')+'"></section>';
-   const contents=description(b);
+   if(b.kind==='note'&&b.noteBlocks?.length){
+   const note=b.noteBlocks.map(part=>{
+     const body=escapeHtml(part.text||'').replace(/\n/g,'<br>');
+     const style=(part.bold?'font-weight:bold;':'')+(part.italic?'font-style:italic;':'');
+     if(part.type==='heading')return '<h3>'+body+'</h3>';
+     if(part.type==='checklist')return '<p>'+ (part.checked?'☑ ':'☐ ')+
+       '<span style="'+style+'">'+body+'</span></p>';
+     if(part.type==='toggle')return '<details open><summary>'+
+       escapeHtml(part.title||'Section')+'</summary><p>'+body+'</p></details>';
+     if(part.type==='bullet')return '<p>• <span style="'+style+'">'+body+'</span></p>';
+     if(part.type==='numbered')return '<p>— <span style="'+style+'">'+body+'</span></p>';
+     return '<p style="'+style+'">'+body+'</p>';
+   }).join('');
+   return '<section>'+heading+note+'</section>';
+ }
+ const contents=description(b);
    return '<section>'+heading+'<p'+(b.kind==='quote'?' class="quote"':'')+'>'+
      escapeHtml(contents).replace(/\n/g,'<br>')+'</p></section>';
  }).join('');
@@ -56,6 +72,20 @@ export default function SemenceShare({dream,initialIds,onClose}:{
  const setAll=(all:boolean)=>setSelected(all?blocks.map(b=>b.id):[]);
  const toggle=(id:string)=>setSelected(current=>current.includes(id)
    ?current.filter(x=>x!==id):[...current,id]);
+ const exportHtml=()=>{
+   if(!picked.length)return;
+   if(Platform.OS!=='web'||typeof document==='undefined'){
+     setNotice('L’export HTML est disponible depuis le site web JenLow.');
+     return;
+   }
+   const content=htmlFor(dream,picked);
+   const blob=new Blob([content],{type:'text/html;charset=utf-8'});
+   const url=URL.createObjectURL(blob);
+   const a=document.createElement('a');
+   a.href=url;a.download=(dream.title||'Semence').replace(/[^a-z0-9à-ÿ _-]/gi,'').slice(0,70)+'.html';
+   document.body.appendChild(a);a.click();a.remove();
+   setNotice('Page HTML exportée avec les inspirations sélectionnées.');
+ };
  const exportWord=()=>{
    if(!picked.length)return;
    if(Platform.OS!=='web'||typeof document==='undefined'){
@@ -86,26 +116,7 @@ export default function SemenceShare({dream,initialIds,onClose}:{
    child.focus();
    setNotice('Dans la nouvelle fenêtre : Imprimer → Enregistrer au format PDF.');
  };
- const shareExternal=()=>{
-   if(!picked.length)return;
-   const message=textFor(dream,picked);
-   if(Platform.OS==='web'&&typeof navigator!=='undefined'){
-     const web=navigator as Navigator&{share?:(data:{title?:string;text?:string})=>Promise<void>};
-     if(web.share){
-       void web.share({title:dream.title,text:message}).catch(()=>
-         setNotice('Partage annulé ou indisponible.'));
-     }else if(navigator.clipboard?.writeText){
-       void navigator.clipboard.writeText(message)
-         .then(()=>setNotice('Texte copié. Tu peux maintenant le transmettre.'))
-         .catch(()=>setNotice('La copie a échoué sur ce navigateur.'));
-     }else{
-       setNotice('Le partage direct n’est pas disponible ici. Utilise les exports PDF ou Word.');
-     }
-     return;
-   }
-   void Share.share({message,title:dream.title}).catch(()=>
-     setNotice('Impossible d’ouvrir le partage de cet appareil.'));
- };
+
  return <Modal visible transparent animationType="slide" onRequestClose={onClose}>
    <View style={{flex:1,justifyContent:'flex-end'}}>
      <Pressable accessibilityRole="button" accessibilityLabel="Fermer l’aperçu"
@@ -176,28 +187,11 @@ export default function SemenceShare({dream,initialIds,onClose}:{
            <Text style={{fontSize:14,fontWeight:'700',color:theme.foreground}}>
              Comment la partager ?
            </Text>
-           <View style={{gap:6}}>
-             <View style={{flexDirection:'row',alignItems:'center',gap:8}}>
-               <Ionicons name="globe-outline" color={theme.muted} size={17}/>
-               <Text style={{fontSize:13,color:theme.foreground}}>Publiquement sur JenLow</Text>
-             </View>
-             <Text style={{fontSize:11,lineHeight:17,color:theme.muted,marginLeft:25}}>
-               Publication publique à connecter au serveur JenLow. Aucun contenu n’est publié automatiquement.
-             </Text>
-           </View>
-           <View style={{gap:6}}>
-             <View style={{flexDirection:'row',alignItems:'center',gap:8}}>
-               <Ionicons name="people-outline" color={theme.muted} size={17}/>
-               <Text style={{fontSize:13,color:theme.foreground}}>Uniquement à des amis JenLow</Text>
-             </View>
-             <Text style={{fontSize:11,lineHeight:17,color:theme.muted,marginLeft:25}}>
-               La sélection privée de destinataires nécessitera un accès protégé. Elle n’est pas encore activée.
-             </Text>
-           </View>
+           <SemencePublishActions dream={dream} picked={picked}/>
            <Text style={{fontSize:13,fontWeight:'700',color:theme.foreground,
              marginTop:7}}>Partager à l’extérieur</Text>
            <Text style={{fontSize:11,color:theme.muted,lineHeight:18}}>
-             Le fichier ou message exporté peut ensuite être envoyé aux personnes de ton choix.
+             Le fichier exporté peut être envoyé aux personnes de ton choix.
              Une fois transmis, JenLow ne peut pas en contrôler l’accès.
            </Text>
            <View style={{flexDirection:'row',flexWrap:'wrap',gap:8}}>
@@ -214,10 +208,10 @@ export default function SemenceShare({dream,initialIds,onClose}:{
                <Text style={{fontSize:12,fontWeight:'700',color:BROWN}}>Word (.doc)</Text>
              </Pressable>
              <Pressable accessibilityRole="button" disabled={!picked.length}
-               onPress={shareExternal}
+               onPress={exportHtml}
                style={{paddingVertical:11,paddingHorizontal:14,borderRadius:10,
                  borderWidth:1,borderColor:BROWN,opacity:picked.length?1:.4}}>
-               <Text style={{fontSize:12,fontWeight:'700',color:BROWN}}>Message</Text>
+               <Text style={{fontSize:12,fontWeight:'700',color:BROWN}}>HTML</Text>
              </Pressable>
            </View>
            {!!notice?<Text accessibilityRole="alert"

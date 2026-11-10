@@ -12,13 +12,17 @@ export type DreamBlockKind =
   | 'image' | 'gallery' | 'audio' | 'music' | 'video'
   | 'document' | 'pdf' | 'bookmark' | 'link' | 'embed'
   | 'code' | 'equation' | 'table' | 'toc' | 'date'
-  | 'columns' | 'collection' | 'bible-verse' | 'publication-ref' | 'poem';
+  | 'columns' | 'collection' | 'bible-verse' | 'publication-ref' | 'poem' | 'note';
 export type DreamBlock = {
   id: string;
   kind: DreamBlockKind;
   content: string;
   title?: string;
   size: 'small' | 'wide' | 'featured';
+  /** Two-column masonry tile dimensions: 1×1 (default), 2×1, 1×2 or 2×2. */
+  tileSize?: '1x1' | '2x1' | '1x2' | '2x2';
+  /** Structured content for notes shared as inspirations, separate from private notebooks. */
+  noteBlocks?: DreamNoteBlock[];
   /** Canvas width (one or two columns); absent on legacy blocks. */
   span?: 1 | 2;
   /** User-adjusted block height in layout points; absent on legacy blocks. */
@@ -45,6 +49,8 @@ export type DreamNoteBlock = {
   color?: 'default' | 'pink' | 'blue' | 'green' | 'sand';
   checked?: boolean;
   collapsed?: boolean;
+  /** Checkbox appearance inside an inspiration note. */
+  checkShape?: 'square' | 'circle';
 };
 /** A private notebook belonging to a dream. Blocks never overlap across books. */
 /** Each notebook has a personal color; labels and progression lines share this color. */

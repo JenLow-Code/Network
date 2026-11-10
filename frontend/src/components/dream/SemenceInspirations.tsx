@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Alert, Image, Linking, Modal, Platform, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -12,6 +12,8 @@ import SemenceInspirationDetail from './SemenceInspirationDetail';
 import SemencePublicationCover from './SemencePublicationCover';
 import { documentKind, documentLabel } from './SemenceDocumentPreview';
 import { linkHost } from './SemenceLinkPreview';
+import { layoutInspirations, isTallTile, isWideTile } from '@/domain/inspirationLayout';
+import RichInspirationNote from './RichInspirationNote';
 import BiblePassagePicker from '@/components/bible/BiblePassagePicker';
 import { bibleReference } from '@/domain/bibleLibrary';
 import { publicationPath } from '@/components/publication/PublicationGallery';
@@ -27,6 +29,7 @@ const options:Option[]=[
   {kind:'image',label:'Photo',sub:'Une image qui t’inspire',icon:'image-outline'},
   {kind:'quote',label:'Citation',sub:'Une phrase, une parole',icon:'chatbubble-ellipses-outline'},
   {kind:'poem',label:'Poème / texte court',sub:'Un poème ou un texte original à lire ici',icon:'book-outline'},
+  {kind:'note',label:'Note',sub:'Une note avec listes, cases à cocher et sections',icon:'create-outline'},
   {kind:'bible-verse',label:'Verset biblique',sub:'Référence et passage',icon:'book-outline'},
   {kind:'publication-ref',label:'Publication',sub:'Retrouver une publication par ID',icon:'albums-outline'},
   {kind:'document',label:'Document',sub:'PDF, texte, fichier de référence',icon:'document-attach-outline'},
@@ -40,6 +43,7 @@ function typeLabel(kind:DreamBlockKind) {
 function typeIcon(kind:DreamBlockKind):keyof typeof Ionicons.glyphMap{
   if(kind==='pdf'||kind==='document')return 'document-text-outline';
   if(kind==='poem')return 'book-outline';
+  if(kind==='note')return 'create-outline';
   if(kind==='publication-ref')return 'albums-outline';
   if(kind==='bible-verse')return 'book-outline';
   if(kind==='video')return 'videocam-outline';
@@ -50,102 +54,104 @@ function typeIcon(kind:DreamBlockKind):keyof typeof Ionicons.glyphMap{
   return 'sparkles-outline';
 }
 /** A shared compact card rhythm: same height and typography across reference types. */
-function InspirationTile({block,onPress,onLongPress}:{
-  block:DreamBlock;onPress:()=>void;onLongPress:()=>void;
+export function InspirationTile({block,onPress,onLongPress}:{
+ block:DreamBlock;onPress:()=>void;onLongPress:()=>void;
 }) {
-  const theme=useAppTheme();
-  const image=hasImage(block);
-  const document=block.kind==='document'||block.kind==='pdf';
-  const publication=block.kind==='publication-ref';
-  const verse=block.kind==='bible-verse';
-  const link=['link','bookmark','embed'].includes(block.kind);
-  const quote=block.kind==='quote';
-  const poem=block.kind==='poem';
-  const wide=document||(block.size==='featured'&&image);
-  const surface=theme.dark?'#2A2B2D':'#F5F1ED';
-  const fullLabel=verse?block.title||'Verset biblique':
-    quote?block.title||'Citation':block.title||typeLabel(block.kind);
-  const label=(verse?block.title||'VERSET BIBLIQUE':
-    quote?block.title?.trim()||'CITATION':
-    poem?block.title?.trim()||'POÈME':typeLabel(block.kind)).toUpperCase();
-  return <Pressable accessibilityRole="button"
-    accessibilityLabel={'Ouvrir '+typeLabel(block.kind)+': '+fullLabel}
-    accessibilityHint="Appui long ou clic droit pour modifier, supprimer ou partager"
-    onPress={onPress} onLongPress={onLongPress} delayLongPress={460}
-    {...(Platform.OS==='web'?{onContextMenu:(event:any)=>{
-      event.preventDefault();onLongPress();
-    }} as any:{})}
-    style={{width:wide?'100%':'48.5%',marginBottom:12,
-      borderRadius:12,overflow:'hidden',backgroundColor:surface,
-      height:document?118:wide&&image?210:168}}>
-    {publication?
-      <SemencePublicationCover publicationId={block.content}
-        fallbackTitle={block.title} fallbackImage={block.media?.[0]}
-        fallbackType={block.icon?.replace(/^publication-/, '')}/>:
-    image?<>
+ const theme=useAppTheme();
+ const image=hasImage(block);
+ const document=block.kind==='document'||block.kind==='pdf';
+ const publication=block.kind==='publication-ref';
+ const verse=block.kind==='bible-verse';
+ const link=['link','bookmark','embed'].includes(block.kind);
+ const quote=block.kind==='quote';
+ const poem=block.kind==='poem';
+ const note=block.kind==='note';
+ const wide=isWideTile(block);
+ const tall=isTallTile(block);
+ const surface=theme.dark?'#2A2B2D':'#F5F1ED';
+ const fullLabel=verse?block.title||'Verset biblique':
+   quote?block.title||'Citation':block.title||typeLabel(block.kind);
+ const label=(verse?block.title||'VERSET BIBLIQUE':
+   quote?block.title?.trim()||'CITATION':
+   poem?block.title?.trim()||'POÈME':
+   note?block.title?.trim()||'NOTE':typeLabel(block.kind)).toUpperCase();
+ const noteSummary=(block.noteBlocks||[]).map(b=>b.type==='checklist'
+   ?(b.checked?'☑ ':'☐ ')+b.text:b.title?b.title+' '+b.text:b.text).join('\n');
+ const contentLimit=tall?15:wide?7:9;
+ const imageHeight=tall?(wide?305:294):wide?190:157;
+ return <Pressable accessibilityRole="button"
+   accessibilityLabel={'Ouvrir '+typeLabel(block.kind)+': '+fullLabel}
+   accessibilityHint="Appui long ou clic droit pour modifier, supprimer ou partager"
+   onPress={onPress} onLongPress={onLongPress} delayLongPress={460}
+   {...(Platform.OS==='web'?{onContextMenu:(event:any)=>{
+     event.preventDefault();onLongPress();
+   }} as any:{})}
+   style={{width:'100%',borderRadius:12,overflow:'hidden',
+     backgroundColor:surface,minHeight:tall?300:110}}>
+   {publication?<SemencePublicationCover publicationId={block.content}
+     fallbackTitle={block.title} fallbackImage={block.media?.[0]}
+     fallbackType={block.icon?.replace(/^publication-/,'')}
+     tileHeight={tall?wide?315:305:wide?190:165}/>:
+    image?<View>
       <Image source={{uri:block.media?.[0]||block.content}}
-        style={{width:'100%',height:wide?183:block.title?139:168}}
-        resizeMode="cover"/>
-      {!!block.title?<Text numberOfLines={1}
-        style={{paddingHorizontal:10,paddingVertical:7,fontSize:11,
-          fontWeight:'600',color:theme.foreground}}>{block.title}</Text>:null}
-    </>:
-    document?<View style={{paddingHorizontal:14,paddingVertical:13,
-      flexDirection:'row',alignItems:'center',gap:13,height:118}}>
-      <View style={{width:52,height:67,borderRadius:9,
-        backgroundColor:theme.dark?'#38383A':'#EDE3D9',
+        style={{width:'100%',height:imageHeight}} resizeMode="cover"/>
+      {!!block.title?<Text numberOfLines={2} style={{paddingHorizontal:11,
+        paddingVertical:9,fontSize:12,fontWeight:'600',
+        color:theme.foreground}}>{block.title}</Text>:null}
+    </View>:document?<View style={{
+      paddingHorizontal:wide?15:12,paddingVertical:14,
+      flexDirection:wide?'row':'column',alignItems:wide?'center':'flex-start',
+      gap:11,minHeight:tall?300:wide?126:165}}>
+      <View style={{width:wide?54:49,height:wide?64:59,
+        borderRadius:9,backgroundColor:theme.dark?'#38383A':'#EDE3D9',
         justifyContent:'center',alignItems:'center',gap:3}}>
-        <Ionicons name="document-text-outline" size={24} color="#A5713D"/>
+        <Ionicons name="document-text-outline" size={23} color="#A5713D"/>
         <Text style={{fontSize:9,color:'#A5713D',fontWeight:'700'}}>
           {documentKind(block).toUpperCase()}
         </Text>
       </View>
-      <View style={{flex:1,gap:5,justifyContent:'center'}}>
-        <Text style={{fontSize:10,letterSpacing:.7,fontWeight:'700',
+      <View style={{flex:wide?1:undefined,alignSelf:'stretch',gap:6}}>
+        <Text style={{fontSize:9,letterSpacing:.7,fontWeight:'700',
           color:theme.muted}}>DOCUMENT</Text>
-        <Text numberOfLines={2} style={{fontSize:14,lineHeight:20,
-          color:theme.foreground,fontWeight:'600'}}>
+        <Text numberOfLines={tall?8:wide?3:5}
+          style={{fontSize:wide?14:12,lineHeight:wide?20:18,
+            fontWeight:'600',color:theme.foreground}}>
           {documentLabel(block)}
         </Text>
-        <Text style={{fontSize:11,color:theme.muted}}>Voir l’aperçu</Text>
       </View>
-      <Ionicons name="chevron-forward" size={17} color={theme.muted}/>
     </View>:
-    <View style={{paddingHorizontal:12,paddingTop:13,paddingBottom:12,
-      gap:10,height:168,justifyContent:'flex-start'}}>
+    <View style={{padding:12,gap:8,minHeight:tall?300:120}}>
       <View style={{flexDirection:'row',alignItems:'center',gap:6}}>
         <Ionicons name={typeIcon(block.kind)} size={14} color="#A5713D"/>
-        <Text numberOfLines={1} style={{fontSize:9,letterSpacing:.55,
-          fontWeight:'700',color:verse?theme.foreground:theme.muted,
-          flex:1}}>{label}</Text>
-      </View>
-      {link?<View style={{gap:7}}>
-        {!!block.title?<Text numberOfLines={2} style={{fontSize:13,
-          lineHeight:18,fontWeight:'600',color:theme.foreground}}>
-          {block.title}
-        </Text>:null}
-        <Text numberOfLines={2} ellipsizeMode="middle"
-          style={{fontSize:11,lineHeight:17,color:'#A5713D',
-            textDecorationLine:'underline'}}>
-          {block.content}
+        <Text numberOfLines={1} style={{
+          fontSize:9,letterSpacing:.45,fontWeight:'600',
+          color:verse?'#A5713D':theme.muted,flex:1}}>
+          {label}
         </Text>
+      </View>
+      {link?<View style={{gap:6}}>
+        {!!block.title?<Text numberOfLines={2}
+          style={{fontSize:13,lineHeight:18,fontWeight:'600',
+            color:theme.foreground}}>{block.title}</Text>:null}
+        <Text numberOfLines={wide?3:2} ellipsizeMode="middle"
+          style={{fontSize:11,lineHeight:17,color:'#A5713D',
+            textDecorationLine:'underline'}}>{block.content}</Text>
       </View>:
-      <Text numberOfLines={quote?4:poem?5:verse?5:4}
-        ellipsizeMode="tail" style={{
-          fontFamily:quote||verse||poem?'serif':undefined,
+      <Text numberOfLines={contentLimit}
+        style={{fontFamily:quote||poem||verse?'serif':undefined,
           fontSize:quote?15:poem?13:verse?13:13,
-          lineHeight:quote?22:19,
-          fontStyle:quote?'italic':'normal',
+          lineHeight:quote?22:19,fontStyle:quote?'italic':'normal',
           color:verse?'#C02772':theme.foreground}}>
-        {quote?'“'+block.content+'”':block.content}
+        {quote?'“'+block.content+'”':note?noteSummary:block.content}
       </Text>}
     </View>}
-  </Pressable>;
+ </Pressable>;
 }
 
 /** Inspiration references, not a second note editor. */
-export default function SemenceInspirations({dream,editable,onShareInspiration}:{
+export default function SemenceInspirations({dream,editable,onShareInspiration,addRequestToken=0}:{
   dream:DreamEntry;editable:boolean;onShareInspiration?:(id:string)=>void;
+  addRequestToken?:number;
 }) {
   const theme=useAppTheme();
   const {width}=useWindowDimensions();
@@ -158,10 +164,12 @@ export default function SemenceInspirations({dream,editable,onShareInspiration}:
   const [message,setMessage]=useState('');
   const [picker,setPicker]=useState<'bible'|'publication'|null>(null);
   const canShow=choosing||!!draft;
+  useEffect(()=>{if(addRequestToken>0&&editable){setChoosing(true);setMessage('');}},[addRequestToken]);
   const patchBlock=(updates:Partial<DreamBlock>)=>
     setDraft(current=>current?{...current,...updates}:current);
   const make=(kind:DreamBlockKind)=>{
     const base:DreamBlock={id:freshId(),kind,title:'',content:'',size:'small',
+      tileSize:'1x1',noteBlocks:kind==='note'?[]:undefined,
       tone:'clear',font:'sans',align:'left',frame:'none'};
     setDraft(base);setChoosing(false);setMessage('');
     setPicker(kind==='bible-verse'?'bible':kind==='publication-ref'?'publication':null);
@@ -173,6 +181,7 @@ export default function SemenceInspirations({dream,editable,onShareInspiration}:
     const title=draft.title?.trim()||'';
     const content=draft.content.trim();
     if(draft.kind==='quote'&&!content)return showError('Écris la citation à conserver.');
+    if(draft.kind==='note'&&!draft.noteBlocks?.length)return showError('Ajoute au moins un bloc dans cette note.');
     if(draft.kind==='poem'&&!content)return showError('Écris ton poème ou ton texte.');
     if(draft.kind==='poem'&&content.length>2000)return showError('Pour un texte plus long, ajoute-le comme document.');
     if(draft.kind==='bible-verse'&&!title)return showError('Ajoute la référence du verset (par ex. Jean 3:16).');
@@ -262,14 +271,28 @@ export default function SemenceInspirations({dream,editable,onShareInspiration}:
         style={{width:36,height:36,alignItems:'center',justifyContent:'center',
           borderRadius:18,backgroundColor:theme.surface,
           borderWidth:1,borderColor:theme.border}}>
-        <Ionicons name="add" size={21} color={theme.foreground}/>
+        <Ionicons name="add" size={25} color="#A5713D"/>
       </Pressable>:null}
     </View>
-    {blocks.length?<View style={{flexDirection:'row',flexWrap:'wrap',
-      justifyContent:'space-between',alignItems:'flex-start'}}>
-      {blocks.map(b=><InspirationTile key={b.id} block={b}
-        onPress={()=>{setSelectedBlock({...b});setSelectedMenu(false);setMessage('');}}
-        onLongPress={()=>{setSelectedBlock({...b});setSelectedMenu(true);setMessage('');}}/>)}
+    {blocks.length?<View style={{gap:11}}>
+      {layoutInspirations(blocks).map((group,index)=>
+        group.type==='wide'?<InspirationTile key={'w-'+group.block.id}
+          block={group.block}
+          onPress={()=>{setSelectedBlock({...group.block});setSelectedMenu(false);setMessage('');}}
+          onLongPress={()=>{setSelectedBlock({...group.block});setSelectedMenu(true);setMessage('');}}/>:
+        <View key={'group-'+index} style={{flexDirection:'row',
+          alignItems:'flex-start',gap:11}}>
+          <View style={{flex:1,gap:11}}>
+            {group.left.map(b=><InspirationTile key={b.id} block={b}
+              onPress={()=>{setSelectedBlock({...b});setSelectedMenu(false);setMessage('');}}
+              onLongPress={()=>{setSelectedBlock({...b});setSelectedMenu(true);setMessage('');}}/>)}
+          </View>
+          <View style={{flex:1,gap:11}}>
+            {group.right.map(b=><InspirationTile key={b.id} block={b}
+              onPress={()=>{setSelectedBlock({...b});setSelectedMenu(false);setMessage('');}}
+              onLongPress={()=>{setSelectedBlock({...b});setSelectedMenu(true);setMessage('');}}/>)}
+          </View>
+        </View>)}
     </View>:<View style={{minHeight:142,alignItems:'center',justifyContent:'center',
       gap:12,paddingHorizontal:20}}>
       <Ionicons name="images-outline" size={26} color={theme.muted}/>
@@ -299,6 +322,12 @@ export default function SemenceInspirations({dream,editable,onShareInspiration}:
       }}
       onShare={()=>{const id=selectedBlock.id;setSelectedBlock(null);
         onShareInspiration?.(id);}}
+      onResize={size=>{
+        const updated={...selectedBlock,tileSize:size};
+        patch(dream.id,{blocks:(dream.blocks||[]).map(b=>
+          b.id===selectedBlock.id?updated:b)});
+        setSelectedBlock(null);
+      }}
     />:null}
     <Modal visible={canShow} transparent animationType="slide" onRequestClose={close}>
       <View style={{flex:1,justifyContent:'flex-end'}}>
@@ -373,6 +402,12 @@ export default function SemenceInspirations({dream,editable,onShareInspiration}:
                   'Écris la citation…',true)}
                 {input(draft.title||'',title=>patchBlock({title}),
                   'Auteur ou source (facultatif)')}
+              </>:null}
+              {draft.kind==='note'?<>
+                {input(draft.title||'',title=>patchBlock({title}),'Titre de la note (facultatif)')}
+                <RichInspirationNote blocks={draft.noteBlocks||[]} editable={editable}
+                  onChange={noteBlocks=>patchBlock({noteBlocks,
+                    content:noteBlocks.map(b=>b.title?b.title+' '+b.text:b.text).join('\n')})}/>
               </>:null}
               {draft.kind==='poem'?<>
                 {input(draft.title||'',title=>patchBlock({title}),'Titre (facultatif)')}
@@ -455,7 +490,7 @@ export default function SemenceInspirations({dream,editable,onShareInspiration}:
                 {input(draft.content.startsWith('data:')?'':draft.content,
                   content=>patchBlock({content,media:[]}), 'Ou coller un lien vers le média')}
               </>:null}
-              {!['image','gallery','quote','poem','bible-verse','publication-ref','document','pdf','link','bookmark','embed','video','audio','music'].includes(draft.kind)?<>
+              {!['image','gallery','quote','poem','note','bible-verse','publication-ref','document','pdf','link','bookmark','embed','video','audio','music'].includes(draft.kind)?<>
                 <Text style={{fontSize:11,color:theme.muted}}>
                   Ancien bloc conservé pour ne pas perdre tes idées.
                 </Text>

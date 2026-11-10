@@ -8,6 +8,7 @@ import { Nav } from '@/components/navigation/Nav';
 import { TopActions } from '@/components/navigation/TopActions';
 import { people } from '@/mocks/people';
 import { ProfilePublicationFeed } from '@/components/publication/PublicationGallery';
+import SemenceSharesFeed from '@/components/dream/SemenceSharesFeed';
 import { TalentArt } from '@/components/talent/TalentArt';
 import { ProfileTalentTile } from '@/components/talent/ProfileTalentTile';
 import { TalentLevelDots } from '@/components/talent/TalentLevelDots';
@@ -116,6 +117,7 @@ export default function PublicMemberProfile() {
             ))}
           </View>
         ) : <Text style={{ color: theme.muted }}>Aucun talent publié pour le moment.</Text>}
+        {!mock&&name?<SemenceSharesFeed handle={name}/>:null}
         <Text style={{ fontSize: 18, fontWeight: '700', color: theme.foreground, marginTop: 8 }}>Publications</Text>
         {person.posts.length
           ? <ProfilePublicationFeed items={person.posts} contentWidth={width} featuredId={featuredId} onFeature={isOwner ? selectFeatured : undefined} />

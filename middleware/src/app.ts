@@ -11,6 +11,7 @@ import { registerProfiles } from './modules/profiles';
 import { registerDreams } from './modules/dreams';
 import { registerNeedInvitations } from './modules/needInvitations';
 import { registerPublications } from './modules/publications';
+import { registerSemenceShares } from './modules/semenceShares';
 import { registerTalents } from './modules/talents';
 import { registerMusic } from './modules/music';
 import { registerBible } from './modules/bible';
@@ -50,6 +51,7 @@ export function buildRouter(): Router {
   registerDreams(r);
   registerNeedInvitations(r);
   registerPublications(r);
+  registerSemenceShares(r);
   registerTalents(r);
   registerMusic(r);
   registerBible(r);

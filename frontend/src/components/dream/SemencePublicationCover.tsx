@@ -19,10 +19,10 @@ function TalentCounts({handle}: {handle:string}) {
 
 /** A grounded preview sourced from the same publication data as Discovery. */
 export default function SemencePublicationCover({
- publicationId,fallbackTitle,fallbackImage,fallbackType,large=false,
+ publicationId,fallbackTitle,fallbackImage,fallbackType,large=false,tileHeight,
 }:{
  publicationId:string;fallbackTitle?:string;fallbackImage?:string;
- fallbackType?:string;large?:boolean;
+ fallbackType?:string;large?:boolean;tileHeight?:number;
 }){
  const theme=useAppTheme();
  const gradientId='semencePublicationFade'+React.useId().replace(/[^A-Za-z0-9]/g,'');
@@ -41,7 +41,7 @@ export default function SemencePublicationCover({
  const profileName=talent?(item?.author||fallbackTitle||''):'';
  const initials=profileName.split(/\s+/).slice(0,2)
    .map(part=>part[0]||'').join('').toUpperCase();
- const height=large?268:168;
+ const height=tileHeight??(large?268:168);
  return <View style={{height,width:'100%',overflow:'hidden',
    backgroundColor:hasArt?theme.dark?'#343336':'#696460':
       theme.dark?'#2A2B2D':'#F5F1ED',
