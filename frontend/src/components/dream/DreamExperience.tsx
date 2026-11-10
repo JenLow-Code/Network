@@ -119,6 +119,7 @@ export default function DreamExperience({
  };
  const editBlock=(block:DreamBlock)=>{setEditingBlock(block.id);setBlockText(block.content);setBlockTitle(block.title||'');setBlockTone(block.tone);setBlockSize(block.size);setBlockKind(block.kind);setPicker(true);};
  const addResource=()=>{
+   if(!resourceEditable)return;
    if(!resourceTitle.trim())return;
    const catalogTalent=resourceCategory==='person'
      ? DREAM_TALENT_CHOICES.find(x=>x.title===resourceTitle) : undefined;
@@ -146,6 +147,7 @@ export default function DreamExperience({
    setToolsPublicationRequested(false);setTalentChoicesOpen(false);setResourceDialog(false);
  };
  const checkResource = (resource: DreamResource) => {
+   if(!canEditCategory(resource.category))return;
    // A person's participation is never locally toggled: only server-confirmed consent.
    if(resource.category === 'person')return;
    setResources(dream.id, resources.map(r =>
@@ -160,8 +162,8 @@ export default function DreamExperience({
  const resourceEditable=phase==='Initiation' && !frozen && (!historical || recoverPastNeeds);
  const canEditCategory=(category:DreamResource['category'])=>
    resourceEditable && (!recoverPastNeeds || recoveryCategory==='all' || recoveryCategory===category);
- const lostResources = dream.phase==='Croissance'?lostFoundNeeds(dream):[];
- const missingResources = dream.phase==='Croissance'
+ const lostResources = phase==='Croissance'?lostFoundNeeds(dream):[];
+ const missingResources = phase==='Croissance'
    ? resources.filter(resource=>!isNeedFound(resource)) : [];
  const newGrowthNeeds = missingResources.filter(need=>need.addedDuringPhase==='Croissance');
  const existingMissing = missingResources.filter(need=>need.addedDuringPhase!=='Croissance');
@@ -198,6 +200,7 @@ export default function DreamExperience({
    }
  };
  const openHabitEditor=(habit?:DreamHabit)=>{
+   if(!growthActive)return;
    setEditingHabitId(habit?.id||null);
    setHabitTitle(habit?.title||'');
    setHabitDescription(habit?.description||'');
@@ -209,6 +212,7 @@ export default function DreamExperience({
    setGrowthDialog('habit');
  };
  const saveHabit=()=>{
+   if(!growthActive)return;
    if(!habitTitle.trim())return;
    const target=Number(habitTarget.replace(',','.'));
    if(!Number.isFinite(target)||target<=0||target>100000){
@@ -889,8 +893,11 @@ export default function DreamExperience({
            <Ionicons name="leaf-outline" size={19} color="#27845B"/>
            <Text style={{fontSize:12,fontWeight:'700',letterSpacing:.4,
              color:'#27845B'}}>
-             {new Date().toLocaleDateString('fr-FR',
-               {day:'numeric',month:'long',year:'numeric'})}
+             {new Date((editingLogId
+               ?(dream.milestones||[]).find(log=>log.id===editingLogId)?.date
+               :undefined)||habitDayKey(new Date())+'T12:00:00')
+                 .toLocaleDateString('fr-FR',
+                   {day:'numeric',month:'long',year:'numeric'})}
            </Text>
          </View>
          <TextInput value={milestone} onChangeText={setMilestone}
