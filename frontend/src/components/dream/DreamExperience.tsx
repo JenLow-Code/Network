@@ -519,12 +519,13 @@ export default function DreamExperience({
                 ?`${newGrowthNeeds.length} nouveau${newGrowthNeeds.length>1?'x':''} besoin${newGrowthNeeds.length>1?'s':''}`
                 :'Ressources'}
             </Text>
-            <Ionicons name="chevron-forward" color={theme.muted} size={13}/>
+            <Ionicons name={recapExpanded?'chevron-down':'chevron-forward'} color={theme.muted} size={13}/>
           </Pressable>
       </View>
     </View>
     {recapExpanded?(
-      <View style={{borderRadius:12,borderWidth:1,borderColor:theme.dark?'#6A584C':'#B5A18E',
+      <View style={{borderRadius:16,borderWidth:1,borderColor:allResourcesFound
+          ?(theme.dark?'#8D796C':'#B5A18E'):'#D71D77',
         backgroundColor:allResourcesFound?'transparent':(theme.dark?'#432D38':'#FCECF4'),
         overflow:'hidden',marginTop:6,marginBottom:7}}>
         <View style={{paddingHorizontal:15,paddingBottom:14,gap:11,
@@ -567,24 +568,26 @@ export default function DreamExperience({
               </View>
             </Pressable>;
           })}
-          {growthActive?<Pressable accessibilityRole="button"
+          <Pressable accessibilityRole="button"
+            disabled={!growthActive}
             accessibilityLabel="Gérer les besoins du rêve"
             onPress={()=>onRecoverResource?.('all')}
             style={{alignSelf:'flex-end',paddingVertical:5,paddingHorizontal:2,
               flexDirection:'row',alignItems:'center',gap:5}}>
-            <Text style={{fontSize:11,fontWeight:'700',color:theme.foreground}}>Gérer</Text>
-            <Ionicons name="arrow-forward" size={14} color={theme.foreground}/>
-          </Pressable>:null}
-          {growthActive?<Pressable accessibilityRole="button"
+            <Text style={{fontSize:11,fontWeight:'700',color:growthActive?theme.foreground:theme.muted}}>Gérer</Text>
+            <Ionicons name="arrow-forward" size={14} color={growthActive?theme.foreground:theme.muted}/>
+          </Pressable>
+          <Pressable accessibilityRole="button"
+            disabled={!growthActive}
             accessibilityLabel="Ajouter un nouveau talent, une ressource ou un financement en Croissance"
             onPress={()=>onRecoverResource?.('all')}
             style={{alignSelf:'flex-end',flexDirection:'row',alignItems:'center',
               gap:5,paddingVertical:5}}>
-            <Ionicons name="add" size={15} color="#27845B"/>
-            <Text style={{fontSize:11,fontWeight:'700',color:'#27845B'}}>
+            <Ionicons name="add" size={15} color={growthActive?'#27845B':theme.muted}/>
+            <Text style={{fontSize:11,fontWeight:'700',color:growthActive?'#27845B':theme.muted}}>
               Ajouter un besoin
             </Text>
-          </Pressable>:null}
+          </Pressable>
                   </View>
       </View>
     ):null}
