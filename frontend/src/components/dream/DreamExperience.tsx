@@ -97,6 +97,7 @@ export default function DreamExperience({
  const [editingHabitId,setEditingHabitId]=useState<string|null>(null);
  const [frequency, setFrequency] = useState<DreamHabit['frequency']>('daily');
  const [milestone, setMilestone] = useState('');
+ const [shareLogAsPost,setShareLogAsPost]=useState(false);
  const [editingLogId,setEditingLogId]=useState<string|null>(null);
 
  const blocks = dream.blocks || [];
@@ -171,12 +172,18 @@ export default function DreamExperience({
    person:'Talents',practical:'Ressources',financial:'Financement',
  };
 
- const publishLog=async(log:DreamMilestone)=>{
-   if(!log.shareRequested || !dream.serverDreamId)return;
+ /** An opt-in publication stays reversible within the note's edit window.
+  * Owner-only visibility is used when a previously public post is unchecked.
+  */
+ const syncLog=async(log:DreamMilestone)=>{
+   if(!dream.serverDreamId)return;
+   if(!log.shareRequested && !log.serverEntryId)return;
    try{
      if(log.serverEntryId){
        await api('/api/entries/'+encodeURIComponent(log.serverEntryId),
-         {method:'PATCH',auth:'required',body:{body:log.title}});
+         {method:'PATCH',auth:'required',body:{
+           body:log.title,visibility:log.shareRequested?'public':'owners',
+         }});
        setGrowthLogPublication(dream.id,log.id,'published',log.serverEntryId);
        return;
      }
@@ -246,21 +253,23 @@ export default function DreamExperience({
    }
    if(existing){
      const updated:DreamMilestone={
-       ...existing,title:content,shareRequested:true,
-       publicationState:dream.serverDreamId?'pending':existing.publicationState,
+       ...existing,title:content,shareRequested:shareLogAsPost,
+       publicationState:shareLogAsPost||existing.serverEntryId?'pending':undefined,
      };
      patch(dream.id,{milestones:logs.map(log=>
        log.id===existing.id?updated:log)});
-     void publishLog(updated);
+     void syncLog(updated);
    }else{
      const log:DreamMilestone={
        id:uid(),title:content,date:today,createdAt:now.toISOString(),
-       shareRequested:true,publicationState:'pending',
+       shareRequested:shareLogAsPost,
+       publicationState:shareLogAsPost?'pending':undefined,
      };
      addGrowthLog(dream.id,log);
-     void publishLog(log);
+     void syncLog(log);
    }
    setMilestone('');
+   setShareLogAsPost(false);
    setEditingLogId(null);
    setGrowthDialog(null);
  };
@@ -580,15 +589,17 @@ export default function DreamExperience({
         }
         setEditingLogId(current?.id||null);
         setMilestone(current?.title||'');
+        setShareLogAsPost(!!current?.shareRequested);
         setGrowthDialog('log');
       }}
       onEditLog={log=>{
         if(!growthActive||!canEditGrowthLog(log))return;
         setEditingLogId(log.id);
         setMilestone(log.title);
+        setShareLogAsPost(!!log.shareRequested);
         setGrowthDialog('log');
       }}
-      onRetry={log=>void publishLog({...log,shareRequested:true})}
+      onRetry={log=>{if(growthActive&&log.shareRequested)void syncLog(log);}}
       onManageHabits={()=>setGrowthDialog('habits')}
       onAddHabit={()=>{if(growthActive)openHabitEditor();}}
       onEditHabit={habit=>{if(growthActive)openHabitEditor(habit);}}
