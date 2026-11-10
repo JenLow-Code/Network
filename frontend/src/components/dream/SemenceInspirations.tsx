@@ -328,9 +328,18 @@ export default function SemenceInspirations({dream,editable,onShareInspiration,a
     // Dropping into empty space far from all cards should be a no-op.
     if(!nearest||nearest.distance>10000)return;
     const after=y>nearest.box.y+nearest.box.height*0.5;
+    const destinationGroup=visibleGroups.find(group=>
+      group.type==='wide'?group.block.id===nearest.id:
+        [...group.left,...group.right].some(b=>b.id===nearest.id));
+    const lane=destinationGroup?.type==='columns'?
+      (destinationGroup.left.some(b=>b.id===nearest.id)?'left':'right'):undefined;
     const original=dream.blocks||[];
     const reordered=reorderInspiration(original,id,nearest.id,after);
-    if(reordered!==original)patch(dream.id,{blocks:reordered});
+    const positioned=reordered.map(b=>b.id===id?
+      {...b,masonryLane:lane}:b);
+    const changed=reordered!==original||original.some(b=>
+      b.id===id&&b.masonryLane!==lane);
+    if(changed)patch(dream.id,{blocks:positioned});
   };
   const onStep=(id:string,direction:-1|1)=>{
     const index=blocks.findIndex(b=>b.id===id);
