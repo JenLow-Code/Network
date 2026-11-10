@@ -117,8 +117,8 @@ export default function PublicMemberProfile() {
             ))}
           </View>
         ) : <Text style={{ color: theme.muted }}>Aucun talent publié pour le moment.</Text>}
-        {!mock&&name?<SemenceSharesFeed handle={name}/>:null}
         <Text style={{ fontSize: 18, fontWeight: '700', color: theme.foreground, marginTop: 8 }}>Publications</Text>
+        {!mock&&name?<SemenceSharesFeed handle={name}/>:null}
         {person.posts.length
           ? <ProfilePublicationFeed items={person.posts} contentWidth={width} featuredId={featuredId} onFeature={isOwner ? selectFeatured : undefined} />
           : <Text style={{ color: theme.muted }}>Aucune publication pour le moment.</Text>}
