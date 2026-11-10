@@ -123,7 +123,7 @@ export function DreamProvider({ children }: { children: React.ReactNode }) {
   },[personalKey,personalHabits,personalHydrated]);
   const setPersonalHabits:Repo['setPersonalHabits']=habits=>setPersonalHabitsState(habits);
   const detachHabit:Repo['detachHabit']=(dreamId,habitId)=>{
-    const source=items.find(d=>d.id===dreamId&&d.phase==='Croissance');
+    const source=items.find(d=>d.id===dreamId&&d.phase==='Croissance'&&!d.flowerStartedAt);
     const habit=source?.habits?.find(h=>h.id===habitId);
     if(!habit)return;
     // Persist as a standalone personal habit before dropping its dream association.
@@ -235,7 +235,7 @@ export function DreamProvider({ children }: { children: React.ReactNode }) {
         'habits','milestones','resources','growthEvents','foundNeedHistory',
         'growthStartedAt','goalDate','paused','pauseUntil','pauseCount',
       ]);
-      const allowed = d.phase==='Témoignage'
+      const allowed = d.phase==='Témoignage' || !!d.flowerStartedAt
         ?Object.fromEntries(Object.entries(changes).filter(
           ([key])=>!lockedGrowthFields.has(key as keyof DreamEntry),
         )) as Partial<DreamEntry>
@@ -244,7 +244,7 @@ export function DreamProvider({ children }: { children: React.ReactNode }) {
     }));
   const appendBlock: Repo['appendBlock'] = (id, block) => setItems(p => p.map(d => d.id === id && d.phase === 'Rêve' ? { ...d, blocks: [...(d.blocks || []), block] } : d));
   const setResources: Repo['setResources'] = (id, resources) => setItems(p => p.map(d => {
-    if(d.id !== id || (d.phase !== 'Initiation' && d.phase !== 'Croissance')) return d;
+    if(d.id !== id || (d.phase !== 'Initiation' && d.phase !== 'Croissance') || !!d.flowerStartedAt) return d;
     const changes = d.phase==='Croissance'
       ? growthResourceEvents(d.resources || [], resources) : [];
     const nextEvents = changes.map((change,i)=>({
@@ -259,9 +259,9 @@ export function DreamProvider({ children }: { children: React.ReactNode }) {
         : d.foundNeedHistory,
     };
   }));
-  const setHabits: Repo['setHabits'] = (id, habits) => setItems(p => p.map(d => d.id === id && d.phase === 'Croissance' ? { ...d, habits } : d));
+  const setHabits: Repo['setHabits'] = (id, habits) => setItems(p => p.map(d => d.id === id && d.phase === 'Croissance' && !d.flowerStartedAt ? { ...d, habits } : d));
   const addGrowthLog: Repo['addGrowthLog'] = (dreamId, log) => setItems(previous =>
-    previous.map(d => d.id === dreamId && d.phase === 'Croissance'
+    previous.map(d => d.id === dreamId && d.phase === 'Croissance' && !d.flowerStartedAt
       ? { ...d, milestones: [...(d.milestones || []), log] } : d));
   const setGrowthLogPublication: Repo['setGrowthLogPublication'] = (dreamId, logId, state, serverEntryId, shareRequestedOverride) =>
     setItems(previous => previous.map(d => d.id === dreamId ? {
