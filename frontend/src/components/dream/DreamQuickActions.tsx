@@ -32,7 +32,7 @@ export default function DreamQuickActions({dream,onClose}:{
   {label:'Voir les détails du rêve',icon:'open-outline',go:run(()=>open('view'))},
   {label:dream.phase==='Rêve'?'Voir les inspirations':'Voir les documents',
     icon:'folder-open-outline',go:run(()=>open(dream.phase==='Rêve'?'inspirations':'docs'))},
-  {label:'Notes personnelles',
+  {label:'Notes',
     icon:'lock-closed-outline',go:run(()=>open('notes'))},
   {label:'Conversation du rêve',icon:'chatbubbles-outline',go:run(()=>open('chat')),visible:active},
   {label:'Co-propriétaires',icon:'people-outline',go:run(()=>open('coowners'))},

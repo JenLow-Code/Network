@@ -15,6 +15,31 @@ export const defaultNotebookColor = (index:number):DreamNotebookColor =>
 
 
 export const FIRST_NOTEBOOK_ID = 'notebook-main';
+export const SHARED_NOTEBOOK_ID = 'notebook-shared';
+
+/**
+ * A dream is shared when an accepted co-owner or real accepted person
+ * resource is present. Simple followers, prayers, "Moi aussi" and unverified
+ * resource checks do not create a shared workspace.
+ */
+export function dreamIsShared(dream: DreamEntry): boolean {
+  return dream.viewerRole === 'co_owner' || (dream.coOwners ?? []).some(person => person.accepted && !!person.userId)
+    || (dream.resources ?? []).some(resource =>
+      resource.category === 'person' && resource.confirmed &&
+      (!!resource.personId || !!resource.serverNeedId),
+    );
+}
+
+/** No private notebook data is copied to the shared notebook. */
+export function sharedDreamNotebook(dream: DreamEntry): DreamNotebook {
+  const stored=dream.sharedNotebook;
+  return {
+    id:SHARED_NOTEBOOK_ID,
+    title:'Carnet partagé',
+    color:'pink',
+    blocks:Array.isArray(stored?.blocks)?stored.blocks:[],
+  };
+}
 
 /** Read older saved dreams without rewriting or dropping any existing content. */
 export function dreamNotebooks(dream: DreamEntry): DreamNotebook[] {

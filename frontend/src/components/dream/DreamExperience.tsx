@@ -460,13 +460,13 @@ export default function DreamExperience({
       </View>:<View style={{flex:1}}/>}
       <View style={{alignItems:'flex-end',gap:0,flexShrink:1}}>
       <Pressable accessibilityRole="button"
-        accessibilityLabel="Ouvrir mes notes personnelles"
+        accessibilityLabel="Ouvrir mes notes"
         onPress={()=>router.push({pathname:'/my-dream/notes/[id]',params:{id:dream.id}})}
         style={{flexDirection:'row',alignItems:'center',gap:5,
           minHeight:35,paddingRight:10}}>
-        <Ionicons name="lock-closed-outline" size={13} color={theme.foreground}/>
+        <Ionicons name="book-outline" size={13} color={theme.foreground}/>
         <Text style={{fontSize:12,fontWeight:'600',color:theme.foreground}}>
-          Notes personnelles
+          Notes
         </Text>
         <Ionicons name="arrow-forward" size={14} color={theme.foreground}/>
       </Pressable>

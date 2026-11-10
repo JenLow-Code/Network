@@ -64,10 +64,10 @@ export default function SemenceStudio({dream,onBack,onNavigate}:{
        color:theme.foreground}}>Inspirations</Text>
      <Pressable onPress={()=>router.push({pathname:'/my-dream/notes/[id]',
        params:{id:dream.id}})} accessibilityRole="button"
-       accessibilityLabel="Ouvrir mon carnet personnel"
+       accessibilityLabel="Ouvrir les notes du rêve"
        style={{flexDirection:'row',alignItems:'center',gap:7,padding:9}}>
        <Ionicons name="lock-closed-outline" size={15} color="#A5713D"/>
-       <Text style={{fontSize:12,color:theme.muted}}>Carnet personnel</Text>
+       <Text style={{fontSize:12,color:theme.muted}}>Notes</Text>
        <Ionicons name="chevron-forward" size={14} color={theme.muted}/>
      </Pressable>
    </View>

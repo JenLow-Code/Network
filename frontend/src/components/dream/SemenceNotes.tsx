@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/theme/AppTheme';
 import { useDreams } from '@/domain/dreamRepository';
 import type { DreamEntry, DreamNoteBlock } from '@/domain/dreamWorkspace';
-import { defaultNotebookColor, NOTEBOOK_COLORS, NOTEBOOK_COLOR_ORDER, dreamNotebooks, editDreamNotebook } from '@/domain/dreamNotebooks';
+import { defaultNotebookColor, NOTEBOOK_COLORS, NOTEBOOK_COLOR_ORDER, dreamNotebooks, editDreamNotebook, dreamIsShared, sharedDreamNotebook, SHARED_NOTEBOOK_ID } from '@/domain/dreamNotebooks';
 
 const id = () => 'note-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 const accent: Record<NonNullable<DreamNoteBlock['color']>, string> = {
@@ -20,7 +20,7 @@ const types: {type:DreamNoteBlock['type'];label:string;icon:keyof typeof Ionicon
   {type:'quote',label:'Citation',icon:'chatbubble-outline'},
 ];
 
-/** Shared owner-only notebook for Semence, Germination and Croissance. */
+/** One quiet notebook editor; personal and shared content are stored separately. */
 export default function SemenceNotes({dream,editable}:{dream:DreamEntry;editable:boolean}) {
   const theme=useAppTheme();
   const {patch}=useDreams();
@@ -36,9 +36,18 @@ export default function SemenceNotes({dream,editable}:{dream:DreamEntry;editable
   const [colorsOpen,setColorsOpen]=useState(false);
   const [readOnlyExpanded,setReadOnlyExpanded]=useState<Record<string,boolean>>({});
   const [contentHeights,setContentHeights]=useState<Record<string,number>>({});
-  const notebooks = dreamNotebooks(dream);
-  const notebook = notebooks.find(book=>book.id===activeBookId) ?? notebooks[0];
-  const items = notebook.blocks;
+  const participant=dream.viewerRole==='participant';
+  const canEdit=editable&&!participant;
+  const personalNotebooks=participant?[]:dreamNotebooks(dream);
+  // Contributors can view the shared notebook in Germination, not in private
+  // Semence or the restricted Croissance workspace.
+  const sharedVisible=dreamIsShared(dream)&&(!participant||dream.phase==='Initiation');
+  const shared=sharedVisible?sharedDreamNotebook(dream):null;
+  const notebooks=[...personalNotebooks,...(shared?[shared]:[])];
+  const notebook=notebooks.find(book=>book.id===activeBookId)??notebooks[0];
+  const sharedSelected=notebook?.id===SHARED_NOTEBOOK_ID;
+  const canManage=canEdit&&!sharedSelected;
+  const items=notebook?.blocks??[];
   const selected=items.find(b=>b.id===selectedId)||items[items.length-1];
   const selectedKey=selected?.id;
 
@@ -49,33 +58,41 @@ export default function SemenceNotes({dream,editable}:{dream:DreamEntry;editable
     setReadOnlyExpanded({});
   };
   const saveNotebooks=(next:typeof notebooks)=>{
-    if(!editable)return;
-    // Persist any colors previously derived for legacy notebooks before reordering.
-    const previousColors=new Map(notebooks.map((book,index)=>[
+    if(!canEdit)return;
+    const previousColors=new Map(personalNotebooks.map((book,index)=>[
       book.id,book.color??defaultNotebookColor(index),
     ]));
-    const withColors=next.map((book,index)=>({
-      ...book,color:book.color??previousColors.get(book.id)??defaultNotebookColor(index),
-    }));
-    patch(dream.id,{privateNotebooks:withColors});
+    const privateBooks=next.filter(book=>book.id!==SHARED_NOTEBOOK_ID)
+      .map((book,index)=>({
+        ...book,color:book.color??previousColors.get(book.id)??defaultNotebookColor(index),
+      }));
+    const nextShared=next.find(book=>book.id===SHARED_NOTEBOOK_ID);
+    // Keep legacy/private notebooks private. The shared book is its own field,
+    // so it can be synchronized independently when account sharing is connected.
+    patch(dream.id,{
+      privateNotebooks:privateBooks,
+      ...(sharedVisible&&nextShared?{
+        sharedNotebook:{...nextShared,id:SHARED_NOTEBOOK_ID,title:'Carnet partagé',color:'pink' as const},
+      }:{}),
+    });
   };
   const persist=(next:DreamNoteBlock[])=>{
-    if(!editable)return;
+    if(!canEdit||!notebook)return;
     saveNotebooks(editDreamNotebook(notebooks,notebook.id,{blocks:next}));
   };
   const startName=(mode:'new'|'rename')=>{
-    if(!editable)return;
+    if(!canEdit||(mode==='rename'&&sharedSelected))return;
     setNameMode(mode);
     setNameDraft(mode==='rename'?notebook.title:'');
     setNameError('');setBookMenuOpen(false);setBookColorsOpen(false);setBookSelectorOpen(false);
   };
   const confirmName=()=>{
-    if(!editable||!nameMode)return;
+    if(!canEdit||!nameMode||(nameMode==='rename'&&sharedSelected))return;
     const title=nameDraft.trim().slice(0,48);
     if(!title){setNameError('Donne un nom à ce carnet.');return;}
     if(nameMode==='new'){
       const created={id:'notebook-'+id(),title,color:defaultNotebookColor(notebooks.length),blocks:[] as DreamNoteBlock[]};
-      saveNotebooks([...notebooks,created]);
+      saveNotebooks([...personalNotebooks,created,...(shared?[shared]:[])]);
       selectNotebook(created.id);
     }else{
       saveNotebooks(editDreamNotebook(notebooks,notebook.id,{title}));
@@ -83,19 +100,19 @@ export default function SemenceNotes({dream,editable}:{dream:DreamEntry;editable
     }
   };
   const moveNotebook=(delta:number)=>{
-    const from=notebooks.findIndex(book=>book.id===notebook.id),to=from+delta;
-    if(!editable||from<0||to<0||to>=notebooks.length)return;
-    const reordered=[...notebooks];
+    const from=personalNotebooks.findIndex(book=>book.id===notebook?.id),to=from+delta;
+    if(!canManage||from<0||to<0||to>=personalNotebooks.length)return;
+    const reordered=[...personalNotebooks];
     [reordered[from],reordered[to]]=[reordered[to],reordered[from]];
-    saveNotebooks(reordered);setBookMenuOpen(false);setBookColorsOpen(false);
+    saveNotebooks([...reordered,...(shared?[shared]:[])]);setBookMenuOpen(false);setBookColorsOpen(false);
   };
   const deleteNotebook=()=>{
-    if(!editable||notebooks.length<=1)return;
+    if(!canManage||personalNotebooks.length<=1)return;
     const proceed=()=>{
-      const remaining=notebooks.filter(book=>book.id!==notebook.id);
-      saveNotebooks(remaining);
+      const remaining=personalNotebooks.filter(book=>book.id!==notebook.id);
+      saveNotebooks([...remaining,...(shared?[shared]:[])]);
       selectNotebook(remaining[Math.max(0,Math.min(
-        notebooks.findIndex(b=>b.id===notebook.id)-1,remaining.length-1))].id);
+        personalNotebooks.findIndex(b=>b.id===notebook.id)-1,remaining.length-1))].id);
     };
     const prompt=notebook.blocks.length
       ?'Ce carnet contient '+notebook.blocks.length+' bloc(s). Sa suppression effacera son contenu.'
@@ -110,13 +127,13 @@ export default function SemenceNotes({dream,editable}:{dream:DreamEntry;editable
   const modify=(blockId:string,changes:Partial<DreamNoteBlock>)=>
     persist(items.map(b=>b.id===blockId?{...b,...changes}:b));
   const add=(type:DreamNoteBlock['type'],text='')=>{
-    if(!editable)return;
+    if(!canEdit)return;
     const block:DreamNoteBlock={id:id(),type,text,color:'default'};
     persist([...items,block]);setSelectedId(block.id);
     setTypesOpen(false);setColorsOpen(false);
   };
   const format=(changes:(b:DreamNoteBlock)=>DreamNoteBlock)=>{
-    if(!editable)return;
+    if(!canEdit)return;
     if(!selectedKey){
       const block=changes({id:id(),type:'text',text:'',color:'default'});
       persist([...items,block]);setSelectedId(block.id);return;
@@ -124,63 +141,72 @@ export default function SemenceNotes({dream,editable}:{dream:DreamEntry;editable
     persist(items.map(b=>b.id===selectedKey?changes(b):b));
   };
   const pill=(icon:keyof typeof Ionicons.glyphMap,label:string,onPress:()=>void,active=false)=>
-    <Pressable key={label} onPress={onPress} disabled={!editable}
+    <Pressable key={label} onPress={onPress} disabled={!canEdit}
       accessibilityRole="button" accessibilityLabel={label} accessibilityState={{selected:active}}
-      style={{minWidth:37,height:38,paddingHorizontal:9,borderRadius:9,
+      style={{minWidth:33,height:33,paddingHorizontal:7,borderRadius:8,
         alignItems:'center',justifyContent:'center',backgroundColor:active?theme.surface:'transparent',
         borderWidth:active?1:0,borderColor:theme.border}}>
-      <Ionicons name={icon} size={18} color={active?theme.foreground:theme.muted}/>
+      <Ionicons name={icon} size={16} color={active?theme.foreground:theme.muted}/>
     </Pressable>;
 
-  return <View style={{gap:15,paddingBottom:15}}>
-    {/* Notebook selector lives INSIDE Notes, not in the dream's main navigation. */}
-    <View style={{gap:9}}>
-      <View style={{flexDirection:'row',alignItems:'center',gap:8,minHeight:49}}>
+  if(!notebook)return <View style={{paddingTop:18}}>
+    <Text style={{color:theme.muted,fontSize:13}}>
+      Ce carnet n’est pas accessible à ton rôle pour cette étape.
+    </Text>
+  </View>;
+  return <View style={{gap:12,paddingBottom:13}}>
+    {/* A single quiet notebook selector, without a large management card. */}
+    <View style={{gap:4}}>
+      <View style={{flexDirection:'row',alignItems:'center',gap:5,minHeight:42}}>
         <Pressable accessibilityRole="button"
           accessibilityLabel={'Choisir un carnet. Actuel : '+notebook.title}
           accessibilityState={{expanded:bookSelectorOpen}}
           onPress={()=>{setBookSelectorOpen(!bookSelectorOpen);setBookMenuOpen(false);setBookColorsOpen(false);setNameMode(null);}}
-          style={{flex:1,minHeight:44,flexDirection:'row',alignItems:'center',gap:10}}>
-          <View style={{width:10,height:10,borderRadius:5,
+          style={{flex:1,minHeight:40,flexDirection:'row',alignItems:'center',gap:8}}>
+          <View style={{width:8,height:8,borderRadius:4,
             backgroundColor:NOTEBOOK_COLORS[notebook.color??defaultNotebookColor(
               notebooks.findIndex(b=>b.id===notebook.id))].hex}}/>
-          <Text numberOfLines={1} style={{fontSize:20,fontWeight:'600',
+          <Text numberOfLines={1} style={{fontSize:19,fontWeight:'600',
             fontFamily:'serif',color:theme.foreground,flexShrink:1}}>{notebook.title}</Text>
           <Ionicons name={bookSelectorOpen?'chevron-up':'chevron-down'}
-            size={17} color={theme.muted}/>
+            size={14} color={theme.muted}/>
         </Pressable>
-        {editable?<Pressable accessibilityRole="button" accessibilityLabel="Créer un carnet"
+        {canEdit?<Pressable accessibilityRole="button" accessibilityLabel="Créer un carnet personnel"
           onPress={()=>startName('new')}
-          style={{width:35,height:42,alignItems:'center',justifyContent:'center'}}>
-          <Ionicons name="add" size={21} color={theme.muted}/>
+          style={{width:31,height:37,alignItems:'center',justifyContent:'center'}}>
+          <Ionicons name="add" size={18} color={theme.muted}/>
         </Pressable>:null}
-        {editable?<Pressable accessibilityRole="button"
+        {canManage?<Pressable accessibilityRole="button"
           accessibilityLabel={'Options du carnet '+notebook.title}
           accessibilityState={{expanded:bookMenuOpen}}
           onPress={()=>{setBookMenuOpen(!bookMenuOpen);setBookSelectorOpen(false);setBookColorsOpen(false);setNameMode(null);}}
-          style={{width:35,height:42,alignItems:'center',justifyContent:'center'}}>
-          <Ionicons name="ellipsis-horizontal" size={19} color={theme.muted}/>
+          style={{width:31,height:37,alignItems:'center',justifyContent:'center'}}>
+          <Ionicons name="ellipsis-horizontal" size={18} color={theme.muted}/>
         </Pressable>:null}
       </View>
-      {bookSelectorOpen?<View style={{backgroundColor:theme.surface,
-        borderRadius:12,borderWidth:1,borderColor:theme.border,
-        paddingVertical:5,overflow:'hidden'}}>
-        <ScrollView nestedScrollEnabled style={{maxHeight:245}}
-          contentContainerStyle={{gap:1}}>
+      {bookSelectorOpen?<View style={{
+        borderTopWidth:1,borderBottomWidth:1,borderColor:theme.border,
+        paddingVertical:4,marginBottom:5}}>
+        <ScrollView nestedScrollEnabled style={{maxHeight:188}}
+          contentContainerStyle={{gap:0}}>
           {notebooks.map((book,index)=>{
             const selectedBook=book.id===notebook.id;
+            const isShared=book.id===SHARED_NOTEBOOK_ID;
             return <Pressable key={book.id} accessibilityRole="button"
               accessibilityLabel={'Ouvrir le carnet '+book.title}
               accessibilityState={{selected:selectedBook}}
               onPress={()=>selectNotebook(book.id)}
-              style={{paddingHorizontal:14,minHeight:45,
-                flexDirection:'row',alignItems:'center',gap:12}}>
-              <View style={{width:9,height:9,borderRadius:5,
+              style={{paddingHorizontal:9,minHeight:38,borderRadius:7,
+                backgroundColor:selectedBook?theme.surface:'transparent',
+                flexDirection:'row',alignItems:'center',gap:10}}>
+              <View style={{width:7,height:7,borderRadius:4,
                 backgroundColor:NOTEBOOK_COLORS[book.color??defaultNotebookColor(index)].hex}}/>
-              <Text numberOfLines={1} style={{fontSize:14,
+              <Text numberOfLines={1} style={{fontSize:12,
                 color:theme.foreground,fontWeight:selectedBook?'700':'400',
                 flex:1}}>{book.title}</Text>
-              {selectedBook?<Ionicons name="checkmark" size={17} color={theme.muted}/>:null}
+              <Ionicons name={isShared?'people-outline':'lock-closed-outline'}
+                size={12} color={theme.muted}/>
+              {selectedBook?<Ionicons name="checkmark" size={14} color={theme.muted}/>:null}
             </Pressable>;
           })}
         </ScrollView>
@@ -214,8 +240,8 @@ export default function SemenceNotes({dream,editable}:{dream:DreamEntry;editable
           </Pressable>
         </View>
       </View>:null}
-      {bookMenuOpen?<View style={{flexDirection:'row',flexWrap:'wrap',gap:5,
-        padding:7,borderRadius:10,borderWidth:1,
+      {bookMenuOpen?<View style={{flexDirection:'row',flexWrap:'wrap',gap:2,
+        paddingVertical:5,paddingHorizontal:6,borderRadius:9,borderWidth:1,
         borderColor:theme.border,backgroundColor:theme.surface}}>
         <Pressable accessibilityRole="button" onPress={()=>startName('rename')}
           style={{flexDirection:'row',gap:5,alignItems:'center',padding:9}}>
@@ -231,24 +257,24 @@ export default function SemenceNotes({dream,editable}:{dream:DreamEntry;editable
           <Text style={{color:theme.foreground,fontSize:12}}>Couleur</Text>
         </Pressable>
         <Pressable accessibilityRole="button"
-          disabled={notebooks[0].id===notebook.id}
+          disabled={personalNotebooks[0]?.id===notebook.id}
           onPress={()=>moveNotebook(-1)}
           style={{flexDirection:'row',gap:4,alignItems:'center',
-            padding:9,opacity:notebooks[0].id===notebook.id ? 0.45 : 1}}>
+            padding:7,opacity:personalNotebooks[0]?.id===notebook.id ? 0.45 : 1}}>
           <Ionicons name="arrow-back-outline" color={theme.muted} size={15}/>
           <Text style={{color:theme.foreground,fontSize:12}}>Avant</Text>
         </Pressable>
         <Pressable accessibilityRole="button"
-          disabled={notebooks[notebooks.length-1].id===notebook.id}
+          disabled={personalNotebooks[personalNotebooks.length-1]?.id===notebook.id}
           onPress={()=>moveNotebook(1)}
           style={{flexDirection:'row',gap:4,alignItems:'center',
-            padding:9,opacity:notebooks[notebooks.length-1].id===notebook.id ? 0.45 : 1}}>
+            padding:7,opacity:personalNotebooks[personalNotebooks.length-1]?.id===notebook.id ? 0.45 : 1}}>
           <Ionicons name="arrow-forward-outline" color={theme.muted} size={15}/>
           <Text style={{color:theme.foreground,fontSize:12}}>Après</Text>
         </Pressable>
-        {notebooks.length>1?<Pressable accessibilityRole="button"
+        {personalNotebooks.length>1?<Pressable accessibilityRole="button"
           onPress={deleteNotebook}
-          style={{flexDirection:'row',gap:4,alignItems:'center',padding:9}}>
+          style={{flexDirection:'row',gap:4,alignItems:'center',padding:7}}>
           <Ionicons name="trash-outline" color="#AF5560" size={15}/>
           <Text style={{color:'#AF5560',fontSize:12}}>Supprimer</Text>
         </Pressable>:null}
@@ -284,31 +310,34 @@ export default function SemenceNotes({dream,editable}:{dream:DreamEntry;editable
         </View>
       </View>:null}
     </View>
-    <View style={{gap:5}}>
-      <View style={{flexDirection:'row',alignItems:'center',gap:7}}>
-        <Ionicons name="lock-closed-outline" size={13} color={theme.muted}/>
-        <Text style={{fontSize:11,color:theme.muted,flex:1}}>
-          Notes personnelles · visibles uniquement par toi
-        </Text>
-        {editable?<Text style={{fontSize:10,color:theme.muted}}>Enregistrement auto</Text>:null}
-      </View>
+    <View style={{flexDirection:'row',alignItems:'center',gap:7,
+      paddingTop:2,marginBottom:2}}>
+      <Ionicons name={sharedSelected?'people-outline':'lock-closed-outline'}
+        size={12} color={theme.muted}/>
+      <Text style={{color:theme.muted,fontSize:10,flex:1}}>
+        {sharedSelected?'Partagé · réunions et décisions':'Personnel · toi uniquement'}
+      </Text>
+      {canEdit?<View style={{flexDirection:'row',gap:4,alignItems:'center'}}>
+        <Ionicons name="checkmark" size={12} color={theme.muted}/>
+        <Text style={{color:theme.muted,fontSize:10}}>Auto</Text>
+      </View>:null}
     </View>
 
-    {editable?<View style={{gap:7}}>
+    {canEdit?<View style={{gap:7}}>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="always"
-        contentContainerStyle={{gap:4,alignItems:'center',paddingRight:5}}>
+        contentContainerStyle={{gap:2,alignItems:'center',paddingRight:5}}>
         {pill('text-outline','Choisir un type de bloc',()=>{setTypesOpen(!typesOpen);setColorsOpen(false);},typesOpen)}
         <View style={{width:1,height:21,backgroundColor:theme.border,marginHorizontal:3}}/>
         <Pressable accessibilityRole="button" accessibilityLabel="Gras"
           onPress={()=>format(b=>({...b,bold:!b.bold}))}
-          style={{minWidth:38,height:38,alignItems:'center',justifyContent:'center',
-            borderRadius:9,backgroundColor:selected?.bold?theme.surface:'transparent'}}>
+          style={{minWidth:33,height:33,alignItems:'center',justifyContent:'center',
+            borderRadius:8,backgroundColor:selected?.bold?theme.surface:'transparent'}}>
           <Text style={{fontWeight:'900',fontSize:17,color:theme.foreground}}>B</Text>
         </Pressable>
         <Pressable accessibilityRole="button" accessibilityLabel="Italique"
           onPress={()=>format(b=>({...b,italic:!b.italic}))}
-          style={{minWidth:38,height:38,alignItems:'center',justifyContent:'center',
-            borderRadius:9,backgroundColor:selected?.italic?theme.surface:'transparent'}}>
+          style={{minWidth:33,height:33,alignItems:'center',justifyContent:'center',
+            borderRadius:8,backgroundColor:selected?.italic?theme.surface:'transparent'}}>
           <Text style={{fontFamily:'serif',fontStyle:'italic',fontSize:20,color:theme.foreground}}>I</Text>
         </Pressable>
         {pill('list-outline','Liste à puces',()=>format(b=>({...b,type:'bullet'})),selected?.type==='bullet')}
@@ -344,7 +373,7 @@ export default function SemenceNotes({dream,editable}:{dream:DreamEntry;editable
 
     <View style={{gap:7}}>
       {items.length===0?(
-        editable?<TextInput multiline accessibilityLabel="Commencer une note"
+        canEdit?<TextInput multiline accessibilityLabel="Commencer une note"
           placeholder="Écris librement…"
           placeholderTextColor={theme.muted}
           onChangeText={value=>{if(value)add('text',value);}}
@@ -353,7 +382,7 @@ export default function SemenceNotes({dream,editable}:{dream:DreamEntry;editable
         <Text style={{fontSize:13,color:theme.muted,paddingVertical:20}}>Aucune note pour le moment.</Text>
       ):items.map((b,index)=>{
         const ink=b.color&&b.color!=='default'?accent[b.color]:theme.foreground;
-        const collapsed=editable?!!b.collapsed:(readOnlyExpanded[b.id]??!!b.collapsed);
+        const collapsed=canEdit?!!b.collapsed:(readOnlyExpanded[b.id]??!!b.collapsed);
         const fontSize=b.type==='heading'?24:b.type==='quote'?19:16;
         const style={color:ink,fontSize,lineHeight:fontSize*1.45,
           fontWeight:(b.bold||b.type==='heading'?'700':'400') as '700'|'400',
@@ -361,14 +390,14 @@ export default function SemenceNotes({dream,editable}:{dream:DreamEntry;editable
           fontFamily:b.type==='heading'||b.type==='quote'?'serif':undefined,
           padding:0,margin:0,flex:1};
         const textField=(value:string,change:(v:string)=>void,placeholder:string,multiline=true)=>
-          <TextInput value={value} editable={editable} multiline={multiline}
+          <TextInput value={value} editable={canEdit} multiline={multiline}
             scrollEnabled={false}
             onContentSizeChange={event=>{
               const next=Math.ceil(event.nativeEvent.contentSize.height);
               if(Number.isFinite(next)&&next>0&&next!==contentHeights[b.id+placeholder])
                 setContentHeights(prev=>({...prev,[b.id+placeholder]:next}));
             }}
-            autoFocus={editable&&selectedId===b.id&&(b.type!=='toggle'||placeholder==='Titre de la section')}
+            autoFocus={canEdit&&selectedId===b.id&&(b.type!=='toggle'||placeholder==='Titre de la section')}
             onFocus={()=>setSelectedId(b.id)} onChangeText={change}
             textAlignVertical="top" placeholder={placeholder}
             placeholderTextColor={theme.muted}
@@ -384,8 +413,8 @@ export default function SemenceNotes({dream,editable}:{dream:DreamEntry;editable
           {b.type==='numbered'?<Text style={{fontSize:15,color:ink,marginTop:3}}>
             {items.slice(0,index+1).filter(x=>x.type==='numbered').length}.
           </Text>:null}
-          {b.type==='checklist'?<Pressable disabled={!editable} accessibilityRole="checkbox"
-            accessibilityState={{checked:!!b.checked,disabled:!editable}}
+          {b.type==='checklist'?<Pressable disabled={!canEdit} accessibilityRole="checkbox"
+            accessibilityState={{checked:!!b.checked,disabled:!canEdit}}
             accessibilityLabel="Cocher cette note"
             onPress={()=>modify(b.id,{checked:!b.checked})}
             style={{padding:2,marginTop:2}}>
@@ -394,7 +423,7 @@ export default function SemenceNotes({dream,editable}:{dream:DreamEntry;editable
           </Pressable>:null}
           {b.type==='toggle'?<Pressable accessibilityRole="button"
             accessibilityLabel={collapsed?'Déplier':'Replier'}
-            onPress={()=>editable?modify(b.id,{collapsed:!collapsed}):
+            onPress={()=>canEdit?modify(b.id,{collapsed:!collapsed}):
               setReadOnlyExpanded(previous=>({...previous,[b.id]:!collapsed}))}
             style={{padding:2,marginTop:2}}>
             <Ionicons name={collapsed?'chevron-forward':'chevron-down'} size={20} color={theme.muted}/>
@@ -408,7 +437,7 @@ export default function SemenceNotes({dream,editable}:{dream:DreamEntry;editable
               b.type==='quote'?'Écris une citation…':
               b.type==='checklist'?'Une tâche à faire…':'Écris ici…')}
           </View>
-          {editable&&selectedId===b.id?<Pressable
+          {canEdit&&selectedId===b.id?<Pressable
             accessibilityRole="button" accessibilityLabel="Supprimer ce bloc"
             onPress={()=>{persist(items.filter(x=>x.id!==b.id));setSelectedId(null);}}
             style={{padding:5}}>
@@ -416,14 +445,14 @@ export default function SemenceNotes({dream,editable}:{dream:DreamEntry;editable
           </Pressable>:null}
         </View>;
       })}
-      {editable?<Pressable onPress={()=>add('text')} accessibilityRole="button"
+      {canEdit?<Pressable onPress={()=>add('text')} accessibilityRole="button"
         accessibilityLabel="Ajouter un paragraphe"
-        style={{flexDirection:'row',alignItems:'center',gap:8,
-          paddingVertical:12,alignSelf:'flex-start'}}>
+        style={{flexDirection:'row',alignItems:'center',gap:6,
+          paddingVertical:10,alignSelf:'flex-start'}}>
         <Ionicons name="add" size={19} color={theme.muted}/>
         <Text style={{fontSize:12,color:theme.muted}}>Ajouter un bloc</Text>
       </Pressable>:null}
-      {notebook.id===notebooks[0].id&&(dream.notes||[]).length? <View style={{marginTop:9,gap:12}}>
+      {notebook?.id===personalNotebooks[0]?.id&&(dream.notes||[]).length? <View style={{marginTop:9,gap:12}}>
         {(dream.notes||[]).map((n,i)=><Text key={i}
           style={{color:theme.foreground,fontSize:15,lineHeight:24}}>{n}</Text>)}
       </View>:null}

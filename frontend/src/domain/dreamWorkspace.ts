@@ -186,6 +186,8 @@ export type DreamEntry = {
   privateNotesBlocks?: DreamNoteBlock[];
   /** Private notebook collection. Legacy notes are used as the first notebook until first edit. */
   privateNotebooks?: DreamNotebook[];
+  /** Separate shared dream notebook. Never merge into privateNotebooks. */
+  sharedNotebook?: DreamNotebook;
 
   growthStartedAt?: string;
   chat?: { id: string; messages: DreamChatMessage[] };
