@@ -166,6 +166,7 @@ export default function DreamExperience({
  const newGrowthNeeds = missingResources.filter(need=>need.addedDuringPhase==='Croissance');
  const existingMissing = missingResources.filter(need=>need.addedDuringPhase!=='Croissance');
  const hasResourceAlert = lostResources.length>0 || existingMissing.length>0;
+ const allResourcesFound = resources.length>0 && missingResources.length===0;
  const missingCategories = Array.from(new Set(missingResources.map(need=>need.category)));
  const recapExpanded = preparationOpen;
  const categoryNames: Record<DreamResource['category'],string> = {
@@ -484,7 +485,9 @@ export default function DreamExperience({
             onPress={()=>setPreparationOpen(open=>!open)}
             style={{flexDirection:'row',alignItems:'center',gap:6,
               marginTop:5,paddingLeft:10,paddingRight:10,paddingVertical:8,minHeight:36,
-              borderRadius:10,backgroundColor:theme.dark?'#432D38':'#FCECF4'}}>
+              borderRadius:10,backgroundColor:allResourcesFound
+                ?(theme.dark?'#2B392C':'#F1F5EC')
+                :(theme.dark?'#432D38':'#FCECF4')}}>
             {hasResourceAlert?(
               <Ionicons name="warning-outline" size={16} color="#D71D77"/>
             ):newGrowthNeeds.length?(
@@ -508,7 +511,8 @@ export default function DreamExperience({
       </View>
     </View>
     {recapExpanded?(
-      <View style={{borderRadius:12,backgroundColor:theme.dark?'#432D38':'#FCECF4',
+      <View style={{borderRadius:12,backgroundColor:allResourcesFound
+          ?'transparent':(theme.dark?'#432D38':'#FCECF4'),
         overflow:'hidden',marginTop:6,marginBottom:7}}>
         <View style={{paddingHorizontal:15,paddingBottom:14,gap:11,
           paddingTop:12}}>
@@ -519,11 +523,14 @@ export default function DreamExperience({
           ] as const).map(item=>{
             const subset=resources.filter(need=>need.category===item.category);
             const unfilled=subset.filter(need=>!isNeedFound(need));
-            if(!unfilled.length)return null;
+            if(!subset.length)return null;
             const foundCount=subset.length-unfilled.length;
             return <Pressable key={item.category} accessibilityRole="button"
-              accessibilityLabel={'Gérer '+item.title.toLowerCase()+' manquants'}
-              onPress={()=>onRecoverResource?.(item.category)}
+              disabled={!growthActive}
+              accessibilityLabel={growthActive
+                ?'Gérer '+item.title.toLowerCase()
+                :'Consulter '+item.title.toLowerCase()}
+              onPress={()=>{if(growthActive)onRecoverResource?.(item.category);}}
               style={{gap:7,paddingVertical:2}}>
               <View style={{flexDirection:'row',flexWrap:'wrap',alignItems:'baseline',gap:5}}>
                 <Text style={{fontSize:12,fontWeight:'700',color:item.color}}>
@@ -531,8 +538,13 @@ export default function DreamExperience({
                 </Text>
                 <Text style={{fontSize:12,lineHeight:18,
                   color:theme.foreground,flexShrink:1}}>
-                  {unfilled.map(need=>need.title+(need.addedDuringPhase==='Croissance'?' · ajouté en Croissance':'')).join(', ')}
-                  {item.category==='financial'?'à payer':'à trouver'}
+                  {unfilled.length
+                    ?unfilled.map(need=>need.title+
+                      (need.addedDuringPhase==='Croissance'
+                        ?' · ajouté en Croissance':'')).join(', ')+
+                      ' '+(item.category==='financial'?'à payer':'à trouver')
+                    :foundCount+' / '+subset.length+' '+
+                      (item.category==='financial'?'payés':'trouvés')}
                 </Text>
               </View>
               <View style={{height:4,borderRadius:3,overflow:'hidden',
@@ -542,18 +554,14 @@ export default function DreamExperience({
               </View>
             </Pressable>;
           })}
-          {missingResources.length===0 ? (
-            <Text style={{fontSize:12,color:theme.muted}}>
-              Tous les besoins enregistrés sont remplis.
-            </Text>
-          ) : <Pressable accessibilityRole="button"
-              accessibilityLabel="Gérer les besoins de Germination"
-              onPress={()=>setRecoveryDialog(true)}
-              style={{alignSelf:'flex-end',paddingVertical:5,paddingHorizontal:2,
-                flexDirection:'row',alignItems:'center',gap:5}}>
-              <Text style={{fontSize:11,fontWeight:'700',color:theme.foreground}}>Gérer</Text>
-              <Ionicons name="arrow-forward" size={14} color={theme.foreground}/>
-            </Pressable>}
+          {growthActive?<Pressable accessibilityRole="button"
+            accessibilityLabel="Gérer les besoins du rêve"
+            onPress={()=>onRecoverResource?.('all')}
+            style={{alignSelf:'flex-end',paddingVertical:5,paddingHorizontal:2,
+              flexDirection:'row',alignItems:'center',gap:5}}>
+            <Text style={{fontSize:11,fontWeight:'700',color:theme.foreground}}>Gérer</Text>
+            <Ionicons name="arrow-forward" size={14} color={theme.foreground}/>
+          </Pressable>:null}
           {growthActive?<Pressable accessibilityRole="button"
             accessibilityLabel="Ajouter un nouveau talent, une ressource ou un financement en Croissance"
             onPress={()=>onRecoverResource?.('all')}
@@ -564,18 +572,7 @@ export default function DreamExperience({
               Ajouter un besoin
             </Text>
           </Pressable>:null}
-          {dream.phase==='Croissance' && !historical &&
-            resources.some(resource=>isNeedFound(resource)) ? (
-            <Pressable accessibilityRole="button"
-              onPress={()=>setReportLostDialog(true)}
-              style={{alignSelf:'flex-start',paddingTop:7,flexDirection:'row',alignItems:'center',gap:6}}>
-              <Ionicons name="help-circle-outline" size={15} color={theme.muted}/>
-              <Text style={{fontSize:11,color:theme.muted}}>
-                Une ressource n’est plus disponible ?
-              </Text>
-            </Pressable>
-          ):null}
-        </View>
+                  </View>
       </View>
     ):null}
     <GrowthLogbook dream={dream} editable={growthActive}
