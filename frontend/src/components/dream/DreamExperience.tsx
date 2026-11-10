@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { lostFoundNeeds, isNeedFound } from '@/domain/dreamResourceRecovery';
 import { api } from '@/lib/api/client';
-import { Alert, Image, Linking, Modal, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Alert, Image, Linking, Modal, Platform, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useDreams } from '@/domain/dreamRepository';
@@ -61,6 +61,8 @@ export default function DreamExperience({
 }) {
  const { patch, appendBlock, setResources, setHabits, detachHabit, setGoalAndGrow, advance, remove, addGrowthLog, setGrowthLogPublication } = useDreams();
  const theme = useAppTheme();
+ const {width:viewportWidth}=useWindowDimensions();
+ const narrowScreen=viewportWidth<640;
  const [editing, setEditing] = useState(false);
  const [picker, setPicker] = useState(false);
  const [editingBlock, setEditingBlock] = useState<string | null>(null);
@@ -606,6 +608,7 @@ export default function DreamExperience({
       }}
       onRetry={log=>void publishLog({...log,shareRequested:true})}
       onManageHabits={()=>setGrowthDialog('habits')}
+      onAddHabit={()=>{if(growthActive)openHabitEditor();}}
       onEditHabit={habit=>{if(growthActive)openHabitEditor(habit);}}
       onDeleteHabit={habit=>{
         if(!growthActive)return;
@@ -716,25 +719,51 @@ export default function DreamExperience({
     accessibilityRole="button" style={{alignItems:'center',marginTop:26,padding:15}}>
       <Text style={{color:'#B24C59',fontSize:12}}>{'Arracher cette plante'}</Text>
    </Pressable> : null}
- <Modal visible={growthDialog!==null} transparent animationType="fade"
+ <Modal visible={growthDialog!==null} transparent
+   animationType={growthDialog==='log'?'slide':'fade'}
    onRequestClose={()=>setGrowthDialog(null)}>
-   <View style={{flex:1,backgroundColor:'rgba(0,0,0,.54)',justifyContent:'center',padding:18}}>
+   <View style={{flex:1,backgroundColor:'rgba(20,27,23,.44)',
+     justifyContent:growthDialog==='log'&&narrowScreen?'flex-end':'center',
+     padding:growthDialog==='log'&&narrowScreen?0:18}}>
      <Pressable style={{position:'absolute',top:0,left:0,bottom:0,right:0}}
        onPress={()=>setGrowthDialog(null)}/>
      <ScrollView keyboardShouldPersistTaps="handled"
-       style={{backgroundColor:theme.surface,borderRadius:15,
-         maxHeight:'84%',maxWidth:440,width:'100%',alignSelf:'center'}}
-       contentContainerStyle={{padding:21,gap:13}}>
-       <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
+       style={{backgroundColor:theme.surface,
+         borderRadius:growthDialog==='log'?24:15,
+         borderWidth:growthDialog==='log'?1:0,borderColor:theme.border,
+         maxHeight:growthDialog==='log'?'88%':'84%',
+         maxWidth:growthDialog==='log'?550:440,width:'100%',alignSelf:'center'}}
+       contentContainerStyle={{padding:growthDialog==='log'?25:21,
+         gap:growthDialog==='log'?16:13}}>
+       {growthDialog==='log'?<>
+         {narrowScreen?<View style={{height:4,width:38,borderRadius:4,
+           backgroundColor:theme.border,alignSelf:'center',marginBottom:5}}/>:null}
+         <View style={{flexDirection:'row',justifyContent:'space-between',
+           alignItems:'flex-start',gap:10}}>
+           <View style={{flex:1,gap:5}}>
+             <Text style={{fontSize:10,fontWeight:'700',letterSpacing:1.4,
+               color:'#27845B'}}>JOURNAL DE CROISSANCE</Text>
+             <Text style={{color:theme.foreground,fontFamily:'serif',
+               fontSize:29,lineHeight:35}}>
+               {editingLogId?'Modifier ma feuille':'Écrire une feuille'}
+             </Text>
+           </View>
+           <Pressable accessibilityRole="button" accessibilityLabel="Fermer"
+             onPress={()=>setGrowthDialog(null)}
+             style={{padding:6,marginTop:1}}>
+             <Ionicons name="close" color={theme.muted} size={22}/>
+           </Pressable>
+         </View>
+       </>:<View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
          <Text style={{color:theme.foreground,fontSize:20,fontWeight:'700'}}>
            {growthDialog==='habit'
              ? editingHabitId?'Modifier l’habitude':'Nouvelle habitude'
-             : growthDialog==='habits'?'Mes habitudes':editingLogId?'Modifier ma feuille':'Nouvelle feuille'}
+             : 'Mes habitudes'}
          </Text>
          <Pressable accessibilityLabel="Fermer" onPress={()=>setGrowthDialog(null)}>
            <Ionicons name="close-outline" color={theme.foreground} size={23}/>
          </Pressable>
-       </View>
+       </View>}
        {growthDialog==='habit'?<>
          <Field label="Nom de l’habitude" value={habitTitle}
            onChange={setHabitTitle} placeholder="Ex. Apprendre la guitare"/>
@@ -865,23 +894,48 @@ export default function DreamExperience({
            <Text style={{color:'#27845B',fontSize:12,fontWeight:'700'}}>Ajouter une habitude</Text>
          </Pressable>
        </>:growthDialog==='log'?<>
+         <View style={{flexDirection:'row',alignItems:'center',gap:8,
+           paddingBottom:11,borderBottomWidth:1,borderColor:theme.border}}>
+           <Ionicons name="leaf-outline" size={19} color="#27845B"/>
+           <Text style={{fontSize:12,fontWeight:'700',letterSpacing:.4,
+             color:'#27845B'}}>
+             {new Date().toLocaleDateString('fr-FR',
+               {day:'numeric',month:'long',year:'numeric'})}
+           </Text>
+         </View>
          <TextInput value={milestone} onChangeText={setMilestone}
-           accessibilityLabel="Écrire une feuille du journal"
-           placeholder="Qu’est-ce qui a grandi aujourd’hui ?"
+           accessibilityLabel="Contenu de la feuille du Logbook"
+           placeholder="Raconte ce qui a grandi aujourd’hui…"
            placeholderTextColor={theme.muted} multiline textAlignVertical="top"
            maxLength={5000}
-           style={{fontSize:16,lineHeight:25,
-             minHeight:154,paddingHorizontal:14,paddingVertical:13,
-             borderWidth:1,borderColor:theme.border,borderRadius:10,
-             color:theme.foreground,backgroundColor:theme.background}}/>
-         <Text style={{color:theme.muted,fontSize:11,lineHeight:18}}>
-           Modifiable pendant 24 heures après sa création, puis définitive.
-           L’écriture Biro apparaît uniquement dans le Logbook.
-           Publique par défaut une fois synchronisée.
-         </Text>
-         <Action label={editingLogId?'Enregistrer les modifications':
-           dream.serverDreamId?'Publier cette feuille':'Enregistrer cette feuille'}
-           onPress={saveLog}/>
+           style={{fontSize:16,lineHeight:26,
+             minHeight:narrowScreen?175:210,
+             paddingHorizontal:1,paddingVertical:7,
+             borderBottomWidth:1,borderColor:theme.border,
+             color:theme.foreground,backgroundColor:'transparent'}}/>
+         <View style={{flexDirection:'row',alignItems:'flex-start',gap:8}}>
+           <Ionicons name="information-circle-outline" size={16}
+             color={theme.muted} style={{marginTop:2}}/>
+           <Text style={{flex:1,color:theme.muted,fontSize:11,lineHeight:18}}>
+             Cette feuille apparaît dans le Logbook en écriture Biro.
+             Elle sera visible dans ton rêve, publiée après synchronisation,
+             et modifiable pendant 24 heures.
+           </Text>
+         </View>
+         <Pressable accessibilityRole="button"
+           accessibilityState={{disabled:!milestone.trim()}}
+           disabled={!milestone.trim()} onPress={saveLog}
+           style={{flexDirection:'row',alignItems:'center',
+             justifyContent:'center',gap:9,minHeight:51,
+             borderRadius:12,marginTop:3,
+             backgroundColor:milestone.trim()?'#27845B':
+               theme.dark?'#395349':'#CDDCD2'}}>
+           <Ionicons name={editingLogId?'checkmark':'leaf-outline'}
+             size={18} color="#FFFFFF"/>
+           <Text style={{fontSize:13,fontWeight:'700',color:'#FFFFFF'}}>
+             {editingLogId?'Enregistrer les modifications':'Ajouter au Logbook'}
+           </Text>
+         </Pressable>
        </>:null}
      </ScrollView>
    </View>
