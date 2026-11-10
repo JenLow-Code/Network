@@ -58,6 +58,14 @@ export default function SemencePublicationCover({
      </LinearGradient></Defs>
      <Rect width="100%" height="100%" fill={"url(#"+gradientId+")"}/>
    </Svg>:null}
+   {hasArt?<View style={{position:'absolute',left:10,top:10,
+     flexDirection:'row',alignItems:'center',gap:5,paddingHorizontal:8,
+     paddingVertical:5,borderRadius:6,
+     backgroundColor:'rgba(250,247,242,.93)'}}>
+     <Ionicons name="albums-outline" size={13} color="#A5713D"/>
+     <Text style={{fontSize:9,letterSpacing:.6,
+       fontWeight:'700',color:'#A5713D'}}>{category}</Text>
+   </View>:null}
    {!hasArt?<View style={{position:'absolute',left:12,top:13,
      flexDirection:'row',alignItems:'center',gap:7}}>
      <Ionicons name={talent?'person-outline':'albums-outline'}
@@ -73,8 +81,6 @@ export default function SemencePublicationCover({
        color:theme.foreground}}>{initials||'•'}</Text>
    </View>:null}
    <View style={{padding:large?17:12,gap:5}}>
-     {hasArt?<Text style={{fontSize:9,letterSpacing:.7,fontWeight:'700',
-       color:'#F4EDE7'}}>{category}</Text>:null}
      <Text numberOfLines={large?4:2}
        style={{fontSize:large?20:14,lineHeight:large?27:19,
          fontWeight:'600',
