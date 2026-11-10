@@ -46,34 +46,29 @@ function SocialLine({title,icon,color,value}:{
   const theme=useAppTheme();
   const today=positiveCount(value.delta)?value.delta:null;
   const total=validCount(value.total)?value.total:null;
-  if(today===null && total===null)return null;
-  const bg=color===SEED_BROWN?'#F6EFE7':'#FCEBF3';
-  const description=today!==null
-    ?icon==='prayer'
-      ?(today===1?'1 personne a prié':''
-        +today+' personnes ont prié')+' pour ce rêve aujourd’hui'
-      :(today===1?'1 personne t’a encouragé':''
-        +today+' personnes t’ont encouragé')+' aujourd’hui'
-    :icon==='prayer'
-      ?(total===1?'1 prière reçue':''
-        +total+' prières reçues')
-      :(total===1?'1 encouragement reçu':''
-        +total+' encouragements reçus');
-  return <View style={{alignSelf:'flex-start',flexDirection:'row',
-    alignItems:'center',gap:8,borderRadius:15,
-    paddingHorizontal:11,paddingVertical:7,maxWidth:'100%',
-    backgroundColor:theme.dark?theme.surface:bg}}>
-    {icon==='prayer'?<PrayerIcon size={15} color={color} filled/>:
-      <Ionicons name="heart" size={16} color={color}/>}
+  if(today===null&&total===null)return null;
+  const item=icon==='prayer'?'prière':'encouragement';
+  const plural=(n:number)=>n===1?item:item+'s';
+  const label=total!==null
+    ?total+' '+plural(total)+' au total'
+    :title;
+  const daily=today!==null
+    ?'+'+today+' personne'+(today===1?'':'s')+' aujourd’hui'
+    :null;
+  return <View style={{flexDirection:'row',alignSelf:'flex-start',
+    alignItems:'center',gap:9,maxWidth:'100%',paddingVertical:3}}>
+    {icon==='prayer'?<PrayerIcon size={17} color={color} filled/>:
+      <Ionicons name="heart" size={17} color={color}/>}
     <View style={{gap:2,flexShrink:1}}>
-      <Text style={{fontSize:11,lineHeight:16,color:theme.foreground}}>
-        {description}
+      <Text style={{fontSize:12,lineHeight:17,fontWeight:'600',color:theme.foreground}}>
+        {label}
       </Text>
-      {today!==null&&total!==null?<Text style={{fontSize:10,fontWeight:'600',
-        color}}>{total} au total</Text>:null}
+      {daily?<Text style={{fontSize:10,lineHeight:15,fontWeight:'500',
+        color:theme.dark?'#8BC7A6':'#619A7B'}}>{daily}</Text>:null}
     </View>
   </View>;
 }
+
 /** Each habit is a compact line and one row of its own colored squares. */
 function CurrentHabitSummary({
   dream,editable,onManage,onEdit,onDelete,onDetach,onCheckIn,
@@ -428,8 +423,10 @@ export function GrowthLogbook({
       <View style={{ width: 23, alignItems: 'center' }}>
         <Ionicons name="leaf-outline" size={22} color={GREEN} style={{ marginTop: 1 }} />
         {index < shown.length - 1 ? <View style={{
-          flex: 1, width: 1, marginTop: 4, marginBottom: -2,
-          backgroundColor: '#A4BDAF',
+          // Let the line meet the leaf's stem and continue through
+          // the inter-day spacing, rather than floating below the leaf.
+          flex: 1, width: 1, marginTop: -5, marginBottom: -15,
+          marginLeft: -4, backgroundColor: '#A4BDAF',
         }} /> : null}
       </View>
       <View style={{ flex: 1, paddingBottom: 18, gap: 10 }}>
