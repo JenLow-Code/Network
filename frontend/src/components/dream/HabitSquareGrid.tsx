@@ -108,18 +108,24 @@ export function HabitSquareGrid({
               }}/>:null}
             </Pressable>;
           }
-          return <View key={period.key} accessibilityLabel={
-            period.key+' · '+(period.future?'à venir':period.completed?'accompli':'manqué')
-          } style={{...size,
-            backgroundColor:color,
-            // Completed = full chosen color. Missed = colored square with a
-            // clearly visible white cross. Future = very faint chosen color.
-            opacity:period.future ? .14 : 1,
-            alignItems:'center',justifyContent:'center'}}>
-            {!period.future&&!period.completed
-              ?<Ionicons name="close" color="#FFFFFF"
-                size={Math.max(9,Math.round(cellSize*.79))}/>
-              :null}
+          if(period.completed){
+            // Only a successful day receives the fully saturated habit color.
+            return <View key={period.key} accessibilityLabel={period.key+' · accompli'}
+              style={{...size,backgroundColor:color}}/>;
+          }
+          if(period.future){
+            // Planned, not yet attempted: a nearly invisible tile, without a mark.
+            return <View key={period.key} accessibilityLabel={period.key+' · à venir'}
+              style={{...size,backgroundColor:color,opacity:.12}}/>;
+          }
+          // Missed: tinted tile with a VISIBLE colored X, never a solid
+          // completed-looking square. Its fill must not make the cross translucent.
+          return <View key={period.key} accessibilityLabel={period.key+' · manqué'}
+            style={{...size,alignItems:'center',justifyContent:'center',overflow:'hidden'}}>
+            <View style={{position:'absolute',top:0,bottom:0,left:0,right:0,
+              backgroundColor:color,opacity:.24,borderRadius:size.borderRadius}}/>
+            <Ionicons name="close" color={color}
+              size={Math.max(10,Math.round(cellSize*.82))}/>
           </View>;
         })}
       </View>
