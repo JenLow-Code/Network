@@ -3,6 +3,7 @@ import { Image, Modal, Platform, Pressable, ScrollView, Text, View } from 'react
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/theme/AppTheme';
 import type { DreamBlock, DreamEntry } from '@/domain/dreamWorkspace';
+import SemencePublishActions from './SemencePublishActions';
 
 const BROWN='#A5713D';
 const escapeHtml=(s:string)=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;')
@@ -186,24 +187,7 @@ export default function SemenceShare({dream,initialIds,onClose}:{
            <Text style={{fontSize:14,fontWeight:'700',color:theme.foreground}}>
              Comment la partager ?
            </Text>
-           <View style={{gap:6}}>
-             <View style={{flexDirection:'row',alignItems:'center',gap:8}}>
-               <Ionicons name="globe-outline" color={theme.muted} size={17}/>
-               <Text style={{fontSize:13,color:theme.foreground}}>Publiquement sur JenLow</Text>
-             </View>
-             <Text style={{fontSize:11,lineHeight:17,color:theme.muted,marginLeft:25}}>
-               Publication publique à connecter au serveur JenLow. Aucun contenu n’est publié automatiquement.
-             </Text>
-           </View>
-           <View style={{gap:6}}>
-             <View style={{flexDirection:'row',alignItems:'center',gap:8}}>
-               <Ionicons name="people-outline" color={theme.muted} size={17}/>
-               <Text style={{fontSize:13,color:theme.foreground}}>Uniquement à des amis JenLow</Text>
-             </View>
-             <Text style={{fontSize:11,lineHeight:17,color:theme.muted,marginLeft:25}}>
-               La sélection privée de destinataires nécessitera un accès protégé. Elle n’est pas encore activée.
-             </Text>
-           </View>
+           <SemencePublishActions dream={dream} picked={picked}/>
            <Text style={{fontSize:13,fontWeight:'700',color:theme.foreground,
              marginTop:7}}>Partager à l’extérieur</Text>
            <Text style={{fontSize:11,color:theme.muted,lineHeight:18}}>
