@@ -114,17 +114,18 @@ export function HabitSquareGrid({
               style={{...size,backgroundColor:color}}/>;
           }
           if(period.future){
-            // Planned, not yet attempted: a nearly invisible tile, without a mark.
+            // Not attempted: neutral grey, independent of the habit's chosen color.
             return <View key={period.key} accessibilityLabel={period.key+' · à venir'}
-              style={{...size,backgroundColor:color,opacity:.12}}/>;
+              style={{...size,backgroundColor:theme.dark?'#444B48':'#E8EBE9'}}/>;
           }
-          // Missed: tinted tile with a VISIBLE colored X, never a solid
-          // completed-looking square. Its fill must not make the cross translucent.
+          // Missed: a LIGHT tint of the habit color, with a knock-out cross
+          // in the page background color (visually transparent, never a dark X).
           return <View key={period.key} accessibilityLabel={period.key+' · manqué'}
-            style={{...size,alignItems:'center',justifyContent:'center',overflow:'hidden'}}>
+            style={{...size,backgroundColor:theme.background,
+              alignItems:'center',justifyContent:'center',overflow:'hidden'}}>
             <View style={{position:'absolute',top:0,bottom:0,left:0,right:0,
-              backgroundColor:color,opacity:.24,borderRadius:size.borderRadius}}/>
-            <Ionicons name="close" color={color}
+              backgroundColor:color,opacity:.40,borderRadius:size.borderRadius}}/>
+            <Ionicons name="close" color={theme.background}
               size={Math.max(10,Math.round(cellSize*.82))}/>
           </View>;
         })}
