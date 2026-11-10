@@ -8,7 +8,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Nav } from '@/components/navigation/Nav';
 import { useDreams } from '@/domain/dreamRepository';
-import type { DreamEntry, DreamMedia, FlowerDraft } from '@/domain/dreamWorkspace';
+import type { DreamMedia, FlowerDraft } from '@/domain/dreamWorkspace';
 import { buildGrowthDays, countVerifiedPrayers } from '@/domain/growthTimeline';
 import { pickFlowerMedia } from '@/lib/pickFlowerMedia';
 import { useAppTheme } from '@/theme/AppTheme';
@@ -82,7 +82,7 @@ function ReadOnlySheet({ title, visible, onClose, children }: {
 
 export default function FlowerPreparation() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { items, complete, setFlowerDraft, patch: patchDream, remove } = useDreams();
+  const { items, complete, setFlowerDraft, confirmFlower, remove } = useDreams();
   const theme = useAppTheme();
   const { width } = useWindowDimensions();
   const narrow = width < 600;
@@ -101,7 +101,7 @@ export default function FlowerPreparation() {
     </SafeAreaView>
   );
 
-  const confirmed = !!dream.flowerStartedAt && !!draft.achievedOn;
+  const confirmed = dream.phase === 'Témoignage' && !!dream.flowerStartedAt && !!draft.achievedOn;
   const photo = draft.attachments.find(item => item.kind === 'photo');
   const prayerCount = countVerifiedPrayers(dream);
   const encouragementCount = isVerifiedCount(dream.encouragementCount)
@@ -127,8 +127,7 @@ export default function FlowerPreparation() {
     if (!acknowledged) return;
     // This is the only entry point that locks Croissance. Opening the route
     // or drafting a story never counts as confirming the achievement.
-    patchDream(dream.id, { flowerStartedAt: new Date().toISOString() });
-    setFlowerDraft(dream.id, { ...draft, achievedOn: achievementDate });
+    confirmFlower(dream.id, achievementDate);
     setDateError('');
   };
   const selectMedia = () => pickFlowerMedia(
