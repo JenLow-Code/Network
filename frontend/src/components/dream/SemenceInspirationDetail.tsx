@@ -6,6 +6,7 @@ import { useAppTheme } from '@/theme/AppTheme';
 import { usePublication } from '@/lib/api/hooks';
 import { publicationPath } from '@/components/publication/PublicationGallery';
 import SemencePublicationCover from './SemencePublicationCover';
+import SemenceProfileCover from './SemenceProfileCover';
 import SemenceLinkPreview from './SemenceLinkPreview';
 import { SemenceDocumentPreview } from './SemenceDocumentPreview';
 import type { DreamBlock } from '@/domain/dreamWorkspace';
@@ -17,7 +18,7 @@ const isImage=(b:DreamBlock)=>['image','gallery'].includes(b.kind)
   && /^(https?:|data:image\/|file:|blob:)/i.test((b.media?.[0]||b.content).trim());
 const kindName=(b:DreamBlock):string=>
   b.kind==='quote'?'Citation':b.kind==='bible-verse'?'Verset biblique':
-  b.kind==='publication-ref'?'Publication':
+  b.kind==='publication-ref'?'Publication':b.kind==='profile-ref'?'Profil':
   b.kind==='image'?'Photo':b.kind==='document'?'Document':
   b.kind==='poem'?'Poème / texte court':b.kind==='note'?'Note':'Inspiration';
 
@@ -32,6 +33,13 @@ export default function SemenceInspirationDetail({block,initialMenu,editable,onC
  const [error,setError]=useState('');
  const publication=usePublication(block.kind==='publication-ref'?block.content.trim():undefined);
  const openSource=()=>{
+  if(block.kind==='profile-ref'){
+    const handle=block.content.trim().replace(/^@/,'');
+    if(/^[a-zA-Z0-9_.-]{2,80}$/.test(handle)){
+      onClose();router.push({pathname:'/member/[name]',params:{name:handle}});
+    }else setError('Ce profil est introuvable.');
+    return;
+  }
   if(block.kind==='publication-ref'){
     if(publication.item?.id===block.content.trim()){
       onClose();router.push(publicationPath(publication.item) as any);
@@ -50,7 +58,7 @@ export default function SemenceInspirationDetail({block,initialMenu,editable,onC
   }
   setError('Cette référence ne peut pas être ouverte directement sur cet appareil.');
  };
- const hasSource=['document','pdf','link','bookmark','embed','video','audio','music','publication-ref'].includes(block.kind);
+ const hasSource=['document','pdf','link','bookmark','embed','video','audio','music','publication-ref','profile-ref'].includes(block.kind);
  return <Modal visible transparent animationType="slide" onRequestClose={onClose}>
    <View style={{flex:1,justifyContent:'flex-end'}}>
      <Pressable accessibilityRole="button" accessibilityLabel="Fermer le détail"
@@ -147,7 +155,17 @@ export default function SemenceInspirationDetail({block,initialMenu,editable,onC
            <Text style={{fontSize:11,color:theme.muted}}>
              {block.caption||'Louis Segond 1910'}
            </Text>
-         </View>:block.kind==='publication-ref'?<>
+         </View>:block.kind==='profile-ref'?<>
+           <SemenceProfileCover handle={block.content} name={block.title}
+             avatar={block.media?.[0]} height={290}/>
+           <Pressable onPress={openSource} accessibilityRole="button"
+             style={{alignItems:'center',borderRadius:10,borderWidth:1,
+               borderColor:brown,padding:12}}>
+             <Text style={{fontSize:13,fontWeight:'700',color:brown}}>
+               Voir le profil JenLow
+             </Text>
+           </Pressable>
+         </>:block.kind==='publication-ref'?<>
            <SemencePublicationCover publicationId={block.content}
              fallbackTitle={block.title} large/>
            <Pressable onPress={openSource} accessibilityRole="button"

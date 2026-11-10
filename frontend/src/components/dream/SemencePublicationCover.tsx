@@ -35,7 +35,7 @@ export default function SemencePublicationCover({
  const title=item?.type==='talent'?item.author:
    item?.title||fallbackTitle||'Publication';
  const category=item?.type==='dream'?'RÊVE':item?.type==='music'?'MUSIQUE':
-   item?.type==='bible'?'BIBLE':talent?'TALENT':
+   item?.type==='bible'?'BIBLE':talent?'PROFIL':
    fallbackType==='music'?'MUSIQUE':fallbackType==='dream'?'RÊVE':
    fallbackType==='bible'?'BIBLE':'PUBLICATION';
  const profileName=talent?(item?.author||fallbackTitle||''):'';

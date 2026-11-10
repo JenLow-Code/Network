@@ -45,14 +45,14 @@ export default function SemenceStudio({dream,onBack,onNavigate}:{
    {!!dream.image?<View pointerEvents="none"
      style={{position:'absolute',top:0,left:0,right:0,height:510,overflow:'hidden'}}>
      <Image source={{uri:dream.image}}
-       resizeMode="cover" blurRadius={5}
-       style={{position:'absolute',top:0,left:0,right:0,height:510,opacity:theme.dark?.34:.48}}/>
+       resizeMode="cover"
+       style={{position:'absolute',top:0,left:0,right:0,height:510,opacity:theme.dark?.95:.96}}/>
      <Svg width="100%" height="100%" style={{position:'absolute',top:0,left:0}}>
        <Defs><LinearGradient id="semence-background-fade"
          x1="0%" y1="0%" x2="0%" y2="100%">
-         <Stop offset="0%" stopColor={theme.background} stopOpacity={theme.dark?0.48:0.43}/>
-         <Stop offset="35%" stopColor={theme.background} stopOpacity={theme.dark?0.40:0.34}/>
-         <Stop offset="75%" stopColor={theme.background} stopOpacity="0.87"/>
+         <Stop offset="0%" stopColor={theme.background} stopOpacity={theme.dark?0.17:0.14}/>
+         <Stop offset="35%" stopColor={theme.background} stopOpacity={theme.dark?0.25:0.21}/>
+         <Stop offset="69%" stopColor={theme.background} stopOpacity="0.80"/>
          <Stop offset="100%" stopColor={theme.background} stopOpacity="1"/>
        </LinearGradient></Defs>
        <Rect width="100%" height="100%" fill="url(#semence-background-fade)"/>
@@ -126,8 +126,8 @@ export default function SemenceStudio({dream,onBack,onNavigate}:{
   </ScrollView>
   {editable?<Pressable accessibilityRole="button"
     accessibilityLabel="Ajouter une inspiration" onPress={add}
-    style={{position:'absolute',right:width<520?21:27,bottom:19,
-      width:50,height:50,borderRadius:15,
+    style={{position:'absolute',right:width<520?21:27,bottom:94,zIndex:55,
+      width:48,height:48,borderRadius:14,
       borderWidth:1,borderColor:'#B88962',
       backgroundColor:theme.background,alignItems:'center',
       justifyContent:'center',elevation:5,shadowColor:'#382C21',

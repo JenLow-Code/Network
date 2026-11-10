@@ -29,17 +29,17 @@ export default function PublicationSearchPicker({selectedId,onSelect,onManual,on
          paddingVertical:10,fontSize:13}}/>
    </View>
    <Text style={{fontSize:11,lineHeight:18,color:theme.muted}}>
-     Choisis une publication dans les résultats, ou saisis son identifiant.
+     Choisis une publication dans les résultats. Pour une personne, utilise le type « Profil ».
    </Text>
    <View style={{flexDirection:'row',flexWrap:'wrap',
      justifyContent:'space-between',alignItems:'flex-start',gap:8}}>
-     {discovery.items.slice(0,18).map((item,index)=>
+     {discovery.items.filter(item=>item.type!=='talent').slice(0,18).map((item,index)=>
        <Pressable key={item.id} onPress={()=>onSelect(item)}
          accessibilityRole="button" accessibilityLabel={'Sélectionner '+item.title}
          style={{width:'48.5%',borderRadius:11,overflow:'hidden',
            backgroundColor:item.type==='dream'?'#606260':'#68646A',
            height:175,justifyContent:'flex-end'}}>
-         {(item.type==='talent'?item.avatar:item.image)?<Image source={{uri:(item.type==='talent'?item.avatar:item.image)!}}
+         {item.image?<Image source={{uri:item.image}}
            resizeMode="cover" style={{position:'absolute',left:0,right:0,
              top:0,bottom:0,width:'100%',height:'100%'}}/>:null}
          <Svg pointerEvents="none" width="100%" height="100%"
@@ -70,7 +70,7 @@ export default function PublicationSearchPicker({selectedId,onSelect,onManual,on
    {discovery.state==='error'?<Text style={{fontSize:12,color:theme.muted}}>
      Impossible de charger les publications. Utilise leur ID.
    </Text>:null}
-   {!discovery.items.length&&discovery.state==='ready'?
+   {!discovery.items.some(item=>item.type!=='talent')&&discovery.state==='ready'?
      <Text style={{fontSize:12,color:theme.muted}}>Aucune publication trouvée.</Text>:null}
    <TextInput value={selectedId} onChangeText={onManual}
      placeholder="Ou saisir l’ID exact de la publication"

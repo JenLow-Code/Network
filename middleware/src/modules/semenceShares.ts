@@ -12,7 +12,7 @@ type ShareRow={
  handle:string;display_name:string;profile_visibility:string|null;account_status:string;
 };
 const SELECT='SELECT s.*,u.handle,u.display_name,u.account_status,p.profile_visibility FROM semence_shares s JOIN users u ON u.id=s.author_id LEFT JOIN user_preferences p ON p.user_id=s.author_id';
-const KINDS=new Set(['image','gallery','quote','poem','note','link','bookmark','embed','bible-verse','publication-ref','document','pdf','audio','music','video']);
+const KINDS=new Set(['image','gallery','quote','poem','note','link','bookmark','embed','bible-verse','publication-ref','profile-ref','document','pdf','audio','music','video']);
 const NOTE_KINDS=new Set(['text','heading','bullet','numbered','checklist','toggle','quote']);
 const SIZES=new Set(['1x1','2x1','1x2','2x2']);
 const COLORS=new Set(['default','pink','blue','green','sand']);
@@ -45,6 +45,8 @@ function block(raw:unknown,index:number){
  }
  if(['link','bookmark','embed'].includes(kind)&&!/^https:\/\//i.test(content))
    throw unprocessable('invalid_link');
+ if(kind==='profile-ref'&&!/^[A-Za-z0-9_.-]{2,80}$/.test(content.replace(/^@/,'')))
+   throw unprocessable('invalid_profile_reference');
  if(kind==='publication-ref'&&!/^[A-Za-z0-9_-]{1,80}$/.test(content))
    throw unprocessable('invalid_publication_reference');
  let noteBlocks:Record<string,unknown>[]|undefined;
@@ -67,6 +69,7 @@ function block(raw:unknown,index:number){
  return {
    id:str(b.id,80)||'block-'+index,kind,content,title:str(b.title,160),
    tileSize:SIZES.has(String(b.tileSize))?b.tileSize:'1x1',
+   masonryLane:b.masonryLane==='left'||b.masonryLane==='right'?b.masonryLane:undefined,
    media:savedMedia,icon:str(b.icon,60),caption:str(b.caption,140),
    ...(noteBlocks?{noteBlocks}:{}),
  };

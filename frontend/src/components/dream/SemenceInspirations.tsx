@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { Alert, Image, Linking, Modal, Platform, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from 'react-native';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Alert, Animated, Image, Linking, Modal, PanResponder, Platform, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useAppTheme } from '@/theme/AppTheme';
@@ -10,9 +10,11 @@ import { usePublication } from '@/lib/api/hooks';
 import PublicationSearchPicker from './PublicationSearchPicker';
 import SemenceInspirationDetail from './SemenceInspirationDetail';
 import SemencePublicationCover from './SemencePublicationCover';
+import SemenceProfileCover from './SemenceProfileCover';
+import SemenceProfilePicker from './SemenceProfilePicker';
 import { documentKind, documentLabel } from './SemenceDocumentPreview';
 import { linkHost } from './SemenceLinkPreview';
-import { layoutInspirations, isTallTile, isWideTile } from '@/domain/inspirationLayout';
+import { layoutInspirations, isTallTile, isWideTile, reorderInspiration, tileSizeOf, type TileSize } from '@/domain/inspirationLayout';
 import RichInspirationNote from './RichInspirationNote';
 import BiblePassagePicker from '@/components/bible/BiblePassagePicker';
 import { bibleReference } from '@/domain/bibleLibrary';
@@ -31,7 +33,8 @@ const options:Option[]=[
   {kind:'poem',label:'Poème / texte court',sub:'Un poème ou un texte original à lire ici',icon:'book-outline'},
   {kind:'note',label:'Note',sub:'Une note avec listes, cases à cocher et sections',icon:'create-outline'},
   {kind:'bible-verse',label:'Verset biblique',sub:'Référence et passage',icon:'book-outline'},
-  {kind:'publication-ref',label:'Publication',sub:'Retrouver une publication par ID',icon:'albums-outline'},
+  {kind:'publication-ref',label:'Publication',sub:'Une publication partagée sur JenLow',icon:'albums-outline'},
+  {kind:'profile-ref',label:'Profil',sub:'Une personne JenLow qui t’inspire',icon:'person-outline'},
   {kind:'document',label:'Document',sub:'PDF, texte, fichier de référence',icon:'document-attach-outline'},
   {kind:'link',label:'Lien',sub:'Article ou site inspirant',icon:'link-outline'},
   {kind:'video',label:'Vidéo / audio',sub:'Une référence à écouter ou regarder',icon:'play-circle-outline'},
@@ -45,6 +48,7 @@ function typeIcon(kind:DreamBlockKind):keyof typeof Ionicons.glyphMap{
   if(kind==='poem')return 'book-outline';
   if(kind==='note')return 'create-outline';
   if(kind==='publication-ref')return 'albums-outline';
+  if(kind==='profile-ref')return 'person-outline';
   if(kind==='bible-verse')return 'book-outline';
   if(kind==='video')return 'videocam-outline';
   if(kind==='audio'||kind==='music')return 'musical-notes-outline';
@@ -61,6 +65,7 @@ export function InspirationTile({block,onPress,onLongPress}:{
  const image=hasImage(block);
  const document=block.kind==='document'||block.kind==='pdf';
  const publication=block.kind==='publication-ref';
+ const profile=block.kind==='profile-ref';
  const verse=block.kind==='bible-verse';
  const link=['link','bookmark','embed'].includes(block.kind);
  const quote=block.kind==='quote';
@@ -88,7 +93,9 @@ export function InspirationTile({block,onPress,onLongPress}:{
    }} as any:{})}
    style={{width:'100%',borderRadius:12,overflow:'hidden',
      backgroundColor:surface,minHeight:tall?300:110}}>
-   {publication?<SemencePublicationCover publicationId={block.content}
+   {profile?<SemenceProfileCover handle={block.content} name={block.title}
+     avatar={block.media?.[0]} height={tall?305:wide?190:165}/>:
+    publication?<SemencePublicationCover publicationId={block.content}
      fallbackTitle={block.title} fallbackImage={block.media?.[0]}
      fallbackType={block.icon?.replace(/^publication-/,'')}
      tileHeight={tall?wide?315:305:wide?190:165}/>:
@@ -148,6 +155,126 @@ export function InspirationTile({block,onPress,onLongPress}:{
  </Pressable>;
 }
 
+
+type MeasurableTile={measureInWindow:(fn:(x:number,y:number,width:number,height:number)=>void)=>void};
+
+/** Separate handles keep tap-to-preview and long-press-to-edit intact.
+ * PanResponder provides true touch dragging on mobile; on a simple tap,
+ * arrows offer keyboard/screen-reader-friendly reordering.
+ */
+function SortableInspirationCard({block,editable,onOpen,onMenu,onResize,onMeasure,
+ registerRef,onStartDrag,onFinishDrag,onDrop,onStep}:{
+ block:DreamBlock;editable:boolean;onOpen:()=>void;onMenu:()=>void;
+ onResize:(size:TileSize)=>void;onMeasure:(id:string,height:number)=>void;
+ registerRef:(id:string,view:MeasurableTile|null)=>void;
+ onStartDrag:(id:string)=>void;onFinishDrag:()=>void;
+ onDrop:(id:string,x:number,y:number)=>void;
+ onStep:(id:string,direction:-1|1)=>void;
+}){
+ const theme=useAppTheme();
+ const [sizeOpen,setSizeOpen]=useState(false);
+ const [moveOpen,setMoveOpen]=useState(false);
+ const [moving,setMoving]=useState(false);
+ const moved=useRef(false);
+ const offset=useRef(new Animated.ValueXY({x:0,y:0})).current;
+ const callbacks=useRef({onStartDrag,onFinishDrag,onDrop});
+ callbacks.current={onStartDrag,onFinishDrag,onDrop};
+ const responder=useMemo(()=>PanResponder.create({
+   onStartShouldSetPanResponder:()=>true,
+   onMoveShouldSetPanResponder:()=>true,
+   onPanResponderTerminationRequest:()=>false,
+   onPanResponderGrant:()=>{
+     moved.current=false;
+     callbacks.current.onStartDrag(block.id);
+   },
+   onPanResponderMove:(_,gesture)=>{
+     if(Math.abs(gesture.dx)+Math.abs(gesture.dy)>8){
+       if(!moved.current){moved.current=true;setMoving(true);}
+       offset.setValue({x:gesture.dx,y:gesture.dy});
+     }
+   },
+   onPanResponderRelease:(_,gesture)=>{
+     const actuallyMoved=moved.current;
+     offset.setValue({x:0,y:0});setMoving(false);
+     callbacks.current.onFinishDrag();
+     if(actuallyMoved)callbacks.current.onDrop(block.id,gesture.moveX,gesture.moveY);
+     else setMoveOpen(open=>!open);
+     moved.current=false;
+   },
+   onPanResponderTerminate:()=>{
+     offset.setValue({x:0,y:0});setMoving(false);moved.current=false;
+     callbacks.current.onFinishDrag();
+   },
+ }),[block.id,offset]);
+ const resizeChoices:{size:TileSize;icon:keyof typeof Ionicons.glyphMap}[]=[
+   {size:'1x1',icon:'square-outline'},
+   {size:'2x1',icon:'tablet-landscape-outline'},
+   {size:'1x2',icon:'tablet-portrait-outline'},
+   {size:'2x2',icon:'grid-outline'},
+ ];
+ return <Animated.View
+   ref={ref=>registerRef(block.id,ref as unknown as MeasurableTile|null)}
+   onLayout={event=>onMeasure(block.id,event.nativeEvent.layout.height)}
+   style={{position:'relative',zIndex:moving||sizeOpen||moveOpen?30:1,
+     elevation:moving?14:0,opacity:moving?0.88:1,
+     transform:offset.getTranslateTransform()}}>
+   <InspirationTile block={block} onPress={onOpen} onLongPress={onMenu}/>
+   {editable?<View style={{minHeight:31,paddingRight:8,paddingBottom:4,
+     flexDirection:'row',alignItems:'center',justifyContent:'flex-end',gap:6,
+     borderBottomLeftRadius:12,borderBottomRightRadius:12,
+     backgroundColor:theme.dark?'#2A2B2D':'#F5F1ED'}}>
+     <Pressable accessibilityRole="button"
+       accessibilityLabel={'Changer la taille de '+(block.title||'cette inspiration')}
+       accessibilityState={{expanded:sizeOpen}}
+       onPress={()=>{setSizeOpen(value=>!value);setMoveOpen(false);}}
+       style={{height:27,width:27,borderRadius:8,alignItems:'center',
+         justifyContent:'center',borderWidth:0.5,borderColor:theme.border,
+         backgroundColor:theme.dark?'#343435':'#F8F5F1'}}>
+       <Ionicons name="resize-outline" size={15} color="#9D6C43"/>
+     </Pressable>
+     <View {...responder.panHandlers}
+       accessible accessibilityRole="button"
+       accessibilityLabel={'Glisser pour déplacer '+(block.title||'cette inspiration')}
+       accessibilityHint="Maintenir et déplacer pour réorganiser les cartes, ou toucher pour les flèches"
+       style={{width:27,height:27,borderRadius:8,alignItems:'center',
+         justifyContent:'center',borderWidth:0.5,borderColor:theme.border,
+         backgroundColor:theme.dark?'#343435':'#F8F5F1'}}>
+       <Ionicons name="reorder-three-outline" size={20} color="#9D6C43"/>
+     </View>
+   </View>:null}
+   {editable&&sizeOpen?<View style={{position:'absolute',right:6,bottom:41,
+     flexDirection:'row',gap:4,padding:5,borderRadius:10,
+     backgroundColor:theme.background,borderWidth:1,borderColor:theme.border,
+     elevation:6,zIndex:75,shadowColor:'#332619',shadowOpacity:.12,shadowRadius:8}}>
+     {resizeChoices.map(choice=><Pressable key={choice.size}
+       accessibilityRole="button"
+       accessibilityLabel={'Carte '+choice.size.replace('x',' par ')}
+       accessibilityState={{selected:tileSizeOf(block)===choice.size}}
+       onPress={()=>{onResize(choice.size);setSizeOpen(false);}}
+       style={{width:37,height:44,borderRadius:7,
+         justifyContent:'center',alignItems:'center',gap:2,
+         backgroundColor:tileSizeOf(block)===choice.size?
+           (theme.dark?'#4C3C30':'#F0E5D9'):'transparent'}}>
+       <Ionicons name={choice.icon} color="#9D6C43" size={16}/>
+       <Text style={{fontSize:9,color:theme.foreground}}>{choice.size.replace('x','×')}</Text>
+     </Pressable>)}
+   </View>:null}
+   {editable&&moveOpen?<View style={{position:'absolute',right:7,bottom:41,
+     flexDirection:'row',gap:6,padding:5,borderRadius:10,
+     backgroundColor:theme.background,borderWidth:1,borderColor:theme.border,
+     zIndex:75,elevation:6}}>
+     {([-1,1] as const).map(direction=><Pressable key={direction}
+       accessibilityRole="button"
+       accessibilityLabel={direction===-1?'Déplacer avant':'Déplacer après'}
+       onPress={()=>{onStep(block.id,direction);setMoveOpen(false);}}
+       style={{width:42,height:39,alignItems:'center',justifyContent:'center'}}>
+       <Ionicons name={direction===-1?'arrow-up':'arrow-down'}
+         color="#9D6C43" size={21}/>
+     </Pressable>)}
+   </View>:null}
+ </Animated.View>;
+}
+
 /** Inspiration references, not a second note editor. */
 export default function SemenceInspirations({dream,editable,onShareInspiration,addRequestToken=0,showAddControl=false}:{
   dream:DreamEntry;editable:boolean;onShareInspiration?:(id:string)=>void;
@@ -162,7 +289,78 @@ export default function SemenceInspirations({dream,editable,onShareInspiration,a
   const [selectedBlock,setSelectedBlock]=useState<DreamBlock|null>(null);
   const [selectedMenu,setSelectedMenu]=useState(false);
   const [message,setMessage]=useState('');
-  const [picker,setPicker]=useState<'bible'|'publication'|null>(null);
+  const [picker,setPicker]=useState<'bible'|'publication'|'profile'|null>(null);
+  const [heights,setHeights]=useState<Record<string,number>>({});
+  const tileRefs=useRef<Record<string,MeasurableTile|null>>({});
+  const dropRegions=useRef<Record<string,{x:number;y:number;width:number;height:number}>>({});
+  const [draggingId,setDraggingId]=useState<string|null>(null);
+  const onMeasure=(id:string,height:number)=>{
+    if(!Number.isFinite(height)||height<=0)return;
+    setHeights(current=>Math.abs((current[id]||0)-height)<4?
+      current:{...current,[id]:height});
+  };
+  const beginDrag=(id:string)=>{
+    setDraggingId(id);
+    const snapshot:typeof dropRegions.current={};
+    for(const [key,node] of Object.entries(tileRefs.current)){
+      node?.measureInWindow((x,y,width,height)=>{
+        if(width>0&&height>0)dropRegions.current[key]={x,y,width,height};
+      });
+    }
+    dropRegions.current=snapshot;
+  };
+  const endDrag=()=>setDraggingId(null);
+  const onDrop=(id:string,x:number,y:number)=>{
+    if(!Number.isFinite(x)||!Number.isFinite(y))return;
+    const source=dropRegions.current[id];
+    // Short accidental drags ending inside the original tile don't reorder.
+    if(source&&x>=source.x&&x<=source.x+source.width&&
+       y>=source.y&&y<=source.y+source.height)return;
+    const positions=Object.entries(dropRegions.current)
+      .filter(([otherId,box])=>otherId!==id&&box.width>0&&box.height>0);
+    if(!positions.length)return;
+    // Prefer the tile under the finger/cursor, or the closest one in the gap.
+    const nearest=positions.map(([otherId,box])=>{
+      const dx=Math.max(box.x-x,0,x-(box.x+box.width));
+      const dy=Math.max(box.y-y,0,y-(box.y+box.height));
+      return {id:otherId,box,distance:dx*dx+dy*dy};
+    }).sort((a,b)=>a.distance-b.distance)[0];
+    // Dropping into empty space far from all cards should be a no-op.
+    if(!nearest||nearest.distance>10000)return;
+    const after=y>nearest.box.y+nearest.box.height*0.5;
+    const destinationGroup=visibleGroups.find(group=>
+      group.type==='wide'?group.block.id===nearest.id:
+        [...group.left,...group.right].some(b=>b.id===nearest.id));
+    const lane:'left'|'right'|undefined=destinationGroup?.type==='columns'?
+      (destinationGroup.left.some(b=>b.id===nearest.id)?'left':'right'):undefined;
+    const original=dream.blocks||[];
+    const reordered=reorderInspiration(original,id,nearest.id,after);
+    const positioned=reordered.map(b=>b.id===id?
+      {...b,masonryLane:lane}:b);
+    const changed=reordered!==original||original.some(b=>
+      b.id===id&&b.masonryLane!==lane);
+    if(changed)patch(dream.id,{blocks:positioned});
+  };
+  const onStep=(id:string,direction:-1|1)=>{
+    const index=blocks.findIndex(b=>b.id===id);
+    const target=blocks[index+direction];
+    if(!target)return;
+    const original=dream.blocks||[];
+    const reordered=reorderInspiration(original,id,target.id,direction===1);
+    if(reordered!==original)patch(dream.id,{blocks:reordered});
+  };
+  const visibleGroups=useMemo(()=>layoutInspirations(blocks,heights),[blocks,heights]);
+  const renderTile=(block:DreamBlock)=><SortableInspirationCard key={block.id}
+    block={block} editable={editable}
+    onOpen={()=>{setSelectedBlock({...block});setSelectedMenu(false);setMessage('');}}
+    onMenu={()=>{setSelectedBlock({...block});setSelectedMenu(true);setMessage('');}}
+    onResize={size=>patch(dream.id,{blocks:(dream.blocks||[]).map(b=>
+      b.id===block.id?{...b,tileSize:size}:b)})}
+    onMeasure={onMeasure}
+    registerRef={(id,node)=>{tileRefs.current[id]=node;}}
+    onStartDrag={beginDrag} onFinishDrag={endDrag}
+    onDrop={onDrop} onStep={onStep}/>;
+
   const canShow=choosing||!!draft;
   useEffect(()=>{if(addRequestToken>0&&editable){setChoosing(true);setMessage('');}},[addRequestToken]);
   const patchBlock=(updates:Partial<DreamBlock>)=>
@@ -172,7 +370,7 @@ export default function SemenceInspirations({dream,editable,onShareInspiration,a
       tileSize:'1x1',noteBlocks:kind==='note'?[]:undefined,
       tone:'clear',font:'sans',align:'left',frame:'none'};
     setDraft(base);setChoosing(false);setMessage('');
-    setPicker(kind==='bible-verse'?'bible':kind==='publication-ref'?'publication':null);
+    setPicker(kind==='bible-verse'?'bible':kind==='publication-ref'?'publication':kind==='profile-ref'?'profile':null);
   };
   const close=()=>{setChoosing(false);setDraft(null);setPicker(null);setMessage('');};
   const showError=(msg:string)=>{setMessage(msg);};
@@ -186,6 +384,8 @@ export default function SemenceInspirations({dream,editable,onShareInspiration,a
     if(draft.kind==='poem'&&content.length>2000)return showError('Pour un texte plus long, ajoute-le comme document.');
     if(draft.kind==='bible-verse'&&!title)return showError('Ajoute la référence du verset (par ex. Jean 3:16).');
     if(draft.kind==='publication-ref'&&!content)return showError('Saisis l’ID de la publication.');
+    if(draft.kind==='profile-ref'&&!/^[a-zA-Z0-9_.-]{2,80}$/.test(content.replace(/^@/,'')))
+      return showError('Sélectionne un profil JenLow valide.');
     if(['link','bookmark','embed'].includes(draft.kind)&&!isRemote(content))
       return showError('Utilise un lien qui commence par https:// ou http://.');
     if(['image','gallery','document','pdf','video','audio','music'].includes(draft.kind)&&!content)
@@ -275,22 +475,18 @@ export default function SemenceInspirations({dream,editable,onShareInspiration,a
       </Pressable>:null}
     </View>:null}
     {blocks.length?<View style={{gap:11}}>
-      {layoutInspirations(blocks).map((group,index)=>
-        group.type==='wide'?<InspirationTile key={'w-'+group.block.id}
-          block={group.block}
-          onPress={()=>{setSelectedBlock({...group.block});setSelectedMenu(false);setMessage('');}}
-          onLongPress={()=>{setSelectedBlock({...group.block});setSelectedMenu(true);setMessage('');}}/>:
+      {visibleGroups.map((group,index)=>group.type==='wide'?
+        <View key={'w-'+group.block.id} style={{zIndex:draggingId===group.block.id?60:1}}>
+          {renderTile(group.block)}
+        </View>:
         <View key={'group-'+index} style={{flexDirection:'row',
-          alignItems:'flex-start',gap:11}}>
+          alignItems:'flex-start',gap:11,
+          zIndex:draggingId&&[...group.left,...group.right].some(b=>b.id===draggingId)?60:1}}>
           <View style={{flex:1,gap:11}}>
-            {group.left.map(b=><InspirationTile key={b.id} block={b}
-              onPress={()=>{setSelectedBlock({...b});setSelectedMenu(false);setMessage('');}}
-              onLongPress={()=>{setSelectedBlock({...b});setSelectedMenu(true);setMessage('');}}/>)}
+            {group.left.map(renderTile)}
           </View>
           <View style={{flex:1,gap:11}}>
-            {group.right.map(b=><InspirationTile key={b.id} block={b}
-              onPress={()=>{setSelectedBlock({...b});setSelectedMenu(false);setMessage('');}}
-              onLongPress={()=>{setSelectedBlock({...b});setSelectedMenu(true);setMessage('');}}/>)}
+            {group.right.map(renderTile)}
           </View>
         </View>)}
     </View>:<View style={{minHeight:142,alignItems:'center',justifyContent:'center',
@@ -344,7 +540,7 @@ export default function SemenceInspirations({dream,editable,onShareInspiration,a
           <View style={{flexDirection:'row',alignItems:'center',
             justifyContent:'space-between',marginBottom:16}}>
             <Text style={{fontFamily:'serif',fontSize:23,color:theme.foreground}}>
-              {choosing?'Ajouter une inspiration':picker==='publication'?'Trouver une publication':picker==='bible'?'Dans ma Bible':draft?typeLabel(draft.kind):'Inspiration'}
+              {choosing?'Ajouter une inspiration':picker==='publication'?'Trouver une publication':picker==='profile'?'Trouver un profil':picker==='bible'?'Dans ma Bible':draft?typeLabel(draft.kind):'Inspiration'}
             </Text>
             <Pressable accessibilityRole="button" accessibilityLabel="Fermer"
               onPress={close} style={{padding:7}}>
@@ -374,13 +570,24 @@ export default function SemenceInspirations({dream,editable,onShareInspiration,a
                 title:bibleReference(verse),content:verse.text,
                 caption:'Louis Segond 1910',
               });setPicker(null);}}/>:null}
+            {draft&&picker==='profile'?<SemenceProfilePicker
+              onSelect={member=>{patchBlock({content:member.handle,
+                title:member.displayName,media:member.avatarUrl?[member.avatarUrl]:[]});
+                setPicker(null);}}
+              onBack={()=>setPicker(null)}/>:null}
             {draft&&picker==='publication'?<PublicationSearchPicker
               selectedId={draft.content}
               onManual={content=>patchBlock({content})}
               onSelect={item=>{const image=item.type==='talent'?item.avatar:
                 item.type==='music'?(item.coverArt||item.image):item.image;
-                patchBlock({content:item.id,title:item.title,
-                  media:image?[image]:[],icon:'publication-'+item.type});setPicker(null);}}
+                if(item.type==='talent'&&item.authorHandle){
+                  patchBlock({kind:'profile-ref',content:item.authorHandle,
+                    title:item.author,media:image?[image]:[],icon:undefined});
+                }else{
+                  patchBlock({content:item.id,title:item.title,
+                    media:image?[image]:[],icon:'publication-'+item.type});
+                }
+                setPicker(null);}}
               onDone={()=>setPicker(null)}/>:null}
             {draft&&!picker?<>
               {draft.kind==='image'||draft.kind==='gallery'?<>
@@ -435,7 +642,36 @@ export default function SemenceInspirations({dream,editable,onShareInspiration,a
                   </Text>
                 </Pressable>
               </>:null}
+              {draft.kind==='profile-ref'?<>
+                <Pressable onPress={()=>setPicker('profile')} accessibilityRole="button"
+                  style={{flexDirection:'row',alignItems:'center',gap:10,
+                    padding:12,borderWidth:1,borderColor:theme.border,borderRadius:10}}>
+                  <Ionicons name="person-outline" size={19} color={palette}/>
+                  <Text style={{fontSize:13,color:theme.foreground,fontWeight:'600'}}>
+                    {draft.content?'Changer de profil':'Rechercher un profil'}
+                  </Text>
+                </Pressable>
+                {!!draft.content?<SemenceProfileCover handle={draft.content}
+                  name={draft.title} avatar={draft.media?.[0]} height={205}/>:null}
+              </>:null}
               {draft.kind==='publication-ref'?<>
+                <Pressable onPress={()=>{
+                  patchBlock({kind:'profile-ref',content:'',media:[],icon:undefined});
+                  setPicker('profile');
+                }} accessibilityRole="button"
+                  style={{flexDirection:'row',gap:9,alignItems:'center',padding:12,
+                    borderRadius:10,borderWidth:1,borderColor:theme.border}}>
+                  <Ionicons name="person-outline" size={18} color={palette}/>
+                  <View style={{flex:1,gap:2}}>
+                    <Text style={{fontSize:13,fontWeight:'700',color:theme.foreground}}>
+                      Cette référence est un profil ?
+                    </Text>
+                    <Text style={{fontSize:11,color:theme.muted}}>
+                      Retrouver la personne et utiliser sa photo de profil
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={16} color={theme.muted}/>
+                </Pressable>
                 <Pressable onPress={()=>setPicker('publication')} accessibilityRole="button"
                   style={{flexDirection:'row',gap:9,alignItems:'center',padding:12,
                     borderRadius:10,borderWidth:1,borderColor:theme.border}}>
@@ -490,7 +726,7 @@ export default function SemenceInspirations({dream,editable,onShareInspiration,a
                 {input(draft.content.startsWith('data:')?'':draft.content,
                   content=>patchBlock({content,media:[]}), 'Ou coller un lien vers le média')}
               </>:null}
-              {!['image','gallery','quote','poem','note','bible-verse','publication-ref','document','pdf','link','bookmark','embed','video','audio','music'].includes(draft.kind)?<>
+              {!['image','gallery','quote','poem','note','bible-verse','publication-ref','profile-ref','document','pdf','link','bookmark','embed','video','audio','music'].includes(draft.kind)?<>
                 <Text style={{fontSize:11,color:theme.muted}}>
                   Ancien bloc conservé pour ne pas perdre tes idées.
                 </Text>
