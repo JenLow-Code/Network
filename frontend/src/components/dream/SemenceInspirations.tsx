@@ -331,7 +331,7 @@ export default function SemenceInspirations({dream,editable,onShareInspiration,a
     const destinationGroup=visibleGroups.find(group=>
       group.type==='wide'?group.block.id===nearest.id:
         [...group.left,...group.right].some(b=>b.id===nearest.id));
-    const lane=destinationGroup?.type==='columns'?
+    const lane:'left'|'right'|undefined=destinationGroup?.type==='columns'?
       (destinationGroup.left.some(b=>b.id===nearest.id)?'left':'right'):undefined;
     const original=dream.blocks||[];
     const reordered=reorderInspiration(original,id,nearest.id,after);
