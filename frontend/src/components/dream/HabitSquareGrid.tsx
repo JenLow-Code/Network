@@ -68,12 +68,15 @@ export function HabitSquareGrid({
   const {width:screenWidth}=useWindowDimensions();
   const [expanded,setExpanded]=useState(false);
   const [measuredWidth,setMeasuredWidth]=useState(0);
-  const gap=5;
-  // A day-based habit is a calendar: precisely seven slots, Monday to Sunday.
-  // Weekly habits retain seven periods per row (one slot = one week).
+  const gap=6;
+  // One week = seven squares, Monday to Sunday. Indent this visual beneath
+  // the habit's title, aligned with its "Voir dans le calendrier" subtitle.
   const columns=7;
-  const available=Math.max(156,measuredWidth||Math.min(screenWidth-130,500));
-  const cellSize=Math.max(16,Math.min(22,(available-(columns-1)*gap)/columns));
+  const indent=33;
+  const available=measuredWidth>0
+    ?Math.max(100,measuredWidth-indent)
+    :Math.max(100,Math.min(screenWidth-155,500));
+  const cellSize=Math.max(12,Math.min(27,(available-(columns-1)*gap)/columns));
   const periods=chronologicalPeriods(habit,goalDate,dreamStartedAt,plannedSessions);
   const mondayKey=(dateKey:string):string=>{
     const date=new Date(dateKey+'T12:00:00');
@@ -98,6 +101,15 @@ export function HabitSquareGrid({
       rows.push({key:'week-periods-'+i,slots:periods.slice(i,i+columns)});
     }
   }
+  const isoWeek=(monday:string):number=>{
+    const date=new Date(monday+'T12:00:00');
+    const thursday=new Date(date);
+    thursday.setDate(thursday.getDate()+3);
+    const year=thursday.getFullYear();
+    const firstMonday=new Date(year,0,4,12);
+    firstMonday.setDate(firstMonday.getDate()-((firstMonday.getDay()+6)%7));
+    return 1+Math.round((date.getTime()-firstMonday.getTime())/(7*86400000));
+  };
   const nowKey=habitDayKey(new Date());
   const thisWeek=mondayKey(nowKey);
   const activeIndex=rows.findIndex(row=>habit.frequency==='daily'
@@ -149,16 +161,22 @@ export function HabitSquareGrid({
     const width=event.nativeEvent.layout.width;
     if(width>0&&Math.abs(width-measuredWidth)>1)setMeasuredWidth(width);
   }}>
-    <View style={{gap:5,paddingVertical:4}}>
-      {shown.map(row=><View key={row.key}
-        style={{flexDirection:'row',gap,alignItems:'center'}}>
-        {row.slots.map((period,index)=>period?(
-          <React.Fragment key={period.key}>{renderSquare(period)}</React.Fragment>
-        ):(
-          // Empty alignment slots are not goal squares. They just preserve
-          // Monday–Sunday alignment for partial first/last weeks.
-          <View key={'empty-'+index} style={{width:cellSize,height:cellSize}}/>
-        ))}
+    <View style={{gap:6,paddingVertical:4,paddingLeft:indent}}>
+      {shown.map(row=><View key={row.key} style={{gap:4}}>
+        <Text style={{fontSize:10,lineHeight:13,fontWeight:'500',
+          color:theme.muted,letterSpacing:.15}}>
+          {habit.frequency==='daily'
+            ?(row.key===thisWeek?'Cette semaine · S':'Semaine ')+isoWeek(row.key)
+            :'Semaines'}
+        </Text>
+        <View style={{flexDirection:'row',gap,alignItems:'center'}}>
+          {row.slots.map((period,index)=>period?(
+            <React.Fragment key={period.key}>{renderSquare(period)}</React.Fragment>
+          ):(
+            // Invisible positional spacer, not a failed or future habit square.
+            <View key={'empty-'+index} style={{width:cellSize,height:cellSize}}/>
+          ))}
+        </View>
       </View>)}
       {canExpand?<Pressable accessibilityRole="button"
         accessibilityState={{expanded}}
