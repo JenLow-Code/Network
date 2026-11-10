@@ -468,7 +468,7 @@ export default function DreamExperience({
         <Ionicons name="arrow-forward" size={14} color={theme.foreground}/>
       </Pressable>
 
-        {(resources.length>0||!!dream.goalDate)?(
+        {true?(
           <Pressable accessibilityRole="button"
             accessibilityState={{expanded:recapExpanded}}
             accessibilityLabel={recapExpanded
@@ -478,17 +478,21 @@ export default function DreamExperience({
             style={{flexDirection:'row',alignItems:'center',gap:6,
               marginTop:5,paddingLeft:10,paddingRight:10,paddingVertical:8,minHeight:36,
               borderRadius:10,backgroundColor:theme.dark?'#432D38':'#FCECF4'}}>
-            {missingResources.length?(
+            {hasResourceAlert?(
               <Ionicons name="warning-outline" size={16} color="#D71D77"/>
+            ):newGrowthNeeds.length?(
+              <Ionicons name="add-circle-outline" size={16} color="#27845B"/>
             ):(
               <View style={{width:10,height:10,borderRadius:5,
                 backgroundColor:'#A1BA44',borderWidth:1,borderColor:'#668C2A'}}/>
             )}
             <Text numberOfLines={1} style={{fontSize:11,fontWeight:'700',
               color:theme.foreground,flexShrink:1}}>
-              {missingResources.length
+              {hasResourceAlert
                 ?`${missingResources.length} besoin${missingResources.length>1?'s':''} à compléter`
-                :'Depuis la Germination'}
+                :newGrowthNeeds.length
+                ?`${newGrowthNeeds.length} nouveau${newGrowthNeeds.length>1?'x':''} besoin${newGrowthNeeds.length>1?'s':''}`
+                :'Mes ressources'}
             </Text>
             <Ionicons name={recapExpanded?'chevron-up':'chevron-down'}
               color={theme.foreground} size={15}/>
@@ -496,7 +500,7 @@ export default function DreamExperience({
         ):null}
       </View>
     </View>
-    {(resources.length>0||!!dream.goalDate)&&recapExpanded?(
+    {recapExpanded?(
       <View style={{borderRadius:12,backgroundColor:theme.dark?'#432D38':'#FCECF4',
         overflow:'hidden',marginTop:6,marginBottom:7}}>
         <View style={{paddingHorizontal:15,paddingBottom:14,gap:11,
@@ -520,7 +524,8 @@ export default function DreamExperience({
                 </Text>
                 <Text style={{fontSize:12,lineHeight:18,
                   color:theme.foreground,flexShrink:1}}>
-                  {unfilled.map(need=>need.title).join(', ')} {item.category==='financial'?'à payer':'à trouver'}
+                  {unfilled.map(need=>need.title+(need.addedDuringPhase==='Croissance'?' · ajouté en Croissance':'')).join(', ')}
+                  {item.category==='financial'?'à payer':'à trouver'}
                 </Text>
               </View>
               <View style={{height:4,borderRadius:3,overflow:'hidden',
@@ -532,7 +537,7 @@ export default function DreamExperience({
           })}
           {missingResources.length===0 ? (
             <Text style={{fontSize:12,color:theme.muted}}>
-              Tous les besoins de Germination sont remplis.
+              Tous les besoins enregistrés sont remplis.
             </Text>
           ) : <Pressable accessibilityRole="button"
               accessibilityLabel="Gérer les besoins de Germination"
@@ -542,6 +547,16 @@ export default function DreamExperience({
               <Text style={{fontSize:11,fontWeight:'700',color:theme.foreground}}>Gérer</Text>
               <Ionicons name="arrow-forward" size={14} color={theme.foreground}/>
             </Pressable>}
+          {growthActive?<Pressable accessibilityRole="button"
+            accessibilityLabel="Ajouter un nouveau talent, une ressource ou un financement en Croissance"
+            onPress={()=>onRecoverResource?.('all')}
+            style={{alignSelf:'flex-end',flexDirection:'row',alignItems:'center',
+              gap:5,paddingVertical:5}}>
+            <Ionicons name="add" size={15} color="#27845B"/>
+            <Text style={{fontSize:11,fontWeight:'700',color:'#27845B'}}>
+              Ajouter un besoin
+            </Text>
+          </Pressable>:null}
           {dream.phase==='Croissance' && !historical &&
             resources.some(resource=>isNeedFound(resource)) ? (
             <Pressable accessibilityRole="button"
@@ -921,7 +936,7 @@ export default function DreamExperience({
          </Text>
        </View>
        <Text style={{fontSize:13,color:theme.muted,lineHeight:20,marginBottom:4}}>
-         Veux-tu gérer les ressources nécessaires dans l’étape précédente, Germination ?
+         Tu peux gérer ces besoins avec les outils de Germination tout en restant en Croissance.
        </Text>
        {missingCategories.map(category=><Pressable key={category}
          accessibilityRole="button"
