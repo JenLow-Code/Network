@@ -17,13 +17,13 @@ export default function PublishedSemenceCard({item,width,onPress,preview=false}:
    ?art(images[0],0,{width:'100%',height:138,borderRadius:3})
    :images.length===2
      ?<View style={{flexDirection:'row',gap:3}}>
-        {images.map((uri,i)=>art(uri,i,{width:'49.5%',height:129,borderRadius:2}))}
+        {images.map((uri,i)=>art(uri,i,{flex:1,height:129,borderRadius:2}))}
        </View>
      :images.length>=3
        ?<View style={{gap:3}}>
          <View style={{flexDirection:'row',gap:3}}>
            {images.slice(0,2).map((uri,i)=>art(uri,i,{
-             width:'49.5%',height:94,borderRadius:2}))}
+             flex:1,height:94,borderRadius:2}))}
          </View>
          {art(images[2],2,{width:'100%',height:88,borderRadius:2})}
        </View>
