@@ -72,7 +72,8 @@ export default function Profile() {
     let active=true;
     setServerPublications([]);
     void api<{items:ApiFeedItem[]}>('/api/me/publications?limit=100',{auth:'required'})
-      .then(result=>{if(active)setServerPublications(toPublications(result.items||[]));})
+      .then(result=>{if(active)setServerPublications(toPublications(
+         (result.items||[]).filter(item=>item.visibility==='public')));})
       .catch(()=>{ /* Keep existing locally visible profile items when API is disconnected. */ });
     return ()=>{active=false;};
   },[app.email]);
