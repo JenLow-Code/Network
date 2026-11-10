@@ -154,10 +154,15 @@ export default function DreamExperience({
  };
  const phase = viewPhase || dream.phase;
  const historical = phase !== dream.phase;
- const readOnly = historical || dream.phase === 'Témoignage';
+ // Floraison locks Croissance immediately upon entering the flower editor,
+ // not only once the flower is published.
+ const growthLocked = dream.phase==='Témoignage' || !!dream.flowerStartedAt;
+ const readOnly = historical || growthLocked;
  const frozen=!!dream.paused && !!dream.pauseUntil && dream.pauseUntil>=day();
- const growthActive=phase==='Croissance' && !historical && !frozen;
- const recoverPastNeeds = phase==='Initiation' && dream.phase==='Croissance' && !!recoveryCategory;
+ const growthWritable=phase==='Croissance' && !historical && !growthLocked;
+ const growthActive=growthWritable && !frozen;
+ const recoverPastNeeds = phase==='Initiation' && dream.phase==='Croissance'
+   && !growthLocked && !!recoveryCategory;
  const resourceEditable=phase==='Initiation' && !frozen && (!historical || recoverPastNeeds);
  const canEditCategory=(category:DreamResource['category'])=>
    resourceEditable && (!recoverPastNeeds || recoveryCategory==='all' || recoveryCategory===category);
@@ -470,7 +475,7 @@ export default function DreamExperience({
    ):null}
   </> : null}
   {phase==='Croissance' ? <>
-    {historical?<View style={{flexDirection:'row',alignItems:'center',
+    {(historical||growthLocked)?<View style={{flexDirection:'row',alignItems:'center',
       gap:7,paddingVertical:7,paddingHorizontal:3}}>
       <Ionicons name="lock-closed-outline" size={13} color={theme.muted}/>
       <Text style={{fontSize:11,color:theme.muted}}>
@@ -705,7 +710,7 @@ export default function DreamExperience({
         setHabits(dream.id,next);
       }}
     />
-    {!historical?<View style={{gap:11,marginTop:11,marginBottom:22}}>
+    {growthWritable?<View style={{gap:11,marginTop:11,marginBottom:22}}>
       {frozen ? (
         <View style={{gap:9,padding:14,borderWidth:1,
           borderColor:'#397F9E',borderRadius:11}}>
