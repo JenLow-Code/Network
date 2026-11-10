@@ -81,8 +81,8 @@ export default function ProfilePreview() {
          onPress={()=>setSelectedTalent(t)}/>)}
      </View>
      {talents.length===0?<Text style={{fontSize:12,color:theme.muted,marginBottom:25}}>Aucun talent enregistré.</Text>:null}
-     <SemenceSharesFeed mine publicOnly/>
      <Text style={{fontWeight:'700',fontSize:18,color:theme.foreground,marginBottom:14}}>Mes publications</Text>
+     <SemenceSharesFeed mine publicOnly/>
      {posts.length>0?<ProfilePublicationFeed grid items={posts} contentWidth={contentWidth} featuredId={featuredId}/>:
        <Text style={{fontSize:12,color:theme.muted,lineHeight:19}}>Aucune publication publique disponible dans cet aperçu pour le moment.</Text>}
      <Pressable onPress={()=>router.back()} accessibilityRole="button"

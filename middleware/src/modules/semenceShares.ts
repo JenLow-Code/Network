@@ -72,8 +72,13 @@ function block(raw:unknown,index:number){
  };
 }
 function view(row:ShareRow,details=false){
+ const snapshot=JSON.parse(row.blocks_json) as {kind:string;content?:string;media?:string[]}[];
+ const previewImages=snapshot.filter(block=>block.kind==='image'||block.kind==='gallery')
+   .map(block=>block.media?.[0]||block.content||'')
+   .filter(url=>/^https:\/\/|^data:image\//i.test(url)).slice(0,3);
  return {
   id:row.id,title:row.title,summary:row.summary,coverUrl:row.cover_url,
+  previewImages,
   visibility:row.visibility,createdAt:iso(row.created_at),
   author:{handle:row.handle,displayName:row.display_name},
   ...(details?{blocks:JSON.parse(row.blocks_json)}:{}),

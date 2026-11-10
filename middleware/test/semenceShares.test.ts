@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import {createApp} from './helpers/app.ts';
 
 const blocks=[
+ {id:'photo-1',kind:'image',title:'Idée de visuel',content:'https://images.example.test/flower.jpg',
+   tileSize:'1x1',media:['https://images.example.test/flower.jpg']},
  {id:'verse-1',kind:'bible-verse',title:'Jean 3:12',content:'Si vous ne croyez pas…',tileSize:'1x1',media:[]},
  {id:'note-1',kind:'note',title:'Une note',content:'',tileSize:'1x2',
    noteBlocks:[{id:'a',type:'checklist',text:'Parler au studio',checked:true}]},
@@ -21,7 +23,8 @@ test('Semence public profile snapshot excludes private notebooks and stays out o
  const id=published.body.item.id as string;
  const detail=await app.call('GET','/api/semence-shares/'+id);
  assert.equal(detail.status,200,JSON.stringify(detail.body));
- assert.equal(detail.body.item.blocks[1].noteBlocks[0].checked,true);
+ assert.deepEqual(detail.body.item.previewImages,['https://images.example.test/flower.jpg']);
+ assert.equal(detail.body.item.blocks[2].noteBlocks[0].checked,true);
  assert.equal(JSON.stringify(detail.body).includes('NE PAS PARTAGER'),false);
  assert.equal((await app.call('GET','/api/me/semence-shares',{token:author.token})).body.items.length,1);
  assert.equal((await app.call('GET','/api/users/'+author.handle+'/semence-shares')).body.items.length,1);

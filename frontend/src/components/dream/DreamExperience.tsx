@@ -18,6 +18,7 @@ import { DREAM_TALENT_CHOICES } from './dreamTalentCatalog';
 import { TalentLevelSelector } from '@/components/talent/TalentLevelSelector';
 import { habitDayKey, habitKey } from '@/domain/habitProgress';
 import { GrowthLogbook } from './GrowthLogbook';
+import DreamWorkspaceShortcuts from './DreamWorkspaceShortcuts';
 import { canEditGrowthLog } from '@/domain/growthTimeline';
 
 const pink = '#D71D77';
@@ -307,6 +308,9 @@ export default function DreamExperience({
    {!historical ? <Action label="Faire germer ce rêve" onPress={()=>confirm('Faire germer','Ton rêve deviendra public. Tu pourras toujours retrouver tes inspirations dans son histoire.',()=>{patch(dream.id,{visibility:'public'});advance(dream.id);})}/> : null}
   </> : null}
   {phase==='Initiation' ? <>
+   <View style={{alignItems:'flex-end',marginTop:-10,marginBottom:4}}>
+     <DreamWorkspaceShortcuts dream={dream} showLibrary/>
+   </View>
    {recoverPastNeeds?<View style={{padding:12,borderRadius:10,borderWidth:1,
      borderColor:'#D71D77',marginBottom:11,backgroundColor:theme.surface,gap:4}}>
      <Text style={{color:'#D71D77',fontSize:12,fontWeight:'700'}}>{recoveryCategory==='all'?'Besoins pendant Croissance': 'Gestion des besoins · '+categoryNames[recoveryCategory!]}</Text>
@@ -444,7 +448,7 @@ export default function DreamExperience({
   </> : null}
   {phase==='Croissance' ? <>
     <View style={{flexDirection:'row',alignItems:'flex-start',
-      justifyContent:'space-between',gap:12,marginTop:0,marginBottom:6,
+      justifyContent:'space-between',gap:12,marginTop:-10,marginBottom:6,
       paddingHorizontal:3}}>
       {dream.goalDate?<View style={{flex:1,alignItems:'flex-start',
         gap:6,paddingLeft:2,paddingTop:5,minWidth:0}}>
@@ -461,29 +465,7 @@ export default function DreamExperience({
         </View>
       </View>:<View style={{flex:1}}/>}
       <View style={{alignItems:'flex-end',gap:0,flexShrink:1}}>
-      <Pressable accessibilityRole="button"
-        accessibilityLabel="Ouvrir mes notes"
-        onPress={()=>router.push({pathname:'/my-dream/notes/[id]',params:{id:dream.id}})}
-        style={{flexDirection:'row',alignItems:'center',gap:5,
-          minHeight:35,paddingRight:10}}>
-        <Ionicons name="book-outline" size={13} color={theme.foreground}/>
-        <Text style={{fontSize:12,fontWeight:'600',color:theme.foreground}}>
-          Notes
-        </Text>
-        <Ionicons name="arrow-forward" size={14} color={theme.foreground}/>
-      </Pressable>
-      <Pressable accessibilityRole="button"
-        accessibilityLabel="Ouvrir inspirations et documents"
-        onPress={()=>router.push({pathname:'/my-dream/library/[id]',params:{id:dream.id}})}
-        style={{flexDirection:'row',alignItems:'center',gap:5,
-          minHeight:35,paddingRight:10}}>
-        <Ionicons name="folder-open-outline" size={14} color={theme.foreground}/>
-        <Text style={{fontSize:12,fontWeight:'600',color:theme.foreground}}>
-          Inspirations / Documents
-        </Text>
-        <Ionicons name="arrow-forward" size={14} color={theme.foreground}/>
-      </Pressable>
-
+        <DreamWorkspaceShortcuts dream={dream} showLibrary/>
         {true?(
           <Pressable accessibilityRole="button"
             accessibilityState={{expanded:recapExpanded}}
