@@ -4,7 +4,15 @@ export type DreamMedia = {
   uri: string;
   kind: 'photo' | 'video' | 'audio' | 'document';
 };
-export type FlowerDraft = { story: string; attachments: DreamMedia[]; reminderDate?: string };
+export type FlowerDraft = {
+  story: string;
+  attachments: DreamMedia[];
+  reminderDate?: string;
+  /** Calendar day explicitly confirmed when the dream became reality. */
+  achievedOn?: string;
+  /** Only deliberately selected journal moments appear in a public Floraison. */
+  highlightIds?: string[];
+};
 export type DreamBlockKind =
   | 'text' | 'heading1' | 'heading2' | 'heading3'
   | 'quote' | 'callout' | 'bullet' | 'numbered' | 'todo'
@@ -216,6 +224,10 @@ export type DreamEntry = {
     mediaType: 'audio' | 'photo' | 'video' | 'text';
     mediaUrl?: string;
     mediaItems?: DreamMedia[];
+    /** Public moments explicitly selected from the private Logbook. */
+    highlights?: { id: string; title: string; date: string }[];
+    /** The achievement and publication dates are separate milestones. */
+    publishedAt?: string;
     date: string;
   };
   createdAt: string;

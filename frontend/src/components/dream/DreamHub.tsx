@@ -115,13 +115,18 @@ export default function DreamHub({ dream, startInSemence = false, startPhase }: 
   const [resultOpen,setResultOpen]=useState(false);
   const [recoveryCategory,setRecoveryCategory]=useState<DreamResource['category']|'all'|null>(null);
   const [open, setOpen] = useState<DreamPhase | null>(() =>
-    startPhase && order.indexOf(startPhase) <= order.indexOf(dream.phase)
+    startPhase === 'Témoignage' && dream.phase === 'Témoignage' && !dream.testimony
+      ? null : startPhase && order.indexOf(startPhase) <= order.indexOf(dream.phase)
       ? startPhase : startInSemence && dream.phase === 'Rêve' ? 'Rêve' :
         dream.phase !== 'Témoignage' ? dream.phase : null
   );
   const firstRender = useRef(true);
   const switchPhase = (next: DreamPhase) => {
     if (order.indexOf(next) <= order.indexOf(dream.phase)) {
+      if(next==='Témoignage' && !dream.testimony){
+        router.push({pathname:'/my-dream/flower/[id]',params:{id:dream.id}});
+        return;
+      }
       setRecoveryCategory(null);
       setOpen(next);
     }
@@ -152,6 +157,10 @@ export default function DreamHub({ dream, startInSemence = false, startPhase }: 
   }, [sheet, width, height]);
 
   const enter = useCallback((phase: DreamPhase) => {
+    if(phase==='Témoignage' && dream.phase==='Témoignage' && !dream.testimony){
+      router.push({pathname:'/my-dream/flower/[id]',params:{id:dream.id}});
+      return;
+    }
     if (busy.current || openRef.current || order.indexOf(phase) > order.indexOf(phaseRef.current)) {
       resetScene();
       return;
@@ -172,9 +181,10 @@ export default function DreamHub({ dream, startInSemence = false, startPhase }: 
       sheet.setValue({ x: 0, y: 0 });
       busy.current = false;
     });
-  }, [sheet, width, height, resetScene]);
+  }, [sheet, width, height, resetScene, dream.id, dream.phase, !!dream.testimony]);
 
   const dragScene = useCallback((phase: DreamPhase, distance: number) => {
+    if (phase==='Témoignage' && dream.phase==='Témoignage' && !dream.testimony) return;
     if (busy.current || openRef.current || order.indexOf(phase) > order.indexOf(phaseRef.current)) return;
     if (previewRef.current !== phase) {
       sheet.setValue(sheetPosition(phase, width, height));
@@ -182,7 +192,7 @@ export default function DreamHub({ dream, startInSemence = false, startPhase }: 
       setPreview(phase);
     }
     sheet.setValue(sheetPosition(phase, width, height, Math.max(0, distance)));
-  }, [sheet, width, height]);
+  }, [sheet, width, height, dream.phase, !!dream.testimony]);
 
   const pullHandle = useCallback((phase: DreamPhase, distance: number) => {
     dragScene(phase, distance);
@@ -235,17 +245,18 @@ export default function DreamHub({ dream, startInSemence = false, startPhase }: 
   const talentFound = requestedTalents.filter(item => !!item.serverNeedId && item.confirmed).length;
   const resourceFound = otherResources.filter(item => item.confirmed).length;
   const phaseIndex = order.indexOf(dream.phase);
-  const preparingFlower = dream.phase === 'Croissance' &&
-    (!!dream.flowerStartedAt || !!dream.flowerDraft?.story?.trim() || !!dream.flowerDraft?.attachments?.length);
-  const currentLabel = dream.phase === 'Témoignage'
-    ? 'Fruit' : preparingFlower ? 'Floraison' : PHASE_LABELS[dream.phase];
-  const image = dream.phase === 'Témoignage'
+  const fruit = dream.phase === 'Témoignage' && !!dream.testimony;
+  const preparingFlower = (dream.phase === 'Témoignage' && !dream.testimony) ||
+    (dream.phase === 'Croissance' &&
+      (!!dream.flowerStartedAt || !!dream.flowerDraft?.story?.trim() ||
+        !!dream.flowerDraft?.attachments?.length));
+  const currentLabel = fruit ? 'Fruit' : preparingFlower ? 'Floraison' : PHASE_LABELS[dream.phase];
+  const image = fruit
     ? (dream.resultImage || dream.testimony?.mediaItems?.find(media => media.kind === 'photo')?.uri || dream.image)
     : dream.image;
   const hasImage = !!image;
-  const fruit = dream.phase === 'Témoignage';
   const fruitPhoto = dream.resultImage || dream.testimony?.mediaItems?.find(m=>m.kind==='photo')?.uri;
-  const completedOn = dream.testimony?.date || dream.fruitAt;
+  const completedOn = dream.testimony?.date || dream.flowerDraft?.achievedOn || dream.fruitAt;
   const ink = fruit ? '#FFFFFF' : theme.dark ? '#F7F5F0' : '#222320';
   const muted = fruit ? '#FDE8EE' : theme.dark ? '#D1D0C9' : '#565A56';
   const coOwners = (dream.coOwners || []).filter(owner => owner.accepted && !!owner.name.trim());
@@ -375,7 +386,7 @@ export default function DreamHub({ dream, startInSemence = false, startPhase }: 
                   >
                     <Ionicons name="calendar-outline" size={15} color={ink}/>
                     <Text style={{ fontSize: compact ? 12 : 13, color: ink, fontWeight: '600' }}>
-                      {fruit ? (completedOn ? 'Accompli le ' + shortDate(completedOn.slice(0,10)) : 'Rêve accompli') :
+                      {(fruit || preparingFlower) && completedOn ? 'Réalisé le ' + shortDate(completedOn.slice(0,10)) :
                         dream.goalDate ? 'Date objectif · ' + shortDate(dream.goalDate) : 'Date objectif à définir'}
                     </Text>
                   </Pressable>
