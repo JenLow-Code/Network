@@ -39,15 +39,22 @@ export function habitScheduleStart(
 
 /** Current run of consecutive completions. Today's incomplete slot doesn't break the run yet. */
 export function habitStreak(habit: DreamHabit, now: Date = new Date()): number {
-  const completed = new Set(habit.completed.map(key => habitKey(habit.frequency, key)));
+  const completed = new Set((habit.completed||[]).map(key => habitKey(habit.frequency, key)));
+  const target = habit.target && habit.target > 0 ? habit.target : 1;
+  // Match exactly the same success rule used to color historical squares.
+  // A measured value overrides a legacy completed flag for that period.
+  const isDone=(key:string):boolean=>{
+    const measured=habit.measurements?.[key];
+    return measured!==undefined?measured>=target:completed.has(key);
+  };
   const date = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12);
   if (habit.frequency === 'weekly') {
     date.setDate(date.getDate() - ((date.getDay() + 6) % 7));
   }
   const step = habit.frequency === 'weekly' ? 7 : 1;
-  if (!completed.has(habitDayKey(date))) date.setDate(date.getDate() - step);
+  if (!isDone(habitDayKey(date))) date.setDate(date.getDate() - step);
   let count = 0;
-  while (count < 520 && completed.has(habitDayKey(date))) {
+  while (count < 520 && isDone(habitDayKey(date))) {
     count += 1;
     date.setDate(date.getDate() - step);
   }
