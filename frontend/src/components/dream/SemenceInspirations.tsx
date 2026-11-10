@@ -156,6 +156,8 @@ export function InspirationTile({block,onPress,onLongPress}:{
 }
 
 
+type MeasurableTile={measureInWindow:(fn:(x:number,y:number,width:number,height:number)=>void)=>void};
+
 /** Separate handles keep tap-to-preview and long-press-to-edit intact.
  * PanResponder provides true touch dragging on mobile; on a simple tap,
  * arrows offer keyboard/screen-reader-friendly reordering.
@@ -164,7 +166,7 @@ function SortableInspirationCard({block,editable,onOpen,onMenu,onResize,onMeasur
  registerRef,onStartDrag,onFinishDrag,onDrop,onStep}:{
  block:DreamBlock;editable:boolean;onOpen:()=>void;onMenu:()=>void;
  onResize:(size:TileSize)=>void;onMeasure:(id:string,height:number)=>void;
- registerRef:(id:string,view:View|null)=>void;
+ registerRef:(id:string,view:MeasurableTile|null)=>void;
  onStartDrag:(id:string)=>void;onFinishDrag:()=>void;
  onDrop:(id:string,x:number,y:number)=>void;
  onStep:(id:string,direction:-1|1)=>void;
@@ -211,7 +213,7 @@ function SortableInspirationCard({block,editable,onOpen,onMenu,onResize,onMeasur
    {size:'2x2',icon:'grid-outline'},
  ];
  return <Animated.View
-   ref={ref=>registerRef(block.id,ref as unknown as View|null)}
+   ref={ref=>registerRef(block.id,ref as unknown as MeasurableTile|null)}
    onLayout={event=>onMeasure(block.id,event.nativeEvent.layout.height)}
    style={{position:'relative',zIndex:moving||sizeOpen||moveOpen?30:1,
      elevation:moving?14:0,opacity:moving?0.88:1,
@@ -287,7 +289,7 @@ export default function SemenceInspirations({dream,editable,onShareInspiration,a
   const [message,setMessage]=useState('');
   const [picker,setPicker]=useState<'bible'|'publication'|'profile'|null>(null);
   const [heights,setHeights]=useState<Record<string,number>>({});
-  const tileRefs=useRef<Record<string,View|null>>({});
+  const tileRefs=useRef<Record<string,MeasurableTile|null>>({});
   const dropRegions=useRef<Record<string,{x:number;y:number;width:number;height:number}>>({});
   const [draggingId,setDraggingId]=useState<string|null>(null);
   const onMeasure=(id:string,height:number)=>{
@@ -324,7 +326,6 @@ export default function SemenceInspirations({dream,editable,onShareInspiration,a
     if(reordered!==original)patch(dream.id,{blocks:reordered});
   };
   const onStep=(id:string,direction:-1|1)=>{
-    const ordered=blocks.filter(b=>b.id!==id);
     const index=blocks.findIndex(b=>b.id===id);
     const target=blocks[index+direction];
     if(!target)return;
