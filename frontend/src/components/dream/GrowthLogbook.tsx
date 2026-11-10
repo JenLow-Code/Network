@@ -44,25 +44,36 @@ function SocialLine({title,icon,color,value}:{
   title:string;icon:'prayer'|'heart';color:string;value:ActivityCount;
 }){
   const theme=useAppTheme();
-  const delta=positiveCount(value.delta)?'+'+value.delta:null;
-  const total=validCount(value.total)?String(value.total):null;
-  if(!delta&&!total)return null;
-  const bg = color===SEED_BROWN?'#F6EFE7':'#FCEBF3';
+  const today=positiveCount(value.delta)?value.delta:null;
+  const total=validCount(value.total)?value.total:null;
+  if(today===null && total===null)return null;
+  const bg=color===SEED_BROWN?'#F6EFE7':'#FCEBF3';
+  const description=today!==null
+    ?icon==='prayer'
+      ?(today===1?'1 personne a prié':''
+        +today+' personnes ont prié')+' pour ce rêve aujourd’hui'
+      :(today===1?'1 personne t’a encouragé':''
+        +today+' personnes t’ont encouragé')+' aujourd’hui'
+    :icon==='prayer'
+      ?(total===1?'1 prière reçue':''
+        +total+' prières reçues')
+      :(total===1?'1 encouragement reçu':''
+        +total+' encouragements reçus');
   return <View style={{alignSelf:'flex-start',flexDirection:'row',
-    alignItems:'center',gap:7,minHeight:28,
-    borderRadius:15,paddingHorizontal:10,paddingVertical:5,
+    alignItems:'center',gap:8,borderRadius:15,
+    paddingHorizontal:11,paddingVertical:7,maxWidth:'100%',
     backgroundColor:theme.dark?theme.surface:bg}}>
-    {icon==='prayer'?<PrayerIcon size={14} color={color} filled/>:
-      <Ionicons name="heart" size={15} color={color}/>}
-    <Text numberOfLines={1} style={{fontSize:11,
-      color:theme.foreground}}>{title}</Text>
-    <Text numberOfLines={1} style={{fontSize:11,fontWeight:'700',
-      color:color,fontVariant:['tabular-nums'],marginLeft:5}}>
-      {delta||''}{delta&&total?' / ':''}{total||''}
-    </Text>
+    {icon==='prayer'?<PrayerIcon size={15} color={color} filled/>:
+      <Ionicons name="heart" size={16} color={color}/>}
+    <View style={{gap:2,flexShrink:1}}>
+      <Text style={{fontSize:11,lineHeight:16,color:theme.foreground}}>
+        {description}
+      </Text>
+      {today!==null&&total!==null?<Text style={{fontSize:10,fontWeight:'600',
+        color}}>{total} au total</Text>:null}
+    </View>
   </View>;
 }
-
 /** Each habit is a compact line and one row of its own colored squares. */
 function CurrentHabitSummary({
   dream,editable,onManage,onEdit,onDelete,onDetach,onCheckIn,
@@ -137,13 +148,14 @@ function CurrentHabitSummary({
                 progress.completed+' / '+progress.planned}
             </Text>
           </View>
-          {progress.streak>0?<View style={{flexDirection:'row',
-            alignItems:'center',gap:2}} accessibilityLabel={'Série de '+progress.streak}>
+          <View style={{flexDirection:'row',alignItems:'center',gap:2}}
+            accessibilityLabel={'Série de '+progress.streak+
+              (habit.frequency==='weekly'?' semaines':' jours')+' consécutifs'}>
             <Text style={{fontSize:15,lineHeight:19}}>🔥</Text>
             <Text style={{fontSize:11,fontWeight:'700',color:theme.foreground}}>
               {progress.streak}
             </Text>
-          </View>:null}
+          </View>
           {editable?<Pressable accessibilityRole="button"
             accessibilityLabel={'Options pour '+habit.title}
             onPress={()=>setMenuHabit(habit)}
@@ -153,6 +165,7 @@ function CurrentHabitSummary({
         </View>
         <HabitSquareGrid habit={habit} goalDate={dream.goalDate}
           dreamStartedAt={dream.growthStartedAt}
+          plannedSessions={progress.planned}
           color={color} editable={editable}
           onTodayPress={()=>openCheckIn(habit)}/>
       </View>;
