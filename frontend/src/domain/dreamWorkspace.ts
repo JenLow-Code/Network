@@ -68,6 +68,10 @@ export type DreamResource = {
   title: string;
   category: 'person' | 'practical' | 'financial';
   confirmed: boolean;
+  /** Creation provenance: a newly discovered requirement while the dream is growing. */
+  addedDuringPhase?: 'Initiation' | 'Croissance';
+  /** Original creation timestamp; preserved across edits and phase transitions. */
+  addedAt?: string;
   linkedBlockId?: string;
   personId?: string;
   amount?: number;
