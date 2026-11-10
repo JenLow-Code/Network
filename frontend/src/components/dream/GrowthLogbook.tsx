@@ -493,11 +493,11 @@ export function GrowthLogbook({
             event.kind === 'need_found' ? 'Trouvé' : 'À retrouver';
           return <View key={event.id} style={{flexDirection:'row',
             alignItems:'flex-start',gap:7,minHeight:21}}>
-            <View style={{width:26,alignItems:'center',paddingTop:1}}>
+            <View style={{width:26,alignItems:'center',paddingTop:2}}>
               <Ionicons name={icon} size={17} color={color}/>
             </View>
             <Text style={{color:theme.foreground,fontSize:12,lineHeight:19,
-              flex:1}}>
+              flex:1,marginLeft:11}}>
               <Text style={{ fontWeight: '700', color }}>{categoryTitle(event.category)} · </Text>
               {event.title + ' · ' + label}
             </Text>
@@ -506,10 +506,10 @@ export function GrowthLogbook({
         {group.documents.map(doc => <Pressable key={doc.id} accessibilityRole="button"
           onPress={() => router.push({ pathname: '/my-dream/library/[id]', params: { id: dream.id } })}
           style={{flexDirection:'row',alignItems:'flex-start',gap:7}}>
-          <View style={{width:26,alignItems:'center',paddingTop:1}}>
+          <View style={{width:26,alignItems:'center',paddingTop:2}}>
             <Ionicons name="document-text-outline" size={17} color={BLUE}/>
           </View>
-          <Text style={{color:theme.foreground,fontSize:12,lineHeight:19,flex:1}}> 
+          <Text style={{color:theme.foreground,fontSize:12,lineHeight:19,flex:1,marginLeft:11}}> 
             <Text style={{ fontWeight: '700', color: BLUE }}>Document · </Text>
             {doc.title + (doc.version > 1 ? ' · v' + doc.version : '') + ' ajouté'}
           </Text>
@@ -517,11 +517,11 @@ export function GrowthLogbook({
         </Pressable>)}
         {group.previewEvents.map(event => <View key={event.id}
           style={{flexDirection:'row',alignItems:'flex-start',gap:7}}>
-          <View style={{width:26,alignItems:'center',paddingTop:1}}>
+          <View style={{width:26,alignItems:'center',paddingTop:2}}>
             <Ionicons name={event.kind === 'document'
               ?'document-text-outline':'cube-outline'} size={17} color={BLUE}/>
           </View>
-          <Text style={{fontSize:12,lineHeight:19,color:theme.foreground,flex:1}}> 
+          <Text style={{fontSize:12,lineHeight:19,color:theme.foreground,flex:1,marginLeft:11}}> 
             {event.title}
           </Text>
           <Text style={{ fontSize: 9, color: theme.muted }}>Démo</Text>
