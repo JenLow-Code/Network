@@ -77,7 +77,11 @@ export function HabitSquareGrid({
   const available=measuredWidth>0
     ?Math.max(100,measuredWidth-indent)
     :Math.max(100,screenWidth-155);
-  const cellSize=Math.max(12,(available-(columns-1)*gap)/columns);
+  // Phone: use the entire available row. Desktop: keep the squares
+  // compact instead of stretching seven cells into giant blocks.
+  const cellSize=Math.max(12,Math.min(screenWidth>=700?30:1000,
+    (available-(columns-1)*gap)/columns));
+  const rowWidth=columns*cellSize+(columns-1)*gap;
   const periods=chronologicalPeriods(habit,goalDate,dreamStartedAt,plannedSessions);
   const mondayKey=(dateKey:string):string=>{
     const date=new Date(dateKey+'T12:00:00');
@@ -162,8 +166,9 @@ export function HabitSquareGrid({
     const width=event.nativeEvent.layout.width;
     if(width>0&&Math.abs(width-measuredWidth)>1)setMeasuredWidth(width);
   }}>
-    <View style={{gap:6,paddingVertical:4,paddingLeft:indent}}>
-      {shown.map(row=><View key={row.key} style={{gap:4}}>
+    <View style={{gap:6,paddingVertical:4,paddingLeft:indent,
+      alignItems:'flex-start'}}>
+      {shown.map(row=><View key={row.key} style={{gap:4,width:rowWidth}}>
         {expanded ? <Text style={{fontSize:10,lineHeight:13,fontWeight:'500',
           color:theme.muted,letterSpacing:.15}}>
           {habit.frequency==='daily'
@@ -183,8 +188,8 @@ export function HabitSquareGrid({
         accessibilityState={{expanded}}
         accessibilityLabel={expanded?'Réduire la chronologie':'Voir toute la chronologie'}
         onPress={()=>setExpanded(value=>!value)}
-        style={{alignSelf:'flex-end',flexDirection:'row',alignItems:'center',
-          gap:4,paddingVertical:5,paddingHorizontal:3}}>
+        style={{width:rowWidth,justifyContent:'flex-end',flexDirection:'row',
+          alignItems:'center',gap:4,paddingVertical:5,paddingHorizontal:3}}>
         <Text style={{fontSize:10,color:theme.muted}}>
           {expanded?'Réduire':'Voir tous les carrés'}
         </Text>
