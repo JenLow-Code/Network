@@ -486,7 +486,7 @@ export function GrowthLogbook({
           const color = colorFor(event.category);
           const icon = event.category === 'person' ? 'people-outline' :
             event.category === 'financial' ? 'wallet-outline' : 'cube-outline';
-          const label = event.kind === 'need_added' ? 'Nouveau besoin' :
+          const label = event.kind === 'need_added' ? 'Ajouté en Croissance' :
             event.kind === 'need_found' ? 'Trouvé' : 'À retrouver';
           return <View key={event.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <Ionicons name={icon} size={17} color={color} />
