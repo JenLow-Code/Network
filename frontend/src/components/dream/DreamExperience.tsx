@@ -774,8 +774,8 @@ export default function DreamExperience({
         <Text style={{color:theme.foreground,flex:1,fontSize:12}}>{m.name}</Text><Ionicons name="open-outline" size={17} color={theme.muted}/>
       </Pressable>)}
     </DreamPhaseSection>
-    {(dream.milestones||[]).length>0?<DreamPhaseSection title="Le chemin parcouru">
-      {(dream.milestones||[]).map(m=><View key={m.id} style={{flexDirection:'row',gap:10,alignItems:'center',paddingVertical:9}}><Ionicons name="checkmark-circle-outline" size={18} color="#27845B"/><Text style={{color:theme.foreground,fontSize:13}}>{m.title}</Text></View>)}
+    {(dream.testimony?.highlights||[]).length>0?<DreamPhaseSection title="Le chemin parcouru">
+      {(dream.testimony?.highlights||[]).map(m=><View key={m.id} style={{flexDirection:'row',gap:10,alignItems:'center',paddingVertical:9}}><Ionicons name="checkmark-circle-outline" size={18} color="#27845B"/><Text style={{color:theme.foreground,fontSize:13}}>{m.title}</Text></View>)}
     </DreamPhaseSection>:null}
   </> : null}
  {(!historical && phase === 'Témoignage') ? <Pressable
