@@ -80,7 +80,8 @@ function InspirationTile({block,onPress,onLongPress}:{
       height:document?118:wide&&image?210:178}}>
     {publication?
       <SemencePublicationCover publicationId={block.content}
-        fallbackTitle={block.title}/>:
+        fallbackTitle={block.title} fallbackImage={block.media?.[0]}
+        fallbackType={block.icon?.replace(/^publication-/, '')}/>:
     image?<>
       <Image source={{uri:block.media?.[0]||block.content}}
         style={{width:'100%',height:wide?183:block.title?148:178}}
@@ -347,7 +348,10 @@ export default function SemenceInspirations({dream,editable,onShareInspiration}:
             {draft&&picker==='publication'?<PublicationSearchPicker
               selectedId={draft.content}
               onManual={content=>patchBlock({content})}
-              onSelect={item=>{patchBlock({content:item.id,title:item.title});setPicker(null);}}
+              onSelect={item=>{const image=item.type==='talent'?item.avatar:
+                item.type==='music'?(item.coverArt||item.image):item.image;
+                patchBlock({content:item.id,title:item.title,
+                  media:image?[image]:[],icon:'publication-'+item.type});setPicker(null);}}
               onDone={()=>setPicker(null)}/>:null}
             {draft&&!picker?<>
               {draft.kind==='image'||draft.kind==='gallery'?<>
