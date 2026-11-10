@@ -87,7 +87,6 @@ export default function DreamExperience({
  const [growthDialog,setGrowthDialog]=useState<'habit'|'habits'|'log'|null>(null);
  const [preparationOpen,setPreparationOpen]=useState(false);
  const [recoveryDialog,setRecoveryDialog]=useState(false);
- const [reportLostDialog,setReportLostDialog]=useState(false);
  const [habitTitle, setHabitTitle] = useState('');
  const [habitEmoji,setHabitEmoji]=useState('🌱');
  const [habitColor,setHabitColor]=useState(HABIT_PALETTE[0]);
@@ -170,7 +169,7 @@ export default function DreamExperience({
  const hasResourceAlert = lostResources.length>0 || existingMissing.length>0;
  const allResourcesFound = resources.length>0 && missingResources.length===0;
  const missingCategories = Array.from(new Set(missingResources.map(need=>need.category)));
- const recapExpanded = preparationOpen;
+ const recapExpanded = preparationOpen && !allResourcesFound;
  const categoryNames: Record<DreamResource['category'],string> = {
    person:'Talents',practical:'Ressources',financial:'Financement',
  };
@@ -471,6 +470,13 @@ export default function DreamExperience({
    ):null}
   </> : null}
   {phase==='Croissance' ? <>
+    {historical?<View style={{flexDirection:'row',alignItems:'center',
+      gap:7,paddingVertical:7,paddingHorizontal:3}}>
+      <Ionicons name="lock-closed-outline" size={13} color={theme.muted}/>
+      <Text style={{fontSize:11,color:theme.muted}}>
+        Croissance terminée · consultation uniquement
+      </Text>
+    </View>:null}
     <View style={{flexDirection:'row',alignItems:'flex-start',
       justifyContent:'space-between',gap:12,marginTop:-10,marginBottom:6,
       paddingHorizontal:3}}>
@@ -490,7 +496,7 @@ export default function DreamExperience({
       </View>:<View style={{flex:1}}/>}
       <View style={{alignItems:'flex-end',gap:0,flexShrink:1}}>
         <DreamWorkspaceShortcuts dream={dream} showLibrary/>
-        {true?(
+        {!allResourcesFound?(
           <Pressable accessibilityRole="button"
             accessibilityState={{expanded:recapExpanded}}
             accessibilityLabel={recapExpanded
@@ -524,6 +530,55 @@ export default function DreamExperience({
         ):null}
       </View>
     </View>
+    {allResourcesFound?(
+      <View style={{paddingHorizontal:9,paddingTop:6,paddingBottom:9,
+        marginTop:6,marginBottom:5,gap:12}}>
+        <View style={{flexDirection:'row',justifyContent:'space-between',
+          alignItems:'center',gap:12}}>
+          <Text style={{color:theme.muted,fontSize:11,fontWeight:'600'}}>
+            Depuis la Germination
+          </Text>
+          {growthActive?<Pressable accessibilityRole="button"
+            accessibilityLabel="Gérer les ressources de ce rêve"
+            onPress={()=>onRecoverResource?.('all')}
+            style={{flexDirection:'row',alignItems:'center',gap:5,
+              paddingHorizontal:3,paddingVertical:5}}>
+            <Text style={{color:'#27845B',fontSize:11,fontWeight:'700'}}>Gérer</Text>
+            <Ionicons name="arrow-forward" size={13} color="#27845B"/>
+          </Pressable>:null}
+        </View>
+        {([
+          {category:'person',label:'Talents',color:'#D71D77'},
+          {category:'practical',label:'Ressources',color:'#397F9E'},
+          {category:'financial',label:'Financement',color:'#A1BA44'},
+        ] as const).map(item=>{
+          const count=resources.filter(need=>need.category===item.category).length;
+          if(!count)return null;
+          return <View key={item.category} style={{gap:5}}>
+            <View style={{flexDirection:'row',alignItems:'center',
+              justifyContent:'space-between',gap:8}}>
+              <Text style={{fontSize:11,fontWeight:'700',color:item.color}}>
+                {item.label}
+              </Text>
+              <Text style={{fontSize:10,color:theme.muted}}>
+                {count} / {count} {item.category==='financial'?'payés':'trouvés'}
+              </Text>
+            </View>
+            <View style={{height:4,borderRadius:4,backgroundColor:item.color}}/>
+          </View>;
+        })}
+        {growthActive?<Pressable accessibilityRole="button"
+          accessibilityLabel="Ajouter un besoin pendant la Croissance"
+          onPress={()=>onRecoverResource?.('all')}
+          style={{alignSelf:'flex-end',flexDirection:'row',gap:5,
+            alignItems:'center',paddingVertical:4}}>
+          <Ionicons name="add" size={14} color="#27845B"/>
+          <Text style={{fontSize:11,fontWeight:'600',color:'#27845B'}}>
+            Ajouter un besoin
+          </Text>
+        </Pressable>:null}
+      </View>
+    ):null}
     {recapExpanded?(
       <View style={{borderRadius:12,backgroundColor:allResourcesFound
           ?'transparent':(theme.dark?'#432D38':'#FCECF4'),
@@ -968,54 +1023,6 @@ export default function DreamExperience({
          </Pressable>
        </>:null}
      </ScrollView>
-   </View>
- </Modal>
- <Modal transparent visible={reportLostDialog} animationType="fade"
-   onRequestClose={()=>setReportLostDialog(false)}>
-   <View style={{flex:1,justifyContent:'center',padding:18,
-     backgroundColor:'rgba(0,0,0,.55)'}}>
-     <Pressable accessibilityRole="button" accessibilityLabel="Fermer"
-       onPress={()=>setReportLostDialog(false)}
-       style={{position:'absolute',top:0,left:0,right:0,bottom:0}}/>
-     <View style={{maxWidth:430,width:'100%',alignSelf:'center',padding:22,
-       backgroundColor:theme.surface,borderRadius:15,gap:12}}>
-       <Text style={{fontSize:19,color:theme.foreground,fontWeight:'700'}}>
-         Une ressource a changé ?
-       </Text>
-       <Text style={{fontSize:12,color:theme.muted,lineHeight:20}}>
-         Indique uniquement un besoin que tu avais déjà trouvé.
-         Pour un talent, la participation doit être retirée via son invitation.
-       </Text>
-       {resources.filter(isNeedFound).map(need=>(
-         <Pressable key={need.id} accessibilityRole="button"
-           onPress={()=>{
-             if(need.category==='person'){
-               setReportLostDialog(false);
-               onRecoverResource?.('person');
-               return;
-             }
-             confirm('Ressource perdue',
-               '« '+need.title+' » sera de nouveau à rechercher. Continuer ?',()=>{
-                 setResources(dream.id,resources.map(r=>r.id===need.id?{...r,confirmed:false}:r));
-                 setReportLostDialog(false);
-               });
-           }}
-           style={{minHeight:48,borderWidth:1,borderColor:theme.border,
-             borderRadius:10,paddingHorizontal:12,paddingVertical:10,
-             flexDirection:'row',alignItems:'center',gap:9}}>
-           <Text style={{fontSize:12,color:theme.foreground,flex:1,fontWeight:'600'}}>
-             {need.title}
-           </Text>
-           <Text style={{fontSize:11,color:'#D71D77'}}>
-             {need.category==='person'?'Gérer':'Signaler la perte'}
-           </Text>
-         </Pressable>
-       ))}
-       <Pressable accessibilityRole="button" onPress={()=>setReportLostDialog(false)}
-         style={{alignItems:'center',padding:12}}>
-         <Text style={{color:theme.muted,fontSize:12}}>Annuler</Text>
-       </Pressable>
-     </View>
    </View>
  </Modal>
  <Modal transparent visible={recoveryDialog} animationType="fade"
