@@ -286,6 +286,64 @@ export default function SemenceInspirations({dream,editable,onShareInspiration,a
   const [selectedMenu,setSelectedMenu]=useState(false);
   const [message,setMessage]=useState('');
   const [picker,setPicker]=useState<'bible'|'publication'|'profile'|null>(null);
+  const [heights,setHeights]=useState<Record<string,number>>({});
+  const tileRefs=useRef<Record<string,View|null>>({});
+  const dropRegions=useRef<Record<string,{x:number;y:number;width:number;height:number}>>({});
+  const [draggingId,setDraggingId]=useState<string|null>(null);
+  const onMeasure=(id:string,height:number)=>{
+    if(!Number.isFinite(height)||height<=0)return;
+    setHeights(current=>Math.abs((current[id]||0)-height)<4?
+      current:{...current,[id]:height});
+  };
+  const beginDrag=(id:string)=>{
+    setDraggingId(id);
+    const snapshot:typeof dropRegions.current={};
+    for(const [key,node] of Object.entries(tileRefs.current)){
+      node?.measureInWindow((x,y,width,height)=>{
+        if(width>0&&height>0)dropRegions.current[key]={x,y,width,height};
+      });
+    }
+    dropRegions.current=snapshot;
+  };
+  const endDrag=()=>setDraggingId(null);
+  const onDrop=(id:string,x:number,y:number)=>{
+    if(!Number.isFinite(x)||!Number.isFinite(y))return;
+    const positions=Object.entries(dropRegions.current)
+      .filter(([otherId,box])=>otherId!==id&&box.width>0&&box.height>0);
+    if(!positions.length)return;
+    // Prefer the tile under the finger/cursor, or the closest one in the gap.
+    const nearest=positions.map(([otherId,box])=>{
+      const dx=Math.max(box.x-x,0,x-(box.x+box.width));
+      const dy=Math.max(box.y-y,0,y-(box.y+box.height));
+      return {id:otherId,box,distance:dx*dx+dy*dy};
+    }).sort((a,b)=>a.distance-b.distance)[0];
+    if(!nearest)return;
+    const after=y>nearest.box.y+nearest.box.height*0.5;
+    const original=dream.blocks||[];
+    const reordered=reorderInspiration(original,id,nearest.id,after);
+    if(reordered!==original)patch(dream.id,{blocks:reordered});
+  };
+  const onStep=(id:string,direction:-1|1)=>{
+    const ordered=blocks.filter(b=>b.id!==id);
+    const index=blocks.findIndex(b=>b.id===id);
+    const target=blocks[index+direction];
+    if(!target)return;
+    const original=dream.blocks||[];
+    const reordered=reorderInspiration(original,id,target.id,direction===1);
+    if(reordered!==original)patch(dream.id,{blocks:reordered});
+  };
+  const visibleGroups=useMemo(()=>layoutInspirations(blocks,heights),[blocks,heights]);
+  const renderTile=(block:DreamBlock)=><SortableInspirationCard key={block.id}
+    block={block} editable={editable}
+    onOpen={()=>{setSelectedBlock({...block});setSelectedMenu(false);setMessage('');}}
+    onMenu={()=>{setSelectedBlock({...block});setSelectedMenu(true);setMessage('');}}
+    onResize={size=>patch(dream.id,{blocks:(dream.blocks||[]).map(b=>
+      b.id===block.id?{...b,tileSize:size}:b)})}
+    onMeasure={onMeasure}
+    registerRef={(id,node)=>{tileRefs.current[id]=node;}}
+    onStartDrag={beginDrag} onFinishDrag={endDrag}
+    onDrop={onDrop} onStep={onStep}/>;
+
   const canShow=choosing||!!draft;
   useEffect(()=>{if(addRequestToken>0&&editable){setChoosing(true);setMessage('');}},[addRequestToken]);
   const patchBlock=(updates:Partial<DreamBlock>)=>
@@ -400,22 +458,18 @@ export default function SemenceInspirations({dream,editable,onShareInspiration,a
       </Pressable>:null}
     </View>:null}
     {blocks.length?<View style={{gap:11}}>
-      {layoutInspirations(blocks).map((group,index)=>
-        group.type==='wide'?<InspirationTile key={'w-'+group.block.id}
-          block={group.block}
-          onPress={()=>{setSelectedBlock({...group.block});setSelectedMenu(false);setMessage('');}}
-          onLongPress={()=>{setSelectedBlock({...group.block});setSelectedMenu(true);setMessage('');}}/>:
+      {visibleGroups.map((group,index)=>group.type==='wide'?
+        <View key={'w-'+group.block.id} style={{zIndex:draggingId===group.block.id?60:1}}>
+          {renderTile(group.block)}
+        </View>:
         <View key={'group-'+index} style={{flexDirection:'row',
-          alignItems:'flex-start',gap:11}}>
+          alignItems:'flex-start',gap:11,
+          zIndex:draggingId&&[...group.left,...group.right].some(b=>b.id===draggingId)?60:1}}>
           <View style={{flex:1,gap:11}}>
-            {group.left.map(b=><InspirationTile key={b.id} block={b}
-              onPress={()=>{setSelectedBlock({...b});setSelectedMenu(false);setMessage('');}}
-              onLongPress={()=>{setSelectedBlock({...b});setSelectedMenu(true);setMessage('');}}/>)}
+            {group.left.map(renderTile)}
           </View>
           <View style={{flex:1,gap:11}}>
-            {group.right.map(b=><InspirationTile key={b.id} block={b}
-              onPress={()=>{setSelectedBlock({...b});setSelectedMenu(false);setMessage('');}}
-              onLongPress={()=>{setSelectedBlock({...b});setSelectedMenu(true);setMessage('');}}/>)}
+            {group.right.map(renderTile)}
           </View>
         </View>)}
     </View>:<View style={{minHeight:142,alignItems:'center',justifyContent:'center',
