@@ -113,7 +113,7 @@ export default function DreamHub({ dream, startInSemence = false, startPhase }: 
   const { width, height } = useWindowDimensions();
   const compact = width < 720;
   const [resultOpen,setResultOpen]=useState(false);
-  const [recoveryCategory,setRecoveryCategory]=useState<DreamResource['category']|null>(null);
+  const [recoveryCategory,setRecoveryCategory]=useState<DreamResource['category']|'all'|null>(null);
   const [open, setOpen] = useState<DreamPhase | null>(() =>
     startPhase && order.indexOf(startPhase) <= order.indexOf(dream.phase)
       ? startPhase : startInSemence && dream.phase === 'Rêve' ? 'Rêve' :
