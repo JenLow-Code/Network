@@ -762,7 +762,20 @@ export default function DreamExperience({
       </Pressable>
     </View>:null}
   </>:null}
-  {phase==='Témoignage' ? <>
+  {phase==='Témoignage' && !dream.testimony ? (
+    <DreamPhaseSection title="La fleur se prépare"
+      subtitle="Ton rêve est réalisé. Choisis maintenant comment raconter ce qui a fleuri.">
+      <Pressable accessibilityRole="button"
+        onPress={()=>router.push({pathname:'/my-dream/flower/[id]',params:{id:dream.id}})}
+        style={{minHeight:48,borderRadius:11,backgroundColor:'#D71D77',
+          alignItems:'center',justifyContent:'center',paddingHorizontal:14}}>
+        <Text style={{color:'#FFFFFF',fontSize:13,fontWeight:'700'}}>
+          Préparer ma floraison
+        </Text>
+      </Pressable>
+    </DreamPhaseSection>
+  ) : null}
+  {phase==='Témoignage' && !!dream.testimony ? <>
     <DreamPhaseSection title="Au commencement">
       <Text style={{fontSize:22,fontFamily:HANDWRITING_FAMILY,color:theme.foreground,lineHeight:32,marginBottom:14}}>{dream.summary}</Text>
       {dream.image?<Image source={{uri:dream.image}} resizeMode="cover" style={{width:'100%',height:190,borderRadius:12,marginBottom:8}}/>:null}
@@ -778,7 +791,7 @@ export default function DreamExperience({
       {(dream.testimony?.highlights||[]).map(m=><View key={m.id} style={{flexDirection:'row',gap:10,alignItems:'center',paddingVertical:9}}><Ionicons name="checkmark-circle-outline" size={18} color="#27845B"/><Text style={{color:theme.foreground,fontSize:13}}>{m.title}</Text></View>)}
     </DreamPhaseSection>:null}
   </> : null}
- {(!historical && phase === 'Témoignage') ? <Pressable
+ {(!historical && phase === 'Témoignage' && !!dream.testimony) ? <Pressable
     onPress={()=>confirm(
       dream.visibility==='private'?'Rendre cette fleur visible ?':'Masquer cette fleur ?',
       dream.visibility==='private'
