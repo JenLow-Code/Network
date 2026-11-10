@@ -77,14 +77,14 @@ function InspirationTile({block,onPress,onLongPress}:{
     }} as any:{})}
     style={{width:wide?'100%':'48.5%',marginBottom:12,
       borderRadius:12,overflow:'hidden',backgroundColor:surface,
-      height:document?118:wide&&image?210:178}}>
+      height:document?118:wide&&image?210:168}}>
     {publication?
       <SemencePublicationCover publicationId={block.content}
         fallbackTitle={block.title} fallbackImage={block.media?.[0]}
         fallbackType={block.icon?.replace(/^publication-/, '')}/>:
     image?<>
       <Image source={{uri:block.media?.[0]||block.content}}
-        style={{width:'100%',height:wide?183:block.title?148:178}}
+        style={{width:'100%',height:wide?183:block.title?139:168}}
         resizeMode="cover"/>
       {!!block.title?<Text numberOfLines={1}
         style={{paddingHorizontal:10,paddingVertical:7,fontSize:11,
@@ -112,7 +112,7 @@ function InspirationTile({block,onPress,onLongPress}:{
       <Ionicons name="chevron-forward" size={17} color={theme.muted}/>
     </View>:
     <View style={{paddingHorizontal:12,paddingTop:13,paddingBottom:12,
-      gap:11,height:178,justifyContent:'flex-start'}}>
+      gap:10,height:168,justifyContent:'flex-start'}}>
       <View style={{flexDirection:'row',alignItems:'center',gap:6}}>
         <Ionicons name={typeIcon(block.kind)} size={14} color="#A5713D"/>
         <Text numberOfLines={1} style={{fontSize:9,letterSpacing:.55,
