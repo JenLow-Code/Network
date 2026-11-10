@@ -655,6 +655,23 @@ export default function SemenceInspirations({dream,editable,onShareInspiration,a
                   name={draft.title} avatar={draft.media?.[0]} height={205}/>:null}
               </>:null}
               {draft.kind==='publication-ref'?<>
+                <Pressable onPress={()=>{
+                  patchBlock({kind:'profile-ref',content:'',media:[],icon:undefined});
+                  setPicker('profile');
+                }} accessibilityRole="button"
+                  style={{flexDirection:'row',gap:9,alignItems:'center',padding:12,
+                    borderRadius:10,borderWidth:1,borderColor:theme.border}}>
+                  <Ionicons name="person-outline" size={18} color={palette}/>
+                  <View style={{flex:1,gap:2}}>
+                    <Text style={{fontSize:13,fontWeight:'700',color:theme.foreground}}>
+                      Cette référence est un profil ?
+                    </Text>
+                    <Text style={{fontSize:11,color:theme.muted}}>
+                      Retrouver la personne et utiliser sa photo de profil
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={16} color={theme.muted}/>
+                </Pressable>
                 <Pressable onPress={()=>setPicker('publication')} accessibilityRole="button"
                   style={{flexDirection:'row',gap:9,alignItems:'center',padding:12,
                     borderRadius:10,borderWidth:1,borderColor:theme.border}}>
