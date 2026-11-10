@@ -779,9 +779,17 @@ export default function DreamExperience({
     </DreamPhaseSection>:null}
   </> : null}
  {(!historical && phase === 'Témoignage') ? <Pressable
-    onPress={()=>confirm('Arracher ' + ('cette plante') + ' ?', 'Cette action supprimera définitivement ce rêve et ses données enregistrées sur cet appareil.', ()=>{remove(dream.id);router.replace('/my-space');})}
+    onPress={()=>confirm(
+      dream.visibility==='private'?'Rendre cette fleur visible ?':'Masquer cette fleur ?',
+      dream.visibility==='private'
+        ?'Ta publication redeviendra visible. Son histoire et ses souvenirs sont conservés.'
+        :'Cette fleur sera masquée du public. Rien ne sera supprimé, tu pourras la réafficher.',
+      ()=>patch(dream.id,{visibility:dream.visibility==='private'?'public':'private'}),
+    )}
     accessibilityRole="button" style={{alignItems:'center',marginTop:26,padding:15}}>
-      <Text style={{color:'#B24C59',fontSize:12}}>{'Arracher cette plante'}</Text>
+      <Text style={{color:'#B24C59',fontSize:12}}>
+        {dream.visibility==='private'?'Réafficher cette fleur':'Masquer cette fleur'}
+      </Text>
    </Pressable> : null}
  <Modal visible={growthDialog!==null} transparent
    animationType={growthDialog==='log'?'slide':'fade'}
