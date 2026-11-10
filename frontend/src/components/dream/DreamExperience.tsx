@@ -56,8 +56,8 @@ export default function DreamExperience({
  viewPhase?:DreamEntry['phase'];
  onBack?:()=>void;
  onNavigate?:(phase:DreamPhase)=>void;
- recoveryCategory?:DreamResource['category']|null;
- onRecoverResource?:(category:DreamResource['category'])=>void;
+ recoveryCategory?:DreamResource['category']|'all'|null;
+ onRecoverResource?:(category:DreamResource['category']|'all')=>void;
 }) {
  const { patch, appendBlock, setResources, setHabits, detachHabit, setGoalAndGrow, advance, remove, addGrowthLog, setGrowthLogPublication } = useDreams();
  const theme = useAppTheme();
@@ -129,6 +129,8 @@ export default function DreamExperience({
    }
    setResources(dream.id,[...resources,{
      id:uid(),title:resourceTitle.trim(),category:resourceCategory,confirmed:false,
+     addedDuringPhase:dream.phase==='Croissance'?'Croissance':'Initiation',
+     addedAt:new Date().toISOString(),
      description:resourceDescription.trim(),
      illustration:catalogTalent?.illustration,
      requiredLevel:resourceCategory==='person'?resourceLevel:undefined,
@@ -153,10 +155,13 @@ export default function DreamExperience({
  const recoverPastNeeds = phase==='Initiation' && dream.phase==='Croissance' && !!recoveryCategory;
  const resourceEditable=phase==='Initiation' && !frozen && (!historical || recoverPastNeeds);
  const canEditCategory=(category:DreamResource['category'])=>
-   resourceEditable && (!recoverPastNeeds || recoveryCategory===category);
+   resourceEditable && (!recoverPastNeeds || recoveryCategory==='all' || recoveryCategory===category);
  const lostResources = dream.phase==='Croissance'?lostFoundNeeds(dream):[];
  const missingResources = dream.phase==='Croissance'
    ? resources.filter(resource=>!isNeedFound(resource)) : [];
+ const newGrowthNeeds = missingResources.filter(need=>need.addedDuringPhase==='Croissance');
+ const existingMissing = missingResources.filter(need=>need.addedDuringPhase!=='Croissance');
+ const hasResourceAlert = lostResources.length>0 || existingMissing.length>0;
  const missingCategories = Array.from(new Set(missingResources.map(need=>need.category)));
  const recapExpanded = preparationOpen;
  const categoryNames: Record<DreamResource['category'],string> = {
@@ -302,9 +307,9 @@ export default function DreamExperience({
   {phase==='Initiation' ? <>
    {recoverPastNeeds?<View style={{padding:12,borderRadius:10,borderWidth:1,
      borderColor:'#D71D77',marginBottom:11,backgroundColor:theme.surface,gap:4}}>
-     <Text style={{color:'#D71D77',fontSize:12,fontWeight:'700'}}>Gestion des besoins · {categoryNames[recoveryCategory!]}</Text>
+     <Text style={{color:'#D71D77',fontSize:12,fontWeight:'700'}}>{recoveryCategory==='all'?'Besoins pendant Croissance': 'Gestion des besoins · '+categoryNames[recoveryCategory!]}</Text>
      <Text style={{color:theme.muted,fontSize:11,lineHeight:17}}>
-       Tu peux modifier cette catégorie pour retrouver une ressource. Les autres éléments de Germination restent verrouillés.
+       {recoveryCategory==='all'?'Ajoute ou ajuste les besoins sans quitter Croissance. Les nouvelles demandes apparaîtront dans le Logbook.':'Tu peux modifier cette catégorie pour retrouver une ressource. Les autres catégories restent verrouillées.'}
      </Text>
    </View>:null}
    <View style={{ marginTop: 3 }}>
@@ -318,7 +323,9 @@ export default function DreamExperience({
         <Text style={{color:'#9B772E',fontWeight:'700',fontSize:12}}>Reprendre cette germination</Text>
       </Pressable>
     </View> : null}
-   {(['person','practical','financial'] as const).filter(category=>resources.some(r=>r.category===category)).map(category=><View key={category} style={{marginBottom:17}}>
+   {(['person','practical','financial'] as const).filter(category=>
+     resources.some(r=>r.category===category) || (recoverPastNeeds && recoveryCategory==='all')
+   ).map(category=><View key={category} style={{marginBottom:17}}>
       <Text style={{fontSize:17,fontWeight:'700',color:theme.foreground,marginBottom:9}}>{category==='person'?'Talents':category==='practical'?'Autres ressources':'Financement'}</Text>
       <View style={{flexDirection:'row',flexWrap:'wrap',gap:9,marginBottom:8}}>
         {category==='person'
