@@ -13,6 +13,7 @@ import { useAuth } from '@/context/AuthProvider';
 import { useAppTheme } from '@/theme/AppTheme';
 import { ProfileTalentTile } from '@/components/talent/ProfileTalentTile';
 import { ProfilePublicationFeed } from '@/components/publication/PublicationGallery';
+import SemenceSharesFeed from '@/components/dream/SemenceSharesFeed';
 import { useDreams } from '@/domain/dreamRepository';
 import { PHASE_LABELS, PHASE_COLORS } from '@/domain/publication';
 import { publications } from '@/mocks/publications';
@@ -263,6 +264,7 @@ export default function Profile() {
           </Pressable>
         </View>
         <View onLayout={e=>{postsY.current=e.nativeEvent.layout.y;}}>
+          <SemenceSharesFeed mine/>
           <Text style={{fontSize:19,fontWeight:'800',color:theme.foreground,marginTop:25,marginBottom:14}}>Mes publications</Text>
         </View>
         {myLocalDreams.length>0 ? (
