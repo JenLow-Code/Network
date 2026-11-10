@@ -15,11 +15,10 @@ export const habitWeekStart = (date: string): string => {
 export const habitKey = (frequency: DreamHabit['frequency'], date: string): string =>
   frequency === 'weekly' ? habitWeekStart(date) : date;
 
-/** Canonical schedule start shared by the progress counter and the dated grid.
- * If recorded activity predates the saved habit start (e.g. a legacy migration),
- * start at the oldest recorded period. Otherwise the badge would count completed
- * work outside the grid and all its squares would misleadingly remain pale.
- * Both the badge's target and the grid's length follow the same date range. */
+/** Stable date used to define the plan's target total, independent of
+ * historical check-ins. Moving this start date backwards whenever older
+ * activity is found unexpectedly changes targets (for example 83 to 90).
+ * The grid can credit early check-ins without changing this planned total. */
 export function habitScheduleStart(
   habit:DreamHabit,
   dreamStartedAt?:string,
@@ -35,8 +34,7 @@ export function habitScheduleStart(
   const started=valid(habit.startedAt)?habit.startedAt:
     valid(dreamStartedAt?.slice(0,10))?dreamStartedAt!.slice(0,10):
     firstRecorded||habitDayKey(now);
-  const startKey=habitKey(habit.frequency,started);
-  return firstRecorded&&firstRecorded<startKey?firstRecorded:startKey;
+  return habitKey(habit.frequency,started);
 }
 
 /** Current run of consecutive completions. Today's incomplete slot doesn't break the run yet. */
