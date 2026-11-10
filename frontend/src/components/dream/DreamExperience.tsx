@@ -441,7 +441,8 @@ export default function DreamExperience({
       <Pressable accessibilityRole="button"
         accessibilityLabel="Ouvrir mes notes personnelles"
         onPress={()=>router.push({pathname:'/my-dream/notes/[id]',params:{id:dream.id}})}
-        style={{flexDirection:'row',alignItems:'center',gap:5,minHeight:35}}>
+        style={{flexDirection:'row',alignItems:'center',gap:5,
+          minHeight:35,paddingRight:10}}>
         <Ionicons name="lock-closed-outline" size={13} color={theme.foreground}/>
         <Text style={{fontSize:12,fontWeight:'600',color:theme.foreground}}>
           Notes personnelles
@@ -451,7 +452,8 @@ export default function DreamExperience({
       <Pressable accessibilityRole="button"
         accessibilityLabel="Ouvrir inspirations et documents"
         onPress={()=>router.push({pathname:'/my-dream/library/[id]',params:{id:dream.id}})}
-        style={{flexDirection:'row',alignItems:'center',gap:5,minHeight:35}}>
+        style={{flexDirection:'row',alignItems:'center',gap:5,
+          minHeight:35,paddingRight:10}}>
         <Ionicons name="folder-open-outline" size={14} color={theme.foreground}/>
         <Text style={{fontSize:12,fontWeight:'600',color:theme.foreground}}>
           Inspirations / Documents
@@ -467,7 +469,7 @@ export default function DreamExperience({
               :'Développer le résumé des besoins de Germination'}
             onPress={()=>setPreparationOpen(open=>!open)}
             style={{flexDirection:'row',alignItems:'center',gap:6,
-              marginTop:5,paddingLeft:10,paddingRight:0,paddingVertical:8,minHeight:36,
+              marginTop:5,paddingLeft:10,paddingRight:10,paddingVertical:8,minHeight:36,
               borderRadius:10,backgroundColor:theme.dark?'#432D38':'#FCECF4'}}>
             {missingResources.length?(
               <Ionicons name="warning-outline" size={16} color="#D71D77"/>
