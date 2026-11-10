@@ -69,14 +69,15 @@ export function HabitSquareGrid({
   const [expanded,setExpanded]=useState(false);
   const [measuredWidth,setMeasuredWidth]=useState(0);
   const gap=6;
-  // One week = seven squares, Monday to Sunday. Indent this visual beneath
-  // the habit's title, aligned with its "Voir dans le calendrier" subtitle.
+  // Keep exactly seven columns. On phones each square grows to use the
+  // available space all the way to the right edge, rather than stopping
+  // at the previous 27px cap.
   const columns=7;
   const indent=33;
   const available=measuredWidth>0
     ?Math.max(100,measuredWidth-indent)
-    :Math.max(100,Math.min(screenWidth-155,500));
-  const cellSize=Math.max(12,Math.min(27,(available-(columns-1)*gap)/columns));
+    :Math.max(100,screenWidth-155);
+  const cellSize=Math.max(12,(available-(columns-1)*gap)/columns);
   const periods=chronologicalPeriods(habit,goalDate,dreamStartedAt,plannedSessions);
   const mondayKey=(dateKey:string):string=>{
     const date=new Date(dateKey+'T12:00:00');
@@ -163,12 +164,12 @@ export function HabitSquareGrid({
   }}>
     <View style={{gap:6,paddingVertical:4,paddingLeft:indent}}>
       {shown.map(row=><View key={row.key} style={{gap:4}}>
-        <Text style={{fontSize:10,lineHeight:13,fontWeight:'500',
+        {expanded ? <Text style={{fontSize:10,lineHeight:13,fontWeight:'500',
           color:theme.muted,letterSpacing:.15}}>
           {habit.frequency==='daily'
             ?(row.key===thisWeek?'Cette semaine · S':'Semaine ')+isoWeek(row.key)
             :'Semaines'}
-        </Text>
+        </Text> : null}
         <View style={{flexDirection:'row',gap,alignItems:'center'}}>
           {row.slots.map((period,index)=>period?(
             <React.Fragment key={period.key}>{renderSquare(period)}</React.Fragment>
