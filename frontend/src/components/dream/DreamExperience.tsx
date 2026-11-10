@@ -501,29 +501,39 @@ export default function DreamExperience({
       </View>:<View style={{flex:1}}/>}
       <View style={{alignItems:'flex-end',gap:0,flexShrink:1}}>
         <DreamWorkspaceShortcuts dream={dream} showLibrary/>
+        <Pressable accessibilityRole="button"
+            accessibilityState={{expanded:recapExpanded}}
+            accessibilityLabel={recapExpanded
+              ?'Réduire le résumé des besoins de Germination'
+              :'Développer le résumé des besoins de Germination'}
+            onPress={()=>setPreparationOpen(open=>!open)}
+            style={{flexDirection:'row',alignItems:'center',gap:6,
+              marginTop:5,paddingLeft:10,paddingRight:10,paddingVertical:8,minHeight:36,
+              borderRadius:10,backgroundColor:allResourcesFound
+                ?'transparent':(theme.dark?'#432D38':'#FCECF4')}}>
+            {hasResourceAlert?(
+              <Ionicons name="warning-outline" size={16} color="#D71D77"/>
+            ):newGrowthNeeds.length?(
+              <Ionicons name="add-circle-outline" size={16} color="#27845B"/>
+            ):(
+              <View style={{width:10,height:10,borderRadius:5,
+                backgroundColor:'#A1BA44',borderWidth:1,borderColor:'#668C2A'}}/>
+            )}
+            <Text numberOfLines={1} style={{fontSize:11,fontWeight:'700',
+              color:theme.foreground,flexShrink:1}}>
+              {hasResourceAlert
+                ?`${missingResources.length} besoin${missingResources.length>1?'s':''} à compléter`
+                :newGrowthNeeds.length
+                ?`${newGrowthNeeds.length} nouveau${newGrowthNeeds.length>1?'x':''} besoin${newGrowthNeeds.length>1?'s':''}`
+                :'Ressources'}
+            </Text>
+            <Ionicons name={recapExpanded?'chevron-up':'chevron-down'}
+              color={theme.foreground} size={15}/>
+          </Pressable>
       </View>
     </View>
-    <Pressable accessibilityRole="button"
-      accessibilityState={{expanded:recapExpanded}}
-      accessibilityLabel={recapExpanded?'Réduire les ressources':'Développer les ressources'}
-      onPress={()=>setPreparationOpen(open=>!open)}
-      style={{flexDirection:'row',alignItems:'center',gap:8,
-        paddingHorizontal:12,paddingVertical:11,marginTop:5,
-        borderWidth:1,borderColor:theme.border,borderRadius:12,
-        backgroundColor:'transparent'}}>
-      {hasResourceAlert?<Ionicons name="warning-outline" size={15} color="#D71D77"/>:null}
-      <Text style={{fontSize:12,fontWeight:'700',color:theme.foreground,flex:1}}>
-        {allResourcesFound?'Ressources':hasResourceAlert
-          ?`${missingResources.length} besoin${missingResources.length>1?'s':''} à compléter`
-          :'Ressources'}
-      </Text>
-      <Text style={{fontSize:10,color:theme.muted}}>
-        {resources.length-missingResources.length} / {resources.length} trouvés
-      </Text>
-      <Ionicons name={recapExpanded?'chevron-up':'chevron-down'} size={15} color={theme.foreground}/>
-    </Pressable>
     {recapExpanded?(
-      <View style={{borderRadius:12,borderWidth:1,borderColor:theme.border,
+      <View style={{borderRadius:12,borderWidth:1,borderColor:theme.dark?'#6A584C':'#B5A18E',
         backgroundColor:allResourcesFound?'transparent':(theme.dark?'#432D38':'#FCECF4'),
         overflow:'hidden',marginTop:6,marginBottom:7}}>
         <View style={{paddingHorizontal:15,paddingBottom:14,gap:11,
