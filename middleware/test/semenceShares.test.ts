@@ -55,6 +55,24 @@ test('Friends-only Semence requires real reciprocal contact',async()=>{
  assert.equal((await app.call('GET',url)).status,404);
 });
 
+test('Profile inspirations are references to members, not publications',async()=>{
+ const app=createApp();
+ const author=await app.register('Auteur profil');
+ const published=await app.call('POST','/api/semence-shares',{token:author.token,
+   body:{title:'Rêve',sourceLocalId:'dream-profile',visibility:'public',
+     blocks:[{id:'member-1',kind:'profile-ref',title:'Un musicien',
+       content:author.handle,media:[],tileSize:'1x1'}]}});
+ assert.equal(published.status,201,JSON.stringify(published.body));
+ const detail=await app.call('GET','/api/semence-shares/'+published.body.item.id);
+ assert.equal(detail.body.item.blocks[0].kind,'profile-ref');
+ assert.equal(detail.body.item.blocks[0].content,author.handle);
+ const invalid=await app.call('POST','/api/semence-shares',{token:author.token,
+   body:{title:'Rêve',sourceLocalId:'dream-profile',visibility:'public',
+     blocks:[{kind:'profile-ref',title:'Unsafe',
+       content:'https://example.org/not-a-member'}]}});
+ assert.equal(invalid.status,422);
+});
+
 test('Semence publishing rejects unsafe links and empty selections',async()=>{
  const app=createApp();
  const author=await app.register('Auteur');
