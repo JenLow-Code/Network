@@ -62,8 +62,8 @@ export default function SemencePublicationCover({
      flexDirection:'row',alignItems:'center',gap:7}}>
      <Ionicons name={talent?'person-outline':'albums-outline'}
        size={15} color="#A5713D"/>
-     <Text style={{fontSize:9,letterSpacing:.55,fontWeight:'700',
-       color:theme.muted}}>{category}</Text>
+     <Text style={{fontSize:9,letterSpacing:.6,fontWeight:'700',
+       color:'#A5713D'}}>{category}</Text>
    </View>:null}
    {!hasArt&&talent?<View style={{position:'absolute',top:48,left:12,
      width:42,height:42,borderRadius:21,
