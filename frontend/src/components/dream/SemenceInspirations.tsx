@@ -54,7 +54,7 @@ function typeIcon(kind:DreamBlockKind):keyof typeof Ionicons.glyphMap{
   return 'sparkles-outline';
 }
 /** A shared compact card rhythm: same height and typography across reference types. */
-function InspirationTile({block,onPress,onLongPress}:{
+export function InspirationTile({block,onPress,onLongPress}:{
  block:DreamBlock;onPress:()=>void;onLongPress:()=>void;
 }) {
  const theme=useAppTheme();
