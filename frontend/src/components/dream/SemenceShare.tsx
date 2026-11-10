@@ -3,7 +3,10 @@ import { Image, Modal, Platform, Pressable, ScrollView, Text, View } from 'react
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/theme/AppTheme';
 import type { DreamBlock, DreamEntry } from '@/domain/dreamWorkspace';
-import SemencePublishActions from './SemencePublishActions';
+import { publishSemenceSnapshot, explainSemencePublishError,
+  type PublishedSemence, type Visibility } from './SemencePublishActions';
+import PublishedSemenceCard from './PublishedSemenceCard';
+import { router } from 'expo-router';
 
 const BROWN='#A5713D';
 const escapeHtml=(s:string)=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;')
@@ -68,6 +71,33 @@ export default function SemenceShare({dream,initialIds,onClose}:{
  const [selected,setSelected]=useState<string[]>(()=>
    initialIds?.length?blocks.filter(b=>initialIds.includes(b.id)).map(b=>b.id):blocks.map(b=>b.id));
  const [notice,setNotice]=useState('');
+ const [stage,setStage]=useState<'select'|'preview'|'success'>('select');
+ const [visibility,setVisibility]=useState<Visibility>('public');
+ const [publishing,setPublishing]=useState(false);
+ const [publishError,setPublishError]=useState('');
+ const [published,setPublished]=useState<PublishedSemence|null>(null);
+ const images=(picked:DreamBlock[])=>(picked.filter(b=>
+   b.kind==='image'||b.kind==='gallery')
+   .map(b=>b.media?.[0]||b.content).filter(Boolean)).slice(0,3);
+ const preview=()=>{
+   setVisibility('public');setPublishError('');setStage('preview');
+ };
+ const confirmPublish=async()=>{
+   if(publishing||!picked.length)return;
+   setPublishing(true);setPublishError('');
+   try{
+     const created=await publishSemenceSnapshot(dream,picked,visibility);
+     setPublished(created);setStage('success');
+   }catch(e){setPublishError(explainSemencePublishError(e));}
+   finally{setPublishing(false);}
+ };
+ const viewPublication=()=>{
+   if(!published)return;
+   const id=published.id;
+   onClose();
+   router.push({pathname:'/semence-share/[id]',params:{id}});
+ };
+
  const picked=blocks.filter(b=>selected.includes(b.id));
  const setAll=(all:boolean)=>setSelected(all?blocks.map(b=>b.id):[]);
  const toggle=(id:string)=>setSelected(current=>current.includes(id)
@@ -129,13 +159,89 @@ export default function SemenceShare({dream,initialIds,onClose}:{
          borderRadius:2,alignSelf:'center'}}/>
        <View style={{flexDirection:'row',alignItems:'center',gap:12}}>
          <Text style={{fontSize:23,fontFamily:'serif',color:theme.foreground,
-           flex:1}}>Publier cette semence</Text>
+           flex:1}}>{stage==='preview'?'Aperçu de la publication':
+             stage==='success'?'Semence publiée':'Publier cette semence'}</Text>
          <Pressable accessibilityRole="button" accessibilityLabel="Fermer" onPress={onClose}
            style={{padding:6}}>
            <Ionicons name="close" size={22} color={theme.foreground}/>
          </Pressable>
        </View>
-       <ScrollView nestedScrollEnabled keyboardShouldPersistTaps="handled"
+       {stage==='success'?<View style={{gap:16,paddingVertical:18}}>
+         <View style={{alignItems:'center',gap:10,marginBottom:6}}>
+           <Ionicons name="checkmark-circle-outline" size={48} color="#27845B"/>
+           <Text style={{fontSize:21,fontFamily:'serif',
+             color:theme.foreground,textAlign:'center'}}>Ta Semence est publiée !</Text>
+           <Text style={{fontSize:13,lineHeight:20,
+             color:theme.muted,textAlign:'center'}}>
+             Elle est maintenant visible sur ton profil.
+             Ton rêve reste en Semence et tes carnets personnels restent privés.
+           </Text>
+         </View>
+         <Pressable accessibilityRole="button"
+           onPress={onClose}
+           style={{borderRadius:11,paddingVertical:15,
+             alignItems:'center',backgroundColor:'#A1BA44'}}>
+           <Text style={{fontSize:13,fontWeight:'700',color:'#242322'}}>
+             Continuer à travailler sur mon rêve
+           </Text>
+         </Pressable>
+         <Pressable accessibilityRole="button"
+           onPress={viewPublication}
+           style={{borderRadius:11,paddingVertical:14,
+             borderWidth:1,borderColor:BROWN,alignItems:'center'}}>
+           <Text style={{fontSize:13,fontWeight:'700',color:BROWN}}>
+             Voir la publication
+           </Text>
+         </Pressable>
+       </View>:stage==='preview'?<ScrollView nestedScrollEnabled
+         keyboardShouldPersistTaps="handled"
+         contentContainerStyle={{gap:16,paddingBottom:15}}>
+         <Text style={{fontSize:12,lineHeight:19,color:theme.muted}}>
+           Voilà comment cette Semence apparaîtra sur ton profil.
+           Elle reste distincte de ton rêve en cours et n’apparaît pas dans Découverte.
+         </Text>
+         <View style={{alignItems:'center'}}>
+           <PublishedSemenceCard preview item={{
+             title:dream.title,visibility,coverUrl:dream.image||null,
+             previewImages:images(picked),
+           }} width={260}/>
+         </View>
+         <View style={{gap:9}}>
+           <Text style={{fontSize:14,fontWeight:'700',color:theme.foreground}}>
+             Inspirations incluses · {picked.length}
+           </Text>
+           {picked.map(b=><View key={b.id} style={{flexDirection:'row',
+             alignItems:'center',gap:10,paddingVertical:8,
+             borderBottomWidth:0.5,borderColor:theme.border}}>
+             <Ionicons name={b.kind==='image'||b.kind==='gallery'?'image-outline':
+               b.kind==='bible-verse'?'book-outline':
+               b.kind==='note'?'create-outline':'document-text-outline'}
+               size={17} color={BROWN}/>
+             <Text numberOfLines={2} style={{flex:1,fontSize:12,
+               color:theme.foreground}}>{label(b)}</Text>
+           </View>)}
+         </View>
+         <Text style={{fontSize:11,color:theme.muted,lineHeight:18}}>
+           Seules ces inspirations seront publiées. Aucun carnet personnel ne sera partagé.
+         </Text>
+         {!!publishError?<Text accessibilityRole="alert" style={{
+           color:'#B34759',fontSize:12,lineHeight:18}}>{publishError}</Text>:null}
+         <Pressable accessibilityRole="button" disabled={publishing}
+           onPress={()=>void confirmPublish()}
+           style={{borderRadius:11,paddingVertical:15,
+             alignItems:'center',backgroundColor:'#A1BA44',opacity:publishing?.55:1}}>
+           <Text style={{fontSize:13,fontWeight:'700',color:'#242322'}}>
+             {publishing?'Publication en cours…':'Confirmer la publication'}
+           </Text>
+         </Pressable>
+         <Pressable accessibilityRole="button" disabled={publishing}
+           onPress={()=>{setStage('select');setPublishError('');}}
+           style={{paddingVertical:11,alignItems:'center'}}>
+           <Text style={{fontSize:12,color:theme.muted}}>
+             Modifier ma sélection
+           </Text>
+         </Pressable>
+       </ScrollView>:       <ScrollView nestedScrollEnabled keyboardShouldPersistTaps="handled"
          contentContainerStyle={{paddingBottom:12,gap:15}}>
          <Text style={{fontSize:12,color:theme.muted,lineHeight:19}}>
            Choisis exactement les inspirations à inclure. Tes carnets privés ne sont jamais partagés.
@@ -187,7 +293,19 @@ export default function SemenceShare({dream,initialIds,onClose}:{
            <Text style={{fontSize:14,fontWeight:'700',color:theme.foreground}}>
              Comment la partager ?
            </Text>
-           <SemencePublishActions dream={dream} picked={picked}/>
+           <Pressable accessibilityRole="button" disabled={!picked.length}
+             accessibilityLabel="Prévisualiser la publication sur mon profil"
+             onPress={preview}
+             style={{minHeight:51,backgroundColor:'#A1BA44',
+               borderRadius:11,justifyContent:'center',alignItems:'center',
+               padding:12,opacity:picked.length?1:.45}}>
+             <Text style={{fontSize:13,fontWeight:'700',color:'#242322'}}>
+               Publier sur mon profil
+             </Text>
+           </Pressable>
+           <Text style={{fontSize:11,lineHeight:18,color:theme.muted}}>
+             Prévisualisation et confirmation avant la publication.
+           </Text>
            <Text style={{fontSize:13,fontWeight:'700',color:theme.foreground,
              marginTop:7}}>Partager à l’extérieur</Text>
            <Text style={{fontSize:11,color:theme.muted,lineHeight:18}}>
@@ -217,7 +335,7 @@ export default function SemenceShare({dream,initialIds,onClose}:{
            {!!notice?<Text accessibilityRole="alert"
              style={{fontSize:12,lineHeight:19,color:theme.muted}}>{notice}</Text>:null}
          </View>
-       </ScrollView>
+       </ScrollView>}
      </View>
    </View>
  </Modal>;
