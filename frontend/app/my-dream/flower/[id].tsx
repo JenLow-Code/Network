@@ -433,26 +433,26 @@ export default function FlowerPreparation() {
           ) : null}
         </View>
 
-        {/* Keep the three established actions, their meaning, and their order. */}
+        {/* Publication comes first; secondary edit is a magenta outline. */}
         <View style={{ borderTopWidth: 1, borderColor: theme.border,
           paddingTop: 22, marginTop: 30, gap: 10 }}>
           <Text style={sectionTitle}>La floraison</Text>
           <Text style={{ ...muted, marginBottom: 6 }}>
             Tu peux revenir sur ta présentation avant de la partager.
           </Text>
-          <Pressable accessibilityRole="button" onPress={() => router.replace('/my-space')}
-            style={{ minHeight: 48, borderWidth: 1, borderColor: theme.border,
-              borderRadius: 11, backgroundColor: theme.surface,
-              alignItems: 'center', justifyContent: 'center', paddingHorizontal: 14 }}>
-            <Text style={{ color: theme.foreground, fontSize: 13,
-              fontWeight: '700' }}>Continuer à éditer cette fleur plus tard</Text>
-          </Pressable>
           <Pressable accessibilityRole="button" onPress={publish}
             style={{ minHeight: 48, borderRadius: 11, backgroundColor: MAGENTA,
               alignItems: 'center', justifyContent: 'center', paddingHorizontal: 14 }}>
             <Text style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '700' }}>
-              Afficher (publier) cette fleur
+              Publier cette fleur
             </Text>
+          </Pressable>
+          <Pressable accessibilityRole="button" onPress={() => router.replace('/my-space')}
+            style={{ minHeight: 48, borderWidth: 1.5, borderColor: MAGENTA,
+              borderRadius: 11, backgroundColor: 'transparent',
+              alignItems: 'center', justifyContent: 'center', paddingHorizontal: 14 }}>
+            <Text style={{ color: MAGENTA, fontSize: 13,
+              fontWeight: '700' }}>Continuer à éditer</Text>
           </Pressable>
           <Pressable accessibilityRole="button" onPress={uproot}
             style={{ minHeight: 48, borderRadius: 11, backgroundColor: '#242322',
