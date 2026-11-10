@@ -226,7 +226,22 @@ export function DreamProvider({ children }: { children: React.ReactNode }) {
           : d,
       ),
     );
-  const patch: Repo['patch'] = (id, changes) => setItems(p => p.map(d => d.id === id ? { ...d, ...changes, id: d.id, title: d.title, phase: d.phase } : d));
+  const patch: Repo['patch'] = (id, changes) => setItems(previous =>
+    previous.map(d => {
+      if(d.id !== id)return d;
+      // Once the dream reaches Floraison, Croissance is an immutable archive.
+      // Continue allowing edits to Floraison presentation and personal notebooks.
+      const lockedGrowthFields = new Set<keyof DreamEntry>([
+        'habits','milestones','resources','growthEvents','foundNeedHistory',
+        'growthStartedAt','goalDate','paused','pauseUntil','pauseCount',
+      ]);
+      const allowed = d.phase==='Témoignage'
+        ?Object.fromEntries(Object.entries(changes).filter(
+          ([key])=>!lockedGrowthFields.has(key as keyof DreamEntry),
+        )) as Partial<DreamEntry>
+        :changes;
+      return { ...d, ...allowed, id:d.id, title:d.title, phase:d.phase };
+    }));
   const appendBlock: Repo['appendBlock'] = (id, block) => setItems(p => p.map(d => d.id === id && d.phase === 'Rêve' ? { ...d, blocks: [...(d.blocks || []), block] } : d));
   const setResources: Repo['setResources'] = (id, resources) => setItems(p => p.map(d => {
     if(d.id !== id || (d.phase !== 'Initiation' && d.phase !== 'Croissance')) return d;
