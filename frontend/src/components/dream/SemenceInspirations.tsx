@@ -219,24 +219,26 @@ function SortableInspirationCard({block,editable,onOpen,onMenu,onResize,onMeasur
      elevation:moving?14:0,opacity:moving?0.88:1,
      transform:offset.getTranslateTransform()}}>
    <InspirationTile block={block} onPress={onOpen} onLongPress={onMenu}/>
-   {editable?<View style={{position:'absolute',right:7,bottom:7,
-     flexDirection:'row',alignItems:'center',gap:4}}>
+   {editable?<View style={{minHeight:31,paddingRight:8,paddingBottom:4,
+     flexDirection:'row',alignItems:'center',justifyContent:'flex-end',gap:6,
+     borderBottomLeftRadius:12,borderBottomRightRadius:12,
+     backgroundColor:theme.dark?'#2A2B2D':'#F5F1ED'}}>}
      <Pressable accessibilityRole="button"
        accessibilityLabel={'Changer la taille de '+(block.title||'cette inspiration')}
        accessibilityState={{expanded:sizeOpen}}
        onPress={()=>{setSizeOpen(value=>!value);setMoveOpen(false);}}
-       style={{height:30,width:30,borderRadius:9,alignItems:'center',
-         justifyContent:'center',borderWidth:0.6,borderColor:theme.border,
-         backgroundColor:theme.dark?'rgba(35,35,35,.9)':'rgba(255,252,247,.92)'}}>
+       style={{height:27,width:27,borderRadius:8,alignItems:'center',
+         justifyContent:'center',borderWidth:0.5,borderColor:theme.border,
+         backgroundColor:theme.dark?'#343435':'#F8F5F1'}}>
        <Ionicons name="resize-outline" size={15} color="#9D6C43"/>
      </Pressable>
      <View {...responder.panHandlers}
        accessible accessibilityRole="button"
        accessibilityLabel={'Glisser pour déplacer '+(block.title||'cette inspiration')}
        accessibilityHint="Maintenir et déplacer pour réorganiser les cartes, ou toucher pour les flèches"
-       style={{width:30,height:30,borderRadius:9,alignItems:'center',
-         justifyContent:'center',borderWidth:0.6,borderColor:theme.border,
-         backgroundColor:theme.dark?'rgba(35,35,35,.9)':'rgba(255,252,247,.92)'}}>
+       style={{width:27,height:27,borderRadius:8,alignItems:'center',
+         justifyContent:'center',borderWidth:0.5,borderColor:theme.border,
+         backgroundColor:theme.dark?'#343435':'#F8F5F1'}}>
        <Ionicons name="reorder-three-outline" size={20} color="#9D6C43"/>
      </View>
    </View>:null}
