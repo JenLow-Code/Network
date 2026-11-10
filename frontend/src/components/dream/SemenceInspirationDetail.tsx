@@ -9,6 +9,8 @@ import SemencePublicationCover from './SemencePublicationCover';
 import SemenceLinkPreview from './SemenceLinkPreview';
 import { SemenceDocumentPreview } from './SemenceDocumentPreview';
 import type { DreamBlock } from '@/domain/dreamWorkspace';
+import { tileSizeOf, type TileSize } from '@/domain/inspirationLayout';
+import RichInspirationNote from './RichInspirationNote';
 
 const brown='#B88962';
 const isImage=(b:DreamBlock)=>['image','gallery'].includes(b.kind)
@@ -17,14 +19,16 @@ const kindName=(b:DreamBlock):string=>
   b.kind==='quote'?'Citation':b.kind==='bible-verse'?'Verset biblique':
   b.kind==='publication-ref'?'Publication':
   b.kind==='image'?'Photo':b.kind==='document'?'Document':
-  b.kind==='poem'?'Poème / texte court':'Inspiration';
+  b.kind==='poem'?'Poème / texte court':b.kind==='note'?'Note':'Inspiration';
 
-export default function SemenceInspirationDetail({block,initialMenu,editable,onClose,onEdit,onDelete,onShare}:{
+export default function SemenceInspirationDetail({block,initialMenu,editable,onClose,onEdit,onDelete,onShare,onResize}:{
  block:DreamBlock;initialMenu:boolean;editable:boolean;
  onClose:()=>void;onEdit:()=>void;onDelete:()=>void;onShare:()=>void;
+ onResize?:(size:TileSize)=>void;
 }){
  const theme=useAppTheme();
  const [menuOpen,setMenuOpen]=useState(initialMenu);
+ const [sizeOpen,setSizeOpen]=useState(false);
  const [error,setError]=useState('');
  const publication=usePublication(block.kind==='publication-ref'?block.content.trim():undefined);
  const openSource=()=>{
@@ -82,6 +86,32 @@ export default function SemenceInspirationDetail({block,initialMenu,editable,onC
            <Ionicons name="share-outline" size={19} color={theme.foreground}/>
            <Text style={{fontSize:14,color:theme.foreground}}>Partager</Text>
          </Pressable>
+         {editable&&onResize?<View style={{gap:6}}>
+           <Pressable accessibilityRole="button" onPress={()=>setSizeOpen(!sizeOpen)}
+             style={{flexDirection:'row',alignItems:'center',gap:12,padding:13}}>
+             <Ionicons name="resize-outline" size={19} color={theme.foreground}/>
+             <Text style={{fontSize:14,color:theme.foreground,flex:1}}>Taille de la carte</Text>
+             <Text style={{fontSize:12,color:theme.muted}}>{tileSizeOf(block)}</Text>
+             <Ionicons name={sizeOpen?'chevron-up':'chevron-down'}
+               size={16} color={theme.muted}/>
+           </Pressable>
+           {sizeOpen?<View style={{flexDirection:'row',gap:7,paddingHorizontal:12,
+             paddingBottom:12}}>
+             {(['1x1','2x1','1x2','2x2'] as TileSize[]).map(size=>
+               <Pressable key={size} accessibilityRole="button"
+                 accessibilityState={{selected:tileSizeOf(block)===size}}
+                 onPress={()=>onResize(size)}
+                 style={{flex:1,minHeight:44,borderRadius:9,borderWidth:1,
+                   borderColor:tileSizeOf(block)===size?'#A5713D':theme.border,
+                   backgroundColor:theme.background,alignItems:'center',
+                   justifyContent:'center'}}>
+                 <Text style={{fontSize:12,fontWeight:'700',
+                   color:tileSizeOf(block)===size?'#A5713D':theme.foreground}}>
+                   {size.replace('x','×')}
+                 </Text>
+               </Pressable>)}
+           </View>:null}
+         </View>:null}
          {editable?<Pressable accessibilityRole="button" onPress={onDelete}
            style={{flexDirection:'row',alignItems:'center',gap:12,padding:13}}>
            <Ionicons name="trash-outline" size={19} color="#AA4B58"/>
@@ -100,7 +130,9 @@ export default function SemenceInspirationDetail({block,initialMenu,editable,onC
            {!!block.title?<Text style={{fontSize:13,color:theme.muted}}>
              — {block.title}
            </Text>:null}
-         </View>:block.kind==='poem'?<View style={{gap:8}}>
+         </View>:block.kind==='note'?<RichInspirationNote
+             blocks={block.noteBlocks||[]} editable={false} onChange={()=>{}}/>:
+           block.kind==='poem'?<View style={{gap:8}}>
            <Text selectable style={{fontSize:19,lineHeight:30,
              fontFamily:'serif',color:theme.foreground}}>
              {block.content}
