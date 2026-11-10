@@ -138,6 +138,11 @@ export type DreamEntry = {
   id: string;
   /** ID of a synchronized server dream; undefined for local workspaces. */
   serverDreamId?: string;
+  /** Role of the current viewer, assigned only from a trusted account membership.
+   * Local-only workspaces default to creator when this field is absent.
+   * This is display metadata, NEVER an authorization check.
+   */
+  viewerRole?: 'creator' | 'co_owner' | 'participant';
   title: string;
   phase: DreamPhase;
   /** Accepted co-owner names only; never display raw account IDs as names. */

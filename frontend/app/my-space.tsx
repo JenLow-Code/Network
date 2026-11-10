@@ -12,6 +12,17 @@ import { useAppTheme } from '@/theme/AppTheme';
 import DreamQuickActions from '@/components/dream/DreamQuickActions';
 
 type ViewFilter = 'Tout' | 'Liste' | 'Congelés';
+type RoleFilter = 'all' | 'creator' | 'co_owner' | 'participant';
+const ROLE_OPTIONS: {key:RoleFilter;label:string;empty:string}[] = [
+  {key:'all',label:'Tous les rêves',empty:'Tout commence par une semence'},
+  {key:'creator',label:'Créés par moi',empty:'Aucun rêve créé pour le moment'},
+  {key:'co_owner',label:'Co-propriétaire',empty:'Aucun rêve en copropriété pour le moment'},
+  {key:'participant',label:'Mes participations',empty:'Aucune participation pour le moment'},
+];
+/** Derived from trusted membership when connected; local dreams belong to the creator.
+ * Never derive participant status from encouragements, prayers or "Moi aussi".
+ */
+const viewerRole = (dream:DreamEntry) => dream.viewerRole || 'creator';
 const series: { phase: DreamPhase; title: string; sub: string }[] = [
   { phase: 'Témoignage', title: 'Fruits potentiels', sub: 'Des rêves accomplis, de possibles nouvelles semences.' },
   { phase: 'Rêve', title: 'Mes semences', sub: 'Les idées que je cultive.' },
@@ -113,6 +124,8 @@ export default function MySpace() {
   const compact = windowWidth < 600;
   const { items } = useDreams();
   const [view, setView] = useState<ViewFilter>('Tout');
+  const [roleFilter,setRoleFilter]=useState<RoleFilter>('all');
+  const [roleMenuOpen,setRoleMenuOpen]=useState(false);
   const [activeTestimony, setActiveTestimony] = useState(0);
   const [longDream,setLongDream]=useState<DreamEntry|null>(null);
   const side = compact ? 18 : 28;
@@ -120,7 +133,10 @@ export default function MySpace() {
   const innerWidth = contentWidth - side * 2;
   const tileWidth = compact ? Math.max(137, Math.min(205, Math.floor(innerWidth * .48))) : 210;
   const list = view === 'Liste';
-  const visible = view === 'Congelés' ? items.filter(frozen) : items;
+  const matchingRole = roleFilter === 'all' ? items :
+    items.filter(dream => viewerRole(dream) === roleFilter);
+  const visible = view === 'Congelés' ? matchingRole.filter(frozen) : matchingRole;
+  const roleOption = ROLE_OPTIONS.find(option=>option.key===roleFilter)!;
   const testimonies = visible.filter(d => d.phase === 'Témoignage');
   const inFlower = (d:DreamEntry) => d.phase==='Croissance' &&
     (!!d.flowerStartedAt || !!d.flowerDraft?.story?.trim() || !!d.flowerDraft?.attachments?.length);
@@ -141,29 +157,61 @@ export default function MySpace() {
               Des premières idées aux histoires accomplies.
             </Text>
           </View>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 24 }}>
-            {(['Tout', 'Liste', 'Congelés'] as ViewFilter[]).map(choice => (
-              <Pressable key={choice} accessibilityRole="button"
-                accessibilityState={{ selected: view === choice }}
-                onPress={() => setView(choice)}
-                style={{
-                  paddingHorizontal: compact ? 10 : 16, paddingVertical: 10,
-                  borderRadius: 22, borderWidth: 1,
-                  borderColor: view === choice ? theme.foreground : theme.border,
-                  backgroundColor: view === choice ? theme.foreground : 'transparent',
-                }}>
-                <Text style={{ fontSize: 11, fontWeight: '700',
-                  color: view === choice ? theme.background : theme.foreground }}>{choice}</Text>
+          <View style={{ flexDirection:'row',alignItems:'center',gap:7,marginBottom:11 }}>
+            <Pressable onPress={()=>setRoleMenuOpen(current=>!current)}
+              accessibilityRole="button" accessibilityLabel={'Filtrer mes rêves : '+roleOption.label}
+              accessibilityState={{expanded:roleMenuOpen}}
+              style={{flexDirection:'row',alignItems:'center',gap:7,
+                paddingHorizontal:11,minHeight:37,borderRadius:19,
+                borderWidth:1,borderColor:theme.border,
+                backgroundColor:theme.surface}}>
+              <Ionicons name="filter-outline" size={15} color={theme.muted}/>
+              <Text style={{fontSize:11,fontWeight:'600',color:theme.foreground}}>
+                {roleOption.label}
+              </Text>
+              <Ionicons name={roleMenuOpen?'chevron-up':'chevron-down'}
+                size={13} color={theme.muted}/>
+            </Pressable>
+            <View style={{flex:1}}/>
+            {(['Liste','Congelés'] as ViewFilter[]).map(choice=>(
+              <Pressable key={choice} onPress={()=>setView(current=>current===choice?'Tout':choice)}
+                accessibilityRole="button"
+                accessibilityState={{selected:view===choice}}
+                accessibilityLabel={choice==='Liste'?'Afficher en liste':'Afficher les rêves gelés'}
+                style={{paddingHorizontal:compact?9:13,minHeight:37,
+                  alignItems:'center',justifyContent:'center',borderRadius:19,
+                  borderWidth:1,borderColor:view===choice?theme.foreground:theme.border,
+                  backgroundColor:view===choice?theme.foreground:'transparent'}}>
+                <Text style={{fontSize:11,fontWeight:'600',
+                  color:view===choice?theme.background:theme.foreground}}>
+                  {choice}
+                </Text>
               </Pressable>
             ))}
-            <View style={{ flex: 1 }} />
-            <Pressable onPress={() => router.push('/my-dream/new')}
+            <Pressable onPress={()=>router.push('/my-dream/new')}
               accessibilityRole="button" accessibilityLabel="Planter une semence"
-              style={{ width: 42, height: 42, borderRadius: 12,
-                backgroundColor: '#D71D77', alignItems: 'center', justifyContent: 'center' }}>
-              <Ionicons name="add" size={22} color="#FFFFFF" />
+              style={{width:39,height:39,borderRadius:12,
+                backgroundColor:'#D71D77',alignItems:'center',justifyContent:'center'}}>
+              <Ionicons name="add" size={22} color="#FFFFFF"/>
             </Pressable>
           </View>
+          {roleMenuOpen?<View style={{marginBottom:18,maxWidth:300,
+            borderWidth:1,borderColor:theme.border,borderRadius:12,
+            backgroundColor:theme.surface,paddingVertical:5}}>
+            {ROLE_OPTIONS.map(option=><Pressable key={option.key}
+              accessibilityRole="button"
+              accessibilityState={{selected:option.key===roleFilter}}
+              onPress={()=>{setRoleFilter(option.key);setRoleMenuOpen(false);}}
+              style={{minHeight:41,paddingHorizontal:13,flexDirection:'row',
+                alignItems:'center',gap:10}}>
+              <Text style={{flex:1,color:option.key===roleFilter?theme.foreground:theme.muted,
+                fontSize:12,fontWeight:option.key===roleFilter?'700':'500'}}>
+                {option.label}
+              </Text>
+              {option.key===roleFilter?<Ionicons name="checkmark" size={16}
+                color={theme.foreground}/>:null}
+            </Pressable>)}
+          </View>:<View style={{height:13}}/>}
         </View>
 
         {visible.length === 0 ? (
@@ -171,10 +219,14 @@ export default function MySpace() {
             <Ionicons name={view === 'Congelés' ? 'snow' : 'sparkles-outline'} size={27}
               color={view === 'Congelés' ? '#427FA6' : theme.muted} />
             <Text style={{ color: theme.foreground, fontWeight: '700', fontSize: 16 }}>
-              {view === 'Congelés' ? 'Aucun rêve congelé' : 'Tout commence par une semence'}
+              {view === 'Congelés' ? 'Aucun rêve gelé dans cette catégorie' : roleOption.empty}
             </Text>
             <Text style={{ color: theme.muted, fontSize: 12, textAlign: 'center', lineHeight: 19 }}>
-              {view === 'Congelés' ? 'Les germinations congelées apparaîtront ici.' : 'Plante ta première idée.'}
+              {view === 'Congelés'
+                ? 'Les rêves gelés apparaîtront ici.'
+                : roleFilter==='participant'?'Les rêves auxquels tu contribues apparaîtront après acceptation de ta ressource.'
+                : roleFilter==='co_owner'?'Les rêves partagés apparaîtront après acceptation d’une invitation de copropriété.'
+                : 'Plante une semence ou retrouve tes rêves existants.'}
             </Text>
           </View>
         ) : list ? (
@@ -235,7 +287,7 @@ export default function MySpace() {
           </>
         )}
 
-        {view==='Tout' ? (
+        {view==='Tout' && roleFilter!=='participant' && visible.length>0 ? (
           <View style={{marginTop:6,marginBottom:26}}>
             <View style={{paddingHorizontal:side,marginBottom:12}}>
               <Text style={{fontSize:17,fontWeight:'700',color:theme.foreground}}>Floraison</Text>
