@@ -88,7 +88,8 @@ function CurrentHabitSummary({
   const [measureValue,setMeasureValue]=useState('');
   const [invalid,setInvalid]=useState(false);
   if(!habits.length)return null;
-  const visible=habits.slice(0,3);
+  // Archived Croissance is a complete read-only record, not a truncated editor.
+  const visible=editable?habits.slice(0,3):habits;
   const today=habitDayKey(new Date());
   const currentQuantity=(habit:DreamHabit)=>{
     const key=habitKey(habit.frequency,today);
@@ -167,7 +168,7 @@ function CurrentHabitSummary({
           onTodayPress={()=>openCheckIn(habit)}/>
       </View>;
     })}
-    {habits.length>visible.length?<Pressable accessibilityRole="button"
+    {editable&&habits.length>visible.length?<Pressable accessibilityRole="button"
       onPress={onManage} style={{alignSelf:'flex-end',paddingVertical:5}}>
       <Text style={{color:GREEN,fontSize:11}}>
         Voir les {habits.length-visible.length} autres habitudes
@@ -490,9 +491,13 @@ export function GrowthLogbook({
             event.category === 'financial' ? 'wallet-outline' : 'cube-outline';
           const label = event.kind === 'need_added' ? 'Ajouté en Croissance' :
             event.kind === 'need_found' ? 'Trouvé' : 'À retrouver';
-          return <View key={event.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <Ionicons name={icon} size={17} color={color} />
-            <Text style={{ color: theme.foreground, fontSize: 12, lineHeight: 19, flex: 1 }}>
+          return <View key={event.id} style={{flexDirection:'row',
+            alignItems:'flex-start',gap:7,minHeight:21}}>
+            <View style={{width:26,alignItems:'center',paddingTop:1}}>
+              <Ionicons name={icon} size={17} color={color}/>
+            </View>
+            <Text style={{color:theme.foreground,fontSize:12,lineHeight:19,
+              flex:1}}>
               <Text style={{ fontWeight: '700', color }}>{categoryTitle(event.category)} · </Text>
               {event.title + ' · ' + label}
             </Text>
@@ -500,19 +505,23 @@ export function GrowthLogbook({
         })}
         {group.documents.map(doc => <Pressable key={doc.id} accessibilityRole="button"
           onPress={() => router.push({ pathname: '/my-dream/library/[id]', params: { id: dream.id } })}
-          style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <Ionicons name="document-text-outline" size={17} color={BLUE} />
-          <Text style={{ color: theme.foreground, fontSize: 12, lineHeight: 19, flex: 1 }}>
+          style={{flexDirection:'row',alignItems:'flex-start',gap:7}}>
+          <View style={{width:26,alignItems:'center',paddingTop:1}}>
+            <Ionicons name="document-text-outline" size={17} color={BLUE}/>
+          </View>
+          <Text style={{color:theme.foreground,fontSize:12,lineHeight:19,flex:1}}> 
             <Text style={{ fontWeight: '700', color: BLUE }}>Document · </Text>
             {doc.title + (doc.version > 1 ? ' · v' + doc.version : '') + ' ajouté'}
           </Text>
           <Ionicons name="chevron-forward" size={14} color={theme.muted} />
         </Pressable>)}
         {group.previewEvents.map(event => <View key={event.id}
-          style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <Ionicons name={event.kind === 'document' ? 'document-text-outline' : 'cube-outline'}
-            size={17} color={BLUE} />
-          <Text style={{ fontSize: 12, lineHeight: 19, color: theme.foreground, flex: 1 }}>
+          style={{flexDirection:'row',alignItems:'flex-start',gap:7}}>
+          <View style={{width:26,alignItems:'center',paddingTop:1}}>
+            <Ionicons name={event.kind === 'document'
+              ?'document-text-outline':'cube-outline'} size={17} color={BLUE}/>
+          </View>
+          <Text style={{fontSize:12,lineHeight:19,color:theme.foreground,flex:1}}> 
             {event.title}
           </Text>
           <Text style={{ fontSize: 9, color: theme.muted }}>Démo</Text>
