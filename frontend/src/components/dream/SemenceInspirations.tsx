@@ -12,7 +12,7 @@ import SemenceInspirationDetail from './SemenceInspirationDetail';
 import SemencePublicationCover from './SemencePublicationCover';
 import { documentKind, documentLabel } from './SemenceDocumentPreview';
 import { linkHost } from './SemenceLinkPreview';
-import { layoutInspirations, tileSizeOf, isTallTile, isWideTile } from '@/domain/inspirationLayout';
+import { layoutInspirations, isTallTile, isWideTile } from '@/domain/inspirationLayout';
 import RichInspirationNote from './RichInspirationNote';
 import BiblePassagePicker from '@/components/bible/BiblePassagePicker';
 import { bibleReference } from '@/domain/bibleLibrary';
@@ -271,7 +271,7 @@ export default function SemenceInspirations({dream,editable,onShareInspiration,a
         style={{width:36,height:36,alignItems:'center',justifyContent:'center',
           borderRadius:18,backgroundColor:theme.surface,
           borderWidth:1,borderColor:theme.border}}>
-        <Ionicons name="add" size={21} color={theme.foreground}/>
+        <Ionicons name="add" size={25} color="#A5713D"/>
       </Pressable>:null}
     </View>
     {blocks.length?<View style={{gap:11}}>
@@ -322,6 +322,12 @@ export default function SemenceInspirations({dream,editable,onShareInspiration,a
       }}
       onShare={()=>{const id=selectedBlock.id;setSelectedBlock(null);
         onShareInspiration?.(id);}}
+      onResize={size=>{
+        const updated={...selectedBlock,tileSize:size};
+        patch(dream.id,{blocks:(dream.blocks||[]).map(b=>
+          b.id===selectedBlock.id?updated:b)});
+        setSelectedBlock(null);
+      }}
     />:null}
     <Modal visible={canShow} transparent animationType="slide" onRequestClose={close}>
       <View style={{flex:1,justifyContent:'flex-end'}}>
