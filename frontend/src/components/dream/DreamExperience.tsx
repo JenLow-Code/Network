@@ -420,8 +420,18 @@ export default function DreamExperience({
    ):null}
   </> : null}
   {phase==='Croissance' ? <>
-    <View style={{flexDirection:'column',alignItems:'flex-end',
-      gap:0,marginTop:0,marginBottom:9,paddingHorizontal:3}}>
+    <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',
+      gap:10,marginTop:0,marginBottom:5,paddingHorizontal:3}}>
+      {dream.goalDate?<View style={{flex:1,alignItems:'flex-start',gap:4,paddingLeft:2}}>
+        <Text style={{fontSize:10,letterSpacing:1,color:theme.muted,fontWeight:'600'}}>
+          OBJECTIF
+        </Text>
+        <Text style={{fontSize:12,color:theme.foreground,fontWeight:'600'}}>
+          {new Date(dream.goalDate+'T12:00:00').toLocaleDateString('fr-FR',
+            {day:'numeric',month:'short',year:'numeric'})}
+        </Text>
+      </View>:<View style={{flex:1}}/>}
+      <View style={{alignItems:'flex-end',gap:0}}> 
       <Pressable accessibilityRole="button"
         accessibilityLabel="Ouvrir mes notes personnelles"
         onPress={()=>router.push({pathname:'/my-dream/notes/[id]',params:{id:dream.id}})}
@@ -442,6 +452,7 @@ export default function DreamExperience({
         </Text>
         <Ionicons name="arrow-forward" size={14} color={theme.foreground}/>
       </Pressable>
+      </View>
     </View>
     {(resources.length>0 || !!dream.goalDate) ? (
       <View style={{
@@ -463,15 +474,11 @@ export default function DreamExperience({
             <View style={{width:13,height:13,borderRadius:7,
               backgroundColor:'#A1BA44',borderWidth:2,borderColor:'#668C2A'}}/>
           )}
-          <View style={{flex:1,gap:4}}>
-            <Text style={{fontSize:12,fontWeight:'700',
-              color:theme.foreground}}>
+          <View style={{flex:1}}>
+            <Text style={{fontSize:12,fontWeight:'700',color:theme.foreground}}>
               {missingResources.length
                 ? `${missingResources.length} besoin${missingResources.length>1?'s':''} à compléter`
                 : 'Depuis la Germination'}
-            </Text>
-            <Text style={{fontSize:11,color:theme.foreground,opacity:.7}}>
-              {dream.goalDate?'Objectif · '+dream.goalDate:'Préparatifs et besoins'}
             </Text>
           </View>
           <Ionicons name={recapExpanded?'chevron-up':'chevron-down'}
