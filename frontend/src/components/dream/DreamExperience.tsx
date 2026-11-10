@@ -405,7 +405,7 @@ export default function DreamExperience({
            setFreezeDialog(true);
          }} style={{minHeight:48,borderWidth:1.5,borderColor:'#397F9E',borderRadius:11,
            alignItems:'center',justifyContent:'center',paddingHorizontal:16}}>
-           <Text style={{color:'#397F9E',fontSize:13,fontWeight:'700'}}>Congeler</Text>
+           <Text style={{color:'#397F9E',fontSize:13,fontWeight:'700'}}>Geler</Text>
          </Pressable>
          <Pressable accessibilityRole="button" accessibilityLabel="Arracher cette plante"
            onPress={()=>confirm('Arracher cette plante ?',
@@ -420,18 +420,24 @@ export default function DreamExperience({
    ):null}
   </> : null}
   {phase==='Croissance' ? <>
-    <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',
-      gap:10,marginTop:0,marginBottom:5,paddingHorizontal:3}}>
-      {dream.goalDate?<View style={{flex:1,alignItems:'flex-start',gap:4,paddingLeft:2}}>
-        <Text style={{fontSize:10,letterSpacing:1,color:theme.muted,fontWeight:'600'}}>
+    <View style={{flexDirection:'row',alignItems:'flex-start',
+      justifyContent:'space-between',gap:12,marginTop:0,marginBottom:6,
+      paddingHorizontal:3}}>
+      {dream.goalDate?<View style={{flex:1,alignItems:'flex-start',
+        gap:6,paddingLeft:2,paddingTop:5,minWidth:0}}>
+        <Text style={{fontSize:11,letterSpacing:1.3,color:theme.muted,fontWeight:'700'}}>
           OBJECTIF
         </Text>
-        <Text style={{fontSize:12,color:theme.foreground,fontWeight:'600'}}>
-          {new Date(dream.goalDate+'T12:00:00').toLocaleDateString('fr-FR',
-            {day:'numeric',month:'short',year:'numeric'})}
-        </Text>
+        <View style={{flexDirection:'row',alignItems:'center',gap:6,flexWrap:'wrap'}}>
+          <Ionicons name="calendar-outline" size={15} color="#27845B"/>
+          <Text style={{fontSize:15,lineHeight:20,color:theme.foreground,
+            fontWeight:'700'}}>
+            {new Date(dream.goalDate+'T12:00:00').toLocaleDateString('fr-FR',
+              {day:'numeric',month:'short',year:'numeric'})}
+          </Text>
+        </View>
       </View>:<View style={{flex:1}}/>}
-      <View style={{alignItems:'flex-end',gap:0}}> 
+      <View style={{alignItems:'flex-end',gap:0,flexShrink:1}}>
       <Pressable accessibilityRole="button"
         accessibilityLabel="Ouvrir mes notes personnelles"
         onPress={()=>router.push({pathname:'/my-dream/notes/[id]',params:{id:dream.id}})}
@@ -452,39 +458,39 @@ export default function DreamExperience({
         </Text>
         <Ionicons name="arrow-forward" size={14} color={theme.foreground}/>
       </Pressable>
+
+        {(resources.length>0||!!dream.goalDate)?(
+          <Pressable accessibilityRole="button"
+            accessibilityState={{expanded:recapExpanded}}
+            accessibilityLabel={recapExpanded
+              ?'Réduire le résumé des besoins de Germination'
+              :'Développer le résumé des besoins de Germination'}
+            onPress={()=>setPreparationOpen(open=>!open)}
+            style={{flexDirection:'row',alignItems:'center',gap:6,
+              marginTop:5,paddingHorizontal:10,paddingVertical:8,minHeight:36,
+              borderRadius:10,backgroundColor:theme.dark?'#432D38':'#FCECF4'}}>
+            {missingResources.length?(
+              <Ionicons name="warning-outline" size={16} color="#D71D77"/>
+            ):(
+              <View style={{width:10,height:10,borderRadius:5,
+                backgroundColor:'#A1BA44',borderWidth:1,borderColor:'#668C2A'}}/>
+            )}
+            <Text numberOfLines={1} style={{fontSize:11,fontWeight:'700',
+              color:theme.foreground,flexShrink:1}}>
+              {missingResources.length
+                ?`${missingResources.length} besoin${missingResources.length>1?'s':''} à compléter`
+                :'Depuis la Germination'}
+            </Text>
+            <Ionicons name={recapExpanded?'chevron-up':'chevron-down'}
+              color={theme.foreground} size={15}/>
+          </Pressable>
+        ):null}
       </View>
     </View>
-    {(resources.length>0 || !!dream.goalDate) ? (
-      <View style={{
-        borderRadius:12,
-        backgroundColor:theme.dark?'#432D38':'#FCECF4',
-        overflow:'hidden',marginTop:10,marginBottom:6,
-      }}>
-        <Pressable accessibilityRole="button"
-          accessibilityState={{expanded:recapExpanded}}
-          accessibilityLabel={recapExpanded
-            ? 'Réduire le résumé des besoins de Germination'
-            : 'Développer le résumé des besoins de Germination'}
-          onPress={()=>setPreparationOpen(open=>!open)}
-          style={{flexDirection:'row',alignItems:'center',gap:10,
-            minHeight:49,paddingHorizontal:13,paddingVertical:7}}>
-          {missingResources.length ? (
-            <Ionicons name="warning-outline" size={26} color="#D71D77"/>
-          ) : (
-            <View style={{width:13,height:13,borderRadius:7,
-              backgroundColor:'#A1BA44',borderWidth:2,borderColor:'#668C2A'}}/>
-          )}
-          <View style={{flex:1}}>
-            <Text style={{fontSize:12,fontWeight:'700',color:theme.foreground}}>
-              {missingResources.length
-                ? `${missingResources.length} besoin${missingResources.length>1?'s':''} à compléter`
-                : 'Depuis la Germination'}
-            </Text>
-          </View>
-          <Ionicons name={recapExpanded?'chevron-up':'chevron-down'}
-            color={theme.foreground} size={18}/>
-        </Pressable>
-        {recapExpanded?<View style={{paddingHorizontal:15,paddingBottom:14,gap:11,
+    {(resources.length>0||!!dream.goalDate)&&recapExpanded?(
+      <View style={{borderRadius:12,backgroundColor:theme.dark?'#432D38':'#FCECF4',
+        overflow:'hidden',marginTop:6,marginBottom:7}}>
+        <View style={{paddingHorizontal:15,paddingBottom:14,gap:11,
           paddingTop:12}}>
           {([
             {category:'person',title:'Talents',color:'#D71D77',track:'#F5C5DA'},
@@ -538,7 +544,7 @@ export default function DreamExperience({
               </Text>
             </Pressable>
           ):null}
-        </View>:null}
+        </View>
       </View>
     ):null}
     <GrowthLogbook dream={dream} editable={growthActive}
@@ -635,7 +641,7 @@ export default function DreamExperience({
         style={{minHeight:48,borderRadius:11,borderWidth:1.5,
           borderColor:'#397F9E',alignItems:'center',justifyContent:'center',
           paddingHorizontal:16,opacity:frozen?.5:1}}>
-        <Text style={{color:'#397F9E',fontSize:13,fontWeight:'700'}}>Congeler</Text>
+        <Text style={{color:'#397F9E',fontSize:13,fontWeight:'700'}}>Geler</Text>
       </Pressable>
       <Pressable accessibilityRole="button"
         accessibilityLabel="Arracher cette plante"
