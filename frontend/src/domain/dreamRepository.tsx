@@ -213,6 +213,7 @@ export function DreamProvider({ children }: { children: React.ReactNode }) {
           ? {
               ...d,
               phase: 'Témoignage',
+              visibility: 'public',
               fruitAt: d.flowerDraft!.achievedOn! + 'T12:00:00',
               resultImage: d.flowerDraft!.attachments.find(a => a.kind === 'photo')!.uri,
               testimony: {
