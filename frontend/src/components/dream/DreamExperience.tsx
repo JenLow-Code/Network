@@ -906,13 +906,36 @@ export default function DreamExperience({
              paddingHorizontal:1,paddingVertical:7,
              borderBottomWidth:1,borderColor:theme.border,
              color:theme.foreground,backgroundColor:'transparent'}}/>
+         <Pressable accessibilityRole="checkbox"
+           accessibilityState={{checked:shareLogAsPost}}
+           accessibilityLabel="Publier cette feuille comme publication"
+           onPress={()=>setShareLogAsPost(value=>!value)}
+           style={{flexDirection:'row',alignItems:'center',
+             paddingVertical:11,paddingHorizontal:3,gap:11}}>
+           <View style={{width:21,height:21,borderRadius:6,
+             borderWidth:1.5,borderColor:shareLogAsPost?'#27845B':theme.border,
+             backgroundColor:shareLogAsPost?'#27845B':'transparent',
+             alignItems:'center',justifyContent:'center'}}>
+             {shareLogAsPost?<Ionicons name="checkmark" color="#FFFFFF" size={15}/>:null}
+           </View>
+           <View style={{flex:1,gap:3}}>
+             <Text style={{fontSize:13,fontWeight:'600',color:theme.foreground}}>
+               Publier comme publication
+             </Text>
+             <Text style={{fontSize:11,lineHeight:16,color:theme.muted}}>
+               {shareLogAsPost
+                 ?'Visible publiquement dans JenLow.'
+                 :'Sinon, cette note reste uniquement dans le rêve.'}
+             </Text>
+           </View>
+         </Pressable>
          <View style={{flexDirection:'row',alignItems:'flex-start',gap:8}}>
            <Ionicons name="information-circle-outline" size={16}
              color={theme.muted} style={{marginTop:2}}/>
            <Text style={{flex:1,color:theme.muted,fontSize:11,lineHeight:18}}>
-             Cette feuille apparaît dans le Logbook en écriture Biro.
-             Elle sera visible dans ton rêve, publiée après synchronisation,
-             et modifiable pendant 24 heures.
+             Visible dans le Logbook en écriture Biro.
+             Le texte et la publication peuvent être modifiés pendant
+             les 24 heures suivant sa création.
            </Text>
          </View>
          <Pressable accessibilityRole="button"
