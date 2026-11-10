@@ -56,15 +56,17 @@ function SocialLine({title,icon,color,value}:{
     ?'+'+today+' personne'+(today===1?'':'s')+' aujourd’hui'
     :null;
   return <View style={{flexDirection:'row',alignSelf:'flex-start',
-    alignItems:'center',gap:9,maxWidth:'100%',paddingVertical:3}}>
-    {icon==='prayer'?<PrayerIcon size={17} color={color} filled/>:
-      <Ionicons name="heart" size={17} color={color}/>}
-    <View style={{gap:2,flexShrink:1}}>
-      <Text style={{fontSize:12,lineHeight:17,fontWeight:'600',color:theme.foreground}}>
+    alignItems:'flex-start',gap:7,maxWidth:'100%',paddingVertical:2}}>
+    <View style={{width:26,alignItems:'center',paddingTop:2}}>
+      {icon==='prayer'?<PrayerIcon size={17} color={color} filled/>:
+        <Ionicons name="heart" size={17} color={color}/>}
+    </View>
+    <View style={{gap:0,flexShrink:1}}>
+      <Text style={{fontSize:12,lineHeight:17,fontWeight:'600',color}}>
         {label}
       </Text>
       {daily?<Text style={{fontSize:10,lineHeight:15,fontWeight:'500',
-        color:theme.dark?'#8BC7A6':'#619A7B'}}>{daily}</Text>:null}
+        color:theme.muted}}>{daily}</Text>:null}
     </View>
   </View>;
 }
@@ -125,7 +127,7 @@ function CurrentHabitSummary({
             borderRadius:15,alignItems:'center',justifyContent:'center'}}>
             <Text style={{fontSize:14,lineHeight:19}}>{habit.emoji||'🌱'}</Text>
           </View>
-          <View style={{flex:1,gap:0,minWidth:0,marginLeft:4}}>
+          <View style={{flex:1,gap:0,minWidth:0}}>
             <Text numberOfLines={1} style={{color:theme.foreground,
               fontSize:12,lineHeight:16,fontWeight:'600'}}>{habit.title}</Text>
             <Pressable accessibilityRole="link" onPress={()=>router.push('/agenda')}
@@ -425,8 +427,8 @@ export function GrowthLogbook({
         {index < shown.length - 1 ? <View style={{
           // Let the line meet the leaf's stem and continue through
           // the inter-day spacing, rather than floating below the leaf.
-          flex: 1, width: 1, marginTop: -5, marginBottom: -15,
-          marginLeft: -4, backgroundColor: '#A4BDAF',
+          flex: 1, width: 1, marginTop: -4, marginBottom: 10,
+          marginLeft: -4, backgroundColor: GREEN,
         }} /> : null}
       </View>
       <View style={{ flex: 1, paddingBottom: 18, gap: 10 }}>
