@@ -174,7 +174,7 @@ export default function DreamExperience({
  const hasResourceAlert = lostResources.length>0 || existingMissing.length>0;
  const allResourcesFound = resources.length>0 && missingResources.length===0;
  const missingCategories = Array.from(new Set(missingResources.map(need=>need.category)));
- const recapExpanded = preparationOpen && !allResourcesFound;
+ const recapExpanded = preparationOpen;
  const categoryNames: Record<DreamResource['category'],string> = {
    person:'Talents',practical:'Ressources',financial:'Financement',
  };
@@ -501,92 +501,30 @@ export default function DreamExperience({
       </View>:<View style={{flex:1}}/>}
       <View style={{alignItems:'flex-end',gap:0,flexShrink:1}}>
         <DreamWorkspaceShortcuts dream={dream} showLibrary/>
-        {!allResourcesFound?(
-          <Pressable accessibilityRole="button"
-            accessibilityState={{expanded:recapExpanded}}
-            accessibilityLabel={recapExpanded
-              ?'Réduire le résumé des besoins de Germination'
-              :'Développer le résumé des besoins de Germination'}
-            onPress={()=>setPreparationOpen(open=>!open)}
-            style={{flexDirection:'row',alignItems:'center',gap:6,
-              marginTop:5,paddingLeft:10,paddingRight:10,paddingVertical:8,minHeight:36,
-              borderRadius:10,backgroundColor:allResourcesFound
-                ?(theme.dark?'#2B392C':'#F1F5EC')
-                :(theme.dark?'#432D38':'#FCECF4')}}>
-            {hasResourceAlert?(
-              <Ionicons name="warning-outline" size={16} color="#D71D77"/>
-            ):newGrowthNeeds.length?(
-              <Ionicons name="add-circle-outline" size={16} color="#27845B"/>
-            ):(
-              <View style={{width:10,height:10,borderRadius:5,
-                backgroundColor:'#A1BA44',borderWidth:1,borderColor:'#668C2A'}}/>
-            )}
-            <Text numberOfLines={1} style={{fontSize:11,fontWeight:'700',
-              color:theme.foreground,flexShrink:1}}>
-              {hasResourceAlert
-                ?`${missingResources.length} besoin${missingResources.length>1?'s':''} à compléter`
-                :newGrowthNeeds.length
-                ?`${newGrowthNeeds.length} nouveau${newGrowthNeeds.length>1?'x':''} besoin${newGrowthNeeds.length>1?'s':''}`
-                :resources.length?'Depuis la Germination':'Mes ressources'}
-            </Text>
-            <Ionicons name={recapExpanded?'chevron-up':'chevron-down'}
-              color={theme.foreground} size={15}/>
-          </Pressable>
-        ):null}
       </View>
     </View>
-    {allResourcesFound?(
-      <View style={{paddingHorizontal:9,paddingTop:6,paddingBottom:9,
-        marginTop:6,marginBottom:5,gap:12}}>
-        <View style={{flexDirection:'row',justifyContent:'space-between',
-          alignItems:'center',gap:12}}>
-          <Text style={{color:theme.muted,fontSize:11,fontWeight:'600'}}>
-            Depuis la Germination
-          </Text>
-          {growthActive?<Pressable accessibilityRole="button"
-            accessibilityLabel="Gérer les ressources de ce rêve"
-            onPress={()=>onRecoverResource?.('all')}
-            style={{flexDirection:'row',alignItems:'center',gap:5,
-              paddingHorizontal:3,paddingVertical:5}}>
-            <Text style={{color:'#27845B',fontSize:11,fontWeight:'700'}}>Gérer</Text>
-            <Ionicons name="arrow-forward" size={13} color="#27845B"/>
-          </Pressable>:null}
-        </View>
-        {([
-          {category:'person',label:'Talents',color:'#D71D77'},
-          {category:'practical',label:'Ressources',color:'#397F9E'},
-          {category:'financial',label:'Financement',color:'#A1BA44'},
-        ] as const).map(item=>{
-          const count=resources.filter(need=>need.category===item.category).length;
-          if(!count)return null;
-          return <View key={item.category} style={{gap:5}}>
-            <View style={{flexDirection:'row',alignItems:'center',
-              justifyContent:'space-between',gap:8}}>
-              <Text style={{fontSize:11,fontWeight:'700',color:item.color}}>
-                {item.label}
-              </Text>
-              <Text style={{fontSize:10,color:theme.muted}}>
-                {count} / {count} {item.category==='financial'?'payés':'trouvés'}
-              </Text>
-            </View>
-            <View style={{height:4,borderRadius:4,backgroundColor:item.color}}/>
-          </View>;
-        })}
-        {growthActive?<Pressable accessibilityRole="button"
-          accessibilityLabel="Ajouter un besoin pendant la Croissance"
-          onPress={()=>onRecoverResource?.('all')}
-          style={{alignSelf:'flex-end',flexDirection:'row',gap:5,
-            alignItems:'center',paddingVertical:4}}>
-          <Ionicons name="add" size={14} color="#27845B"/>
-          <Text style={{fontSize:11,fontWeight:'600',color:'#27845B'}}>
-            Ajouter un besoin
-          </Text>
-        </Pressable>:null}
-      </View>
-    ):null}
+    <Pressable accessibilityRole="button"
+      accessibilityState={{expanded:recapExpanded}}
+      accessibilityLabel={recapExpanded?'Réduire les ressources':'Développer les ressources'}
+      onPress={()=>setPreparationOpen(open=>!open)}
+      style={{flexDirection:'row',alignItems:'center',gap:8,
+        paddingHorizontal:12,paddingVertical:11,marginTop:5,
+        borderWidth:1,borderColor:theme.border,borderRadius:12,
+        backgroundColor:'transparent'}}>
+      {hasResourceAlert?<Ionicons name="warning-outline" size={15} color="#D71D77"/>:null}
+      <Text style={{fontSize:12,fontWeight:'700',color:theme.foreground,flex:1}}>
+        {allResourcesFound?'Ressources':hasResourceAlert
+          ?`${missingResources.length} besoin${missingResources.length>1?'s':''} à compléter`
+          :'Ressources'}
+      </Text>
+      <Text style={{fontSize:10,color:theme.muted}}>
+        {resources.length-missingResources.length} / {resources.length} trouvés
+      </Text>
+      <Ionicons name={recapExpanded?'chevron-up':'chevron-down'} size={15} color={theme.foreground}/>
+    </Pressable>
     {recapExpanded?(
-      <View style={{borderRadius:12,backgroundColor:allResourcesFound
-          ?'transparent':(theme.dark?'#432D38':'#FCECF4'),
+      <View style={{borderRadius:12,borderWidth:1,borderColor:theme.border,
+        backgroundColor:allResourcesFound?'transparent':(theme.dark?'#432D38':'#FCECF4'),
         overflow:'hidden',marginTop:6,marginBottom:7}}>
         <View style={{paddingHorizontal:15,paddingBottom:14,gap:11,
           paddingTop:12}}>
