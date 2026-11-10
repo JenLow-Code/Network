@@ -131,7 +131,7 @@ export type DreamMilestone = {
   date: string;
   /** Exact creation moment for a strict 24-hour edit window. */
   createdAt?: string;
-  /** New Growth logs are public by default, but local intent is not public delivery. */
+  /** Opt-in publication: false means dream-only visibility, true means a public post. */
   shareRequested?: boolean;
   serverEntryId?: string;
   publicationState?: 'pending' | 'published' | 'failed';
