@@ -21,6 +21,8 @@ export type DreamBlock = {
   size: 'small' | 'wide' | 'featured';
   /** Two-column masonry tile dimensions: 1×1 (default), 2×1, 1×2 or 2×2. */
   tileSize?: '1x1' | '2x1' | '1x2' | '2x2';
+  /** Optional lane chosen by a drag gesture; automatic balancing fills the remaining space. */
+  masonryLane?: 'left' | 'right';
   /** Structured content for notes shared as inspirations, separate from private notebooks. */
   noteBlocks?: DreamNoteBlock[];
   /** Canvas width (one or two columns); absent on legacy blocks. */
