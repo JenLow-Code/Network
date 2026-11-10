@@ -467,7 +467,7 @@ export default function DreamExperience({
               :'Développer le résumé des besoins de Germination'}
             onPress={()=>setPreparationOpen(open=>!open)}
             style={{flexDirection:'row',alignItems:'center',gap:6,
-              marginTop:5,paddingHorizontal:10,paddingVertical:8,minHeight:36,
+              marginTop:5,paddingLeft:10,paddingRight:0,paddingVertical:8,minHeight:36,
               borderRadius:10,backgroundColor:theme.dark?'#432D38':'#FCECF4'}}>
             {missingResources.length?(
               <Ionicons name="warning-outline" size={16} color="#D71D77"/>
