@@ -7,51 +7,59 @@ import { useAppTheme } from '@/theme/AppTheme';
 
 type Period = { key:string; completed:boolean; isToday:boolean; future:boolean };
 
-function chronologicalPeriods(habit:DreamHabit, goalDate?:string,
-  dreamStartedAt?:string, now:Date=new Date()): Period[] {
+function chronologicalPeriods(
+  habit:DreamHabit, goalDate?:string, dreamStartedAt?:string,
+  plannedSessions?:number|null, now:Date=new Date(),
+):Period[] {
   const today=habitDayKey(now);
   const periodToday=habitKey(habit.frequency,today);
-  // Use precisely the same schedule start as the "4 / 83" progress counter.
-  // Historical completions must not silently add extra calendar squares.
-  const start=habitScheduleStart(habit,dreamStartedAt,now);
-  const validDate=(value?:string)=>!!value && /^\d{4}-\d{2}-\d{2}$/.test(value) &&
+  const validDate=(value?:string):value is string=>
+    !!value && /^\d{4}-\d{2}-\d{2}$/.test(value) &&
     !Number.isNaN(new Date(value+'T12:00:00').getTime());
-  const finish=validDate(goalDate)?habitKey(habit.frequency,goalDate!):periodToday;
-  const first=new Date(start+'T12:00:00');
-  const last=new Date(finish+'T12:00:00');
-  if(last.getTime()<first.getTime())return [];
+  const scheduledStart=habitScheduleStart(habit,dreamStartedAt,now);
+  const olderRecorded=[...(habit.completed||[]),...Object.keys(habit.measurements||{})]
+    .filter(validDate).map(date=>habitKey(habit.frequency,date)).sort()[0];
+  // Historical activity is credited at its real dates, but it must NOT
+  // change the number of goal squares. 4 / 83 must always mean 83 tiles.
+  const start=olderRecorded && olderRecorded<scheduledStart?olderRecorded:scheduledStart;
   const target=habit.target&&habit.target>0?habit.target:1;
-  const done=new Set((habit.completed||[]).map(key=>habitKey(habit.frequency,key)));
-  const result:Period[]=[];
   const step=habit.frequency==='weekly'?7:1;
-  for(let date=new Date(first);date<=last&&result.length<1000;date.setDate(date.getDate()+step)){
+  let periodCount=28;
+  if(plannedSessions!==null && plannedSessions!==undefined &&
+     Number.isFinite(plannedSessions)) {
+    periodCount=Math.max(0,Math.ceil(plannedSessions/target));
+  } else if(validDate(goalDate)) {
+    const first=new Date(scheduledStart+'T12:00:00');
+    const last=new Date(habitKey(habit.frequency,goalDate)+'T12:00:00');
+    periodCount=Math.max(0,1+Math.round((last.getTime()-first.getTime())/(step*86400000)));
+  }
+  // In exceptional goals exceeding 336 periods, the UI is intentionally
+  // a bounded preview. Normal goals such as 83 show EXACTLY 83 squares.
+  const count=Math.min(336,periodCount);
+  const startDate=new Date(start+'T12:00:00');
+  const done=new Set((habit.completed||[]).map(date=>habitKey(habit.frequency,date)));
+  return Array.from({length:count},(_,i)=>{
+    const date=new Date(startDate);
+    date.setDate(startDate.getDate()+i*step);
     const key=habitDayKey(date);
     const amount=habit.measurements?.[key];
-    result.push({key,completed:amount!==undefined?amount>=target:done.has(key),
-      isToday:key===periodToday,future:key>periodToday});
-  }
-  // Huge plans display the most recent/future segment rather than falsely
-  // implying a dense history of completions.
-  if(result.length>336){
-    const todayIndex=result.findIndex(period=>period.isToday);
-    const center=Math.max(0,todayIndex<0?result.length-1:todayIndex);
-    const from=Math.max(0,Math.min(result.length-336,center-125));
-    return result.slice(from,from+336);
-  }
-  return result;
+    return {key,completed:amount!==undefined?amount>=target:done.has(key),
+      isToday:key===periodToday,future:key>periodToday};
+  });
 }
 
 /**
- * Each square represents an actual calendar period (a day or week).
- * This makes adjacent completed squares consistent with a consecutive-period streak.
- * Session totals remain separately visible as e.g. "4 / 83".
+ * Each square records a dated opportunity for this habit (day or week).
+ * The planned number of opportunities is kept stable even when historical
+ * completions predate the scheduled start date. Streaks use actual dates.
  */
 export function HabitSquareGrid({
-  habit, goalDate, dreamStartedAt, color, editable, onTodayPress,
+  habit, goalDate, dreamStartedAt, plannedSessions, color, editable, onTodayPress,
 }: {
   habit:DreamHabit;
   goalDate?:string;
   dreamStartedAt?:string;
+  plannedSessions?:number|null;
   color:string;
   editable:boolean;
   onTodayPress:()=>void;
@@ -64,7 +72,7 @@ export function HabitSquareGrid({
   const available=Math.max(160,measuredWidth||Math.min(screenWidth-130,500));
   const columns=Math.max(8,Math.min(30,Math.floor((available+gap)/18)));
   const cellSize=Math.max(8,(available-(columns-1)*gap)/columns);
-  const periods=chronologicalPeriods(habit,goalDate,dreamStartedAt);
+  const periods=chronologicalPeriods(habit,goalDate,dreamStartedAt,plannedSessions);
   const todayIndex=periods.findIndex(period=>period.isToday);
   const canExpand=periods.length>columns;
   // The single-row preview ends at today, so the preceding successful days
