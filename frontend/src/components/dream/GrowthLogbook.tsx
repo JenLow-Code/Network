@@ -306,12 +306,13 @@ function CurrentHabitSummary({
 }
 
 export function GrowthLogbook({
-  dream, editable, onWrite, onEditLog, onRetry, onManageHabits,
+  dream, editable, onWrite, onAddHabit, onEditLog, onRetry, onManageHabits,
   onEditHabit,onDeleteHabit,onDetachHabit,onCheckIn,
 }: {
   dream: DreamEntry;
   editable: boolean;
   onWrite: () => void;
+  onAddHabit: () => void;
   onEditLog: (log: DreamMilestone) => void;
   onRetry: (log: DreamMilestone) => void;
   onManageHabits: () => void;
@@ -322,6 +323,7 @@ export function GrowthLogbook({
 }) {
   const theme = useAppTheme();
   const [allOpen, setAllOpen] = useState(false);
+  const [addMenuOpen, setAddMenuOpen] = useState(false);
   const [preview, setPreview] = useState(() => isSeedGrowthPreview(dream));
   const showPreview = canPreviewGrowth(dream) && preview;
   const example = showPreview ? sampleGrowthPreview() : null;
@@ -400,8 +402,8 @@ export function GrowthLogbook({
     <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
       <Text style={{color:theme.foreground,fontSize:21,fontWeight:'700'}}>Logbook</Text>
       {editable && !byDate.has(today) ? <Pressable accessibilityRole="button"
-        accessibilityLabel="Ajouter une note aujourd’hui"
-        onPress={onWrite} hitSlop={9}
+        accessibilityLabel="Ajouter une note ou une habitude"
+        onPress={()=>setAddMenuOpen(true)} hitSlop={9}
         style={{padding:8}}>
         <Ionicons name="add" size={20} color={GREEN}/>
       </Pressable>:null}
@@ -438,8 +440,8 @@ export function GrowthLogbook({
             {localLabel(group.date,today)}
           </Text>
           {group.date===today && editable?<Pressable accessibilityRole="button"
-            accessibilityLabel="Ajouter une note au journal aujourd’hui"
-            onPress={onWrite} hitSlop={9}
+            accessibilityLabel="Ajouter une note ou une habitude aujourd’hui"
+            onPress={()=>setAddMenuOpen(true)} hitSlop={9}
             style={{paddingHorizontal:7,paddingVertical:4}}>
             <Ionicons name="add" size={16} color={GREEN}/>
           </Pressable>:null}
@@ -523,5 +525,83 @@ export function GrowthLogbook({
         Voir le reste du parcours ({timeline.length - shown.length})
       </Text>
     </Pressable> : null}
+    <Modal visible={addMenuOpen} transparent animationType="fade"
+      onRequestClose={()=>setAddMenuOpen(false)}>
+      <View style={{flex:1,backgroundColor:'rgba(22,29,24,.35)',
+        justifyContent:'center',padding:20}}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Fermer"
+          onPress={()=>setAddMenuOpen(false)}
+          style={{position:'absolute',top:0,bottom:0,left:0,right:0}}/>
+        <View style={{backgroundColor:theme.surface,borderRadius:20,
+          maxWidth:390,width:'100%',alignSelf:'center',
+          paddingHorizontal:19,paddingVertical:20,gap:12,
+          borderWidth:1,borderColor:theme.border}}>
+          <View style={{flexDirection:'row',justifyContent:'space-between',
+            alignItems:'flex-start',gap:12}}>
+            <View style={{flex:1,gap:4}}>
+              <Text style={{fontSize:10,fontWeight:'700',
+                letterSpacing:1.3,color:GREEN}}>LOGBOOK</Text>
+              <Text style={{fontFamily:'serif',fontSize:24,
+                color:theme.foreground,lineHeight:30}}>
+                Qu’aimerais-tu ajouter ?
+              </Text>
+            </View>
+            <Pressable accessibilityRole="button" accessibilityLabel="Fermer"
+              onPress={()=>setAddMenuOpen(false)} hitSlop={8}
+              style={{padding:4}}>
+              <Ionicons name="close" size={20} color={theme.muted}/>
+            </Pressable>
+          </View>
+          <Pressable accessibilityRole="button"
+            accessibilityLabel="Écrire une note du Logbook"
+            onPress={()=>{
+              setAddMenuOpen(false);
+              onWrite();
+            }}
+            style={{flexDirection:'row',alignItems:'center',gap:12,
+              minHeight:72,paddingHorizontal:12,paddingVertical:13,
+              borderRadius:13,borderWidth:1,borderColor:theme.border}}>
+            <View style={{width:38,height:38,borderRadius:20,
+              backgroundColor:theme.dark?'#203B2D':'#EAF2EC',
+              justifyContent:'center',alignItems:'center'}}>
+              <Ionicons name="leaf-outline" size={20} color={GREEN}/>
+            </View>
+            <View style={{flex:1,gap:3}}>
+              <Text style={{fontWeight:'700',fontSize:13,color:theme.foreground}}>
+                Écrire une note
+              </Text>
+              <Text style={{fontSize:11,lineHeight:16,color:theme.muted}}>
+                Une feuille dans le Logbook, visible dans ton rêve
+              </Text>
+            </View>
+            <Ionicons name="arrow-forward" size={17} color={theme.muted}/>
+          </Pressable>
+          <Pressable accessibilityRole="button"
+            accessibilityLabel="Créer une habitude"
+            onPress={()=>{
+              setAddMenuOpen(false);
+              onAddHabit();
+            }}
+            style={{flexDirection:'row',alignItems:'center',gap:12,
+              minHeight:72,paddingHorizontal:12,paddingVertical:13,
+              borderRadius:13,borderWidth:1,borderColor:theme.border}}>
+            <View style={{width:38,height:38,borderRadius:20,
+              backgroundColor:theme.dark?'#203B2D':'#EAF2EC',
+              justifyContent:'center',alignItems:'center'}}>
+              <Ionicons name="repeat-outline" size={19} color={GREEN}/>
+            </View>
+            <View style={{flex:1,gap:3}}>
+              <Text style={{fontWeight:'700',fontSize:13,color:theme.foreground}}>
+                Ajouter une habitude
+              </Text>
+              <Text style={{fontSize:11,lineHeight:16,color:theme.muted}}>
+                Une pratique à suivre jusqu’à ton objectif
+              </Text>
+            </View>
+            <Ionicons name="arrow-forward" size={17} color={theme.muted}/>
+          </Pressable>
+        </View>
+      </View>
+    </Modal>
   </View>;
 }
