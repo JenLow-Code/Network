@@ -177,15 +177,7 @@ export default function Profile() {
         }}
       >
         <PageHeader />
-        <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
-          <Text style={{fontSize:29,fontWeight:'800',color:theme.foreground}}>Mon profil</Text>
-          <Pressable onPress={()=>router.push('/profile-preview')} accessibilityRole="button"
-            style={{padding:11,borderWidth:1,borderColor:theme.border,borderRadius:10,
-              flexDirection:'row',alignItems:'center',gap:7}}>
-            <Ionicons name="eye-outline" size={18} color={theme.foreground}/>
-            <Text style={{fontSize:12,color:theme.foreground,fontWeight:'700'}}>Aperçu</Text>
-          </Pressable>
-        </View>
+        <Text style={{fontSize:29,fontWeight:'800',color:theme.foreground}}>Mon profil</Text>
         <View style={{ alignItems: 'center', marginTop: 23 }}>
           {avatar ? (
             <Image
@@ -208,7 +200,28 @@ export default function Profile() {
         <View style={{alignItems:'center',marginTop:12,gap:4}}>
           <Text style={{fontSize:14,color:theme.muted,textAlign:'center',maxWidth:440}}>{app.bio || 'Ajouter une description personnelle'}</Text>
           <Text style={{fontSize:12,color:theme.muted}}>{app.church || 'Église non renseignée'}</Text>
-          <Pressable onPress={()=>start('bio')} style={{padding:9}}><Text style={{fontSize:12,color:'#D71D77'}}>Modifier ma présentation</Text></Pressable>
+          <View style={{flexDirection:'row',alignItems:'center',justifyContent:'center',
+            flexWrap:'wrap',gap:8,marginTop:9}}>
+            <Pressable onPress={()=>start('bio')} accessibilityRole="button"
+              accessibilityLabel="Modifier ma présentation"
+              style={{minHeight:40,paddingHorizontal:10,flexDirection:'row',
+                alignItems:'center',gap:6}}>
+              <Ionicons name="pencil-outline" size={14} color={theme.muted}/>
+              <Text style={{fontSize:12,color:theme.foreground,fontWeight:'600'}}>Modifier</Text>
+            </Pressable>
+            <View style={{width:1,height:19,backgroundColor:theme.border}}/>
+            <Pressable onPress={()=>router.push('/profile-preview')} accessibilityRole="button"
+              accessibilityLabel="Voir mon profil public tel que les autres le voient"
+              style={{minHeight:39,paddingVertical:8,paddingHorizontal:13,
+                flexDirection:'row',alignItems:'center',gap:8,borderWidth:1,
+                borderColor:theme.border,borderRadius:20,backgroundColor:theme.surface}}>
+              <Ionicons name="eye-outline" size={16} color={theme.foreground}/>
+              <Text style={{fontSize:12,color:theme.foreground,fontWeight:'600'}}>
+                Voir mon profil public
+              </Text>
+              <Ionicons name="arrow-forward-outline" size={13} color={theme.muted}/>
+            </Pressable>
+          </View>
         </View>
         {edit!==null?<View style={{backgroundColor:theme.surface,borderWidth:1,borderColor:theme.border,borderRadius:12,padding:15,marginTop:10}}>
           {field('bio','Ma description')}{field('city','Ma ville')}{field('church','Ma communauté')}
@@ -265,10 +278,10 @@ export default function Profile() {
           <Text style={{fontSize:19,fontWeight:'800',color:theme.foreground,
             marginTop:25,marginBottom:14}}>Mes publications</Text>
         </View>
-        <SemenceSharesFeed mine onCountChange={setSemenceCount}/>
+        <SemenceSharesFeed mine roundedCards onCountChange={setSemenceCount}/>
         {myPublicPosts.length
           ?<ProfilePublicationFeed grid items={myPublicPosts} contentWidth={areaWidth}
-            featuredId={featuredId} onFeature={feature}/>
+            roundedCards featuredId={featuredId} onFeature={feature}/>
           :semenceCount===0?<Text style={{color:theme.muted,fontSize:13}}>
              Aucune publication pour le moment.
            </Text>:null}

@@ -15,6 +15,9 @@ import { ProfilePublicationFeed } from '@/components/publication/PublicationGall
 import SemenceSharesFeed from '@/components/dream/SemenceSharesFeed';
 import type { TalentIllustration } from '@/components/talent/TalentArt';
 import { publications } from '@/mocks/publications';
+import { api } from '@/lib/api/client';
+import { toPublications, type ApiFeedItem } from '@/lib/api/adapters';
+import type { Publication } from '@/domain/publication';
 
 type Talent = { name:string; level:number; interests:string[]; description?:string };
 const levels=['Grand débutant','Quelques notions','Intermédiaire','Avancé','Professionnel'];
@@ -40,8 +43,23 @@ export default function ProfilePreview() {
  const [talents,setTalents]=useState<Talent[]>([]);
  const [featuredId,setFeaturedId]=useState<string|null>(null);
  const [selectedTalent,setSelectedTalent]=useState<Talent|null>(null);
+ const [serverPublications,setServerPublications]=useState<Publication[]>([]);
+ useEffect(()=>{
+   let active=true;
+   setServerPublications([]);
+   void api<{items:ApiFeedItem[]}>('/api/me/publications?limit=100',{auth:'required'})
+     .then(result=>{
+       if(active)setServerPublications(toPublications(
+         (result.items||[]).filter(item=>item.visibility==='public')));
+     }).catch(()=>{ /* Preview remains available if the API is temporarily unavailable. */ });
+   return ()=>{active=false;};
+ },[app.email]);
  const avatar=typeof auth.user?.user_metadata?.avatar_url==='string'?auth.user.user_metadata.avatar_url:undefined;
- const posts=publications.filter(p=>p.author===app.name);
+ const posts=[
+   ...serverPublications,
+   ...publications.filter(p=>p.author===app.name &&
+     !serverPublications.some(remote=>remote.id===p.id)),
+ ];
  useEffect(()=>{
    let live=true;
    const key='jenlow.profile.talents.'+(app.email||'guest').toLowerCase();
@@ -60,14 +78,21 @@ export default function ProfilePreview() {
    <ScrollView contentContainerStyle={{paddingHorizontal:18,paddingTop:12,
      paddingBottom:85,maxWidth:900,width:'100%',alignSelf:'center'}}>
      <PageHeader onBack={()=>router.back()}/>
-     <View style={{flexDirection:'row',alignItems:'center',gap:9,marginTop:14}}>
-       <Ionicons name="eye-outline" size={19} color={theme.muted}/>
-       <Text style={{color:theme.foreground,fontSize:20,fontWeight:'700'}}>Aperçu de mon profil</Text>
+     <View style={{flexDirection:'row',alignItems:'center',gap:10,marginTop:14}}>
+       <View style={{width:34,height:34,borderRadius:17,
+         borderWidth:1,borderColor:theme.border,backgroundColor:theme.surface,
+         alignItems:'center',justifyContent:'center'}}>
+         <Ionicons name="eye-outline" size={17} color={theme.muted}/>
+       </View>
+       <View style={{flex:1,gap:3}}>
+         <Text style={{color:theme.foreground,fontSize:19,fontWeight:'700'}}>
+           Mon profil public
+         </Text>
+         <Text style={{color:theme.muted,fontSize:11}}>
+           Tel que les autres membres le voient
+         </Text>
+       </View>
      </View>
-     <Text style={{color:theme.muted,fontSize:11,lineHeight:18,marginTop:8}}>
-       Aperçu de la présentation publique. Les brouillons privés ne sont pas visibles ici.
-       Les publications du compte ne sont affichées que si elles sont disponibles dans ce flux.
-     </Text>
      <View style={{alignItems:'center',gap:8,marginTop:29,marginBottom:25}}>
        {avatar?<Image source={{uri:avatar}} style={{width:102,height:102,borderRadius:51}}/>:<Avatar size={102}/>}
        <Text style={{color:theme.foreground,fontSize:24,fontWeight:'800'}}>{app.name}</Text>
@@ -82,13 +107,9 @@ export default function ProfilePreview() {
      </View>
      {talents.length===0?<Text style={{fontSize:12,color:theme.muted,marginBottom:25}}>Aucun talent enregistré.</Text>:null}
      <Text style={{fontWeight:'700',fontSize:18,color:theme.foreground,marginBottom:14}}>Mes publications</Text>
-     <SemenceSharesFeed mine publicOnly/>
-     {posts.length>0?<ProfilePublicationFeed grid items={posts} contentWidth={contentWidth} featuredId={featuredId}/>:
+     <SemenceSharesFeed mine publicOnly roundedCards/>
+     {posts.length>0?<ProfilePublicationFeed grid items={posts} contentWidth={contentWidth} roundedCards featuredId={featuredId}/>:
        <Text style={{fontSize:12,color:theme.muted,lineHeight:19}}>Aucune publication publique disponible dans cet aperçu pour le moment.</Text>}
-     <Pressable onPress={()=>router.back()} accessibilityRole="button"
-       style={{alignSelf:'center',padding:13,marginTop:25,borderWidth:1,borderColor:theme.border,borderRadius:10}}>
-       <Text style={{color:theme.foreground,fontSize:12,fontWeight:'700'}}>Retour à la modification du profil</Text>
-     </Pressable>
    </ScrollView>
    <Modal visible={selectedTalent!==null} transparent animationType="fade"
      onRequestClose={()=>setSelectedTalent(null)}>

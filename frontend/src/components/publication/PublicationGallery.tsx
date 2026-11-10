@@ -685,12 +685,15 @@ export function ProfilePublicationFeed({
   featuredId,
   onFeature,
   grid = false,
+  roundedCards = false,
 }: {
   items: Publication[];
   contentWidth: number;
   featuredId?: string | null;
   onFeature?: (id: string | null) => void;
   grid?: boolean;
+  /** Rounded only in the personal-profile presentation, not Discovery. */
+  roundedCards?: boolean;
 }) {
   const theme = useAppTheme();
   const columns = contentWidth < 350 ? 2 : 3;
@@ -708,9 +711,11 @@ export function ProfilePublicationFeed({
         const featured = item.id === featuredId;
         return (
           <View key={item.id} style={{width:tileWidth,gap:5}}>
-            <StoryCover item={item} width={tileWidth}
-              height={Math.max(145, Math.round(tileWidth * 1.10))}
-              scale="small" adaptive />
+            <View style={roundedCards?{borderRadius:16,overflow:'hidden'}:undefined}>
+              <StoryCover item={item} width={tileWidth}
+                height={Math.max(145, Math.round(tileWidth * 1.10))}
+                scale="small" adaptive />
+            </View>
             {onFeature ? <Pressable accessibilityRole="button"
               accessibilityLabel={featured?'Retirer de la une':'Mettre à la une'}
               onPress={()=>onFeature(featured?null:item.id)}
@@ -750,13 +755,15 @@ export function ProfilePublicationFeed({
                   {date ? <Text style={{ fontSize: 11, color: theme.muted }}>{date}</Text> : null}
                 </View>
               ) : null}
-              <StoryCover
-                item={item}
-                width={coverWidth}
-                height={adaptiveTileHeight(item, coverWidth)}
-                scale="small"
-                adaptive
-              />
+              <View style={roundedCards?{borderRadius:16,overflow:'hidden'}:undefined}>
+                <StoryCover
+                  item={item}
+                  width={coverWidth}
+                  height={adaptiveTileHeight(item, coverWidth)}
+                  scale="small"
+                  adaptive
+                />
+              </View>
               {onFeature ? (
                 <Pressable
                   accessibilityRole="button"

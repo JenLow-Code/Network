@@ -5,9 +5,9 @@ import { useAppTheme } from '@/theme/AppTheme';
 import type { PublishedSemence } from './SemencePublishActions';
 
 type Props={item:Pick<PublishedSemence,'title'|'visibility'|'coverUrl'|'previewImages'>;
-  width?:number;onPress?:()=>void;preview?:boolean};
+  width?:number;onPress?:()=>void;preview?:boolean;rounded?:boolean};
 /** A Semence is an editorial publication, not a dark cover-image dream tile. */
-export default function PublishedSemenceCard({item,width,onPress,preview=false}:Props){
+export default function PublishedSemenceCard({item,width,onPress,preview=false,rounded=false}:Props){
  const theme=useAppTheme();
  const pictures=(item.previewImages||[]).slice(0,3);
  const images=pictures.length?pictures:item.coverUrl?[item.coverUrl]:[];
@@ -33,7 +33,7 @@ export default function PublishedSemenceCard({item,width,onPress,preview=false}:
  return <Pressable disabled={!onPress} accessibilityRole={onPress?'button':undefined}
    accessibilityLabel={'Voir la Semence '+item.title} onPress={onPress}
    style={{width,backgroundColor:theme.dark?'#282827':'#F4F0E9',
-     borderRadius:11,overflow:'hidden',padding:11,gap:9,
+     borderRadius:rounded?16:11,overflow:'hidden',padding:11,gap:9,
      borderWidth:0.5,borderColor:theme.dark?'#43413F':'#EAE5DE'}}>
    <View style={{flexDirection:'row',alignItems:'center',justifyContent:'flex-end',
      minHeight:16,gap:5}}>

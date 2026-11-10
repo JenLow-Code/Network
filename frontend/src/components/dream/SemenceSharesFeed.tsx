@@ -9,9 +9,10 @@ import PublishedSemenceCard from './PublishedSemenceCard';
 
 /** Only server-confirmed published snapshots are shown; private local drafts never appear here. */
 export default function SemenceSharesFeed({mine=false,handle,publicOnly=false,
-  withHeading=false,onCountChange}:{
+  withHeading=false,onCountChange,roundedCards=false}:{
  mine?:boolean;handle?:string;publicOnly?:boolean;withHeading?:boolean;
  onCountChange?:(count:number)=>void;
+ roundedCards?:boolean;
 }){
  const theme=useAppTheme();
  const {width}=useWindowDimensions();
@@ -39,7 +40,8 @@ export default function SemenceSharesFeed({mine=false,handle,publicOnly=false,
    </Text>:null}
    <View style={{flexDirection:'row',flexWrap:'wrap',gap:10,alignItems:'flex-start'}}>
      {visible.map(item=><PublishedSemenceCard key={item.id} item={item}
-       width={cellWidth} onPress={()=>router.push({pathname:'/semence-share/[id]',
+       width={cellWidth} rounded={roundedCards}
+       onPress={()=>router.push({pathname:'/semence-share/[id]',
          params:{id:item.id}})}/>)}
    </View>
  </View>;
