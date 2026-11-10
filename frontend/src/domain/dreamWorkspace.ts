@@ -12,7 +12,7 @@ export type DreamBlockKind =
   | 'image' | 'gallery' | 'audio' | 'music' | 'video'
   | 'document' | 'pdf' | 'bookmark' | 'link' | 'embed'
   | 'code' | 'equation' | 'table' | 'toc' | 'date'
-  | 'columns' | 'collection' | 'bible-verse' | 'publication-ref' | 'poem' | 'note';
+  | 'columns' | 'collection' | 'bible-verse' | 'publication-ref' | 'profile-ref' | 'poem' | 'note';
 export type DreamBlock = {
   id: string;
   kind: DreamBlockKind;
