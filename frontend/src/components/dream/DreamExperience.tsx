@@ -196,7 +196,16 @@ export default function DreamExperience({
          body:{type:'progress',body:log.title,entryDate:log.date,visibility:'public'}});
      setGrowthLogPublication(dream.id,log.id,'published',response.id);
    }catch{
-     setGrowthLogPublication(dream.id,log.id,'failed');
+     const wasPublic=(dream.milestones||[]).find(item=>item.id===log.id)?.shareRequested===true;
+     setGrowthLogPublication(dream.id,log.id,'failed',log.serverEntryId,
+       !log.shareRequested&&wasPublic?true:undefined);
+     if(log.serverEntryId){
+       const message=!log.shareRequested&&wasPublic
+         ?'La publication n’a pas pu être retirée du public. Réessaie avant de considérer cette note comme privée.'
+         :'Le changement n’a pas pu être synchronisé. Réessaie depuis cette feuille.';
+       if(Platform.OS==='web'&&typeof window!=='undefined')window.alert(message);
+       else Alert.alert('Synchronisation impossible',message);
+     }
    }
  };
  const openHabitEditor=(habit?:DreamHabit)=>{
@@ -893,9 +902,9 @@ export default function DreamExperience({
            <Ionicons name="leaf-outline" size={19} color="#27845B"/>
            <Text style={{fontSize:12,fontWeight:'700',letterSpacing:.4,
              color:'#27845B'}}>
-             {new Date((editingLogId
+             {new Date(((editingLogId
                ?(dream.milestones||[]).find(log=>log.id===editingLogId)?.date
-               :undefined)||habitDayKey(new Date())+'T12:00:00')
+               :undefined)||habitDayKey(new Date()))+'T12:00:00')
                  .toLocaleDateString('fr-FR',
                    {day:'numeric',month:'long',year:'numeric'})}
            </Text>
