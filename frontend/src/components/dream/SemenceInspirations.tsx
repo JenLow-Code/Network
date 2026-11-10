@@ -222,7 +222,7 @@ function SortableInspirationCard({block,editable,onOpen,onMenu,onResize,onMeasur
    {editable?<View style={{minHeight:31,paddingRight:8,paddingBottom:4,
      flexDirection:'row',alignItems:'center',justifyContent:'flex-end',gap:6,
      borderBottomLeftRadius:12,borderBottomRightRadius:12,
-     backgroundColor:theme.dark?'#2A2B2D':'#F5F1ED'}}>}
+     backgroundColor:theme.dark?'#2A2B2D':'#F5F1ED'}}>
      <Pressable accessibilityRole="button"
        accessibilityLabel={'Changer la taille de '+(block.title||'cette inspiration')}
        accessibilityState={{expanded:sizeOpen}}
