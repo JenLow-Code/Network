@@ -475,13 +475,6 @@ export default function DreamExperience({
    ):null}
   </> : null}
   {phase==='Croissance' ? <>
-    {(historical||growthLocked)?<View style={{flexDirection:'row',alignItems:'center',
-      gap:7,paddingVertical:7,paddingHorizontal:3}}>
-      <Ionicons name="lock-closed-outline" size={13} color={theme.muted}/>
-      <Text style={{fontSize:11,color:theme.muted}}>
-        Croissance terminée · consultation uniquement
-      </Text>
-    </View>:null}
     <View style={{flexDirection:'row',alignItems:'flex-start',
       justifyContent:'space-between',gap:12,marginTop:-10,marginBottom:6,
       paddingHorizontal:3}}>
@@ -508,18 +501,17 @@ export default function DreamExperience({
               :'Développer le résumé des besoins de Germination'}
             onPress={()=>setPreparationOpen(open=>!open)}
             style={{flexDirection:'row',alignItems:'center',gap:6,
-              marginTop:5,paddingLeft:10,paddingRight:10,paddingVertical:8,minHeight:36,
-              borderRadius:10,backgroundColor:allResourcesFound
+              minHeight:30,paddingVertical:5,paddingHorizontal:3,
+              backgroundColor:allResourcesFound
                 ?'transparent':(theme.dark?'#432D38':'#FCECF4')}}>
             {hasResourceAlert?(
               <Ionicons name="warning-outline" size={16} color="#D71D77"/>
             ):newGrowthNeeds.length?(
               <Ionicons name="add-circle-outline" size={16} color="#27845B"/>
             ):(
-              <View style={{width:10,height:10,borderRadius:5,
-                backgroundColor:'#A1BA44',borderWidth:1,borderColor:'#668C2A'}}/>
+              <Ionicons name="cube-outline" size={13} color={theme.muted}/>
             )}
-            <Text numberOfLines={1} style={{fontSize:11,fontWeight:'700',
+            <Text numberOfLines={1} style={{fontSize:12,fontWeight:'500',
               color:theme.foreground,flexShrink:1}}>
               {hasResourceAlert
                 ?`${missingResources.length} besoin${missingResources.length>1?'s':''} à compléter`
@@ -527,8 +519,7 @@ export default function DreamExperience({
                 ?`${newGrowthNeeds.length} nouveau${newGrowthNeeds.length>1?'x':''} besoin${newGrowthNeeds.length>1?'s':''}`
                 :'Ressources'}
             </Text>
-            <Ionicons name={recapExpanded?'chevron-up':'chevron-down'}
-              color={theme.foreground} size={15}/>
+            <Ionicons name="chevron-forward" color={theme.muted} size={13}/>
           </Pressable>
       </View>
     </View>
