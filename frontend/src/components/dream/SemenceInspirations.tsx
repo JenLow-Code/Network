@@ -112,7 +112,7 @@ export function InspirationTile({block,onPress,onLongPress}:{
       </View>
       <View style={{flex:wide?1:undefined,alignSelf:'stretch',gap:6}}>
         <Text style={{fontSize:9,letterSpacing:.7,fontWeight:'700',
-          color:theme.muted}}>DOCUMENT</Text>
+          color:'#A5713D'}}>DOCUMENT</Text>
         <Text numberOfLines={tall?8:wide?3:5}
           style={{fontSize:wide?14:12,lineHeight:wide?20:18,
             fontWeight:'600',color:theme.foreground}}>
@@ -124,8 +124,8 @@ export function InspirationTile({block,onPress,onLongPress}:{
       <View style={{flexDirection:'row',alignItems:'center',gap:6}}>
         <Ionicons name={typeIcon(block.kind)} size={14} color="#A5713D"/>
         <Text numberOfLines={1} style={{
-          fontSize:9,letterSpacing:.45,fontWeight:'600',
-          color:verse?'#A5713D':theme.muted,flex:1}}>
+          fontSize:9,letterSpacing:.6,fontWeight:'700',
+          color:'#A5713D',flex:1}}>
           {label}
         </Text>
       </View>
@@ -149,9 +149,9 @@ export function InspirationTile({block,onPress,onLongPress}:{
 }
 
 /** Inspiration references, not a second note editor. */
-export default function SemenceInspirations({dream,editable,onShareInspiration,addRequestToken=0}:{
+export default function SemenceInspirations({dream,editable,onShareInspiration,addRequestToken=0,showAddControl=false}:{
   dream:DreamEntry;editable:boolean;onShareInspiration?:(id:string)=>void;
-  addRequestToken?:number;
+  addRequestToken?:number;showAddControl?:boolean;
 }) {
   const theme=useAppTheme();
   const {width}=useWindowDimensions();
@@ -265,15 +265,15 @@ export default function SemenceInspirations({dream,editable,onShareInspiration,a
         borderRadius:11,backgroundColor:theme.background}}/>;
 
   return <View style={{paddingBottom:12,gap:12}}>
-    <View style={{flexDirection:'row',alignItems:'center',justifyContent:'flex-end',gap:8}}>
-      {editable?<Pressable accessibilityRole="button" accessibilityLabel="Ajouter une inspiration"
+    {showAddControl?<View style={{flexDirection:'row',alignItems:'center',justifyContent:'flex-end',gap:8}}>
+      {editable&&showAddControl?<Pressable accessibilityRole="button" accessibilityLabel="Ajouter une inspiration"
         onPress={()=>{setChoosing(true);setMessage('');}}
         style={{width:36,height:36,alignItems:'center',justifyContent:'center',
           borderRadius:18,backgroundColor:theme.surface,
           borderWidth:1,borderColor:theme.border}}>
         <Ionicons name="add" size={25} color="#A5713D"/>
       </Pressable>:null}
-    </View>
+    </View>:null}
     {blocks.length?<View style={{gap:11}}>
       {layoutInspirations(blocks).map((group,index)=>
         group.type==='wide'?<InspirationTile key={'w-'+group.block.id}
