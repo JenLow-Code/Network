@@ -506,7 +506,7 @@ export default function DreamExperience({
                 ?`${missingResources.length} besoin${missingResources.length>1?'s':''} à compléter`
                 :newGrowthNeeds.length
                 ?`${newGrowthNeeds.length} nouveau${newGrowthNeeds.length>1?'x':''} besoin${newGrowthNeeds.length>1?'s':''}`
-                :'Mes ressources'}
+                :resources.length?'Depuis la Germination':'Mes ressources'}
             </Text>
             <Ionicons name={recapExpanded?'chevron-up':'chevron-down'}
               color={theme.foreground} size={15}/>
