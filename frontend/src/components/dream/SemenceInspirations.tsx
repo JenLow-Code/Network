@@ -312,6 +312,10 @@ export default function SemenceInspirations({dream,editable,onShareInspiration,a
   const endDrag=()=>setDraggingId(null);
   const onDrop=(id:string,x:number,y:number)=>{
     if(!Number.isFinite(x)||!Number.isFinite(y))return;
+    const source=dropRegions.current[id];
+    // Short accidental drags ending inside the original tile don't reorder.
+    if(source&&x>=source.x&&x<=source.x+source.width&&
+       y>=source.y&&y<=source.y+source.height)return;
     const positions=Object.entries(dropRegions.current)
       .filter(([otherId,box])=>otherId!==id&&box.width>0&&box.height>0);
     if(!positions.length)return;
@@ -321,7 +325,8 @@ export default function SemenceInspirations({dream,editable,onShareInspiration,a
       const dy=Math.max(box.y-y,0,y-(box.y+box.height));
       return {id:otherId,box,distance:dx*dx+dy*dy};
     }).sort((a,b)=>a.distance-b.distance)[0];
-    if(!nearest)return;
+    // Dropping into empty space far from all cards should be a no-op.
+    if(!nearest||nearest.distance>10000)return;
     const after=y>nearest.box.y+nearest.box.height*0.5;
     const original=dream.blocks||[];
     const reordered=reorderInspiration(original,id,nearest.id,after);
