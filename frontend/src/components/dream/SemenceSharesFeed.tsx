@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useFocusEffect } from 'expo-router';
 import { View, Text, useWindowDimensions } from 'react-native';
 import { router } from 'expo-router';
 import { useAppTheme } from '@/theme/AppTheme';
@@ -15,7 +16,7 @@ export default function SemenceSharesFeed({mine=false,handle,publicOnly=false,
  const theme=useAppTheme();
  const {width}=useWindowDimensions();
  const [items,setItems]=useState<PublishedSemence[]>([]);
- useEffect(()=>{
+ useFocusEffect(React.useCallback(()=>{
    let mounted=true;
    const endpoint=mine?'/api/me/semence-shares':
      handle?'/api/users/'+encodeURIComponent(handle)+'/semence-shares':null;
@@ -25,7 +26,7 @@ export default function SemenceSharesFeed({mine=false,handle,publicOnly=false,
      .then(result=>{if(mounted)setItems(result.items||[]);})
      .catch(()=>{if(mounted)setItems([]);});
    return ()=>{mounted=false;};
- },[mine,handle]);
+ },[mine,handle]));
  const visible=publicOnly?items.filter(x=>x.visibility==='public'):items;
  useEffect(()=>{onCountChange?.(visible.length);},[visible.length,onCountChange]);
  if(!visible.length)return null;
