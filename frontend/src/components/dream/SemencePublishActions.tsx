@@ -98,7 +98,7 @@ export default function SemencePublishActions({dream,picked}:{
      style={{borderWidth:1,borderColor:theme.border,borderRadius:11,
        paddingHorizontal:13,paddingVertical:14,flexDirection:'row',
        alignItems:'center',gap:11,
-       opacity:busy||!picked.length?.50:1}}>
+       opacity:(busy||!picked.length)?0.5:1}}>
      <Ionicons name={icon} size={20} color="#A5713D"/>
      <Text style={{fontSize:13,fontWeight:'600',color:theme.foreground,flex:1}}>
        {busy?'Publication en cours…':name}
