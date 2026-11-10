@@ -209,18 +209,22 @@ export function DreamProvider({ children }: { children: React.ReactNode }) {
   const complete: Repo['complete'] = (id, comment, mediaType, mediaUrl) =>
     setItems(p =>
       p.map(d =>
-        d.id === id && d.phase === 'Croissance' && !!d.flowerDraft?.attachments?.some(a => a.kind === 'photo')
+        d.id === id && d.phase === 'Croissance' && !!d.flowerDraft?.achievedOn && !!d.flowerDraft?.attachments?.some(a => a.kind === 'photo')
           ? {
               ...d,
               phase: 'Témoignage',
-              fruitAt: new Date().toISOString(),
+              fruitAt: d.flowerDraft!.achievedOn! + 'T12:00:00',
               resultImage: d.flowerDraft!.attachments.find(a => a.kind === 'photo')!.uri,
               testimony: {
                 comment,
                 mediaType,
                 mediaUrl,
                 mediaItems: d.flowerDraft?.attachments || [],
-                date: new Date().toISOString(),
+                highlights: (d.milestones || [])
+                  .filter(log => d.flowerDraft?.highlightIds?.includes(log.id))
+                  .map(log => ({ id: log.id, title: log.title, date: log.date })),
+                date: d.flowerDraft!.achievedOn!,
+                publishedAt: new Date().toISOString(),
               },
             }
           : d,
