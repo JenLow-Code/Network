@@ -39,7 +39,7 @@ type Repo = {
   setResources: (id: string, resources: DreamResource[]) => void;
   setHabits: (id: string, habits: DreamHabit[]) => void;
   addGrowthLog: (dreamId: string, log: DreamMilestone) => void;
-  setGrowthLogPublication: (dreamId: string, logId: string, state: NonNullable<DreamMilestone['publicationState']>, serverEntryId?: string) => void;
+  setGrowthLogPublication: (dreamId: string, logId: string, state: NonNullable<DreamMilestone['publicationState']>, serverEntryId?: string, shareRequestedOverride?: boolean) => void;
   transitionToGrowth: (id: string) => void;
   /** Explicit calendar confirmation records the date and starts Growth atomically. */
   setGoalAndGrow: (id: string, date: string) => void;
@@ -248,10 +248,12 @@ export function DreamProvider({ children }: { children: React.ReactNode }) {
   const addGrowthLog: Repo['addGrowthLog'] = (dreamId, log) => setItems(previous =>
     previous.map(d => d.id === dreamId && d.phase === 'Croissance'
       ? { ...d, milestones: [...(d.milestones || []), log] } : d));
-  const setGrowthLogPublication: Repo['setGrowthLogPublication'] = (dreamId, logId, state, serverEntryId) =>
+  const setGrowthLogPublication: Repo['setGrowthLogPublication'] = (dreamId, logId, state, serverEntryId, shareRequestedOverride) =>
     setItems(previous => previous.map(d => d.id === dreamId ? {
       ...d, milestones: (d.milestones || []).map(log =>
-        log.id === logId ? { ...log, publicationState: state, serverEntryId: serverEntryId ?? log.serverEntryId } : log),
+        log.id === logId ? { ...log, publicationState: state,
+          serverEntryId: serverEntryId ?? log.serverEntryId,
+          shareRequested: shareRequestedOverride ?? log.shareRequested } : log),
     } : d));
   const transitionToGrowth: Repo['transitionToGrowth'] = id => setItems(p => p.map(d => {
     if (d.id !== id || d.phase !== 'Initiation') return d;
