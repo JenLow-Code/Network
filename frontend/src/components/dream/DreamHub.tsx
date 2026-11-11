@@ -122,14 +122,18 @@ export default function DreamHub({ dream, startInSemence = false, startPhase }: 
   );
   const firstRender = useRef(true);
   const switchPhase = (next: DreamPhase) => {
-    if (order.indexOf(next) <= order.indexOf(dream.phase)) {
-      if(next==='Témoignage' && !dream.testimony){
-        router.push({pathname:'/my-dream/flower/[id]',params:{id:dream.id}});
-        return;
-      }
-      setRecoveryCategory(null);
-      setOpen(next);
+    const accessible = order.indexOf(next) <= order.indexOf(dream.phase) ||
+      (next === 'Témoignage' && !!dream.flowerStartedAt);
+    if (!accessible) return;
+    setRecoveryCategory(null);
+    if (next === 'Témoignage') {
+      // Croissance can be viewed as an archive. Always return to the actual
+      // Floraison workspace, not to the obsolete testimony placeholder.
+      if (dream.testimony) setOpen(null);
+      else router.push({pathname:'/my-dream/flower/[id]',params:{id:dream.id}});
+      return;
     }
+    setOpen(next);
   };
   const [preview, setPreview] = useState<DreamPhase | null>(null);
   const sheet = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
