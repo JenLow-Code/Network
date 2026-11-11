@@ -497,7 +497,7 @@ export function GrowthLogbook({
               <Ionicons name={icon} size={17} color={color}/>
             </View>
             <Text style={{color:theme.foreground,fontSize:12,lineHeight:19,
-              flex:1,marginLeft:11}}>
+              flex:1}}>
               <Text style={{ fontWeight: '700', color }}>{categoryTitle(event.category)} · </Text>
               {event.title + ' · ' + label}
             </Text>
@@ -509,7 +509,7 @@ export function GrowthLogbook({
           <View style={{width:26,alignItems:'center',paddingTop:2}}>
             <Ionicons name="document-text-outline" size={17} color={BLUE}/>
           </View>
-          <Text style={{color:theme.foreground,fontSize:12,lineHeight:19,flex:1,marginLeft:11}}> 
+          <Text style={{color:theme.foreground,fontSize:12,lineHeight:19,flex:1}}> 
             <Text style={{ fontWeight: '700', color: BLUE }}>Document · </Text>
             {doc.title + (doc.version > 1 ? ' · v' + doc.version : '') + ' ajouté'}
           </Text>
@@ -521,7 +521,7 @@ export function GrowthLogbook({
             <Ionicons name={event.kind === 'document'
               ?'document-text-outline':'cube-outline'} size={17} color={BLUE}/>
           </View>
-          <Text style={{fontSize:12,lineHeight:19,color:theme.foreground,flex:1,marginLeft:11}}> 
+          <Text style={{fontSize:12,lineHeight:19,color:theme.foreground,flex:1}}> 
             {event.title}
           </Text>
           <Text style={{ fontSize: 9, color: theme.muted }}>Démo</Text>
