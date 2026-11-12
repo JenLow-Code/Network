@@ -122,8 +122,7 @@ export default function DreamHub({ dream, startInSemence = false, startPhase }: 
   );
   const firstRender = useRef(true);
   const switchPhase = (next: DreamPhase) => {
-    const accessible = order.indexOf(next) <= order.indexOf(dream.phase) ||
-      (next === 'Témoignage' && !!dream.flowerStartedAt);
+    const accessible = order.indexOf(next) <= order.indexOf(dream.phase);
     if (!accessible) return;
     setRecoveryCategory(null);
     if (next === 'Témoignage') {
@@ -250,10 +249,7 @@ export default function DreamHub({ dream, startInSemence = false, startPhase }: 
   const resourceFound = otherResources.filter(item => item.confirmed).length;
   const phaseIndex = order.indexOf(dream.phase);
   const fruit = dream.phase === 'Témoignage' && !!dream.testimony;
-  const preparingFlower = (dream.phase === 'Témoignage' && !dream.testimony) ||
-    (dream.phase === 'Croissance' &&
-      (!!dream.flowerStartedAt || !!dream.flowerDraft?.story?.trim() ||
-        !!dream.flowerDraft?.attachments?.length));
+  const preparingFlower = dream.phase === 'Témoignage' && !dream.testimony;
   const currentLabel = fruit ? 'Fruit' : preparingFlower ? 'Floraison' : PHASE_LABELS[dream.phase];
   const image = fruit
     ? (dream.resultImage || dream.testimony?.mediaItems?.find(media => media.kind === 'photo')?.uri || dream.image)
