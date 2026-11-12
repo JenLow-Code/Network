@@ -87,6 +87,9 @@ export function DreamProvider({ children }: { children: React.ReactNode }) {
               return {
                 ...entry,
                 resources: entry.resources ?? seed.resources,
+                // Keep the historical published result of bundled demo dreams
+                // without overwriting photos chosen by the creator.
+                resultImage: entry.resultImage ?? seed.resultImage,
                 foundNeedHistory: entry.foundNeedHistory ??
                   (entry.phase === 'Croissance' ?
                     rememberFoundNeeds([], entry.resources ?? seed.resources ?? []) : undefined),
