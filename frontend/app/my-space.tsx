@@ -278,19 +278,12 @@ export default function MySpace() {
           </>
         )}
 
-        {view==='Tout' && roleFilter!=='participant' && visible.length>0 ? (
+        {view==='Tout' && roleFilter!=='participant' && unfinished.length>0 ? (
           <View style={{marginTop:6,marginBottom:26}}>
             <View style={{paddingHorizontal:side,marginBottom:12}}>
               <Text style={{fontSize:17,fontWeight:'700',color:theme.foreground}}>Floraison</Text>
               <Text style={{fontSize:11,color:theme.muted,marginTop:4}}>Prépare et partage le résultat de ton rêve.</Text>
             </View>
-            {unfinished.length===0?(
-              <View style={{marginHorizontal:side,paddingVertical:17,paddingHorizontal:15,borderWidth:1,borderColor:theme.border,borderRadius:11}}>
-                <Text style={{fontSize:12,color:theme.muted,lineHeight:19}}>
-                  Les fleurs que tu prépares apparaîtront ici, avant leur publication.
-                </Text>
-              </View>
-            ):(
               <ScrollView horizontal showsHorizontalScrollIndicator={false}
                 contentContainerStyle={{paddingHorizontal:side,gap:11}}>
                 {unfinished.map(d=><Pressable key={d.id} accessibilityRole="button"
@@ -307,7 +300,6 @@ export default function MySpace() {
                     color:'#FFFFFF',fontWeight:'700',fontSize:14}}>{d.title}</Text>
                 </Pressable>)}
               </ScrollView>
-            )}
           </View>
         ):null}
       </ScrollView>
