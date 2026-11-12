@@ -8,12 +8,13 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Nav } from '@/components/navigation/Nav';
 import { useDreams } from '@/domain/dreamRepository';
-import type { DreamMedia, FlowerDraft } from '@/domain/dreamWorkspace';
-import { buildGrowthDays, countVerifiedPrayers } from '@/domain/growthTimeline';
+import { isPublishedFlower, type DreamMedia, type FlowerDraft } from '@/domain/dreamWorkspace';
+import { buildGrowthDays } from '@/domain/growthTimeline';
 import { pickFlowerMedia } from '@/lib/pickFlowerMedia';
 import { useAppTheme } from '@/theme/AppTheme';
 import { DreamPhaseHeader } from '@/components/dream/DreamPhaseLayout';
 import DreamWorkspaceShortcuts, { DreamWorkspaceShortcutRow } from '@/components/dream/DreamWorkspaceShortcuts';
+import FlowerJourneyRecap from '@/components/dream/FlowerJourneyRecap';
 
 const MAGENTA = '#D71D77';
 const localDay = () => {
@@ -33,9 +34,6 @@ const readableDate = (value?: string) => {
   return new Date(value.slice(0, 10) + 'T12:00:00')
     .toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
 };
-const isVerifiedCount = (value: unknown): value is number =>
-  typeof value === 'number' && Number.isInteger(value) && value >= 0;
-
 function ReadOnlySheet({ title, visible, onClose, children }: {
   title: string; visible: boolean; onClose: () => void; children: React.ReactNode;
 }) {
@@ -76,24 +74,23 @@ export default function FlowerPreparation() {
   const [achievementDate, setAchievementDate] = useState(localDay());
   const [legacyDateOpen, setLegacyDateOpen] = useState(false);
   const [acknowledged, setAcknowledged] = useState(false);
-  const [showAllMoments, setShowAllMoments] = useState(false);
   const [resourcesOpen, setResourcesOpen] = useState(false);
   const [logbookOpen, setLogbookOpen] = useState(false);
   const [dateError, setDateError] = useState('');
 
   // A published Floraison opens its completed presentation, never the editor.
   useEffect(() => {
-    if (dream?.phase === 'Témoignage' && dream.testimony) {
+    if (dream && isPublishedFlower(dream)) {
       router.replace({ pathname: '/my-dream/[id]', params: { id: dream.id } });
     }
-  }, [dream?.id, dream?.phase, !!dream?.testimony]);
+  }, [dream?.id, dream?.phase, !!dream?.testimony, !!dream?.resultImage, !!dream?.fruitAt]);
 
   if (!dream) return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
       <Text style={{ padding: 20, color: theme.foreground }}>Rêve introuvable</Text>
     </SafeAreaView>
   );
-  if (dream.phase === 'Témoignage' && dream.testimony) return (
+  if (isPublishedFlower(dream)) return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background,
       justifyContent: 'center', alignItems: 'center', padding: 24 }}>
       <Text style={{ color: theme.foreground, fontSize: 15, textAlign: 'center' }}>
@@ -114,14 +111,6 @@ export default function FlowerPreparation() {
   const achievedOn = draft.achievedOn || (!dream.testimony ? undefined :
     dream.testimony.date.slice(0, 10));
   const photo = draft.attachments.find(item => item.kind === 'photo');
-  const prayerCount = countVerifiedPrayers(dream);
-  const encouragementCount = isVerifiedCount(dream.encouragementCount)
-    ? dream.encouragementCount : null;
-  const people = (dream.resources || []).filter(item =>
-    item.category === 'person' && item.confirmed);
-  const moments = [...(dream.milestones || [])]
-    .filter(item => validDay(item.date))
-    .sort((a, b) => b.date.localeCompare(a.date));
   const selectedIds = draft.highlightIds || [];
   const growthDays = buildGrowthDays(dream);
   const patch = (changes: Partial<FlowerDraft>) =>
@@ -185,10 +174,6 @@ export default function FlowerPreparation() {
   const sectionTitle = { color: theme.foreground, fontSize: 22,
     fontFamily: 'serif' as const, lineHeight: 29 };
   const muted = { color: theme.muted, fontSize: 12, lineHeight: 19 };
-  const publishedMoments = moments.filter(item => selectedIds.includes(item.id));
-  const visibleMoments = showAllMoments ? moments : moments.slice(0, 3);
-  const hasStats = prayerCount !== null || encouragementCount !== null ||
-    people.length > 0;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
@@ -273,11 +258,27 @@ export default function FlowerPreparation() {
           <Text style={{ fontSize: 10, letterSpacing: 1.1, fontWeight: '700',
             color: theme.muted, marginBottom: 5 }}>AU COMMENCEMENT</Text>
           <Text style={{ color: theme.foreground, fontFamily: 'serif',
-            fontSize: 20, lineHeight: 29, marginBottom: 18 }}>
+            fontSize: 20, lineHeight: 29, marginBottom: 13 }}>
             {dream.summary || dream.title}
           </Text>
+          {dream.image ? (
+            <View style={{ marginBottom: 18, gap: 5 }}>
+              <Image source={{ uri: dream.image }} resizeMode="cover"
+                style={{ width: '100%', height: narrow ? 110 : 155,
+                  borderRadius: 11 }}/>
+              <Text style={{ color: theme.muted, fontSize: 10 }}>
+                L'image de ce rêve à son commencement
+              </Text>
+            </View>
+          ) : null}
           <Text style={{ fontSize: 10, letterSpacing: 1.1, fontWeight: '700',
             color: MAGENTA, marginBottom: 9 }}>ET AUJOURD’HUI</Text>
+          {achievedOn ? (
+            <Text style={{ color: theme.foreground, fontSize: 14,
+              lineHeight: 22, marginBottom: 13 }}>
+              Le {readableDate(achievedOn)}, ce rêve est devenu réalité.
+            </Text>
+          ) : null}
           <Pressable accessibilityRole="button"
             accessibilityLabel={photo ? 'Ajouter des images et souvenirs' :
               'Ajouter la photographie de ma réalisation'}
@@ -339,131 +340,23 @@ export default function FlowerPreparation() {
             lineHeight: 16 }}>Photos, vidéos ou audio · sauvegarde locale provisoire,
               2 Mo maximum par fichier.</Text>
 
-          <Text style={{ fontSize: 12, color: theme.foreground,
-            fontWeight: '700', marginTop: 21 }}>
-            Raconter ce qui a changé
+          <Text style={{ color: theme.foreground, fontFamily: 'serif',
+            fontSize: 18, lineHeight: 26, marginTop: 20 }}>
+            Ce rêve, autrefois une idée, a maintenant une histoire à partager.
           </Text>
           <TextInput multiline value={draft.story} onChangeText={story => patch({ story })}
-            placeholder="Et aujourd’hui, qu’est-ce qui a changé ? Raconte-le avec tes mots…"
+            placeholder="Ce que j’ai vécu et ce que ce rêve représente pour moi…"
             placeholderTextColor={theme.muted} accessibilityLabel="Raconter ma floraison"
             style={{ borderBottomWidth: 1, borderBottomColor: theme.border,
               color: theme.foreground, fontSize: 15, lineHeight: 24,
-              paddingVertical: 12, paddingHorizontal: 1, minHeight: 73,
-              textAlignVertical: 'top', marginTop: 12 }}/>
+              paddingVertical: 10, paddingHorizontal: 1, minHeight: 54,
+              textAlignVertical: 'top', marginTop: 8 }}/>
         </View>
 
-        {/* Grounded aggregates only — never generate mock counts or private quotes. */}
-        <View style={{ borderTopWidth: 1, borderColor: theme.border,
-          paddingTop: 23, marginTop: 27 }}>
-          <Text style={sectionTitle}>Tout ce chemin…</Text>
-          <Text style={{ ...muted, marginTop: 5, marginBottom: 16 }}>
-            Les personnes et les gestes qui ont accompagné ce rêve.
-          </Text>
-          {hasStats ? (
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap',
-              gap: narrow ? 18 : 25 }}>
-              {prayerCount !== null ? (
-                <View style={{ minWidth: narrow ? '43%' : 140, gap: 5 }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
-                    <Ionicons name="hand-left-outline" size={20} color="#B88962"/>
-                    <Text style={{ color: MAGENTA, fontSize: 22, fontWeight: '800' }}>
-                      {prayerCount}
-                    </Text>
-                  </View>
-                  <Text style={muted}>prière{prayerCount === 1 ? '' : 's'} reçue{prayerCount === 1 ? '' : 's'}</Text>
-                </View>
-              ) : null}
-              {encouragementCount !== null ? (
-                <View style={{ minWidth: narrow ? '43%' : 140, gap: 5 }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
-                    <Ionicons name="heart-outline" size={20} color={MAGENTA}/>
-                    <Text style={{ color: MAGENTA, fontSize: 22, fontWeight: '800' }}>
-                      {encouragementCount}
-                    </Text>
-                  </View>
-                  <Text style={muted}>encouragement{encouragementCount === 1 ? '' : 's'} reçu{encouragementCount === 1 ? '' : 's'}</Text>
-                </View>
-              ) : null}
-              {people.length ? (
-                <View style={{ minWidth: narrow ? '43%' : 140, gap: 5 }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
-                    <Ionicons name="people-outline" size={20} color="#27845B"/>
-                    <Text style={{ color: MAGENTA, fontSize: 22, fontWeight: '800' }}>
-                      {people.length}
-                    </Text>
-                  </View>
-                  <Text style={muted}>talent{people.length === 1 ? '' : 's'} trouvé{people.length === 1 ? '' : 's'}</Text>
-                </View>
-              ) : null}
-            </View>
-          ) : (
-            <Text style={{ ...muted, fontStyle: 'italic' }}>
-              Les prières, encouragements et participants apparaîtront ici
-              lorsqu'ils seront disponibles.
-            </Text>
-          )}
-        </View>
-
-        <View style={{ borderTopWidth: 1, borderColor: theme.border,
-          paddingTop: 22, marginTop: 27 }}>
-          <Text style={sectionTitle}>Les moments qui ont compté</Text>
-          <Text style={{ ...muted, marginTop: 6, marginBottom: 16 }}>
-            Ton Logbook garde le parcours. Choisis les moments que tu souhaites
-            faire apparaître dans ta fleur publique.
-          </Text>
-          {moments.length ? (
-            <View style={{ paddingLeft: 8, borderLeftWidth: 1.5,
-              borderLeftColor: '#BFD9CA', marginLeft: 7 }}>
-              {visibleMoments.map(moment => {
-                const chosen = selectedIds.includes(moment.id);
-                return (
-                  <Pressable key={moment.id} accessibilityRole="button"
-                    accessibilityState={{ selected: chosen }}
-                    accessibilityLabel={(chosen ? 'Retirer du récit : ' :
-                      'Ajouter au récit : ') + moment.title}
-                    onPress={() => toggleMoment(moment.id)}
-                    style={{ paddingVertical: 11, paddingHorizontal: 15,
-                      marginLeft: 8, marginBottom: 5, borderRadius: 11,
-                      backgroundColor: chosen
-                        ? (theme.dark ? '#43303B' : '#F9EAF1') : 'transparent',
-                      flexDirection: 'row', alignItems: 'flex-start', gap: 11 }}>
-                    <View style={{ flex: 1, gap: 4 }}>
-                      <Text style={{ color: chosen ? MAGENTA : '#27845B',
-                        fontSize: 10, fontWeight: '700' }}>
-                        {readableDate(moment.date)}
-                      </Text>
-                      <Text style={{ color: theme.foreground, fontSize: 13,
-                        lineHeight: 20 }}>{moment.title}</Text>
-                    </View>
-                    <Ionicons name={chosen ? 'checkmark-circle' : 'add-circle-outline'}
-                      size={20} color={chosen ? MAGENTA : theme.muted}/>
-                  </Pressable>
-                );
-              })}
-            </View>
-          ) : (
-            <View style={{ padding: 14, borderRadius: 11,
-              backgroundColor: theme.surface }}>
-              <Text style={muted}>Les souvenirs de ton Logbook pourront être
-                ajoutés ici. Tu peux aussi simplement raconter la réalisation.</Text>
-            </View>
-          )}
-          {moments.length > 3 ? (
-            <Pressable accessibilityRole="button"
-              onPress={() => setShowAllMoments(value => !value)}
-              style={{ paddingVertical: 11, alignSelf: 'flex-start' }}>
-              <Text style={{ color: MAGENTA, fontSize: 12, fontWeight: '700' }}>
-                {showAllMoments ? 'Voir moins' : 'Voir tous les moments du Logbook'}
-              </Text>
-            </Pressable>
-          ) : null}
-          {publishedMoments.length ? (
-            <Text style={{ color: theme.muted, fontSize: 11, marginTop: 8 }}>
-              {publishedMoments.length} moment{publishedMoments.length === 1 ? '' : 's'}
-              {' '}sélectionné{publishedMoments.length === 1 ? '' : 's'} pour le récit public.
-            </Text>
-          ) : null}
-        </View>
+        {/* Automatically composed from the dream's actual journey.
+            Logbook leaves are opt-in for the eventual public version. */}
+        <FlowerJourneyRecap dream={dream}
+          selectedMomentIds={selectedIds} onToggleMoment={toggleMoment}/>
 
         {/* Publication comes first; secondary edit is a magenta outline. */}
         <View style={{ borderTopWidth: 1, borderColor: theme.border,
