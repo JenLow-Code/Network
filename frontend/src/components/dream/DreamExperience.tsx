@@ -18,7 +18,7 @@ import { DREAM_TALENT_CHOICES } from './dreamTalentCatalog';
 import { TalentLevelSelector } from '@/components/talent/TalentLevelSelector';
 import { habitDayKey, habitKey } from '@/domain/habitProgress';
 import { GrowthLogbook } from './GrowthLogbook';
-import DreamWorkspaceShortcuts from './DreamWorkspaceShortcuts';
+import DreamWorkspaceShortcuts, { DreamWorkspaceShortcutRow } from './DreamWorkspaceShortcuts';
 import { canEditGrowthLog } from '@/domain/growthTimeline';
 
 const pink = '#D71D77';
@@ -156,7 +156,7 @@ export default function DreamExperience({
  const historical = phase !== dream.phase;
  // Floraison locks Croissance immediately upon entering the flower editor,
  // not only once the flower is published.
- const growthLocked = dream.phase==='Témoignage' || !!dream.flowerStartedAt;
+ const growthLocked = dream.phase==='Témoignage';
  const readOnly = historical || growthLocked;
  const frozen=!!dream.paused && !!dream.pauseUntil && dream.pauseUntil>=day();
  const growthWritable=phase==='Croissance' && !historical && !growthLocked;
@@ -494,34 +494,18 @@ export default function DreamExperience({
       </View>:<View style={{flex:1}}/>}
       <View style={{alignItems:'flex-end',gap:0,flexShrink:1}}>
         <DreamWorkspaceShortcuts dream={dream} showLibrary/>
-        <Pressable accessibilityRole="button"
-            accessibilityState={{expanded:recapExpanded}}
-            accessibilityLabel={recapExpanded
-              ?'Réduire le résumé des besoins de Germination'
-              :'Développer le résumé des besoins de Germination'}
-            onPress={()=>setPreparationOpen(open=>!open)}
-            style={{flexDirection:'row',alignItems:'center',gap:6,
-              minHeight:30,paddingVertical:5,paddingHorizontal:3,
-              borderRadius:10,
-              backgroundColor:allResourcesFound
-                ?'transparent':(theme.dark?'#432D38':'#FCECF4')}}>
-            {hasResourceAlert?(
-              <Ionicons name="warning-outline" size={16} color="#D71D77"/>
-            ):newGrowthNeeds.length?(
-              <Ionicons name="add-circle-outline" size={16} color="#27845B"/>
-            ):(
-              <Ionicons name="cube-outline" size={13} color={theme.muted}/>
-            )}
-            <Text numberOfLines={1} style={{fontSize:12,fontWeight:'500',
-              color:theme.foreground,flexShrink:1}}>
-              {hasResourceAlert
-                ?`${missingResources.length} besoin${missingResources.length>1?'s':''} à compléter`
-                :newGrowthNeeds.length
-                ?`${newGrowthNeeds.length} nouveau${newGrowthNeeds.length>1?'x':''} besoin${newGrowthNeeds.length>1?'s':''}`
-                :'Ressources'}
-            </Text>
-            <Ionicons name={recapExpanded?'chevron-down':'chevron-forward'} color={theme.muted} size={13}/>
-          </Pressable>
+        <DreamWorkspaceShortcutRow
+          label={hasResourceAlert
+            ?`${missingResources.length} besoin${missingResources.length>1?'s':''} à compléter`
+            :newGrowthNeeds.length
+            ?`${newGrowthNeeds.length} nouveau${newGrowthNeeds.length>1?'x':''} besoin${newGrowthNeeds.length>1?'s':''}`
+            :'Ressources'}
+          icon={hasResourceAlert ? 'warning-outline' :
+            newGrowthNeeds.length ? 'add-circle-outline' : 'cube-outline'}
+          expanded={recapExpanded}
+          highlighted={hasResourceAlert || newGrowthNeeds.length>0}
+          onPress={()=>setPreparationOpen(open=>!open)}/>
+
       </View>
     </View>
     {recapExpanded?(
