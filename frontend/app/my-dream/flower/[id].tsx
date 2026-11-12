@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Alert, Image, Modal, Platform, Pressable, ScrollView, Text, TextInput,
   View, useWindowDimensions,
@@ -13,6 +13,7 @@ import { buildGrowthDays, countVerifiedPrayers } from '@/domain/growthTimeline';
 import { pickFlowerMedia } from '@/lib/pickFlowerMedia';
 import { useAppTheme } from '@/theme/AppTheme';
 import { DreamPhaseHeader } from '@/components/dream/DreamPhaseLayout';
+import DreamWorkspaceShortcuts, { DreamWorkspaceShortcutRow } from '@/components/dream/DreamWorkspaceShortcuts';
 
 const MAGENTA = '#D71D77';
 const localDay = () => {
@@ -34,22 +35,6 @@ const readableDate = (value?: string) => {
 };
 const isVerifiedCount = (value: unknown): value is number =>
   typeof value === 'number' && Number.isInteger(value) && value >= 0;
-
-function FlowerShortcut({ label, icon, onPress }: {
-  label: string; icon: keyof typeof Ionicons.glyphMap; onPress: () => void;
-}) {
-  const theme = useAppTheme();
-  return (
-    <Pressable accessibilityRole="button" accessibilityLabel={'Ouvrir ' + label}
-      onPress={onPress} style={{ flexDirection: 'row', alignItems: 'center',
-        justifyContent: 'flex-end', minHeight: 30, paddingVertical: 5, gap: 5 }}>
-      <Ionicons name={icon} size={13} color={theme.muted}/>
-      <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.82}
-        style={{ fontSize: 11, color: theme.foreground }}>{label}</Text>
-      <Ionicons name="chevron-forward" size={12} color={theme.muted}/>
-    </Pressable>
-  );
-}
 
 function ReadOnlySheet({ title, visible, onClose, children }: {
   title: string; visible: boolean; onClose: () => void; children: React.ReactNode;
@@ -89,11 +74,19 @@ export default function FlowerPreparation() {
   const dream = items.find(item => item.id === id);
   const draft: FlowerDraft = dream?.flowerDraft || { story: '', attachments: [] };
   const [achievementDate, setAchievementDate] = useState(localDay());
+  const [legacyDateOpen, setLegacyDateOpen] = useState(false);
   const [acknowledged, setAcknowledged] = useState(false);
   const [showAllMoments, setShowAllMoments] = useState(false);
   const [resourcesOpen, setResourcesOpen] = useState(false);
   const [logbookOpen, setLogbookOpen] = useState(false);
   const [dateError, setDateError] = useState('');
+
+  // A published Floraison opens its completed presentation, never the editor.
+  useEffect(() => {
+    if (dream?.phase === 'Témoignage' && dream.testimony) {
+      router.replace({ pathname: '/my-dream/[id]', params: { id: dream.id } });
+    }
+  }, [dream?.id, dream?.phase, !!dream?.testimony]);
 
   if (!dream) return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
@@ -101,7 +94,10 @@ export default function FlowerPreparation() {
     </SafeAreaView>
   );
 
-  const confirmed = dream.phase === 'Témoignage' && !!dream.flowerStartedAt && !!draft.achievedOn;
+  // The phase, not an editor timestamp or a missing legacy date, is authoritative.
+  const confirmed = dream.phase === 'Témoignage';
+  const achievedOn = draft.achievedOn || (!dream.testimony ? undefined :
+    dream.testimony.date.slice(0, 10));
   const photo = draft.attachments.find(item => item.kind === 'photo');
   const prayerCount = countVerifiedPrayers(dream);
   const encouragementCount = isVerifiedCount(dream.encouragementCount)
@@ -120,6 +116,7 @@ export default function FlowerPreparation() {
     else Alert.alert(title, message);
   };
   const confirmAchievement = () => {
+    if (dream.phase !== 'Croissance') return;
     if (!validDay(achievementDate) || achievementDate > localDay()) {
       setDateError("Choisis une date réelle, aujourd'hui ou dans le passé.");
       return;
@@ -136,7 +133,12 @@ export default function FlowerPreparation() {
   );
   const publish = () => {
     if (!confirmed) {
-      notify('Floraison', 'Confirme d’abord la date de réalisation de ce rêve.');
+      notify('Floraison', 'Ce rêve est encore en Croissance.');
+      return;
+    }
+    if (!validDay(draft.achievedOn || '')) {
+      setLegacyDateOpen(true);
+      notify('Date de réalisation', 'Indique la date réelle de réalisation dans Floraison avant de publier.');
       return;
     }
     if (!draft.story.trim() || !photo) {
@@ -181,9 +183,11 @@ export default function FlowerPreparation() {
           alignSelf: 'center' }}>
         <DreamPhaseHeader dream={dream} phase="Témoignage"
           onBack={() => router.replace('/my-space')}
-          onNavigate={phase => router.replace({
-            pathname: '/my-dream/[id]', params: { id: dream.id, view: phase },
-          })}
+          onNavigate={phase => {
+            if (phase !== 'Témoignage') router.replace({
+              pathname: '/my-dream/[id]', params: { id: dream.id, view: phase },
+            });
+          }}
           summary="Il est temps de raconter ce que ce rêve a produit." />
 
         {/* The four existing workspace links remain beside the two dates. */}
@@ -209,23 +213,27 @@ export default function FlowerPreparation() {
                 <Ionicons name="flower-outline" size={17} color={MAGENTA}/>
                 <Text style={{ color: MAGENTA, fontSize: narrow ? 14 : 18,
                   fontWeight: '800' }}>
-                  {confirmed ? readableDate(draft.achievedOn) : 'À confirmer'}
+                  {confirmed ? (achievedOn ? readableDate(achievedOn) : 'Date à renseigner')
+                    : 'À confirmer'}
                 </Text>
               </View>
+              {confirmed && !achievedOn ? (
+                <Pressable accessibilityRole="button"
+                  accessibilityLabel="Renseigner la date de réalisation"
+                  onPress={() => { setAchievementDate(localDay()); setLegacyDateOpen(true); }}
+                  style={{ alignSelf: 'flex-start', paddingVertical: 5 }}>
+                  <Text style={{ fontSize: 11, color: MAGENTA, fontWeight: '600' }}>
+                    Ajouter la date
+                  </Text>
+                </Pressable>
+              ) : null}
             </View>
           </View>
           <View style={{ flex: 1.25, alignItems: 'flex-end' }}>
-            <FlowerShortcut label="Notes personnelles" icon="lock-closed-outline"
-              onPress={() => router.push({
-                pathname: '/my-dream/notes/[id]', params: { id: dream.id },
-              })}/>
-            <FlowerShortcut label="Inspirations / Documents" icon="folder-open-outline"
-              onPress={() => router.push({
-                pathname: '/my-dream/library/[id]', params: { id: dream.id },
-              })}/>
-            <FlowerShortcut label="Ressources" icon="people-outline"
+            <DreamWorkspaceShortcuts dream={dream} showLibrary/>
+            <DreamWorkspaceShortcutRow label="Ressources" icon="people-outline"
               onPress={() => setResourcesOpen(true)}/>
-            <FlowerShortcut label="Logbook" icon="book-outline"
+            <DreamWorkspaceShortcutRow label="Logbook" icon="book-outline"
               onPress={() => setLogbookOpen(true)}/>
           </View>
         </View>
@@ -233,17 +241,18 @@ export default function FlowerPreparation() {
         {/* The flower is presented as a story, not as a separate upload form. */}
         <View style={{ borderTopWidth: 1, borderColor: theme.border, paddingTop: 23 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center',
-            justifyContent: 'space-between', gap: 10, marginBottom: 9 }}>
-            <Text style={{ fontSize: 10, letterSpacing: 1.7, color: MAGENTA,
+            gap: 7, marginBottom: 10 }}>
+            <Ionicons name="flower-outline" size={18} color={MAGENTA}/>
+            <Text style={{ fontSize: 10, letterSpacing: 1.5, color: MAGENTA,
               fontWeight: '800' }}>LA FLORAISON</Text>
-            <Ionicons name="flower-outline" size={21} color={MAGENTA}/>
           </View>
           <Text style={{ ...sectionTitle, fontSize: 26, lineHeight: 33,
             marginBottom: 8 }}>Et ce rêve a fleuri.</Text>
           <Text style={{ ...muted, marginBottom: 17 }}>
-            {confirmed ? 'Ce rêve est devenu réalité le ' +
-              readableDate(draft.achievedOn) + '.' :
-              'Le moment où ce rêve est devenu réalité.'}
+            {achievedOn ? 'Devenu réalité le ' + readableDate(achievedOn) +
+              '. Voici la fleur que tu peux partager.' :
+              'Voici l’histoire de ce rêve accompli. Ajoute le résultat et les mots que tu souhaites partager.'}
+            {' '}Cette présentation reste privée tant que tu ne la publies pas.
           </Text>
 
           <Pressable accessibilityRole="button"
@@ -466,7 +475,7 @@ export default function FlowerPreparation() {
       <Nav/>
 
       {/* Achievement is confirmed separately from publication; never reversed. */}
-      <Modal visible={!confirmed} transparent animationType="fade"
+      <Modal visible={dream.phase === 'Croissance'} transparent animationType="fade"
         onRequestClose={() => router.replace('/my-space')}>
         <View style={{ flex: 1, backgroundColor: 'rgba(21,18,21,.56)',
           justifyContent: 'center', padding: 18 }}>
@@ -543,6 +552,55 @@ export default function FlowerPreparation() {
         </View>
       </Modal>
 
+      {/* Older Floraison records can be missing their achievement date.
+          Ask only when the creator elects to supply it, never on opening. */}
+      {confirmed && !achievedOn ? (
+        <Modal visible={legacyDateOpen} transparent animationType="fade"
+          onRequestClose={() => setLegacyDateOpen(false)}>
+          <View style={{ flex: 1, backgroundColor: 'rgba(21,18,21,.50)',
+            justifyContent: 'center', padding: 18 }}>
+            <View style={{ backgroundColor: theme.background, maxWidth: 420,
+              width: '100%', alignSelf: 'center', borderRadius: 18,
+              padding: 22, gap: 13 }}>
+              <Text style={{ color: theme.foreground, fontFamily: 'serif',
+                fontSize: 24 }}>Date de réalisation</Text>
+              <Text style={muted}>
+                Cette fleur est déjà en Floraison. Renseigne simplement le jour
+                où elle est devenue réalité, sans nouvelle confirmation d’étape.
+              </Text>
+              <TextInput value={achievementDate}
+                onChangeText={value => { setAchievementDate(value); setDateError(''); }}
+                accessibilityLabel="Date de réalisation, année-mois-jour"
+                placeholder="AAAA-MM-JJ" placeholderTextColor={theme.muted}
+                maxLength={10} autoCapitalize="none"
+                style={{ borderWidth: 1, borderColor: theme.border,
+                  borderRadius: 10, paddingHorizontal: 12, minHeight: 46,
+                  backgroundColor: theme.surface, color: theme.foreground }}/>
+              {dateError ? <Text style={{ color: '#B24753', fontSize: 11 }}>
+                {dateError}
+              </Text> : null}
+              <Pressable accessibilityRole="button" onPress={() => {
+                if (!validDay(achievementDate) || achievementDate > localDay()) {
+                  setDateError("Choisis une date réelle, aujourd'hui ou dans le passé.");
+                  return;
+                }
+                patch({ achievedOn: achievementDate });
+                setLegacyDateOpen(false);
+              }} style={{ backgroundColor: MAGENTA, borderRadius: 10,
+                minHeight: 47, alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '700' }}>
+                  Enregistrer la date
+                </Text>
+              </Pressable>
+              <Pressable accessibilityRole="button"
+                onPress={() => setLegacyDateOpen(false)}
+                style={{ alignSelf: 'center', padding: 8 }}>
+                <Text style={{ color: theme.muted, fontSize: 12 }}>Plus tard</Text>
+              </Pressable>
+            </View>
+          </View>
+        </Modal>
+      ) : null}
       <ReadOnlySheet visible={resourcesOpen} onClose={() => setResourcesOpen(false)}
         title="Ressources">
         {(dream.resources || []).length ? (dream.resources || []).map(item => (
