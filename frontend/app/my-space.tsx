@@ -33,10 +33,8 @@ const series: { phase: DreamPhase; title: string; sub: string }[] = [
  * Published Fruit remains the intentional immersive result cover. */
 const open = (dream: DreamEntry) => {
   if (dream.phase === 'Témoignage') {
-    router.push({pathname:'/my-dream/[id]',params:{id:dream.id}});
-  } else if (dream.phase === 'Croissance' &&
-    (dream.flowerStartedAt || dream.flowerDraft?.story?.trim() || dream.flowerDraft?.attachments?.length)) {
-    router.push({pathname:'/my-dream/flower/[id]',params:{id:dream.id}});
+    if (dream.testimony) router.push({pathname:'/my-dream/[id]',params:{id:dream.id}});
+    else router.push({pathname:'/my-dream/flower/[id]',params:{id:dream.id}});
   } else {
     router.push({pathname:'/my-dream/[id]',params:{id:dream.id,view:dream.phase}});
   }
@@ -94,11 +92,6 @@ function DreamListRow({ dream, onLongPress }: { dream: DreamEntry; onLongPress:(
     <Pressable accessibilityRole="button" onLongPress={onLongPress} delayLongPress={460}
       accessibilityHint="Maintenir pour voir les actions du rêve" onPress={() => {
       if(dream.phase==='Témoignage') { open(dream); return; }
-      if(dream.phase==='Croissance' &&
-        (dream.flowerStartedAt||dream.flowerDraft?.story?.trim()||dream.flowerDraft?.attachments?.length)){
-        router.push({pathname:'/my-dream/flower/[id]',params:{id:dream.id}});
-        return;
-      }
       router.push({pathname:'/my-dream/[id]',params:{id:dream.id,view:dream.phase}});
     }}
       style={{ flexDirection: 'row', alignItems: 'center', gap: 13,
@@ -138,8 +131,7 @@ export default function MySpace() {
   const visible = view === 'Congelés' ? matchingRole.filter(frozen) : matchingRole;
   const roleOption = ROLE_OPTIONS.find(option=>option.key===roleFilter)!;
   const testimonies = visible.filter(d => d.phase === 'Témoignage');
-  const inFlower = (d:DreamEntry) => d.phase==='Croissance' &&
-    (!!d.flowerStartedAt || !!d.flowerDraft?.story?.trim() || !!d.flowerDraft?.attachments?.length);
+  const inFlower = (d:DreamEntry) => d.phase==='Témoignage' && !d.testimony;
   const unfinished = visible.filter(inFlower);
 
   return (
