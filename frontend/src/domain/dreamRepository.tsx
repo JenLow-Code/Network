@@ -75,19 +75,25 @@ export function DreamProvider({ children }: { children: React.ReactNode }) {
           try {
             const p = JSON.parse(v);
             if (Array.isArray(p)) setItems(p.map((stored: DreamEntry) => {
-              const seed = initial.find(item => item.id === stored.id);
-              if (!seed) return stored.phase === 'Croissance' && !stored.foundNeedHistory
-                ? { ...stored, foundNeedHistory: rememberFoundNeeds([], stored.resources ?? []) }
+              // Old editor versions set flowerStartedAt while leaving phase in
+              // Croissance. Restore those dreams to their irreversible Floraison
+              // state without guessing the date on which they were achieved.
+              const entry: DreamEntry = stored.phase === 'Croissance' && !!stored.flowerStartedAt
+                ? { ...stored, phase: 'Témoignage', visibility: 'private' }
                 : stored;
+              const seed = initial.find(item => item.id === entry.id);
+              if (!seed) return entry.phase === 'Croissance' && !entry.foundNeedHistory
+                ? { ...entry, foundNeedHistory: rememberFoundNeeds([], entry.resources ?? []) }
+                : entry;
               // Fill missing demo metadata without overwriting the person's saved edits.
               return {
-                ...stored,
-                resources: stored.resources ?? seed.resources,
-                foundNeedHistory: stored.foundNeedHistory ??
-                  (stored.phase === 'Croissance' ?
-                    rememberFoundNeeds([], stored.resources ?? seed.resources ?? []) : undefined),
-                goalDate: stored.goalDate ?? seed.goalDate,
-                motivation: stored.motivation ?? seed.motivation,
+                ...entry,
+                resources: entry.resources ?? seed.resources,
+                foundNeedHistory: entry.foundNeedHistory ??
+                  (entry.phase === 'Croissance' ?
+                    rememberFoundNeeds([], entry.resources ?? seed.resources ?? []) : undefined),
+                goalDate: entry.goalDate ?? seed.goalDate,
+                motivation: entry.motivation ?? seed.motivation,
               };
             }));
           } catch {}
@@ -125,7 +131,7 @@ export function DreamProvider({ children }: { children: React.ReactNode }) {
   },[personalKey,personalHabits,personalHydrated]);
   const setPersonalHabits:Repo['setPersonalHabits']=habits=>setPersonalHabitsState(habits);
   const detachHabit:Repo['detachHabit']=(dreamId,habitId)=>{
-    const source=items.find(d=>d.id===dreamId&&d.phase==='Croissance'&&!d.flowerStartedAt);
+    const source=items.find(d=>d.id===dreamId&&d.phase==='Croissance');
     const habit=source?.habits?.find(h=>h.id===habitId);
     if(!habit)return;
     // Persist as a standalone personal habit before dropping its dream association.
@@ -199,7 +205,7 @@ export function DreamProvider({ children }: { children: React.ReactNode }) {
     );
   const setFlowerDraft: Repo['setFlowerDraft'] = (id, draft) =>
     setItems(p => p.map(d =>
-      d.id === id && !!d.flowerStartedAt && !d.testimony
+      d.id === id && d.phase === 'Témoignage' && !d.testimony
         ? { ...d, flowerDraft: draft } : d,
     ));
   const confirmFlower: Repo['confirmFlower'] = (id, achievedOn) =>
@@ -258,7 +264,7 @@ export function DreamProvider({ children }: { children: React.ReactNode }) {
         'habits','milestones','resources','growthEvents','foundNeedHistory',
         'growthStartedAt','goalDate','paused','pauseUntil','pauseCount',
       ]);
-      const allowed = d.phase==='Témoignage' || !!d.flowerStartedAt
+      const allowed = d.phase==='Témoignage'
         ?Object.fromEntries(Object.entries(changes).filter(
           ([key])=>!lockedGrowthFields.has(key as keyof DreamEntry),
         )) as Partial<DreamEntry>
@@ -267,7 +273,7 @@ export function DreamProvider({ children }: { children: React.ReactNode }) {
     }));
   const appendBlock: Repo['appendBlock'] = (id, block) => setItems(p => p.map(d => d.id === id && d.phase === 'Rêve' ? { ...d, blocks: [...(d.blocks || []), block] } : d));
   const setResources: Repo['setResources'] = (id, resources) => setItems(p => p.map(d => {
-    if(d.id !== id || (d.phase !== 'Initiation' && d.phase !== 'Croissance') || !!d.flowerStartedAt) return d;
+    if(d.id !== id || (d.phase !== 'Initiation' && d.phase !== 'Croissance')) return d;
     const changes = d.phase==='Croissance'
       ? growthResourceEvents(d.resources || [], resources) : [];
     const nextEvents = changes.map((change,i)=>({
@@ -282,9 +288,9 @@ export function DreamProvider({ children }: { children: React.ReactNode }) {
         : d.foundNeedHistory,
     };
   }));
-  const setHabits: Repo['setHabits'] = (id, habits) => setItems(p => p.map(d => d.id === id && d.phase === 'Croissance' && !d.flowerStartedAt ? { ...d, habits } : d));
+  const setHabits: Repo['setHabits'] = (id, habits) => setItems(p => p.map(d => d.id === id && d.phase === 'Croissance' ? { ...d, habits } : d));
   const addGrowthLog: Repo['addGrowthLog'] = (dreamId, log) => setItems(previous =>
-    previous.map(d => d.id === dreamId && d.phase === 'Croissance' && !d.flowerStartedAt
+    previous.map(d => d.id === dreamId && d.phase === 'Croissance'
       ? { ...d, milestones: [...(d.milestones || []), log] } : d));
   const setGrowthLogPublication: Repo['setGrowthLogPublication'] = (dreamId, logId, state, serverEntryId, shareRequestedOverride) =>
     setItems(previous => previous.map(d => d.id === dreamId ? {
