@@ -88,8 +88,9 @@ export function DreamPhaseHeader({
       {/* The phase progression is the single botanical header, preceding the dream identity. */}
       <View style={{ flexDirection: 'row', gap: 6, marginBottom: 19 }}>
         {DREAM_PHASES.map((item, i) => {
-          const reached = i <= DREAM_PHASES.indexOf(dream.phase) ||
-            (item === 'Témoignage' && !!dream.flowerStartedAt);
+          // A phase is reached only by an explicit phase transition.
+          // Legacy editor timestamps are not phase transitions.
+          const reached = i <= DREAM_PHASES.indexOf(dream.phase);
           const selected = item === phase;
           return (
             <Pressable key={item}
