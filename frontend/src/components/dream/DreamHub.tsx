@@ -452,6 +452,19 @@ export default function DreamHub({ dream, startInSemence = false, startPhase }: 
                   </Text>
                 </Pressable>
               )}
+              {fruit ? (
+                <Pressable accessibilityRole="button"
+                  accessibilityLabel="Lire l’histoire de cette fleur"
+                  onPress={() => enter('Témoignage')}
+                  style={{ minHeight: 44, marginTop: 15,
+                    paddingHorizontal: 22, paddingVertical: 11,
+                    borderWidth: 1.5, borderColor: '#F3D6E3',
+                    borderRadius: 11, alignItems: 'center',
+                    justifyContent: 'center' }}>
+                  <Text style={{ fontSize: 13, fontWeight: '700',
+                    color: '#FFFFFF' }}>Lire l’histoire de cette fleur</Text>
+                </Pressable>
+              ) : null}
               {phaseIndex >= 2 ? (
                 <Pressable
                   onPress={() => router.push({ pathname: '/chat/[id]', params: { id: 'dream-' + dream.id } })}
