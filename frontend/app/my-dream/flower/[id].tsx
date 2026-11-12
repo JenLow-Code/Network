@@ -93,6 +93,21 @@ export default function FlowerPreparation() {
       <Text style={{ padding: 20, color: theme.foreground }}>Rêve introuvable</Text>
     </SafeAreaView>
   );
+  if (dream.phase === 'Témoignage' && dream.testimony) return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.background,
+      justifyContent: 'center', alignItems: 'center', padding: 24 }}>
+      <Text style={{ color: theme.foreground, fontSize: 15, textAlign: 'center' }}>
+        Cette fleur est déjà publiée.
+      </Text>
+      <Pressable accessibilityRole="button"
+        accessibilityLabel="Voir ma fleur publiée"
+        onPress={() => router.replace({
+          pathname: '/my-dream/[id]', params: { id: dream.id },
+        })} style={{ marginTop: 15, padding: 12 }}>
+        <Text style={{ color: MAGENTA, fontWeight: '700' }}>Voir ma fleur</Text>
+      </Pressable>
+    </SafeAreaView>
+  );
 
   // The phase, not an editor timestamp or a missing legacy date, is authoritative.
   const confirmed = dream.phase === 'Témoignage';
