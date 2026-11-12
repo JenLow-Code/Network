@@ -3,7 +3,7 @@ import { Animated, Easing, Image, PanResponder, Modal, Pressable, ScrollView, St
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
-import type { DreamEntry, DreamResource } from '@/domain/dreamWorkspace';
+import { isPublishedFlower, type DreamEntry, type DreamResource } from '@/domain/dreamWorkspace';
 import type { DreamPhase } from '@/domain/publication';
 import { PHASE_LABELS } from '@/domain/publication';
 import { useDreams } from '@/domain/dreamRepository';
@@ -115,7 +115,7 @@ export default function DreamHub({ dream, startInSemence = false, startPhase }: 
   const [resultOpen,setResultOpen]=useState(false);
   const [recoveryCategory,setRecoveryCategory]=useState<DreamResource['category']|'all'|null>(null);
   const [open, setOpen] = useState<DreamPhase | null>(() =>
-    startPhase === 'Témoignage' && dream.phase === 'Témoignage' && !dream.testimony
+    startPhase === 'Témoignage' && dream.phase === 'Témoignage' && !isPublishedFlower(dream)
       ? null : startPhase && order.indexOf(startPhase) <= order.indexOf(dream.phase)
       ? startPhase : startInSemence && dream.phase === 'Rêve' ? 'Rêve' :
         dream.phase !== 'Témoignage' ? dream.phase : null
@@ -128,7 +128,7 @@ export default function DreamHub({ dream, startInSemence = false, startPhase }: 
     if (next === 'Témoignage') {
       // Croissance can be viewed as an archive. Always return to the actual
       // Floraison workspace, not to the obsolete testimony placeholder.
-      if (dream.testimony) setOpen(null);
+      if (isPublishedFlower(dream)) setOpen(null);
       else router.push({pathname:'/my-dream/flower/[id]',params:{id:dream.id}});
       return;
     }
@@ -160,7 +160,7 @@ export default function DreamHub({ dream, startInSemence = false, startPhase }: 
   }, [sheet, width, height]);
 
   const enter = useCallback((phase: DreamPhase) => {
-    if(phase==='Témoignage' && dream.phase==='Témoignage' && !dream.testimony){
+    if(phase==='Témoignage' && dream.phase==='Témoignage' && !isPublishedFlower(dream)){
       router.push({pathname:'/my-dream/flower/[id]',params:{id:dream.id}});
       return;
     }
@@ -187,7 +187,7 @@ export default function DreamHub({ dream, startInSemence = false, startPhase }: 
   }, [sheet, width, height, resetScene, dream.id, dream.phase, !!dream.testimony]);
 
   const dragScene = useCallback((phase: DreamPhase, distance: number) => {
-    if (phase==='Témoignage' && dream.phase==='Témoignage' && !dream.testimony) return;
+    if (phase==='Témoignage' && dream.phase==='Témoignage' && !isPublishedFlower(dream)) return;
     if (busy.current || openRef.current || order.indexOf(phase) > order.indexOf(phaseRef.current)) return;
     if (previewRef.current !== phase) {
       sheet.setValue(sheetPosition(phase, width, height));
@@ -248,8 +248,8 @@ export default function DreamHub({ dream, startInSemence = false, startPhase }: 
   const talentFound = requestedTalents.filter(item => !!item.serverNeedId && item.confirmed).length;
   const resourceFound = otherResources.filter(item => item.confirmed).length;
   const phaseIndex = order.indexOf(dream.phase);
-  const fruit = dream.phase === 'Témoignage' && !!dream.testimony;
-  const preparingFlower = dream.phase === 'Témoignage' && !dream.testimony;
+  const fruit = isPublishedFlower(dream);
+  const preparingFlower = dream.phase === 'Témoignage' && !isPublishedFlower(dream);
   const currentLabel = fruit ? 'Fruit' : preparingFlower ? 'Floraison' : PHASE_LABELS[dream.phase];
   const image = fruit
     ? (dream.resultImage || dream.testimony?.mediaItems?.find(media => media.kind === 'photo')?.uri || dream.image)
