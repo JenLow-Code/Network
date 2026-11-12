@@ -75,12 +75,10 @@ export function DreamProvider({ children }: { children: React.ReactNode }) {
           try {
             const p = JSON.parse(v);
             if (Array.isArray(p)) setItems(p.map((stored: DreamEntry) => {
-              // Old editor versions set flowerStartedAt while leaving phase in
-              // Croissance. Restore those dreams to their irreversible Floraison
-              // state without guessing the date on which they were achieved.
-              const entry: DreamEntry = stored.phase === 'Croissance' && !!stored.flowerStartedAt
-                ? { ...stored, phase: 'Témoignage', visibility: 'private' }
-                : stored;
+              // The saved phase is authoritative. Older editors recorded
+              // flowerStartedAt simply when opened, without a confirmation.
+              // Never promote an unconfirmed Croissance to Floraison.
+              const entry: DreamEntry = stored;
               const seed = initial.find(item => item.id === entry.id);
               if (!seed) return entry.phase === 'Croissance' && !entry.foundNeedHistory
                 ? { ...entry, foundNeedHistory: rememberFoundNeeds([], entry.resources ?? []) }
