@@ -5,7 +5,7 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Nav } from '@/components/navigation/Nav';
 import { PageHeader } from '@/components/navigation/PageHeader';
-import type { DreamEntry } from '@/domain/dreamWorkspace';
+import { isPublishedFlower, type DreamEntry } from '@/domain/dreamWorkspace';
 import type { DreamPhase } from '@/domain/publication';
 import { useDreams } from '@/domain/dreamRepository';
 import { useAppTheme } from '@/theme/AppTheme';
@@ -33,7 +33,7 @@ const series: { phase: DreamPhase; title: string; sub: string }[] = [
  * Published Fruit remains the intentional immersive result cover. */
 const open = (dream: DreamEntry) => {
   if (dream.phase === 'Témoignage') {
-    if (dream.testimony) router.push({pathname:'/my-dream/[id]',params:{id:dream.id}});
+    if (isPublishedFlower(dream)) router.push({pathname:'/my-dream/[id]',params:{id:dream.id}});
     else router.push({pathname:'/my-dream/flower/[id]',params:{id:dream.id}});
   } else {
     router.push({pathname:'/my-dream/[id]',params:{id:dream.id,view:dream.phase}});
@@ -63,7 +63,7 @@ function PictureCard({ dream, width, height, onLongPress }: { dream: DreamEntry;
         paddingHorizontal: 13, paddingTop: 36, paddingBottom: 12,
         backgroundColor: 'rgba(0,0,0,0.30)',
       }}>
-        {dream.phase === 'Témoignage' ? (
+        {isPublishedFlower(dream) ? (
           <View style={{flexDirection:'row',alignItems:'center',gap:5,marginBottom:6}}>
             <Ionicons name="nutrition-outline" size={13} color="#F3D9AD"/>
             <Text style={{color:'#F7E7C7',fontSize:10,fontWeight:'700',letterSpacing:1.1}}>FRUIT</Text>
@@ -130,8 +130,8 @@ export default function MySpace() {
     items.filter(dream => viewerRole(dream) === roleFilter);
   const visible = view === 'Congelés' ? matchingRole.filter(frozen) : matchingRole;
   const roleOption = ROLE_OPTIONS.find(option=>option.key===roleFilter)!;
-  const testimonies = visible.filter(d => d.phase === 'Témoignage');
-  const inFlower = (d:DreamEntry) => d.phase==='Témoignage' && !d.testimony;
+  const testimonies = visible.filter(isPublishedFlower);
+  const inFlower = (d:DreamEntry) => d.phase==='Témoignage' && !isPublishedFlower(d);
   const unfinished = visible.filter(inFlower);
 
   return (
@@ -256,8 +256,7 @@ export default function MySpace() {
               </View>
             ) : null}
             {series.filter(g => g.phase !== 'Témoignage').map(group => {
-              const dreams = visible.filter(d => d.phase === group.phase &&
-    (group.phase!=='Croissance' || !inFlower(d)));
+              const dreams = visible.filter(d => d.phase === group.phase);
               if (!dreams.length) return null;
               return (
                 <View key={group.phase} style={{ marginBottom: compact ? 27 : 36 }}>
