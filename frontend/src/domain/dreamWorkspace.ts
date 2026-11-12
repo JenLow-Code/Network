@@ -233,6 +233,14 @@ export type DreamEntry = {
   createdAt: string;
   ownerIds: string[];
 };
+/** Publishing creates a fruit; entering Floraison alone does not.
+ * A historical resultImage/fruitAt also identifies published legacy dreams.
+ * A hidden published dream remains a fruit for its owner.
+ */
+export const isPublishedFlower = (dream: DreamEntry): boolean =>
+  dream.phase === 'Témoignage' &&
+  (!!dream.testimony || !!dream.fruitAt || !!dream.resultImage);
+
 export const phaseOrder: DreamPhase[] = ['Rêve', 'Initiation', 'Croissance', 'Témoignage'];
 export function fromDemo(d: DreamPublication): DreamEntry {
   return {
@@ -241,6 +249,7 @@ export function fromDemo(d: DreamPublication): DreamEntry {
     phase: d.phase,
     summary: d.summary,
     image: d.image,
+    resultImage: d.phase === 'Témoignage' ? d.resultImage : undefined,
     needs: d.needs,
     motivation: d.motivation,
     goalDate: d.goalDate,
