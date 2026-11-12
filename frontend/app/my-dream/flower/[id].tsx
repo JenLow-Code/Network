@@ -255,13 +255,21 @@ export default function FlowerPreparation() {
             {' '}Cette présentation reste privée tant que tu ne la publies pas.
           </Text>
 
+          <Text style={{ fontSize: 10, letterSpacing: 1.1, fontWeight: '700',
+            color: theme.muted, marginBottom: 5 }}>AU COMMENCEMENT</Text>
+          <Text style={{ color: theme.foreground, fontFamily: 'serif',
+            fontSize: 20, lineHeight: 29, marginBottom: 18 }}>
+            {dream.summary || dream.title}
+          </Text>
+          <Text style={{ fontSize: 10, letterSpacing: 1.1, fontWeight: '700',
+            color: MAGENTA, marginBottom: 9 }}>ET AUJOURD’HUI</Text>
           <Pressable accessibilityRole="button"
             accessibilityLabel={photo ? 'Ajouter des images et souvenirs' :
               'Ajouter la photographie de ma réalisation'}
             onPress={selectMedia}
             style={{ borderRadius: 13, overflow: 'hidden', borderWidth: photo ? 0 : 1,
               borderColor: theme.border, borderStyle: photo ? 'solid' : 'dashed',
-              backgroundColor: theme.surface, minHeight: narrow ? 195 : 255,
+              backgroundColor: theme.surface, minHeight: photo ? (narrow ? 195 : 255) : 145,
               alignItems: 'center', justifyContent: 'center' }}>
             {photo ? (
               <Image source={{ uri: photo.uri }} resizeMode="cover"
@@ -316,9 +324,9 @@ export default function FlowerPreparation() {
             lineHeight: 16 }}>Photos, vidéos ou audio · sauvegarde locale provisoire,
               2 Mo maximum par fichier.</Text>
 
-          <Text style={{ color: theme.foreground, fontFamily: 'serif',
-            fontSize: 20, marginTop: 24, lineHeight: 29 }}>
-            {dream.summary || 'Il y avait un rêve…'}
+          <Text style={{ fontSize: 12, color: theme.foreground,
+            fontWeight: '700', marginTop: 21 }}>
+            Raconter ce qui a changé
           </Text>
           <TextInput multiline value={draft.story} onChangeText={story => patch({ story })}
             placeholder="Et aujourd’hui, qu’est-ce qui a changé ? Raconte-le avec tes mots…"
