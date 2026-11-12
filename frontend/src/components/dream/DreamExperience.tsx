@@ -5,7 +5,7 @@ import { Alert, Image, Linking, Modal, Platform, Pressable, ScrollView, Text, Te
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useDreams } from '@/domain/dreamRepository';
-import type { DreamEntry, DreamBlock, DreamResource, DreamHabit, DreamMilestone } from '@/domain/dreamWorkspace';
+import { isPublishedFlower, type DreamEntry, type DreamBlock, type DreamResource, type DreamHabit, type DreamMilestone } from '@/domain/dreamWorkspace';
 import { PHASE_LABELS, type DreamPhase } from '@/domain/publication';
 import { useAppTheme } from '@/theme/AppTheme';
 import { HANDWRITING_FAMILY } from '@/theme/handwriting';
@@ -19,6 +19,7 @@ import { TalentLevelSelector } from '@/components/talent/TalentLevelSelector';
 import { habitDayKey, habitKey } from '@/domain/habitProgress';
 import { GrowthLogbook } from './GrowthLogbook';
 import DreamWorkspaceShortcuts, { DreamWorkspaceShortcutRow } from './DreamWorkspaceShortcuts';
+import FlowerJourneyRecap from './FlowerJourneyRecap';
 import { canEditGrowthLog } from '@/domain/growthTimeline';
 
 const pink = '#D71D77';
@@ -687,7 +688,7 @@ export default function DreamExperience({
       </Pressable>
     </View>:null}
   </>:null}
-  {phase==='Témoignage' && !dream.testimony ? (
+  {phase==='Témoignage' && !isPublishedFlower(dream) ? (
     <DreamPhaseSection title="La fleur se prépare"
       subtitle="Ton rêve est réalisé. Choisis maintenant comment raconter ce qui a fleuri.">
       <Pressable accessibilityRole="button"
@@ -700,23 +701,26 @@ export default function DreamExperience({
       </Pressable>
     </DreamPhaseSection>
   ) : null}
-  {phase==='Témoignage' && !!dream.testimony ? <>
+  {phase==='Témoignage' && isPublishedFlower(dream) ? <>
     <DreamPhaseSection title="Au commencement">
       <Text style={{fontSize:22,fontFamily:HANDWRITING_FAMILY,color:theme.foreground,lineHeight:32,marginBottom:14}}>{dream.summary}</Text>
       {dream.image?<Image source={{uri:dream.image}} resizeMode="cover" style={{width:'100%',height:190,borderRadius:12,marginBottom:8}}/>:null}
     </DreamPhaseSection>
     <DreamPhaseSection title="Et aujourd'hui" subtitle="Le résultat de ce qui a été semé.">
-      <Text style={{color:theme.foreground,fontSize:16,lineHeight:26,marginBottom:14}}>{dream.testimony?.comment}</Text>
+      <Text style={{color:theme.foreground,fontSize:16,lineHeight:26,marginBottom:14}}>
+        {dream.testimony?.comment || dream.summary}
+      </Text>
+      {!dream.testimony?.mediaItems?.length && dream.resultImage ?
+        <Image source={{uri:dream.resultImage}} resizeMode="cover"
+          style={{width:'100%',height:220,borderRadius:12,marginBottom:12}}/>:null}
       {(dream.testimony?.mediaItems||[]).map((m,i)=><Pressable key={i} onPress={()=>void Linking.openURL(m.uri)} style={{backgroundColor:theme.surface,borderRadius:12,padding:13,marginTop:9,flexDirection:'row',alignItems:'center',gap:12,borderWidth:1,borderColor:theme.border}}>
         {m.kind==='photo'?<Image source={{uri:m.uri}} style={{width:64,height:64,borderRadius:8}}/>:<Ionicons name={m.kind==='document'?'document-text-outline':m.kind==='audio'?'musical-notes':'videocam-outline'} size={28} color={theme.foreground}/>}
         <Text style={{color:theme.foreground,flex:1,fontSize:12}}>{m.name}</Text><Ionicons name="open-outline" size={17} color={theme.muted}/>
       </Pressable>)}
     </DreamPhaseSection>
-    {(dream.testimony?.highlights||[]).length>0?<DreamPhaseSection title="Le chemin parcouru">
-      {(dream.testimony?.highlights||[]).map(m=><View key={m.id} style={{flexDirection:'row',gap:10,alignItems:'center',paddingVertical:9}}><Ionicons name="checkmark-circle-outline" size={18} color="#27845B"/><Text style={{color:theme.foreground,fontSize:13}}>{m.title}</Text></View>)}
-    </DreamPhaseSection>:null}
+    <FlowerJourneyRecap dream={dream} publicView/>
   </> : null}
- {(!historical && phase === 'Témoignage' && !!dream.testimony) ? <Pressable
+ {(!historical && phase === 'Témoignage' && isPublishedFlower(dream)) ? <Pressable
     onPress={()=>confirm(
       dream.visibility==='private'?'Rendre cette fleur visible ?':'Masquer cette fleur ?',
       dream.visibility==='private'
