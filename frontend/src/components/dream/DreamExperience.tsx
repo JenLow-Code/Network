@@ -16,6 +16,7 @@ import { DreamGoalDatePicker } from './DreamGoalDatePicker';
 import { DreamResourceDetailsModal } from './DreamResourceDetailsModal';
 import { DREAM_TALENT_CHOICES } from './dreamTalentCatalog';
 import { TalentLevelSelector } from '@/components/talent/TalentLevelSelector';
+import { TranslatorLanguageFields } from '@/components/talent/TranslatorLanguageFields';
 import { habitDayKey, habitKey } from '@/domain/habitProgress';
 import { GrowthLogbook } from './GrowthLogbook';
 import DreamWorkspaceShortcuts, { DreamWorkspaceShortcutRow } from './DreamWorkspaceShortcuts';
@@ -78,6 +79,8 @@ export default function DreamExperience({
  const [toolsPublicationRequested, setToolsPublicationRequested] = useState(false);
  const [talentChoicesOpen, setTalentChoicesOpen] = useState(false);
  const [resourceLevel,setResourceLevel]=useState('Quelques notions');
+ const [resourceSourceLanguage,setResourceSourceLanguage]=useState('');
+ const [resourceTargetLanguage,setResourceTargetLanguage]=useState('');
  const [selectedResourceId, setSelectedResourceId] = useState<string|null>(null);
  const [resourceAmount, setResourceAmount] = useState('');
  const [resourceCategory, setResourceCategory] = useState<DreamResource['category']>('person');
@@ -127,6 +130,11 @@ export default function DreamExperience({
      Alert.alert('Talent requis','Choisis un talent dans la liste proposée.');
      return;
    }
+   if(resourceCategory==='person' && resourceTitle==='Traducteur' &&
+     (!resourceSourceLanguage.trim() || !resourceTargetLanguage.trim())){
+     Alert.alert('Langues requises','Indique la langue de départ et la langue d’arrivée.');
+     return;
+   }
    const amount=resourceCategory==='financial'?Number(resourceAmount.replace(',','.')):undefined;
    if(resourceCategory==='financial' && (!Number.isFinite(amount)||!amount||amount<=0)){
      Alert.alert('Montant requis','Saisis un montant supérieur à zéro.');
@@ -139,11 +147,14 @@ export default function DreamExperience({
      description:resourceDescription.trim(),
      illustration:catalogTalent?.illustration,
      requiredLevel:resourceCategory==='person'?resourceLevel:undefined,
+     sourceLanguage:resourceCategory==='person' && resourceTitle==='Traducteur'?resourceSourceLanguage.trim():undefined,
+     targetLanguage:resourceCategory==='person' && resourceTitle==='Traducteur'?resourceTargetLanguage.trim():undefined,
      linkedBlockId:resourceLink||undefined,
      amount:amount&&Number.isFinite(amount)&&amount>0?amount:undefined,
      toolsPublicationRequested:resourceCategory==='practical'?toolsPublicationRequested:undefined,
    }]);
    setResourceTitle('');setResourceDescription('');setResourceAmount('');setResourceLink('');
+   setResourceSourceLanguage('');setResourceTargetLanguage('');
    setToolsPublicationRequested(false);setTalentChoicesOpen(false);setResourceDialog(false);
  };
  const checkResource = (resource: DreamResource) => {
@@ -1095,6 +1106,9 @@ export default function DreamExperience({
        </> : <Field
          label={resourceCategory==='financial'?'Objet du financement':'Ressource nécessaire'}
          value={resourceTitle} onChange={setResourceTitle} placeholder="Ex. Salle de répétition"/>}
+       {resourceCategory==='person' && resourceTitle==='Traducteur'?<TranslatorLanguageFields
+         sourceLanguage={resourceSourceLanguage} targetLanguage={resourceTargetLanguage}
+         onChangeSource={setResourceSourceLanguage} onChangeTarget={setResourceTargetLanguage}/>:null}
        {resourceCategory==='person'?<View style={{gap:8}}>
          <Text style={{fontSize:12,color:theme.muted}}>Niveau recherché</Text>
          <TalentLevelSelector value={resourceLevel} onChange={setResourceLevel}/>
