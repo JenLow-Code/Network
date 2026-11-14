@@ -455,6 +455,23 @@ export default function FlowerJourneyRecap({
                             'Ajouter / modifier mes mots' : 'Modifier ce moment',
                           run: () => openEdit(moment),
                         },
+                        ...(moment.source === 'recorded' &&
+                          presentation[moment.id]?.note ? [{
+                          key: 'clear-note', icon: 'close-circle-outline' as const,
+                          label: 'Supprimer mon commentaire',
+                          run: () => {
+                            onChangeDraft?.({
+                              momentPresentation: {
+                                ...presentation,
+                                [moment.id]: {
+                                  ...presentation[moment.id],
+                                  note: undefined,
+                                },
+                              },
+                            });
+                            setMenuId(null);
+                          },
+                        }] : []),
                         {
                           key: 'visibility', icon:
                             (isHidden ? 'eye-outline' : 'eye-off-outline') as
