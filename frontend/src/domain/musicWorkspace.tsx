@@ -100,6 +100,7 @@ export type MusicProject = {
   musicalMode?: 'majeur' | 'mineur';
   timeSignature?: string;
   instruments: string[];
+  musicStyles?: string[];
   versions: MusicVersion[];
   files: MusicProjectFile[];
   coverUrl?: string;
@@ -129,7 +130,7 @@ export function makeMusicProject(draft: NewMusicDraft, email: string, name: stri
   return {
     id: newMusicId(), title: draft.title.trim(), ownerEmail: email, ownerName: name,
     description: draft.description?.trim() || '', originalLanguage: draft.originalLanguage.trim() || 'Français',
-    instruments: [], versions: [], files: [], timeSignature: '4/4',
+    instruments: [], musicStyles: [], versions: [], files: [], timeSignature: '4/4',
     createdAt: now, updatedAt: now,
     // An idea begins without an imposed structure or invented duration.
     sections: [],
@@ -173,7 +174,7 @@ export function MusicWorkspaceProvider({ children }: { children: React.ReactNode
             (x as MusicProject).ownerEmail?.toLowerCase() === email.toLowerCase()
           ).map(project => ({
             ...project, originalLanguage: project.originalLanguage || 'Français',
-            instruments: project.instruments || [], files: project.files || [],
+            instruments: project.instruments || [], musicStyles: project.musicStyles || [], files: project.files || [],
             versions: project.versions?.length ? project.versions : project.masterMediaId || project.masterUrl
               ? [{ id:'legacy-'+project.id,title:'Version originale',createdAt:project.createdAt,
                 audioMediaId:project.masterMediaId,audioUrl:project.masterUrl,
