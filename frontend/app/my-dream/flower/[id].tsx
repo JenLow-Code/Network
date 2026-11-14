@@ -76,6 +76,7 @@ export default function FlowerPreparation() {
   const [legacyDateOpen, setLegacyDateOpen] = useState(false);
   const [acknowledged, setAcknowledged] = useState(false);
   const [resourcesOpen, setResourcesOpen] = useState(false);
+  const [inspirationPickerOpen, setInspirationPickerOpen] = useState(false);
   const [logbookOpen, setLogbookOpen] = useState(false);
   const [dateError, setDateError] = useState('');
 
@@ -269,6 +270,80 @@ export default function FlowerPreparation() {
             fontSize: narrow ? 19 : 22, lineHeight: 30, marginBottom: 29 }}>
             {dream.summary || dream.title}
           </Text>
+
+          {(dream.blocks || []).length > 0 ? (
+            <View style={{ marginBottom: 28 }}>
+              <Pressable accessibilityRole="button"
+                accessibilityState={{ expanded: inspirationPickerOpen }}
+                accessibilityLabel="Choisir les inspirations à partager"
+                onPress={() => setInspirationPickerOpen(value => !value)}
+                style={{ flexDirection: 'row', alignItems: 'center',
+                  gap: 9, paddingVertical: 10 }}>
+                <Ionicons name="albums-outline" size={17} color={theme.muted}/>
+                <Text style={{ flex: 1, color: theme.foreground,
+                  fontSize: 13, fontWeight: '600' }}>
+                  Les inspirations du commencement
+                </Text>
+                <Text style={{ color: theme.muted, fontSize: 11 }}>
+                  {(draft.inspirationIds || []).length} retenue(s)
+                </Text>
+                <Ionicons name={inspirationPickerOpen ? 'chevron-up' : 'chevron-down'}
+                  size={16} color={theme.muted}/>
+              </Pressable>
+              {inspirationPickerOpen ? (
+                <View style={{ marginTop: 7 }}>
+                  <Text style={{ ...muted, marginBottom: 13 }}>
+                    Sélectionne les références que tu souhaites montrer dans
+                    l’histoire publique. Le reste de ton espace Semence reste privé.
+                  </Text>
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap',
+                    justifyContent: 'space-between', rowGap: 9 }}>
+                    {(dream.blocks || []).map(block => {
+                      const checked = (draft.inspirationIds || []).includes(block.id);
+                      return (
+                        <Pressable key={block.id} accessibilityRole="checkbox"
+                          accessibilityState={{ checked }}
+                          accessibilityLabel={'Partager inspiration ' +
+                            (block.title || block.content.slice(0, 40))}
+                          onPress={() => patch({
+                            inspirationIds: checked
+                              ? (draft.inspirationIds || []).filter(id => id !== block.id)
+                              : [...(draft.inspirationIds || []), block.id],
+                          })}
+                          style={{ width: block.tileSize?.startsWith('2x')
+                              ? '100%' : '48.5%',
+                            borderRadius: 13, borderWidth: 1,
+                            borderColor: checked ? MAGENTA : theme.border,
+                            backgroundColor: theme.surface,
+                            padding: 12, gap: 8, minHeight: 86,
+                            overflow: 'hidden' }}>
+                          <View style={{ flexDirection: 'row',
+                            justifyContent: 'space-between', alignItems: 'center' }}>
+                            <Text style={{ color: theme.muted,
+                              fontSize: 9, textTransform: 'uppercase',
+                              letterSpacing: .7 }}>{block.kind}</Text>
+                            <Ionicons name={checked ? 'checkbox' : 'square-outline'}
+                              size={18} color={checked ? MAGENTA : theme.muted}/>
+                          </View>
+                          {block.kind === 'image' && !!block.content ? (
+                            <Image source={{ uri: block.content }}
+                              resizeMode="cover" style={{ width: '100%',
+                                height: 100, borderRadius: 8 }}/>
+                          ) : null}
+                          <Text numberOfLines={3} style={{
+                            color: theme.foreground, fontSize: 12,
+                            lineHeight: 18, fontFamily: 'serif' }}>
+                            {block.title || block.caption || block.content ||
+                              'Inspiration'}
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                </View>
+              ) : null}
+            </View>
+          ) : null}
 
           {/* The achievement is a human account, not a second upload form. */}
           <Text style={{ fontSize: 10, letterSpacing: 1.2, fontWeight: '800',
