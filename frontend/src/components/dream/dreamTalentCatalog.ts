@@ -2,7 +2,7 @@ import type { DreamResource } from '@/domain/dreamWorkspace';
 
 export const DREAM_TALENT_CHOICES: {
   title: string;
-  illustration: NonNullable<DreamResource['illustration']>;
+  illustration?: NonNullable<DreamResource['illustration']>;
 }[] = [
   { title:'Guitariste', illustration:'acoustic-guitar' },
   { title:'Guitariste électrique', illustration:'electric-guitar' },
@@ -18,4 +18,5 @@ export const DREAM_TALENT_CHOICES: {
   { title:'Contrebassiste', illustration:'double-bass' },
   { title:'Ukuléliste', illustration:'ukulele' },
   { title:'Cavaquinhiste', illustration:'ukulele' },
+  { title:'Traducteur' },
 ];

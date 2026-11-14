@@ -5,6 +5,7 @@ import type { DreamResource } from '@/domain/dreamWorkspace';
 import { useAppTheme } from '@/theme/AppTheme';
 import { DREAM_TALENT_CHOICES } from './dreamTalentCatalog';
 import { TalentLevelSelector } from '@/components/talent/TalentLevelSelector';
+import { TranslatorLanguageFields } from '@/components/talent/TranslatorLanguageFields';
 import { DreamTalentInvitationPanel } from './DreamTalentInvitationPanel';
 
 /** Edits the exact saved wording of a dream need. No remote Tools publication is implied. */
@@ -29,11 +30,17 @@ export function DreamResourceDetailsModal({
   const [toolsRequested, setToolsRequested] = useState(false);
   const [talentListOpen, setTalentListOpen] = useState(false);
   const [requiredLevel,setRequiredLevel]=useState('Quelques notions');
+  const [sourceLanguage,setSourceLanguage]=useState('');
+  const [targetLanguage,setTargetLanguage]=useState('');
+  const [languageError,setLanguageError]=useState(false);
 
   useEffect(() => {
     if (!resource) return;
     setTitle(resource.title);
     setRequiredLevel(resource.requiredLevel||'Quelques notions');
+    setSourceLanguage(resource.sourceLanguage||'');
+    setTargetLanguage(resource.targetLanguage||'');
+    setLanguageError(false);
     setDescription(resource.description || '');
     setAmount(typeof resource.amount === 'number' ? String(resource.amount) : '');
     setSelectedIllustration(resource.illustration);
@@ -47,6 +54,10 @@ export function DreamResourceDetailsModal({
   const person = resource.category === 'person';
   const save = () => {
     if (!title.trim()) return;
+    if (person && title==='Traducteur' && (!sourceLanguage.trim() || !targetLanguage.trim())) {
+      setLanguageError(true);
+      return;
+    }
     const parsedAmount = Number(amount.replace(',', '.'));
     if (financial && (!Number.isFinite(parsedAmount) || parsedAmount <= 0)) return;
     onSave({
@@ -56,6 +67,8 @@ export function DreamResourceDetailsModal({
       amount: financial ? parsedAmount : resource.amount,
       illustration: person ? selectedIllustration : resource.illustration,
       requiredLevel:person?requiredLevel:resource.requiredLevel,
+      sourceLanguage: person && title==='Traducteur'?sourceLanguage.trim():undefined,
+      targetLanguage: person && title==='Traducteur'?targetLanguage.trim():undefined,
       toolsPublicationRequested: practical ? toolsRequested : resource.toolsPublicationRequested,
     });
     onClose();
@@ -123,6 +136,13 @@ export function DreamResourceDetailsModal({
                 <Text style={{ color: theme.foreground, fontSize: 16, fontWeight: '600' }}>{title}</Text>}
             </>
           )}
+          {person && title==='Traducteur'?<TranslatorLanguageFields
+            sourceLanguage={sourceLanguage} targetLanguage={targetLanguage}
+            onChangeSource={value=>{setSourceLanguage(value);setLanguageError(false);}}
+            onChangeTarget={value=>{setTargetLanguage(value);setLanguageError(false);}}
+            disabled={!editable}/>:null}
+          {person && title==='Traducteur' && languageError ?
+            <Text style={{fontSize:12,color:'#C34D65'}}>Renseigne les deux langues pour enregistrer ce besoin.</Text>:null}
           {person ? <View style={{gap:8}}>
             <Text style={{color:theme.muted,fontSize:12}}>Niveau recherché</Text>
             <TalentLevelSelector value={requiredLevel} onChange={setRequiredLevel} disabled={!editable}/>
