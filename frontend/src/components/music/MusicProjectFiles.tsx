@@ -191,9 +191,9 @@ export function MusicProjectFiles({project,patch,openSection}:Props){
           </Text>
         </Pressable>
       </View>
-      {kind==='audio'?<MusicAudioCapture onSaved={(localId,filename)=>
+      {kind==='audio'?<MusicAudioCapture onSaved={(localId,filename,durationSeconds)=>
         {patch({files:[...files,{id:newMusicId(),title:filename,kind:'audio',
-          sectionIds:[...sectionIds],localFileId:localId,instrument:instrument||undefined,
+          sectionIds:[...sectionIds],localFileId:localId,instrument:instrument||undefined,durationSeconds,
           createdAt:new Date().toISOString()}]});setAdding(false);setSectionIds([]);}}/>:null}
     </View>:null}
     <View>
