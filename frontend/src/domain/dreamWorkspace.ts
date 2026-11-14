@@ -4,6 +4,26 @@ export type DreamMedia = {
   uri: string;
   kind: 'photo' | 'video' | 'audio' | 'document';
 };
+/** Creator-written story memory, distinct from immutable system events. */
+export type FlowerPersonalMoment = {
+  id: string;
+  title: string;
+  date: string;
+  note?: string;
+};
+/** A presentation layer only; original events remain untouched in the Logbook. */
+export type FlowerMomentPresentation = {
+  hidden?: boolean;
+  note?: string;
+};
+/** Snapshot captured only when the creator deliberately publishes a moment. */
+export type FlowerPublishedMoment = {
+  id: string;
+  title: string;
+  date: string;
+  kind?: 'logbook' | 'resource' | 'document' | 'personal';
+  note?: string;
+};
 export type FlowerDraft = {
   story: string;
   attachments: DreamMedia[];
@@ -12,6 +32,10 @@ export type FlowerDraft = {
   achievedOn?: string;
   /** Only deliberately selected journal moments appear in a public Floraison. */
   highlightIds?: string[];
+  /** Source events can be hidden or annotated, but their facts cannot be edited. */
+  momentPresentation?: Record<string, FlowerMomentPresentation>;
+  /** Entries freely authored and removable by the dream creator. */
+  personalMoments?: FlowerPersonalMoment[];
 };
 export type DreamBlockKind =
   | 'text' | 'heading1' | 'heading2' | 'heading3'
@@ -225,7 +249,7 @@ export type DreamEntry = {
     mediaUrl?: string;
     mediaItems?: DreamMedia[];
     /** Public moments explicitly selected from the private Logbook. */
-    highlights?: { id: string; title: string; date: string }[];
+    highlights?: FlowerPublishedMoment[];
     /** The achievement and publication dates are separate milestones. */
     publishedAt?: string;
     date: string;
