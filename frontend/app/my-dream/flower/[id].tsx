@@ -18,6 +18,13 @@ import DreamWorkspaceShortcuts, { DreamWorkspaceShortcutRow } from '@/components
 import FlowerJourneyRecap from '@/components/dream/FlowerJourneyRecap';
 
 const MAGENTA = '#D71D77';
+const inspirationTypeLabel: Record<string, string> = {
+  image: 'Image', link: 'Lien', bookmark: 'Lien',
+  'bible-verse': 'Verset', 'publication-ref': 'Publication',
+  'profile-ref': 'Profil', document: 'Document', pdf: 'Document',
+  audio: 'Audio', video: 'Vidéo', quote: 'Citation',
+  note: 'Note', music: 'Musique',
+};
 const localDay = () => {
   const now = new Date();
   return [now.getFullYear(), String(now.getMonth() + 1).padStart(2, '0'),
@@ -321,7 +328,7 @@ export default function FlowerPreparation() {
                             justifyContent: 'space-between', alignItems: 'center' }}>
                             <Text style={{ color: theme.muted,
                               fontSize: 9, textTransform: 'uppercase',
-                              letterSpacing: .7 }}>{block.kind}</Text>
+                              letterSpacing: .7 }}>{inspirationTypeLabel[block.kind] || 'Inspiration'}</Text>
                             <Ionicons name={checked ? 'checkbox' : 'square-outline'}
                               size={18} color={checked ? MAGENTA : theme.muted}/>
                           </View>
