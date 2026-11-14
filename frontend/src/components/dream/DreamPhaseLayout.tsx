@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ActivityIndicator, Image, Pressable, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { useAppTheme } from '@/theme/AppTheme';
 import type { DreamEntry } from '@/domain/dreamWorkspace';
 import { DREAM_PHASES, PHASE_LABELS, type DreamPhase } from '@/domain/publication';
@@ -16,6 +17,38 @@ export const phaseAccent: Record<DreamPhase, string> = {
   Croissance: '#27845B',
   Témoignage: '#D71D77',
 };
+
+
+/** A dream's original cover belongs to the atmosphere, not to a repeated card.
+ * Semence, Germination, Croissance and Floraison all share the same treatment.
+ */
+export function DreamCoverBackdrop({ uri }: { uri?: string }) {
+  const theme = useAppTheme();
+  if (!uri) return null;
+  return (
+    <View pointerEvents="none" style={{
+      position: 'absolute', top: 0, left: 0, right: 0,
+      height: 510, overflow: 'hidden',
+    }}>
+      <Image source={{ uri }} resizeMode="cover"
+        style={{ position: 'absolute', top: 0, left: 0, right: 0,
+          height: 510, opacity: theme.dark ? .95 : .96 }}/>
+      <Svg width="100%" height="100%"
+        style={{ position: 'absolute', top: 0, left: 0 }}>
+        <Defs><LinearGradient id="dream-cover-background-fade"
+          x1="0%" y1="0%" x2="0%" y2="100%">
+          <Stop offset="0%" stopColor={theme.background}
+            stopOpacity={theme.dark ? .17 : .14}/>
+          <Stop offset="35%" stopColor={theme.background}
+            stopOpacity={theme.dark ? .25 : .21}/>
+          <Stop offset="69%" stopColor={theme.background} stopOpacity=".80"/>
+          <Stop offset="100%" stopColor={theme.background} stopOpacity="1"/>
+        </LinearGradient></Defs>
+        <Rect width="100%" height="100%" fill="url(#dream-cover-background-fade)"/>
+      </Svg>
+    </View>
+  );
+}
 
 export function DreamPhaseHeader({
   dream, phase, onBack, onNavigate, action, summary, readOnly = false,
@@ -100,11 +133,12 @@ export function DreamPhaseHeader({
               disabled={!reached || !onNavigate}
               onPress={() => onNavigate?.(item)}
               style={{
-                flex: 1, minWidth: 0, minHeight: 75,
+                flex: 1, minWidth: 0,
+                minHeight: phase === 'Témoignage' ? 49 : 75,
                 justifyContent: 'flex-end', alignItems: 'center',
                 paddingBottom: 2,
               }}>
-              {selected ? (
+              {selected && item !== 'Témoignage' ? (
                 <Image source={{ uri: dreamPhaseImageUris[item] }} resizeMode="contain"
                   style={{
                     width: item==='Rêve'?16:31,
@@ -112,7 +146,7 @@ export function DreamPhaseHeader({
                     marginBottom: item==='Rêve'?13:5,
                     ...(item==='Croissance'?{tintColor:phaseAccent.Croissance}:{}),
                   }}/>
-              ) : <View style={{ height: 36 }} />}
+              ) : <View style={{ height: phase === 'Témoignage' ? 9 : 36 }} />}
               <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}
                 style={{
                   color: selected ? accent : reached ? theme.muted : theme.border,

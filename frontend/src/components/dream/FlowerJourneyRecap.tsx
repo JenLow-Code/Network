@@ -27,7 +27,7 @@ const dateLabel = (value: string) => {
   const parsed = validFlowerDay(value) ? new Date(value + 'T12:00:00') : null;
   return parsed
     ? parsed.toLocaleDateString('fr-FR', {
-        day: 'numeric', month: 'long', year: 'numeric',
+        day: 'numeric', month: 'short', year: 'numeric',
       })
     : value;
 };
@@ -106,16 +106,13 @@ export default function FlowerJourneyRecap({
     dream.encouragementCount : null;
   const found = (dream.resources || []).filter(isNeedFound);
   const talents = found.filter(item => item.category === 'person');
-  const material = found.filter(item => item.category !== 'person');
-  const needs = dream.resources?.length ? dream.resources.map(item => item.title) :
-    dream.needs || [];
 
   const recorded: Moment[] = flowerSourceMoments(dream, draft?.verifiedTalentNames);
   const custom: Moment[] = flowerPersonalMoments(draft?.personalMoments);
   const presentation = draft?.momentPresentation || {};
   const selected = new Set(draft?.highlightIds || []);
   const allMoments = [...recorded, ...custom].sort((a, b) =>
-    b.date.localeCompare(a.date));
+    a.date.localeCompare(b.date));
   const publicMoments: Moment[] = (dream.testimony?.highlights || []).map(
     (item): Moment => item.kind === 'personal'
       ? { ...item, kind: 'personal', source: 'personal' }
@@ -125,7 +122,8 @@ export default function FlowerJourneyRecap({
           source: 'recorded',
         },
   );
-  const list = publicView ? publicMoments : allMoments;
+  const list = publicView ? publicMoments.sort((a, b) =>
+    a.date.localeCompare(b.date)) : allMoments;
   const hidden = publicView ? [] : list.filter(m => presentation[m.id]?.hidden);
   const visible = publicView ? list :
     list.filter(m => !presentation[m.id]?.hidden);
@@ -323,7 +321,6 @@ export default function FlowerJourneyRecap({
     setCustomEmoji('');
     setMenuId(null);
     setEditingId(null);
-    setInlineNoteId(null);
   };
 
   const deletePersonal = (moment: Moment) => {
@@ -451,77 +448,37 @@ export default function FlowerJourneyRecap({
   );
 
   return (
-    <View style={{ borderTopWidth: 1, borderColor: theme.border,
-      paddingTop: 23, marginTop: 25 }}>
-      <Text style={heading}>Tout ce chemin…</Text>
-      <Text style={{ ...muted, marginTop: 6, marginBottom: 14 }}>
-        Ce qui a accompagné la croissance de ce rêve.
+    <View style={{ marginTop: 33, paddingTop: 4 }}>
+      <Text style={{ fontSize: 10, color: MAGENTA, fontWeight: '800',
+        letterSpacing: 1.15, marginBottom: 9 }}>LE CHEMIN PARCOURU</Text>
+      <Text style={{ ...heading, fontSize: 26, lineHeight: 34 }}>
+        Les moments qui nous ont conduits ici
       </Text>
-      {dream.goalDate ? (
-        <View style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-start',
-          marginBottom: 15 }}>
-          <Ionicons name="calendar-outline" color={theme.muted}
-            size={15} style={{ marginTop: 2 }}/>
-          <Text style={{ ...muted, flex: 1 }}>
-            Au départ, l’objectif était fixé au {dateLabel(dream.goalDate)}.
-          </Text>
-        </View>
-      ) : null}
+      <Text style={{ ...muted, marginTop: 8, marginBottom: 17,
+        fontSize: 13, lineHeight: 21 }}>
+        Les rencontres, les étapes et les petits pas qui ont donné vie à ce rêve.
+      </Text>
       {stats.length ? (
         <View style={{ flexDirection: 'row', flexWrap: 'wrap',
-          columnGap: 24, rowGap: 15, marginBottom: 19 }}>
+          gap: 15, marginBottom: 19 }}>
           {stats.map(stat => (
-            <View key={stat.key} style={{ minWidth: 115, flexGrow: 1,
-              flexBasis: '35%', flexDirection: 'row',
-              gap: 9, alignItems: 'flex-start' }}>
-              <Ionicons name={stat.icon} size={20} color={stat.color}
-                style={{ marginTop: 5 }}/>
-              <View style={{ flex: 1 }}>
-                <Text style={{ color: theme.foreground,
-                  fontSize: 22, lineHeight: 26,
-                  fontWeight: '700' }}>{stat.value}</Text>
-                <Text style={muted}>{stat.label}</Text>
-              </View>
-            </View>
+            <Text key={stat.key} style={{ ...muted,
+              fontSize: 11, lineHeight: 17 }}>
+              <Text style={{ fontWeight: '700',
+                color: theme.foreground }}>{stat.value}</Text>
+              {' '}{stat.label}
+            </Text>
           ))}
         </View>
       ) : null}
-      {!publicView && found.length ? (
-        <View style={{ marginBottom: 18, gap: 7 }}>
-          <Text style={{ ...muted, fontWeight: '700' }}>
-            Les ressources qui ont fait partie de l’aventure
-          </Text>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 7 }}>
-            {[...talents, ...material].slice(0, 8).map(item => (
-              <View key={item.id} style={{ borderWidth: 1,
-                borderColor: theme.border, borderRadius: 20,
-                paddingHorizontal: 10, paddingVertical: 6,
-                flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-                <Ionicons name="checkmark" size={12} color={GREEN}/>
-                <Text style={{ color: theme.foreground, fontSize: 11 }}>
-                  {item.title}
-                </Text>
-              </View>
-            ))}
-          </View>
-        </View>
-      ) : !publicView && needs.length ? (
+      {editable ? (
         <Text style={{ ...muted, marginBottom: 17 }}>
-          Pour avancer, ce rêve cherchait : {needs.slice(0, 5).join(', ')}.
+          Coche les moments que tu veux garder dans la présentation publique.
+          Les autres restent privés. Tu peux personnaliser chaque souvenir.
         </Text>
       ) : null}
 
       <View style={{ marginTop: 3 }}>
-        <Text style={{ ...heading, fontSize: 19,
-          lineHeight: 26, marginBottom: 7 }}>
-          Les moments qui ont compté
-        </Text>
-        {!publicView ? (
-          <Text style={{ ...muted, marginBottom: 12 }}>
-            Les rencontres, les épreuves et les petits miracles qui ont donné
-            vie à ce rêve.
-          </Text>
-        ) : null}
         {shown.length ? (
           <View style={{ marginTop: 3 }}>
             {shown.map((moment, i) => {
@@ -533,20 +490,17 @@ export default function FlowerJourneyRecap({
               // No automatically forced emoji: a small neutral botanical
               // mark keeps the journey readable until the creator chooses one.
               const emoji = publicView ? moment.emoji :
-                (presentation[moment.id]?.emoji ?? moment.emoji);
-              const isNewDate = i === 0 || shown[i-1].date !== moment.date;
+                presentation[moment.id]?.emoji || moment.emoji;
               const actions: {
                 key: string; icon: keyof typeof Ionicons.glyphMap;
                 label: string; run: () => void; danger?: boolean;
               }[] = [
                 { key: 'emoji', icon: 'happy-outline',
-                  label: emoji ? 'Modifier / retirer l’emoji' : 'Ajouter un emoji',
-                  run: () => openEmojiPicker(moment) },
+                  label: 'Changer l’emoji', run: () => openEmojiPicker(moment) },
                 { key: 'edit', icon: 'pencil-outline',
                   label: moment.source === 'personal' ?
                     'Modifier mon souvenir' : 'Raconter ce moment',
-                  run: () => moment.source === 'personal' ?
-                    openEdit(moment) : beginInlineNote(moment) },
+                  run: () => openEdit(moment) },
                 ...(moment.source === 'recorded' &&
                   presentation[moment.id]?.note ? [{
                   key: 'clear-note', icon: 'close-circle-outline' as const,
@@ -587,25 +541,41 @@ export default function FlowerJourneyRecap({
                     emojiPickerId === moment.id ? 40 : 0,
                   opacity: isHidden ? .55 : 1,
                 }}>
-                  {/* One visible date per day; moments remain together. */}
-                  {isNewDate ? (
-                    <View style={{
-                      flexDirection: 'row', alignItems: 'center', gap: 10,
-                      marginTop: i === 0 ? 7 : 15, marginBottom: 5,
-                      paddingLeft: 9,
-                    }}>
-                      <View style={{ width: 6, height: 6,
-                        borderRadius: 3,
-                        backgroundColor: theme.dark ? '#8CAC99' : '#6B9C80' }}/>
-                      <Text style={{
-                        color: theme.dark ? '#B3D1BE' : '#477C5B',
-                        fontSize: 10, fontWeight: '700',
-                        letterSpacing: .55, textTransform: 'uppercase',
-                      }}>{dateLabel(moment.date)}</Text>
-                    </View>
-                  ) : null}
+                  {/* Every dated event has its own date, even when several
+                      things happened on the same day: the journey matters. */}
+                  <View style={{
+                    flexDirection: 'row', alignItems: 'center', gap: 10,
+                    marginTop: i === 0 ? 6 : 15, marginBottom: 6,
+                    paddingLeft: 9,
+                  }}>
+                    <View style={{ width: 6, height: 6,
+                      borderRadius: 3,
+                      backgroundColor: theme.dark ? '#8CAC99' : '#6B9C80' }}/>
+                    <Text style={{
+                      color: theme.dark ? '#B3D1BE' : '#477C5B',
+                      fontSize: 11, fontWeight: '700',
+                      letterSpacing: .3,
+                    }}>{dateLabel(moment.date)}</Text>
+                    {editable && !isHidden ? (
+                      <Pressable accessibilityRole="checkbox"
+                        accessibilityState={{ checked: isSelected }}
+                        accessibilityLabel={'Inclure ' + moment.title + ' dans la présentation publique'}
+                        onPress={() => togglePublic(moment)}
+                        style={{ marginLeft: 'auto', flexDirection: 'row',
+                          alignItems: 'center', gap: 6, minHeight: 30,
+                          paddingHorizontal: 6 }}>
+                        <Ionicons name={isSelected ? 'checkbox' : 'square-outline'}
+                          color={isSelected ? MAGENTA : theme.muted} size={18}/>
+                        <Text style={{ color: isSelected ? MAGENTA : theme.muted,
+                          fontSize: 10, fontWeight: isSelected ? '700' : '500' }}>
+                          {isSelected ? 'À partager' : 'Inclure'}
+                        </Text>
+                      </Pressable>
+                    ) : null}
+                  </View>
                   <View style={{
                     flexDirection: 'row', alignItems: 'stretch',
+                    minHeight: 66,
                   }}>
                     <View style={{
                       width: 23, alignItems: 'center',
@@ -616,63 +586,57 @@ export default function FlowerJourneyRecap({
                       }}/>
                     </View>
                     <View style={{
-                      flex: 1, paddingBottom: 9, paddingTop: 2,
+                      flex: 1, paddingBottom: 14, paddingTop: 4,
                       position: 'relative',
                     }}>
                       <View style={{
                         flexDirection: 'row',
-                        alignItems: 'flex-start', gap: emoji ? 9 : 0,
+                        alignItems: 'flex-start', gap: 11,
                       }}>
-                        {emoji ? (
-                          <Pressable disabled={!editable}
-                            accessibilityRole={editable ? 'button' : undefined}
-                            accessibilityLabel={editable ?
-                              'Changer l’emoji de ' + moment.title : undefined}
-                            onPress={() => openEmojiPicker(moment)}
-                            style={{ width: 20, minHeight: 24,
-                              alignItems: 'center', justifyContent: 'center' }}>
-                            <Text style={{ fontSize: 15, lineHeight: 22 }}>{emoji}</Text>
-                          </Pressable>
-                        ) : null}
-                        <View style={{ flex: 1, paddingTop: 1, gap: 3 }}>
+                        <Pressable disabled={!editable}
+                          accessibilityRole={editable ? 'button' : undefined}
+                          accessibilityLabel={editable ?
+                            'Choisir l’emoji pour ' + moment.title : undefined}
+                          onPress={() => openEmojiPicker(moment)}
+                          style={{
+                            width: 27, height: 29,
+                            alignItems: 'center', justifyContent: 'center',
+                          }}>
+                          {emoji ? (
+                            <Text style={{ fontSize: 16, lineHeight: 22,
+                              opacity: .82 }}>{emoji}</Text>
+                          ) : (
+                            <Ionicons name="flower-outline" size={14}
+                              color={theme.muted} style={{ opacity: .55 }}/>
+                          )}
+                        </Pressable>
+                        <View style={{ flex: 1, paddingTop: 1, gap: 5 }}>
                           <Text style={{
                             color: theme.foreground,
-                            fontFamily: 'serif', fontSize: 15, lineHeight: 21,
+                            fontFamily: 'serif', fontSize: 16, lineHeight: 23,
                           }}>{moment.title}</Text>
-                          {editable && !isHidden && inlineNoteId === moment.id ? (
-                            <TextInput autoFocus multiline
-                              accessibilityLabel={'Mes mots sur ' + moment.title}
-                              value={inlineNote}
-                              onChangeText={value => changeInlineNote(moment, value)}
-                              onBlur={() => setInlineNoteId(null)}
-                              placeholder={momentWritingPrompt(moment)}
-                              placeholderTextColor={theme.dark ? '#B49DA6' : '#A18C94'}
-                              style={{
-                                padding: 0, margin: 0, minHeight: 22,
-                                fontSize: 12, lineHeight: 19, fontStyle: 'italic',
-                                color: theme.dark ? '#D5C8C3' : '#756A66',
-                                maxWidth: 500,
-                              }}/>
-                          ) : note ? (
+                          {note ? (
                             <Pressable disabled={!editable || isHidden}
                               accessibilityRole={editable && !isHidden ? 'button' : undefined}
                               accessibilityLabel={editable && !isHidden ?
                                 'Modifier mes mots sur ' + moment.title : undefined}
-                              onPress={() => beginInlineNote(moment)}
-                              style={{ alignSelf: 'flex-start', paddingVertical: 1 }}>
-                              <Text style={{
-                                color: theme.dark ? '#CFC0BB' : '#756A66',
-                                fontSize: 12, lineHeight: 19, fontStyle: 'italic',
-                              }}>{note}</Text>
-                            </Pressable>
-                          ) : editable && !isHidden ? (
-                            <Pressable accessibilityRole="button"
-                              accessibilityLabel={'Raconter ce moment : ' + moment.title}
-                              onPress={() => beginInlineNote(moment)}
+                              onPress={() => openEdit(moment)}
                               style={{ alignSelf: 'flex-start', paddingVertical: 2 }}>
                               <Text style={{
+                                color: theme.dark ? '#CFC0BB' : '#756A66',
+                                fontSize: 12.5, lineHeight: 19, fontStyle: 'italic',
+                              }}>{note}</Text>
+                            </Pressable>
+                          ) : editable && !isHidden && editingId !== moment.id ? (
+                            <Pressable accessibilityRole="button"
+                              accessibilityLabel={'Raconter ce moment : ' + moment.title}
+                              onPress={() => openEdit(moment)}
+                              style={{ alignSelf: 'flex-start',
+                                paddingTop: 3, paddingBottom: 5 }}>
+                              <Text style={{
                                 color: theme.dark ? '#B29BAA' : '#A08894',
-                                fontSize: 12, lineHeight: 19, fontStyle: 'italic',
+                                fontSize: 12, lineHeight: 19,
+                                fontStyle: 'italic',
                               }}>{momentWritingPrompt(moment)}</Text>
                             </Pressable>
                           ) : null}
@@ -705,13 +669,13 @@ export default function FlowerJourneyRecap({
                               setEmojiPickerId(null);
                             }}
                             style={{
-                              width: 28, height: 28, borderRadius: 14,
+                              width: 34, height: 34, borderRadius: 17,
                               justifyContent: 'center', alignItems: 'center',
                               backgroundColor: menuId === moment.id ?
                                 (theme.dark ? '#393039' : '#F4E9E6') :
                                 'transparent',
                             }}>
-                            <Ionicons name="ellipsis-horizontal" size={16}
+                            <Ionicons name="ellipsis-horizontal" size={18}
                               color={theme.muted}/>
                           </Pressable>
                         ) : null}
@@ -821,7 +785,7 @@ export default function FlowerJourneyRecap({
                               onPress={() => chooseEmoji(moment, undefined)}
                               style={{ paddingVertical: 8 }}>
                               <Text style={{ color: theme.muted, fontSize: 11 }}>
-                                Sans emoji
+                                Réinitialiser
                               </Text>
                             </Pressable>
                           </View>
@@ -835,10 +799,49 @@ export default function FlowerJourneyRecap({
             })}
           </View>
         ) : !publicView ? (
-          <Text style={{ ...muted, fontStyle: 'italic', marginBottom: 7 }}>
-            Les moments du Logbook apparaîtront ici. Tu peux déjà ajouter un
-            souvenir personnel.
-          </Text>
+          <View style={{ marginBottom: 11, gap: 13 }}>
+            <Text style={{ ...muted, fontStyle: 'italic' }}>
+              Les moments enregistrés dans le Logbook apparaîtront ici.
+            </Text>
+            {/musique|équipe|chant/i.test(dream.title) ? (
+              <View style={{ borderLeftWidth: 2,
+                borderLeftColor: theme.border, paddingLeft: 17, gap: 13,
+                paddingVertical: 4 }}>
+                <Text style={{ color: theme.muted, fontSize: 10,
+                  letterSpacing: 1 }}>EXEMPLE UNIQUEMENT · NON PUBLIÉ</Text>
+                <View style={{ gap: 3 }}>
+                  <Text style={{ color: MAGENTA, fontSize: 11,
+                    fontWeight: '700' }}>18 sept. 2026</Text>
+                  <Text style={{ color: theme.foreground, fontSize: 15,
+                    fontFamily: 'serif' }}>
+                    Sarah nous a rejoint en tant que chanteuse
+                  </Text>
+                  <Text style={muted}>
+                    La première personne à croire à ce projet avec nous.
+                  </Text>
+                </View>
+                <View style={{ gap: 3 }}>
+                  <Text style={{ color: MAGENTA, fontSize: 11,
+                    fontWeight: '700' }}>4 oct. 2026</Text>
+                  <Text style={{ color: theme.foreground, fontSize: 15,
+                    fontFamily: 'serif' }}>
+                    David nous a rejoint en tant que batteur
+                  </Text>
+                  <Text style={muted}>
+                    Avec lui, le groupe a commencé à prendre forme.
+                  </Text>
+                </View>
+                <View style={{ gap: 3 }}>
+                  <Text style={{ color: MAGENTA, fontSize: 11,
+                    fontWeight: '700' }}>12 nov. 2026</Text>
+                  <Text style={{ color: theme.foreground, fontSize: 15,
+                    fontFamily: 'serif' }}>
+                    Notre première répétition tous ensemble
+                  </Text>
+                </View>
+              </View>
+            ) : null}
+          </View>
         ) : null}
         {editable && visible.length > 5 ? (
           <Pressable accessibilityRole="button"

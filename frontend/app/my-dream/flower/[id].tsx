@@ -13,11 +13,18 @@ import { buildGrowthDays } from '@/domain/growthTimeline';
 import { pickFlowerMedia } from '@/lib/pickFlowerMedia';
 import { api } from '@/lib/api/client';
 import { useAppTheme } from '@/theme/AppTheme';
-import { DreamPhaseHeader } from '@/components/dream/DreamPhaseLayout';
+import { DreamCoverBackdrop, DreamPhaseHeader } from '@/components/dream/DreamPhaseLayout';
 import DreamWorkspaceShortcuts, { DreamWorkspaceShortcutRow } from '@/components/dream/DreamWorkspaceShortcuts';
 import FlowerJourneyRecap from '@/components/dream/FlowerJourneyRecap';
 
 const MAGENTA = '#D71D77';
+const inspirationTypeLabel: Record<string, string> = {
+  image: 'Image', link: 'Lien', bookmark: 'Lien',
+  'bible-verse': 'Verset', 'publication-ref': 'Publication',
+  'profile-ref': 'Profil', document: 'Document', pdf: 'Document',
+  audio: 'Audio', video: 'Vidéo', quote: 'Citation',
+  note: 'Note', music: 'Musique',
+};
 const localDay = () => {
   const now = new Date();
   return [now.getFullYear(), String(now.getMonth() + 1).padStart(2, '0'),
@@ -76,6 +83,7 @@ export default function FlowerPreparation() {
   const [legacyDateOpen, setLegacyDateOpen] = useState(false);
   const [acknowledged, setAcknowledged] = useState(false);
   const [resourcesOpen, setResourcesOpen] = useState(false);
+  const [inspirationPickerOpen, setInspirationPickerOpen] = useState(false);
   const [logbookOpen, setLogbookOpen] = useState(false);
   const [dateError, setDateError] = useState('');
 
@@ -203,6 +211,7 @@ export default function FlowerPreparation() {
         contentContainerStyle={{ paddingHorizontal: narrow ? 19 : 26,
           paddingTop: 10, paddingBottom: 70, maxWidth: 760, width: '100%',
           alignSelf: 'center' }}>
+        <DreamCoverBackdrop uri={dream.image}/>
         <DreamPhaseHeader dream={dream} phase="Témoignage"
           onBack={() => router.replace('/my-space')}
           onNavigate={phase => {
@@ -232,7 +241,6 @@ export default function FlowerPreparation() {
                 letterSpacing: 1 }}>RÉALISÉ LE</Text>
               <View style={{ flexDirection: 'row', gap: 5, alignItems: 'center',
                 flexWrap: 'wrap' }}>
-                <Ionicons name="flower-outline" size={17} color={MAGENTA}/>
                 <Text style={{ color: MAGENTA, fontSize: narrow ? 14 : 18,
                   fontWeight: '800' }}>
                   {confirmed ? (achievedOn ? readableDate(achievedOn) : 'Date à renseigner')
@@ -260,77 +268,149 @@ export default function FlowerPreparation() {
           </View>
         </View>
 
-        {/* The flower is presented as a story, not as a separate upload form. */}
-        <View style={{ borderTopWidth: 1, borderColor: theme.border, paddingTop: 23 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center',
-            gap: 7, marginBottom: 10 }}>
-            <Ionicons name="flower-outline" size={18} color={MAGENTA}/>
-            <Text style={{ fontSize: 10, letterSpacing: 1.5, color: MAGENTA,
-              fontWeight: '800' }}>LA FLORAISON</Text>
-          </View>
-          <Text style={{ ...sectionTitle, fontSize: 26, lineHeight: 33,
-            marginBottom: 8 }}>Et ce rêve a fleuri.</Text>
-          <Text style={{ ...muted, marginBottom: 17 }}>
-            {achievedOn ? 'Devenu réalité le ' + readableDate(achievedOn) +
-              '. Voici la fleur que tu peux partager.' :
-              'Voici l’histoire de ce rêve accompli. Ajoute le résultat et les mots que tu souhaites partager.'}
-            {' '}Cette présentation reste privée tant que tu ne la publies pas.
-          </Text>
-
-          <Text style={{ fontSize: 10, letterSpacing: 1.1, fontWeight: '700',
-            color: theme.muted, marginBottom: 5 }}>AU COMMENCEMENT</Text>
+        {/* The original wish remains visible; no duplicated flower title, date
+            or separate thumbnail of the dream's atmospheric cover. */}
+        <View style={{ paddingTop: 5 }}>
+          <Text style={{ fontSize: 10, letterSpacing: 1.2, fontWeight: '700',
+            color: theme.muted, marginBottom: 8 }}>AU COMMENCEMENT</Text>
           <Text style={{ color: theme.foreground, fontFamily: 'serif',
-            fontSize: 20, lineHeight: 29, marginBottom: 13 }}>
+            fontSize: narrow ? 19 : 22, lineHeight: 30, marginBottom: 29 }}>
             {dream.summary || dream.title}
           </Text>
-          {dream.image ? (
-            <View style={{ marginBottom: 18, gap: 5 }}>
-              <Image source={{ uri: dream.image }} resizeMode="cover"
-                style={{ width: '100%', height: narrow ? 110 : 155,
-                  borderRadius: 11 }}/>
-              <Text style={{ color: theme.muted, fontSize: 10 }}>
-                L'image de ce rêve à son commencement
-              </Text>
+
+          {(dream.blocks || []).length > 0 ? (
+            <View style={{ marginBottom: 28 }}>
+              <Pressable accessibilityRole="button"
+                accessibilityState={{ expanded: inspirationPickerOpen }}
+                accessibilityLabel="Choisir les inspirations à partager"
+                onPress={() => setInspirationPickerOpen(value => !value)}
+                style={{ flexDirection: 'row', alignItems: 'center',
+                  gap: 9, paddingVertical: 10 }}>
+                <Ionicons name="albums-outline" size={17} color={theme.muted}/>
+                <Text style={{ flex: 1, color: theme.foreground,
+                  fontSize: 13, fontWeight: '600' }}>
+                  Les inspirations du commencement
+                </Text>
+                <Text style={{ color: theme.muted, fontSize: 11 }}>
+                  {(draft.inspirationIds || []).length} retenue(s)
+                </Text>
+                <Ionicons name={inspirationPickerOpen ? 'chevron-up' : 'chevron-down'}
+                  size={16} color={theme.muted}/>
+              </Pressable>
+              {inspirationPickerOpen ? (
+                <View style={{ marginTop: 7 }}>
+                  <Text style={{ ...muted, marginBottom: 13 }}>
+                    Sélectionne les références que tu souhaites montrer dans
+                    l’histoire publique. Le reste de ton espace Semence reste privé.
+                  </Text>
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap',
+                    justifyContent: 'space-between', rowGap: 9 }}>
+                    {(dream.blocks || []).map(block => {
+                      const checked = (draft.inspirationIds || []).includes(block.id);
+                      return (
+                        <Pressable key={block.id} accessibilityRole="checkbox"
+                          accessibilityState={{ checked }}
+                          accessibilityLabel={'Partager inspiration ' +
+                            (block.title || block.content.slice(0, 40))}
+                          onPress={() => patch({
+                            inspirationIds: checked
+                              ? (draft.inspirationIds || []).filter(id => id !== block.id)
+                              : [...(draft.inspirationIds || []), block.id],
+                          })}
+                          style={{ width: block.tileSize?.startsWith('2x')
+                              ? '100%' : '48.5%',
+                            borderRadius: 13, borderWidth: 1,
+                            borderColor: checked ? MAGENTA : theme.border,
+                            backgroundColor: theme.surface,
+                            padding: 12, gap: 8, minHeight: 86,
+                            overflow: 'hidden' }}>
+                          <View style={{ flexDirection: 'row',
+                            justifyContent: 'space-between', alignItems: 'center' }}>
+                            <Text style={{ color: theme.muted,
+                              fontSize: 9, textTransform: 'uppercase',
+                              letterSpacing: .7 }}>{inspirationTypeLabel[block.kind] || 'Inspiration'}</Text>
+                            <Ionicons name={checked ? 'checkbox' : 'square-outline'}
+                              size={18} color={checked ? MAGENTA : theme.muted}/>
+                          </View>
+                          {block.kind === 'image' && !!block.content ? (
+                            <Image source={{ uri: block.content }}
+                              resizeMode="cover" style={{ width: '100%',
+                                height: 100, borderRadius: 8 }}/>
+                          ) : null}
+                          <Text numberOfLines={3} style={{
+                            color: theme.foreground, fontSize: 12,
+                            lineHeight: 18, fontFamily: 'serif' }}>
+                            {block.title || block.caption || block.content ||
+                              'Inspiration'}
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                </View>
+              ) : null}
             </View>
           ) : null}
-          <Text style={{ fontSize: 10, letterSpacing: 1.1, fontWeight: '700',
-            color: MAGENTA, marginBottom: 9 }}>ET AUJOURD’HUI</Text>
-          {achievedOn ? (
-            <Text style={{ color: theme.foreground, fontSize: 14,
-              lineHeight: 22, marginBottom: 13 }}>
-              Le {readableDate(achievedOn)}, ce rêve est devenu réalité.
-            </Text>
-          ) : null}
+
+          {/* The achievement is a human account, not a second upload form. */}
+          <Text style={{ fontSize: 10, letterSpacing: 1.2, fontWeight: '800',
+            color: MAGENTA, marginBottom: 8 }}>LE RÊVE DEVENU RÉEL</Text>
+          <Text style={{ ...sectionTitle, fontSize: 26, lineHeight: 34,
+            marginBottom: 10 }}>Ce qui a pris vie</Text>
+          <Text style={{ ...muted, fontSize: 13, lineHeight: 21,
+            marginBottom: 17 }}>
+            Raconte le moment où ce rêve a pris forme, ce qui s’est passé
+            et ce que cela représente pour toi.
+          </Text>
+          <Text style={{ color: theme.foreground, fontWeight: '700',
+            fontSize: 13, marginBottom: 7 }}>Le récit de cette réalisation</Text>
+          <TextInput multiline value={draft.story}
+            onChangeText={story => patch({ story })}
+            placeholder={/musique|chant|équipe/i.test(dream.title)
+              ? 'Exemple : Le 12 novembre, nous nous sommes enfin retrouvés pour jouer ensemble. Ce qui n’était qu’une idée est devenu notre première répétition…'
+              : 'Exemple : Ce jour-là, nous avons enfin vu notre projet prendre vie. Voici ce que nous avons vécu ensemble…'}
+            placeholderTextColor={theme.muted}
+            accessibilityLabel="Raconter ce qui s’est réalisé"
+            style={{ color: theme.foreground, fontSize: 15, lineHeight: 25,
+              borderBottomWidth: 1, borderColor: theme.border,
+              paddingVertical: 13, paddingHorizontal: 2, minHeight: 100,
+              textAlignVertical: 'top', marginBottom: 20 }}/>
+          <Text style={{ color: theme.foreground, fontWeight: '700',
+            fontSize: 13, marginBottom: 9 }}>Un souvenir de ce moment</Text>
           <Pressable accessibilityRole="button"
             accessibilityLabel={photo ? 'Ajouter des images et souvenirs' :
               'Ajouter la photographie de ma réalisation'}
             onPress={selectMedia}
-            style={{ borderRadius: 13, overflow: 'hidden', borderWidth: photo ? 0 : 1,
-              borderColor: theme.border, borderStyle: photo ? 'solid' : 'dashed',
-              backgroundColor: theme.surface, minHeight: photo ? (narrow ? 195 : 255) : 145,
+            style={{ borderRadius: 14, overflow: 'hidden',
+              borderWidth: photo ? 0 : 1, borderStyle: photo ? 'solid' : 'dashed',
+              borderColor: theme.border,
+              backgroundColor: photo ? 'transparent' : theme.surface,
+              minHeight: photo ? (narrow ? 190 : 270) : 118,
               alignItems: 'center', justifyContent: 'center' }}>
             {photo ? (
               <Image source={{ uri: photo.uri }} resizeMode="cover"
-                style={{ width: '100%', height: narrow ? 205 : 300 }}/>
+                style={{ width: '100%', height: narrow ? 210 : 285 }}/>
             ) : (
-              <View style={{ alignItems: 'center', padding: 18, gap: 10 }}>
-                <Ionicons name="image-outline" size={30} color={MAGENTA}/>
-                <Text style={{ color: theme.foreground, fontSize: 14,
-                  fontWeight: '700' }}>Le visage de ta floraison</Text>
-                <Text style={{ ...muted, textAlign: 'center', maxWidth: 280 }}>
-                  Ajoute une photo de ce qui est devenu réel.
-                </Text>
-                <Text style={{ color: MAGENTA, fontSize: 12, fontWeight: '700' }}>
-                  + Choisir une photographie
-                </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center',
+                gap: 15, paddingHorizontal: 19, paddingVertical: 23,
+                width: '100%' }}>
+                <Ionicons name="image-outline" size={23} color={MAGENTA}/>
+                <View style={{ flex: 1, gap: 5 }}>
+                  <Text style={{ color: theme.foreground, fontSize: 13,
+                    fontWeight: '700' }}>Ajouter une photo de la réalisation</Text>
+                  <Text style={{ ...muted, lineHeight: 18 }}>
+                    Un instant vrai qui raconte ce qui s’est accompli.
+                  </Text>
+                </View>
+                <Ionicons name="add" size={19} color={MAGENTA}/>
               </View>
             )}
           </Pressable>
           {draft.attachments.length > 0 ? (
             <View style={{ marginTop: 9, gap: 8 }}>
               {draft.attachments.map((item: DreamMedia, index: number) => (
-                <View key={index} style={{ flexDirection: 'row', alignItems: 'center',
-                  gap: 9, paddingVertical: 6 }}>
+                <View key={index} style={{ flexDirection: 'row',
+                  alignItems: 'center', gap: 9, paddingVertical: 6 }}>
                   {item.kind === 'photo' ? (
                     <Image source={{ uri: item.uri }} style={{
                       width: 36, height: 36, borderRadius: 7 }}/>
@@ -351,28 +431,17 @@ export default function FlowerPreparation() {
               <Pressable onPress={selectMedia} accessibilityRole="button"
                 style={{ flexDirection: 'row', alignItems: 'center', gap: 6,
                   paddingVertical: 7, alignSelf: 'flex-start' }}>
-                <Ionicons name="add-circle-outline" size={17} color={MAGENTA}/>
-                <Text style={{ color: MAGENTA, fontSize: 12, fontWeight: '700' }}>
-                  Ajouter un souvenir
-                </Text>
+                <Ionicons name="add" size={17} color={MAGENTA}/>
+                <Text style={{ color: MAGENTA, fontSize: 12,
+                  fontWeight: '700' }}>Ajouter un souvenir</Text>
               </Pressable>
             </View>
           ) : null}
-          <Text style={{ color: theme.muted, fontSize: 10, marginTop: 7,
-            lineHeight: 16 }}>Photos, vidéos ou audio · sauvegarde locale provisoire,
-              2 Mo maximum par fichier.</Text>
-
-          <Text style={{ color: theme.foreground, fontFamily: 'serif',
-            fontSize: 18, lineHeight: 26, marginTop: 20 }}>
-            Ce rêve, autrefois une idée, a maintenant une histoire à partager.
+          <Text style={{ color: theme.muted, fontSize: 10,
+            marginTop: 7, lineHeight: 16 }}>
+            Photos, vidéos ou audio · sauvegarde locale provisoire,
+            2 Mo maximum par fichier.
           </Text>
-          <TextInput multiline value={draft.story} onChangeText={story => patch({ story })}
-            placeholder="Ce que j’ai vécu et ce que ce rêve représente pour moi…"
-            placeholderTextColor={theme.muted} accessibilityLabel="Raconter ma floraison"
-            style={{ borderBottomWidth: 1, borderBottomColor: theme.border,
-              color: theme.foreground, fontSize: 15, lineHeight: 24,
-              paddingVertical: 10, paddingHorizontal: 1, minHeight: 54,
-              textAlignVertical: 'top', marginTop: 8 }}/>
         </View>
 
         {/* Automatically composed from the dream's actual journey.
@@ -380,12 +449,7 @@ export default function FlowerPreparation() {
         <FlowerJourneyRecap dream={dream} draft={draft} onChangeDraft={patch}/>
 
         {/* Publication comes first; secondary edit is a magenta outline. */}
-        <View style={{ borderTopWidth: 1, borderColor: theme.border,
-          paddingTop: 22, marginTop: 30, gap: 10 }}>
-          <Text style={sectionTitle}>La floraison</Text>
-          <Text style={{ ...muted, marginBottom: 6 }}>
-            Tu peux revenir sur ta présentation avant de la partager.
-          </Text>
+        <View style={{ paddingTop: 18, marginTop: 30, gap: 10 }}>
           <Pressable accessibilityRole="button" onPress={publish}
             style={{ minHeight: 48, borderRadius: 11, backgroundColor: MAGENTA,
               alignItems: 'center', justifyContent: 'center', paddingHorizontal: 14 }}>

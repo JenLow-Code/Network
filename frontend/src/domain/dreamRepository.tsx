@@ -261,6 +261,8 @@ export function DreamProvider({ children }: { children: React.ReactNode }) {
                 mediaUrl,
                 mediaItems: d.flowerDraft?.attachments || [],
                 highlights: flowerPublicationSnapshot(d),
+                inspirationHighlights: (d.blocks || []).filter(block =>
+                  (d.flowerDraft?.inspirationIds || []).includes(block.id)),
                 date: d.flowerDraft!.achievedOn!,
                 publishedAt: new Date().toISOString(),
               },

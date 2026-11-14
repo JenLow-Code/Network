@@ -10,7 +10,7 @@ import { PHASE_LABELS, type DreamPhase } from '@/domain/publication';
 import { useAppTheme } from '@/theme/AppTheme';
 import { HANDWRITING_FAMILY } from '@/theme/handwriting';
 import { pickDreamImage } from '@/lib/pickDreamImage';
-import { DreamPhaseHeader, DreamPhaseSection, DreamPhaseButton, DreamPhaseField } from './DreamPhaseLayout';
+import { DreamCoverBackdrop, DreamPhaseHeader, DreamPhaseSection, DreamPhaseButton, DreamPhaseField } from './DreamPhaseLayout';
 import { DreamTalentSquare } from './DreamTalentSquare';
 import { DreamGoalDatePicker } from './DreamGoalDatePicker';
 import { DreamResourceDetailsModal } from './DreamResourceDetailsModal';
@@ -24,6 +24,8 @@ import FlowerJourneyRecap from './FlowerJourneyRecap';
 import { canEditGrowthLog } from '@/domain/growthTimeline';
 
 const pink = '#D71D77';
+const shortDate = (value: string) => new Date(value.slice(0, 10) + 'T12:00:00')
+  .toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
 const HABIT_PALETTE = ['#C68FBF','#D7AE62','#80B8BC','#7DBA99','#D78C9F','#A1A0CF','#A9BF78'];
 const HABIT_EMOJIS = ['🌱','🙏','🎹','🎸','🎼','📖','🎨','📷','🧘','🏃','💧','✍️','🏡','❤️','☀️','🎯'];
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
@@ -316,6 +318,7 @@ export default function DreamExperience({
    setFreezeDialog(false);
  };
  return <ScrollView style={{flex:1,backgroundColor:theme.background}} contentContainerStyle={{paddingHorizontal:19,paddingTop:10,paddingBottom:65,maxWidth:760,width:'100%',alignSelf:'center'}}>
+  <DreamCoverBackdrop uri={dream.image}/>
   <DreamPhaseHeader dream={dream} phase={phase} onBack={onBack || (()=>router.replace('/my-space'))} onNavigate={onNavigate} readOnly={readOnly&&!recoverPastNeeds}
     summary={phase==='Témoignage'?'Le rêve est devenu réalité. Voici ce qui a pris vie.':undefined}
     action={phase==='Rêve'&&!historical?<Pressable onPress={()=>setEditing(!editing)} style={{padding:8}}><Text style={{color:theme.foreground,fontWeight:'700',fontSize:12}}>{editing?'Terminer':'Composer'}</Text></Pressable>:undefined}
@@ -325,7 +328,6 @@ export default function DreamExperience({
      <Ionicons name="link-outline" size={15} color={theme.muted}/>
      <Text style={{color:theme.muted,fontSize:12}}>Semence non répertoriée jusqu'à la germination</Text>
    </View>
-      {dream.image ? <Image source={{uri:dream.image}} style={{width:'100%',height:190,borderRadius:13,marginBottom:12}}/>:null}
    {editing && !historical ? <Action secondary label="Changer l'image principale" onPress={()=>pickDreamImage(uri=>patch(dream.id,{image:uri}),msg=>Alert.alert('Image',msg))}/> : null}
    {editing && !historical ? <Field label="Mon rêve, en quelques mots" value={dream.summary} onChange={v=>patch(dream.id,{summary:v})} multiline/> : dream.summary ? <Text style={{color:theme.foreground,fontSize:15,marginVertical:9,lineHeight:22}}>{dream.summary}</Text> : null}
    <View style={{flexDirection:'row',flexWrap:'wrap',justifyContent:'space-between',marginTop:12}}>
@@ -713,22 +715,94 @@ export default function DreamExperience({
     </DreamPhaseSection>
   ) : null}
   {phase==='Témoignage' && isPublishedFlower(dream) ? <>
-    <DreamPhaseSection title="Au commencement">
-      <Text style={{fontSize:22,fontFamily:HANDWRITING_FAMILY,color:theme.foreground,lineHeight:32,marginBottom:14}}>{dream.summary}</Text>
-      {dream.image?<Image source={{uri:dream.image}} resizeMode="cover" style={{width:'100%',height:190,borderRadius:12,marginBottom:8}}/>:null}
-    </DreamPhaseSection>
-    <DreamPhaseSection title="Et aujourd'hui" subtitle="Le résultat de ce qui a été semé.">
-      <Text style={{color:theme.foreground,fontSize:16,lineHeight:26,marginBottom:14}}>
+    <View style={{ marginTop: 3 }}>
+      <Text style={{ fontSize: 10, fontWeight: '700',
+        letterSpacing: 1.2, color: theme.muted,
+        marginBottom: 8 }}>AU COMMENCEMENT</Text>
+      <Text style={{ color: theme.foreground, fontFamily: 'serif',
+        fontSize: 22, lineHeight: 30, marginBottom: 13 }}>
+        {dream.summary || dream.title}
+      </Text>
+      {dream.goalDate ? (
+        <Text style={{ color: theme.muted, fontSize: 11, lineHeight: 18 }}>
+          Objectif initial · {shortDate(dream.goalDate)}
+        </Text>
+      ) : null}
+      {(dream.testimony?.inspirationHighlights || []).length > 0 ? (
+        <View style={{ marginTop: 23 }}>
+          <Text style={{ fontSize: 11, color: theme.muted,
+            marginBottom: 10, fontWeight: '700' }}>
+            Ce qui nous inspirait au départ
+          </Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap',
+            justifyContent: 'space-between', rowGap: 10 }}>
+            {(dream.testimony?.inspirationHighlights || []).map(block => (
+              <View key={block.id} style={{ width: block.tileSize?.startsWith('2x')
+                  ? '100%' : '48.5%',
+                borderRadius: 12, borderWidth: 1,
+                borderColor: theme.border,
+                backgroundColor: theme.surface, overflow: 'hidden',
+                padding: 12, gap: 8 }}>
+                {block.kind === 'image' && !!block.content ? (
+                  <Image source={{ uri: block.content }} resizeMode="cover"
+                    style={{ width: '100%', height: 120, borderRadius: 8 }}/>
+                ) : null}
+                <Text numberOfLines={5} style={{ color: theme.foreground,
+                  fontSize: 13, fontFamily: 'serif', lineHeight: 21 }}>
+                  {block.title || block.caption || block.content || 'Inspiration'}
+                </Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      ) : null}
+    </View>
+
+    <View style={{ marginTop: 30 }}>
+      <Text style={{ fontSize: 10, fontWeight: '800', color: pink,
+        letterSpacing: 1.2, marginBottom: 9 }}>LE RÊVE DEVENU RÉEL</Text>
+      <Text style={{ color: theme.foreground, fontFamily: 'serif',
+        fontSize: 26, lineHeight: 34, marginBottom: 9 }}>
+        Ce qui a pris vie
+      </Text>
+      {dream.testimony?.date ? (
+        <Text style={{ fontSize: 12, fontWeight: '700',
+          color: pink, marginBottom: 15 }}>
+          Réalisé le {shortDate(dream.testimony.date.slice(0, 10))}
+        </Text>
+      ) : null}
+      <Text style={{ color: theme.foreground,
+        fontSize: 15, lineHeight: 25, marginBottom: 17 }}>
         {dream.testimony?.comment || dream.summary}
       </Text>
-      {!dream.testimony?.mediaItems?.length && dream.resultImage ?
-        <Image source={{uri:dream.resultImage}} resizeMode="cover"
-          style={{width:'100%',height:220,borderRadius:12,marginBottom:12}}/>:null}
-      {(dream.testimony?.mediaItems||[]).map((m,i)=><Pressable key={i} onPress={()=>void Linking.openURL(m.uri)} style={{backgroundColor:theme.surface,borderRadius:12,padding:13,marginTop:9,flexDirection:'row',alignItems:'center',gap:12,borderWidth:1,borderColor:theme.border}}>
-        {m.kind==='photo'?<Image source={{uri:m.uri}} style={{width:64,height:64,borderRadius:8}}/>:<Ionicons name={m.kind==='document'?'document-text-outline':m.kind==='audio'?'musical-notes':'videocam-outline'} size={28} color={theme.foreground}/>}
-        <Text style={{color:theme.foreground,flex:1,fontSize:12}}>{m.name}</Text><Ionicons name="open-outline" size={17} color={theme.muted}/>
-      </Pressable>)}
-    </DreamPhaseSection>
+      {!dream.testimony?.mediaItems?.length && dream.resultImage ? (
+        <Image source={{ uri: dream.resultImage }} resizeMode="cover"
+          style={{ width: '100%', height: narrowScreen ? 200 : 275,
+            borderRadius: 13, marginBottom: 11 }}/>
+      ) : null}
+      {(dream.testimony?.mediaItems || []).map((m, i) =>
+        m.kind === 'photo' ? (
+          <Image key={i} source={{ uri: m.uri }} resizeMode="cover"
+            style={{ width: '100%', height: narrowScreen ? 200 : 275,
+              borderRadius: 13, marginBottom: 11 }}/>
+        ) : (
+          <Pressable key={i} accessibilityRole="button"
+            accessibilityLabel={'Ouvrir ' + m.name}
+            onPress={() => void Linking.openURL(m.uri)}
+            style={{ padding: 13, borderRadius: 12, borderWidth: 1,
+              borderColor: theme.border, backgroundColor: theme.surface,
+              marginTop: 8, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+            <Ionicons name={m.kind === 'document' ?
+              'document-text-outline' : m.kind === 'audio' ?
+                'musical-notes-outline' : 'videocam-outline'}
+              size={21} color={theme.foreground}/>
+            <Text numberOfLines={1} style={{ flex: 1,
+              color: theme.foreground, fontSize: 12 }}>{m.name}</Text>
+            <Ionicons name="open-outline" size={15} color={theme.muted}/>
+          </Pressable>
+        ),
+      )}
+    </View>
     <FlowerJourneyRecap dream={dream} publicView
       onAppendPublishedMoment={phase === dream.phase &&
         (dream.viewerRole === undefined || dream.viewerRole === 'creator' ||
