@@ -8,8 +8,8 @@ import { TranslatorLanguageFields } from '@/components/talent/TranslatorLanguage
 import { useApp } from '@/context/AppContext';
 import { MusicAudioCapture } from './MusicAudioCapture';
 import { MusicAudioPreview } from './MusicAudioPreview';
-import { chooseMusicFile, uploadMusicAudioFile } from '@/domain/musicMedia';
-import { getDraftAudio, saveDraftAudio } from '@/domain/musicLocalStorage';
+import { chooseMusicFile, uploadMusicAudioFile, uploadMusicCoverFile } from '@/domain/musicMedia';
+import { getDraftAudio, getDraftAttachment, saveDraftAudio, saveDraftAttachment } from '@/domain/musicLocalStorage';
 import { newMusicId } from '@/domain/musicWorkspace';
 import type { MusicProject, MusicVersion, MusicNeed, MusicSuggestion } from '@/domain/musicWorkspace';
 import { api } from '@/lib/api/client';
@@ -37,6 +37,8 @@ export function MusicWholeSong({project,patch,selectSection}:Props){
   const [newVersion,setNewVersion]=useState('');
   const [importError,setImportError]=useState('');
   const [addingAudio,setAddingAudio]=useState(false);
+  const [coverError,setCoverError]=useState('');
+  const [savingCover,setSavingCover]=useState(false);
   const [rights,setRights]=useState(false);
   const [publishing,setPublishing]=useState(false);
   const [publishError,setPublishError]=useState('');
@@ -79,6 +81,20 @@ export function MusicWholeSong({project,patch,selectSection}:Props){
   const addVersion=(title:string,localAudioId?:string)=>
     patch({versions:[...project.versions,{id:newMusicId(),title:title.trim()||'Nouvelle version',
       localAudioId,createdAt:new Date().toISOString(),selectedForPublication:false}]});
+  const chooseCover=()=>{
+    if(Platform.OS!=='web'||typeof document==='undefined')return;
+    const input=document.createElement('input');
+    input.type='file';input.accept='.jpg,.jpeg,.png,.webp,image/*';
+    input.onchange=()=>{
+      const file=input.files?.[0];if(!file)return;
+      setSavingCover(true);setCoverError('');
+      void saveDraftAttachment(file).then(coverLocalId=>patch({
+        coverLocalId,coverMediaId:undefined,coverUrl:undefined,
+      })).catch(e=>setCoverError(e instanceof Error?e.message:'Image indisponible.'))
+        .finally(()=>setSavingCover(false));
+    };
+    input.click();
+  };
   const addFile=()=>{if(Platform.OS!=='web')return;
     chooseMusicFile(file=>{
       setAddingAudio(true);setImportError('');
@@ -146,6 +162,15 @@ export function MusicWholeSong({project,patch,selectSection}:Props){
     let current=[...project.versions];
     let count=0;
     try{
+      let coverMediaId=project.coverMediaId;
+      if(!coverMediaId && project.coverLocalId){
+        const blob=await getDraftAttachment(project.coverLocalId);
+        if(!blob)throw new Error('La pochette privée du morceau est introuvable.');
+        const mime=blob.type;
+        const ext=mime==='image/jpeg'?'jpg':mime==='image/png'?'png':'webp';
+        coverMediaId=await uploadMusicCoverFile(new File([blob],project.title+'.'+ext,{type:mime}));
+        patch({coverMediaId});
+      }
       for(const version of selected){
         let mediaId=version.audioMediaId;
         if(version.localAudioId){
@@ -164,6 +189,7 @@ export function MusicWholeSong({project,patch,selectSection}:Props){
             audioMediaId:mediaId||undefined,
             externalStreamUrl:mediaId?undefined:version.audioUrl,
             parentPublicationId:rootId,
+            coverMediaId,
             visibility:'public',rightsConfirmed:true,
             credits:[{displayName:project.ownerName,contribution:'Création et arrangement · '+version.title}],
             rights:{originalCreatorName:project.ownerName,rightsHolderName:project.ownerName,
@@ -245,9 +271,17 @@ export function MusicWholeSong({project,patch,selectSection}:Props){
             {pill(sig,()=>patch({timeSignature:sig}),project.timeSignature===sig)}
           </View>)}
         </View>
-        {label('Image privée (lien HTTPS, facultatif)')}
-        <TextInput value={project.coverUrl||''} onChangeText={coverUrl=>patch({coverUrl})}
-          placeholder="https://…" placeholderTextColor={theme.muted} style={input}/>
+        {label('Pochette du morceau')}
+        {Platform.OS==='web'?button(savingCover?'Import en cours…':'Choisir une image',
+          chooseCover,true,savingCover):null}
+        {project.coverLocalId?<Text style={{color:theme.muted,fontSize:11}}>
+          Pochette personnelle ajoutée · visible dans ton dossier, et publiée avec les versions sélectionnées.
+        </Text>:null}
+        {label('Ou adresse HTTPS de l’image')}
+        <TextInput value={project.coverUrl||''} onChangeText={coverUrl=>patch({
+          coverUrl,coverLocalId:undefined,coverMediaId:undefined,
+        })} placeholder="https://…" placeholderTextColor={theme.muted} style={input}/>
+        {coverError?<Text style={{color:'#B34D67',fontSize:12}}>{coverError}</Text>:null}
       </View>}
       {label('Instruments du morceau')}
       <View style={{flexDirection:'row',flexWrap:'wrap',gap:7}}>
