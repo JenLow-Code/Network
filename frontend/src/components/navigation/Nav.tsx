@@ -22,7 +22,7 @@ export function Nav() {
       icon: 'musical-note-outline' as const, title: t('music'),
       path: '/music-hub' as const,
       active: path === '/music-hub' || path.startsWith('/publish/music') ||
-        path.startsWith('/music-proposal/') || path.startsWith('/music-workspace/') ||
+        path.startsWith('/music-proposal/') || path === '/music/new' || path.startsWith('/music-workspace/') ||
         path.startsWith('/music-collaboration/'),
     },
     {
@@ -30,7 +30,7 @@ export function Nav() {
       path: '/discover' as const,
       active: path === '/discover' || path.startsWith('/dream/') ||
         path.startsWith('/bible/') || path.startsWith('/person/') ||
-        path.startsWith('/music/'),
+        (path.startsWith('/music/') && path !== '/music/new'),
     },
     {
       icon: 'layers-outline' as const, title: 'Mes rêves',
