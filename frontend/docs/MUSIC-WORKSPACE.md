@@ -61,3 +61,18 @@ Each section is a standalone sub-workspace with:
 
 ## Design bar
 Use JenLow's warm editorial light palette + magenta, subtle rounded private objects and minimal headers; avoid giant administrative forms, a DAW clone, decorative waveforms, or duplicate cassettes in private work.
+
+
+## 14 November — song view, file hierarchy and contextual chat redesign
+- **New song:** no redundant descriptive paragraphs; display title, description, one compact original-language selector and three start methods. A blank idea no longer creates artificial Intro/Couplet/Refrain sections or duration.
+- **Whole-song overview:** compact permanent key data: original language, BPM, tonal key/mode, time signature, real duration if known; style badges in the song identity, not incorrectly placed in “talents searched”.
+- **Instruments:** summary is derived from actual track roles (and section parts) plus optional manual instruments — the user should not have to enter an instrument list separately from their recordings.
+- **Structure near the top:** add/reorder/remove Intro/Couplet/Refrain/Pont/etc.; each entry navigates to its real sub-workspace. Duration is shown only from actual attached recording metadata or explicit valid start/end points, never for an empty idea.
+- **File browser:** one indexed view of versions, recordings, lyrics, scores, documents, ideas and notes. New files can be explicitly typed, given language or instrument metadata, and associated with zero, one or multiple sections. An imported full lyric text stays intact; each linked section can hold its own excerpt in sectionContent.
+- **Section workspace:** displays only associated lyrics excerpts and tracks/other files, a per-section talent request, and a contextual “Écrire au groupe” action. The section does **not** get a new independent group chat.
+- **One song conversation:** published songs share the existing server conversation. New migration adds optional music-section-id and title to individual messages, and the chat displays a section tag. A click returns to the relevant local section when it is present on that device. Draft projects keep clearly labelled local notes, never misrepresented as messages delivered to other members.
+- **Real recording metadata:** browser imports and microphone saves attempt to read the audio duration before attaching it to versions/tracks/files. Unknown duration is displayed as “—”.
+- **Permissions:** only conversation members can send/read messages, and section-context metadata is valid only in a song text conversation. The server currently cannot validate section existence because section structure is stored locally.
+
+### Still outside current implementation
+The complete file structure, per-section proposals, lyrics and messages are **not yet synchronized between participants**. A collaborator without a corresponding local project can read a chat section label but cannot open that private section. There is no production-ready multiperson document collaboration or automatic mixing/translation yet. Published song versions and public song chat use the real existing API.
