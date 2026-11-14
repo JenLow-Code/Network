@@ -21,7 +21,9 @@ export function Nav() {
     {
       icon: 'musical-note-outline' as const, title: t('music'),
       path: '/music-hub' as const,
-      active: path === '/music-hub' || path.startsWith('/publish/music') || path.startsWith('/music-proposal/'),
+      active: path === '/music-hub' || path.startsWith('/publish/music') ||
+        path.startsWith('/music-proposal/') || path.startsWith('/music-workspace/') ||
+        path.startsWith('/music-collaboration/'),
     },
     {
       icon: 'ellipse-outline' as const, title: t('discover'),
