@@ -98,7 +98,7 @@ export function PublicationPrimaryAction({ item }: { item: Publication }) {
       accessibilityLabel={label}
       // Only native sharing and local dream creation are functional in beta;
       // other actions must never imply a real message or collaboration was sent.
-      onPress={label === 'Partager ce verset' || label === 'Créer un rêve inspiré' ? onPress : () => setUnavailable(true)}
+      onPress={label === 'Partager ce verset' || label === 'Créer un rêve inspiré' || label === 'Collaborer sur ce morceau' ? onPress : () => setUnavailable(true)}
       style={[
         styles.action,
         styles.fullAction,
