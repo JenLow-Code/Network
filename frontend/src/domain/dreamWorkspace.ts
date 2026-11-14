@@ -40,6 +40,8 @@ export type FlowerDraft = {
   momentPresentation?: Record<string, FlowerMomentPresentation>;
   /** Entries freely authored and removable by the dream creator. */
   personalMoments?: FlowerPersonalMoment[];
+  /** Names obtained from accepted server invitations, keyed by server need ID. */
+  verifiedTalentNames?: Record<string, string>;
 };
 export type DreamBlockKind =
   | 'text' | 'heading1' | 'heading2' | 'heading3'
