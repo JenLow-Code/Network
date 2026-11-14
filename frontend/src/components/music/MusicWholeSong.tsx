@@ -170,6 +170,16 @@ export function MusicWholeSong({project,patch,selectSection}:Props){
         const ext=mime==='image/jpeg'?'jpg':mime==='image/png'?'png':'webp';
         coverMediaId=await uploadMusicCoverFile(new File([blob],project.title+'.'+ext,{type:mime}));
         patch({coverMediaId});
+      } else if(!coverMediaId && project.coverUrl?.trim()){
+        const response=await api<{media:{id:string}}>('/api/media/external',{
+          method:'POST',auth:'required',body:{
+            url:project.coverUrl.trim(),mediaType:'image',purpose:'music_cover',
+            attribution:project.ownerName+' — pochette du morceau',
+            sourceName:project.title,
+          },
+        });
+        coverMediaId=response.media.id;
+        patch({coverMediaId});
       }
       for(const version of selected){
         let mediaId=version.audioMediaId;
