@@ -108,7 +108,7 @@ export default function FlowerJourneyRecap({
   const needs = dream.resources?.length ? dream.resources.map(item => item.title) :
     dream.needs || [];
 
-  const recorded: Moment[] = flowerSourceMoments(dream);
+  const recorded: Moment[] = flowerSourceMoments(dream, draft?.verifiedTalentNames);
   const custom: Moment[] = flowerPersonalMoments(draft?.personalMoments);
   const presentation = draft?.momentPresentation || {};
   const selected = new Set(draft?.highlightIds || []);
