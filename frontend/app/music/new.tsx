@@ -9,6 +9,7 @@ import { useAppTheme } from '@/theme/AppTheme';
 import { useMusicWorkspaces, newMusicId } from '@/domain/musicWorkspace';
 import { chooseMusicFile } from '@/domain/musicMedia';
 import { saveDraftAudio } from '@/domain/musicLocalStorage';
+import { fileAudioDuration } from '@/domain/musicProjectSelectors';
 import { MusicAudioCapture } from '@/components/music/MusicAudioCapture';
 
 type StartMode='blank'|'upload'|'record';
@@ -28,6 +29,7 @@ export default function NewMusic(){
   const [mode,setMode]=useState<StartMode>('blank');
   const [fileName,setFileName]=useState('');
   const [audioId,setAudioId]=useState('');
+  const [audioDuration,setAudioDuration]=useState<number|undefined>();
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState('');
   const field={borderWidth:1,borderColor:theme.border,backgroundColor:theme.surface,
@@ -36,7 +38,8 @@ export default function NewMusic(){
     if(Platform.OS!=='web'){setError('L’import nécessite actuellement le navigateur web.');return;}
     chooseMusicFile(file=>{
       setBusy(true);setError('');
-      void saveDraftAudio(file).then(localId=>{setAudioId(localId);setFileName(file.name);})
+      void Promise.all([saveDraftAudio(file),fileAudioDuration(file)]).then(([localId,duration])=>{
+        setAudioId(localId);setFileName(file.name);setAudioDuration(duration);})
         .catch(e=>setError(e instanceof Error?e.message:'Import audio impossible.'))
         .finally(()=>setBusy(false));
     });
@@ -46,7 +49,7 @@ export default function NewMusic(){
     const id=create({title,description,originalLanguage:language});
     if(!id){setError('Création impossible sur cet appareil.');return;}
     if(audioId)patch(id,{versions:[{
-      id:newMusicId(),title:'Version originale',localAudioId:audioId,
+      id:newMusicId(),title:'Version originale',localAudioId:audioId,durationSeconds:audioDuration,
       createdAt:new Date().toISOString(),selectedForPublication:false,
     }]});
     router.replace({pathname:'/music-workspace/[id]',params:{id}});
@@ -126,7 +129,8 @@ export default function NewMusic(){
             <Ionicons name="checkmark-circle" size={15} color="#237B56"/> {fileName}
           </Text>:null}
         </View>:null}
-        {mode==='record'?<MusicAudioCapture onSaved={(id,filename)=>{setAudioId(id);setFileName(filename);}}/>:null}
+        {mode==='record'?<MusicAudioCapture onSaved={(id,filename,duration)=>{
+          setAudioId(id);setFileName(filename);setAudioDuration(duration);}}/>:null}
       </View>
       {storageError?<Text style={{fontSize:12,color:'#B34D67'}}>{storageError}</Text>:null}
       {error?<Text style={{fontSize:12,color:'#B34D67'}}>{error}</Text>:null}
