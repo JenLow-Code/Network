@@ -5,6 +5,7 @@ import { useFonts } from 'expo-font';
 import { handwritingFontMap } from '@/theme/handwriting';
 import { Provider } from '@/context/AppContext';
 import { DreamProvider } from '@/domain/dreamRepository';
+import { MusicWorkspaceProvider } from '@/domain/musicWorkspace';
 import { LocaleProvider } from '@/i18n/locale';
 import { AuthProvider } from '@/context/AuthProvider';
 import { AppThemeProvider, useAppTheme } from '@/theme/AppTheme';
@@ -29,7 +30,9 @@ export default function Layout() {
         <AuthProvider>
           <Provider>
             <DreamProvider>
-              <ThemedStack />
+              <MusicWorkspaceProvider>
+                <ThemedStack />
+              </MusicWorkspaceProvider>
             </DreamProvider>
           </Provider>
         </AuthProvider>
