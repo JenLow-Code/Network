@@ -54,6 +54,18 @@ const defaultMomentEmoji = (moment: Pick<FlowerPublishedMoment,'kind'|'title'>):
   return '✨';
 };
 
+/** Visible writing invitation: never published unless the creator writes it. */
+const momentWritingPrompt = (moment: Pick<FlowerPublishedMoment, 'kind'|'title'>): string => {
+  const label = moment.title.toLocaleLowerCase('fr-FR');
+  if (/en tant que batt(eur|euse)/.test(label)) return 'Ce batteur a…';
+  if (/en tant que pianiste/.test(label)) return 'Ce pianiste a…';
+  if (/nous a rejoint en tant que/.test(label)) return 'Cette rencontre a…';
+  if (/n’était plus disponible|nous a manqué/.test(label))
+    return 'Ce passage difficile nous a…';
+  if (/trouvé|trouvée|solution/.test(label)) return 'Cette étape nous a permis de…';
+  return 'Ce moment a compté parce que…';
+};
+
 /**
  * A pre-filled but editable personal story.
  *
@@ -373,7 +385,8 @@ export default function FlowerJourneyRecap({
       ) : null}
       <TextInput multiline accessibilityLabel="Mon commentaire personnel"
         value={formNote} onChangeText={setFormNote}
-        placeholder="Ce que j’ai ressenti, ce que j’aimerais raconter…"
+        placeholder={moment ? momentWritingPrompt(moment) :
+          'Ce que j’ai ressenti, ce que j’aimerais raconter…'}
         placeholderTextColor={theme.muted}
         style={{ color: theme.foreground, fontSize: 13, lineHeight: 22,
           minHeight: 50, textAlignVertical: 'top', paddingVertical: 6 }}/>
@@ -478,7 +491,6 @@ export default function FlowerJourneyRecap({
               const note = publicView ? moment.note :
                 moment.source === 'personal' ? moment.note :
                 presentation[moment.id]?.note;
-              const isNewDate = !shown[i - 1] || shown[i - 1].date !== moment.date;
               const emoji = (publicView ? moment.emoji :
                 presentation[moment.id]?.emoji || moment.emoji) ||
                 defaultMomentEmoji(moment);
@@ -532,21 +544,22 @@ export default function FlowerJourneyRecap({
                     emojiPickerId === moment.id ? 40 : 0,
                   opacity: isHidden ? .55 : 1,
                 }}>
-                  {isNewDate ? (
-                    <View style={{
-                      flexDirection: 'row', alignItems: 'center', gap: 11,
-                      marginTop: i === 0 ? 7 : 17, marginBottom: 7,
-                      paddingLeft: 9,
-                    }}>
-                      <View style={{ width: 7, height: 7,
-                        borderRadius: 4, backgroundColor: '#D8BDAF' }}/>
-                      <Text style={{ color: theme.dark ? '#C8AC9E' : '#94796D',
-                        fontSize: 10, fontWeight: '700',
-                        letterSpacing: .9, textTransform: 'uppercase' }}>
-                        {dateLabel(moment.date)}
-                      </Text>
-                    </View>
-                  ) : null}
+                  {/* Every dated event has its own date, even when several
+                      things happened on the same day: the journey matters. */}
+                  <View style={{
+                    flexDirection: 'row', alignItems: 'center', gap: 10,
+                    marginTop: i === 0 ? 6 : 15, marginBottom: 6,
+                    paddingLeft: 9,
+                  }}>
+                    <View style={{ width: 6, height: 6,
+                      borderRadius: 3,
+                      backgroundColor: theme.dark ? '#8CAC99' : '#6B9C80' }}/>
+                    <Text style={{
+                      color: theme.dark ? '#B3D1BE' : '#477C5B',
+                      fontSize: 11, fontWeight: '700',
+                      letterSpacing: .3,
+                    }}>{dateLabel(moment.date)}</Text>
+                  </View>
                   <View style={{
                     flexDirection: 'row', alignItems: 'stretch',
                     minHeight: 66,
@@ -573,23 +586,42 @@ export default function FlowerJourneyRecap({
                             'Choisir l’emoji pour ' + moment.title : undefined}
                           onPress={() => openEmojiPicker(moment)}
                           style={{
-                            width: 43, height: 43, borderRadius: 15,
-                            backgroundColor: theme.dark ? '#302A32' : '#F7EEE8',
+                            width: 27, height: 29,
                             alignItems: 'center', justifyContent: 'center',
                           }}>
-                          <Text style={{ fontSize: 23, lineHeight: 32 }}>{emoji}</Text>
+                          <Text style={{
+                            fontSize: 16, lineHeight: 22, opacity: .78,
+                          }}>{emoji}</Text>
                         </Pressable>
-                        <View style={{ flex: 1, paddingTop: 3, gap: 5 }}>
+                        <View style={{ flex: 1, paddingTop: 1, gap: 5 }}>
                           <Text style={{
                             color: theme.foreground,
-                            fontFamily: 'serif', fontSize: 17, lineHeight: 24,
+                            fontFamily: 'serif', fontSize: 16, lineHeight: 23,
                           }}>{moment.title}</Text>
                           {note ? (
-                            <Text style={{
-                              color: theme.dark ? '#CFC0BB' : '#756A66',
-                              fontSize: 13, lineHeight: 20,
-                              fontStyle: 'italic',
-                            }}>{note}</Text>
+                            <Pressable disabled={!editable || isHidden}
+                              accessibilityRole={editable && !isHidden ? 'button' : undefined}
+                              accessibilityLabel={editable && !isHidden ?
+                                'Modifier mes mots sur ' + moment.title : undefined}
+                              onPress={() => openEdit(moment)}
+                              style={{ alignSelf: 'flex-start', paddingVertical: 2 }}>
+                              <Text style={{
+                                color: theme.dark ? '#CFC0BB' : '#756A66',
+                                fontSize: 12.5, lineHeight: 19, fontStyle: 'italic',
+                              }}>{note}</Text>
+                            </Pressable>
+                          ) : editable && !isHidden && editingId !== moment.id ? (
+                            <Pressable accessibilityRole="button"
+                              accessibilityLabel={'Raconter ce moment : ' + moment.title}
+                              onPress={() => openEdit(moment)}
+                              style={{ alignSelf: 'flex-start',
+                                paddingTop: 3, paddingBottom: 5 }}>
+                              <Text style={{
+                                color: theme.dark ? '#B29BAA' : '#A08894',
+                                fontSize: 12, lineHeight: 19,
+                                fontStyle: 'italic',
+                              }}>{momentWritingPrompt(moment)}</Text>
+                            </Pressable>
                           ) : null}
                           {isHidden ? (
                             <Text style={{ color: theme.muted, fontSize: 10 }}>
