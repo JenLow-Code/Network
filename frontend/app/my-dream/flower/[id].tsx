@@ -111,7 +111,6 @@ export default function FlowerPreparation() {
   const achievedOn = draft.achievedOn || (!dream.testimony ? undefined :
     dream.testimony.date.slice(0, 10));
   const photo = draft.attachments.find(item => item.kind === 'photo');
-  const selectedIds = draft.highlightIds || [];
   const growthDays = buildGrowthDays(dream);
   const patch = (changes: Partial<FlowerDraft>) =>
     setFlowerDraft(dream.id, { ...draft, ...changes });
@@ -164,12 +163,6 @@ export default function FlowerPreparation() {
       { text: 'Annuler', style: 'cancel' },
       { text: 'Arracher', style: 'destructive', onPress: go },
     ]);
-  };
-  const toggleMoment = (momentId: string) => {
-    const next = selectedIds.includes(momentId)
-      ? selectedIds.filter(item => item !== momentId)
-      : [...selectedIds, momentId];
-    patch({ highlightIds: next });
   };
   const sectionTitle = { color: theme.foreground, fontSize: 22,
     fontFamily: 'serif' as const, lineHeight: 29 };
@@ -355,8 +348,7 @@ export default function FlowerPreparation() {
 
         {/* Automatically composed from the dream's actual journey.
             Logbook leaves are opt-in for the eventual public version. */}
-        <FlowerJourneyRecap dream={dream}
-          selectedMomentIds={selectedIds} onToggleMoment={toggleMoment}/>
+        <FlowerJourneyRecap dream={dream} draft={draft} onChangeDraft={patch}/>
 
         {/* Publication comes first; secondary edit is a magenta outline. */}
         <View style={{ borderTopWidth: 1, borderColor: theme.border,
