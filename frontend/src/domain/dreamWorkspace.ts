@@ -112,6 +112,8 @@ export type DreamResource = {
   addedAt?: string;
   linkedBlockId?: string;
   personId?: string;
+  /** Name read from an accepted server invitation; never guessed from a skill. */
+  acceptedPersonName?: string;
   amount?: number;
   illustration?: NonNullable<DreamPublication['resources']>[number]['illustration'];
   requiredLevel?: string;
@@ -165,6 +167,8 @@ export type DreamGrowthEvent = {
   category: DreamResource['category'];
   title: string;
   needId: string;
+  /** Historical snapshot of a verified joining person's name, if available. */
+  personName?: string;
 };
 export type DreamMilestone = {
   id: string;
