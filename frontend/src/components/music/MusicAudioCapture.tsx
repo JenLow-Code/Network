@@ -3,8 +3,9 @@ import { Platform, Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/theme/AppTheme';
 import { saveDraftAudio } from '@/domain/musicLocalStorage';
+import { fileAudioDuration } from '@/domain/musicProjectSelectors';
 
-type Props = { onSaved: (localAudioId: string, filename: string) => void };
+type Props = { onSaved: (localAudioId: string, filename: string, durationSeconds?: number) => void };
 const pink = '#CB245C';
 
 /** Capture with an actual user-granted microphone. Requires HTTPS or localhost on web. */
@@ -79,8 +80,8 @@ export function MusicAudioCapture({ onSaved }: Props) {
     if (!file || saving) return;
     setSaving(true);setError('');
     try {
-      const id = await saveDraftAudio(file);
-      onSaved(id,file.name);
+      const [id,durationSeconds] = await Promise.all([saveDraftAudio(file),fileAudioDuration(file)]);
+      onSaved(id,file.name,durationSeconds);
       releasePreview();setPreviewUrl('');setFile(null);
     } catch(e) {setError(e instanceof Error ? e.message:'Sauvegarde audio impossible.');}
     finally {setSaving(false);}
