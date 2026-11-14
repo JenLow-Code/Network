@@ -12,6 +12,7 @@ import { musics } from '@/mocks/publications';
 import { useAppTheme } from '@/theme/AppTheme';
 import { api } from '@/lib/api/client';
 import { CassetteArtwork } from '@/components/publication/PublicationGallery';
+import { MusicFolderCover } from '@/components/music/MusicFolderCover';
 import type { MusicPublication } from '@/domain/publication';
 
 type Tab = 'mine' | 'collabs' | 'saved' | 'explore';
@@ -114,12 +115,7 @@ export default function MusicHub() {
               onPress={() => router.push({ pathname: '/music-workspace/[id]', params: { id: project.id } })}
               style={{ backgroundColor: theme.surface, borderRadius: 17, borderWidth: 1,
                 borderColor: theme.border, flexDirection: 'row', alignItems: 'center', gap: 14, padding: 14 }}>
-              <View style={{ width: 68, height: 68, borderRadius: 12, backgroundColor: theme.dark ? '#393035' : '#F5ECEB',
-                overflow: 'hidden', justifyContent: 'center', alignItems: 'center' }}>
-                {project.coverUrl ? <Image source={{ uri: project.coverUrl }}
-                  style={{ width: '100%', height: '100%', borderRadius: 12 }}/> :
-                  <Ionicons name="musical-notes-outline" size={29} color={pink}/>}
-              </View>
+              <MusicFolderCover project={project} size={68}/>
               <View style={{ flex: 1, gap: 5 }}>
                 <Text style={{ color: theme.foreground, fontSize: 15, fontWeight: '700' }}>{project.title}</Text>
                 <Text style={{ color: theme.muted, fontSize: 11 }}>
