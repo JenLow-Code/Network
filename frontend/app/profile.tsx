@@ -12,6 +12,7 @@ import { useApp } from '@/context/AppContext';
 import { useAuth } from '@/context/AuthProvider';
 import { useAppTheme } from '@/theme/AppTheme';
 import { ProfileTalentTile } from '@/components/talent/ProfileTalentTile';
+import { TranslatorLanguageFields } from '@/components/talent/TranslatorLanguageFields';
 import { ProfilePublicationFeed } from '@/components/publication/PublicationGallery';
 import SemenceSharesFeed from '@/components/dream/SemenceSharesFeed';
 import { PHASE_LABELS, PHASE_COLORS } from '@/domain/publication';
@@ -20,7 +21,7 @@ import { api } from '@/lib/api/client';
 import { toPublications, type ApiFeedItem } from '@/lib/api/adapters';
 import type { Publication } from '@/domain/publication';
 import type { TalentIllustration } from '@/components/talent/TalentArt';
-type Talent = { name: string; level: number; interests: string[]; description?: string };
+type Talent = { name: string; level: number; interests: string[]; description?: string; sourceLanguage?: string; targetLanguage?: string };
 const initial: Talent[] = [
   { name: 'Batterie', level: 2, interests: ['Tandem', 'Enseigner'] },
   { name: 'Chant', level: 1, interests: ['Tandem', 'Apprendre'] },
@@ -59,6 +60,9 @@ export default function Profile() {
   const [talents, setTalents] = useState<Talent[]>(initial);
   const [loaded, setLoaded] = useState(false);
   const [newTalent, setNewTalent] = useState('');
+  const [newSourceLanguage,setNewSourceLanguage] = useState('');
+  const [newTargetLanguage,setNewTargetLanguage] = useState('');
+  const [addLanguageError,setAddLanguageError] = useState(false);
   const [addTalentOpen,setAddTalentOpen]=useState(false);
   const scrollRef=useRef<any>(null);
   const talentY=useRef(0);
@@ -266,7 +270,10 @@ export default function Profile() {
           Découvrir lorsque les profils seront publiés.
         </Text>
         <View style={{flexDirection:'row',flexWrap:'wrap',gap:10,marginTop:16}}>
-          {talents.map((t,index)=><ProfileTalentTile key={index} title={t.name} level={levels[t.level]?.name||'À définir'} art={talentArt(t.name)} width={cardWidth} onPress={()=>setSelectedTalent(index)}/>)}
+          {talents.map((t,index)=><ProfileTalentTile key={index} title={t.name} level={levels[t.level]?.name||'À définir'}
+            subtitle={t.name.toLocaleLowerCase('fr')==='traducteur'&&t.sourceLanguage&&t.targetLanguage
+              ?t.sourceLanguage+' → '+t.targetLanguage:undefined}
+            art={talentArt(t.name)} width={cardWidth} onPress={()=>setSelectedTalent(index)}/>)}
           <Pressable accessibilityRole="button" accessibilityLabel="Ajouter un talent" onPress={()=>setAddTalentOpen(true)}
             style={{width:cardWidth,height:cardWidth,borderRadius:10,borderWidth:1.5,
               borderStyle:'dashed',borderColor:'#27845B',backgroundColor:theme.surface,
@@ -303,10 +310,29 @@ export default function Profile() {
               placeholder="Ex. Guitare, photographie, chant…"
               style={{borderWidth:1,borderColor:theme.border,borderRadius:10,
                 padding:13,color:theme.foreground,fontSize:14}}/>
+            <Pressable accessibilityRole="button" onPress={()=>setNewTalent('Traducteur')}
+              style={{alignSelf:'flex-start',paddingVertical:7,paddingHorizontal:11,
+                borderWidth:1,borderColor:theme.border,borderRadius:9}}>
+              <Text style={{color:theme.foreground,fontSize:12}}>Traducteur</Text>
+            </Pressable>
+            {newTalent.trim().toLocaleLowerCase('fr')==='traducteur'?<TranslatorLanguageFields
+              sourceLanguage={newSourceLanguage} targetLanguage={newTargetLanguage}
+              onChangeSource={v=>{setNewSourceLanguage(v);setAddLanguageError(false);}}
+              onChangeTarget={v=>{setNewTargetLanguage(v);setAddLanguageError(false);}}/>:null}
+            {addLanguageError?<Text style={{color:'#C34D65',fontSize:12}}>
+              Indique les deux langues de traduction.
+            </Text>:null}
             <Pressable accessibilityRole="button" onPress={()=>{
               if(!newTalent.trim())return;
-              setTalents(items=>[...items,{name:newTalent.trim(),level:0,interests:[]}]);
-              setNewTalent('');setAddTalentOpen(false);
+              const translator=newTalent.trim().toLocaleLowerCase('fr')==='traducteur';
+              if(translator&&(!newSourceLanguage.trim()||!newTargetLanguage.trim())){
+                setAddLanguageError(true);return;
+              }
+              setTalents(items=>[...items,{name:translator?'Traducteur':newTalent.trim(),level:0,interests:[],
+                sourceLanguage:translator?newSourceLanguage.trim():undefined,
+                targetLanguage:translator?newTargetLanguage.trim():undefined}]);
+              setNewTalent('');setNewSourceLanguage('');setNewTargetLanguage('');
+              setAddLanguageError(false);setAddTalentOpen(false);
             }} style={{backgroundColor:'#242322',borderRadius:10,padding:14,alignItems:'center'}}>
               <Text style={{color:'#FFFFFF',fontSize:13,fontWeight:'700'}}>Ajouter à mon profil</Text>
             </Pressable>
@@ -319,6 +345,11 @@ export default function Profile() {
             <Pressable onPress={()=>setSelectedTalent(null)} style={{alignSelf:'flex-end',padding:6}}><Ionicons name="close" size={23} color={theme.foreground}/></Pressable>
             {selectedTalent!==null&&talents[selectedTalent] ? <>
               <Text style={{fontSize:24,fontWeight:'700',color:theme.foreground,textAlign:'center'}}>{talents[selectedTalent].name}</Text>
+              {talents[selectedTalent].name.toLocaleLowerCase('fr')==='traducteur'?<TranslatorLanguageFields
+                sourceLanguage={talents[selectedTalent].sourceLanguage||''}
+                targetLanguage={talents[selectedTalent].targetLanguage||''}
+                onChangeSource={sourceLanguage=>updateTalent(selectedTalent,{sourceLanguage})}
+                onChangeTarget={targetLanguage=>updateTalent(selectedTalent,{targetLanguage})}/>:null}
               <Text style={{color:theme.muted,textAlign:'center'}}>Niveau : {levels[talents[selectedTalent].level]?.name}</Text>
               <View style={{flexDirection:'row',justifyContent:'center',gap:12}}>{levels.map((l,i)=><Pressable key={l.name} onPress={()=>updateTalent(selectedTalent,{level:i})} style={{width:24,height:24,borderRadius:12,backgroundColor:i<=talents[selectedTalent].level?l.color:theme.border,borderWidth:i===talents[selectedTalent].level?2:0,borderColor:theme.foreground}} accessibilityLabel={l.name}/>)}</View>
               <Text style={{fontWeight:'700',color:theme.foreground}}>Ma présentation</Text>
