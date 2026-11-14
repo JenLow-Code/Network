@@ -111,6 +111,8 @@ export default function MusicWorkspace() {
   const [publishing, setPublishing] = useState(false);
   const [publishError, setPublishError] = useState('');
   const [masterInput, setMasterInput] = useState('');
+  const [openingChat,setOpeningChat] = useState(false);
+  const [chatError,setChatError] = useState('');
 
   useEffect(() => {
     setDraftTitle(project?.title || '');
@@ -259,6 +261,17 @@ export default function MusicWorkspace() {
     } catch (e) {
       setServerError(e instanceof Error ? e.message : 'Impossible de traiter la proposition.');
     } finally { setSavingServer(null); }
+  };
+  const openSharedChat = async () => {
+    if (!project.publishedId || openingChat) return;
+    setOpeningChat(true);setChatError('');
+    try {
+      const response = await api<{conversationId:string}>(
+        '/api/music/' + encodeURIComponent(project.publishedId) + '/conversation',
+        {auth:'required'});
+      router.push({pathname:'/chat/[id]',params:{id:response.conversationId}});
+    } catch (e) { setChatError(e instanceof Error?e.message:'Discussion partagée inaccessible.'); }
+    finally {setOpeningChat(false);}
   };
   const publish = async () => {
     if (!rights || (!project.masterMediaId && !project.masterUrl)) {
@@ -609,8 +622,12 @@ export default function MusicWorkspace() {
         <Text style={{fontSize:19,fontWeight:'700',color:theme.foreground}}>Discussion du morceau</Text>
         <Text style={{fontSize:12,color:theme.muted,lineHeight:20}}>
           Chaque dossier possède sa discussion. Les notes ci-dessous restent privées sur cet appareil.
-          Le chat entre collaborateurs sera activé quand le dossier et ses participants seront synchronisés.
+          Pour un morceau publié, tu peux ouvrir sa discussion partagée avec les collaborateurs acceptés.
         </Text>
+        {project.publishedId ? <>
+          {action(openingChat?'Ouverture…':'Ouvrir le chat partagé',()=>{void openSharedChat();},false,openingChat)}
+          {chatError?<Text style={{color:'#B44F63',fontSize:12}}>{chatError}</Text>:null}
+        </>:null}
         {project.messages.map(note=><View key={note.id}
           style={{padding:12,borderRadius:13,backgroundColor:theme.dark?'#352733':'#F8EAF0',gap:5}}>
           <Text style={{fontSize:11,color:accent,fontWeight:'700'}}>{note.author} · {fmtDate(note.createdAt)}</Text>
