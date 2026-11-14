@@ -9,6 +9,7 @@ import { useAppTheme } from '@/theme/AppTheme';
 import { useMusicWorkspaces, newMusicId } from '@/domain/musicWorkspace';
 import { MusicWholeSong } from '@/components/music/MusicWholeSong';
 import { MusicSectionStudio } from '@/components/music/MusicSectionStudio';
+import { MusicFolderCover } from '@/components/music/MusicFolderCover';
 
 const pink='#CB245C';
 
@@ -51,8 +52,6 @@ export default function MusicWorkspace(){
   </SafeAreaView>;
 
   const update=(change:Partial<typeof project>)=>patch(project.id,change);
-  const palette=['#F3E4E7','#E9EAF2','#E8EEDF','#E8E8E2','#F1E9D8'];
-  const tint=palette[Array.from(project.title).reduce((sum,ch)=>sum+ch.charCodeAt(0),0)%palette.length];
   const chooseSection=(selected:string)=>setSectionId(selected);
   const newPart=()=>{
     const sectionId=newMusicId();
@@ -65,13 +64,7 @@ export default function MusicWorkspace(){
         paddingHorizontal:compact?17:30,paddingTop:12,paddingBottom:110,gap:19}}>
       <PageHeader onBack={()=>router.replace('/music-hub')} title="Atelier musical"/>
       <View style={{flexDirection:'row',gap:16,alignItems:'center'}}>
-        <View style={{width:compact?78:102,height:compact?78:102,borderRadius:18,
-          backgroundColor:theme.dark?'#382B35':tint,alignItems:'center',
-          justifyContent:'center',overflow:'hidden'}}>
-          {project.coverUrl?<Image source={{uri:project.coverUrl}}
-            style={{width:'100%',height:'100%',borderRadius:18}}/>:
-            <Ionicons name="musical-notes-outline" color={pink} size={34}/>}
-        </View>
+        <MusicFolderCover project={project} size={compact?78:102}/>
         <View style={{flex:1,gap:7}}>
           <Text numberOfLines={2} style={{color:theme.foreground,fontSize:compact?23:29,
             lineHeight:compact?30:36,fontWeight:'700'}}>{project.title}</Text>
