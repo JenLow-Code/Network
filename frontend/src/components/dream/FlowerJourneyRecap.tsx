@@ -113,7 +113,7 @@ export default function FlowerJourneyRecap({
   const presentation = draft?.momentPresentation || {};
   const selected = new Set(draft?.highlightIds || []);
   const allMoments = [...recorded, ...custom].sort((a, b) =>
-    b.date.localeCompare(a.date));
+    a.date.localeCompare(b.date));
   const publicMoments: Moment[] = (dream.testimony?.highlights || []).map(
     (item): Moment => item.kind === 'personal'
       ? { ...item, kind: 'personal', source: 'personal' }
@@ -123,7 +123,8 @@ export default function FlowerJourneyRecap({
           source: 'recorded',
         },
   );
-  const list = publicView ? publicMoments : allMoments;
+  const list = publicView ? publicMoments.sort((a, b) =>
+    a.date.localeCompare(b.date)) : allMoments;
   const hidden = publicView ? [] : list.filter(m => presentation[m.id]?.hidden);
   const visible = publicView ? list :
     list.filter(m => !presentation[m.id]?.hidden);
@@ -412,77 +413,37 @@ export default function FlowerJourneyRecap({
   );
 
   return (
-    <View style={{ borderTopWidth: 1, borderColor: theme.border,
-      paddingTop: 23, marginTop: 25 }}>
-      <Text style={heading}>Tout ce chemin…</Text>
-      <Text style={{ ...muted, marginTop: 6, marginBottom: 14 }}>
-        Ce qui a accompagné la croissance de ce rêve.
+    <View style={{ marginTop: 33, paddingTop: 4 }}>
+      <Text style={{ fontSize: 10, color: MAGENTA, fontWeight: '800',
+        letterSpacing: 1.15, marginBottom: 9 }}>LE CHEMIN PARCOURU</Text>
+      <Text style={{ ...heading, fontSize: 26, lineHeight: 34 }}>
+        Les moments qui nous ont conduits ici
       </Text>
-      {dream.goalDate ? (
-        <View style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-start',
-          marginBottom: 15 }}>
-          <Ionicons name="calendar-outline" color={theme.muted}
-            size={15} style={{ marginTop: 2 }}/>
-          <Text style={{ ...muted, flex: 1 }}>
-            Au départ, l’objectif était fixé au {dateLabel(dream.goalDate)}.
-          </Text>
-        </View>
-      ) : null}
+      <Text style={{ ...muted, marginTop: 8, marginBottom: 17,
+        fontSize: 13, lineHeight: 21 }}>
+        Les rencontres, les étapes et les petits pas qui ont donné vie à ce rêve.
+      </Text>
       {stats.length ? (
         <View style={{ flexDirection: 'row', flexWrap: 'wrap',
-          columnGap: 24, rowGap: 15, marginBottom: 19 }}>
+          gap: 15, marginBottom: 19 }}>
           {stats.map(stat => (
-            <View key={stat.key} style={{ minWidth: 115, flexGrow: 1,
-              flexBasis: '35%', flexDirection: 'row',
-              gap: 9, alignItems: 'flex-start' }}>
-              <Ionicons name={stat.icon} size={20} color={stat.color}
-                style={{ marginTop: 5 }}/>
-              <View style={{ flex: 1 }}>
-                <Text style={{ color: theme.foreground,
-                  fontSize: 22, lineHeight: 26,
-                  fontWeight: '700' }}>{stat.value}</Text>
-                <Text style={muted}>{stat.label}</Text>
-              </View>
-            </View>
+            <Text key={stat.key} style={{ ...muted,
+              fontSize: 11, lineHeight: 17 }}>
+              <Text style={{ fontWeight: '700',
+                color: theme.foreground }}>{stat.value}</Text>
+              {' '}{stat.label}
+            </Text>
           ))}
         </View>
       ) : null}
-      {!publicView && found.length ? (
-        <View style={{ marginBottom: 18, gap: 7 }}>
-          <Text style={{ ...muted, fontWeight: '700' }}>
-            Les ressources qui ont fait partie de l’aventure
-          </Text>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 7 }}>
-            {[...talents, ...material].slice(0, 8).map(item => (
-              <View key={item.id} style={{ borderWidth: 1,
-                borderColor: theme.border, borderRadius: 20,
-                paddingHorizontal: 10, paddingVertical: 6,
-                flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-                <Ionicons name="checkmark" size={12} color={GREEN}/>
-                <Text style={{ color: theme.foreground, fontSize: 11 }}>
-                  {item.title}
-                </Text>
-              </View>
-            ))}
-          </View>
-        </View>
-      ) : !publicView && needs.length ? (
+      {editable ? (
         <Text style={{ ...muted, marginBottom: 17 }}>
-          Pour avancer, ce rêve cherchait : {needs.slice(0, 5).join(', ')}.
+          Coche les moments que tu veux garder dans la présentation publique.
+          Les autres restent privés. Tu peux personnaliser chaque souvenir.
         </Text>
       ) : null}
 
       <View style={{ marginTop: 3 }}>
-        <Text style={{ ...heading, fontSize: 19,
-          lineHeight: 26, marginBottom: 7 }}>
-          Les moments qui ont compté
-        </Text>
-        {!publicView ? (
-          <Text style={{ ...muted, marginBottom: 12 }}>
-            Chaque étape a compté. Donne-lui un symbole, quelques mots,
-            et choisis ce que tu souhaites partager.
-          </Text>
-        ) : null}
         {shown.length ? (
           <View style={{ marginTop: 3 }}>
             {shown.map((moment, i) => {
@@ -560,6 +521,22 @@ export default function FlowerJourneyRecap({
                       fontSize: 11, fontWeight: '700',
                       letterSpacing: .3,
                     }}>{dateLabel(moment.date)}</Text>
+                    {editable && !isHidden ? (
+                      <Pressable accessibilityRole="checkbox"
+                        accessibilityState={{ checked: isSelected }}
+                        accessibilityLabel={'Inclure ' + moment.title + ' dans la présentation publique'}
+                        onPress={() => togglePublic(moment)}
+                        style={{ marginLeft: 'auto', flexDirection: 'row',
+                          alignItems: 'center', gap: 6, minHeight: 30,
+                          paddingHorizontal: 6 }}>
+                        <Ionicons name={isSelected ? 'checkbox' : 'square-outline'}
+                          color={isSelected ? MAGENTA : theme.muted} size={18}/>
+                        <Text style={{ color: isSelected ? MAGENTA : theme.muted,
+                          fontSize: 10, fontWeight: isSelected ? '700' : '500' }}>
+                          {isSelected ? 'À partager' : 'Inclure'}
+                        </Text>
+                      </Pressable>
+                    ) : null}
                   </View>
                   <View style={{
                     flexDirection: 'row', alignItems: 'stretch',
@@ -787,10 +764,49 @@ export default function FlowerJourneyRecap({
             })}
           </View>
         ) : !publicView ? (
-          <Text style={{ ...muted, fontStyle: 'italic', marginBottom: 7 }}>
-            Les moments du Logbook apparaîtront ici. Tu peux déjà ajouter un
-            souvenir personnel.
-          </Text>
+          <View style={{ marginBottom: 11, gap: 13 }}>
+            <Text style={{ ...muted, fontStyle: 'italic' }}>
+              Les moments enregistrés dans le Logbook apparaîtront ici.
+            </Text>
+            {/musique|équipe|chant/i.test(dream.title) ? (
+              <View style={{ borderLeftWidth: 2,
+                borderLeftColor: theme.border, paddingLeft: 17, gap: 13,
+                paddingVertical: 4 }}>
+                <Text style={{ color: theme.muted, fontSize: 10,
+                  letterSpacing: 1 }}>EXEMPLE UNIQUEMENT · NON PUBLIÉ</Text>
+                <View style={{ gap: 3 }}>
+                  <Text style={{ color: MAGENTA, fontSize: 11,
+                    fontWeight: '700' }}>18 sept. 2026</Text>
+                  <Text style={{ color: theme.foreground, fontSize: 15,
+                    fontFamily: 'serif' }}>
+                    Sarah nous a rejoint en tant que chanteuse
+                  </Text>
+                  <Text style={muted}>
+                    La première personne à croire à ce projet avec nous.
+                  </Text>
+                </View>
+                <View style={{ gap: 3 }}>
+                  <Text style={{ color: MAGENTA, fontSize: 11,
+                    fontWeight: '700' }}>4 oct. 2026</Text>
+                  <Text style={{ color: theme.foreground, fontSize: 15,
+                    fontFamily: 'serif' }}>
+                    David nous a rejoint en tant que batteur
+                  </Text>
+                  <Text style={muted}>
+                    Avec lui, le groupe a commencé à prendre forme.
+                  </Text>
+                </View>
+                <View style={{ gap: 3 }}>
+                  <Text style={{ color: MAGENTA, fontSize: 11,
+                    fontWeight: '700' }}>12 nov. 2026</Text>
+                  <Text style={{ color: theme.foreground, fontSize: 15,
+                    fontFamily: 'serif' }}>
+                    Notre première répétition tous ensemble
+                  </Text>
+                </View>
+              </View>
+            ) : null}
+          </View>
         ) : null}
         {editable && visible.length > 5 ? (
           <Pressable accessibilityRole="button"
