@@ -16,7 +16,7 @@ import { json } from '../http/respond';
 import { createDream, dreamDetail, parseCreate } from '../services/dreams';
 
 type Credit = { displayName: string; contribution: string; handle?: string | null };
-type TrackRow = { id: string; publication_id: string; publisher_id: string; rights_id: string; audio_asset_id: string | null; external_stream_url: string | null; cover_asset_id: string | null; withdrawn_at: string | null; title: string; adaptations_allowed: number; reviewed_status: string };
+type TrackRow = { id: string; publication_id: string; publisher_id: string; original_track_id: string | null; rights_id: string; audio_asset_id: string | null; external_stream_url: string | null; cover_asset_id: string | null; withdrawn_at: string | null; title: string; adaptations_allowed: number; reviewed_status: string };
 
 function parseCredits(v: V, field: string, required: boolean): Credit[] | undefined {
   return v.array(field, raw => {
@@ -74,6 +74,7 @@ export function registerMusic(r: Router): void {
     const audioMediaId = v.id('audioMediaId', { nullable: true });
     const externalStreamUrl = v.url('externalStreamUrl', { nullable: true });
     const coverMediaId = v.id('coverMediaId', { nullable: true });
+    const parentPublicationId = v.id('parentPublicationId', { nullable: true });
     const durationMs = v.int('durationMs', { min: 0, max: 3 * 3600 * 1000, nullable: true });
     const visibility = v.oneOf('visibility', ['public', 'members', 'private'] as const) ?? 'public';
     const rightsConfirmed = v.bool('rightsConfirmed', { required: true });
@@ -98,6 +99,28 @@ export function registerMusic(r: Router): void {
     if (licenseType !== 'own_work' && !originalSourceUrl && !permissionEvidenceRef) throw unprocessable('rights_evidence_required', 'Name the source or the permission you hold for music that is not your own work.');
     if (audioMediaId) await requireOwnedMedia(ctx.sql, audioMediaId, viewer.id, ['audio']);
     if (coverMediaId) await requireOwnedMedia(ctx.sql, coverMediaId, viewer.id, ['image']);
+    // Additional versions may be published by the original publisher only.
+    // They link to the original recording, never replace it.
+    let parentOriginalTrackId: string | null = null;
+    if (parentPublicationId) {
+      const parent = await trackByPublication(ctx, parentPublicationId);
+      const root = parent.original_track_id
+        ? await ctx.sql.first<{id:string;publisher_id:string;withdrawn_at:string|null;
+            original_creator_name:string}>(
+              'SELECT t.id,t.publisher_id,t.withdrawn_at,r.original_creator_name FROM music_tracks t JOIN music_rights r ON r.id=t.rights_id WHERE t.id=?',
+              parent.original_track_id) : null;
+      if (parent.publisher_id !== viewer.id || (root && root.publisher_id !== viewer.id))
+        throw forbidden('original_publisher_only', 'Only the original publisher may create a new version of this song.');
+      if (parent.withdrawn_at || root?.withdrawn_at)
+        throw unprocessable('original_track_withdrawn');
+      const originCreator = root?.original_creator_name || (
+        await ctx.sql.first<{ original_creator_name:string }>(
+          'SELECT original_creator_name FROM music_rights WHERE id=?',parent.rights_id)
+      )?.original_creator_name;
+      if (originCreator && originCreator.trim() !== originalCreatorName?.trim())
+        throw unprocessable('original_attribution_mismatch', 'A new version must preserve the original creator.');
+      parentOriginalTrackId = root?.id || parent.id;
+    }
     const rightsId = newId(), pubId = newId(), trackId = newId();
     const stmts: D1PreparedStatement[] = [
       ctx.sql.stmt(
@@ -108,8 +131,8 @@ export function registerMusic(r: Router): void {
       ),
       ctx.sql.stmt("INSERT INTO publications(id,type,author_id,title,cover_asset_id,visibility) VALUES(?,'music',?,?,?,?)", pubId, viewer.id, title!, coverMediaId ?? null, visibility),
       ctx.sql.stmt(
-        'INSERT INTO music_tracks(id,publication_id,publisher_id,audio_asset_id,external_stream_url,cover_asset_id,rights_id,duration_ms,description,song_author,lyrics_json) VALUES(?,?,?,?,?,?,?,?,?,?,?)',
-        trackId, pubId, viewer.id, audioMediaId ?? null, externalStreamUrl ?? null, coverMediaId ?? null, rightsId, durationMs ?? null, description ?? null, songAuthor ?? null, lyrics ? JSON.stringify(lyrics) : null,
+        'INSERT INTO music_tracks(id,publication_id,publisher_id,audio_asset_id,external_stream_url,cover_asset_id,rights_id,duration_ms,description,song_author,lyrics_json,original_track_id) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)',
+        trackId, pubId, viewer.id, audioMediaId ?? null, externalStreamUrl ?? null, coverMediaId ?? null, rightsId, durationMs ?? null, description ?? null, songAuthor ?? null, lyrics ? JSON.stringify(lyrics) : null, parentOriginalTrackId,
       ),
       ...(await creditStatements(ctx, 'music_contributors', 'track_id', trackId, credits!)),
       // Every published piece has a real, access-controlled group conversation.
@@ -117,7 +140,7 @@ export function registerMusic(r: Router): void {
         'music-' + pubId, title!, viewer.id),
       ctx.sql.stmt("INSERT INTO conversation_members(conversation_id,user_id,role) VALUES(?,?,'admin')",
         'music-' + pubId, viewer.id),
-      auditStmt(ctx.sql, viewer.id, 'music_published', 'publication', pubId, ctx.requestId, { licenseType }),
+      auditStmt(ctx.sql, viewer.id, 'music_published', 'publication', pubId, ctx.requestId, { licenseType, parentOriginalTrackId }),
     ];
     try { await ctx.sql.batch(stmts); } catch (e) { mapSqlError(e); }
     return json({ item: await loadItem(ctx, pubId, { includeDemo: true }) }, 201, { Location: `/api/music/${pubId}` });
