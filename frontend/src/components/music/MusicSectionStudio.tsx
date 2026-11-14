@@ -338,6 +338,21 @@ export function MusicSectionStudio({project,section,patch,onOpenChat}:Props){
         {file.text?<Text selectable style={{color:theme.muted,fontSize:12,lineHeight:19}}>
           {file.sectionContent?.[section.id]||file.text}
         </Text>:null}
+        {file.localFileId||file.externalUrl?<Pressable onPress={()=>{
+          if(file.externalUrl?.startsWith('https://')){
+            void Linking.openURL(file.externalUrl);return;
+          }
+          if(!file.localFileId)return;
+          void getDraftAttachment(file.localFileId).then(blob=>{
+            if(!blob||Platform.OS!=='web'){setUploadError('Fichier joint indisponible.');return;}
+            const url=URL.createObjectURL(blob);
+            void Linking.openURL(url).catch(()=>setUploadError('Ouverture impossible.'))
+              .finally(()=>setTimeout(()=>URL.revokeObjectURL(url),60000));
+          });
+        }} style={{flexDirection:'row',alignItems:'center',gap:6,paddingVertical:5}}>
+          <Ionicons name="open-outline" size={16} color={pink}/>
+          <Text style={{fontSize:12,color:pink}}>Ouvrir le fichier joint</Text>
+        </Pressable>:null}
       </View>)}
     </View>:null}
     <View style={card}>
