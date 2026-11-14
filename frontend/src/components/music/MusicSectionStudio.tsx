@@ -103,9 +103,9 @@ export function MusicSectionStudio({project,section,patch,onOpenChat}:Props){
       patch({lyrics:[...project.lyrics,lyric]});
     }
   };
-  const addLayer=(title:string,role:string,localAudioId?:string)=>{
+  const addLayer=(title:string,role:string,localAudioId?:string,durationSeconds?:number)=>{
     const layer:MusicLayer={id:newMusicId(),sectionId:section.id,title:title.trim()||'Nouvelle prise',
-      role:role.trim()||'Instrument',contributor:user.name,createdAt:new Date().toISOString(),localAudioId};
+      role:role.trim()||'Instrument',contributor:user.name,createdAt:new Date().toISOString(),localAudioId,durationSeconds};
     patch({layers:[...project.layers,layer]});
     setNewTrack('');setTrackRole('');
   };
@@ -322,8 +322,8 @@ export function MusicSectionStudio({project,section,patch,onOpenChat}:Props){
           {action('Piste sans audio',()=>addLayer(newTrack,trackRole),true,!newTrack.trim())}
           {Platform.OS==='web'?action(uploading?'Import en cours…':'Importer une prise',importTrack,true,uploading):null}
         </View>
-        <MusicAudioCapture onSaved={(id,filename)=>addLayer(
-          newTrack.trim()||filename.replace(/\.[^.]+$/,''),trackRole,id)}/>
+        <MusicAudioCapture onSaved={(id,filename,durationSeconds)=>addLayer(
+          newTrack.trim()||filename.replace(/\.[^.]+$/,''),trackRole,id,durationSeconds)}/>
       </View>
       {uploadError?<Text style={{color:'#B34D67',fontSize:12}}>{uploadError}</Text>:null}
     </View>
