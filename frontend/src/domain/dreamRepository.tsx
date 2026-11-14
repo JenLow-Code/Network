@@ -5,6 +5,7 @@ import { DreamPhase } from './publication';
 import { DreamEntry, DreamBlock, DreamResource, DreamHabit, DreamMilestone, FlowerDraft, fromDemo, canEditField, nextPhase } from './dreamWorkspace';
 import { rememberFoundNeeds } from './dreamResourceRecovery';
 import { growthResourceEvents } from './growthTimeline';
+import { flowerPublicationSnapshot } from './flowerMoments';
 import { useApp } from '@/context/AppContext';
 import { readDreamWorkspace, persistDreamWorkspace } from './dreamPersistence';
 type Repo = {
@@ -246,9 +247,7 @@ export function DreamProvider({ children }: { children: React.ReactNode }) {
                 mediaType,
                 mediaUrl,
                 mediaItems: d.flowerDraft?.attachments || [],
-                highlights: (d.milestones || [])
-                  .filter(log => d.flowerDraft?.highlightIds?.includes(log.id))
-                  .map(log => ({ id: log.id, title: log.title, date: log.date })),
+                highlights: flowerPublicationSnapshot(d),
                 date: d.flowerDraft!.achievedOn!,
                 publishedAt: new Date().toISOString(),
               },
