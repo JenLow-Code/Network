@@ -21,6 +21,7 @@ import { colors as c } from '@/theme/colors';
 import { useDreams } from '@/domain/dreamRepository';
 import { api } from '@/lib/api/client';
 import { useAppTheme } from '@/theme/AppTheme';
+import { useMusicWorkspaces } from '@/domain/musicWorkspace';
 
 function ChatHeader({ name, subtitle }: { name: string; subtitle: string }) {
   return (
@@ -217,11 +218,18 @@ function PersonChat({
 type MusicChatMessage = {
   id: string; body: string | null; sentAt: string; mine: boolean;
   sender?: { displayName?: string } | null;
+  musicSection?: {id:string;title:string}|null;
 };
 
 /** Shared, server-backed chat. Unlike draft notes, these messages reach other members. */
 function MusicSharedConversation({ conversationId }: { conversationId: string }) {
   const theme = useAppTheme();
+  const {sectionId,sectionTitle,projectId} = useLocalSearchParams<{
+    sectionId?:string;sectionTitle?:string;projectId?:string;
+  }>();
+  const workspaces=useMusicWorkspaces();
+  const [contextId,setContextId] = useState(sectionId||'');
+  const [contextTitle,setContextTitle] = useState(sectionTitle||'');
   const [title,setTitle] = useState('Discussion du morceau');
   const [items,setItems] = useState<MusicChatMessage[]>([]);
   const [input,setInput] = useState('');
@@ -257,9 +265,13 @@ function MusicSharedConversation({ conversationId }: { conversationId: string })
     const body = input.trim();
     try {
       await api('/api/conversations/' + encodeURIComponent(conversationId) + '/messages',{
-        method:'POST',auth:'required',body:{type:'text',body,clientMessageId:'music-'+Date.now()},
+        method:'POST',auth:'required',body:{
+          type:'text',body,clientMessageId:'music-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),
+          ...(contextId&&contextTitle?{musicSectionId:contextId,musicSectionTitle:contextTitle}:{}),
+        },
       });
       setInput('');
+      setContextId('');setContextTitle('');
       await reload();
     } catch(e) { setError(e instanceof Error?e.message:'Envoi impossible.'); }
     finally{setBusy(false);}
@@ -290,12 +302,40 @@ function MusicSharedConversation({ conversationId }: { conversationId: string })
         {!item.mine?<Text style={{color:theme.muted,fontSize:11,fontWeight:'700'}}>
           {item.sender?.displayName||'Membre'}
         </Text>:null}
+        {item.musicSection?<Pressable accessibilityRole="button"
+          onPress={()=>{
+            const local=workspaces.items.find(p=>p.publishedId===conversationId.slice(6)||
+              p.versions.some(v=>v.publishedId===conversationId.slice(6)));
+            if(local && local.sections.some(x=>x.id===item.musicSection!.id))
+              router.push({pathname:'/music-workspace/[id]',params:{
+                id:local.id,sectionId:item.musicSection!.id,
+              }});
+          }} style={{paddingVertical:5,paddingHorizontal:8,borderRadius:8,
+            backgroundColor:item.mine?'rgba(255,255,255,.18)':(theme.dark?'#3B2D38':'#F9E8F0'),
+            alignSelf:'flex-start',flexDirection:'row',alignItems:'center',gap:5}}>
+          <Ionicons name="return-down-forward-outline" size={13}
+            color={item.mine?'#fff':'#CB245C'}/>
+          <Text style={{fontSize:11,fontWeight:'700',color:item.mine?'#fff':'#CB245C'}}>
+            {item.musicSection.title}
+          </Text>
+        </Pressable>:null}
         <Text style={{color:item.mine?'#fff':theme.foreground,fontSize:13,lineHeight:19}}>
           {item.body||'Message indisponible'}
         </Text>
       </View>)}
       {error?<Text style={{color:'#B44F63',fontSize:12}}>{error}</Text>:null}
     </ScrollView>
+    {contextId&&contextTitle?<View style={{flexDirection:'row',alignItems:'center',gap:9,
+      borderTopWidth:1,borderColor:theme.border,paddingHorizontal:14,paddingVertical:7}}>
+      <Ionicons name="return-down-forward-outline" color="#CB245C" size={17}/>
+      <Text style={{color:theme.foreground,fontSize:12,flex:1}}>
+        Référence : {contextTitle}
+      </Text>
+      <Pressable accessibilityLabel="Retirer la référence"
+        onPress={()=>{setContextId('');setContextTitle('');}}>
+        <Ionicons name="close" color={theme.muted} size={19}/>
+      </Pressable>
+    </View>:null}
     <View style={{padding:12,gap:8,flexDirection:'row',alignItems:'center',
       borderTopWidth:1,borderColor:theme.border}}>
       <TextInput value={input} onChangeText={setInput}

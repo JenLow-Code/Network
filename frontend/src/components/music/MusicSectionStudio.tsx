@@ -8,10 +8,13 @@ import { MusicAudioPreview } from './MusicAudioPreview';
 import { chooseMusicFile } from '@/domain/musicMedia';
 import { getDraftAttachment, saveDraftAttachment, saveDraftAudio } from '@/domain/musicLocalStorage';
 import { newMusicId } from '@/domain/musicWorkspace';
+import { MusicTalentRequests } from './MusicTalentRequests';
+import { fileAudioDuration,formatMusicDuration,sectionDurationSeconds } from '@/domain/musicProjectSelectors';
 import type { MusicLayer, MusicLyric, MusicProject, MusicSection, MusicSuggestion } from '@/domain/musicWorkspace';
 
 const pink='#CB245C';
-type Props={project:MusicProject;section:MusicSection;patch:(change:Partial<MusicProject>)=>void};
+type Props={project:MusicProject;section:MusicSection;patch:(change:Partial<MusicProject>)=>void;
+  onOpenChat:(sectionId:string)=>void;};
 
 function ScoreLink({section}:{section:MusicSection}){
   const theme=useAppTheme();
@@ -45,7 +48,7 @@ function ScoreLink({section}:{section:MusicSection}){
     <Ionicons name="open-outline" size={17} color={theme.muted}/>
   </Pressable>;
 }
-export function MusicSectionStudio({project,section,patch}:Props){
+export function MusicSectionStudio({project,section,patch,onOpenChat}:Props){
   const theme=useAppTheme();const user=useApp();
   const [currentLanguage,setCurrentLanguage]=useState(project.originalLanguage||'Français');
   const [newLanguage,setNewLanguage]=useState('');
@@ -59,6 +62,8 @@ export function MusicSectionStudio({project,section,patch}:Props){
   const [suggestionNote,setSuggestionNote]=useState('');
   const [comment,setComment]=useState('');
   const [editingTitle,setEditingTitle]=useState(false);
+  const [editingTiming,setEditingTiming]=useState(false);
+  const [showFreeLyrics,setShowFreeLyrics]=useState(false);
   useEffect(()=>{setCurrentLanguage(project.originalLanguage||'Français');setEditingTitle(false);},
     [section.id]);
   const lyrics=project.lyrics.filter(x=>x.sectionId===section.id);
@@ -67,6 +72,15 @@ export function MusicSectionStudio({project,section,patch}:Props){
   const layers=project.layers.filter(x=>x.sectionId===section.id);
   const proposals=project.suggestions.filter(x=>x.sectionId===section.id);
   const messages=project.messages.filter(x=>x.sectionId===section.id);
+  const mappedFiles=project.files.filter(f=>f.sectionIds.includes(section.id));
+  const mappedLyrics=mappedFiles.filter(f=>f.kind==='lyrics');
+  const linkedAudio=mappedFiles.filter(f=>f.kind==='audio');
+  const linkedDocuments=mappedFiles.filter(f=>f.kind!=='lyrics'&&f.kind!=='audio');
+  const derivedInstruments=[...new Set([
+    ...layers.map(l=>l.role),...linkedAudio.map(f=>f.instrument||''),
+    ...(section.instruments||[]),
+  ].map(x=>x.trim()).filter(x=>x&&!['Piste','Instrument','Piste audio'].includes(x)))];
+  const duration=sectionDurationSeconds(project,section);
   const card={borderWidth:1,borderColor:theme.border,borderRadius:17,
     backgroundColor:theme.surface,padding:17,gap:13} as const;
   const input={backgroundColor:theme.background,borderWidth:1,borderColor:theme.border,
@@ -89,15 +103,22 @@ export function MusicSectionStudio({project,section,patch}:Props){
       patch({lyrics:[...project.lyrics,lyric]});
     }
   };
-  const addLayer=(title:string,role:string,localAudioId?:string)=>{
+  const addLayer=(title:string,role:string,localAudioId?:string,durationSeconds?:number)=>{
     const layer:MusicLayer={id:newMusicId(),sectionId:section.id,title:title.trim()||'Nouvelle prise',
-      role:role.trim()||'Instrument',contributor:user.name,createdAt:new Date().toISOString(),localAudioId};
+      role:role.trim()||'Instrument',contributor:user.name,createdAt:new Date().toISOString(),localAudioId,durationSeconds};
     patch({layers:[...project.layers,layer]});
     setNewTrack('');setTrackRole('');
   };
   const importTrack=()=>{if(Platform.OS!=='web')return;
     chooseMusicFile(file=>{setUploading(true);setUploadError('');
-      void saveDraftAudio(file).then(id=>addLayer(file.name.replace(/\.[^.]+$/,''),trackRole,id))
+      void Promise.all([saveDraftAudio(file),fileAudioDuration(file)])
+        .then(([id,durationSeconds])=>{
+          const layer:MusicLayer={id:newMusicId(),sectionId:section.id,
+            title:file.name.replace(/\.[^.]+$/,''),role:trackRole.trim()||'Piste audio',
+            contributor:user.name,createdAt:new Date().toISOString(),
+            localAudioId:id,durationSeconds};
+          patch({layers:[...project.layers,layer]});
+        })
         .catch(e=>setUploadError(e instanceof Error?e.message:'Import impossible.'))
         .finally(()=>setUploading(false));
     });
@@ -134,8 +155,9 @@ export function MusicSectionStudio({project,section,patch}:Props){
           onChangeText={title=>updateSection({title})}
           onBlur={()=>setEditingTitle(false)} autoFocus style={{...input,fontSize:17}}/>:
           <Text style={{color:theme.foreground,fontSize:23,fontWeight:'700'}}>{section.title}</Text>}
-        <Text style={{fontSize:11,color:theme.muted}}>
-          Partie du morceau · {layers.length} piste{layers.length!==1?'s':''}
+        <Text style={{fontSize:12,color:theme.muted}}>
+          {formatMusicDuration(duration)} · {layers.length+linkedAudio.length} piste(s)
+          {duration===undefined?' · durée non définie':''}
         </Text>
       </View>
       <Pressable accessibilityRole="button" accessibilityLabel="Renommer cette partie"
@@ -144,8 +166,59 @@ export function MusicSectionStudio({project,section,patch}:Props){
       </Pressable>
     </View>
 
+    <View style={{gap:7}}>
+      <Pressable onPress={()=>setEditingTiming(!editingTiming)}
+        style={{flexDirection:'row',alignItems:'center',gap:7}}>
+        <Ionicons name="time-outline" color={pink} size={17}/>
+        <Text style={{fontSize:12,color:theme.foreground,flex:1}}>
+          {duration===undefined?'Définir les repères temporels':'Durée de cette partie : '+formatMusicDuration(duration)}
+        </Text>
+        <Ionicons name={editingTiming?'chevron-up':'chevron-down'} color={theme.muted} size={17}/>
+      </Pressable>
+      {editingTiming?<View style={{flexDirection:'row',gap:8}}>
+        {(['startSeconds','endSeconds'] as const).map((key)=><View key={key} style={{flex:1,gap:4}}>
+          <Text style={{fontSize:11,color:theme.muted}}>
+            {key==='startSeconds'?'Début (secondes)':'Fin (secondes)'}
+          </Text>
+          <TextInput keyboardType="decimal-pad"
+            defaultValue={section[key]===undefined?'':String(section[key])}
+            onEndEditing={e=>{
+              const value=e.nativeEvent.text.trim();
+              const parsed=Number(value);
+              if(!value)updateSection({[key]:undefined});
+              else if(Number.isFinite(parsed)&&parsed>=0)updateSection({[key]:parsed});
+            }}
+            placeholder="—" placeholderTextColor={theme.muted} style={input}/>
+        </View>)}
+      </View>:null}
+      <Text style={{color:theme.muted,fontSize:10,lineHeight:17}}>
+        Le temps provient d’un enregistrement lié ou de repères définis sur le morceau complet.
+        Aucun minutage n’est inventé pour une idée sans audio.
+      </Text>
+    </View>
     <View style={card}>
-      <Text style={{fontWeight:'700',fontSize:17,color:theme.foreground}}>Paroles de cette partie</Text>
+      <Text style={{fontWeight:'700',fontSize:17,color:theme.foreground}}>Paroles · {section.title}</Text>
+      {mappedLyrics.map(file=><View key={file.id}
+        style={{padding:11,borderRadius:11,borderWidth:1,borderColor:theme.border,gap:8}}>
+        <Text style={{fontSize:12,fontWeight:'700',color:theme.foreground}}>
+          {file.title} · {file.language||project.originalLanguage}
+        </Text>
+        <TextInput value={file.sectionContent?.[section.id]||''}
+          onChangeText={text=>patch({files:project.files.map(f=>f.id===file.id?
+            {...f,sectionContent:{...(f.sectionContent||{}),[section.id]:text}}:f)})}
+          multiline textAlignVertical="top"
+          placeholder={'Les lignes de '+section.title+' dans ce fichier…'}
+          placeholderTextColor={theme.muted} style={{...input,minHeight:110,lineHeight:23,fontSize:14}}/>
+        {file.text?<Text selectable style={{fontSize:11,color:theme.muted,lineHeight:18}}>
+          Source intégrale : {file.text}
+        </Text>:null}
+      </View>)}
+      {mappedLyrics.length?<Pressable onPress={()=>setShowFreeLyrics(!showFreeLyrics)}>
+        <Text style={{fontSize:12,color:pink}}>
+          {showFreeLyrics?'Masquer les paroles supplémentaires':'Écrire des paroles directement dans cette partie'}
+        </Text>
+      </Pressable>:null}
+      {(!mappedLyrics.length||showFreeLyrics)?<>
       <ScrollView horizontal showsHorizontalScrollIndicator={false}
         contentContainerStyle={{gap:7}}>
         {languages.map(lang=><Pressable key={lang}
@@ -181,14 +254,21 @@ export function MusicSectionStudio({project,section,patch}:Props){
           setCurrentLanguage(lang);setNewLanguage('');
         },true,!newLanguage.trim()||languages.some(x=>x.toLowerCase()===newLanguage.trim().toLowerCase()))}
       </View>
+      </>:null}
       <Text style={{color:theme.muted,fontSize:11,lineHeight:18}}>
-        Les traductions restent distinctes de la version originale. Traduction automatique non connectée.
+        Les paroles peuvent venir d’un fichier classé « Paroles » dans Chant entier,
+        avec uniquement l’extrait associé à cette partie. Traduction automatique non connectée.
       </Text>
     </View>
 
     <View style={card}>
       <Text style={{fontSize:17,fontWeight:'700',color:theme.foreground}}>Instruments et pistes</Text>
       <View style={{flexDirection:'row',flexWrap:'wrap',gap:7}}>
+        {derivedInstruments.filter(item=>!(section.instruments||[]).includes(item)).map(item=>
+          <View key={item} style={{borderRadius:9,backgroundColor:theme.dark?'#42333D':'#F9EBF0',
+            paddingHorizontal:11,paddingVertical:8}}>
+            <Text style={{fontSize:12,color:theme.foreground}}>{item}</Text>
+          </View>)}
         {(section.instruments||[]).map(item=><Pressable key={item}
           onPress={()=>updateSection({instruments:(section.instruments||[]).filter(x=>x!==item)})}
           style={{borderRadius:9,backgroundColor:theme.dark?'#42333D':'#F9EBF0',
@@ -209,6 +289,13 @@ export function MusicSectionStudio({project,section,patch}:Props){
           setInstrument('');
         },true,!instrument.trim())}
       </View>
+      {linkedAudio.map(file=><View key={file.id}
+        style={{padding:11,borderRadius:11,borderWidth:1,borderColor:theme.border,gap:8}}>
+        <Text style={{fontSize:13,fontWeight:'700',color:theme.foreground}}>
+          {file.title}{file.instrument?' · '+file.instrument:''}
+        </Text>
+        <MusicAudioPreview source={{localAudioId:file.localFileId,audioUrl:file.externalUrl}}/>
+      </View>)}
       {layers.map(layer=><View key={layer.id}
         style={{padding:12,borderRadius:12,backgroundColor:theme.background,gap:9,
           borderWidth:1,borderColor:theme.border}}>
@@ -235,12 +322,39 @@ export function MusicSectionStudio({project,section,patch}:Props){
           {action('Piste sans audio',()=>addLayer(newTrack,trackRole),true,!newTrack.trim())}
           {Platform.OS==='web'?action(uploading?'Import en cours…':'Importer une prise',importTrack,true,uploading):null}
         </View>
-        <MusicAudioCapture onSaved={(id,filename)=>addLayer(
-          newTrack.trim()||filename.replace(/\.[^.]+$/,''),trackRole,id)}/>
+        <MusicAudioCapture onSaved={(id,filename,durationSeconds)=>addLayer(
+          newTrack.trim()||filename.replace(/\.[^.]+$/,''),trackRole,id,durationSeconds)}/>
       </View>
       {uploadError?<Text style={{color:'#B34D67',fontSize:12}}>{uploadError}</Text>:null}
     </View>
 
+    {linkedDocuments.length?<View style={card}>
+      <Text style={{fontSize:16,fontWeight:'700',color:theme.foreground}}>Fichiers associés à cette partie</Text>
+      {linkedDocuments.map(file=><View key={file.id} style={{gap:5,paddingVertical:8,
+        borderBottomWidth:1,borderColor:theme.border}}>
+        <Text style={{fontSize:13,color:theme.foreground,fontWeight:'700'}}>
+          {file.title} · {file.kind==='score'?'Partition':file.kind==='idea'?'Idée':'Note'}
+        </Text>
+        {file.text?<Text selectable style={{color:theme.muted,fontSize:12,lineHeight:19}}>
+          {file.sectionContent?.[section.id]||file.text}
+        </Text>:null}
+        {file.localFileId||file.externalUrl?<Pressable onPress={()=>{
+          if(file.externalUrl?.startsWith('https://')){
+            void Linking.openURL(file.externalUrl);return;
+          }
+          if(!file.localFileId)return;
+          void getDraftAttachment(file.localFileId).then(blob=>{
+            if(!blob||Platform.OS!=='web'){setUploadError('Fichier joint indisponible.');return;}
+            const url=URL.createObjectURL(blob);
+            void Linking.openURL(url).catch(()=>setUploadError('Ouverture impossible.'))
+              .finally(()=>setTimeout(()=>URL.revokeObjectURL(url),60000));
+          });
+        }} style={{flexDirection:'row',alignItems:'center',gap:6,paddingVertical:5}}>
+          <Ionicons name="open-outline" size={16} color={pink}/>
+          <Text style={{fontSize:12,color:pink}}>Ouvrir le fichier joint</Text>
+        </Pressable>:null}
+      </View>)}
+    </View>:null}
     <View style={card}>
       <Text style={{fontSize:17,fontWeight:'700',color:theme.foreground}}>Partition</Text>
       <ScoreLink section={section}/>
@@ -263,6 +377,7 @@ export function MusicSectionStudio({project,section,patch}:Props){
         placeholderTextColor={theme.muted}/>
     </View>
 
+    <MusicTalentRequests project={project} patch={patch} sectionId={section.id}/>
     <View style={card}>
       <Text style={{fontSize:17,fontWeight:'700',color:theme.foreground}}>Propositions pour cette partie</Text>
       {proposals.map(suggestion=><View key={suggestion.id}
@@ -300,27 +415,17 @@ export function MusicSectionStudio({project,section,patch}:Props){
       </Text>
     </View>
 
-    <View style={card}>
-      <Text style={{fontSize:17,fontWeight:'700',color:theme.foreground}}>Discussion · {section.title}</Text>
-      {messages.map(message=><View key={message.id}
-        style={{backgroundColor:theme.dark?'#332936':'#FAE9F0',padding:11,borderRadius:11,gap:5}}>
-        <Text style={{fontSize:11,color:pink,fontWeight:'700'}}>{message.author}</Text>
-        <Text style={{fontSize:13,lineHeight:19,color:theme.foreground}}>{message.text}</Text>
-      </View>)}
-      {!messages.length?<Text style={{fontSize:12,color:theme.muted}}>
-        Aucune note de discussion pour cette partie.
-      </Text>:null}
-      <TextInput value={comment} onChangeText={setComment} multiline style={{...input,minHeight:64}}
-        placeholder="Un retour sur cette partie…" placeholderTextColor={theme.muted}/>
-      {action('Ajouter mon commentaire',()=>{
-        if(!comment.trim())return;
-        patch({messages:[...project.messages,{id:newMusicId(),sectionId:section.id,
-          text:comment.trim(),author:user.name,createdAt:new Date().toISOString()}]});
-        setComment('');
-      },false,!comment.trim())}
-      <Text style={{fontSize:11,color:theme.muted,lineHeight:18}}>
-        Discussion locale sur cette partie. Le partage en temps réel par section sera connecté au serveur ultérieurement.
-      </Text>
-    </View>
+    <Pressable onPress={()=>onOpenChat(section.id)} accessibilityRole="button"
+      style={{padding:15,borderRadius:15,backgroundColor:theme.surface,
+        borderColor:theme.border,borderWidth:1,flexDirection:'row',alignItems:'center',gap:10}}>
+      <Ionicons name="chatbubbles-outline" color={pink} size={23}/>
+      <View style={{flex:1,gap:4}}>
+        <Text style={{color:theme.foreground,fontSize:15,fontWeight:'700'}}>Écrire au groupe</Text>
+        <Text style={{color:theme.muted,fontSize:11}}>
+          Le message fera référence à « {section.title} » dans le chat du morceau
+        </Text>
+      </View>
+      <Ionicons name="arrow-forward" color={pink} size={17}/>
+    </Pressable>
   </View>;
 }
