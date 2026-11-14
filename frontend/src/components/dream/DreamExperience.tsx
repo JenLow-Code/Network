@@ -718,7 +718,17 @@ export default function DreamExperience({
         <Text style={{color:theme.foreground,flex:1,fontSize:12}}>{m.name}</Text><Ionicons name="open-outline" size={17} color={theme.muted}/>
       </Pressable>)}
     </DreamPhaseSection>
-    <FlowerJourneyRecap dream={dream} publicView/>
+    <FlowerJourneyRecap dream={dream} publicView
+      onAppendPublishedMoment={phase === dream.phase &&
+        (dream.viewerRole === undefined || dream.viewerRole === 'creator' ||
+          dream.viewerRole === 'co_owner') && !!dream.testimony
+        ? moment => {
+          // Published material is append-only: existing highlights are retained.
+          patch(dream.id, { testimony: {
+            ...dream.testimony!,
+            highlights: [...(dream.testimony?.highlights || []), moment],
+          } });
+        } : undefined}/>
   </> : null}
  {(!historical && phase === 'Témoignage' && isPublishedFlower(dream)) ? <Pressable
     onPress={()=>confirm(
