@@ -79,6 +79,8 @@ export type MusicProject = {
   instruments: string[];
   versions: MusicVersion[];
   coverUrl?: string;
+  coverLocalId?: string;
+  coverMediaId?: string;
   masterUrl?: string;
   masterMediaId?: string;
   publishedId?: string;
