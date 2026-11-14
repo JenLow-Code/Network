@@ -15,7 +15,7 @@ export function DreamTalentInvitationPanel({
 }:{
   resource:DreamResource;dreamServerId?:string;editable?:boolean;
   /** Only server-confirmed acceptances can update the local UI. */
-  onVerified?:(confirmed:boolean)=>void;
+  onVerified?:(confirmed:boolean,acceptedPersonName?:string)=>void;
 }){
   const theme=useAppTheme();
   const [handle,setHandle]=useState('');
@@ -34,7 +34,8 @@ export function DreamTalentInvitationPanel({
         '/api/dreams/'+encodeURIComponent(dreamServerId)+'/need-invitations',{auth:'required'});
       const relevant=r.items.filter(item=>item.needId===resource.serverNeedId);
       setOutgoing(relevant);
-      verifiedRef.current?.(relevant.some(item=>item.status==='accepted'));
+      const accepted=relevant.find(item=>item.status==='accepted');
+      verifiedRef.current?.(!!accepted, accepted?.recipient?.displayName?.trim() || undefined);
     }catch(e){
       setError(e instanceof ApiRequestError && e.status===401
         ? 'Connecte-toi avec un compte JenLow Network pour gérer les demandes.'
