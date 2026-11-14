@@ -75,6 +75,7 @@ export type MusicProject = {
   originalLanguage: string;
   bpm?: number;
   musicalKey?: string;
+  musicalMode?: 'majeur' | 'mineur';
   timeSignature?: string;
   instruments: string[];
   versions: MusicVersion[];
