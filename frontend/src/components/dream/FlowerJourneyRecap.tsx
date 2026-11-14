@@ -491,9 +491,10 @@ export default function FlowerJourneyRecap({
               const note = publicView ? moment.note :
                 moment.source === 'personal' ? moment.note :
                 presentation[moment.id]?.note;
-              const emoji = (publicView ? moment.emoji :
-                presentation[moment.id]?.emoji || moment.emoji) ||
-                defaultMomentEmoji(moment);
+              // No automatically forced emoji: a small neutral botanical
+              // mark keeps the journey readable until the creator chooses one.
+              const emoji = publicView ? moment.emoji :
+                presentation[moment.id]?.emoji || moment.emoji;
               const actions: {
                 key: string; icon: keyof typeof Ionicons.glyphMap;
                 label: string; run: () => void; danger?: boolean;
@@ -589,9 +590,13 @@ export default function FlowerJourneyRecap({
                             width: 27, height: 29,
                             alignItems: 'center', justifyContent: 'center',
                           }}>
-                          <Text style={{
-                            fontSize: 16, lineHeight: 22, opacity: .78,
-                          }}>{emoji}</Text>
+                          {emoji ? (
+                            <Text style={{ fontSize: 16, lineHeight: 22,
+                              opacity: .82 }}>{emoji}</Text>
+                          ) : (
+                            <Ionicons name="flower-outline" size={14}
+                              color={theme.muted} style={{ opacity: .55 }}/>
+                          )}
                         </Pressable>
                         <View style={{ flex: 1, paddingTop: 1, gap: 5 }}>
                           <Text style={{
