@@ -23,15 +23,18 @@ const cleanDay = (date: string): boolean => {
 };
 export { cleanDay as validFlowerDay };
 
+/** Talent names are derived from the requested role, never from equipment. */
 const personRole = (title: string): string => {
-  const role = title.trim().toLowerCase();
-  if (/^batterie$/.test(role)) return 'à la batterie';
-  if (/^piano$/.test(role)) return 'au piano';
-  if (/^chant$/.test(role)) return 'au chant';
-  if (/^guitare$/.test(role)) return 'à la guitare';
-  if (/^basse$/.test(role)) return 'à la basse';
-  if (/^clavier(s)?$/.test(role)) return 'aux claviers';
-  return 'en tant que ' + (role || 'collaborateur');
+  const role = title.trim().toLocaleLowerCase('fr-FR');
+  if (/^(batterie|batteur|batteriste|drums)$/.test(role)) return 'batteur';
+  if (/^batteuse$/.test(role)) return 'batteuse';
+  if (/^(piano|pianiste)$/.test(role)) return 'pianiste';
+  if (/^(chant|chanteur|voix)$/.test(role)) return 'chanteur';
+  if (/^chanteuse$/.test(role)) return 'chanteuse';
+  if (/^(guitare|guitariste)$/.test(role)) return 'guitariste';
+  if (/^(basse|bassiste)$/.test(role)) return 'bassiste';
+  if (/^(clavier|claviers|claviériste)$/.test(role)) return 'claviériste';
+  return role || 'musicien';
 };
 
 const foundResourceLabel = (dream: DreamEntry, event: DreamGrowthEvent): string => {
@@ -42,16 +45,21 @@ const foundResourceLabel = (dream: DreamEntry, event: DreamGrowthEvent): string 
     if (title.toLowerCase() === 'chant') return 'Une solution trouvée pour le chant';
     return 'Une ressource trouvée : ' + title;
   }
-  // Real verified names are not available on most resource records.
-  // Never interpret an instrument or role as a person's actual name.
-  const need = (dream.resources || []).find(r =>
-    r.id === event.needId && r.category === 'person' && r.confirmed && !!r.serverNeedId);
-  const coOwner = need?.personId
-    ? (dream.coOwners || []).find(person =>
-        person.accepted && person.userId === need.personId && person.name.trim())
+  // A joining person has a different story from acquiring an instrument.
+  // The name comes from the actual accepted invitation, snapshotted when
+  // the person joins. Never replace a historical name with a guessed one.
+  const archivedName = event.personName?.trim();
+  const matchingNeed = (dream.resources || []).find(r =>
+    r.id === event.needId && r.category === 'person' &&
+    r.confirmed && !!r.serverNeedId);
+  const acceptedName = matchingNeed?.acceptedPersonName?.trim();
+  const coOwner = matchingNeed?.personId
+    ? (dream.coOwners || []).find(p => p.accepted &&
+        p.userId === matchingNeed.personId && p.name.trim())
     : undefined;
-  const who = coOwner?.name.trim() || 'Une personne';
-  return who + ' nous a rejoints ' + personRole(title);
+  const name = archivedName || acceptedName || coOwner?.name.trim() ||
+    '[Nom de la personne]';
+  return name + ' nous a rejoint en tant que ' + personRole(title);
 };
 
 export const factualFlowerTitle = (
