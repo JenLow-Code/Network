@@ -219,7 +219,10 @@ export default function DreamHub({ dream, startInSemence = false, startPhase }: 
   useFocusEffect(useCallback(()=>{
     if(!dream.serverDreamId || dream.phase==='Témoignage')return;
     let live=true;
-    void api<{items:{needId:string;status:string}[]}>(
+    void api<{items:{
+      needId:string;status:string;
+      recipient?:{displayName?:string;handle?:string};
+    }[]}>(
       '/api/dreams/'+encodeURIComponent(dream.serverDreamId)+'/need-invitations',
       {auth:'required'},
     ).then(({items})=>{
@@ -227,8 +230,15 @@ export default function DreamHub({ dream, startInSemence = false, startPhase }: 
       const existing=resourcesRef.current;
       const next=existing.map(r=>{
         if(r.category!=='person'||!r.serverNeedId)return r;
-        const accepted=items.some(inv=>inv.needId===r.serverNeedId&&inv.status==='accepted');
-        return r.confirmed===accepted?r:{...r,confirmed:accepted};
+        const acceptedInvitation=items.find(inv=>
+          inv.needId===r.serverNeedId&&inv.status==='accepted');
+        const accepted=!!acceptedInvitation;
+        const name=accepted
+          ? acceptedInvitation?.recipient?.displayName?.trim() ||
+            r.acceptedPersonName
+          : undefined;
+        if(r.confirmed===accepted && r.acceptedPersonName===name)return r;
+        return {...r,confirmed:accepted,acceptedPersonName:name};
       });
       if(next.some((r,i)=>r!==existing[i])){
         setResourcesRef.current(dream.id,next);
