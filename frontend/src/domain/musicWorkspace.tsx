@@ -13,6 +13,8 @@ export type MusicSection = {
   endSeconds?: number;
   notes?: string;
   scoreUrl?: string;
+  scoreLocalId?: string;
+  scoreFileName?: string;
   instruments?: string[];
 };
 export type MusicLyric = {
@@ -148,7 +150,11 @@ export function MusicWorkspaceProvider({ children }: { children: React.ReactNode
             (x as MusicProject).ownerEmail?.toLowerCase() === email.toLowerCase()
           ).map(project => ({
             ...project, originalLanguage: project.originalLanguage || 'Français',
-            instruments: project.instruments || [], versions: project.versions || [],
+            instruments: project.instruments || [],
+            versions: project.versions?.length ? project.versions : project.masterMediaId || project.masterUrl
+              ? [{ id:'legacy-'+project.id,title:'Version originale',createdAt:project.createdAt,
+                audioMediaId:project.masterMediaId,audioUrl:project.masterUrl,
+                selectedForPublication:false,publishedId:project.publishedId }] : [],
             sections: project.sections || [], lyrics: project.lyrics || [],
             layers: project.layers || [], needs: project.needs || [],
             suggestions: project.suggestions || [], messages: project.messages || [],
