@@ -94,3 +94,18 @@ export async function getDraftAudio(id: string): Promise<Blob | null> {
   if (Platform.OS !== 'web') return null;
   try { return (await getStored<Blob>(AUDIO, id)) ?? null; } catch { return null; }
 }
+
+/** Local PDF/image attachments for individual song sections (not publicly distributed). */
+export async function saveDraftAttachment(file: File): Promise<string> {
+  if (Platform.OS !== 'web') throw new Error('Pièces jointes locales non disponibles sur cette plateforme.');
+  if (!file.size || file.size > 20 * 1024 * 1024)
+    throw new Error('La partition doit être un PDF ou une image de 20 Mo maximum.');
+  if (!['application/pdf','image/png','image/jpeg','image/webp'].includes(file.type))
+    throw new Error('Formats de partition pris en charge : PDF, JPG, PNG et WebP.');
+  const id = 'local-score-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2);
+  await putStored(AUDIO,id,file);
+  return id;
+}
+export async function getDraftAttachment(id: string): Promise<Blob | null> {
+  return getDraftAudio(id);
+}
