@@ -83,6 +83,8 @@ export default function FlowerJourneyRecap({
   const [formDate, setFormDate] = useState(localDay());
   const [formTitle, setFormTitle] = useState('');
   const [formNote, setFormNote] = useState('');
+  const [formEmoji, setFormEmoji] = useState('🌸');
+  const [formEmojiPicker, setFormEmojiPicker] = useState(false);
   const [formError, setFormError] = useState('');
 
   const prayerCount = countVerifiedPrayers(dream);
@@ -152,11 +154,14 @@ export default function FlowerJourneyRecap({
     setEditingId(null);
     setMenuId(null);
     setFormError('');
+    setFormEmojiPicker(false);
   };
   const openAdd = () => {
     setFormDate(localDay());
     setFormTitle('');
     setFormNote('');
+    setFormEmoji('🌸');
+    setFormEmojiPicker(false);
     setFormError('');
     setEditingId(null);
     setAdding(true);
@@ -168,6 +173,9 @@ export default function FlowerJourneyRecap({
     setFormTitle(moment.title);
     setFormNote(moment.source === 'personal'
       ? moment.note || '' : presentation[moment.id]?.note || '');
+    setFormEmoji(presentation[moment.id]?.emoji || moment.emoji ||
+      defaultMomentEmoji(moment));
+    setFormEmojiPicker(false);
     setFormError('');
     setAdding(false);
     setEditingId(moment.id);
@@ -197,7 +205,8 @@ export default function FlowerJourneyRecap({
       personalMoments: (draft.personalMoments || []).map(item =>
         item.id === moment.id
           ? { ...item, title: formTitle.trim(), date: formDate,
-              note: formNote.trim() || undefined }
+              note: formNote.trim() || undefined,
+              emoji: formEmoji.trim().slice(0, 18) || undefined }
           : item),
     });
     closeEditor();
@@ -213,6 +222,7 @@ export default function FlowerJourneyRecap({
       date: formDate,
       title: formTitle.trim(),
       note: formNote.trim() || undefined,
+      emoji: formEmoji.trim().slice(0, 18) || undefined,
     };
     if (publicView && onAppendPublishedMoment) {
       onAppendPublishedMoment({ ...item, kind: 'personal' });
@@ -305,6 +315,45 @@ export default function FlowerJourneyRecap({
       </Text>
       {moment?.source !== 'recorded' ? (
         <View style={{ gap: 8 }}>
+          <Pressable accessibilityRole="button"
+            onPress={() => setFormEmojiPicker(current => !current)}
+            style={{ flexDirection: 'row', alignItems: 'center',
+              gap: 8, paddingVertical: 3, alignSelf: 'flex-start' }}>
+            <Text style={{ fontSize: 24 }}>{formEmoji || '🌸'}</Text>
+            <Text style={{ color: MAGENTA, fontSize: 12 }}>
+              Choisir un emoji
+            </Text>
+            <Ionicons name={formEmojiPicker ? 'chevron-up' : 'chevron-down'}
+              size={12} color={MAGENTA}/>
+          </Pressable>
+          {formEmojiPicker ? (
+            <View style={{ gap: 9 }}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+                contentContainerStyle={{ gap: 5 }}>
+                {STORY_EMOJIS.map((option, index) => (
+                  <Pressable key={index} accessibilityRole="button"
+                    accessibilityLabel={'Utiliser ' + option}
+                    onPress={() => {
+                      setFormEmoji(option);
+                      setFormEmojiPicker(false);
+                    }}
+                    style={{ width: 36, height: 36, borderRadius: 12,
+                      backgroundColor: theme.dark ? '#433941' : '#FFF9F4',
+                      alignItems: 'center', justifyContent: 'center' }}>
+                    <Text style={{ fontSize: 21 }}>{option}</Text>
+                  </Pressable>
+                ))}
+              </ScrollView>
+              <TextInput accessibilityLabel="Autre emoji du souvenir"
+                placeholder="Ou colle ton propre emoji"
+                placeholderTextColor={theme.muted} value={formEmoji}
+                onChangeText={setFormEmoji} maxLength={18}
+                style={{ color: theme.foreground, fontSize: 12,
+                  paddingVertical: 7, borderBottomWidth: 1,
+                  borderBottomColor: theme.border }}/>
+            </View>
+          ) : null}
           <TextInput accessibilityLabel="Date du souvenir" value={formDate}
             onChangeText={setFormDate} maxLength={10}
             placeholder="AAAA-MM-JJ" placeholderTextColor={theme.muted}
