@@ -79,6 +79,11 @@ export function growthResourceEvents(
     changes.push({
       date,kind:current?'need_found':'need_lost',needId:need.id,
       title:need.title,category:need.category,
+      // Capture the participant from the server-accepted invitation at this
+      // transition. Names are historical facts, not editable story labels.
+      personName: need.category === 'person' ?
+        (current ? need.acceptedPersonName : previous?.acceptedPersonName) :
+        undefined,
     });
   }
   return changes;
