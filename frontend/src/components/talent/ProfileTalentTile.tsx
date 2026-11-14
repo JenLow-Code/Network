@@ -9,12 +9,14 @@ import { useAppTheme } from '@/theme/AppTheme';
 export function ProfileTalentTile({
   title,
   level,
+  subtitle,
   art,
   width,
   onPress,
 }: {
   title: string;
   level: string;
+  subtitle?: string;
   art?: TalentIllustration;
   width: number;
   onPress: () => void;
@@ -36,12 +38,15 @@ export function ProfileTalentTile({
         gap: 5,
       }}
     >
-      {art ? <TalentArt kind={art} size={Math.min(110, width * 0.64)} /> :
-        <Ionicons name="person-outline" size={Math.min(95, width * 0.52)} color={theme.foreground}/>}
+      {art ? <TalentArt kind={art} size={Math.min(110, width * (subtitle ? .49 : .64))} /> :
+        <Ionicons name={title.toLocaleLowerCase('fr')==='traducteur'?'language-outline':'person-outline'}
+          size={Math.min(95, width * (subtitle ? .40 : .52))} color={theme.foreground}/>}
       <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}
         style={{ color: theme.foreground, fontSize: 11, fontWeight: '800', letterSpacing: 0.7 }}>
         {title.toLocaleUpperCase('fr')}
       </Text>
+      {subtitle ? <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={.7}
+        style={{color:theme.muted,fontSize:9,textAlign:'center'}}>{subtitle}</Text> : null}
       <TalentLevelDots level={level} size={width < 112 ? 6 : 8} spacing={4} />
     </Pressable>
   );
