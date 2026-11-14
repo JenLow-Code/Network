@@ -1041,10 +1041,13 @@ export default function DreamExperience({
  <DreamResourceDetailsModal
    resource={resources.find(r=>r.id===selectedResourceId)||null}
    dreamServerId={dream.serverDreamId}
-   onServerVerified={(resourceId,confirmed)=>{
+   onServerVerified={(resourceId,confirmed,acceptedPersonName)=>{
      const existing=resources.find(r=>r.id===resourceId);
-     if(existing && existing.confirmed!==confirmed && existing.serverNeedId){
-       setResources(dream.id,resources.map(r=>r.id===resourceId?{...r,confirmed}:r));
+     const name=confirmed ? acceptedPersonName?.trim() || undefined : undefined;
+     if(existing && existing.serverNeedId &&
+       (existing.confirmed!==confirmed || existing.acceptedPersonName!==name)){
+       setResources(dream.id,resources.map(r=>r.id===resourceId?
+         {...r,confirmed,acceptedPersonName:name}:r));
      }
    }}
    editable={!!resources.find(r=>r.id===selectedResourceId&&canEditCategory(r.category))}
