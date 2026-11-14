@@ -45,3 +45,26 @@ export function chooseMusicFile(onSelected: (file: File) => void): void {
   input.onchange = () => { const file = input.files?.[0]; if (file) onSelected(file); };
   input.click();
 }
+
+/** A unique photograph/illustration owned by the song author, not the same demo cover. */
+export async function uploadMusicCoverFile(file: File): Promise<string> {
+  const mimeType = file.type;
+  if (!['image/jpeg','image/png','image/webp'].includes(mimeType) ||
+      !file.size || file.size > 8 * 1024 * 1024)
+    throw new Error('La pochette doit être un JPG, PNG ou WebP de 8 Mo maximum.');
+  const started = await api<{
+    mediaId: string; upload: { url: string; headers: Record<string,string> };
+  }>('/api/media/uploads', {method:'POST',auth:'required',
+    body:{purpose:'music_cover',mimeType,bytes:file.size,filename:file.name}});
+  const token = currentAccessToken() ?? await refreshAccessToken();
+  if (!token) throw new ApiRequestError(401,'not_authenticated');
+  const response = await fetch(started.upload.url, {
+    method:'PUT',headers:{...started.upload.headers,Authorization:'Bearer '+token},body:file,
+  });
+  if(!response.ok)throw new Error('Impossible d’envoyer la pochette au serveur.');
+  const completed = await api<{media:{id:string;status:string}}>(
+    '/api/media/'+encodeURIComponent(started.mediaId)+'/complete',
+    {method:'POST',auth:'required',body:{}});
+  if(completed.media.status!=='ready')throw new Error('Pochette non validée par le serveur.');
+  return completed.media.id;
+}

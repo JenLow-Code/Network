@@ -1,53 +1,63 @@
-# JenLow Music — working folder architecture (14 November 2026)
+# JenLow Music — Song/workspace architecture (14 November 2026)
 
-## Non-negotiable product direction
+## Identity and non-negotiables
+A song is primarily a **private/shared creative project**, NOT an audio publication.
+- Private creative folders/cards have rounded corners, and never display a cassette.
+- Public Discovery/music publications display an authentic cassette with the **individual track's** title and artwork, not a baked-in repeated cover.
+- One song can grow into many songs/arrangements/versions with source attribution retained.
+- JenLow Network remains human-first, encouraging, collaborative and non-commercial. No AI-generated creative performances, popularity contest, or unlimited downloads.
 
-**A song is a creation workspace first, a public music publication second.**
+## Current creation workflow
+1. Open Music > **Nouveau morceau**. There is no old inline “Créer son dossier” form.
+2. Name the song and select its **original language**, including French, Portuguese, German, English, Spanish, Italian or a custom entry.
+3. Choose **idea only**, **import a pre-recorded piece** or **record a microphone take directly** (browser HTTPS/localhost only). The working folder is generated automatically.
+4. Song metadata (editable later): title, description, original language, BPM, key, time signature, instruments, and a unique rounded cover (image uploaded locally or credited URL).
 
-- **Private and shared workspaces** show **rounded** creative folders/cards; they must **not** display cassette imagery.
-- **Public discovery and public published song detail** retain the approved JenLow cassette artwork and square-corner publication treatment.
-- A song folder can organize: title, cover, multilingual lyrics, a lyrics template, song sections, individual audio stems, requests for specific talents and proposed musical styles, collaboration proposals (whole song or one section), and an attached project discussion.
-- Users must distinguish **my original songs**, **songs I collaborate on but do not own**, and **saved or bookmarked music from others**.
-- Derivative releases must preserve original attribution and credits. Nothing replaces the original recording.
-- Avoid public comments, popularity competitions, payments, generic Spotify-style streaming UI, AI-generated creative content, or mixing private and public objects.
-- The wider music design continues to be human-first, collaborative and supportive.
+## Main information architecture
+### Chant entier
+- Song-level metadata, instrument badges, and inspiration/description.
+- **Multiple versions** (acoustic, live, piano/vocals, etc.), each with its own actual audio file or recording. The creator can check which versions to publish.
+- Once authorized and with a final premixed recording for each checked version, publish the selected versions. The first is the root; subsequent versions are linked to the **same root track** in the API.
+- Musical sections are ordered and can be added, deleted, reordered, and opened as tabs.
+- Talent requests and musical-style badges; translator includes from/to languages and existing level scale.
+- Working suggestions and owner review of real remote audio proposals.
+- Private owner notes and a real server chat for accepted collaborators on published songs.
 
-## Implemented in this iteration
+### Intro / Couplet / Refrain / Pont / etc.
+Each section is a standalone sub-workspace with:
+- **Lyrics per language**, original-language first, independently editable and optionally given a section template.
+- Instrument badges specific to that section.
+- Individual takes: named tracks, browser file import, actual browser mic recording, audio playback.
+- Sheet music: locally attached PDF/image or external document URL.
+- Arrangement notes.
+- Proposed changes to a track, section, lyrics, or style (work-in-progress status, retained/archived).
+- Comments and notes scoped to that musical part.
+- These private notes/comments are not yet real-time collaborative server messages; do not imply they were delivered.
 
-1. Music landing view with tabs for personal pieces, accepted collaborations, saved music, and public discovery.
-2. Durable private local-first folders keyed by the user's account email (or guest storage).
-3. Editable sections, lyrics in multiple manually maintained languages, and a supplied lyrics outline template.
-4. Named individual audio tracks; external HTTPS references and real R2 imports on the web when unified API auth and R2 are connected. Stable media IDs are stored rather than expiring signed URLs.
-5. A separate final mix requirement and rights acknowledgement before attempting server publication.
-6. Talent requests (five-level selector), translator direction, and musical style tags.
-7. Local proposal notes for stems, section edits, lyrics and style; integrate/archive/restore local states.
-8. Server-backed audio proposals for public music, including credits, accept/reject/publish owner actions.
-9. Automatically created group conversation for newly published songs. Legacy songs initialize the conversation on first authorized open. Original publisher and accepted collaborators can use the group chat; pending proposers cannot.
-10. Local, clearly designated private notes in a draft's Discussion tab, separate from online group chat.
-11. A shared collaboration folder accessible after acceptance, containing available published information, contributions and server chat.
+## Browser storage
+- Workspace metadata uses IndexedDB on the web, with legacy AsyncStorage import/fallback. Avoid claiming persistent success when all browser storage is denied.
+- Actual recorded/uploaded draft audio and section scores are kept in IndexedDB as binary objects; only their stable local IDs are kept in the project metadata. Blob URLs are ephemeral and not persisted.
+- Native support still uses AsyncStorage for metadata and needs native file recording/picker integration.
+- A browser that blocks both IndexedDB and AsyncStorage cannot guarantee durable drafts.
+- Local drafts do NOT sync between devices or other members yet.
 
-## Current technical boundaries — do not misrepresent
+## Public upload and publication
+- Publishing each selected version requires rights confirmation.
+- Actual audio + artwork must complete the existing JenLow media-upload API (R2 or an explicitly attributed external URL).
+- The backend enforces **publisher-only** secondary versions, preserves the original creator’s name, and links each to the first track in the family via original_track_id.
+- Publication never overwrites a prior recording. Failure leaves remaining versions unmarked; completed versions retain their IDs.
+- Music collaboration proposals sent by others remain server controlled, with owner accept/reject/publish.
+- Saved/Fire, personal music and accepted collaborations remain independent navigation categories.
 
-- The local private folder is stored on the **current device only** in AsyncStorage. Private lyrics, structure, stems, talent/style needs, and informal proposal notes are **not yet synchronized** with the server.
-- Existing public music publication uses the server's **single rendered audio master**, not a mixer of independent stems. The user must provide a ready mix. No client-side multitrack rendering is claimed.
-- Real file upload requires the unified JenLow API access token and configured R2. Supabase-only frontend login does not suffice until authentication is unified.
-- The original server proposal endpoint accepts audio adaptations; text-only and section-scoped collaboration proposals require backend extensions.
-- Translation is **manual** for now. Do not invent an automatic translation result or imply a service is connected.
-- Shared workspace metadata for accepted collaborators is currently limited to material supported by existing public APIs and actual chat. Full private folder sync and permissions are future work.
-- The published song's public lyrics cannot yet represent the full multilingual local lyric library without a backend schema/API change.
-- The displayed cassette in public music remains independent of the rounded private folder.
-- No public download button for songs.
+## Explicit limitations (must not be disguised)
+- No automatic translation provider connected. Multiple-language lyric versions are manually editable.
+- No automatically synchronized multitrack mixes. A song section may hold multiple takes, but publication requires an actual final mixed file per selected version.
+- Private project structure/lyrics/score/section comments/needs aren't server synced, visible to collaborators or included in published streaming metadata yet.
+- The backend supports credit-linked *owner-published* versions; true branched multi-person stem compositing and section-specific server proposal publishing need future backend changes.
+- Actual web microphone recording uses MediaRecorder; native iOS/Android recording still needs dedicated implementation.
+- The existing Unified API authentication and R2 bindings are required for uploading and publishing public versions. A Supabase-only session cannot silently upload.
+- Audio playback and file access may differ on iOS/Safari; runtime device tests remain required.
+- Code validation and Expo bundling do not prove production deployment or visual QA.
 
-## Next engineering milestones
-
-- Server-side persistent projects with privacy/roles: owner, accepted collaborator and listener.
-- Per-section and per-track proposal models with accepted/rejected/archived states (real data), including score/lyrics/style changes and audit trails.
-- Multitrack storage and preview/safe final mix rendering, linked to version lineage.
-- Rich multilingual lyric versions, provenance/source text, human review and opt-in translation provider.
-- Publish and synchronize collaboration and style invitations into the real Discovery/Talents matching flow.
-- Enforce permissions and credits when creating branching derivative versions.
-- Account/session unification, comprehensive mobile-native file picking and real collaborative tests.
-
-## Developer rule
-
-Never claim a local note or local proposal was sent to another person. Never display a fake track as uploaded or a song as published until the server confirms it.
+## Design bar
+Use JenLow's warm editorial light palette + magenta, subtle rounded private objects and minimal headers; avoid giant administrative forms, a DAW clone, decorative waveforms, or duplicate cassettes in private work.
