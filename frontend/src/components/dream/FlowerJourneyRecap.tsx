@@ -289,53 +289,61 @@ export default function FlowerJourneyRecap({
   };
 
   const editor = (moment?: Moment) => (
-    <View style={{ borderWidth: 1, borderColor: theme.border,
-      borderRadius: 12, padding: 13, marginTop: 8, gap: 9,
-      backgroundColor: theme.surface }}>
-      <Text style={{ color: theme.foreground, fontSize: 12, fontWeight: '700' }}>
-        {adding ? (publicView ? 'Ajouter un souvenir à cette fleur' :
-          'Ajouter un moment personnel') :
-          moment?.source === 'recorded'
-          ? 'Raconter ce moment' : 'Modifier mon souvenir'}
+    <View style={{
+      marginTop: 12, marginLeft: moment ? 49 : 0,
+      maxWidth: 520,
+      borderRadius: 16,
+      paddingHorizontal: 16, paddingTop: 16, paddingBottom: 12,
+      backgroundColor: theme.dark ? '#2C2830' : '#F8F0EA',
+      gap: 11,
+    }}>
+      <Text style={{ color: theme.foreground, fontFamily: 'serif',
+        fontSize: 17, lineHeight: 23 }}>
+        {adding ? 'Un nouveau souvenir' :
+          moment?.source === 'recorded' ? 'Ce que ce moment représentait…' :
+          'Faire vivre ce souvenir'}
       </Text>
-      {moment?.source === 'recorded' ? (
-        <Text style={{ color: theme.muted, fontSize: 11, lineHeight: 17 }}>
-          Le fait enregistré reste inchangé. Tu peux enrichir son récit.
-        </Text>
-      ) : (
-        <>
-          <TextInput accessibilityLabel="Date du souvenir"
-            value={formDate} onChangeText={setFormDate}
-            maxLength={10} placeholder="AAAA-MM-JJ"
-            placeholderTextColor={theme.muted}
-            style={{ borderBottomWidth: 1, borderColor: theme.border,
-              fontSize: 12, color: theme.foreground, paddingVertical: 8 }}/>
-          <TextInput accessibilityLabel="Titre du souvenir"
-            value={formTitle} onChangeText={setFormTitle}
-            placeholder="Ce qui s'est passé…" placeholderTextColor={theme.muted}
-            style={{ borderBottomWidth: 1, borderColor: theme.border,
-              fontSize: 13, color: theme.foreground, paddingVertical: 8 }}/>
-        </>
-      )}
+      {moment?.source !== 'recorded' ? (
+        <View style={{ gap: 8 }}>
+          <TextInput accessibilityLabel="Date du souvenir" value={formDate}
+            onChangeText={setFormDate} maxLength={10}
+            placeholder="AAAA-MM-JJ" placeholderTextColor={theme.muted}
+            style={{
+              borderBottomWidth: 1, borderBottomColor: theme.border,
+              fontSize: 12, color: theme.foreground,
+              paddingVertical: 8,
+            }}/>
+          <TextInput accessibilityLabel="Titre du souvenir" value={formTitle}
+            onChangeText={setFormTitle} maxLength={160}
+            placeholder="Un moment que tu veux garder…" placeholderTextColor={theme.muted}
+            style={{
+              borderBottomWidth: 1, borderBottomColor: theme.border,
+              fontSize: 14, color: theme.foreground, paddingVertical: 8,
+            }}/>
+        </View>
+      ) : null}
       <TextInput multiline accessibilityLabel="Mon commentaire personnel"
         value={formNote} onChangeText={setFormNote}
-        placeholder="Quelques mots personnels (facultatif)…"
+        placeholder="Ce que j’ai ressenti, ce que j’aimerais raconter…"
         placeholderTextColor={theme.muted}
-        style={{ fontSize: 13, lineHeight: 20, color: theme.foreground,
-          paddingVertical: 8, minHeight: 45, textAlignVertical: 'top' }}/>
+        style={{ color: theme.foreground, fontSize: 13, lineHeight: 22,
+          minHeight: 50, textAlignVertical: 'top', paddingVertical: 6 }}/>
       {formError ? <Text style={{ color: '#B24753', fontSize: 11 }}>
         {formError}
       </Text> : null}
-      <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 14 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center',
+        justifyContent: 'flex-end', gap: 16 }}>
         <Pressable accessibilityRole="button" onPress={closeEditor}
-          style={{ paddingVertical: 8 }}>
+          style={{ paddingVertical: 10 }}>
           <Text style={{ color: theme.muted, fontSize: 12 }}>Annuler</Text>
         </Pressable>
         <Pressable accessibilityRole="button"
           onPress={() => moment ? commitEdit(moment) : commitAdd()}
-          style={{ paddingVertical: 8 }}>
-          <Text style={{ color: MAGENTA, fontSize: 12,
-            fontWeight: '700' }}>Enregistrer</Text>
+          style={{ backgroundColor: MAGENTA, paddingHorizontal: 15,
+            paddingVertical: 10, borderRadius: 20 }}>
+          <Text style={{ color: '#FFFFFF', fontSize: 12, fontWeight: '700' }}>
+            Enregistrer
+          </Text>
         </Pressable>
       </View>
     </View>
@@ -408,9 +416,9 @@ export default function FlowerJourneyRecap({
           Les moments qui ont compté
         </Text>
         {!publicView ? (
-          <Text style={{ ...muted, marginBottom: 13 }}>
-            Les faits du Logbook restent intacts. Ajoute tes propres mots,
-            masque les moments de ton choix, puis sélectionne ceux à publier.
+          <Text style={{ ...muted, marginBottom: 12 }}>
+            Chaque étape a compté. Donne-lui un symbole, quelques mots,
+            et choisis ce que tu souhaites partager.
           </Text>
         ) : null}
         {shown.length ? (
