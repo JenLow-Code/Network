@@ -24,6 +24,8 @@ import FlowerJourneyRecap from './FlowerJourneyRecap';
 import { canEditGrowthLog } from '@/domain/growthTimeline';
 
 const pink = '#D71D77';
+const shortDate = (value: string) => new Date(value.slice(0, 10) + 'T12:00:00')
+  .toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
 const HABIT_PALETTE = ['#C68FBF','#D7AE62','#80B8BC','#7DBA99','#D78C9F','#A1A0CF','#A9BF78'];
 const HABIT_EMOJIS = ['🌱','🙏','🎹','🎸','🎼','📖','🎨','📷','🧘','🏃','💧','✍️','🏡','❤️','☀️','🎯'];
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
