@@ -87,10 +87,15 @@ export default function FlowerJourneyRecap({
   const selected = new Set(draft?.highlightIds || []);
   const allMoments = [...recorded, ...custom].sort((a, b) =>
     b.date.localeCompare(a.date));
-  const publicMoments: Moment[] = (dream.testimony?.highlights || []).map(item => ({
-    ...item, kind: (item.kind || 'logbook') as MomentKind,
-    source: item.kind === 'personal' ? 'personal' as const : 'recorded' as const,
-  }));
+  const publicMoments: Moment[] = (dream.testimony?.highlights || []).map(
+    (item): Moment => item.kind === 'personal'
+      ? { ...item, kind: 'personal', source: 'personal' }
+      : {
+          ...item, kind: (item.kind || 'logbook') as
+            Exclude<MomentKind, 'personal'>,
+          source: 'recorded',
+        },
+  );
   const list = publicView ? publicMoments : allMoments;
   const hidden = publicView ? [] : list.filter(m => presentation[m.id]?.hidden);
   const visible = publicView ? list :
