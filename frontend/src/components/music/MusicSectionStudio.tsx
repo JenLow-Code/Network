@@ -33,6 +33,9 @@ function ScoreLink({section}:{section:MusicSection}){
     La partition locale est indisponible sur cet appareil.
   </Text>;
   if(!resolved)return null;
+  if(!section.scoreLocalId && !/^https:\/\//i.test(resolved)) return <Text style={{color:'#B34D67',fontSize:12}}>
+    La partition doit utiliser un lien HTTPS valide.
+  </Text>;
   return <Pressable onPress={()=>{void Linking.openURL(resolved);}} accessibilityRole="link"
     style={{flexDirection:'row',alignItems:'center',gap:10,paddingVertical:9}}>
     <Ionicons name="document-text-outline" size={21} color={pink}/>
