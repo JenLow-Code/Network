@@ -133,7 +133,8 @@ export function DreamPhaseHeader({
               disabled={!reached || !onNavigate}
               onPress={() => onNavigate?.(item)}
               style={{
-                flex: 1, minWidth: 0, minHeight: 75,
+                flex: 1, minWidth: 0,
+                minHeight: phase === 'Témoignage' ? 49 : 75,
                 justifyContent: 'flex-end', alignItems: 'center',
                 paddingBottom: 2,
               }}>
@@ -145,7 +146,7 @@ export function DreamPhaseHeader({
                     marginBottom: item==='Rêve'?13:5,
                     ...(item==='Croissance'?{tintColor:phaseAccent.Croissance}:{}),
                   }}/>
-              ) : <View style={{ height: 36 }} />}
+              ) : <View style={{ height: phase === 'Témoignage' ? 9 : 36 }} />}
               <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}
                 style={{
                   color: selected ? accent : reached ? theme.muted : theme.border,
