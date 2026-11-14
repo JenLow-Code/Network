@@ -76,7 +76,18 @@ export const factualFlowerTitle = (
 };
 
 /** Structured timeline, dated from original logs and resource transitions. */
-export function flowerSourceMoments(dream: DreamEntry): FlowerSourceMoment[] {
+export function flowerSourceMoments(
+  dream: DreamEntry,
+  verifiedTalentNames: Record<string, string> = {},
+): FlowerSourceMoment[] {
+  const verifiedNameFor = (event: DreamGrowthEvent): string | undefined => {
+    if (event.personName?.trim()) return event.personName.trim();
+    if (event.category !== 'person') return undefined;
+    const need = (dream.resources || []).find(resource =>
+      resource.id === event.needId && resource.serverNeedId);
+    return need?.serverNeedId ?
+      verifiedTalentNames[need.serverNeedId]?.trim() || undefined : undefined;
+  };
   const result = buildGrowthDays(dream).flatMap(day => [
     ...day.notes.map(note => ({
       id: note.id, date: day.date, title: note.title,
@@ -84,7 +95,9 @@ export function flowerSourceMoments(dream: DreamEntry): FlowerSourceMoment[] {
     })),
     ...day.changes.map(event => ({
       id: 'resource:' + event.id, date: day.date,
-      title: factualFlowerTitle(dream, event),
+      title: factualFlowerTitle(dream, {
+        ...event, personName: verifiedNameFor(event),
+      }),
       kind: 'resource' as const, source: 'recorded' as const,
     })),
     ...day.documents.map(doc => ({
@@ -116,7 +129,7 @@ export function flowerPublicationSnapshot(dream: DreamEntry): FlowerPublishedMom
   if (!draft) return [];
   const selected = new Set(draft.highlightIds || []);
   const entries = [
-    ...flowerSourceMoments(dream),
+    ...flowerSourceMoments(dream, draft.verifiedTalentNames),
     ...flowerPersonalMoments(draft.personalMoments),
   ];
   return entries.filter(moment =>
