@@ -82,6 +82,7 @@ export type MusicProjectFile = {
   text?: string;
   sectionContent?: Record<string, string>;
   language?: string;
+  instrument?: string;
   localFileId?: string;
   externalUrl?: string;
   durationSeconds?: number;
