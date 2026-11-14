@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-  Alert, Platform, Pressable, Text, TextInput, View,
+  Alert, Platform, Pressable, ScrollView, Text, TextInput, View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/theme/AppTheme';
@@ -33,14 +33,25 @@ const dateLabel = (value: string) => {
 };
 type Moment = FlowerSourceMoment | FlowerEditableMoment;
 type MomentKind = NonNullable<FlowerPublishedMoment['kind']>;
-const momentIcon = (moment: Pick<FlowerPublishedMoment,'kind'|'title'>):
-keyof typeof Ionicons.glyphMap => {
-  if (moment.kind === 'personal') return 'leaf-outline';
-  if (moment.kind === 'document') return 'document-text-outline';
-  if (moment.kind === 'logbook') return 'book-outline';
-  if (moment.title.includes('nous a rejoints')) return 'people-outline';
-  if (moment.title.includes('indisponible')) return 'alert-circle-outline';
-  return 'cube-outline';
+// Quiet, personal symbols instead of generic technical icons.
+const STORY_EMOJIS = [
+  '🌸','🤝','🥁','🎹','🎤','🎸','🎶','❤️','🙏','✨',
+  '🌱','🌿','🌧️','🕊️','🎯','📸','💪','🎉','🫶','📖',
+  '🌻','🎧','🪴','⭐','💐','🍃','🕯️','🎼',
+];
+const defaultMomentEmoji = (moment: Pick<FlowerPublishedMoment,'kind'|'title'>): string => {
+  const label = moment.title.toLocaleLowerCase('fr-FR');
+  if (moment.kind === 'personal') return '🌸';
+  if (moment.kind === 'document') return '📖';
+  if (moment.kind === 'logbook') return '🍃';
+  if (/indisponible|perdu|perdue|difficulté/.test(label)) return '🌧️';
+  if (/nous a rejoint|une personne|en tant que|un talent/.test(label)) return '🤝';
+  if (/batterie|batteur|batterist/.test(label)) return '🥁';
+  if (/piano|pianiste|clavier/.test(label)) return '🎹';
+  if (/chant|chanteur|chanteuse|voix/.test(label)) return '🎤';
+  if (/guitare|guitariste/.test(label)) return '🎸';
+  if (/prière|prier/.test(label)) return '🙏';
+  return '✨';
 };
 
 /**
@@ -65,6 +76,8 @@ export default function FlowerJourneyRecap({
   const [expanded, setExpanded] = useState(false);
   const [showHidden, setShowHidden] = useState(false);
   const [menuId, setMenuId] = useState<string | null>(null);
+  const [emojiPickerId, setEmojiPickerId] = useState<string | null>(null);
+  const [customEmoji, setCustomEmoji] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
   const [formDate, setFormDate] = useState(localDay());
@@ -134,6 +147,7 @@ export default function FlowerJourneyRecap({
   ].filter((item): item is NonNullable<typeof item> => item !== null);
 
   const closeEditor = () => {
+    setEmojiPickerId(null);
     setAdding(false);
     setEditingId(null);
     setMenuId(null);
@@ -147,6 +161,7 @@ export default function FlowerJourneyRecap({
     setEditingId(null);
     setAdding(true);
     setMenuId(null);
+    setEmojiPickerId(null);
   };
   const openEdit = (moment: Moment) => {
     setFormDate(moment.date);
@@ -157,6 +172,7 @@ export default function FlowerJourneyRecap({
     setAdding(false);
     setEditingId(moment.id);
     setMenuId(null);
+    setEmojiPickerId(null);
   };
   const commitEdit = (moment: Moment) => {
     if (!onChangeDraft || !draft) return;
@@ -230,6 +246,29 @@ export default function FlowerJourneyRecap({
     });
     setMenuId(null);
   };
+  const chooseEmoji = (moment: Moment, value?: string) => {
+    if (!draft || !onChangeDraft) return;
+    const emoji = value?.trim().slice(0, 18) || undefined;
+    onChangeDraft({
+      momentPresentation: {
+        ...presentation,
+        [moment.id]: {
+          ...presentation[moment.id],
+          emoji,
+        },
+      },
+    });
+    setEmojiPickerId(null);
+    setCustomEmoji('');
+    setMenuId(null);
+  };
+  const openEmojiPicker = (moment: Moment) => {
+    setEmojiPickerId(moment.id);
+    setCustomEmoji('');
+    setMenuId(null);
+    setEditingId(null);
+  };
+
   const deletePersonal = (moment: Moment) => {
     if (!draft || !onChangeDraft || moment.source !== 'personal') return;
     const run = () => {
