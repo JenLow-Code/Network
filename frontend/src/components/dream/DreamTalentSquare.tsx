@@ -44,11 +44,17 @@ export function DreamTalentSquare({
       >
         {resource.illustration
           ? <TalentArt kind={resource.illustration} size={illustrationSize}/>
-          : <Ionicons name="person-outline" size={illustrationSize * .65} color={theme.foreground}/>}
+          : <Ionicons name={role==='Traducteur'?'language-outline':'person-outline'}
+              size={illustrationSize * .65} color={theme.foreground}/>}
         <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={.75}
           style={{ color: theme.foreground, fontSize: size < 80 ? 9 : 10, fontWeight: '700', textAlign: 'center', width: '100%' }}>
           {role}
         </Text>
+        {role==='Traducteur' && resource.sourceLanguage && resource.targetLanguage ?
+          <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={.7}
+            style={{color:theme.muted,fontSize:8,textAlign:'center'}}>
+            {resource.sourceLanguage} → {resource.targetLanguage}
+          </Text>:null}
         {resource.requiredLevel ? <TalentLevelDots level={resource.requiredLevel} size={size < 80 ? 4 : 6} spacing={3}/> : null}
       </Pressable>
       <Modal visible={detailsOpen} transparent animationType="fade" onRequestClose={() => setDetailsOpen(false)}>
@@ -72,6 +78,10 @@ export function DreamTalentSquare({
               </View>
               <Text style={{ fontFamily: 'serif', fontSize: 28, color: theme.foreground, marginBottom: 17 }}>{role}</Text>
               {resource.illustration ? <View style={{ alignItems: 'center', marginBottom: 21 }}><TalentArt kind={resource.illustration} size={108}/></View> : null}
+              {role==='Traducteur' && resource.sourceLanguage && resource.targetLanguage ?
+                <Text style={{color:theme.foreground,fontSize:14,marginBottom:13}}>
+                  De {resource.sourceLanguage} vers {resource.targetLanguage}
+                </Text>:null}
               {resource.requiredLevel ? (
                 <View style={{ marginBottom: 19, gap: 9 }}>
                   <Text style={{ color: theme.muted, fontSize: 12 }}>Niveau souhaité : {resource.requiredLevel}</Text>

@@ -10,15 +10,11 @@ export type FlowerPersonalMoment = {
   title: string;
   date: string;
   note?: string;
-  /** Optional creator-chosen emoji for this memory. */
-  emoji?: string;
 };
 /** A presentation layer only; original events remain untouched in the Logbook. */
 export type FlowerMomentPresentation = {
   hidden?: boolean;
   note?: string;
-  /** A visual choice; it never alters the recorded fact. */
-  emoji?: string;
 };
 /** Snapshot captured only when the creator deliberately publishes a moment. */
 export type FlowerPublishedMoment = {
@@ -27,7 +23,6 @@ export type FlowerPublishedMoment = {
   date: string;
   kind?: 'logbook' | 'resource' | 'document' | 'personal';
   note?: string;
-  emoji?: string;
 };
 export type FlowerDraft = {
   story: string;
@@ -116,6 +111,9 @@ export type DreamResource = {
   amount?: number;
   illustration?: NonNullable<DreamPublication['resources']>[number]['illustration'];
   requiredLevel?: string;
+  /** Language pair for a requested translator talent (source -> target). */
+  sourceLanguage?: string;
+  targetLanguage?: string;
   description?: string;
   /** Local intent to request listing in Tools; not a published listing until synced. */
   toolsPublicationRequested?: boolean;
