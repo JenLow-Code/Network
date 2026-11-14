@@ -27,7 +27,7 @@ const dateLabel = (value: string) => {
   const parsed = validFlowerDay(value) ? new Date(value + 'T12:00:00') : null;
   return parsed
     ? parsed.toLocaleDateString('fr-FR', {
-        day: 'numeric', month: 'short', year: 'numeric',
+        day: 'numeric', month: 'long', year: 'numeric',
       })
     : value;
 };
