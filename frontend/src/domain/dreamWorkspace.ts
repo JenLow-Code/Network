@@ -10,11 +10,14 @@ export type FlowerPersonalMoment = {
   title: string;
   date: string;
   note?: string;
+  /** Optional creator-selected display symbol. */
+  emoji?: string;
 };
 /** A presentation layer only; original events remain untouched in the Logbook. */
 export type FlowerMomentPresentation = {
   hidden?: boolean;
   note?: string;
+  emoji?: string;
 };
 /** Snapshot captured only when the creator deliberately publishes a moment. */
 export type FlowerPublishedMoment = {
@@ -23,6 +26,7 @@ export type FlowerPublishedMoment = {
   date: string;
   kind?: 'logbook' | 'resource' | 'document' | 'personal';
   note?: string;
+  emoji?: string;
 };
 export type FlowerDraft = {
   story: string;
