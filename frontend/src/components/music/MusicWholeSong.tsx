@@ -37,6 +37,7 @@ export function MusicWholeSong({project,patch,selectSection}:Props){
   const [newVersion,setNewVersion]=useState('');
   const [importError,setImportError]=useState('');
   const [addingAudio,setAddingAudio]=useState(false);
+  const [recordingVersionId,setRecordingVersionId]=useState<string|null>(null);
   const [coverError,setCoverError]=useState('');
   const [savingCover,setSavingCover]=useState(false);
   const [rights,setRights]=useState(false);
@@ -99,6 +100,16 @@ export function MusicWholeSong({project,patch,selectSection}:Props){
     chooseMusicFile(file=>{
       setAddingAudio(true);setImportError('');
       void saveDraftAudio(file).then(id=>addVersion(file.name.replace(/\.[^.]+$/,''),id))
+        .catch(e=>setImportError(e instanceof Error?e.message:'Import impossible.'))
+        .finally(()=>setAddingAudio(false));
+    });
+  };
+  const importForVersion=(versionId:string)=>{
+    if(Platform.OS!=='web')return;
+    chooseMusicFile(file=>{
+      setAddingAudio(true);setImportError('');
+      void saveDraftAudio(file)
+        .then(localAudioId=>updateVersion(versionId,{localAudioId,audioMediaId:undefined,audioUrl:undefined}))
         .catch(e=>setImportError(e instanceof Error?e.message:'Import impossible.'))
         .finally(()=>setAddingAudio(false));
     });
@@ -352,10 +363,21 @@ export function MusicWholeSong({project,patch,selectSection}:Props){
           </Pressable>}
         </View>
         <MusicAudioPreview source={version}/>
-        {!version.publishedId?<TextInput value={version.title}
-          onChangeText={title=>updateVersion(version.id,{title})}
-          placeholder="Nom de la version" placeholderTextColor={theme.muted}
-          style={{...input,backgroundColor:theme.surface}}/>:null}
+        {!version.publishedId?<>
+          <TextInput value={version.title} onChangeText={title=>updateVersion(version.id,{title})}
+            placeholder="Nom de la version" placeholderTextColor={theme.muted}
+            style={{...input,backgroundColor:theme.surface}}/>
+          <View style={{flexDirection:'row',flexWrap:'wrap',gap:8}}>
+            {Platform.OS==='web'?button('Importer son mix',
+              ()=>importForVersion(version.id),true,addingAudio):null}
+            {button(recordingVersionId===version.id?'Fermer l’enregistreur':'Enregistrer une prise',
+              ()=>setRecordingVersionId(recordingVersionId===version.id?null:version.id),true)}
+          </View>
+          {recordingVersionId===version.id?<MusicAudioCapture onSaved={localAudioId=>{
+            updateVersion(version.id,{localAudioId,audioMediaId:undefined,audioUrl:undefined});
+            setRecordingVersionId(null);
+          }}/>:null}
+        </>:null}
       </View>)}
       <View style={{gap:8}}>
         {label('Ajouter une version')}
