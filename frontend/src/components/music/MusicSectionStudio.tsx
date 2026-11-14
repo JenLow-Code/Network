@@ -182,7 +182,7 @@ export function MusicSectionStudio({project,section,patch,onOpenChat}:Props){
           </Text>
           <TextInput keyboardType="decimal-pad"
             defaultValue={section[key]===undefined?'':String(section[key])}
-            onBlur={e=>{
+            onEndEditing={e=>{
               const value=e.nativeEvent.text.trim();
               const parsed=Number(value);
               if(!value)updateSection({[key]:undefined});
