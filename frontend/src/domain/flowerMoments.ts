@@ -37,10 +37,10 @@ const personRole = (title: string): string => {
 const foundResourceLabel = (dream: DreamEntry, event: DreamGrowthEvent): string => {
   const title = event.title.trim() || 'Ressource';
   if (event.category !== 'person') {
-    if (title.toLowerCase() === 'batterie') return 'Batterie trouvée';
-    if (title.toLowerCase() === 'piano') return 'Piano trouvé';
+    if (title.toLowerCase() === 'batterie') return 'Nous avons trouvé une batterie';
+    if (title.toLowerCase() === 'piano') return 'Nous avons trouvé un piano';
     if (title.toLowerCase() === 'chant') return 'Une solution trouvée pour le chant';
-    return title + ' : ressource trouvée';
+    return 'Une ressource trouvée : ' + title;
   }
   // Real verified names are not available on most resource records.
   // Never interpret an instrument or role as a person's actual name.
@@ -58,8 +58,13 @@ export const factualFlowerTitle = (
   dream: DreamEntry, event: DreamGrowthEvent,
 ): string => {
   if (event.kind === 'need_found') return foundResourceLabel(dream, event);
-  if (event.kind === 'need_lost') return 'Ressource devenue indisponible : ' + event.title;
-  return 'Nouveau besoin identifié : ' + event.title;
+  if (event.kind === 'need_lost') {
+    const item = event.title.toLowerCase();
+    if (item === 'batterie') return 'La batterie n’était plus disponible';
+    if (item === 'piano') return 'Le piano n’était plus disponible';
+    return 'Une ressource nous a manqué : ' + event.title;
+  }
+  return 'Un nouveau besoin est apparu : ' + event.title;
 };
 
 /** Structured timeline, dated from original logs and resource transitions. */
