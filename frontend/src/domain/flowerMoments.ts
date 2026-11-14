@@ -39,7 +39,8 @@ const foundResourceLabel = (dream: DreamEntry, event: DreamGrowthEvent): string 
   if (event.category !== 'person') {
     if (title.toLowerCase() === 'batterie') return 'Batterie trouvée';
     if (title.toLowerCase() === 'piano') return 'Piano trouvé';
-    return 'Ressource trouvée : ' + title;
+    if (title.toLowerCase() === 'chant') return 'Une solution trouvée pour le chant';
+    return title + ' : ressource trouvée';
   }
   // Real verified names are not available on most resource records.
   // Never interpret an instrument or role as a person's actual name.
@@ -89,7 +90,8 @@ export function flowerPersonalMoments(
   return personal.filter(entry => cleanDay(entry.date) && !!entry.title.trim())
     .map(entry => ({
       id: entry.id, date: entry.date, title: entry.title.trim(),
-      note: entry.note?.trim() || undefined, kind: 'personal', source: 'personal',
+      note: entry.note?.trim() || undefined,
+      emoji: entry.emoji, kind: 'personal', source: 'personal',
     }));
 }
 
@@ -111,6 +113,7 @@ export function flowerPublicationSnapshot(dream: DreamEntry): FlowerPublishedMom
       date: moment.date,
       title: moment.title,
       kind: moment.kind,
+      emoji: draft.momentPresentation?.[moment.id]?.emoji || moment.emoji,
       note: moment.source === 'personal'
         ? moment.note || draft.momentPresentation?.[moment.id]?.note?.trim() || undefined
         : draft.momentPresentation?.[moment.id]?.note?.trim() || undefined,
