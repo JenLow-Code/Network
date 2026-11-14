@@ -27,6 +27,7 @@ export function formatMusicDuration(value?:number): string {
 }
 export function projectInstruments(project: MusicProject): string[] {
   const all=[...project.instruments, ...project.layers.map(x=>x.role),
+    ...project.files.filter(f=>f.kind==='audio').map(f=>f.instrument||''),
     ...project.sections.flatMap(x=>x.instruments||[])];
   return [...new Set(all.map(x=>x.trim()).filter(x=>x && x.toLowerCase()!=='piste' &&
     x.toLowerCase()!=='instrument' && x.toLowerCase()!=='piste audio'))];
