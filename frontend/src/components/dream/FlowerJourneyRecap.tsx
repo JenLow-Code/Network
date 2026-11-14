@@ -91,11 +91,13 @@ export default function FlowerJourneyRecap({
   const [emojiPickerId, setEmojiPickerId] = useState<string | null>(null);
   const [customEmoji, setCustomEmoji] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [inlineNoteId, setInlineNoteId] = useState<string | null>(null);
+  const [inlineNote, setInlineNote] = useState('');
   const [adding, setAdding] = useState(false);
   const [formDate, setFormDate] = useState(localDay());
   const [formTitle, setFormTitle] = useState('');
   const [formNote, setFormNote] = useState('');
-  const [formEmoji, setFormEmoji] = useState('🌸');
+  const [formEmoji, setFormEmoji] = useState('');
   const [formEmojiPicker, setFormEmojiPicker] = useState(false);
   const [formError, setFormError] = useState('');
 
@@ -162,6 +164,7 @@ export default function FlowerJourneyRecap({
 
   const closeEditor = () => {
     setEmojiPickerId(null);
+    setInlineNoteId(null);
     setAdding(false);
     setEditingId(null);
     setMenuId(null);
@@ -172,10 +175,11 @@ export default function FlowerJourneyRecap({
     setFormDate(localDay());
     setFormTitle('');
     setFormNote('');
-    setFormEmoji('🌸');
+    setFormEmoji('');
     setFormEmojiPicker(false);
     setFormError('');
     setEditingId(null);
+    setInlineNoteId(null);
     setAdding(true);
     setMenuId(null);
     setEmojiPickerId(null);
@@ -185,14 +189,44 @@ export default function FlowerJourneyRecap({
     setFormTitle(moment.title);
     setFormNote(moment.source === 'personal'
       ? moment.note || '' : presentation[moment.id]?.note || '');
-    setFormEmoji(presentation[moment.id]?.emoji || moment.emoji ||
-      defaultMomentEmoji(moment));
+    setFormEmoji(presentation[moment.id]?.emoji ?? moment.emoji ?? '');
     setFormEmojiPicker(false);
     setFormError('');
     setAdding(false);
+    setInlineNoteId(null);
     setEditingId(moment.id);
     setMenuId(null);
     setEmojiPickerId(null);
+  };
+  // The narrative is written in place, never in a separate form. Every keystroke
+  // goes into the unpublished draft; no explicit Save button is required.
+  const beginInlineNote = (moment: Moment) => {
+    if (!editable) return;
+    setInlineNoteId(moment.id);
+    setInlineNote(moment.source === 'personal'
+      ? moment.note || '' : presentation[moment.id]?.note || '');
+    setMenuId(null);
+    setEmojiPickerId(null);
+    setEditingId(null);
+  };
+  const changeInlineNote = (moment: Moment, value: string) => {
+    setInlineNote(value);
+    if (!draft || !onChangeDraft) return;
+    if (moment.source === 'personal') {
+      onChangeDraft({
+        personalMoments: (draft.personalMoments || []).map(item =>
+          item.id === moment.id ? { ...item, note: value || undefined } : item),
+      });
+    } else {
+      onChangeDraft({
+        momentPresentation: {
+          ...presentation,
+          [moment.id]: {
+            ...presentation[moment.id], note: value || undefined,
+          },
+        },
+      });
+    }
   };
   const commitEdit = (moment: Moment) => {
     if (!onChangeDraft || !draft) return;
@@ -270,7 +304,7 @@ export default function FlowerJourneyRecap({
   };
   const chooseEmoji = (moment: Moment, value?: string) => {
     if (!draft || !onChangeDraft) return;
-    const emoji = value?.trim().slice(0, 18) || undefined;
+    const emoji = value?.trim().slice(0, 18) || '';
     onChangeDraft({
       momentPresentation: {
         ...presentation,
@@ -289,6 +323,7 @@ export default function FlowerJourneyRecap({
     setCustomEmoji('');
     setMenuId(null);
     setEditingId(null);
+    setInlineNoteId(null);
   };
 
   const deletePersonal = (moment: Moment) => {
@@ -331,9 +366,10 @@ export default function FlowerJourneyRecap({
             onPress={() => setFormEmojiPicker(current => !current)}
             style={{ flexDirection: 'row', alignItems: 'center',
               gap: 8, paddingVertical: 3, alignSelf: 'flex-start' }}>
-            <Text style={{ fontSize: 24 }}>{formEmoji || '🌸'}</Text>
+            {formEmoji ? <Text style={{ fontSize: 18 }}>{formEmoji}</Text> :
+              <Ionicons name="happy-outline" size={17} color={theme.muted}/>}
             <Text style={{ color: MAGENTA, fontSize: 12 }}>
-              Choisir un emoji
+              {formEmoji ? 'Changer / retirer l’emoji' : 'Ajouter un emoji (facultatif)'}
             </Text>
             <Ionicons name={formEmojiPicker ? 'chevron-up' : 'chevron-down'}
               size={12} color={MAGENTA}/>
@@ -357,6 +393,9 @@ export default function FlowerJourneyRecap({
                   </Pressable>
                 ))}
               </ScrollView>
+              <Pressable accessibilityRole="button" onPress={() => {
+                setFormEmoji(''); setFormEmojiPicker(false);
+              }}><Text style={{ color: theme.muted, fontSize: 12 }}>Sans emoji</Text></Pressable>
               <TextInput accessibilityLabel="Autre emoji du souvenir"
                 placeholder="Ou colle ton propre emoji"
                 placeholderTextColor={theme.muted} value={formEmoji}
@@ -479,8 +518,8 @@ export default function FlowerJourneyRecap({
         </Text>
         {!publicView ? (
           <Text style={{ ...muted, marginBottom: 12 }}>
-            Chaque étape a compté. Donne-lui un symbole, quelques mots,
-            et choisis ce que tu souhaites partager.
+            Les rencontres, les épreuves et les petits miracles qui ont donné
+            vie à ce rêve.
           </Text>
         ) : null}
         {shown.length ? (
