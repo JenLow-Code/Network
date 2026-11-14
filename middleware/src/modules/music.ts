@@ -112,6 +112,11 @@ export function registerMusic(r: Router): void {
         trackId, pubId, viewer.id, audioMediaId ?? null, externalStreamUrl ?? null, coverMediaId ?? null, rightsId, durationMs ?? null, description ?? null, songAuthor ?? null, lyrics ? JSON.stringify(lyrics) : null,
       ),
       ...(await creditStatements(ctx, 'music_contributors', 'track_id', trackId, credits!)),
+      // Every published piece has a real, access-controlled group conversation.
+      ctx.sql.stmt("INSERT INTO conversations(id,type,title,created_by) VALUES(?,'group',?,?)",
+        'music-' + pubId, title!, viewer.id),
+      ctx.sql.stmt("INSERT INTO conversation_members(conversation_id,user_id,role) VALUES(?,?,'admin')",
+        'music-' + pubId, viewer.id),
       auditStmt(ctx.sql, viewer.id, 'music_published', 'publication', pubId, ctx.requestId, { licenseType }),
     ];
     try { await ctx.sql.batch(stmts); } catch (e) { mapSqlError(e); }
@@ -188,6 +193,31 @@ export function registerMusic(r: Router): void {
     const input = parseCreate({ ...(await ctx.body()), needs: undefined });
     const id = await createDream(ctx, viewer, { ...input, inspiredByPublicationId: t.publication_id });
     return json(await dreamDetail(ctx, id), 201, { Location: `/api/dreams/${id}` });
+  });
+
+  // A song's chat is reachable by its publisher and explicitly accepted contributors only.
+  // Old tracks are migrated lazily to a conversation on first authorized access.
+  // Other contributors are not enrolled merely because they submitted a proposal.
+  r.add('GET', '/api/music/:id/conversation', {
+    tag: 'Music', summary: 'Get the song group chat (publisher and accepted collaborators)', auth: 'required'
+  }, async ctx => {
+    const viewer = await ctx.user();
+    const t = await trackByPublication(ctx, ctx.param('id'));
+    const accepted = t.publisher_id === viewer.id || await ctx.sql.exists(
+      "SELECT 1 FROM music_collab_proposals WHERE original_track_id=? AND proposed_by=? AND status IN ('accepted','published')",
+      t.id, viewer.id,
+    );
+    if (!accepted || t.withdrawn_at) throw notFound();
+    const conversationId = 'music-' + t.publication_id;
+    await ctx.sql.batch([
+      ctx.sql.stmt("INSERT OR IGNORE INTO conversations(id,type,title,created_by) VALUES(?,'group',?,?)",
+        conversationId, 'Musique · ' + t.title, t.publisher_id),
+      ctx.sql.stmt("INSERT OR IGNORE INTO conversation_members(conversation_id,user_id,role) VALUES(?,?,'admin')",
+        conversationId, t.publisher_id),
+      ctx.sql.stmt("INSERT OR IGNORE INTO conversation_members(conversation_id,user_id,role) VALUES(?,?,'member')",
+        conversationId, viewer.id),
+    ]);
+    return { conversationId };
   });
 
   // ------------------------------------------------------------------ adaptation proposals
@@ -275,7 +305,19 @@ export function registerMusic(r: Router): void {
     v.done();
     const changed = await ctx.sql.run("UPDATE music_collab_proposals SET status=?,publisher_response=?,responded_at=CURRENT_TIMESTAMP WHERE id=? AND status='submitted'", decision, response ?? null, p.id);
     if (!changed) throw conflict('proposal_not_submitted');
-    await ctx.sql.batch([notifyStmt(ctx.sql, { userId: p.proposed_by, type: decision === 'accepted' ? 'music.proposal.accepted' : 'music.proposal.rejected', category: 'music', actorId: viewer.id, entityType: 'music_proposal', entityId: p.id, params: { track: p.title }, dedupeKey: `proposal-${decision}:${p.id}` })]);
+    await ctx.sql.batch([
+      ...(decision === 'accepted' ? [
+        ctx.sql.stmt("INSERT OR IGNORE INTO conversations(id,type,title,created_by) VALUES(?,'group',?,?)",
+          'music-' + p.publication_id, 'Musique · ' + p.title, p.publisher_id),
+        ctx.sql.stmt("INSERT OR IGNORE INTO conversation_members(conversation_id,user_id,role) VALUES(?,?,'admin')",
+          'music-' + p.publication_id, p.publisher_id),
+        ctx.sql.stmt("INSERT OR IGNORE INTO conversation_members(conversation_id,user_id,role) VALUES(?,?,'member')",
+          'music-' + p.publication_id, p.proposed_by),
+      ] : []),
+      notifyStmt(ctx.sql, { userId: p.proposed_by, type: decision === 'accepted' ? 'music.proposal.accepted' : 'music.proposal.rejected',
+        category: 'music', actorId: viewer.id, entityType: 'music_proposal', entityId: p.id,
+        params: { track: p.title }, dedupeKey: `proposal-${decision}:${p.id}` }),
+    ]);
     return { proposal: { id: p.id, status: decision } };
   };
   r.add('POST', '/api/music-proposals/:id/accept', { tag: 'Music', summary: 'Accept an adaptation (publisher)', auth: 'required' }, decide('accepted'));
