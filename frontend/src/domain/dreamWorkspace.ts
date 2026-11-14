@@ -111,6 +111,9 @@ export type DreamResource = {
   amount?: number;
   illustration?: NonNullable<DreamPublication['resources']>[number]['illustration'];
   requiredLevel?: string;
+  /** Language pair for a requested translator talent (source -> target). */
+  sourceLanguage?: string;
+  targetLanguage?: string;
   description?: string;
   /** Local intent to request listing in Tools; not a published listing until synced. */
   toolsPublicationRequested?: boolean;
