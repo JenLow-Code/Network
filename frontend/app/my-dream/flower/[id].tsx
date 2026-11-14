@@ -442,12 +442,7 @@ export default function FlowerPreparation() {
         <FlowerJourneyRecap dream={dream} draft={draft} onChangeDraft={patch}/>
 
         {/* Publication comes first; secondary edit is a magenta outline. */}
-        <View style={{ borderTopWidth: 1, borderColor: theme.border,
-          paddingTop: 22, marginTop: 30, gap: 10 }}>
-          <Text style={sectionTitle}>La floraison</Text>
-          <Text style={{ ...muted, marginBottom: 6 }}>
-            Tu peux revenir sur ta présentation avant de la partager.
-          </Text>
+        <View style={{ paddingTop: 18, marginTop: 30, gap: 10 }}>
           <Pressable accessibilityRole="button" onPress={publish}
             style={{ minHeight: 48, borderRadius: 11, backgroundColor: MAGENTA,
               alignItems: 'center', justifyContent: 'center', paddingHorizontal: 14 }}>
