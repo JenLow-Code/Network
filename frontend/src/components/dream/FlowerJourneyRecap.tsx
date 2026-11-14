@@ -338,7 +338,7 @@ export default function FlowerJourneyRecap({
           ))}
         </View>
       ) : null}
-      {found.length ? (
+      {!publicView && found.length ? (
         <View style={{ marginBottom: 18, gap: 7 }}>
           <Text style={{ ...muted, fontWeight: '700' }}>
             Les ressources qui ont fait partie de l’aventure
@@ -357,7 +357,7 @@ export default function FlowerJourneyRecap({
             ))}
           </View>
         </View>
-      ) : needs.length ? (
+      ) : !publicView && needs.length ? (
         <Text style={{ ...muted, marginBottom: 17 }}>
           Pour avancer, ce rêve cherchait : {needs.slice(0, 5).join(', ')}.
         </Text>
@@ -476,7 +476,7 @@ export default function FlowerJourneyRecap({
                           key: 'visibility', icon:
                             (isHidden ? 'eye-outline' : 'eye-off-outline') as
                               keyof typeof Ionicons.glyphMap,
-                          label: isHidden ? 'Réafficher' : 'Masquer de la présentation',
+                          label: isHidden ? 'Réafficher' : 'Masquer de cette chronologie',
                           run: () => toggleVisible(moment),
                         },
                         ...(!isHidden ? [{
