@@ -104,9 +104,6 @@ export default function FlowerJourneyRecap({
     dream.encouragementCount : null;
   const found = (dream.resources || []).filter(isNeedFound);
   const talents = found.filter(item => item.category === 'person');
-  const material = found.filter(item => item.category !== 'person');
-  const needs = dream.resources?.length ? dream.resources.map(item => item.title) :
-    dream.needs || [];
 
   const recorded: Moment[] = flowerSourceMoments(dream, draft?.verifiedTalentNames);
   const custom: Moment[] = flowerPersonalMoments(draft?.personalMoments);
