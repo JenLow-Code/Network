@@ -35,6 +35,8 @@ export type MusicLayer = {
   contributor: string;
   sectionId?: string;
   createdAt: string;
+  /** Actual file length, not an invented timeline. */
+  durationSeconds?: number;
 };
 export type MusicNeed = {
   id: string;
@@ -43,6 +45,8 @@ export type MusicNeed = {
   level?: string;
   sourceLanguage?: string;
   targetLanguage?: string;
+  /** Empty for the whole song; otherwise the exact requested section. */
+  sectionId?: string;
 };
 export type MusicSuggestion = {
   id: string;
@@ -65,6 +69,23 @@ export type MusicVersion = {
   audioUrl?: string;
   selectedForPublication: boolean;
   publishedId?: string;
+  durationSeconds?: number;
+};
+
+/** A document or creative resource, optionally mapped to one or more song sections. */
+export type MusicProjectFile = {
+  id: string;
+  title: string;
+  kind: 'lyrics' | 'audio' | 'score' | 'note' | 'idea' | 'document';
+  sectionIds: string[];
+  /** Original full text; mapped excerpts live in sectionContent. */
+  text?: string;
+  sectionContent?: Record<string, string>;
+  language?: string;
+  localFileId?: string;
+  externalUrl?: string;
+  durationSeconds?: number;
+  createdAt: string;
 };
 export type MusicProject = {
   id: string;
@@ -79,6 +100,7 @@ export type MusicProject = {
   timeSignature?: string;
   instruments: string[];
   versions: MusicVersion[];
+  files: MusicProjectFile[];
   coverUrl?: string;
   coverLocalId?: string;
   coverMediaId?: string;
@@ -100,19 +122,16 @@ export const newMusicId = () => 'music-' + Date.now().toString(36) + '-' + Math.
 export const musicStorageKey = (email: string) => 'jenlow.network.music.workspaces.v1.' + (email || 'guest').trim().toLowerCase();
 export const LYRIC_TEMPLATE = 'Couplet 1\n\nRefrain\n\nCouplet 2\n\nRefrain\n\nPont\n\nRefrain';
 
-export type NewMusicDraft = { title: string; originalLanguage: string };
+export type NewMusicDraft = { title: string; description?: string; originalLanguage: string };
 export function makeMusicProject(draft: NewMusicDraft, email: string, name: string): MusicProject {
   const now = new Date().toISOString();
   return {
     id: newMusicId(), title: draft.title.trim(), ownerEmail: email, ownerName: name,
-    description: '', originalLanguage: draft.originalLanguage.trim() || 'Français',
-    instruments: [], versions: [], timeSignature: '4/4',
+    description: draft.description?.trim() || '', originalLanguage: draft.originalLanguage.trim() || 'Français',
+    instruments: [], versions: [], files: [], timeSignature: '4/4',
     createdAt: now, updatedAt: now,
-    sections: [
-      { id: newMusicId(), title: 'Intro' },
-      { id: newMusicId(), title: 'Couplet 1' },
-      { id: newMusicId(), title: 'Refrain' },
-    ],
+    // An idea begins without an imposed structure or invented duration.
+    sections: [],
     lyrics: [], layers: [], needs: [], suggestions: [], messages: [],
   };
 }
@@ -153,7 +172,7 @@ export function MusicWorkspaceProvider({ children }: { children: React.ReactNode
             (x as MusicProject).ownerEmail?.toLowerCase() === email.toLowerCase()
           ).map(project => ({
             ...project, originalLanguage: project.originalLanguage || 'Français',
-            instruments: project.instruments || [],
+            instruments: project.instruments || [], files: project.files || [],
             versions: project.versions?.length ? project.versions : project.masterMediaId || project.masterUrl
               ? [{ id:'legacy-'+project.id,title:'Version originale',createdAt:project.createdAt,
                 audioMediaId:project.masterMediaId,audioUrl:project.masterUrl,
