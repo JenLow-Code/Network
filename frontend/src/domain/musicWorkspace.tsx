@@ -24,6 +24,7 @@ export type MusicLayer = {
   title: string;
   role: string;
   audioUrl?: string;
+  audioMediaId?: string;
   contributor: string;
   sectionId?: string;
   createdAt: string;
@@ -43,7 +44,7 @@ export type MusicSuggestion = {
   sectionId?: string;
   note: string;
   audioUrl?: string;
-  status: 'pending' | 'published' | 'archived';
+  status: 'pending' | 'integrated' | 'archived';
   createdAt: string;
 };
 export type MusicMessage = { id: string; text: string; createdAt: string; author: string };
@@ -55,6 +56,7 @@ export type MusicProject = {
   description: string;
   coverUrl?: string;
   masterUrl?: string;
+  masterMediaId?: string;
   publishedId?: string;
   createdAt: string;
   updatedAt: string;
