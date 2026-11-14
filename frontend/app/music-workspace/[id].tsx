@@ -7,7 +7,9 @@ import { Nav } from '@/components/navigation/Nav';
 import { PageHeader } from '@/components/navigation/PageHeader';
 import { useAppTheme } from '@/theme/AppTheme';
 import { useMusicWorkspaces, newMusicId } from '@/domain/musicWorkspace';
-import { MusicWholeSong } from '@/components/music/MusicWholeSong';
+import { MusicSongOverview } from '@/components/music/MusicSongOverview';
+import { MusicSongChat } from '@/components/music/MusicSongChat';
+import { api } from '@/lib/api/client';
 import { MusicSectionStudio } from '@/components/music/MusicSectionStudio';
 import { MusicFolderCover } from '@/components/music/MusicFolderCover';
 
@@ -19,19 +21,23 @@ const pink='#CB245C';
  * Song sections are navigable sub-workspaces, never just rows in a generic form.
  */
 export default function MusicWorkspace(){
-  const {id}=useLocalSearchParams<{id:string}>();
+  const {id,sectionId:sectionFromChat}=useLocalSearchParams<{id:string;sectionId?:string}>();
   const {items,patch,ready,error}=useMusicWorkspaces();
   const theme=useAppTheme();
   const {width}=useWindowDimensions();
   const compact=width<640;
   const project=items.find(item=>item.id===id);
-  const [sectionId,setSectionId]=useState('');
+  const [sectionId,setSectionId]=useState(sectionFromChat||'');
+  const [chatOpen,setChatOpen]=useState(false);
+  const [chatReference,setChatReference]=useState('');
+  const [chatError,setChatError]=useState('');
   const section=project?.sections.find(x=>x.id===sectionId);
 
   useEffect(()=>{
     if(!project?.sections.some(x=>x.id===sectionId) && sectionId) setSectionId('');
   },[project?.sections,sectionId]);
-  useEffect(()=>setSectionId(''),[id]);
+  useEffect(()=>{if(sectionFromChat)setSectionId(sectionFromChat);
+    else setSectionId('');setChatOpen(false);},[id,sectionFromChat]);
 
   if(!ready)return <SafeAreaView style={{flex:1,backgroundColor:theme.background,
     alignItems:'center',justifyContent:'center'}}>
@@ -52,7 +58,25 @@ export default function MusicWorkspace(){
   </SafeAreaView>;
 
   const update=(change:Partial<typeof project>)=>patch(project.id,change);
-  const chooseSection=(selected:string)=>setSectionId(selected);
+  const chooseSection=(selected:string)=>{setChatOpen(false);setSectionId(selected);};
+  const openSongChat=async(fromSection?:string)=>{
+    if(project.publishedId){
+      setChatError('');
+      try {
+        const result=await api<{conversationId:string}>('/api/music/'+
+          encodeURIComponent(project.publishedId)+'/conversation',{auth:'required'});
+        const source=project.sections.find(s=>s.id===fromSection);
+        router.push({pathname:'/chat/[id]',params:{
+          id:result.conversationId,
+          ...(source?{sectionId:source.id,sectionTitle:source.title,projectId:project.id}:{}),
+        }});
+      } catch (e) {
+        setChatError(e instanceof Error?e.message:'Le chat partagé est indisponible.');
+      }
+    } else {
+      setChatReference(fromSection||'');setChatOpen(true);
+    }
+  };
   const newPart=()=>{
     const sectionId=newMusicId();
     update({sections:[...project.sections,{id:sectionId,title:'Nouvelle partie'}]});
@@ -63,6 +87,7 @@ export default function MusicWorkspace(){
       contentContainerStyle={{width:'100%',maxWidth:890,alignSelf:'center',
         paddingHorizontal:compact?17:30,paddingTop:12,paddingBottom:110,gap:19}}>
       <PageHeader onBack={()=>router.replace('/music-hub')} title="Atelier musical"/>
+      {chatError?<Text style={{color:'#B34D67',fontSize:12}}>{chatError}</Text>:null}
       <View style={{flexDirection:'row',gap:16,alignItems:'center'}}>
         <MusicFolderCover project={project} size={compact?78:102}/>
         <View style={{flex:1,gap:7}}>
@@ -77,6 +102,12 @@ export default function MusicWorkspace(){
             {project.publishedId?'Dossier de création · versions publiques liées':'Espace de création · privé'}
           </Text>
         </View>
+        <Pressable accessibilityRole="button" accessibilityLabel="Chat du morceau"
+          onPress={()=>{void openSongChat();}}
+          style={{width:43,height:43,borderRadius:12,borderWidth:1,borderColor:theme.border,
+            alignItems:'center',justifyContent:'center',backgroundColor:theme.surface}}>
+          <Ionicons name="chatbubbles-outline" size={22} color={pink}/>
+        </Pressable>
       </View>
       {error?<View style={{backgroundColor:theme.dark?'#3D292F':'#FCECEE',
         borderWidth:1,borderColor:'#E2A2B0',padding:11,borderRadius:12}}>
@@ -85,15 +116,15 @@ export default function MusicWorkspace(){
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false}
         contentContainerStyle={{gap:8,paddingBottom:6}}>
-        <Pressable accessibilityRole="tab" accessibilityState={{selected:!sectionId}}
-          onPress={()=>setSectionId('')}
+        <Pressable accessibilityRole="tab" accessibilityState={{selected:!sectionId&&!chatOpen}}
+          onPress={()=>{setChatOpen(false);setSectionId('');}}
           style={{minHeight:46,paddingHorizontal:16,borderRadius:13,flexDirection:'row',
             gap:8,alignItems:'center',borderWidth:1,
-            borderColor:!sectionId?pink:theme.border,
-            backgroundColor:!sectionId?(theme.dark?'#422938':'#F8E6EE'):theme.surface}}>
-          <Ionicons name="albums-outline" color={!sectionId?pink:theme.muted} size={17}/>
-          <Text style={{fontSize:13,fontWeight:!sectionId?'700':'500',
-            color:!sectionId?pink:theme.foreground}}>Chant entier</Text>
+            borderColor:!sectionId&&!chatOpen?pink:theme.border,
+            backgroundColor:!sectionId&&!chatOpen?(theme.dark?'#422938':'#F8E6EE'):theme.surface}}>
+          <Ionicons name="albums-outline" color={!sectionId&&!chatOpen?pink:theme.muted} size={17}/>
+          <Text style={{fontSize:13,fontWeight:!sectionId&&!chatOpen?'700':'500',
+            color:!sectionId&&!chatOpen?pink:theme.foreground}}>Chant entier</Text>
         </Pressable>
         {project.sections.map((part,index)=><Pressable key={part.id}
           accessibilityRole="tab" accessibilityState={{selected:sectionId===part.id}}
@@ -113,10 +144,22 @@ export default function MusicWorkspace(){
             backgroundColor:theme.surface,justifyContent:'center',alignItems:'center'}}>
           <Ionicons name="add" color={pink} size={22}/>
         </Pressable>
+        <Pressable onPress={()=>{setChatReference('');setChatOpen(true);}} accessibilityRole="tab"
+          accessibilityState={{selected:chatOpen}}
+          style={{minHeight:46,paddingHorizontal:14,borderRadius:13,borderWidth:1,
+            borderColor:chatOpen?pink:theme.border,flexDirection:'row',gap:7,alignItems:'center',
+            backgroundColor:chatOpen?(theme.dark?'#422938':'#F8E6EE'):theme.surface}}>
+          <Ionicons name="chatbubbles-outline" size={17} color={chatOpen?pink:theme.foreground}/>
+          <Text style={{fontSize:12,color:chatOpen?pink:theme.foreground}}>Chat</Text>
+        </Pressable>
       </ScrollView>
 
-      {section?<MusicSectionStudio key={section.id} project={project} section={section} patch={update}/>:
-        <MusicWholeSong project={project} patch={update} selectSection={chooseSection}/>}
+      {chatOpen?<MusicSongChat key={chatReference||'whole'} project={project} patch={update}
+        referenceId={chatReference} openSection={chooseSection}/>:
+        section?<MusicSectionStudio key={section.id} project={project} section={section}
+          patch={update} onOpenChat={(source)=>{void openSongChat(source);}}/>:
+        <MusicSongOverview project={project} patch={update} openSection={chooseSection}
+          openChat={()=>{void openSongChat();}}/>}
       <Text style={{color:theme.muted,fontSize:11,lineHeight:18,textAlign:'center'}}>
         Atelier personnel · les coins arrondis sont réservés à ton espace de travail.
         La cassette n’apparaît que dans les publications publiques.
