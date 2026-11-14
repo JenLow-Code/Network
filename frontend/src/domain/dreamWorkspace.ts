@@ -36,6 +36,8 @@ export type FlowerDraft = {
   achievedOn?: string;
   /** Only deliberately selected journal moments appear in a public Floraison. */
   highlightIds?: string[];
+  /** Original Semence inspiration cards explicitly chosen for public testimony. */
+  inspirationIds?: string[];
   /** Source events can be hidden or annotated, but their facts cannot be edited. */
   momentPresentation?: Record<string, FlowerMomentPresentation>;
   /** Entries freely authored and removable by the dream creator. */
@@ -263,6 +265,8 @@ export type DreamEntry = {
     mediaItems?: DreamMedia[];
     /** Public moments explicitly selected from the private Logbook. */
     highlights?: FlowerPublishedMoment[];
+    /** Frozen public copies; never expose the full private Semence workspace. */
+    inspirationHighlights?: DreamBlock[];
     /** The achievement and publication dates are separate milestones. */
     publishedAt?: string;
     date: string;
