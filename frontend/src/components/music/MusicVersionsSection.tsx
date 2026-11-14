@@ -156,8 +156,8 @@ export function MusicVersionsSection({project,patch}:Props){
               ()=>setRecordingFor(recordingFor===version.id?null:version.id))}
             {btn('Retirer',()=>patch({versions:versions.filter(v=>v.id!==version.id)}))}
           </View>
-          {recordingFor===version.id?<MusicAudioCapture onSaved={(localAudioId)=>{
-            update(version.id,{localAudioId,audioMediaId:undefined,audioUrl:undefined});
+          {recordingFor===version.id?<MusicAudioCapture onSaved={(localAudioId,_filename,durationSeconds)=>{
+            update(version.id,{localAudioId,durationSeconds,audioMediaId:undefined,audioUrl:undefined});
             setRecordingFor(null);
           }}/>:null}
         </View>:null}
