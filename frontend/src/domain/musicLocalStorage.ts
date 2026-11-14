@@ -47,8 +47,9 @@ function getStored<T>(store: StoreName, key: string): Promise<T | undefined> {
 }
 function putStored(store: StoreName, key: string, value: unknown): Promise<void> {
   return access<void>(store, 'readwrite', (s, resolve, reject) => {
+    const transaction = s.transaction;
+    transaction.oncomplete = () => resolve();
     const r = s.put(value, key);
-    r.onsuccess = () => resolve();
     r.onerror = () => reject(r.error);
   });
 }
@@ -56,11 +57,14 @@ function putStored(store: StoreName, key: string, value: unknown): Promise<void>
 /** Metadata: prefer IndexedDB after migration. Fall back to AsyncStorage on native or unsupported browsers. */
 export async function readMusicWorkspace(key: string): Promise<string | null> {
   if (Platform.OS !== 'web') return AsyncStorage.getItem(key);
+  let indexedDbAccessible = false;
   try {
     const stored = await getStored<string>(DATA, key);
+    indexedDbAccessible = true;
     if (stored !== undefined) return stored;
   } catch { /* May still be accessible from old storage. */ }
-  return AsyncStorage.getItem(key);
+  try { return await AsyncStorage.getItem(key); }
+  catch (e) { if (indexedDbAccessible) return null; throw e; }
 }
 export async function writeMusicWorkspace(key: string, value: string): Promise<void> {
   if (Platform.OS !== 'web') return AsyncStorage.setItem(key, value);
