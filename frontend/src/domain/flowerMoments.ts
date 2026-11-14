@@ -139,7 +139,7 @@ export function flowerPublicationSnapshot(dream: DreamEntry): FlowerPublishedMom
       date: moment.date,
       title: moment.title,
       kind: moment.kind,
-      emoji: draft.momentPresentation?.[moment.id]?.emoji || moment.emoji,
+      emoji: draft.momentPresentation?.[moment.id]?.emoji ?? moment.emoji,
       note: moment.source === 'personal'
         ? moment.note || draft.momentPresentation?.[moment.id]?.note?.trim() || undefined
         : draft.momentPresentation?.[moment.id]?.note?.trim() || undefined,
