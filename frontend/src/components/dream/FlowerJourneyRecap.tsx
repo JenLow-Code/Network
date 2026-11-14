@@ -533,17 +533,20 @@ export default function FlowerJourneyRecap({
               // No automatically forced emoji: a small neutral botanical
               // mark keeps the journey readable until the creator chooses one.
               const emoji = publicView ? moment.emoji :
-                presentation[moment.id]?.emoji || moment.emoji;
+                (presentation[moment.id]?.emoji ?? moment.emoji);
+              const isNewDate = i === 0 || shown[i-1].date !== moment.date;
               const actions: {
                 key: string; icon: keyof typeof Ionicons.glyphMap;
                 label: string; run: () => void; danger?: boolean;
               }[] = [
                 { key: 'emoji', icon: 'happy-outline',
-                  label: 'Changer l’emoji', run: () => openEmojiPicker(moment) },
+                  label: emoji ? 'Modifier / retirer l’emoji' : 'Ajouter un emoji',
+                  run: () => openEmojiPicker(moment) },
                 { key: 'edit', icon: 'pencil-outline',
                   label: moment.source === 'personal' ?
                     'Modifier mon souvenir' : 'Raconter ce moment',
-                  run: () => openEdit(moment) },
+                  run: () => moment.source === 'personal' ?
+                    openEdit(moment) : beginInlineNote(moment) },
                 ...(moment.source === 'recorded' &&
                   presentation[moment.id]?.note ? [{
                   key: 'clear-note', icon: 'close-circle-outline' as const,
@@ -584,25 +587,25 @@ export default function FlowerJourneyRecap({
                     emojiPickerId === moment.id ? 40 : 0,
                   opacity: isHidden ? .55 : 1,
                 }}>
-                  {/* Every dated event has its own date, even when several
-                      things happened on the same day: the journey matters. */}
-                  <View style={{
-                    flexDirection: 'row', alignItems: 'center', gap: 10,
-                    marginTop: i === 0 ? 6 : 15, marginBottom: 6,
-                    paddingLeft: 9,
-                  }}>
-                    <View style={{ width: 6, height: 6,
-                      borderRadius: 3,
-                      backgroundColor: theme.dark ? '#8CAC99' : '#6B9C80' }}/>
-                    <Text style={{
-                      color: theme.dark ? '#B3D1BE' : '#477C5B',
-                      fontSize: 11, fontWeight: '700',
-                      letterSpacing: .3,
-                    }}>{dateLabel(moment.date)}</Text>
-                  </View>
+                  {/* One visible date per day; moments remain together. */}
+                  {isNewDate ? (
+                    <View style={{
+                      flexDirection: 'row', alignItems: 'center', gap: 10,
+                      marginTop: i === 0 ? 7 : 15, marginBottom: 5,
+                      paddingLeft: 9,
+                    }}>
+                      <View style={{ width: 6, height: 6,
+                        borderRadius: 3,
+                        backgroundColor: theme.dark ? '#8CAC99' : '#6B9C80' }}/>
+                      <Text style={{
+                        color: theme.dark ? '#B3D1BE' : '#477C5B',
+                        fontSize: 10, fontWeight: '700',
+                        letterSpacing: .55, textTransform: 'uppercase',
+                      }}>{dateLabel(moment.date)}</Text>
+                    </View>
+                  ) : null}
                   <View style={{
                     flexDirection: 'row', alignItems: 'stretch',
-                    minHeight: 66,
                   }}>
                     <View style={{
                       width: 23, alignItems: 'center',
@@ -613,57 +616,63 @@ export default function FlowerJourneyRecap({
                       }}/>
                     </View>
                     <View style={{
-                      flex: 1, paddingBottom: 14, paddingTop: 4,
+                      flex: 1, paddingBottom: 9, paddingTop: 2,
                       position: 'relative',
                     }}>
                       <View style={{
                         flexDirection: 'row',
-                        alignItems: 'flex-start', gap: 11,
+                        alignItems: 'flex-start', gap: emoji ? 9 : 0,
                       }}>
-                        <Pressable disabled={!editable}
-                          accessibilityRole={editable ? 'button' : undefined}
-                          accessibilityLabel={editable ?
-                            'Choisir l’emoji pour ' + moment.title : undefined}
-                          onPress={() => openEmojiPicker(moment)}
-                          style={{
-                            width: 27, height: 29,
-                            alignItems: 'center', justifyContent: 'center',
-                          }}>
-                          {emoji ? (
-                            <Text style={{ fontSize: 16, lineHeight: 22,
-                              opacity: .82 }}>{emoji}</Text>
-                          ) : (
-                            <Ionicons name="flower-outline" size={14}
-                              color={theme.muted} style={{ opacity: .55 }}/>
-                          )}
-                        </Pressable>
-                        <View style={{ flex: 1, paddingTop: 1, gap: 5 }}>
+                        {emoji ? (
+                          <Pressable disabled={!editable}
+                            accessibilityRole={editable ? 'button' : undefined}
+                            accessibilityLabel={editable ?
+                              'Changer l’emoji de ' + moment.title : undefined}
+                            onPress={() => openEmojiPicker(moment)}
+                            style={{ width: 20, minHeight: 24,
+                              alignItems: 'center', justifyContent: 'center' }}>
+                            <Text style={{ fontSize: 15, lineHeight: 22 }}>{emoji}</Text>
+                          </Pressable>
+                        ) : null}
+                        <View style={{ flex: 1, paddingTop: 1, gap: 3 }}>
                           <Text style={{
                             color: theme.foreground,
-                            fontFamily: 'serif', fontSize: 16, lineHeight: 23,
+                            fontFamily: 'serif', fontSize: 15, lineHeight: 21,
                           }}>{moment.title}</Text>
-                          {note ? (
+                          {editable && !isHidden && inlineNoteId === moment.id ? (
+                            <TextInput autoFocus multiline
+                              accessibilityLabel={'Mes mots sur ' + moment.title}
+                              value={inlineNote}
+                              onChangeText={value => changeInlineNote(moment, value)}
+                              onBlur={() => setInlineNoteId(null)}
+                              placeholder={momentWritingPrompt(moment)}
+                              placeholderTextColor={theme.dark ? '#B49DA6' : '#A18C94'}
+                              style={{
+                                padding: 0, margin: 0, minHeight: 22,
+                                fontSize: 12, lineHeight: 19, fontStyle: 'italic',
+                                color: theme.dark ? '#D5C8C3' : '#756A66',
+                                maxWidth: 500,
+                              }}/>
+                          ) : note ? (
                             <Pressable disabled={!editable || isHidden}
                               accessibilityRole={editable && !isHidden ? 'button' : undefined}
                               accessibilityLabel={editable && !isHidden ?
                                 'Modifier mes mots sur ' + moment.title : undefined}
-                              onPress={() => openEdit(moment)}
-                              style={{ alignSelf: 'flex-start', paddingVertical: 2 }}>
+                              onPress={() => beginInlineNote(moment)}
+                              style={{ alignSelf: 'flex-start', paddingVertical: 1 }}>
                               <Text style={{
                                 color: theme.dark ? '#CFC0BB' : '#756A66',
-                                fontSize: 12.5, lineHeight: 19, fontStyle: 'italic',
+                                fontSize: 12, lineHeight: 19, fontStyle: 'italic',
                               }}>{note}</Text>
                             </Pressable>
-                          ) : editable && !isHidden && editingId !== moment.id ? (
+                          ) : editable && !isHidden ? (
                             <Pressable accessibilityRole="button"
                               accessibilityLabel={'Raconter ce moment : ' + moment.title}
-                              onPress={() => openEdit(moment)}
-                              style={{ alignSelf: 'flex-start',
-                                paddingTop: 3, paddingBottom: 5 }}>
+                              onPress={() => beginInlineNote(moment)}
+                              style={{ alignSelf: 'flex-start', paddingVertical: 2 }}>
                               <Text style={{
                                 color: theme.dark ? '#B29BAA' : '#A08894',
-                                fontSize: 12, lineHeight: 19,
-                                fontStyle: 'italic',
+                                fontSize: 12, lineHeight: 19, fontStyle: 'italic',
                               }}>{momentWritingPrompt(moment)}</Text>
                             </Pressable>
                           ) : null}
@@ -696,13 +705,13 @@ export default function FlowerJourneyRecap({
                               setEmojiPickerId(null);
                             }}
                             style={{
-                              width: 34, height: 34, borderRadius: 17,
+                              width: 28, height: 28, borderRadius: 14,
                               justifyContent: 'center', alignItems: 'center',
                               backgroundColor: menuId === moment.id ?
                                 (theme.dark ? '#393039' : '#F4E9E6') :
                                 'transparent',
                             }}>
-                            <Ionicons name="ellipsis-horizontal" size={18}
+                            <Ionicons name="ellipsis-horizontal" size={16}
                               color={theme.muted}/>
                           </Pressable>
                         ) : null}
@@ -812,7 +821,7 @@ export default function FlowerJourneyRecap({
                               onPress={() => chooseEmoji(moment, undefined)}
                               style={{ paddingVertical: 8 }}>
                               <Text style={{ color: theme.muted, fontSize: 11 }}>
-                                Réinitialiser
+                                Sans emoji
                               </Text>
                             </Pressable>
                           </View>
