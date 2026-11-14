@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
-import { Alert, Image, Platform, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
-import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
+import { Alert, Platform, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useAppTheme } from '@/theme/AppTheme';
 import { useDreams } from '@/domain/dreamRepository';
 import type { DreamEntry } from '@/domain/dreamWorkspace';
 import type { DreamPhase } from '@/domain/publication';
-import { DreamPhaseHeader } from './DreamPhaseLayout';
+import { DreamCoverBackdrop, DreamPhaseHeader } from './DreamPhaseLayout';
 import SemenceInspirations from './SemenceInspirations';
 import SemenceShare from './SemenceShare';
 import DreamWorkspaceShortcuts from './DreamWorkspaceShortcuts';
@@ -42,22 +41,7 @@ export default function SemenceStudio({dream,onBack,onNavigate}:{
    keyboardShouldPersistTaps="handled"
    contentContainerStyle={{paddingHorizontal:width<520?16:19,paddingTop:10,
      paddingBottom:100,maxWidth:760,width:'100%',alignSelf:'center'}}>
-   {!!dream.image?<View pointerEvents="none"
-     style={{position:'absolute',top:0,left:0,right:0,height:510,overflow:'hidden'}}>
-     <Image source={{uri:dream.image}}
-       resizeMode="cover"
-       style={{position:'absolute',top:0,left:0,right:0,height:510,opacity:theme.dark?.95:.96}}/>
-     <Svg width="100%" height="100%" style={{position:'absolute',top:0,left:0}}>
-       <Defs><LinearGradient id="semence-background-fade"
-         x1="0%" y1="0%" x2="0%" y2="100%">
-         <Stop offset="0%" stopColor={theme.background} stopOpacity={theme.dark?0.17:0.14}/>
-         <Stop offset="35%" stopColor={theme.background} stopOpacity={theme.dark?0.25:0.21}/>
-         <Stop offset="69%" stopColor={theme.background} stopOpacity="0.80"/>
-         <Stop offset="100%" stopColor={theme.background} stopOpacity="1"/>
-       </LinearGradient></Defs>
-       <Rect width="100%" height="100%" fill="url(#semence-background-fade)"/>
-     </Svg>
-   </View>:null}
+   <DreamCoverBackdrop uri={dream.image}/>
    <DreamPhaseHeader dream={dream} phase="Rêve"
      onBack={onBack} onNavigate={onNavigate} readOnly={!editable}/>
    <View style={{alignItems:'flex-end',marginTop:-10,marginBottom:6}}>
