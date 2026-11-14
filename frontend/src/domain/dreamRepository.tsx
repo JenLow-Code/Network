@@ -28,6 +28,8 @@ type Repo = {
   ) => void;
   add: (id: string, text: string, kind: 'notes' | 'additions') => void;
   setFlowerDraft: (id: string, draft: FlowerDraft) => void;
+  /** Add only server-verified accepted names to the current unpublished draft. */
+  setFlowerVerifiedTalentNames: (id: string, names: Record<string, string>) => void;
   /** Irreversible transition; achievement can precede the public testimony. */
   confirmFlower: (id: string, achievedOn: string) => void;
   advance: (id: string) => void;
@@ -210,6 +212,17 @@ export function DreamProvider({ children }: { children: React.ReactNode }) {
       d.id === id && d.phase === 'Témoignage' && !d.testimony
         ? { ...d, flowerDraft: draft } : d,
     ));
+  const setFlowerVerifiedTalentNames: Repo['setFlowerVerifiedTalentNames'] = (id, names) =>
+    setItems(p => p.map(d => {
+      if (d.id !== id || d.phase !== 'Témoignage' || d.testimony)
+        return d;
+      const current = d.flowerDraft || { story: '', attachments: [] };
+      const existing = current.verifiedTalentNames || {};
+      const merged = { ...existing, ...names };
+      if (Object.keys(merged).length === Object.keys(existing).length &&
+        Object.keys(merged).every(k => merged[k] === existing[k])) return d;
+      return { ...d, flowerDraft: { ...current, verifiedTalentNames: merged } };
+    }));
   const confirmFlower: Repo['confirmFlower'] = (id, achievedOn) =>
     setItems(p => p.map(d =>
       d.id === id && d.phase === 'Croissance' && !d.testimony
@@ -334,7 +347,7 @@ export function DreamProvider({ children }: { children: React.ReactNode }) {
   const remove: Repo['remove'] = id => setItems(p => p.filter(d => d.id !== id));
   return (
     <Context.Provider
-      value={{ items, ready:hydratedKey===key, storageError, createPersisted, setCoverImage, personalHabits, setPersonalHabits, detachHabit, create, update, add, setFlowerDraft, confirmFlower, advance, complete, remove, patch, appendBlock, setResources, setHabits, transitionToGrowth, setGoalAndGrow, addGrowthLog, setGrowthLogPublication }}
+      value={{ items, ready:hydratedKey===key, storageError, createPersisted, setCoverImage, personalHabits, setPersonalHabits, detachHabit, create, update, add, setFlowerDraft, setFlowerVerifiedTalentNames, confirmFlower, advance, complete, remove, patch, appendBlock, setResources, setHabits, transitionToGrowth, setGoalAndGrow, addGrowthLog, setGrowthLogPublication }}
     >
       {children}
     </Context.Provider>
