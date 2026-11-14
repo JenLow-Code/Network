@@ -184,12 +184,16 @@ export default function MusicHub() {
           </Text>
           {remoteError ? <Text style={{ color: theme.muted, fontSize: 12 }}>{remoteError}</Text> : null}
           {sent.map(proposal => <Pressable key={proposal.id}
-            onPress={() => router.push({ pathname: '/music/[id]', params: { id: proposal.trackPublicationId, from: 'music-tab' } })}
+            onPress={() => router.push(proposal.status === 'accepted' || proposal.status === 'published'
+              ? { pathname: '/music-collaboration/[id]', params: { id: proposal.trackPublicationId } }
+              : { pathname: '/music/[id]', params: { id: proposal.trackPublicationId, from: 'music-tab' } })}
             style={{ padding: 14, borderRadius: 14, backgroundColor: theme.surface,
               borderWidth: 1, borderColor: theme.border, gap: 4 }}>
             <Text style={{ color: theme.foreground, fontWeight: '700' }}>{proposal.trackTitle}</Text>
             <Text style={{ color: theme.muted, fontSize: 12 }}>{proposal.description}</Text>
             <Text style={{ color: pink, fontSize: 11 }}>Proposition : {proposal.status}</Text>
+            {(proposal.status==='accepted'||proposal.status==='published')?
+              <Text style={{fontSize:11,color:theme.muted}}>Ouvrir le dossier partagé</Text>:null}
           </Pressable>)}
           {!sent.length && !remoteError ?
             <Text style={{ color: theme.muted, fontSize: 13 }}>Aucune collaboration envoyée pour le moment.</Text> : null}
