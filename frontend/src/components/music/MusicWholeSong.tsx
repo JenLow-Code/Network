@@ -32,6 +32,10 @@ export function MusicWholeSong({project,patch,selectSection}:Props){
   const theme=useAppTheme();
   const user=useApp();
   const [editInfo,setEditInfo]=useState(false);
+  const [bpmInput,setBpmInput]=useState(project.bpm?String(project.bpm):'');
+  const [bpmError,setBpmError]=useState('');
+  useEffect(()=>{setBpmInput(project.bpm?String(project.bpm):'');setBpmError('');},
+    [project.id]);
   const [newInstrument,setNewInstrument]=useState('');
   const [newSection,setNewSection]=useState('');
   const [newVersion,setNewVersion]=useState('');
@@ -89,6 +93,10 @@ export function MusicWholeSong({project,patch,selectSection}:Props){
     input.onchange=()=>{
       const file=input.files?.[0];if(!file)return;
       setSavingCover(true);setCoverError('');
+      if(file.size>8*1024*1024){
+        setCoverError('Cette pochette dépasse 8 Mo. Choisis une image plus légère.');
+        return;
+      }
       void saveDraftAttachment(file).then(coverLocalId=>patch({
         coverLocalId,coverMediaId:undefined,coverUrl:undefined,
       })).catch(e=>setCoverError(e instanceof Error?e.message:'Image indisponible.'))
@@ -246,7 +254,7 @@ export function MusicWholeSong({project,patch,selectSection}:Props){
         <View style={{flexDirection:'row',flexWrap:'wrap',gap:9}}>
           {[['Langue',project.originalLanguage||'Français'],
             ['Tempo',project.bpm?project.bpm+' BPM':'À définir'],
-            ['Tonalité',project.musicalKey||'À définir'],
+            ['Tonalité',project.musicalKey ? project.musicalKey+' '+(project.musicalMode||'majeur') : 'À définir'],
             ['Mesure',project.timeSignature||'4/4']].map(([key,value])=>
             <View key={key} style={{backgroundColor:theme.background,borderRadius:12,
               paddingHorizontal:12,paddingVertical:10,minWidth:110,gap:5}}>
@@ -268,13 +276,16 @@ export function MusicWholeSong({project,patch,selectSection}:Props){
         <View style={{flexDirection:'row',gap:9,flexWrap:'wrap'}}>
           <View style={{flex:1,minWidth:110,gap:5}}>
             {label('BPM')}
-            <TextInput keyboardType="numeric" value={project.bpm?String(project.bpm):''}
+            <TextInput keyboardType="numeric" value={bpmInput}
               placeholder="Ex. 86" placeholderTextColor={theme.muted}
-              onChangeText={value=>{
-                const bpm=Number(value);
-                if(!value.trim())patch({bpm:undefined});
-                else if(Number.isInteger(bpm)&&bpm>=20&&bpm<=300)patch({bpm});
+              onChangeText={value=>{setBpmInput(value.replace(/[^0-9]/g,''));setBpmError('');}}
+              onBlur={()=>{
+                if(!bpmInput.trim()){patch({bpm:undefined});return;}
+                const next=Number(bpmInput);
+                if(Number.isInteger(next)&&next>=20&&next<=300)patch({bpm:next});
+                else setBpmError('Indique un tempo entre 20 et 300 BPM.');
               }} style={input}/>
+            {bpmError?<Text style={{color:'#B34D67',fontSize:10}}>{bpmError}</Text>:null}
           </View>
           <View style={{flex:1,minWidth:150,gap:5}}>
             {label('Tonalité')}
@@ -284,6 +295,12 @@ export function MusicWholeSong({project,patch,selectSection}:Props){
                 {pill(key,()=>patch({musicalKey:key}),project.musicalKey===key)}
               </View>)}
             </ScrollView>
+            <View style={{flexDirection:'row',gap:6}}>
+              {pill('Majeur',()=>patch({musicalMode:'majeur'}),
+                !project.musicalMode||project.musicalMode==='majeur')}
+              {pill('Mineur',()=>patch({musicalMode:'mineur'}),
+                project.musicalMode==='mineur')}
+            </View>
           </View>
         </View>
         {label('Signature rythmique')}
