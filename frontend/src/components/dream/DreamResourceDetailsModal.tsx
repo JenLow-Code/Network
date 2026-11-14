@@ -20,7 +20,7 @@ export function DreamResourceDetailsModal({
   onToggle: (resource: DreamResource) => void;
   onRemove: (resource: DreamResource) => void;
   dreamServerId?: string;
-  onServerVerified?: (resourceId: string, confirmed: boolean) => void;
+  onServerVerified?: (resourceId: string, confirmed: boolean, acceptedPersonName?: string) => void;
 }) {
   const theme = useAppTheme();
   const [title, setTitle] = useState('');
@@ -183,7 +183,8 @@ export function DreamResourceDetailsModal({
           ) : null}
           {person ? <DreamTalentInvitationPanel
             resource={resource} dreamServerId={dreamServerId} editable={editable}
-            onVerified={confirmed=>onServerVerified?.(resource.id,confirmed)}/> : null}
+            onVerified={(confirmed, acceptedPersonName) =>
+              onServerVerified?.(resource.id,confirmed,acceptedPersonName)}/> : null}
           {editable ? <>
             <Pressable accessibilityRole="button" onPress={save}
               style={{ minHeight: 47, borderRadius: 10, marginTop: 8,
