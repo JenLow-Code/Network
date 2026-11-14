@@ -11,6 +11,7 @@ import { useDreams } from '@/domain/dreamRepository';
 import { isPublishedFlower, type DreamMedia, type FlowerDraft } from '@/domain/dreamWorkspace';
 import { buildGrowthDays } from '@/domain/growthTimeline';
 import { pickFlowerMedia } from '@/lib/pickFlowerMedia';
+import { api } from '@/lib/api/client';
 import { useAppTheme } from '@/theme/AppTheme';
 import { DreamPhaseHeader } from '@/components/dream/DreamPhaseLayout';
 import DreamWorkspaceShortcuts, { DreamWorkspaceShortcutRow } from '@/components/dream/DreamWorkspaceShortcuts';
@@ -65,7 +66,7 @@ function ReadOnlySheet({ title, visible, onClose, children }: {
 
 export default function FlowerPreparation() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { items, complete, setFlowerDraft, confirmFlower, remove } = useDreams();
+  const { items, complete, setFlowerDraft, setFlowerVerifiedTalentNames, confirmFlower, remove } = useDreams();
   const theme = useAppTheme();
   const { width } = useWindowDimensions();
   const narrow = width < 600;
@@ -84,6 +85,34 @@ export default function FlowerPreparation() {
       router.replace({ pathname: '/my-dream/[id]', params: { id: dream.id } });
     }
   }, [dream?.id, dream?.phase, !!dream?.testimony, !!dream?.resultImage, !!dream?.fruitAt]);
+
+  // Backfill names for older Floraison events exclusively from accepted
+  // invitations. This enriches the story without modifying Growth history.
+  useEffect(() => {
+    if (!dream?.serverDreamId || dream.phase !== 'Témoignage' ||
+      isPublishedFlower(dream)) return;
+    let live = true;
+    void api<{items:{
+      needId: string;
+      status: string;
+      recipient?: { displayName?: string };
+    }[]}>(
+      '/api/dreams/' + encodeURIComponent(dream.serverDreamId) +
+        '/need-invitations',
+      { auth: 'required' },
+    ).then(({items}) => {
+      if (!live) return;
+      const names: Record<string, string> = {};
+      items.filter(item => item.status === 'accepted').forEach(item => {
+        const name = item.recipient?.displayName?.trim();
+        if (name && item.needId) names[item.needId] = name;
+      });
+      if (Object.keys(names).length) setFlowerVerifiedTalentNames(dream.id, names);
+    }).catch(() => {
+      // An offline session or missing authorization cannot verify an identity.
+    });
+    return () => { live = false; };
+  }, [dream?.id, dream?.serverDreamId, dream?.phase]);
 
   if (!dream) return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
