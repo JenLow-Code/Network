@@ -436,53 +436,83 @@ export function MusicSongElements({project,patch,sectionId,openSection}:Props) {
         <Text style={{color:'#fff',fontSize:12,fontWeight:'700'}}>{adding?'Fermer':'Ajouter'}</Text>
       </Pressable>
     </View>
-    {adding?<View style={{backgroundColor:theme.surface,borderRadius:14,
-      borderWidth:1,borderColor:theme.border,padding:13,gap:10}}>
-      <Text style={{color:theme.foreground,fontSize:13,fontWeight:'700'}}>Nouvel élément</Text>
-      <View style={{flexDirection:'row',flexWrap:'wrap',gap:6}}>
-        {types.filter(x=>x.kind!=='style'&&(!sectionId||x.kind!=='version')).map(t=>
-          <Pressable key={t.kind} onPress={()=>{setKind(t.kind);setError('');}}
-            style={{borderWidth:1,borderColor:kind===t.kind?pink:theme.border,
-              borderRadius:9,paddingHorizontal:10,paddingVertical:8}}>
-            <Text style={{color:kind===t.kind?pink:theme.foreground,fontSize:11}}>{t.label}</Text>
-          </Pressable>)}
-      </View>
-      <TextInput value={title} onChangeText={setTitle} style={inputStyle}
-        placeholder="Nom de l’élément…" placeholderTextColor={theme.muted}/>
-      {kind==='lyrics'?<TextInput value={language} onChangeText={setLanguage}
-        placeholder="Langue" placeholderTextColor={theme.muted} style={inputStyle}/>:null}
-      {kind==='audio'?<TextInput value={instrument} onChangeText={setInstrument}
-        placeholder="Instrument (facultatif)" placeholderTextColor={theme.muted} style={inputStyle}/>:null}
-      {kind==='talent'?<>
-        <TalentLevelSelector value={level} onChange={setLevel}/>
-        {title.trim().toLowerCase()==='traducteur'?
-          <TranslatorLanguageFields sourceLanguage={sourceLang} targetLanguage={targetLang}
-            onChangeSource={setSourceLang} onChangeTarget={setTargetLang}/>:null}
-      </>:null}
-      {!sectionId&&kind!=='version'?<>
-        <Text style={{color:theme.muted,fontSize:11}}>Parties concernées (facultatif)</Text>
-        {kind==='talent'||kind==='proposal'?
-          selectOneScope(chosenSections[0],id=>setChosenSections(id?[id]:[])):
-          selectScope(chosenSections,setChosenSections)}
-      </>:null}
-      {['lyrics','note','idea','document','proposal'].includes(kind)?
-        <TextInput value={body} onChangeText={setBody} multiline textAlignVertical="top"
-          style={{...inputStyle,minHeight:88}} placeholder="Contenu, idée ou proposition…"
-          placeholderTextColor={theme.muted}/>:null}
-      <View style={{flexDirection:'row',gap:8,flexWrap:'wrap'}}>
-        <Pressable disabled={!title.trim()} onPress={saveNew} accessibilityRole="button"
-          style={{paddingVertical:10,paddingHorizontal:14,borderRadius:9,
-            backgroundColor:title.trim()?pink:theme.border}}>
-          <Text style={{fontSize:12,color:'#fff',fontWeight:'700'}}>Créer l’élément</Text>
+    {adding?<View style={{gap:11,backgroundColor:theme.surface,padding:13,
+      borderWidth:1,borderColor:theme.border,borderRadius:14}}>
+      <Text style={{color:theme.foreground,fontSize:13,fontWeight:'700'}}>
+        {creationMode==='none'?'Ajouter au morceau':
+         creationMode==='talent'?'Quel talent recherches-tu ?':
+         creationMode==='record'?'Enregistrer une prise':'Nouvel élément'}
+      </Text>
+      {creationMode==='none'?<View style={{gap:3}}>
+        {([
+          ['cloud-upload-outline','Importer un fichier','Word, PDF, audio, MIDI, image ou texte','upload'],
+          ['document-text-outline','Écrire des paroles','Créer un fichier de paroles','lyrics'],
+          ['reader-outline','Ajouter une idée / note','Commencer par du texte libre','note'],
+          ['layers-outline','Créer une version','Nouvelle version du morceau','version'],
+          ['person-add-outline','Chercher un talent','Une demande rapide avec le niveau','talent'],
+          ['git-pull-request-outline','Proposer une modification','Arrangement ou nouvelle piste','proposal'],
+          ['mic-outline','Enregistrer une prise','Enregistrement avec le microphone','record'],
+        ] as const).map(([icon,label,desc,action])=><Pressable key={action}
+          accessibilityRole="button" onPress={()=>{
+            if(action==='upload'){importFor();return;}
+            if(action==='record'){setCreationMode('record');return;}
+            setKind(action==='lyrics'?'lyrics':action==='note'?'note':
+              action==='version'?'version':action==='talent'?'talent':'proposal');
+            setCreationMode(action==='talent'?'talent':'text');
+          }} style={{flexDirection:'row',gap:11,alignItems:'center',
+            minHeight:54,borderBottomWidth:1,borderColor:theme.border,paddingVertical:8}}>
+          <Ionicons name={icon} color={pink} size={22}/>
+          <View style={{flex:1,gap:3}}>
+            <Text style={{color:theme.foreground,fontSize:13,fontWeight:'600'}}>{label}</Text>
+            <Text style={{color:theme.muted,fontSize:11}}>{desc}</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={17} color={theme.muted}/>
+        </Pressable>)}
+      </View>:null}
+      {(creationMode==='text'||creationMode==='talent')?<View style={{gap:9}}>
+        <TextInput value={title} onChangeText={setTitle}
+          placeholder={kind==='talent'?'Batteur, guitariste, traducteur…':
+            kind==='version'?'Nom de la version':'Titre de l’élément'}
+          placeholderTextColor={theme.muted} style={inputStyle}/>
+        {kind==='lyrics'?<TextInput value={language} onChangeText={setLanguage}
+          placeholder="Langue des paroles" placeholderTextColor={theme.muted} style={inputStyle}/>:null}
+        {kind==='talent'?<>
+          <TalentLevelSelector value={level} onChange={setLevel}/>
+          {title.toLowerCase().trim()==='traducteur'?
+            <TranslatorLanguageFields sourceLanguage={sourceLang} targetLanguage={targetLang}
+              onChangeSource={setSourceLang} onChangeTarget={setTargetLang}/>:null}
+        </>:null}
+        {['lyrics','note','idea','document','proposal'].includes(kind)?
+          <TextInput value={body} onChangeText={setBody} multiline
+            placeholder="Écris librement…" placeholderTextColor={theme.muted}
+            textAlignVertical="top" style={{...inputStyle,minHeight:100}}/>:null}
+        <View style={{flexDirection:'row',alignItems:'center',gap:8}}>
+          <Pressable disabled={!title.trim()} onPress={saveNew}
+            style={{paddingHorizontal:15,paddingVertical:11,borderRadius:9,
+              backgroundColor:title.trim()?pink:theme.border}}>
+            <Text style={{color:'#fff',fontSize:12,fontWeight:'700'}}>Ajouter</Text>
+          </Pressable>
+          <Pressable onPress={()=>{setCreationMode('none');setTitle('');setBody('');}}>
+            <Text style={{color:theme.muted,fontSize:12}}>Retour</Text>
+          </Pressable>
+        </View>
+        <Text style={{color:theme.muted,fontSize:10}}>
+          Tu pourras modifier le type et lier cet élément à une partie plus tard.
+        </Text>
+      </View>:null}
+      {creationMode==='record'?<View style={{gap:9}}>
+        <MusicAudioCapture onSaved={(localFileId,filename,durationSeconds)=>{
+          const item:MusicProjectFile={id:newMusicId(),title:filename.replace(/\.[^.]+$/,''),
+            kind:'audio',sectionIds:sectionId?[sectionId]:[],localFileId,durationSeconds,
+            createdAt:new Date().toISOString()};
+          patch({files:[...files,item]});
+          setExpanded('f:'+item.id);clearForm();
+        }}/>
+        <Pressable onPress={()=>setCreationMode('none')}>
+          <Text style={{color:theme.muted,fontSize:12}}>Retour</Text>
         </Pressable>
-        {Platform.OS==='web'?smallAction(uploading?'Import en cours…':'Importer un fichier',()=>importFor()):null}
-      </View>
-      {kind==='audio'?<MusicAudioCapture onSaved={(localFileId,filename,durationSeconds)=>{
-        patch({files:[...files,{id:newMusicId(),title:title.trim()||filename,kind:'audio',
-          sectionIds:[...chosenSections],instrument:instrument||undefined,localFileId,
-          durationSeconds,createdAt:new Date().toISOString()}]});
-        clearForm();
-      }}/>:null}
+      </View>:null}
+      {uploading?<Text style={{fontSize:11,color:theme.muted}}>Import en cours…</Text>:null}
     </View>:null}
     <View style={{borderTopWidth:elements.length?1:0,borderColor:theme.border}}>
       {elements.map((element,i)=><View key={element.key}>
