@@ -73,14 +73,22 @@ export type MusicVersion = {
 };
 
 /** A document or creative resource, optionally mapped to one or more song sections. */
+export type MusicLyricSegment = { id: string; text: string; sectionIds: string[] };
+export type MusicFileRegion = { id: string; sectionId: string; startSeconds: number; endSeconds: number };
 export type MusicProjectFile = {
   id: string;
   title: string;
-  kind: 'lyrics' | 'audio' | 'score' | 'note' | 'idea' | 'document';
+  kind: 'lyrics' | 'audio' | 'track' | 'score' | 'note' | 'idea' | 'document';
   sectionIds: string[];
   /** Original full text; mapped excerpts live in sectionContent. */
   text?: string;
   sectionContent?: Record<string, string>;
+  /** Independent editable lyric stanzas. Associating a stanza is optional. */
+  lyricSegments?: MusicLyricSegment[];
+  /** Optional ranges for audio tracks; segment <-> section mapping without cutting the source file. */
+  regions?: MusicFileRegion[];
+  originalFilename?: string;
+  mimeType?: string;
   language?: string;
   instrument?: string;
   localFileId?: string;
@@ -174,7 +182,10 @@ export function MusicWorkspaceProvider({ children }: { children: React.ReactNode
             (x as MusicProject).ownerEmail?.toLowerCase() === email.toLowerCase()
           ).map(project => ({
             ...project, originalLanguage: project.originalLanguage || 'Français',
-            instruments: project.instruments || [], musicStyles: project.musicStyles || [], files: project.files || [],
+            instruments: project.instruments || [], musicStyles: project.musicStyles || [],
+            files: (project.files || []).map(file=>({
+              ...file, sectionIds:file.sectionIds||[], regions:file.regions||[],
+            })),
             versions: project.versions?.length ? project.versions : project.masterMediaId || project.masterUrl
               ? [{ id:'legacy-'+project.id,title:'Version originale',createdAt:project.createdAt,
                 audioMediaId:project.masterMediaId,audioUrl:project.masterUrl,
