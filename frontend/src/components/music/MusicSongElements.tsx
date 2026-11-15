@@ -158,7 +158,7 @@ export function MusicSongElements({project,patch,sectionId,openSection}:Props) {
     }
     const input=document.createElement('input');
     input.type='file';
-    input.accept='.docx,.txt,.md,.pdf,.png,.jpg,.jpeg,.webp,.mp3,.wav,.m4a,.ogg,.webm,.aac,.mid,.midi';
+    input.accept='.doc,.docx,.txt,.md,.pdf,.png,.jpg,.jpeg,.webp,.mp3,.wav,.m4a,.ogg,.webm,.aac,.mid,.midi';
     input.multiple=!id;
     input.onchange=()=>{
       const chosen=Array.from(input.files||[]);
@@ -246,7 +246,13 @@ export function MusicSongElements({project,patch,sectionId,openSection}:Props) {
       return <View style={{gap:10}}>
         <TextInput style={inputStyle} value={f.title} placeholder="Nom de l'élément"
           onChangeText={title=>updateFile(f.id,{title})}/>
-        <Text style={{color:theme.muted,fontSize:11}}>Type</Text>
+        {f.originalFilename?<Text style={{color:theme.muted,fontSize:11}}>
+          Fichier original : {f.originalFilename}
+        </Text>:null}
+        {f.conversionWarning?<Text style={{color:'#B34D67',fontSize:11,lineHeight:18}}>
+          {f.conversionWarning}
+        </Text>:null}
+        <Text style={{color:theme.muted,fontSize:11}}>Type d’élément</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{gap:7}}>
           {types.filter(t=>!['version','proposal','talent','style'].includes(t.kind))
             .map(t=><Pressable key={t.kind} onPress={()=>
@@ -351,7 +357,7 @@ export function MusicSongElements({project,patch,sectionId,openSection}:Props) {
 
         <View style={{flexDirection:'row',flexWrap:'wrap',gap:7}}>
           {Platform.OS==='web'?smallAction(uploading?'Import…':'Joindre un fichier',()=>importFor(f.id)):null}
-          {(f.localFileId||f.externalUrl)&&f.kind!=='audio'&&f.kind!=='track'?smallAction('Ouvrir la pièce jointe',
+          {(f.localFileId||f.externalUrl)&&f.kind!=='audio'&&(!f.mimeType?.startsWith('audio/'))?smallAction('Ouvrir le fichier original',
             ()=>{void openAttachment(f).catch(e=>setError(e instanceof Error?e.message:'Ouverture impossible.'));}):null}
           {smallAction('Retirer',()=>patch({files:files.filter(x=>x.id!==f.id)}))}
         </View>
