@@ -32,6 +32,7 @@ const types:{kind:Kind;label:string;icon:keyof typeof Ionicons.glyphMap}[]=[
   {kind:'proposal',label:'Proposition',icon:'git-branch-outline'},
   {kind:'talent',label:'Talent recherché',icon:'person-add-outline'},
   {kind:'document',label:'Document',icon:'document-attach-outline'},
+  {kind:'style',label:'Style musical',icon:'pricetag-outline'},
 ];
 const nameOf=(kind:Kind)=>types.find(t=>t.kind===kind)?.label||'Élément';
 const iconOf=(kind:Kind)=>types.find(t=>t.kind===kind)?.icon||'document-outline';
@@ -121,7 +122,7 @@ export function MusicSongElements({project,patch,sectionId,openSection}:Props) {
         kind:'section',sectionId:chosenSections[0],status:'pending',
         createdAt:new Date().toISOString()};
       patch({suggestions:[...project.suggestions,suggestion]});
-    } else {
+    } else if(kind!=='style') {
       const file:MusicProjectFile={id:newMusicId(),title:name,kind,
         sectionIds:[...chosenSections],text:body,language:kind==='lyrics'?language.trim():undefined,
         instrument:kind==='audio'?instrument.trim():undefined,
@@ -151,8 +152,9 @@ export function MusicSongElements({project,patch,sectionId,openSection}:Props) {
           const localFileId=audio?await saveDraftAudio(file):
             text?undefined:await saveDraftAttachment(file);
           const durationSeconds=audio?await fileAudioDuration(file):undefined;
+          const fileText=text?await file.text():undefined;
           patch({files:files.map(f=>f.id===id?{...f,
-            localFileId,text:text?await file.text():f.text,
+            localFileId,text:text?fileText:f.text,
             durationSeconds:audio?durationSeconds:f.durationSeconds}:f)});
         })().catch(e=>setError(e instanceof Error?e.message:'Import impossible.'))
           .finally(()=>setUploading(false));
@@ -198,6 +200,17 @@ export function MusicSongElements({project,patch,sectionId,openSection}:Props) {
       {!project.sections.length?<Text style={{color:theme.muted,fontSize:11}}>
         Aucune partie créée pour l’instant.
       </Text>:null}
+    </View>;
+  const selectOneScope=(id:string|undefined,onChange:(next?:string)=>void)=>
+    <View style={{flexDirection:'row',flexWrap:'wrap',gap:6}}>
+      <Pressable onPress={()=>onChange(undefined)} style={{padding:8,borderWidth:1,
+        borderColor:!id?pink:theme.border,borderRadius:8}}>
+        <Text style={{fontSize:11,color:!id?pink:theme.foreground}}>Chant entier</Text>
+      </Pressable>
+      {project.sections.map(s=><Pressable key={s.id} onPress={()=>onChange(s.id)}
+        style={{padding:8,borderWidth:1,borderColor:id===s.id?pink:theme.border,borderRadius:8}}>
+        <Text style={{fontSize:11,color:id===s.id?pink:theme.foreground}}>{s.title}</Text>
+      </Pressable>)}
     </View>;
   const updateFile=(id:string,changes:Partial<MusicProjectFile>)=>
     patch({files:files.map(f=>f.id===id?{...f,...changes}:f)});
@@ -245,6 +258,17 @@ export function MusicSongElements({project,patch,sectionId,openSection}:Props) {
         {f.kind==='lyrics'?<TextInput style={inputStyle} value={f.language||''}
           onChangeText={language=>updateFile(f.id,{language})} placeholder="Langue des paroles"
           placeholderTextColor={theme.muted}/>:null}
+        {f.kind==='lyrics'&&sectionId?<View style={{gap:7}}>
+          <Text style={{fontSize:11,color:theme.muted}}>
+            Extrait de paroles correspondant à {scopeName(sectionId)}
+          </Text>
+          <TextInput multiline textAlignVertical="top"
+            value={f.sectionContent?.[sectionId]||''}
+            onChangeText={text=>updateFile(f.id,{
+              sectionContent:{...(f.sectionContent||{}),[sectionId]:text}
+            })} style={{...inputStyle,minHeight:110}}
+            placeholder="Lignes de cette partie…" placeholderTextColor={theme.muted}/>
+        </View>:null}
         {f.kind==='audio'?<TextInput style={inputStyle} value={f.instrument||''}
           onChangeText={instrument=>updateFile(f.id,{instrument})} placeholder="Instrument / rôle"
           placeholderTextColor={theme.muted}/>:null}
@@ -277,7 +301,7 @@ export function MusicSongElements({project,patch,sectionId,openSection}:Props) {
             onChangeSource={sourceLanguage=>update({sourceLanguage})}
             onChangeTarget={targetLanguage=>update({targetLanguage})}/>:null}
         <Text style={{color:theme.muted,fontSize:11}}>Partie concernée</Text>
-        {selectScope(n.sectionId?[n.sectionId]:[],ids=>update({sectionId:ids[0]}))}
+        {selectOneScope(n.sectionId,sectionId=>update({sectionId}))}
         {smallAction('Retirer',()=>patch({needs:project.needs.filter(x=>x.id!==n.id)}))}
         <Text style={{color:theme.muted,fontSize:10}}>
           Demande enregistrée dans le dossier local ; pas encore envoyée publiquement.
@@ -292,7 +316,7 @@ export function MusicSongElements({project,patch,sectionId,openSection}:Props) {
         <TextInput value={p.note} onChangeText={note=>update({note})}
           style={{...inputStyle,minHeight:100}} multiline textAlignVertical="top"/>
         <Text style={{fontSize:11,color:theme.muted}}>Partie concernée</Text>
-        {selectScope(p.sectionId?[p.sectionId]:[],ids=>update({sectionId:ids[0]}))}
+        {selectOneScope(p.sectionId,sectionId=>update({sectionId}))}
         <View style={{flexDirection:'row',flexWrap:'wrap',gap:7}}>
           {smallAction('Retenir',()=>update({status:'integrated'}))}
           {smallAction(p.status==='archived'?'Réactiver':'Archiver',()=>
@@ -366,7 +390,9 @@ export function MusicSongElements({project,patch,sectionId,openSection}:Props) {
       </>:null}
       {!sectionId&&kind!=='version'?<>
         <Text style={{color:theme.muted,fontSize:11}}>Parties concernées (facultatif)</Text>
-        {selectScope(chosenSections,setChosenSections)}
+        {kind==='talent'||kind==='proposal'?
+          selectOneScope(chosenSections[0],id=>setChosenSections(id?[id]:[])):
+          selectScope(chosenSections,setChosenSections)}
       </>:null}
       {['lyrics','note','idea','document','proposal'].includes(kind)?
         <TextInput value={body} onChangeText={setBody} multiline textAlignVertical="top"
