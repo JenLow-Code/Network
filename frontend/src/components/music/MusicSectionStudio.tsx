@@ -204,12 +204,19 @@ export function MusicSectionStudio({project,section,patch,onOpenChat}:Props){
         <Text style={{fontSize:12,fontWeight:'700',color:theme.foreground}}>
           {file.title} · {file.language||project.originalLanguage}
         </Text>
-        <TextInput value={lyricsForMusicSection(file,section.id)}
+        {file.lyricSegments?.length?<View style={{gap:7}}>
+          <Text selectable style={{fontSize:14,lineHeight:23,color:theme.foreground}}>
+            {lyricsForMusicSection(file,section.id)||'Aucune strophe associée.'}
+          </Text>
+          <Text style={{color:theme.muted,fontSize:11}}>
+            Pour modifier les strophes ou leur association, ouvre le fichier dans la liste des éléments.
+          </Text>
+        </View>:<TextInput value={lyricsForMusicSection(file,section.id)}
           onChangeText={text=>patch({files:project.files.map(f=>f.id===file.id?
             {...f,sectionContent:{...(f.sectionContent||{}),[section.id]:text}}:f)})}
           multiline textAlignVertical="top"
           placeholder={'Les lignes de '+section.title+' dans ce fichier…'}
-          placeholderTextColor={theme.muted} style={{...input,minHeight:110,lineHeight:23,fontSize:14}}/>
+          placeholderTextColor={theme.muted} style={{...input,minHeight:110,lineHeight:23,fontSize:14}}/>}
         {file.text?<Text selectable style={{fontSize:11,color:theme.muted,lineHeight:18}}>
           Source intégrale : {file.text}
         </Text>:null}
