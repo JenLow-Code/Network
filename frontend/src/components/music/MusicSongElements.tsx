@@ -261,16 +261,37 @@ export function MusicSongElements({project,patch,sectionId,openSection}:Props) {
         {f.kind==='lyrics'?<TextInput style={inputStyle} value={f.language||''}
           onChangeText={language=>updateFile(f.id,{language})} placeholder="Langue des paroles"
           placeholderTextColor={theme.muted}/>:null}
-        {f.kind==='lyrics'&&sectionId?<View style={{gap:7}}>
-          <Text style={{fontSize:11,color:theme.muted}}>
-            Extrait de paroles correspondant à {scopeName(sectionId)}
+        {f.kind==='lyrics'&&f.text?.trim()&&!(f.lyricSegments||[]).length?
+          smallAction('Organiser les paroles en strophes',()=>updateFile(f.id,{
+            lyricSegments:lyricStanzas(f.text||''),
+          })):null}
+        {f.kind==='lyrics'&&f.lyricSegments?.length?<View style={{gap:11}}>
+          <Text style={{fontWeight:'700',fontSize:12,color:theme.foreground}}>
+            Paroles · {f.language||project.originalLanguage}
           </Text>
-          <TextInput multiline textAlignVertical="top"
-            value={f.sectionContent?.[sectionId]||''}
-            onChangeText={text=>updateFile(f.id,{
-              sectionContent:{...(f.sectionContent||{}),[sectionId]:text}
-            })} style={{...inputStyle,minHeight:110}}
-            placeholder="Lignes de cette partie…" placeholderTextColor={theme.muted}/>
+          {f.lyricSegments
+            .filter(segment=>!sectionId||segment.sectionIds.includes(sectionId)||
+              (f.sectionIds||[]).includes(sectionId))
+            .map((segment,index)=><View key={segment.id}
+            style={{gap:7,paddingVertical:9,borderTopWidth:1,borderColor:theme.border}}>
+            <Text style={{fontSize:10,color:theme.muted}}>Strophe {index+1}</Text>
+            <TextInput multiline textAlignVertical="top" value={segment.text}
+              onChangeText={text=>updateFile(f.id,{
+                lyricSegments:(f.lyricSegments||[]).map(s=>s.id===segment.id?{...s,text}:s),
+              })} style={{...inputStyle,minHeight:70,lineHeight:22}}
+              placeholderTextColor={theme.muted} placeholder="Texte de la strophe…"/>
+            <Text style={{fontSize:10,color:theme.muted}}>Associer cette strophe (facultatif)</Text>
+            {selectScope(segment.sectionIds,sectionIds=>updateFile(f.id,{
+              lyricSegments:(f.lyricSegments||[]).map(s=>s.id===segment.id?{...s,sectionIds}:s)
+            }))}
+          </View>)}
+          {!sectionId?smallAction('Ajouter une strophe',()=>updateFile(f.id,{
+            lyricSegments:[...(f.lyricSegments||[]),{id:newMusicId(),text:'',sectionIds:[]}],
+          })):null}
+          <Text style={{fontSize:10,color:theme.muted}}>
+            Les strophes non associées restent dans le chant entier.
+            Le document importé d'origine reste disponible.
+          </Text>
         </View>:null}
         {(f.kind==='audio'||f.kind==='track')?<TextInput style={inputStyle} value={f.instrument||''}
           onChangeText={instrument=>updateFile(f.id,{instrument})} placeholder="Instrument / rôle"
@@ -281,6 +302,53 @@ export function MusicSongElements({project,patch,sectionId,openSection}:Props) {
           placeholder="Contenu" placeholderTextColor={theme.muted}/>:null}
         {(f.kind==='audio'||(f.kind==='track'&&f.mimeType?.startsWith('audio/')))?<MusicAudioPreview source={{localAudioId:f.localFileId,
           audioUrl:f.externalUrl}}/>:null}
+        {(f.kind==='audio'||f.kind==='track')?<View style={{gap:8,paddingTop:7}}>
+          <Text style={{fontWeight:'700',fontSize:12,color:theme.foreground}}>
+            Repères temporels (facultatif)
+          </Text>
+          {(f.regions||[]).map(region=><View key={region.id}
+            style={{flexDirection:'row',alignItems:'center',gap:8}}>
+            <Text style={{flex:1,color:theme.foreground,fontSize:11}}>
+              {scopeName(region.sectionId)} · {formatMusicDuration(region.startSeconds)}
+              {' – '}{formatMusicDuration(region.endSeconds)}
+            </Text>
+            <Pressable onPress={()=>updateFile(f.id,{regions:(f.regions||[])
+              .filter(r=>r.id!==region.id)})}>
+              <Ionicons name="close" size={16} color={theme.muted}/>
+            </Pressable>
+          </View>)}
+          <Text style={{fontSize:10,color:theme.muted}}>
+            Sélectionne une partie, puis un passage de la piste. Exemple : 2:50 à 3:14.
+          </Text>
+          <View style={{flexDirection:'row',flexWrap:'wrap',gap:6}}>
+            {project.sections.map(s=><Pressable key={s.id} onPress={()=>setRegionSection(s.id)}
+              style={{borderRadius:8,borderWidth:1,paddingHorizontal:9,paddingVertical:8,
+                borderColor:regionSection===s.id?pink:theme.border}}>
+              <Text style={{fontSize:11,color:regionSection===s.id?pink:theme.foreground}}>{s.title}</Text>
+            </Pressable>)}
+          </View>
+          {project.sections.length?<View style={{flexDirection:'row',gap:7}}>
+            <TextInput value={rangeStart} onChangeText={setRangeStart} style={{...inputStyle,flex:1}}
+              placeholder="Début 2:50" placeholderTextColor={theme.muted} keyboardType="numbers-and-punctuation"/>
+            <TextInput value={rangeEnd} onChangeText={setRangeEnd} style={{...inputStyle,flex:1}}
+              placeholder="Fin 3:14" placeholderTextColor={theme.muted} keyboardType="numbers-and-punctuation"/>
+            <Pressable onPress={()=>{
+              const start=parseTime(rangeStart),end=parseTime(rangeEnd);
+              if(!regionSection||start===undefined||end===undefined||end<=start||
+                (f.durationSeconds!==undefined&&end>f.durationSeconds)){
+                setError('Sélectionne une partie et une plage valide dans la durée du fichier.');return;
+              }
+              updateFile(f.id,{regions:[...(f.regions||[]),{
+                id:newMusicId(),sectionId:regionSection,startSeconds:start,endSeconds:end,
+              }]});
+              setRangeStart('');setRangeEnd('');setError('');
+            }} style={{backgroundColor:pink,paddingHorizontal:11,borderRadius:9,
+              justifyContent:'center'}}>
+              <Ionicons name="checkmark" size={18} color="#fff"/>
+            </Pressable>
+          </View>:null}
+        </View>:null}
+
         <View style={{flexDirection:'row',flexWrap:'wrap',gap:7}}>
           {Platform.OS==='web'?smallAction(uploading?'Import…':'Joindre un fichier',()=>importFor(f.id)):null}
           {(f.localFileId||f.externalUrl)&&f.kind!=='audio'&&f.kind!=='track'?smallAction('Ouvrir la pièce jointe',
