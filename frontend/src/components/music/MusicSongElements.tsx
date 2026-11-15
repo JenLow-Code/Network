@@ -9,7 +9,8 @@ import {MusicOwnerProposals} from './MusicOwnerProposals';
 import {TalentLevelSelector} from '@/components/talent/TalentLevelSelector';
 import {TranslatorLanguageFields} from '@/components/talent/TranslatorLanguageFields';
 import {chooseMusicFile} from '@/domain/musicMedia';
-import {saveDraftAudio,saveDraftAttachment,getDraftAttachment} from '@/domain/musicLocalStorage';
+import {getDraftAttachment} from '@/domain/musicLocalStorage';
+import {importSongFile,classifySongFile,matchesMusicSection,lyricsForMusicSection,lyricStanzas} from '@/domain/musicImportedFiles';
 import {fileAudioDuration,formatMusicDuration} from '@/domain/musicProjectSelectors';
 import {newMusicId} from '@/domain/musicWorkspace';
 import type {
@@ -26,6 +27,7 @@ const types:{kind:Kind;label:string;icon:keyof typeof Ionicons.glyphMap}[]=[
   {kind:'version',label:'Version',icon:'layers-outline'},
   {kind:'lyrics',label:'Paroles',icon:'document-text-outline'},
   {kind:'audio',label:'Audio',icon:'musical-note-outline'},
+  {kind:'track',label:'Piste MIDI / audio',icon:'git-branch-outline'},
   {kind:'score',label:'Partition',icon:'document-outline'},
   {kind:'note',label:'Note',icon:'reader-outline'},
   {kind:'idea',label:'Idée',icon:'bulb-outline'},
@@ -43,6 +45,10 @@ export function MusicSongElements({project,patch,sectionId,openSection}:Props) {
   const theme=useAppTheme();
   const files=project.files||[];
   const [adding,setAdding]=useState(false);
+  const [creationMode,setCreationMode]=useState<'none'|'text'|'talent'|'record'>('none');
+  const [regionSection,setRegionSection]=useState('');
+  const [rangeStart,setRangeStart]=useState('');
+  const [rangeEnd,setRangeEnd]=useState('');
   const [kind,setKind]=useState<Kind>('lyrics');
   const [title,setTitle]=useState('');
   const [body,setBody]=useState('');
@@ -61,6 +67,14 @@ export function MusicSongElements({project,patch,sectionId,openSection}:Props) {
   const scopeName=(id:string)=>project.sections.find(s=>s.id===id)?.title||'Partie supprimée';
   const scopeLabel=(ids:string[])=>ids.length?ids.map(scopeName).join(', '):'Chant entier';
   const cardBg=theme.dark?'#332B31':'#F8F5F2';
+  const parseTime=(value:string):number|undefined=>{
+    const raw=value.trim();
+    if(!/^(?:\d+:)?\d+(?:\.\d+)?$/.test(raw))return undefined;
+    const bits=raw.split(':').map(Number);
+    const seconds=bits.length===2?bits[0]*60+bits[1]:bits[0];
+    return Number.isFinite(seconds)&&seconds>=0&&(!raw.includes(':')||bits[1]<60)
+      ?seconds:undefined;
+  };
 
   const elements=useMemo<Element[]>(()=>{
     const result:Element[]=[
@@ -70,7 +84,9 @@ export function MusicSongElements({project,patch,sectionId,openSection}:Props) {
         scopeIds:[]})),
       ...files.map(f=>({key:'f:'+f.id,id:f.id,origin:'file' as const,kind:f.kind,
         name:f.title,subtitle:f.language||f.instrument||formatMusicDuration(f.durationSeconds),
-        scopeIds:f.sectionIds||[]})),
+        scopeIds:[...new Set([...(f.sectionIds||[]),
+          ...(f.lyricSegments||[]).flatMap(s=>s.sectionIds),
+          ...(f.regions||[]).map(r=>r.sectionId)])]})),
       ...project.layers.map(l=>({key:'l:'+l.id,id:l.id,origin:'layer' as const,
         kind:'audio' as const,name:l.title,subtitle:l.role||'Piste',
         scopeIds:l.sectionId?[l.sectionId]:[]})),
@@ -99,7 +115,7 @@ export function MusicSongElements({project,patch,sectionId,openSection}:Props) {
     return result.filter(e=>!sectionId||e.scopeIds.includes(sectionId));
   },[project,files,sectionId]);
 
-  const clearForm=()=>{setAdding(false);setTitle('');setBody('');setInstrument('');
+  const clearForm=()=>{setAdding(false);setCreationMode('none');setTitle('');setBody('');setInstrument('');
     setChosenSections(sectionId?[sectionId]:[]);setError('');};
   const saveNew=()=>{
     const name=title.trim();
@@ -127,70 +143,54 @@ export function MusicSongElements({project,patch,sectionId,openSection}:Props) {
     } else {
       const file:MusicProjectFile={id:newMusicId(),title:name,kind,
         sectionIds:[...chosenSections],text:body,language:kind==='lyrics'?language.trim():undefined,
-        instrument:kind==='audio'?instrument.trim():undefined,
+        lyricSegments:kind==='lyrics'?lyricStanzas(body):undefined,
+        instrument:kind==='audio'||kind==='track'?instrument.trim():undefined,
         createdAt:new Date().toISOString()};
       patch({files:[...files,file]});
     }
     clearForm();
   };
 
+  /** One tap: import first, classify/associate optionally in the saved item's details. */
   const importFor=(id?:string)=>{
-    if(Platform.OS!=='web'||typeof document==='undefined') {
-      setError('Import de fichier disponible depuis le navigateur.');return;
+    if(Platform.OS!=='web'||typeof document==='undefined'){
+      setError('Import disponible dans le navigateur web.');return;
     }
-    if(id){
-      const item=files.find(f=>f.id===id);
-      if(!item)return;
-      const picker=document.createElement('input');
-      picker.type='file';
-      picker.accept=item.kind==='audio'?'audio/*,.mp3,.wav,.m4a,.webm,.ogg':
-        '.txt,.md,.pdf,.png,.jpeg,.jpg,.webp';
-      picker.onchange=()=>{
-        const file=picker.files?.[0];if(!file)return;
-        setUploading(true);setError('');
-        void (async()=>{
-          const audio=file.type.startsWith('audio/');
-          const text=/\.(txt|md)$/i.test(file.name);
-          const localFileId=audio?await saveDraftAudio(file):
-            text?undefined:await saveDraftAttachment(file);
-          const durationSeconds=audio?await fileAudioDuration(file):undefined;
-          const fileText=text?await file.text():undefined;
-          patch({files:files.map(f=>f.id===id?{...f,
-            localFileId,text:text?fileText:f.text,
-            durationSeconds:audio?durationSeconds:f.durationSeconds}:f)});
-        })().catch(e=>setError(e instanceof Error?e.message:'Import impossible.'))
-          .finally(()=>setUploading(false));
-      };
-      picker.click();return;
-    }
-    const picker=document.createElement('input');
-    picker.type='file';
-    picker.accept='.txt,.md,.pdf,.png,.jpg,.jpeg,.webp,.wav,.mp3,.m4a,.ogg,.webm,.aac';
-    picker.onchange=()=>{
-      const file=picker.files?.[0];if(!file)return;
-      const audio=file.type.startsWith('audio/')||/\.(wav|mp3|m4a|ogg|webm|aac)$/i.test(file.name);
-      const text=/\.(txt|md)$/i.test(file.name);
-      const detected:MusicProjectFile['kind']=audio?'audio':
-        text?(kind==='lyrics'?'lyrics':'note'):'score';
+    const input=document.createElement('input');
+    input.type='file';
+    input.accept='.docx,.txt,.md,.pdf,.png,.jpg,.jpeg,.webp,.mp3,.wav,.m4a,.ogg,.webm,.aac,.mid,.midi';
+    input.multiple=!id;
+    input.onchange=()=>{
+      const chosen=Array.from(input.files||[]);
+      if(!chosen.length)return;
       setUploading(true);setError('');
       void (async()=>{
-        const localFileId=audio?await saveDraftAudio(file):
-          text?undefined:await saveDraftAttachment(file);
-        const item:MusicProjectFile={id:newMusicId(),title:file.name,kind:detected,
-          sectionIds:[...chosenSections],localFileId,
-          text:text?await file.text():undefined,
-          language:detected==='lyrics'?language.trim()||project.originalLanguage:undefined,
-          instrument:detected==='audio'?instrument.trim():undefined,
-          durationSeconds:audio?await fileAudioDuration(file):undefined,
-          createdAt:new Date().toISOString()};
-        patch({files:[...files,item]});
-        clearForm();
+        const imported:MusicProjectFile[]=[];
+        for(const file of chosen)imported.push(await importSongFile(file,project.originalLanguage));
+        if(id){
+          const current=files.find(f=>f.id===id);
+          if(!current)return;
+          patch({files:files.map(f=>f.id===id?{
+            ...f,localFileId:imported[0].localFileId,
+            originalFilename:imported[0].originalFilename,mimeType:imported[0].mimeType,
+            text:imported[0].text??f.text,
+            durationSeconds:imported[0].durationSeconds??f.durationSeconds,
+            lyricSegments:f.kind==='lyrics'&&imported[0].text
+              ?lyricStanzas(imported[0].text):f.lyricSegments,
+          }:f)});
+          setExpanded('f:'+id);
+        }else{
+          patch({files:[...files,...imported.map(f=>({
+            ...f,sectionIds:sectionId?[sectionId]:[],
+          }))]});
+          setExpanded('f:'+imported[0].id);
+          clearForm();
+        }
       })().catch(e=>setError(e instanceof Error?e.message:'Import impossible.'))
         .finally(()=>setUploading(false));
     };
-    picker.click();
+    input.click();
   };
-
   const selectScope=(ids:string[],onChange:(next:string[])=>void)=>
     <View style={{flexDirection:'row',gap:6,flexWrap:'wrap'}}>
       {project.sections.map(s=><Pressable key={s.id}
@@ -248,14 +248,15 @@ export function MusicSongElements({project,patch,sectionId,openSection}:Props) {
           onChangeText={title=>updateFile(f.id,{title})}/>
         <Text style={{color:theme.muted,fontSize:11}}>Type</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{gap:7}}>
-          {types.filter(t=>!['version','proposal','talent'].includes(t.kind))
-            .map(t=><Pressable key={t.kind} onPress={()=>updateFile(f.id,{kind:t.kind as MusicProjectFile['kind']})}
+          {types.filter(t=>!['version','proposal','talent','style'].includes(t.kind))
+            .map(t=><Pressable key={t.kind} onPress={()=>
+              updateFile(f.id,classifySongFile(f,t.kind as MusicProjectFile['kind']))}
               style={{borderWidth:1,borderRadius:8,padding:8,
                 borderColor:f.kind===t.kind?pink:theme.border}}>
               <Text style={{color:f.kind===t.kind?pink:theme.foreground,fontSize:11}}>{t.label}</Text>
             </Pressable>)}
         </ScrollView>
-        <Text style={{fontSize:11,color:theme.muted}}>Parties concernées</Text>
+        <Text style={{fontSize:11,color:theme.muted}}>Associer le fichier entier à une partie (facultatif)</Text>
         {selectScope(f.sectionIds||[],sectionIds=>updateFile(f.id,{sectionIds}))}
         {f.kind==='lyrics'?<TextInput style={inputStyle} value={f.language||''}
           onChangeText={language=>updateFile(f.id,{language})} placeholder="Langue des paroles"
@@ -271,22 +272,22 @@ export function MusicSongElements({project,patch,sectionId,openSection}:Props) {
             })} style={{...inputStyle,minHeight:110}}
             placeholder="Lignes de cette partie…" placeholderTextColor={theme.muted}/>
         </View>:null}
-        {f.kind==='audio'?<TextInput style={inputStyle} value={f.instrument||''}
+        {(f.kind==='audio'||f.kind==='track')?<TextInput style={inputStyle} value={f.instrument||''}
           onChangeText={instrument=>updateFile(f.id,{instrument})} placeholder="Instrument / rôle"
           placeholderTextColor={theme.muted}/>:null}
-        {['lyrics','note','idea','document','score'].includes(f.kind)?<TextInput
+        {['note','idea','document','score'].includes(f.kind)?<TextInput
           multiline textAlignVertical="top" value={f.text||''}
           onChangeText={text=>updateFile(f.id,{text})} style={{...inputStyle,minHeight:110}}
           placeholder="Contenu" placeholderTextColor={theme.muted}/>:null}
-        {f.kind==='audio'?<MusicAudioPreview source={{localAudioId:f.localFileId,
+        {(f.kind==='audio'||(f.kind==='track'&&f.mimeType?.startsWith('audio/')))?<MusicAudioPreview source={{localAudioId:f.localFileId,
           audioUrl:f.externalUrl}}/>:null}
         <View style={{flexDirection:'row',flexWrap:'wrap',gap:7}}>
           {Platform.OS==='web'?smallAction(uploading?'Import…':'Joindre un fichier',()=>importFor(f.id)):null}
-          {(f.localFileId||f.externalUrl)&&f.kind!=='audio'?smallAction('Ouvrir la pièce jointe',
+          {(f.localFileId||f.externalUrl)&&f.kind!=='audio'&&f.kind!=='track'?smallAction('Ouvrir la pièce jointe',
             ()=>{void openAttachment(f).catch(e=>setError(e instanceof Error?e.message:'Ouverture impossible.'));}):null}
           {smallAction('Retirer',()=>patch({files:files.filter(x=>x.id!==f.id)}))}
         </View>
-        {f.kind==='audio'?<MusicAudioCapture onSaved={(localFileId,_name,durationSeconds)=>
+        {(f.kind==='audio'||f.kind==='track')?<MusicAudioCapture onSaved={(localFileId,_name,durationSeconds)=>
           updateFile(f.id,{localFileId,durationSeconds})}/>:null}
       </View>;
     }
