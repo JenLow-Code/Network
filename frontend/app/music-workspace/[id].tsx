@@ -10,7 +10,8 @@ import { useMusicWorkspaces, newMusicId } from '@/domain/musicWorkspace';
 import { MusicSongOverview } from '@/components/music/MusicSongOverview';
 import { MusicSongChat } from '@/components/music/MusicSongChat';
 import { api } from '@/lib/api/client';
-import { MusicSectionStudio } from '@/components/music/MusicSectionStudio';
+import { MusicSectionFocus } from '@/components/music/MusicSectionFocus';
+import { MusicSongMetadata } from '@/components/music/MusicSongMetadata';
 import { MusicFolderCover } from '@/components/music/MusicFolderCover';
 
 const pink='#CB245C';
@@ -93,11 +94,8 @@ export default function MusicWorkspace(){
         <View style={{flex:1,gap:7}}>
           <Text numberOfLines={2} style={{color:theme.foreground,fontSize:compact?23:29,
             lineHeight:compact?30:36,fontWeight:'700'}}>{project.title}</Text>
-          <Text style={{color:theme.muted,fontSize:12}}>
-            {project.originalLanguage||'Langue originale à définir'}
-            {project.bpm?' · '+project.bpm+' BPM':''}
-            {project.timeSignature?' · '+project.timeSignature:''}
-          </Text>
+          {project.description?.trim()?<Text style={{color:theme.muted,fontSize:12,lineHeight:18}}
+            numberOfLines={2}>{project.description}</Text>:null}
           <Text style={{fontSize:11,color:project.publishedId?pink:theme.muted}}>
             {project.publishedId?'Dossier de création · versions publiques liées':'Espace de création · privé'}
           </Text>
@@ -114,6 +112,7 @@ export default function MusicWorkspace(){
         <Text style={{color:theme.dark?'#F7B7C3':'#A83C55',fontSize:12}}>{error}</Text>
       </View>:null}
 
+      <MusicSongMetadata project={project} patch={update}/>
       <ScrollView horizontal showsHorizontalScrollIndicator={false}
         contentContainerStyle={{gap:8,paddingBottom:6}}>
         <Pressable accessibilityRole="tab" accessibilityState={{selected:!sectionId&&!chatOpen}}
@@ -122,7 +121,7 @@ export default function MusicWorkspace(){
             gap:8,alignItems:'center',borderWidth:1,
             borderColor:!sectionId&&!chatOpen?pink:theme.border,
             backgroundColor:!sectionId&&!chatOpen?(theme.dark?'#422938':'#F8E6EE'):theme.surface}}>
-          <Ionicons name="albums-outline" color={!sectionId&&!chatOpen?pink:theme.muted} size={17}/>
+          <Ionicons name="musical-notes-outline" color={!sectionId&&!chatOpen?pink:theme.muted} size={17}/>
           <Text style={{fontSize:13,fontWeight:!sectionId&&!chatOpen?'700':'500',
             color:!sectionId&&!chatOpen?pink:theme.foreground}}>Chant entier</Text>
         </Pressable>
@@ -144,26 +143,15 @@ export default function MusicWorkspace(){
             backgroundColor:theme.surface,justifyContent:'center',alignItems:'center'}}>
           <Ionicons name="add" color={pink} size={22}/>
         </Pressable>
-        <Pressable onPress={()=>{setChatReference('');setChatOpen(true);}} accessibilityRole="tab"
-          accessibilityState={{selected:chatOpen}}
-          style={{minHeight:46,paddingHorizontal:14,borderRadius:13,borderWidth:1,
-            borderColor:chatOpen?pink:theme.border,flexDirection:'row',gap:7,alignItems:'center',
-            backgroundColor:chatOpen?(theme.dark?'#422938':'#F8E6EE'):theme.surface}}>
-          <Ionicons name="chatbubbles-outline" size={17} color={chatOpen?pink:theme.foreground}/>
-          <Text style={{fontSize:12,color:chatOpen?pink:theme.foreground}}>Chat</Text>
-        </Pressable>
       </ScrollView>
 
       {chatOpen?<MusicSongChat key={chatReference||'whole'} project={project} patch={update}
         referenceId={chatReference} openSection={chooseSection}/>:
-        section?<MusicSectionStudio key={section.id} project={project} section={section}
+        section?<MusicSectionFocus key={section.id} project={project} section={section}
           patch={update} onOpenChat={(source)=>{void openSongChat(source);}}/>:
         <MusicSongOverview project={project} patch={update} openSection={chooseSection}
           openChat={()=>{void openSongChat();}}/>}
-      <Text style={{color:theme.muted,fontSize:11,lineHeight:18,textAlign:'center'}}>
-        Atelier personnel · les coins arrondis sont réservés à ton espace de travail.
-        La cassette n’apparaît que dans les publications publiques.
-      </Text>
+
     </ScrollView>
     <Nav/>
   </SafeAreaView>;
