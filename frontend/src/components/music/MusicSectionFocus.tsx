@@ -9,9 +9,9 @@ import type {MusicProject,MusicSection} from '@/domain/musicWorkspace';
 const pink='#CB245C';
 
 /** A section is simply a filtered view of the SAME song elements, not a second folder. */
-export function MusicSectionFocus({project,section,patch,onOpenChat}:{
+export function MusicSectionFocus({project,section,patch,onOpenChat,openSection}:{
   project:MusicProject;section:MusicSection;patch:(changes:Partial<MusicProject>)=>void;
-  onOpenChat:(sectionId:string)=>void;
+  onOpenChat:(sectionId:string)=>void;openSection:(id:string)=>void;
 }) {
   const theme=useAppTheme();
   const [advanced,setAdvanced]=useState(false);
@@ -37,7 +37,7 @@ export function MusicSectionFocus({project,section,patch,onOpenChat}:{
         style={{padding:8}}><Ionicons name="pencil-outline" color={theme.muted} size={18}/></Pressable>
     </View>
     <MusicSongElements key={section.id} project={project} patch={patch}
-      sectionId={section.id} openSection={()=>{}}/>
+      sectionId={section.id} openSection={openSection}/>
     <Pressable onPress={()=>onOpenChat(section.id)} accessibilityRole="button"
       style={{flexDirection:'row',gap:9,alignItems:'center',paddingVertical:8}}>
       <Ionicons name="chatbubble-ellipses-outline" color={pink} size={19}/>
