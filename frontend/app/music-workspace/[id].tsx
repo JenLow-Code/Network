@@ -148,7 +148,8 @@ export default function MusicWorkspace(){
       {chatOpen?<MusicSongChat key={chatReference||'whole'} project={project} patch={update}
         referenceId={chatReference} openSection={chooseSection}/>:
         section?<MusicSectionFocus key={section.id} project={project} section={section}
-          patch={update} onOpenChat={(source)=>{void openSongChat(source);}}/>:
+          patch={update} openSection={chooseSection}
+          onOpenChat={(source)=>{void openSongChat(source);}}/>:
         <MusicSongOverview project={project} patch={update} openSection={chooseSection}
           openChat={()=>{void openSongChat();}}/>}
 
