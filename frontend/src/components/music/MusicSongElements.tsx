@@ -122,7 +122,9 @@ export function MusicSongElements({project,patch,sectionId,openSection}:Props) {
         kind:'section',sectionId:chosenSections[0],status:'pending',
         createdAt:new Date().toISOString()};
       patch({suggestions:[...project.suggestions,suggestion]});
-    } else if(kind!=='style') {
+    } else if(kind==='style') {
+      setError('Ajoute les styles musicaux dans les informations du morceau.');return;
+    } else {
       const file:MusicProjectFile={id:newMusicId(),title:name,kind,
         sectionIds:[...chosenSections],text:body,language:kind==='lyrics'?language.trim():undefined,
         instrument:kind==='audio'?instrument.trim():undefined,
@@ -369,7 +371,7 @@ export function MusicSongElements({project,patch,sectionId,openSection}:Props) {
       borderWidth:1,borderColor:theme.border,padding:13,gap:10}}>
       <Text style={{color:theme.foreground,fontSize:13,fontWeight:'700'}}>Nouvel élément</Text>
       <View style={{flexDirection:'row',flexWrap:'wrap',gap:6}}>
-        {types.filter(x=>!sectionId||x.kind!=='version').map(t=>
+        {types.filter(x=>x.kind!=='style'&&(!sectionId||x.kind!=='version')).map(t=>
           <Pressable key={t.kind} onPress={()=>{setKind(t.kind);setError('');}}
             style={{borderWidth:1,borderColor:kind===t.kind?pink:theme.border,
               borderRadius:9,paddingHorizontal:10,paddingVertical:8}}>
