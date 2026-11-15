@@ -8,7 +8,13 @@ export function sectionDurationSeconds(project: MusicProject, section: MusicSect
   }
   const lengths = [
     ...project.layers.filter(x => x.sectionId === section.id).map(x => x.durationSeconds),
-    ...project.files.filter(x => x.sectionIds.includes(section.id) && x.kind === 'audio').map(x => x.durationSeconds),
+    ...project.files.flatMap(file=>{
+      const regions=(file.regions||[]).filter(r=>r.sectionId===section.id &&
+        r.endSeconds>r.startSeconds && r.startSeconds>=0);
+      if(regions.length)return regions.map(r=>r.endSeconds-r.startSeconds);
+      return file.sectionIds.includes(section.id) &&
+        (file.kind==='audio'||file.kind==='track')?[file.durationSeconds]:[];
+    }),
   ].filter((n): n is number => typeof n === 'number' && n > 0 && Number.isFinite(n));
   return lengths.length ? Math.max(...lengths) : undefined;
 }
@@ -16,6 +22,10 @@ export function songDurationSeconds(project: MusicProject): number | undefined {
   const versions = project.versions.map(v => v.durationSeconds).filter((n): n is number =>
     typeof n === 'number' && n > 0 && Number.isFinite(n));
   if (versions.length) return versions[0];
+  const uploaded=project.files.filter(f=>f.kind==='audio'||f.kind==='track')
+    .map(f=>f.durationSeconds).filter((n):n is number=>typeof n==='number'&&
+      Number.isFinite(n)&&n>0);
+  if(uploaded.length)return Math.max(...uploaded);
   const durations=project.sections.map(s=>sectionDurationSeconds(project,s));
   return durations.length && durations.every(n=>typeof n==='number')
     ? durations.reduce<number>((sum,n)=>sum+(n||0),0) : undefined;
