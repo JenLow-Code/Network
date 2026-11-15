@@ -20,14 +20,21 @@ export async function importSongFile(file:File, originalLanguage:string):Promise
   const docx=/\.docx$/i.test(lower);
   const plain=/\.(txt|md)$/i.test(lower);
   const score=/\.(pdf|png|jpg|jpeg|webp)$/i.test(lower);
-  const text=docx?await textFromDocx(await file.arrayBuffer()):
-    plain?await file.text():undefined;
+  let text:string|undefined;
+  let conversionWarning:string|undefined;
+  if(docx){
+    try{text=await textFromDocx(await file.arrayBuffer());}
+    catch{conversionWarning='Document Word importé. L’extraction du texte n’est pas disponible pour ce fichier ; tu peux quand même le conserver et le classer.';}
+  }else if(plain) text=await file.text();
+  else if(/\.doc$/i.test(lower)){
+    conversionWarning='Ancien format Word (.doc) conservé sans extraction. Convertis-le en .docx pour récupérer les paroles dans JenLow.';
+  }
   const localFileId=await saveMusicWorkspaceFile(file);
   return {
     id:newMusicId(),title:file.name.replace(/\.[^.]+$/,''),
     kind:audio?'audio':midi?'track':score?'score':'document',
     sectionIds:[],text,
-    originalFilename:file.name,mimeType:file.type||undefined,localFileId,
+    originalFilename:file.name,mimeType:file.type||undefined,localFileId,conversionWarning,
     durationSeconds:audio?await fileAudioDuration(file):undefined,
     language:docx||plain?originalLanguage:undefined,
     createdAt:new Date().toISOString(),
