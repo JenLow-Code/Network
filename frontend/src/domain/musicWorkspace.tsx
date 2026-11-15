@@ -89,6 +89,7 @@ export type MusicProjectFile = {
   regions?: MusicFileRegion[];
   originalFilename?: string;
   mimeType?: string;
+  conversionWarning?: string;
   language?: string;
   instrument?: string;
   localFileId?: string;
