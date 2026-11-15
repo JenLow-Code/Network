@@ -9,7 +9,8 @@ import {MusicOwnerProposals} from './MusicOwnerProposals';
 import {TalentLevelSelector} from '@/components/talent/TalentLevelSelector';
 import {TranslatorLanguageFields} from '@/components/talent/TranslatorLanguageFields';
 import {chooseMusicFile} from '@/domain/musicMedia';
-import {saveDraftAudio,saveDraftAttachment,getDraftAttachment} from '@/domain/musicLocalStorage';
+import {getDraftAttachment} from '@/domain/musicLocalStorage';
+import {importSongFile,classifySongFile,matchesMusicSection,lyricsForMusicSection,lyricStanzas} from '@/domain/musicImportedFiles';
 import {fileAudioDuration,formatMusicDuration} from '@/domain/musicProjectSelectors';
 import {newMusicId} from '@/domain/musicWorkspace';
 import type {
@@ -26,6 +27,7 @@ const types:{kind:Kind;label:string;icon:keyof typeof Ionicons.glyphMap}[]=[
   {kind:'version',label:'Version',icon:'layers-outline'},
   {kind:'lyrics',label:'Paroles',icon:'document-text-outline'},
   {kind:'audio',label:'Audio',icon:'musical-note-outline'},
+  {kind:'track',label:'Piste MIDI / audio',icon:'git-branch-outline'},
   {kind:'score',label:'Partition',icon:'document-outline'},
   {kind:'note',label:'Note',icon:'reader-outline'},
   {kind:'idea',label:'Idée',icon:'bulb-outline'},
@@ -43,6 +45,10 @@ export function MusicSongElements({project,patch,sectionId,openSection}:Props) {
   const theme=useAppTheme();
   const files=project.files||[];
   const [adding,setAdding]=useState(false);
+  const [creationMode,setCreationMode]=useState<'none'|'text'|'talent'|'record'>('none');
+  const [regionSection,setRegionSection]=useState('');
+  const [rangeStart,setRangeStart]=useState('');
+  const [rangeEnd,setRangeEnd]=useState('');
   const [kind,setKind]=useState<Kind>('lyrics');
   const [title,setTitle]=useState('');
   const [body,setBody]=useState('');
@@ -61,6 +67,14 @@ export function MusicSongElements({project,patch,sectionId,openSection}:Props) {
   const scopeName=(id:string)=>project.sections.find(s=>s.id===id)?.title||'Partie supprimée';
   const scopeLabel=(ids:string[])=>ids.length?ids.map(scopeName).join(', '):'Chant entier';
   const cardBg=theme.dark?'#332B31':'#F8F5F2';
+  const parseTime=(value:string):number|undefined=>{
+    const raw=value.trim();
+    if(!/^(?:\d+:)?\d+(?:\.\d+)?$/.test(raw))return undefined;
+    const bits=raw.split(':').map(Number);
+    const seconds=bits.length===2?bits[0]*60+bits[1]:bits[0];
+    return Number.isFinite(seconds)&&seconds>=0&&(!raw.includes(':')||bits[1]<60)
+      ?seconds:undefined;
+  };
 
   const elements=useMemo<Element[]>(()=>{
     const result:Element[]=[
@@ -70,7 +84,9 @@ export function MusicSongElements({project,patch,sectionId,openSection}:Props) {
         scopeIds:[]})),
       ...files.map(f=>({key:'f:'+f.id,id:f.id,origin:'file' as const,kind:f.kind,
         name:f.title,subtitle:f.language||f.instrument||formatMusicDuration(f.durationSeconds),
-        scopeIds:f.sectionIds||[]})),
+        scopeIds:[...new Set([...(f.sectionIds||[]),
+          ...(f.lyricSegments||[]).flatMap(s=>s.sectionIds),
+          ...(f.regions||[]).map(r=>r.sectionId)])]})),
       ...project.layers.map(l=>({key:'l:'+l.id,id:l.id,origin:'layer' as const,
         kind:'audio' as const,name:l.title,subtitle:l.role||'Piste',
         scopeIds:l.sectionId?[l.sectionId]:[]})),
@@ -99,7 +115,7 @@ export function MusicSongElements({project,patch,sectionId,openSection}:Props) {
     return result.filter(e=>!sectionId||e.scopeIds.includes(sectionId));
   },[project,files,sectionId]);
 
-  const clearForm=()=>{setAdding(false);setTitle('');setBody('');setInstrument('');
+  const clearForm=()=>{setAdding(false);setCreationMode('none');setTitle('');setBody('');setInstrument('');
     setChosenSections(sectionId?[sectionId]:[]);setError('');};
   const saveNew=()=>{
     const name=title.trim();
@@ -127,70 +143,54 @@ export function MusicSongElements({project,patch,sectionId,openSection}:Props) {
     } else {
       const file:MusicProjectFile={id:newMusicId(),title:name,kind,
         sectionIds:[...chosenSections],text:body,language:kind==='lyrics'?language.trim():undefined,
-        instrument:kind==='audio'?instrument.trim():undefined,
+        lyricSegments:kind==='lyrics'?lyricStanzas(body):undefined,
+        instrument:kind==='audio'||kind==='track'?instrument.trim():undefined,
         createdAt:new Date().toISOString()};
       patch({files:[...files,file]});
     }
     clearForm();
   };
 
+  /** One tap: import first, classify/associate optionally in the saved item's details. */
   const importFor=(id?:string)=>{
-    if(Platform.OS!=='web'||typeof document==='undefined') {
-      setError('Import de fichier disponible depuis le navigateur.');return;
+    if(Platform.OS!=='web'||typeof document==='undefined'){
+      setError('Import disponible dans le navigateur web.');return;
     }
-    if(id){
-      const item=files.find(f=>f.id===id);
-      if(!item)return;
-      const picker=document.createElement('input');
-      picker.type='file';
-      picker.accept=item.kind==='audio'?'audio/*,.mp3,.wav,.m4a,.webm,.ogg':
-        '.txt,.md,.pdf,.png,.jpeg,.jpg,.webp';
-      picker.onchange=()=>{
-        const file=picker.files?.[0];if(!file)return;
-        setUploading(true);setError('');
-        void (async()=>{
-          const audio=file.type.startsWith('audio/');
-          const text=/\.(txt|md)$/i.test(file.name);
-          const localFileId=audio?await saveDraftAudio(file):
-            text?undefined:await saveDraftAttachment(file);
-          const durationSeconds=audio?await fileAudioDuration(file):undefined;
-          const fileText=text?await file.text():undefined;
-          patch({files:files.map(f=>f.id===id?{...f,
-            localFileId,text:text?fileText:f.text,
-            durationSeconds:audio?durationSeconds:f.durationSeconds}:f)});
-        })().catch(e=>setError(e instanceof Error?e.message:'Import impossible.'))
-          .finally(()=>setUploading(false));
-      };
-      picker.click();return;
-    }
-    const picker=document.createElement('input');
-    picker.type='file';
-    picker.accept='.txt,.md,.pdf,.png,.jpg,.jpeg,.webp,.wav,.mp3,.m4a,.ogg,.webm,.aac';
-    picker.onchange=()=>{
-      const file=picker.files?.[0];if(!file)return;
-      const audio=file.type.startsWith('audio/')||/\.(wav|mp3|m4a|ogg|webm|aac)$/i.test(file.name);
-      const text=/\.(txt|md)$/i.test(file.name);
-      const detected:MusicProjectFile['kind']=audio?'audio':
-        text?(kind==='lyrics'?'lyrics':'note'):'score';
+    const input=document.createElement('input');
+    input.type='file';
+    input.accept='.doc,.docx,.txt,.md,.pdf,.png,.jpg,.jpeg,.webp,.mp3,.wav,.m4a,.ogg,.webm,.aac,.mid,.midi';
+    input.multiple=!id;
+    input.onchange=()=>{
+      const chosen=Array.from(input.files||[]);
+      if(!chosen.length)return;
       setUploading(true);setError('');
       void (async()=>{
-        const localFileId=audio?await saveDraftAudio(file):
-          text?undefined:await saveDraftAttachment(file);
-        const item:MusicProjectFile={id:newMusicId(),title:file.name,kind:detected,
-          sectionIds:[...chosenSections],localFileId,
-          text:text?await file.text():undefined,
-          language:detected==='lyrics'?language.trim()||project.originalLanguage:undefined,
-          instrument:detected==='audio'?instrument.trim():undefined,
-          durationSeconds:audio?await fileAudioDuration(file):undefined,
-          createdAt:new Date().toISOString()};
-        patch({files:[...files,item]});
-        clearForm();
+        const imported:MusicProjectFile[]=[];
+        for(const file of chosen)imported.push(await importSongFile(file,project.originalLanguage));
+        if(id){
+          const current=files.find(f=>f.id===id);
+          if(!current)return;
+          patch({files:files.map(f=>f.id===id?{
+            ...f,localFileId:imported[0].localFileId,
+            originalFilename:imported[0].originalFilename,mimeType:imported[0].mimeType,
+            text:imported[0].text??f.text,
+            durationSeconds:imported[0].durationSeconds??f.durationSeconds,
+            lyricSegments:f.kind==='lyrics'&&imported[0].text
+              ?lyricStanzas(imported[0].text):f.lyricSegments,
+          }:f)});
+          setExpanded('f:'+id);
+        }else{
+          patch({files:[...files,...imported.map(f=>({
+            ...f,sectionIds:sectionId?[sectionId]:[],
+          }))]});
+          setExpanded('f:'+imported[0].id);
+          clearForm();
+        }
       })().catch(e=>setError(e instanceof Error?e.message:'Import impossible.'))
         .finally(()=>setUploading(false));
     };
-    picker.click();
+    input.click();
   };
-
   const selectScope=(ids:string[],onChange:(next:string[])=>void)=>
     <View style={{flexDirection:'row',gap:6,flexWrap:'wrap'}}>
       {project.sections.map(s=><Pressable key={s.id}
@@ -246,47 +246,122 @@ export function MusicSongElements({project,patch,sectionId,openSection}:Props) {
       return <View style={{gap:10}}>
         <TextInput style={inputStyle} value={f.title} placeholder="Nom de l'élément"
           onChangeText={title=>updateFile(f.id,{title})}/>
-        <Text style={{color:theme.muted,fontSize:11}}>Type</Text>
+        {f.originalFilename?<Text style={{color:theme.muted,fontSize:11}}>
+          Fichier original : {f.originalFilename}
+        </Text>:null}
+        {f.conversionWarning?<Text style={{color:'#B34D67',fontSize:11,lineHeight:18}}>
+          {f.conversionWarning}
+        </Text>:null}
+        <Text style={{color:theme.muted,fontSize:11}}>Type d’élément</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{gap:7}}>
-          {types.filter(t=>!['version','proposal','talent'].includes(t.kind))
-            .map(t=><Pressable key={t.kind} onPress={()=>updateFile(f.id,{kind:t.kind as MusicProjectFile['kind']})}
+          {types.filter(t=>!['version','proposal','talent','style'].includes(t.kind))
+            .map(t=><Pressable key={t.kind} onPress={()=>
+              updateFile(f.id,classifySongFile(f,t.kind as MusicProjectFile['kind']))}
               style={{borderWidth:1,borderRadius:8,padding:8,
                 borderColor:f.kind===t.kind?pink:theme.border}}>
               <Text style={{color:f.kind===t.kind?pink:theme.foreground,fontSize:11}}>{t.label}</Text>
             </Pressable>)}
         </ScrollView>
-        <Text style={{fontSize:11,color:theme.muted}}>Parties concernées</Text>
+        <Text style={{fontSize:11,color:theme.muted}}>Associer le fichier entier à une partie (facultatif)</Text>
         {selectScope(f.sectionIds||[],sectionIds=>updateFile(f.id,{sectionIds}))}
         {f.kind==='lyrics'?<TextInput style={inputStyle} value={f.language||''}
           onChangeText={language=>updateFile(f.id,{language})} placeholder="Langue des paroles"
           placeholderTextColor={theme.muted}/>:null}
-        {f.kind==='lyrics'&&sectionId?<View style={{gap:7}}>
-          <Text style={{fontSize:11,color:theme.muted}}>
-            Extrait de paroles correspondant à {scopeName(sectionId)}
+        {f.kind==='lyrics'&&f.text?.trim()&&!(f.lyricSegments||[]).length?
+          smallAction('Organiser les paroles en strophes',()=>updateFile(f.id,{
+            lyricSegments:lyricStanzas(f.text||''),
+          })):null}
+        {f.kind==='lyrics'&&f.lyricSegments?.length?<View style={{gap:11}}>
+          <Text style={{fontWeight:'700',fontSize:12,color:theme.foreground}}>
+            Paroles · {f.language||project.originalLanguage}
           </Text>
-          <TextInput multiline textAlignVertical="top"
-            value={f.sectionContent?.[sectionId]||''}
-            onChangeText={text=>updateFile(f.id,{
-              sectionContent:{...(f.sectionContent||{}),[sectionId]:text}
-            })} style={{...inputStyle,minHeight:110}}
-            placeholder="Lignes de cette partie…" placeholderTextColor={theme.muted}/>
+          {f.lyricSegments
+            .filter(segment=>!sectionId||segment.sectionIds.includes(sectionId)||
+              (f.sectionIds||[]).includes(sectionId))
+            .map((segment,index)=><View key={segment.id}
+            style={{gap:7,paddingVertical:9,borderTopWidth:1,borderColor:theme.border}}>
+            <Text style={{fontSize:10,color:theme.muted}}>Strophe {index+1}</Text>
+            <TextInput multiline textAlignVertical="top" value={segment.text}
+              onChangeText={text=>updateFile(f.id,{
+                lyricSegments:(f.lyricSegments||[]).map(s=>s.id===segment.id?{...s,text}:s),
+              })} style={{...inputStyle,minHeight:70,lineHeight:22}}
+              placeholderTextColor={theme.muted} placeholder="Texte de la strophe…"/>
+            <Text style={{fontSize:10,color:theme.muted}}>Associer cette strophe (facultatif)</Text>
+            {selectScope(segment.sectionIds,sectionIds=>updateFile(f.id,{
+              lyricSegments:(f.lyricSegments||[]).map(s=>s.id===segment.id?{...s,sectionIds}:s)
+            }))}
+          </View>)}
+          {!sectionId?smallAction('Ajouter une strophe',()=>updateFile(f.id,{
+            lyricSegments:[...(f.lyricSegments||[]),{id:newMusicId(),text:'',sectionIds:[]}],
+          })):null}
+          <Text style={{fontSize:10,color:theme.muted}}>
+            Les strophes non associées restent dans le chant entier.
+            Le document importé d'origine reste disponible.
+          </Text>
         </View>:null}
-        {f.kind==='audio'?<TextInput style={inputStyle} value={f.instrument||''}
+        {(f.kind==='audio'||f.kind==='track')?<TextInput style={inputStyle} value={f.instrument||''}
           onChangeText={instrument=>updateFile(f.id,{instrument})} placeholder="Instrument / rôle"
           placeholderTextColor={theme.muted}/>:null}
-        {['lyrics','note','idea','document','score'].includes(f.kind)?<TextInput
+        {['note','idea','document','score'].includes(f.kind)?<TextInput
           multiline textAlignVertical="top" value={f.text||''}
           onChangeText={text=>updateFile(f.id,{text})} style={{...inputStyle,minHeight:110}}
           placeholder="Contenu" placeholderTextColor={theme.muted}/>:null}
-        {f.kind==='audio'?<MusicAudioPreview source={{localAudioId:f.localFileId,
+        {(f.kind==='audio'||(f.kind==='track'&&f.mimeType?.startsWith('audio/')))?<MusicAudioPreview source={{localAudioId:f.localFileId,
           audioUrl:f.externalUrl}}/>:null}
+        {(f.kind==='audio'||f.kind==='track')?<View style={{gap:8,paddingTop:7}}>
+          <Text style={{fontWeight:'700',fontSize:12,color:theme.foreground}}>
+            Repères temporels (facultatif)
+          </Text>
+          {(f.regions||[]).map(region=><View key={region.id}
+            style={{flexDirection:'row',alignItems:'center',gap:8}}>
+            <Text style={{flex:1,color:theme.foreground,fontSize:11}}>
+              {scopeName(region.sectionId)} · {formatMusicDuration(region.startSeconds)}
+              {' – '}{formatMusicDuration(region.endSeconds)}
+            </Text>
+            <Pressable onPress={()=>updateFile(f.id,{regions:(f.regions||[])
+              .filter(r=>r.id!==region.id)})}>
+              <Ionicons name="close" size={16} color={theme.muted}/>
+            </Pressable>
+          </View>)}
+          <Text style={{fontSize:10,color:theme.muted}}>
+            Sélectionne une partie, puis un passage de la piste. Exemple : 2:50 à 3:14.
+          </Text>
+          <View style={{flexDirection:'row',flexWrap:'wrap',gap:6}}>
+            {project.sections.map(s=><Pressable key={s.id} onPress={()=>setRegionSection(s.id)}
+              style={{borderRadius:8,borderWidth:1,paddingHorizontal:9,paddingVertical:8,
+                borderColor:regionSection===s.id?pink:theme.border}}>
+              <Text style={{fontSize:11,color:regionSection===s.id?pink:theme.foreground}}>{s.title}</Text>
+            </Pressable>)}
+          </View>
+          {project.sections.length?<View style={{flexDirection:'row',gap:7}}>
+            <TextInput value={rangeStart} onChangeText={setRangeStart} style={{...inputStyle,flex:1}}
+              placeholder="Début 2:50" placeholderTextColor={theme.muted} keyboardType="numbers-and-punctuation"/>
+            <TextInput value={rangeEnd} onChangeText={setRangeEnd} style={{...inputStyle,flex:1}}
+              placeholder="Fin 3:14" placeholderTextColor={theme.muted} keyboardType="numbers-and-punctuation"/>
+            <Pressable onPress={()=>{
+              const start=parseTime(rangeStart),end=parseTime(rangeEnd);
+              if(!regionSection||start===undefined||end===undefined||end<=start||
+                (f.durationSeconds!==undefined&&end>f.durationSeconds)){
+                setError('Sélectionne une partie et une plage valide dans la durée du fichier.');return;
+              }
+              updateFile(f.id,{regions:[...(f.regions||[]),{
+                id:newMusicId(),sectionId:regionSection,startSeconds:start,endSeconds:end,
+              }]});
+              setRangeStart('');setRangeEnd('');setError('');
+            }} style={{backgroundColor:pink,paddingHorizontal:11,borderRadius:9,
+              justifyContent:'center'}}>
+              <Ionicons name="checkmark" size={18} color="#fff"/>
+            </Pressable>
+          </View>:null}
+        </View>:null}
+
         <View style={{flexDirection:'row',flexWrap:'wrap',gap:7}}>
           {Platform.OS==='web'?smallAction(uploading?'Import…':'Joindre un fichier',()=>importFor(f.id)):null}
-          {(f.localFileId||f.externalUrl)&&f.kind!=='audio'?smallAction('Ouvrir la pièce jointe',
+          {(f.localFileId||f.externalUrl)&&f.kind!=='audio'&&(!f.mimeType?.startsWith('audio/'))?smallAction('Ouvrir le fichier original',
             ()=>{void openAttachment(f).catch(e=>setError(e instanceof Error?e.message:'Ouverture impossible.'));}):null}
           {smallAction('Retirer',()=>patch({files:files.filter(x=>x.id!==f.id)}))}
         </View>
-        {f.kind==='audio'?<MusicAudioCapture onSaved={(localFileId,_name,durationSeconds)=>
+        {(f.kind==='audio'||f.kind==='track')?<MusicAudioCapture onSaved={(localFileId,_name,durationSeconds)=>
           updateFile(f.id,{localFileId,durationSeconds})}/>:null}
       </View>;
     }
@@ -367,53 +442,83 @@ export function MusicSongElements({project,patch,sectionId,openSection}:Props) {
         <Text style={{color:'#fff',fontSize:12,fontWeight:'700'}}>{adding?'Fermer':'Ajouter'}</Text>
       </Pressable>
     </View>
-    {adding?<View style={{backgroundColor:theme.surface,borderRadius:14,
-      borderWidth:1,borderColor:theme.border,padding:13,gap:10}}>
-      <Text style={{color:theme.foreground,fontSize:13,fontWeight:'700'}}>Nouvel élément</Text>
-      <View style={{flexDirection:'row',flexWrap:'wrap',gap:6}}>
-        {types.filter(x=>x.kind!=='style'&&(!sectionId||x.kind!=='version')).map(t=>
-          <Pressable key={t.kind} onPress={()=>{setKind(t.kind);setError('');}}
-            style={{borderWidth:1,borderColor:kind===t.kind?pink:theme.border,
-              borderRadius:9,paddingHorizontal:10,paddingVertical:8}}>
-            <Text style={{color:kind===t.kind?pink:theme.foreground,fontSize:11}}>{t.label}</Text>
-          </Pressable>)}
-      </View>
-      <TextInput value={title} onChangeText={setTitle} style={inputStyle}
-        placeholder="Nom de l’élément…" placeholderTextColor={theme.muted}/>
-      {kind==='lyrics'?<TextInput value={language} onChangeText={setLanguage}
-        placeholder="Langue" placeholderTextColor={theme.muted} style={inputStyle}/>:null}
-      {kind==='audio'?<TextInput value={instrument} onChangeText={setInstrument}
-        placeholder="Instrument (facultatif)" placeholderTextColor={theme.muted} style={inputStyle}/>:null}
-      {kind==='talent'?<>
-        <TalentLevelSelector value={level} onChange={setLevel}/>
-        {title.trim().toLowerCase()==='traducteur'?
-          <TranslatorLanguageFields sourceLanguage={sourceLang} targetLanguage={targetLang}
-            onChangeSource={setSourceLang} onChangeTarget={setTargetLang}/>:null}
-      </>:null}
-      {!sectionId&&kind!=='version'?<>
-        <Text style={{color:theme.muted,fontSize:11}}>Parties concernées (facultatif)</Text>
-        {kind==='talent'||kind==='proposal'?
-          selectOneScope(chosenSections[0],id=>setChosenSections(id?[id]:[])):
-          selectScope(chosenSections,setChosenSections)}
-      </>:null}
-      {['lyrics','note','idea','document','proposal'].includes(kind)?
-        <TextInput value={body} onChangeText={setBody} multiline textAlignVertical="top"
-          style={{...inputStyle,minHeight:88}} placeholder="Contenu, idée ou proposition…"
-          placeholderTextColor={theme.muted}/>:null}
-      <View style={{flexDirection:'row',gap:8,flexWrap:'wrap'}}>
-        <Pressable disabled={!title.trim()} onPress={saveNew} accessibilityRole="button"
-          style={{paddingVertical:10,paddingHorizontal:14,borderRadius:9,
-            backgroundColor:title.trim()?pink:theme.border}}>
-          <Text style={{fontSize:12,color:'#fff',fontWeight:'700'}}>Créer l’élément</Text>
+    {adding?<View style={{gap:11,backgroundColor:theme.surface,padding:13,
+      borderWidth:1,borderColor:theme.border,borderRadius:14}}>
+      <Text style={{color:theme.foreground,fontSize:13,fontWeight:'700'}}>
+        {creationMode==='none'?'Ajouter au morceau':
+         creationMode==='talent'?'Quel talent recherches-tu ?':
+         creationMode==='record'?'Enregistrer une prise':'Nouvel élément'}
+      </Text>
+      {creationMode==='none'?<View style={{gap:3}}>
+        {([
+          ['cloud-upload-outline','Importer un fichier','Word, PDF, audio, MIDI, image ou texte','upload'],
+          ['document-text-outline','Écrire des paroles','Créer un fichier de paroles','lyrics'],
+          ['reader-outline','Ajouter une idée / note','Commencer par du texte libre','note'],
+          ['layers-outline','Créer une version','Nouvelle version du morceau','version'],
+          ['person-add-outline','Chercher un talent','Une demande rapide avec le niveau','talent'],
+          ['git-pull-request-outline','Proposer une modification','Arrangement ou nouvelle piste','proposal'],
+          ['mic-outline','Enregistrer une prise','Enregistrement avec le microphone','record'],
+        ] as const).map(([icon,label,desc,action])=><Pressable key={action}
+          accessibilityRole="button" onPress={()=>{
+            if(action==='upload'){importFor();return;}
+            if(action==='record'){setCreationMode('record');return;}
+            setKind(action==='lyrics'?'lyrics':action==='note'?'note':
+              action==='version'?'version':action==='talent'?'talent':'proposal');
+            setCreationMode(action==='talent'?'talent':'text');
+          }} style={{flexDirection:'row',gap:11,alignItems:'center',
+            minHeight:54,borderBottomWidth:1,borderColor:theme.border,paddingVertical:8}}>
+          <Ionicons name={icon} color={pink} size={22}/>
+          <View style={{flex:1,gap:3}}>
+            <Text style={{color:theme.foreground,fontSize:13,fontWeight:'600'}}>{label}</Text>
+            <Text style={{color:theme.muted,fontSize:11}}>{desc}</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={17} color={theme.muted}/>
+        </Pressable>)}
+      </View>:null}
+      {(creationMode==='text'||creationMode==='talent')?<View style={{gap:9}}>
+        <TextInput value={title} onChangeText={setTitle}
+          placeholder={kind==='talent'?'Batteur, guitariste, traducteur…':
+            kind==='version'?'Nom de la version':'Titre de l’élément'}
+          placeholderTextColor={theme.muted} style={inputStyle}/>
+        {kind==='lyrics'?<TextInput value={language} onChangeText={setLanguage}
+          placeholder="Langue des paroles" placeholderTextColor={theme.muted} style={inputStyle}/>:null}
+        {kind==='talent'?<>
+          <TalentLevelSelector value={level} onChange={setLevel}/>
+          {title.toLowerCase().trim()==='traducteur'?
+            <TranslatorLanguageFields sourceLanguage={sourceLang} targetLanguage={targetLang}
+              onChangeSource={setSourceLang} onChangeTarget={setTargetLang}/>:null}
+        </>:null}
+        {['lyrics','note','idea','document','proposal'].includes(kind)?
+          <TextInput value={body} onChangeText={setBody} multiline
+            placeholder="Écris librement…" placeholderTextColor={theme.muted}
+            textAlignVertical="top" style={{...inputStyle,minHeight:100}}/>:null}
+        <View style={{flexDirection:'row',alignItems:'center',gap:8}}>
+          <Pressable disabled={!title.trim()} onPress={saveNew}
+            style={{paddingHorizontal:15,paddingVertical:11,borderRadius:9,
+              backgroundColor:title.trim()?pink:theme.border}}>
+            <Text style={{color:'#fff',fontSize:12,fontWeight:'700'}}>Ajouter</Text>
+          </Pressable>
+          <Pressable onPress={()=>{setCreationMode('none');setTitle('');setBody('');}}>
+            <Text style={{color:theme.muted,fontSize:12}}>Retour</Text>
+          </Pressable>
+        </View>
+        <Text style={{color:theme.muted,fontSize:10}}>
+          Tu pourras modifier le type et lier cet élément à une partie plus tard.
+        </Text>
+      </View>:null}
+      {creationMode==='record'?<View style={{gap:9}}>
+        <MusicAudioCapture onSaved={(localFileId,filename,durationSeconds)=>{
+          const item:MusicProjectFile={id:newMusicId(),title:filename.replace(/\.[^.]+$/,''),
+            kind:'audio',sectionIds:sectionId?[sectionId]:[],localFileId,durationSeconds,
+            createdAt:new Date().toISOString()};
+          patch({files:[...files,item]});
+          setExpanded('f:'+item.id);clearForm();
+        }}/>
+        <Pressable onPress={()=>setCreationMode('none')}>
+          <Text style={{color:theme.muted,fontSize:12}}>Retour</Text>
         </Pressable>
-        {Platform.OS==='web'?smallAction(uploading?'Import en cours…':'Importer un fichier',()=>importFor()):null}
-      </View>
-      {kind==='audio'?<MusicAudioCapture onSaved={(localFileId,filename,durationSeconds)=>{
-        patch({files:[...files,{id:newMusicId(),title:title.trim()||filename,kind:'audio',
-          sectionIds:[...chosenSections],instrument:instrument||undefined,localFileId,
-          durationSeconds,createdAt:new Date().toISOString()}]});
-        clearForm();
-      }}/>:null}
+      </View>:null}
+      {uploading?<Text style={{fontSize:11,color:theme.muted}}>Import en cours…</Text>:null}
     </View>:null}
     <View style={{borderTopWidth:elements.length?1:0,borderColor:theme.border}}>
       {elements.map((element,i)=><View key={element.key}>

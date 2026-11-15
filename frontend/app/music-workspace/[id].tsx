@@ -12,6 +12,7 @@ import { MusicSongChat } from '@/components/music/MusicSongChat';
 import { api } from '@/lib/api/client';
 import { MusicSectionFocus } from '@/components/music/MusicSectionFocus';
 import { MusicSongMetadata } from '@/components/music/MusicSongMetadata';
+import { MusicSongTabs } from '@/components/music/MusicSongTabs';
 import { MusicFolderCover } from '@/components/music/MusicFolderCover';
 
 const pink='#CB245C';
@@ -113,37 +114,8 @@ export default function MusicWorkspace(){
       </View>:null}
 
       <MusicSongMetadata project={project} patch={update}/>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{gap:8,paddingBottom:6}}>
-        <Pressable accessibilityRole="tab" accessibilityState={{selected:!sectionId&&!chatOpen}}
-          onPress={()=>{setChatOpen(false);setSectionId('');}}
-          style={{minHeight:46,paddingHorizontal:16,borderRadius:13,flexDirection:'row',
-            gap:8,alignItems:'center',borderWidth:1,
-            borderColor:!sectionId&&!chatOpen?pink:theme.border,
-            backgroundColor:!sectionId&&!chatOpen?(theme.dark?'#422938':'#F8E6EE'):theme.surface}}>
-          <Ionicons name="musical-notes-outline" color={!sectionId&&!chatOpen?pink:theme.muted} size={17}/>
-          <Text style={{fontSize:13,fontWeight:!sectionId&&!chatOpen?'700':'500',
-            color:!sectionId&&!chatOpen?pink:theme.foreground}}>Chant entier</Text>
-        </Pressable>
-        {project.sections.map((part,index)=><Pressable key={part.id}
-          accessibilityRole="tab" accessibilityState={{selected:sectionId===part.id}}
-          onPress={()=>chooseSection(part.id)}
-          style={{minHeight:46,paddingHorizontal:14,borderRadius:13,
-            flexDirection:'row',gap:8,alignItems:'center',borderWidth:1,
-            borderColor:sectionId===part.id?pink:theme.border,
-            backgroundColor:sectionId===part.id?(theme.dark?'#422938':'#F8E6EE'):theme.surface}}>
-          <Text style={{color:sectionId===part.id?pink:theme.muted,fontSize:10,fontWeight:'700'}}>
-            {String(index+1).padStart(2,'0')}
-          </Text>
-          <Text style={{fontSize:13,color:sectionId===part.id?pink:theme.foreground,
-            fontWeight:sectionId===part.id?'700':'500'}}>{part.title}</Text>
-        </Pressable>)}
-        <Pressable accessibilityLabel="Créer une nouvelle partie" onPress={newPart}
-          style={{minWidth:46,minHeight:46,borderRadius:13,borderWidth:1,borderColor:theme.border,
-            backgroundColor:theme.surface,justifyContent:'center',alignItems:'center'}}>
-          <Ionicons name="add" color={pink} size={22}/>
-        </Pressable>
-      </ScrollView>
+      <MusicSongTabs project={project} activeSectionId={sectionId}
+        onSelect={chooseSection} patch={update}/>
 
       {chatOpen?<MusicSongChat key={chatReference||'whole'} project={project} patch={update}
         referenceId={chatReference} openSection={chooseSection}/>:
