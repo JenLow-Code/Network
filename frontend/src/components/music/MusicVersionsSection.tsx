@@ -12,11 +12,12 @@ import {newMusicId} from '@/domain/musicWorkspace';
 import type {MusicProject,MusicVersion} from '@/domain/musicWorkspace';
 import {api} from '@/lib/api/client';
 const pink='#CB245C';
-type Props={project:MusicProject;patch:(changes:Partial<MusicProject>)=>void};
+type Props={project:MusicProject;patch:(changes:Partial<MusicProject>)=>void;
+  focusVersionId?:string;inline?:boolean;};
 
-export function MusicVersionsSection({project,patch}:Props){
+export function MusicVersionsSection({project,patch,focusVersionId,inline=false}:Props){
   const theme=useAppTheme();
-  const [expanded,setExpanded]=useState(false);
+  const [expanded,setExpanded]=useState(inline);
   const [newVersion,setNewVersion]=useState('');
   const [recordingFor,setRecordingFor]=useState<string|null>(null);
   const [error,setError]=useState('');
@@ -111,9 +112,9 @@ export function MusicVersionsSection({project,patch}:Props){
   </Pressable>;
   const input={padding:11,borderRadius:10,backgroundColor:theme.background,color:theme.foreground,
     borderColor:theme.border,borderWidth:1,fontSize:12} as const;
-  return <View style={{borderWidth:1,borderColor:theme.border,borderRadius:16,
-    backgroundColor:theme.surface,padding:15,gap:11}}>
-    <Pressable accessibilityRole="button" onPress={()=>setExpanded(!expanded)}
+  return <View style={{borderWidth:inline?0:1,borderColor:theme.border,borderRadius:inline?0:16,
+    backgroundColor:theme.surface,padding:inline?0:15,gap:11}}>
+    {!inline?<Pressable accessibilityRole="button" onPress={()=>setExpanded(!expanded)}
       style={{flexDirection:'row',alignItems:'center',gap:11}}>
       <Ionicons name="layers-outline" size={22} color={pink}/>
       <View style={{flex:1,gap:3}}>
@@ -123,9 +124,9 @@ export function MusicVersionsSection({project,patch}:Props){
         </Text>
       </View>
       <Ionicons name={expanded?'chevron-up':'chevron-down'} color={theme.muted} size={19}/>
-    </Pressable>
+    </Pressable>:null}
     {expanded?<>
-      {versions.map(version=><View key={version.id} style={{
+      {versions.filter(v=>!focusVersionId||v.id===focusVersionId).map(version=><View key={version.id} style={{
         backgroundColor:theme.background,borderRadius:12,padding:12,gap:8}}>
         <View style={{flexDirection:'row',alignItems:'center',gap:8}}>
           <Pressable accessibilityRole="checkbox" disabled={!!version.publishedId}
@@ -162,7 +163,7 @@ export function MusicVersionsSection({project,patch}:Props){
           }}/>:null}
         </View>:null}
       </View>)}
-      <View style={{flexDirection:'row',gap:7,alignItems:'center'}}>
+      {!inline?<><View style={{flexDirection:'row',gap:7,alignItems:'center'}}>
         <TextInput value={newVersion} onChangeText={setNewVersion}
           placeholder="Nouvelle version…" placeholderTextColor={theme.muted}
           style={{...input,flex:1}}/>
@@ -170,6 +171,7 @@ export function MusicVersionsSection({project,patch}:Props){
           !newVersion.trim())}
       </View>
       {Platform.OS==='web'?btn('Importer une version',()=>importVersion(),busy):null}
+      </>:null}
       <Pressable accessibilityRole="checkbox" accessibilityState={{checked:rights}}
         onPress={()=>setRights(!rights)} style={{flexDirection:'row',gap:8,alignItems:'flex-start'}}>
         <Ionicons name={rights?'checkbox':'square-outline'} size={20} color={pink}/>

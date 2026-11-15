@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { ActivityIndicator, Platform, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, Image, Platform, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -8,7 +8,7 @@ import { Nav } from '@/components/navigation/Nav';
 import { useAppTheme } from '@/theme/AppTheme';
 import { useMusicWorkspaces, newMusicId } from '@/domain/musicWorkspace';
 import { chooseMusicFile } from '@/domain/musicMedia';
-import { saveDraftAudio } from '@/domain/musicLocalStorage';
+import { saveDraftAudio, saveDraftAttachment } from '@/domain/musicLocalStorage';
 import { fileAudioDuration } from '@/domain/musicProjectSelectors';
 import { MusicAudioCapture } from '@/components/music/MusicAudioCapture';
 
@@ -30,8 +30,30 @@ export default function NewMusic(){
   const [fileName,setFileName]=useState('');
   const [audioId,setAudioId]=useState('');
   const [audioDuration,setAudioDuration]=useState<number|undefined>();
+  const [coverLocalId,setCoverLocalId]=useState('');
+  const [coverPreview,setCoverPreview]=useState('');
+  const [coverBusy,setCoverBusy]=useState(false);
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState('');
+  useEffect(()=>()=>{if(coverPreview&&Platform.OS==='web')URL.revokeObjectURL(coverPreview);},[coverPreview]);
+  const selectCover=()=>{
+    if(Platform.OS!=='web'||typeof document==='undefined'){
+      setError('La pochette peut actuellement être importée depuis la version web.');return;
+    }
+    const input=document.createElement('input');input.type='file';input.accept='.jpg,.jpeg,.png,.webp';
+    input.onchange=()=>{
+      const file=input.files?.[0];if(!file)return;
+      if(file.size>8*1024*1024||!['image/png','image/jpeg','image/webp'].includes(file.type)){
+        setError('Choisis une image JPG, PNG ou WebP de 8 Mo maximum.');return;
+      }
+      setCoverBusy(true);setError('');
+      void saveDraftAttachment(file).then(id=>{
+        setCoverLocalId(id);setCoverPreview(URL.createObjectURL(file));
+      }).catch(e=>setError(e instanceof Error?e.message:'Impossible de conserver la pochette.'))
+        .finally(()=>setCoverBusy(false));
+    };
+    input.click();
+  };
   const field={borderWidth:1,borderColor:theme.border,backgroundColor:theme.surface,
     borderRadius:11,color:theme.foreground,fontSize:14,paddingHorizontal:13,paddingVertical:11} as const;
   const chooseAudio=()=>{
@@ -48,16 +70,22 @@ export default function NewMusic(){
     if(!ready||busy||!title.trim()||!language.trim())return;
     const id=create({title,description,originalLanguage:language});
     if(!id){setError('Création impossible sur cet appareil.');return;}
-    if(audioId)patch(id,{versions:[{
-      id:newMusicId(),title:'Version originale',localAudioId:audioId,durationSeconds:audioDuration,
-      createdAt:new Date().toISOString(),selectedForPublication:false,
-    }]});
+    patch(id,{
+      ...(coverLocalId?{coverLocalId}:{}),
+      ...(audioId?{versions:[{
+        id:newMusicId(),title:'Version originale',localAudioId:audioId,durationSeconds:audioDuration,
+        createdAt:new Date().toISOString(),selectedForPublication:false,
+      }]}:{}),
+    });
     router.replace({pathname:'/music-workspace/[id]',params:{id}});
   };
-  const modes:{id:StartMode;icon:keyof typeof Ionicons.glyphMap;label:string}[]=[
-    {id:'blank',icon:'pencil-outline',label:'Une idée'},
-    {id:'upload',icon:'cloud-upload-outline',label:'Importer'},
-    {id:'record',icon:'mic-outline',label:'Enregistrer'},
+  const modes:{id:StartMode;icon:keyof typeof Ionicons.glyphMap;label:string;detail:string}[]=[
+    {id:'blank',icon:'create-outline',label:"Partir d'une idée",
+      detail:'Paroles et structure, à ton rythme.'},
+    {id:'upload',icon:'cloud-upload-outline',label:'Importer un morceau',
+      detail:'Ajoute une démo ou un mix déjà enregistré.'},
+    {id:'record',icon:'mic-outline',label:'Enregistrer maintenant',
+      detail:'Commence avec ton microphone.'},
   ];
   return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
     <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{
@@ -67,6 +95,24 @@ export default function NewMusic(){
       <Text style={{color:theme.foreground,fontSize:compact?27:32,fontWeight:'700'}}>
         Un nouveau morceau
       </Text>
+      <Pressable onPress={selectCover} disabled={coverBusy} accessibilityRole="button"
+        accessibilityLabel={coverLocalId?'Changer la pochette':'Ajouter une pochette'}
+        style={{flexDirection:'row',gap:13,alignItems:'center',paddingVertical:4}}>
+        <View style={{width:92,height:92,borderRadius:16,overflow:'hidden',
+          backgroundColor:theme.dark?'#3D3039':'#F5E8ED',justifyContent:'center',alignItems:'center'}}>
+          {coverPreview?<Image source={{uri:coverPreview}} style={{width:'100%',height:'100%'}}
+            resizeMode="cover"/>:<Ionicons name="image-outline" color={pink} size={28}/>}
+        </View>
+        <View style={{flex:1,gap:5}}>
+          <Text style={{color:theme.foreground,fontSize:13,fontWeight:'700'}}>
+            {coverLocalId?'Changer la pochette':'Ajouter une pochette'}
+          </Text>
+          <Text style={{color:theme.muted,fontSize:11,lineHeight:18}}>
+            {coverBusy?'Enregistrement de l’image…':'Facultatif · JPG, PNG ou WebP'}
+          </Text>
+        </View>
+        <Ionicons name="add-circle-outline" color={pink} size={22}/>
+      </Pressable>
       <View style={{gap:7}}>
         <Text style={{color:theme.foreground,fontSize:12,fontWeight:'700'}}>Titre du morceau</Text>
         <TextInput autoFocus value={title} onChangeText={setTitle} maxLength={120}
@@ -104,17 +150,19 @@ export default function NewMusic(){
       </View>
       <View style={{gap:8}}>
         <Text style={{color:theme.foreground,fontSize:12,fontWeight:'700'}}>Commencer avec</Text>
-        <View style={{flexDirection:'row',gap:7}}>
+        <View style={{gap:9}}>
           {modes.map(item=><Pressable key={item.id} onPress={()=>{setMode(item.id);setError('');}}
             accessibilityRole="radio" accessibilityState={{checked:mode===item.id}}
-            style={{flex:1,borderWidth:1,borderColor:mode===item.id?pink:theme.border,
-              borderRadius:12,minHeight:64,paddingVertical:10,paddingHorizontal:6,
-              justifyContent:'center',alignItems:'center',gap:5,
-              backgroundColor:mode===item.id?(theme.dark?'#412735':'#FBEAF1'):theme.surface}}>
-            <Ionicons name={item.icon} size={21} color={mode===item.id?pink:theme.foreground}/>
-            <Text style={{color:mode===item.id?pink:theme.foreground,fontSize:11,fontWeight:'600'}}>
-              {item.label}
-            </Text>
+            style={{borderWidth:1,borderColor:mode===item.id?pink:theme.border,
+              borderRadius:16,minHeight:105,paddingVertical:14,paddingHorizontal:15,
+              backgroundColor:mode===item.id?theme.surface:theme.surface,gap:8}}>
+            <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
+              <Ionicons name={item.icon} size={25} color={mode===item.id?pink:theme.foreground}/>
+              <Ionicons name={mode===item.id?'radio-button-on':'radio-button-off'} size={19}
+                color={mode===item.id?pink:theme.muted}/>
+            </View>
+            <Text style={{color:theme.foreground,fontSize:14,fontWeight:'700'}}>{item.label}</Text>
+            <Text style={{color:theme.muted,fontSize:11,lineHeight:17}}>{item.detail}</Text>
           </Pressable>)}
         </View>
         {mode==='upload'?<View style={{gap:9}}>
