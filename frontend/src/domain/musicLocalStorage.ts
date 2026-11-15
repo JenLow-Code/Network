@@ -113,7 +113,7 @@ export async function getDraftAttachment(id: string): Promise<Blob | null> {
 /** Native attachments remain private and are only available from the originating browser. */
 export async function saveMusicWorkspaceFile(file: File): Promise<string> {
   if (Platform.OS !== 'web') throw new Error('L’import de pièces jointes nécessite le navigateur web.');
-  const allowed=/\.(docx|txt|md|pdf|png|jpg|jpeg|webp|mp3|m4a|wav|webm|ogg|aac|mid|midi)$/i;
+  const allowed=/\.(doc|docx|txt|md|pdf|png|jpg|jpeg|webp|mp3|m4a|wav|webm|ogg|aac|mid|midi)$/i;
   if(!allowed.test(file.name))throw new Error('Format non reconnu. Utilise DOCX, texte, PDF, image, audio ou MIDI.');
   if(!file.size||file.size>100*1024*1024)throw new Error('Le fichier doit faire au maximum 100 Mo.');
   const id='music-file-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);
