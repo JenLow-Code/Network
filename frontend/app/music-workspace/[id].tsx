@@ -10,7 +10,7 @@ import {useMusicWorkspaces} from '@/domain/musicWorkspace';
 import {makeWorkingVersion,musicNextState,makeWorkingTrack,
   changeWorkingVersion} from '@/domain/musicNext';
 import {MusicFolderCover} from '@/components/music/MusicFolderCover';
-import {MusicCaptureSpace} from '@/components/music/MusicCaptureNext';
+import {MusicCanvasV3} from '@/components/music/MusicCanvasV3';
 import {MusicStudioNext} from '@/components/music/MusicStudioNext';
 import {MusicCollaborateNext} from '@/components/music/MusicCollaborateNext';
 import type {MusicProjectFile} from '@/domain/musicWorkspace';
@@ -99,7 +99,7 @@ export default function MusicWorkspace(){
           </Text>
         </Pressable>)}
       </View>
-      {space==='capture'?<MusicCaptureSpace project={project} patch={update}
+      {space==='capture'?<MusicCanvasV3 project={project} patch={update}
         activeVersion={!!activeVersion} onStartVersion={startVersion}
         onUseFile={useSource}/>:
       space==='studio'?<MusicStudioNext project={project} patch={update}
