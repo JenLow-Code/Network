@@ -98,7 +98,7 @@ export function PublicationPrimaryAction({ item }: { item: Publication }) {
       accessibilityLabel={label}
       // Only native sharing and local dream creation are functional in beta;
       // other actions must never imply a real message or collaboration was sent.
-      onPress={label === 'Partager ce verset' || label === 'Créer un rêve inspiré' || label === 'Collaborer sur ce morceau' ? onPress : () => setUnavailable(true)}
+      onPress={label === 'Partager ce verset' || label === 'Créer un rêve inspiré' ? onPress : () => setUnavailable(true)}
       style={[
         styles.action,
         styles.fullAction,
@@ -137,12 +137,6 @@ export function PublicationPrimaryAction({ item }: { item: Publication }) {
     );
     return null;
   }
-
-  if (item.type === 'music') return controls(
-    button('Collaborer sur ce morceau', () => router.push({ pathname: '/music-proposal/[id]', params: { id: item.id } })),
-    button('Encourager l’artiste', () => contact(undefined, false,
-      'Bonjour ' + item.author + ', je voulais vous encourager pour votre morceau « ' + item.title + ' » !'), true),
-  );
 
   if (item.type === 'talent') {
     const offers: React.ReactNode[] = [];

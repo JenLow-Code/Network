@@ -2,9 +2,8 @@ import React from 'react';
 import { Text, View } from 'react-native';
 
 /**
- * Shared featured introduction for Dreams, Talents and Music.
- * The featured artwork or Play/Pause button sits on the left; its heading
- * (or musical waveform) is bottom-aligned alongside it.
+ * Shared featured introduction for Dreams and Talents.
+ * The featured artwork sits on the left; its heading is bottom-aligned alongside it.
  */
 export function DetailIntro({
   title,
@@ -17,7 +16,7 @@ export function DetailIntro({
   artwork: React.ReactNode;
   children?: React.ReactNode;
   rightContent?: React.ReactNode;
-  /** Compact botanical artwork in Dream details, without changing Music or Talent layouts. */
+  /** Compact botanical artwork in Dream details, without changing Talent layouts. */
   compact?: boolean;
 }) {
   return (

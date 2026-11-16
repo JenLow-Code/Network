@@ -1,8 +1,7 @@
 /**
  * Publication domain types and dream-phase constants.
  *
- * A publication has exactly one content type: a Dream, a Music recording,
- * or a Bible image/reference.
+ * A publication represents a Dream, Bible reference or Talent showcase.
  */
 export type DreamPhase = 'Rêve' | 'Initiation' | 'Croissance' | 'Témoignage';
 
@@ -56,20 +55,6 @@ export type DreamPublication = PublicationBase & {
   resultImage?: string;
 };
 
-export type MusicPublication = PublicationBase & {
-  type: 'music';
-  /** Optional artwork for the cassette sleeve; omit for a plain, typographic label. */
-  coverArt?: string;
-  audioIndex: 0 | 1 | 2;
-  /** Streaming URL from the API; when absent the bundled demo clip `audioIndex` plays. */
-  audioUrl?: string;
-  songAuthor: string;
-  lyrics?: { time: number; text: string }[];
-  description: string;
-  /** Explicit musical collaborators being sought; absent means no verified request. */
-  requestedTalents?: string[];
-};
-
 export type BiblePublication = PublicationBase & {
   type: 'bible';
   reference: string;
@@ -92,7 +77,6 @@ export type PersonPublication = PublicationBase & {
 };
 export type Publication =
   | DreamPublication
-  | MusicPublication
   | BiblePublication
   | PersonPublication;
 
