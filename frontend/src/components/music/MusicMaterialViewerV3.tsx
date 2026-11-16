@@ -5,10 +5,8 @@ import {useAppTheme} from '@/theme/AppTheme';
 import {MusicLocalArt} from './MusicLocalArtNext';
 import {MusicAudioPreview} from './MusicAudioPreview';
 import {getDraftAttachment} from '@/domain/musicLocalStorage';
-import {classifySongFile,lyricStanzas} from '@/domain/musicImportedFiles';
-import {newMusicId} from '@/domain/musicWorkspace';
 import {isMusicTrackCandidate} from '@/domain/musicNext';
-import type {MusicProject,MusicProjectFile,MusicLyricSegment,MusicSection} from '@/domain/musicWorkspace';
+import type {MusicProject,MusicProjectFile,MusicSection} from '@/domain/musicWorkspace';
 
 const pink='#CB245C';
 const palette={
@@ -29,7 +27,7 @@ type Props={
   onClose:()=>void;onUpdate:(id:string,change:Partial<MusicProjectFile>)=>void;
   onChangeType:(id:string,kind:MusicProjectFile['kind'])=>void;
   onSection:(file:MusicProjectFile,section:MusicSection)=>void;
-  onNewSection:(file:MusicProjectFile,name:string)=>void;
+  onNewSection:(file:MusicProjectFile,name:string,stanzaId?:string)=>void;
   onStartVersion:(file:MusicProjectFile)=>void;onUseFile:(file:MusicProjectFile)=>void;
   hasVersion:boolean;
 };
@@ -65,19 +63,7 @@ export function MusicMaterialViewer({visible,file,project,onClose,onUpdate,onCha
   const createPart=()=>{
     const name=sectionName.trim();
     if(!name)return;
-    if(stanzaId){
-      const part=project.sections.find(s=>s.title.toLowerCase()===name.toLowerCase());
-      if(part)updateStanza(stanzaId,part);
-      else{
-        const section:MusicSection={id:newMusicId(),title:name};
-        const segments=file.lyricSegments||[];
-        onUpdate(file.id,{lyricSegments:segments.map(s=>s.id===stanzaId?{
-          ...s,sectionIds:[...s.sectionIds,section.id],
-        }:s)});
-        // The parent owns both objects and persists them as one workspace update.
-        onNewSection(file,name);
-      }
-    }else onNewSection(file,name);
+    onNewSection(file,name,stanzaId||undefined);
     setSectionName('');setStanzaId('');setMenu('none');
   };
   const save=()=>{
@@ -207,7 +193,7 @@ export function MusicMaterialViewer({visible,file,project,onClose,onUpdate,onCha
               {['Intro','Couplet','Refrain','Pont','Solo','Outro']
                 .filter(n=>!project.sections.some(s=>s.title.toLowerCase()===n.toLowerCase()))
                 .map(name=><Pressable key={name}
-                  onPress={()=>{setSectionName(name);onNewSection(file,name);setMenu('none');}}
+                  onPress={()=>{onNewSection(file,name,stanzaId||undefined);setStanzaId('');setMenu('none');}}
                   style={{paddingVertical:9}}>
                   <Text style={{color:theme.foreground,fontSize:13}}>+ {name}</Text>
                 </Pressable>)}
