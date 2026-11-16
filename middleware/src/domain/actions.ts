@@ -8,9 +8,9 @@ import type { Phase } from './phases';
  */
 export type ActionId =
   | 'share-internal' | 'share-external' | 'fire' | 'prayer' | 'inspire' | 'verse-export'
-  | 'encourage' | 'same-dream' | 'offer-help' | 'introduce' | 'audio-collab';
+  | 'encourage' | 'same-dream' | 'offer-help' | 'introduce';
 
-export type ContentKind = 'dream' | 'bible' | 'music' | 'talent';
+export type ContentKind = 'dream' | 'bible' | 'talent';
 
 export const DREAM_ACTIONS: Record<Phase, readonly ActionId[]> = {
   // "Moi aussi" is offered in the Semence detail (not on the Discovery card).
@@ -22,7 +22,6 @@ export const DREAM_ACTIONS: Record<Phase, readonly ActionId[]> = {
 
 export const CONTENT_ACTIONS: Record<Exclude<ContentKind, 'dream'>, readonly ActionId[]> = {
   bible: ['share-internal', 'fire', 'prayer', 'inspire', 'verse-export'],
-  music: ['share-internal', 'fire', 'audio-collab', 'inspire'],
   talent: ['encourage', 'prayer'],
 };
 
@@ -36,7 +35,7 @@ export function allows(kind: ContentKind, action: ActionId, phase?: Phase | null
 }
 
 /** Actions that make no sense on your own content. */
-const NOT_ON_OWN: readonly ActionId[] = ['encourage', 'same-dream', 'offer-help', 'introduce', 'audio-collab'];
+const NOT_ON_OWN: readonly ActionId[] = ['encourage', 'same-dream', 'offer-help', 'introduce'];
 
 /** What this viewer may actually do now (anonymous viewers can only read). */
 export function viewerActions(kind: ContentKind, phase: Phase | null, opts: { authenticated: boolean; isOwner: boolean }): ActionId[] {

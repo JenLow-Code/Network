@@ -15,9 +15,9 @@ import { hmacSign, hmacVerify, iso, newId } from '../lib/util';
  * Reads use short-lived HMAC-signed URLs with Range support. Never served as a download.
  */
 export type Purpose =
-  | 'avatar' | 'dream_cover' | 'dream_gallery' | 'dream_result' | 'dream_block' | 'music_audio' | 'music_cover'
-  | 'music_proposal' | 'talent_sample' | 'bible_image' | 'message_attachment';
-export const PURPOSES: readonly Purpose[] = ['avatar', 'dream_cover', 'dream_gallery', 'dream_result', 'dream_block', 'music_audio', 'music_cover', 'music_proposal', 'talent_sample', 'bible_image', 'message_attachment'];
+  | 'avatar' | 'dream_cover' | 'dream_gallery' | 'dream_result' | 'dream_block'
+  | 'talent_sample' | 'bible_image' | 'message_attachment';
+export const PURPOSES: readonly Purpose[] = ['avatar', 'dream_cover', 'dream_gallery', 'dream_result', 'dream_block', 'talent_sample', 'bible_image', 'message_attachment'];
 
 const MB = 1024 * 1024;
 const IMAGE = ['image/jpeg', 'image/png', 'image/webp'];
@@ -31,9 +31,6 @@ const RULES: Record<Purpose, { types: string[]; maxBytes: number }> = {
   dream_gallery: { types: IMAGE, maxBytes: 8 * MB },
   dream_block: { types: [...IMAGE, ...AUDIO, ...PDF], maxBytes: 15 * MB },
   dream_result: { types: [...IMAGE, ...AUDIO, ...VIDEO, ...PDF], maxBytes: 50 * MB },
-  music_audio: { types: AUDIO, maxBytes: 30 * MB },
-  music_proposal: { types: AUDIO, maxBytes: 30 * MB },
-  music_cover: { types: IMAGE, maxBytes: 8 * MB },
   talent_sample: { types: [...IMAGE, ...AUDIO, ...VIDEO], maxBytes: 30 * MB },
   bible_image: { types: IMAGE, maxBytes: 8 * MB },
   message_attachment: { types: [...IMAGE, ...PDF], maxBytes: 10 * MB },
@@ -83,7 +80,7 @@ async function signedReadUrl(ctx: Ctx, id: string): Promise<string> {
 
 /**
  * Public URL for a media row: attributed external URLs as-is, R2 objects via signed URL,
- * `app-asset:` references are first-party assets bundled in the app (demo audio).
+ * `app-asset:` references are first-party assets bundled in the app (demo media).
  */
 export async function toMediaDTO(ctx: Ctx, row: MediaRow | null | undefined): Promise<MediaDTO | null> {
   if (!row || row.deleted_at || row.storage_status === 'removed' || row.storage_status === 'quarantined') return null;

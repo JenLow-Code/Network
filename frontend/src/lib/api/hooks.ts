@@ -71,7 +71,6 @@ export function useDiscovery(params: { type?: string; q?: string } = {}) {
         // Bible and Talent are visibly demo previews; D1 currently has only dream data.
         const demoEditorial = demoFeed.filter(p => p.type !== 'dream');
         const mixed = interleaveEditorial(remote, demoEditorial).filter(p =>
-          p.type !== 'music' &&
           (!params.type || p.type === params.type) &&
           (!params.q || [p.title, p.author].join(' ').toLowerCase().includes(params.q.toLowerCase())),
         );
@@ -82,7 +81,7 @@ export function useDiscovery(params: { type?: string; q?: string } = {}) {
         return;
       }
       const page = await api<{ items: ApiFeedItem[]; nextCursor: string | null }>(`/api/discovery?limit=40${key ? '&' + key : ''}`);
-      const mapped = toPublications(page.items).filter(p => p.type !== 'music');
+      const mapped = toPublications(page.items);
       mapped.forEach(p => cache.set(p.id, p));
       setItems(mapped);
       setCursor(page.nextCursor);
