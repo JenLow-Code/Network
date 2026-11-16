@@ -1,6 +1,6 @@
 import type { Ctx, Viewer, Locale } from '../http/context';
 import type { D1Value } from '../platform/cf';
-import type { AuthorSummary, BibleCard, DreamCard, FeedItem, MusicCard, NeedSummary, TalentCard } from '../contracts/dto';
+import type { AuthorSummary, BibleCard, DreamCard, FeedItem, NeedSummary, TalentCard } from '../contracts/dto';
 import type { Cursor } from '../http/cursor';
 import type { MediaDTO } from '../modules/media';
 import { AUTHOR_VISIBLE_SQL, NOT_BLOCKED_SQL } from './access';
@@ -11,7 +11,7 @@ import { viewerActions } from '../domain/actions';
 import { encodeCursor } from '../http/cursor';
 import { iso, marks, parseJson, truthy, uniq } from '../lib/util';
 
-export type ContentType = 'dream' | 'bible' | 'music' | 'talent';
+export type ContentType = 'dream' | 'bible' | 'talent';
 
 export type FeedQuery = {
   viewer: Viewer | null;
@@ -40,7 +40,7 @@ function cursorClause(alias: string, cursor: Cursor | null, args: D1Value[]): st
 }
 
 export async function queryPublications(ctx: Ctx, q: FeedQuery): Promise<PubRow[]> {
-  const types = q.types ?? ['dream', 'bible', 'music', 'talent'];
+  const types = q.types ?? ['dream', 'bible', 'talent'];
   if (!types.length) return [];
   const where: string[] = ['p.deleted_at IS NULL', `p.type IN (${marks(types.length)})`];
   const args: D1Value[] = [...types];
@@ -52,7 +52,6 @@ export async function queryPublications(ctx: Ctx, q: FeedQuery): Promise<PubRow[
     where.push('p.moderation_hidden_at IS NULL', AUTHOR_VISIBLE_SQL('u'));
     where.push(q.viewer ? "p.visibility IN ('public','members')" : "p.visibility='public'");
     where.push(`(p.type<>'dream' OR EXISTS(SELECT 1 FROM dreams d WHERE d.id=p.dream_id AND d.deleted_at IS NULL AND d.moderation_hidden_at IS NULL${q.requireDreamCover ? ' AND d.cover_media_id IS NOT NULL' : ''}))`);
-    where.push("(p.type<>'music' OR NOT EXISTS(SELECT 1 FROM music_tracks t WHERE t.publication_id=p.id AND t.withdrawn_at IS NOT NULL))");
     // A talent showcase also follows the visibility of the member's talent itself.
     where.push(`(p.type<>'talent' OR EXISTS(SELECT 1 FROM talent_publications tp JOIN user_talents ut ON ut.user_id=tp.user_id AND ut.talent_id=tp.talent_id
       WHERE tp.publication_id=p.id AND ut.visibility IN (${q.viewer ? "'public','members'" : "'public'"})))`);
@@ -89,7 +88,7 @@ export async function queryPublications(ctx: Ctx, q: FeedQuery): Promise<PubRow[
   );
 }
 
-/** One page of publications (all four types) newest first, with a keyset cursor. */
+/** One page of publications (Dreams, Bible, Talents) newest first, with a keyset cursor. */
 export async function feedPage(ctx: Ctx, q: FeedQuery): Promise<{ items: FeedItem[]; nextCursor: string | null }> {
   const rows = await queryPublications(ctx, q);
   const page = rows.slice(0, q.limit);
@@ -240,31 +239,6 @@ export async function hydrate(ctx: Ctx, viewer: Viewer | null, pubs: PubRow[], o
     }
   }
 
-  // Music
-  const musicPubIds = pubs.filter(p => p.type === 'music').map(p => p.id);
-  type TrackRow = { id: string; publication_id: string; publisher_id: string; audio_asset_id: string | null; external_stream_url: string | null; cover_asset_id: string | null; original_track_id: string | null; duration_ms: number | null; description: string | null; song_author: string | null; license_type: string; attribution_text: string; adaptations_allowed: number; reviewed_status: string; original_creator_name: string; rights_holder_name: string; original_source_url: string | null };
-  const tracks = new Map<string, TrackRow>();
-  const credits = new Map<string, MusicCard['credits']>();
-  if (musicPubIds.length) {
-    for (const t of await ctx.sql.all<TrackRow>(
-      `SELECT t.id,t.publication_id,t.publisher_id,t.audio_asset_id,t.external_stream_url,t.cover_asset_id,t.original_track_id,t.duration_ms,t.description,t.song_author,
-         r.license_type,r.attribution_text,r.adaptations_allowed,r.reviewed_status,r.original_creator_name,r.rights_holder_name,r.original_source_url
-       FROM music_tracks t JOIN music_rights r ON r.id=t.rights_id WHERE t.publication_id IN (${marks(musicPubIds.length)})`,
-      ...musicPubIds,
-    ))
-      tracks.set(t.publication_id, t);
-    const trackIds = Array.from(tracks.values()).map(t => t.id);
-    if (trackIds.length)
-      for (const c of await ctx.sql.all<{ track_id: string; credit_order: number; display_name: string; contribution: string; handle: string | null }>(
-        `SELECT c.track_id,c.credit_order,c.display_name,c.contribution,u.handle FROM music_contributors c LEFT JOIN users u ON u.id=c.user_id WHERE c.track_id IN (${marks(trackIds.length)}) ORDER BY c.credit_order`,
-        ...trackIds,
-      )) {
-        const list = credits.get(c.track_id) ?? [];
-        list.push({ order: c.credit_order, displayName: c.display_name, contribution: c.contribution, handle: c.handle });
-        credits.set(c.track_id, list);
-      }
-  }
-
   // Talents
   type TalentData = { post_id: string; user_id: string; talent_id: string; name: string; slug: string | null; category: string; level: number; can_teach: number; wants_to_learn: number; wants_tandem: number; available_for_projects: number; description: string | null; experience: string | null; illustration: string | null; t_illustration: string | null };
   const talentData = new Map<string, TalentData>();
@@ -300,7 +274,6 @@ export async function hydrate(ctx: Ctx, viewer: Viewer | null, pubs: PubRow[], o
   for (const d of dreams.values()) mediaIds.push(d.cover_media_id, d.testimony_primary_asset_id, ...(galleries.get(d.id) ?? []));
   for (const p of pubs) mediaIds.push(p.cover_asset_id);
   for (const b of bible.values()) mediaIds.push(b.custom_image_asset_id);
-  for (const t of tracks.values()) mediaIds.push(t.cover_asset_id, t.audio_asset_id);
   for (const list of talentSamples.values()) mediaIds.push(...list);
   const media = await mediaMap(ctx, mediaIds);
   const m = (id: string | null | undefined) => (id ? media.get(id) ?? null : null);
@@ -346,22 +319,6 @@ export async function hydrate(ctx: Ctx, viewer: Viewer | null, pubs: PubRow[], o
         reference: { label, edition: { code: b.edition_code, name: b.edition_name, attribution: b.copyright_notice }, book: { code: b.book_code, name: b.book_name }, chapter: b.chapter, startVerse: b.start_verse, endVerse: b.end_verse },
         excerpt: excerpts.get(p.id) || '', caption: b.caption, image: m(b.custom_image_asset_id) ?? m(p.cover_asset_id),
         viewer: { isOwner: isOwnerAuthor, actions: viewerActions('bible', null, { authenticated: !!viewer, isOwner: isOwnerAuthor }), fire: fire.has(p.id), prayer: prayer.has(p.id) },
-      };
-      items.push(card);
-    } else if (p.type === 'music') {
-      const t = tracks.get(p.id);
-      if (!t) continue;
-      const audio = m(t.audio_asset_id);
-      const appAsset = audio?.url?.startsWith('app-asset:') ? audio.url.slice('app-asset:'.length) : null;
-      const url = appAsset ? null : audio?.url ?? t.external_stream_url ?? null;
-      const card: MusicCard = {
-        ...base, type: 'music', trackId: t.id, title: p.title, description: t.description, songAuthor: t.song_author,
-        cover: m(t.cover_asset_id) ?? m(p.cover_asset_id), durationMs: t.duration_ms ?? audio?.durationMs ?? null,
-        playback: { available: !!(url || appAsset), url, appAsset, mimeType: audio?.mimeType ?? null },
-        credits: credits.get(t.id) ?? [],
-        rights: { licenseType: t.license_type, attribution: t.attribution_text, adaptationsAllowed: t.adaptations_allowed === 1, reviewStatus: t.reviewed_status, originalCreator: t.original_creator_name, rightsHolder: t.rights_holder_name, sourceUrl: t.original_source_url },
-        originalTrackId: t.original_track_id, downloadable: false,
-        viewer: { isOwner: isOwnerAuthor, actions: viewerActions('music', null, { authenticated: !!viewer, isOwner: isOwnerAuthor }), fire: fire.has(p.id), prayer: prayer.has(p.id) },
       };
       items.push(card);
     } else if (p.type === 'talent') {

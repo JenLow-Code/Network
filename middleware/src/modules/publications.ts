@@ -14,7 +14,7 @@ import { activeMemberByHandle, areContacts, inCircle } from '../services/access'
 import { parsePhase, toDbPhase } from '../domain/phases';
 import { json } from '../http/respond';
 
-const TYPES: readonly ContentType[] = ['dream', 'bible', 'music', 'talent'];
+const TYPES: readonly ContentType[] = ['dream', 'bible', 'talent'];
 
 /** Require a visible item and that the action is allowed for it (content- and phase-specific). */
 async function actionable(ctx: Ctx, id: string, action: string): Promise<FeedItem> {
@@ -26,7 +26,7 @@ async function actionable(ctx: Ctx, id: string, action: string): Promise<FeedIte
 }
 
 export function registerPublications(r: Router): void {
-  r.add('GET', '/api/discovery', { tag: 'Discovery', summary: 'Mixed editorial feed (Dreams, Bible, Music, Talents), newest first, cursor-paginated', auth: 'optional' }, async ctx => {
+  r.add('GET', '/api/discovery', { tag: 'Discovery', summary: 'Mixed editorial feed (Dreams, Bible, Talents), newest first, cursor-paginated', auth: 'optional' }, async ctx => {
     const viewer = await ctx.viewer();
     const typeParam = ctx.query('type');
     const types = typeParam ? (typeParam.split(',').filter(t => (TYPES as readonly string[]).includes(t)) as ContentType[]) : undefined;
@@ -50,10 +50,6 @@ export function registerPublications(r: Router): void {
     if (item.type === 'bible') {
       const chapter = await chapterContext(ctx, item.id);
       return { item, chapter };
-    }
-    if (item.type === 'music') {
-      const extra = await ctx.sql.first<{ lyrics_json: string | null }>('SELECT lyrics_json FROM music_tracks WHERE id=?', item.trackId);
-      return { item: { ...item, lyrics: extra?.lyrics_json ? JSON.parse(extra.lyrics_json) : [] } };
     }
     return { item };
   });
@@ -247,7 +243,7 @@ export function registerPublications(r: Router): void {
     return { shared: true, channel, conversationId };
   });
 
-  r.add('POST', '/api/publications/:id/inspired-dreams', { tag: 'Inspiration', summary: 'Start my own Dream inspired by a Bible verse, a song or a Floraison', auth: 'required', status: 201 }, async ctx => {
+  r.add('POST', '/api/publications/:id/inspired-dreams', { tag: 'Inspiration', summary: 'Start my own Dream inspired by a Bible verse or a Floraison', auth: 'required', status: 201 }, async ctx => {
     const viewer = await ctx.user();
     const item = await actionable(ctx, ctx.param('id'), 'inspire');
     const input = parseCreate({ ...(await ctx.body()), needs: undefined });

@@ -13,7 +13,6 @@ import { registerNeedInvitations } from './modules/needInvitations';
 import { registerPublications } from './modules/publications';
 import { registerSemenceShares } from './modules/semenceShares';
 import { registerTalents } from './modules/talents';
-import { registerMusic } from './modules/music';
 import { registerBible } from './modules/bible';
 import { registerSocial } from './modules/social';
 import { registerMessaging } from './modules/messaging';
@@ -53,7 +52,6 @@ export function buildRouter(): Router {
   registerPublications(r);
   registerSemenceShares(r);
   registerTalents(r);
-  registerMusic(r);
   registerBible(r);
   registerSocial(r);
   registerMessaging(r);
