@@ -10,9 +10,9 @@ import {useMusicWorkspaces} from '@/domain/musicWorkspace';
 import {makeWorkingVersion,musicNextState,makeWorkingTrack,
   changeWorkingVersion} from '@/domain/musicNext';
 import {MusicFolderCover} from '@/components/music/MusicFolderCover';
-import {MusicCaptureSpace} from '@/components/music/MusicCaptureNext';
-import {MusicStudioNext} from '@/components/music/MusicStudioNext';
-import {MusicCollaborateNext} from '@/components/music/MusicCollaborateNext';
+import {MusicCanvasV3} from '@/components/music/MusicCanvasV3';
+import {MusicStudioV3} from '@/components/music/MusicStudioV3';
+import {MusicCollaborationV3} from '@/components/music/MusicCollaborationV3';
 import type {MusicProjectFile} from '@/domain/musicWorkspace';
 const pink='#CB245C';
 type Space='capture'|'studio'|'collaborate';
@@ -99,12 +99,12 @@ export default function MusicWorkspace(){
           </Text>
         </Pressable>)}
       </View>
-      {space==='capture'?<MusicCaptureSpace project={project} patch={update}
+      {space==='capture'?<MusicCanvasV3 project={project} patch={update}
         activeVersion={!!activeVersion} onStartVersion={startVersion}
         onUseFile={useSource}/>:
-      space==='studio'?<MusicStudioNext project={project} patch={update}
+      space==='studio'?<MusicStudioV3 project={project} patch={update}
         onCapture={()=>setSpace('capture')}/>:
-        <MusicCollaborateNext project={project} patch={update}/>}
+        <MusicCollaborationV3 project={project} patch={update}/>}
     </ScrollView><Nav/>
   </SafeAreaView>;
 }
