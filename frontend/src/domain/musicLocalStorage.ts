@@ -120,3 +120,14 @@ export async function saveMusicWorkspaceFile(file: File): Promise<string> {
   await putStored(AUDIO,id,file);
   return id;
 }
+
+/** Only discard an unused, newly recorded take after explicit user confirmation. */
+export async function deleteUnassignedMusicTake(localAudioId:string):Promise<void> {
+  if(Platform.OS!=='web')return;
+  await access<void>(AUDIO,'readwrite',(store,resolve,reject)=>{
+    const tx=store.transaction;
+    tx.oncomplete=()=>resolve();
+    const request=store.delete(localAudioId);
+    request.onerror=()=>reject(request.error);
+  });
+}
