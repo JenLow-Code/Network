@@ -3,6 +3,7 @@ import {Pressable,Text,TextInput,View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {useAppTheme} from '@/theme/AppTheme';
 import {MusicSongElements} from './MusicSongElements';
+import {MusicMissingTalentAction} from './MusicMissingTalentAction';
 import {MusicSectionStudio} from './MusicSectionStudio';
 import {sectionDurationSeconds,formatMusicDuration} from '@/domain/musicProjectSelectors';
 import type {MusicProject,MusicSection} from '@/domain/musicWorkspace';
@@ -36,6 +37,7 @@ export function MusicSectionFocus({project,section,patch,onOpenChat,openSection}
       <Pressable onPress={()=>setRenaming(!renaming)} accessibilityLabel="Renommer la partie"
         style={{padding:8}}><Ionicons name="pencil-outline" color={theme.muted} size={18}/></Pressable>
     </View>
+    <MusicMissingTalentAction project={project} patch={patch} sectionId={section.id}/>
     <MusicSongElements key={section.id} project={project} patch={patch}
       sectionId={section.id} openSection={openSection}/>
     <Pressable onPress={()=>onOpenChat(section.id)} accessibilityRole="button"
