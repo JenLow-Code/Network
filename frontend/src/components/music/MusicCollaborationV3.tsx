@@ -18,7 +18,6 @@ export function MusicCollaborationV3({project,patch}:{project:MusicProject;
   const [audio,setAudio]=useState('');
   const [loading,setLoading]=useState(false);
   const [error,setError]=useState('');
-  const [showNeed,setShowNeed]=useState(false);
   const ids=[project.publishedId,...project.versions.map(v=>v.publishedId)]
     .filter((x):x is string=>!!x);
   const key=[...new Set(ids)].sort().join('|');
@@ -106,19 +105,8 @@ export function MusicCollaborationV3({project,patch}:{project:MusicProject;
       </Text>
     </View>:null}
     {error?<Text style={{fontSize:12,color:'#B34D67'}}>{error}</Text>:null}
-    <View style={{paddingTop:7,gap:12,borderTopWidth:1,borderColor:theme.border}}>
-      <Pressable onPress={()=>setShowNeed(!showNeed)}
-        accessibilityRole="button" accessibilityState={{expanded:showNeed}}
-        style={{flexDirection:'row',alignItems:'center',gap:11,
-          minHeight:47}}>
-        <Ionicons name="person-add-outline" size={20} color={pink}/>
-        <Text style={{fontSize:13,fontWeight:'600',flex:1,color:theme.foreground}}>
-          Il me manque un musicien
-        </Text>
-        <Ionicons name={showNeed?'chevron-up':'chevron-down'}
-          size={18} color={theme.muted}/>
-      </Pressable>
-      {showNeed?<MusicMissingTalentAction project={project} patch={patch}/>:null}
+    <View style={{paddingTop:9,borderTopWidth:1,borderColor:theme.border}}>
+      <MusicMissingTalentAction project={project} patch={patch}/>
     </View>
   </View>;
 }
