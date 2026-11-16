@@ -1,14 +1,13 @@
 import React, { useId, useState } from 'react';
-import { Image, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Platform, StyleSheet, Text, View } from 'react-native';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
-import { Ionicons } from '@expo/vector-icons';
 import type { Publication } from '@/domain/publication';
 import { PHASE_LABELS } from '@/domain/publication';
 import { DreamPhaseIcon } from '@/icons/DreamPhaseIcon';
 import { TalentArt } from '@/components/talent/TalentArt';
 import { TalentLevelDots } from '@/components/talent/TalentLevelDots';
 import { useAppTheme } from '@/theme/AppTheme';
-import { BibleVerseCard, CassetteArtwork } from '@/components/publication/PublicationGallery';
+import { BibleVerseCard } from '@/components/publication/PublicationGallery';
 import { DreamPhaseCard } from '@/components/publication/DreamPhaseCard';
 
 /**
@@ -19,14 +18,10 @@ export function DetailHero({
   item,
   width,
   height,
-  onMusicPress,
-  musicPlaying = false,
 }: {
   item: Publication;
   width: number;
   height: number;
-  onMusicPress?: () => void;
-  musicPlaying?: boolean;
 }) {
   const isDream = item.type === 'dream';
   const inset = width < 420 ? 20 : 31;
@@ -44,25 +39,12 @@ export function DetailHero({
     <View style={[styles.hero, {
       width,
       ...(isDream ? {} : { height: heroHeight }),
-      backgroundColor: isDream ? theme.background : item.type === 'music' ? 'transparent' : '#F0EAE0',
+      backgroundColor: isDream ? theme.background : '#F0EAE0',
     }]}>
       {isDream ? (
         <DreamPhaseCard item={item} width={width} variant="detail" />
       ) : item.type === 'bible' ? (
-        <BibleVerseCard item={item} width={width} height={height} />
-      ) : item.type === 'music' ? (
-        <Pressable
-          onPress={onMusicPress}
-          disabled={!onMusicPress}
-          accessibilityRole="button"
-          accessibilityLabel={'Écouter ou mettre en pause ' + item.title}
-          style={{ width, height }}
-        >
-          <CassetteArtwork width={width} height={height} title={item.title} artwork={item.coverArt || item.image} transparent />
-          <View pointerEvents="none" style={styles.cassettePlay}>
-            <Ionicons name={musicPlaying ? "pause" : "play"} size={21} color="#FFFFFF" />
-          </View>
-        </Pressable>
+        <BibleVerseCard item={item} width={width} height={height} /> 
       ) : (
         <>
           <View style={styles.talentArtwork}>
@@ -98,5 +80,4 @@ const styles = StyleSheet.create({
   talentArtwork: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10, paddingBottom: 18 },
   levelLabel: { fontSize: 9, letterSpacing: 1.4, color: '#8A8076' },
   talentLabel: { fontSize: 10, letterSpacing: 1.3, fontWeight: '700', color: '#26211D', marginTop: 5 },
-  cassettePlay: { position: 'absolute', top: '50%', left: '50%', transform: [{ translateX: -19 }, { translateY: -19 }], width: 38, height: 38, borderRadius: 19, backgroundColor: 'rgba(24,20,20,0.34)', alignItems: 'center', justifyContent: 'center' },
 });
