@@ -5,6 +5,7 @@ import {useAppTheme} from '@/theme/AppTheme';
 import {MusicLocalArt} from './MusicLocalArtNext';
 import {MusicAudioPreview} from './MusicAudioPreview';
 import {getDraftAttachment} from '@/domain/musicLocalStorage';
+import {newMusicId} from '@/domain/musicWorkspace';
 import {isMusicTrackCandidate} from '@/domain/musicNext';
 import type {MusicProject,MusicProjectFile,MusicSection} from '@/domain/musicWorkspace';
 
