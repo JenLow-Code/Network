@@ -6,7 +6,7 @@
  */
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { BIBLE, DREAMS, ENCOURAGEMENTS, LINEAGE, MUSIC, PHOTO, SAME_DREAM, SHOWCASES, USERS, type PhotoKey } from './demo-data.ts';
+import { BIBLE, DREAMS, ENCOURAGEMENTS, LINEAGE, PHOTO, SAME_DREAM, SHOWCASES, USERS, type PhotoKey } from './demo-data.ts';
 
 const q = (v: string | number | null | undefined) => (v === null || v === undefined ? 'NULL' : typeof v === 'number' ? String(v) : "'" + v.replace(/'/g, "''") + "'");
 /** The remote rows were written with ASCII apostrophes; immutable titles must match exactly. */
@@ -115,17 +115,6 @@ BIBLE.forEach((b, i) => {
   const img = needMedia(b.owner, b.photo);
   out(`INSERT OR IGNORE INTO publications(id,type,author_id,title,cover_asset_id,visibility,created_at,updated_at) VALUES(${q(id)},'bible',${q(uid(b.owner))},${q('Psaumes 150:' + b.verse)},${q(img)},'public',datetime('2026-11-01 18:00:00','-${i * 17 + 5} hours'),datetime('2026-11-01 18:00:00','-${i * 17 + 5} hours'));`);
   out(`INSERT OR IGNORE INTO bible_posts(publication_id,edition_id,book_id,chapter,start_verse,end_verse,custom_image_asset_id,caption) VALUES(${q(id)},'edition-lsg1910','book-PSA',150,${b.verse},${b.verse},${q(img)},${q(b.caption)});`);
-});
-
-// Music (first-party demo audio bundled in the app: app-asset:<name>) --------------------------
-MUSIC.forEach((m, i) => {
-  const pubId = `demo-pub-music-${m.id}`, trackId = `demo-track-${m.id}`, rightsId = `demo-rights-${m.id}`, audioId = `demo-audio-${m.id}`;
-  const cover = needMedia(m.owner, m.photo);
-  out(`INSERT OR IGNORE INTO media_assets(id,owner_id,external_url,media_type,mime_type,duration_ms,storage_status,purpose,attribution,source_name) VALUES(${q(audioId)},${q(uid(m.owner))},${q('app-asset:' + m.asset)},'audio','audio/wav',8200,'ready','music_audio','Extrait audio de démonstration fourni par JenLow pour la bêta','JenLow');`);
-  out(`INSERT OR IGNORE INTO music_rights(id,publisher_id,original_creator_name,rights_holder_name,license_type,attribution_text,adaptations_allowed,reviewed_status) VALUES(${q(rightsId)},${q(uid(m.owner))},'JenLow (démo)','JenLow','own_work','Extrait audio de démonstration fourni par JenLow pour la bêta',1,'approved');`);
-  out(`INSERT OR IGNORE INTO publications(id,type,author_id,title,cover_asset_id,visibility,created_at,updated_at) VALUES(${q(pubId)},'music',${q(uid(m.owner))},${q(m.title)},${q(cover)},'public',datetime('2026-11-01 18:00:00','-${i * 13 + 4} hours'),datetime('2026-11-01 18:00:00','-${i * 13 + 4} hours'));`);
-  out(`INSERT OR IGNORE INTO music_tracks(id,publication_id,publisher_id,audio_asset_id,cover_asset_id,rights_id,duration_ms,description,song_author) VALUES(${q(trackId)},${q(pubId)},${q(uid(m.owner))},${q(audioId)},${q(cover)},${q(rightsId)},8200,${q(m.description)},'Démo JenLow');`);
-  out(`INSERT OR IGNORE INTO music_contributors(track_id,credit_order,user_id,display_name,contribution) VALUES(${q(trackId)},0,NULL,'JenLow (démo)','Audio de démonstration');`);
 });
 
 const target = join(import.meta.dirname, '..', '..', 'database', 'seeds', 'demo_seed.sql');
