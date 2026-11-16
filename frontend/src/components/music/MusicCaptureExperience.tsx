@@ -194,9 +194,10 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,h
       </View> : null}
       {files.map(file=>{
         const image=isImage(file), sound=isAudio(file), text=content(file).trim();
-        return <Pressable key={file.id} onPress={()=>setSelected(file.id)}
-          accessibilityRole="button" accessibilityLabel={'Ouvrir '+file.title}
-          style={{paddingVertical:18,borderTopWidth:1,borderColor:theme.border,gap:11}}>
+        return <View key={file.id} style={{paddingVertical:18,borderTopWidth:1,
+          borderColor:theme.border,gap:12}}>
+          <Pressable onPress={()=>setSelected(file.id)} accessibilityRole="button"
+            accessibilityLabel={'Ouvrir '+file.title} style={{gap:11}}>
           <View style={{flexDirection:'row',alignItems:'center',gap:9}}>
             <Text style={{color:PINK,fontSize:11,fontWeight:'700'}}>{category(file)}</Text>
             {file.language?<Text style={{color:theme.muted,fontSize:11}}>· {file.language}</Text>:null}
@@ -221,7 +222,6 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,h
               </Text>:null}
             </View>
             <MusicAudioPeaks file={file}/>
-            {file.localFileId?<MusicAudioPreview source={{localAudioId:file.localFileId}}/>:null}
           </View>:null}
           {!image&&!sound&&!text?<View style={{flexDirection:'row',gap:10,alignItems:'center'}}>
             <Ionicons name="document-outline" color={theme.muted} size={20}/>
@@ -230,7 +230,9 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,h
           {isMusicTrackCandidate(file)?<Text style={{fontSize:11,color:theme.muted}}>
             Disponible pour une version · ouvrir pour choisir
           </Text>:null}
-        </Pressable>;
+          </Pressable>
+          {sound&&file.localFileId?<MusicAudioPreview source={{localAudioId:file.localFileId}}/>:null}
+        </View>;
       })}
     </View>
     <MusicMaterialViewer key={selectedFile?.id||'closed'} visible={!!selectedFile}

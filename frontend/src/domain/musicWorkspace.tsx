@@ -142,7 +142,7 @@ export function makeMusicProject(draft: NewMusicDraft, email: string, name: stri
   return {
     id: newMusicId(), title: draft.title.trim(), ownerEmail: email, ownerName: name,
     description: draft.description?.trim() || '', originalLanguage: draft.originalLanguage.trim() || 'Français',
-    instruments: [], musicStyles: [], versions: [], files: [], timeSignature: '4/4',
+    instruments: [], musicStyles: [], versions: [], files: [],
     createdAt: now, updatedAt: now,
     // An idea begins without an imposed structure or invented duration.
     sections: [],

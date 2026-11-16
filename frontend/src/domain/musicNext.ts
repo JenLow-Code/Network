@@ -55,7 +55,7 @@ export function makeWorkingVersion(file:MusicProjectFile, ordinal:number):Workin
   const now=new Date().toISOString();
   return {
     id:newMusicId(),title:'Version '+ordinal,createdAt:now,updatedAt:now,
-    meter:'4/4',tracks:[makeWorkingTrack(file)],
+    tracks:[makeWorkingTrack(file)],
   };
 }
 export function makeWorkingTrack(file:MusicProjectFile):WorkingMusicTrack {

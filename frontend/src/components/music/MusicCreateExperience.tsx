@@ -260,7 +260,8 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
                     ' · '+formatMusicDuration(source.durationSeconds):''}
                 </Text>
               </Pressable>
-              {tiny('volume-mute-outline','Silencieux '+track.title,()=>
+              {tiny(track.muted?'volume-mute-outline':'volume-high-outline',
+                'Couper ou réactiver '+track.title,()=>
                 editTracks(version.tracks.map(t=>t.id===track.id?{...t,muted:!t.muted}:t)),track.muted)}
               {tiny('headset-outline','Solo '+track.title,()=>
                 editTracks(version.tracks.map(t=>t.id===track.id?{...t,solo:!t.solo}:t)),track.solo)}
