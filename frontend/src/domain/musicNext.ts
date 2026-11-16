@@ -28,7 +28,26 @@ export type WorkingMusicVersion = {
 export type MusicNextState = {
   versions: WorkingMusicVersion[];
   activeVersionId?: string;
+  /** Undoable version edits; stored as metadata snapshots, never overwriting source audio. */
+  history?: {id:string; versionId:string; at:string; before:WorkingMusicVersion}[];
 };
+export function changeWorkingVersion(state:MusicNextState,updated:WorkingMusicVersion):MusicNextState {
+  const previous=state.versions.find(v=>v.id===updated.id);
+  if(!previous)return state;
+  return {...state,versions:state.versions.map(v=>v.id===updated.id?{
+    ...updated,updatedAt:new Date().toISOString(),
+  }:v),history:[...(state.history||[]),{
+    id:newMusicId(),versionId:previous.id,at:new Date().toISOString(),before:previous,
+  }]};
+}
+export function undoWorkingVersion(state:MusicNextState,versionId:string):MusicNextState {
+  const entries=state.history||[];
+  const index=entries.findLastIndex(e=>e.versionId===versionId);
+  if(index===-1)return state;
+  const entry=entries[index];
+  return {...state,versions:state.versions.map(v=>v.id===versionId?entry.before:v),
+    history:entries.filter((_,i)=>i!==index)};
+}
 export function musicNextState(project:MusicProject):MusicNextState {
   return project.musicNext || {versions:[]};
 }
