@@ -19,9 +19,6 @@ import { TopActions } from '@/components/navigation/TopActions';
 import { useApp } from '@/context/AppContext';
 import { colors as c } from '@/theme/colors';
 import { useDreams } from '@/domain/dreamRepository';
-import { api } from '@/lib/api/client';
-import { useAppTheme } from '@/theme/AppTheme';
-import { useMusicWorkspaces } from '@/domain/musicWorkspace';
 
 function ChatHeader({ name, subtitle }: { name: string; subtitle: string }) {
   return (
@@ -215,140 +212,6 @@ function PersonChat({
     </SafeAreaView>
   );
 }
-type MusicChatMessage = {
-  id: string; body: string | null; sentAt: string; mine: boolean;
-  sender?: { displayName?: string } | null;
-  musicSection?: {id:string;title:string}|null;
-};
-
-/** Shared, server-backed chat. Unlike draft notes, these messages reach other members. */
-function MusicSharedConversation({ conversationId }: { conversationId: string }) {
-  const theme = useAppTheme();
-  const {sectionId,sectionTitle,projectId} = useLocalSearchParams<{
-    sectionId?:string;sectionTitle?:string;projectId?:string;
-  }>();
-  const workspaces=useMusicWorkspaces();
-  const [contextId,setContextId] = useState(sectionId||'');
-  const [contextTitle,setContextTitle] = useState(sectionTitle||'');
-  const [title,setTitle] = useState('Discussion du morceau');
-  const [items,setItems] = useState<MusicChatMessage[]>([]);
-  const [input,setInput] = useState('');
-  const [error,setError] = useState('');
-  const [busy,setBusy] = useState(false);
-  const [loading,setLoading] = useState(true);
-  const reload = async () => {
-    const result = await api<{ items:MusicChatMessage[] }>(
-      '/api/conversations/' + encodeURIComponent(conversationId) + '/messages?limit=100',
-      {auth:'required'});
-    setItems((result.items || []).slice().reverse());
-  };
-  useEffect(() => {
-    let active = true;
-    setLoading(true); setError('');
-    void Promise.all([
-      api<{conversation:{title?:string}}>('/api/conversations/' +
-        encodeURIComponent(conversationId),{auth:'required'}),
-      api<{items:MusicChatMessage[]}>('/api/conversations/' +
-        encodeURIComponent(conversationId) + '/messages?limit=100',{auth:'required'}),
-    ]).then(([detail, messages]) => {
-      if (!active) return;
-      setTitle(detail.conversation.title || 'Discussion du morceau');
-      setItems((messages.items || []).slice().reverse());
-    }).catch(e => {
-      if (active) setError(e instanceof Error ? e.message : 'Discussion inaccessible.');
-    }).finally(() => {if(active)setLoading(false);});
-    return()=>{active=false;};
-  },[conversationId]);
-  const sendMessage = async () => {
-    if (!input.trim() || busy) return;
-    setBusy(true);setError('');
-    const body = input.trim();
-    try {
-      await api('/api/conversations/' + encodeURIComponent(conversationId) + '/messages',{
-        method:'POST',auth:'required',body:{
-          type:'text',body,clientMessageId:'music-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),
-          ...(contextId&&contextTitle?{musicSectionId:contextId,musicSectionTitle:contextTitle}:{}),
-        },
-      });
-      setInput('');
-      setContextId('');setContextTitle('');
-      await reload();
-    } catch(e) { setError(e instanceof Error?e.message:'Envoi impossible.'); }
-    finally{setBusy(false);}
-  };
-  return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
-    <View style={{flexDirection:'row',alignItems:'center',gap:12,padding:16,
-      borderBottomWidth:1,borderColor:theme.border}}>
-      <Pressable onPress={()=>router.back()} accessibilityLabel="Retour">
-        <Ionicons name="arrow-back-outline" size={22} color={theme.foreground}/>
-      </Pressable>
-      <View style={{flex:1}}>
-        <Text style={{fontWeight:'700',fontSize:16,color:theme.foreground}}>{title}</Text>
-        <Text style={{color:theme.muted,fontSize:11}}>Conversation partagée des collaborateurs autorisés</Text>
-      </View>
-      <Pressable accessibilityRole="button" accessibilityLabel="Actualiser la discussion"
-        onPress={()=>{void reload().catch(e=>setError(e instanceof Error?e.message:'Chargement impossible.'));}}>
-        <Ionicons name="refresh-outline" size={20} color={theme.foreground}/>
-      </Pressable>
-    </View>
-    <ScrollView style={{flex:1}} contentContainerStyle={{padding:16,paddingBottom:30,gap:10}}>
-      {loading?<ActivityIndicator color="#CB245C"/>:null}
-      {!loading && !items.length?<Text style={{fontSize:12,color:theme.muted,textAlign:'center'}}>
-        Aucun message. La discussion commence ici.
-      </Text>:null}
-      {items.map(item=><View key={item.id} style={{alignSelf:item.mine?'flex-end':'flex-start',
-        backgroundColor:item.mine?'#CB245C':theme.surface,borderWidth:item.mine?0:1,
-        borderColor:theme.border,borderRadius:14,padding:12,maxWidth:'85%',gap:4}}>
-        {!item.mine?<Text style={{color:theme.muted,fontSize:11,fontWeight:'700'}}>
-          {item.sender?.displayName||'Membre'}
-        </Text>:null}
-        {item.musicSection?<Pressable accessibilityRole="button"
-          onPress={()=>{
-            const local=workspaces.items.find(p=>p.publishedId===conversationId.slice(6)||
-              p.versions.some(v=>v.publishedId===conversationId.slice(6)));
-            if(local && local.sections.some(x=>x.id===item.musicSection!.id))
-              router.push({pathname:'/music-workspace/[id]',params:{
-                id:local.id,sectionId:item.musicSection!.id,
-              }});
-          }} style={{paddingVertical:5,paddingHorizontal:8,borderRadius:8,
-            backgroundColor:item.mine?'rgba(255,255,255,.18)':(theme.dark?'#3B2D38':'#F9E8F0'),
-            alignSelf:'flex-start',flexDirection:'row',alignItems:'center',gap:5}}>
-          <Ionicons name="return-down-forward-outline" size={13}
-            color={item.mine?'#fff':'#CB245C'}/>
-          <Text style={{fontSize:11,fontWeight:'700',color:item.mine?'#fff':'#CB245C'}}>
-            {item.musicSection.title}
-          </Text>
-        </Pressable>:null}
-        <Text style={{color:item.mine?'#fff':theme.foreground,fontSize:13,lineHeight:19}}>
-          {item.body||'Message indisponible'}
-        </Text>
-      </View>)}
-      {error?<Text style={{color:'#B44F63',fontSize:12}}>{error}</Text>:null}
-    </ScrollView>
-    {contextId&&contextTitle?<View style={{flexDirection:'row',alignItems:'center',gap:9,
-      borderTopWidth:1,borderColor:theme.border,paddingHorizontal:14,paddingVertical:7}}>
-      <Ionicons name="return-down-forward-outline" color="#CB245C" size={17}/>
-      <Text style={{color:theme.foreground,fontSize:12,flex:1}}>
-        Référence : {contextTitle}
-      </Text>
-      <Pressable accessibilityLabel="Retirer la référence"
-        onPress={()=>{setContextId('');setContextTitle('');}}>
-        <Ionicons name="close" color={theme.muted} size={19}/>
-      </Pressable>
-    </View>:null}
-    <View style={{padding:12,gap:8,flexDirection:'row',alignItems:'center',
-      borderTopWidth:1,borderColor:theme.border}}>
-      <TextInput value={input} onChangeText={setInput}
-        placeholder="Un message pour ce morceau…" style={{flex:1,borderRadius:10,
-          padding:12,backgroundColor:theme.surface,color:theme.foreground}}/>
-      <Pressable disabled={busy||!input.trim()} onPress={()=>{void sendMessage();}}
-        accessibilityLabel="Envoyer"><Ionicons name="send" size={23}
-        color={busy?'#888':'#CB245C'}/></Pressable>
-    </View>
-    <Nav/>
-  </SafeAreaView>;
-}
-
 function DreamConversation({ dreamId }: { dreamId: string }) {
  const { items, patch } = useDreams();
  const dream = items.find(d => d.id === dreamId);
@@ -381,9 +244,7 @@ export default function Chat() {
     sharedId?: string;
     draft?: string;
   }>();
-  return id?.startsWith('dream-') ? <DreamConversation dreamId={id.slice(6)}/> : id?.startsWith('music-') ? (
-    <MusicSharedConversation conversationId={id}/>
-  ) : id === 'system' ? (
+  return id?.startsWith('dream-') ? <DreamConversation dreamId={id.slice(6)}/> : id === 'system' ? (
     <SystemChat />
   ) : (
     <PersonChat teacher={id === 'teacher'} recipient={recipient} sharedId={sharedId} draft={draft} />

@@ -10,10 +10,9 @@ function TalentCounts({handle}: {handle:string}) {
   if(state!=='ready'||!profile)return null;
   // Public feed is paged: do not present its first page as a lifetime total.
   const dreams=posts.filter(p=>p.type==='dream').length;
-  const songs=posts.filter(p=>p.type==='music').length;
   const talents=profile.talents.length;
   return <Text numberOfLines={2} style={{fontSize:10,color:'#EDE8E4',lineHeight:15}}>
-    {dreams} rêves · {songs} chants · {talents} talents visibles
+    {dreams} rêves · {talents} talents visibles
   </Text>;
 }
 
@@ -28,15 +27,14 @@ export default function SemencePublicationCover({
  const gradientId='semencePublicationFade'+React.useId().replace(/[^A-Za-z0-9]/g,'');
  const {item,state}=usePublication(publicationId.trim()||undefined);
  const talent=item?.type==='talent'||fallbackType==='talent';
- const remoteArtwork=talent?item?.avatar:
-   item?.type==='music'?(item.coverArt||item.image):item?.image;
+ const remoteArtwork=talent?item?.avatar:item?.image;
  const artwork=remoteArtwork||fallbackImage||'';
  const hasArt=!!artwork;
  const title=item?.type==='talent'?item.author:
    item?.title||fallbackTitle||'Publication';
- const category=item?.type==='dream'?'RÊVE':item?.type==='music'?'MUSIQUE':
+ const category=item?.type==='dream'?'RÊVE':
    item?.type==='bible'?'BIBLE':talent?'PROFIL':
-   fallbackType==='music'?'MUSIQUE':fallbackType==='dream'?'RÊVE':
+   fallbackType==='dream'?'RÊVE':
    fallbackType==='bible'?'BIBLE':'PUBLICATION';
  const profileName=talent?(item?.author||fallbackTitle||''):'';
  const initials=profileName.split(/\s+/).slice(0,2)
