@@ -270,6 +270,17 @@ export function MusicSongElements({project,patch,sectionId,openSection}:Props){
           {items.length} élément{items.length>1?'s':''}
         </Text>
       </View>
+      <Pressable accessibilityRole="button" accessibilityLabel="Écrire une note"
+        onPress={()=>{
+          const id=newMusicId();
+          const noteNumber=files.filter(f=>f.kind==='note').length+1;
+          const note:MusicProjectFile={id,title:'Note '+noteNumber,kind:'note',
+            text:'',sectionIds:sectionId?[sectionId]:[],createdAt:new Date().toISOString()};
+          patch({files:[...files,note]});setExpanded('f:'+id);setAddMenu(false);
+        }}
+        style={{minWidth:39,minHeight:40,justifyContent:'center',alignItems:'center'}}>
+        <Ionicons name="create-outline" size={21} color={pink}/>
+      </Pressable>
       <Pressable accessibilityRole="button" onPress={()=>setAddMenu(!addMenu)}
         accessibilityLabel="Ajouter un fichier ou un enregistrement"
         style={{backgroundColor:pink,borderRadius:11,minWidth:42,minHeight:40,
