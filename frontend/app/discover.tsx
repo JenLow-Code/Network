@@ -69,7 +69,7 @@ export default function Discover() {
   // "Tout" view appended all talents *after* all dreams, undoing API interleaving.
   const shuffledFeed = useMemo(() =>
     feed.items
-      .filter(p => p.type !== 'music' && (p.type !== 'dream' || p.phase !== 'Rêve'))
+      .filter(p => p.type !== 'dream' || p.phase !== 'Rêve')
       .slice()
       .sort((a, b) => discoveryRank(a.id) - discoveryRank(b.id) || a.id.localeCompare(b.id)),
     [feed.items],
