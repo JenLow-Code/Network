@@ -70,3 +70,9 @@ export function isPlayableMusicFile(file:MusicProjectFile) {
 export function studioVersionSourceIds(project:MusicProject):Set<string> {
   return new Set(musicNextState(project).versions.flatMap(v=>v.tracks.map(t=>t.sourceFileId)));
 }
+
+/** MIDI can be part of a working version even before the playback renderer is available. */
+export function isMusicTrackCandidate(file:MusicProjectFile) {
+  return isPlayableMusicFile(file) ||
+    (/\\.(mid|midi)$/i.test(file.originalFilename||'')&&!!file.localFileId);
+}
