@@ -72,9 +72,11 @@ export default function NewMusic(){
     if(!id){setError('Création impossible sur cet appareil.');return;}
     patch(id,{
       ...(coverLocalId?{coverLocalId}:{}),
-      ...(audioId?{versions:[{
-        id:newMusicId(),title:'Version originale',localAudioId:audioId,durationSeconds:audioDuration,
-        createdAt:new Date().toISOString(),selectedForPublication:false,
+      ...(audioId?{files:[{
+        id:newMusicId(),title:fileName.replace(/\\.[^.]+$/,'')||'Première prise',
+        kind:'audio' as const,localFileId:audioId,originalFilename:fileName,
+        mimeType:/\\.m4a$/i.test(fileName)?'audio/mp4':'audio/webm',
+        sectionIds:[],durationSeconds:audioDuration,createdAt:new Date().toISOString(),
       }]}:{}),
     });
     router.replace({pathname:'/music-workspace/[id]',params:{id}});
