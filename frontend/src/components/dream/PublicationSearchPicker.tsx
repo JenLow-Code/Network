@@ -56,7 +56,7 @@ export default function PublicationSearchPicker({selectedId,onSelect,onManual,on
          <View style={{padding:12,gap:5}}>
            <Text numberOfLines={1} style={{fontSize:9,fontWeight:'700',
              letterSpacing:1,color:'#ECE5E3'}}>
-             {item.type==='dream'?'RÊVE':
+             {item.type==='dream'?'RÊVE':item.type==='music'?'MUSIQUE':
                item.type==='bible'?'BIBLE':'TALENT'}
            </Text>
            <Text numberOfLines={3} style={{fontSize:14,fontWeight:'700',

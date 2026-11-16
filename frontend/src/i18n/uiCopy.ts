@@ -181,6 +181,61 @@ export const copy: Record<string, [string, string, string, string]> = {
       'Nur in dieser Demo gespeichert. Keine echte Benachrichtigung wurde gesendet.',
       'Guardado apenas nesta demonstração. Não foi enviada uma notificação real.',
     ],
+  'Écouter, partager et proposer une collaboration.': [
+    'Écouter, partager et proposer une collaboration.',
+    'Listen, share and suggest a collaboration.',
+    'Anhören, teilen und Zusammenarbeit vorschlagen.',
+    'Ouvir, partilhar e propor uma colaboração.',
+  ],
+  'Partager une musique avec les crédits': [
+    'Partager une musique avec les crédits',
+    'Share music with credits',
+    'Musik mit Urheberangaben teilen',
+    'Partilhar música com créditos',
+  ],
+  'Musiques et collaborations': [
+    'Musiques et collaborations',
+    'Music and collaborations',
+    'Musik und Zusammenarbeit',
+    'Música e colaborações',
+  ],
+  'Aucun téléchargement public de chansons. Les adaptations seront gérées via des propositions créditées.':
+    [
+      'Aucun téléchargement public de chansons. Les adaptations seront gérées via des propositions créditées.',
+      'No public song downloads. Adaptations are submitted with proper credits.',
+      'Keine öffentlichen Musikdownloads. Bearbeitungen werden mit Urheberangaben eingereicht.',
+      'Sem downloads públicos de músicas. As adaptações são propostas com créditos.',
+    ],
+  'Proposer une adaptation': [
+    'Proposer une adaptation',
+    'Propose an adaptation',
+    'Bearbeitung vorschlagen',
+    'Propor uma adaptação',
+  ],
+  'Lien vers ton enregistrement (démo)': [
+    'Lien vers ton enregistrement (démo)',
+    'Link to your recording (demo)',
+    'Link zu deiner Aufnahme (Demo)',
+    'Link para a tua gravação (demonstração)',
+  ],
+  'Préparer la proposition': [
+    'Préparer la proposition',
+    'Prepare proposal',
+    'Vorschlag vorbereiten',
+    'Preparar proposta',
+  ],
+  'Décris les contributions et les artistes…': [
+    'Décris les contributions et les artistes…',
+    'Describe the contributions and artists…',
+    'Beschreibe die Beiträge und Künstler…',
+    'Descreve as contribuições e artistas…',
+  ],
+  'Music not found': [
+    'Music not found',
+    'Music not found',
+    'Musik nicht gefunden',
+    'Música não encontrada',
+  ],
   'Qui partage mon rêve ?': [
     'Qui partage mon rêve ?',
     'Who shares my Dream?',
@@ -266,6 +321,12 @@ export const copy: Record<string, [string, string, string, string]> = {
   Eglise: ['Eglise', 'Church', 'Gemeinde', 'Igreja'],
   'Mes pierres': ['Mes pierres', 'My Stones', 'Meine Steine', 'As minhas pedras'],
   'Se déconnecter': ['Se déconnecter', 'Sign out', 'Abmelden', 'Terminar sessão'],
+  'Partager une musique': [
+    'Partager une musique',
+    'Share music',
+    'Musik teilen',
+    'Partilhar música',
+  ],
   'Vérifier le brouillon': [
     'Vérifier le brouillon',
     'Review draft',

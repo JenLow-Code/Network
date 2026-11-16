@@ -96,6 +96,22 @@ export type BibleCard = Base & {
   viewer: ViewerState;
 };
 
+export type MusicCard = Base & {
+  type: 'music';
+  trackId: string;
+  title: string;
+  description: string | null;
+  songAuthor: string | null;
+  cover: MediaDTO | null;
+  durationMs: number | null;
+  playback: { available: boolean; url: string | null; appAsset: string | null; mimeType: string | null };
+  credits: { order: number; displayName: string; contribution: string; handle: string | null }[];
+  rights: { licenseType: string; attribution: string; adaptationsAllowed: boolean; reviewStatus: string; originalCreator: string; rightsHolder: string; sourceUrl: string | null };
+  originalTrackId: string | null;
+  downloadable: false;
+  viewer: ViewerState;
+};
+
 export type TalentCard = Base & {
   type: 'talent';
   talent: { id: string; name: string; slug: string | null; category: string };
@@ -114,6 +130,6 @@ export type TalentCard = Base & {
   viewer: ViewerState & { encouraged: boolean };
 };
 
-export type FeedItem = DreamCard | BibleCard | TalentCard;
+export type FeedItem = DreamCard | BibleCard | MusicCard | TalentCard;
 
 export type Page<T> = { items: T[]; nextCursor: string | null };

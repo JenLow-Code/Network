@@ -8,7 +8,7 @@ import { newId, parseJson } from '../lib/util';
  * `body`; text is rendered per reader locale at read time, so no language is baked into data.
  * Push and email delivery need provider credentials and are recorded as not configured.
  */
-export type NotificationCategory = 'dreams' | 'collaboration' | 'social' | 'messages' | 'agenda' | 'prayer' | 'safety';
+export type NotificationCategory = 'dreams' | 'collaboration' | 'music' | 'social' | 'messages' | 'agenda' | 'prayer' | 'safety';
 
 export type NotifyInput = {
   userId: string;
@@ -64,6 +64,10 @@ const FR: Catalog = {
   'dream.phase.changed': { title: 'Le rêve avance', body: '{dream} entre en {phase}.' },
   'dream.conversation.created': { title: 'Conversation du rêve ouverte', body: 'La conversation de {dream} est ouverte.' },
   'dream.inspired': { title: 'Un fruit est né', body: '{dream} a inspiré un nouveau rêve : {inspired}.' },
+  'music.proposal.received': { title: 'Nouvelle adaptation proposée', body: '{actor} propose une adaptation de {track}.' },
+  'music.proposal.accepted': { title: 'Adaptation acceptée', body: 'Ton adaptation de {track} a été acceptée.' },
+  'music.proposal.rejected': { title: 'Adaptation non retenue', body: 'Ton adaptation de {track} n’a pas été retenue.' },
+  'music.proposal.published': { title: 'Adaptation publiée', body: 'Ton adaptation de {track} est publiée avec tes crédits.' },
   'introduction.consent_requested': { title: 'Présentation proposée', body: '{actor} propose une mise en relation autour de {dream}.' },
   'introduction.connected': { title: 'Mise en relation acceptée', body: 'La conversation autour de {dream} est ouverte.' },
   'introduction.declined': { title: 'Mise en relation non aboutie', body: 'La présentation autour de {dream} n’a pas abouti.' },
@@ -96,6 +100,10 @@ const EN: Catalog = {
   'dream.phase.changed': { title: 'The dream moves forward', body: '{dream} enters {phase}.' },
   'dream.conversation.created': { title: 'Dream conversation opened', body: 'The conversation for {dream} is open.' },
   'dream.inspired': { title: 'A fruit was born', body: '{dream} inspired a new dream: {inspired}.' },
+  'music.proposal.received': { title: 'New adaptation proposed', body: '{actor} proposed an adaptation of {track}.' },
+  'music.proposal.accepted': { title: 'Adaptation accepted', body: 'Your adaptation of {track} was accepted.' },
+  'music.proposal.rejected': { title: 'Adaptation not selected', body: 'Your adaptation of {track} was not selected.' },
+  'music.proposal.published': { title: 'Adaptation published', body: 'Your adaptation of {track} is published with your credits.' },
   'introduction.consent_requested': { title: 'Introduction proposed', body: '{actor} proposed an introduction around {dream}.' },
   'introduction.connected': { title: 'Introduction accepted', body: 'The conversation around {dream} is open.' },
   'introduction.declined': { title: 'Introduction not completed', body: 'The introduction around {dream} did not go ahead.' },

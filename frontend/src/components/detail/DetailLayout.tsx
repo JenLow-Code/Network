@@ -22,16 +22,20 @@ export function DetailLayout({
   children,
   featured,
   headerIcon,
+  onCoverPress,
+  musicPlaying = false,
 }: {
   item: Publication;
   children: React.ReactNode;
   featured?: React.ReactNode;
   headerIcon?: React.ReactNode;
+  onCoverPress?: () => void;
+  musicPlaying?: boolean;
 }) {
   const theme = useAppTheme();
   const { from } = useLocalSearchParams<{ from?: string }>();
-  // The Fire list is a focused space; ordinary publication details keep related inspiration.
-  const showRelated = from !== 'fire';
+  // Music opened from Discovery keeps related inspiration. Only the Music tab and Fire list are focused spaces.
+  const showRelated = from !== 'music-tab' && from !== 'fire';
   // Related stories use the same source and editorial order as Discovery.
   // This prevents detail pages from silently falling back to an obsolete mock-only feed.
   const relatedFeed = useDiscovery();
@@ -66,10 +70,10 @@ export function DetailLayout({
 
         <View style={{ paddingHorizontal: 16 }}>
           <View style={{ position: 'relative', marginHorizontal: isFloraison ? -16 : 0 }}>
-          <DetailHero item={item} width={coverWidth} height={heroHeight} />
+          <DetailHero item={item} width={coverWidth} height={heroHeight} onMusicPress={onCoverPress} musicPlaying={musicPlaying} />
 
           <View style={{
-            paddingTop: item.type === 'dream' ? 0 : 22,
+            paddingTop: item.type === 'music' ? 4 : item.type === 'dream' ? 0 : 22,
             // Match the Germination detail controls to the talent tiles/title inset.
             paddingHorizontal: isFloraison
               ? (heroWidth < 440 ? 23 : 32) + 16

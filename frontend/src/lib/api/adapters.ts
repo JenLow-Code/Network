@@ -7,6 +7,7 @@ import type {
   BiblePublication,
   DreamPhase,
   DreamPublication,
+  MusicPublication,
   PersonPublication,
   Publication,
 } from '@/domain/publication';
@@ -17,7 +18,7 @@ type Need = { label: string; category: string; requiredLevelLabel: string | null
 
 export type ApiFeedItem = {
   id: string;
-  type: 'dream' | 'bible' | 'talent';
+  type: 'dream' | 'bible' | 'music' | 'talent';
   author: Author;
   createdAt: string | null;
   visibility: string;
@@ -41,8 +42,12 @@ export type ApiFeedItem = {
   excerpt?: string;
   caption?: string | null;
   image?: Media;
-  // talent
+  // music
   description?: string | null;
+  songAuthor?: string | null;
+  playback?: { url: string | null; appAsset: string | null };
+  lyrics?: { time: number; text: string }[];
+  // talent
   talent?: { name: string };
   levelLabel?: string | null;
   illustration?: string | null;
@@ -58,6 +63,8 @@ const PHASE: Record<NonNullable<ApiFeedItem['phase']>, DreamPhase> = {
   croissance: 'Croissance',
   floraison: 'Témoignage',
 };
+/** Demo audio bundled in the app (assets/audio). */
+const APP_AUDIO: Record<string, 0 | 1 | 2> = { 'pierre-01-douceur': 0, 'pierre-02-esperance': 1, 'pierre-03-lumiere': 2 };
 const ILLUSTRATIONS = new Set(['drums', 'cello', 'trumpet', 'acoustic-guitar', 'singing', 'bass', 'violin', 'saxophone', 'piano', 'double-bass', 'ukulele', 'electric-guitar', 'guitar', 'cavaquinho', 'viola', 'camera']);
 
 const base = (item: ApiFeedItem) => ({
@@ -119,6 +126,23 @@ export function toPublication(item: ApiFeedItem): Publication | null {
         imageAlt: ref.label,
       };
       return bible;
+    }
+    case 'music': {
+      const appAsset = item.playback?.appAsset ?? null;
+      const music: MusicPublication = {
+        ...base(item),
+        type: 'music',
+        title: item.title ?? '',
+        coverArt: url(item.cover) || undefined,
+        audioIndex: appAsset && APP_AUDIO[appAsset] !== undefined ? APP_AUDIO[appAsset] : 0,
+        audioUrl: appAsset ? undefined : item.playback?.url ?? undefined,
+        songAuthor: item.songAuthor || 'Auteur non renseigné',
+        lyrics: item.lyrics,
+        description: item.description ?? '',
+        image: url(item.cover),
+        imageAlt: item.title ?? '',
+      };
+      return music;
     }
     case 'talent': {
       const name = item.talent?.name ?? '';

@@ -31,7 +31,7 @@ async function membership(ctx: Ctx, conversationId: string, viewer: Viewer): Pro
   return { conv, me };
 }
 
-type MessageRow = { seq?: number; id: string; conversation_id: string; sender_id: string | null; message_type: string; body: string | null; publication_id: string | null; media_id: string | null; agenda_event_id: string | null; sent_at: string; edited_at: string | null; deleted_at: string | null; moderation_hidden_at: string | null; client_message_id: string | null };
+type MessageRow = { seq?: number; id: string; conversation_id: string; sender_id: string | null; message_type: string; body: string | null; publication_id: string | null; media_id: string | null; agenda_event_id: string | null; sent_at: string; edited_at: string | null; deleted_at: string | null; moderation_hidden_at: string | null; client_message_id: string | null; music_section_id?: string|null; music_section_title?: string|null };
 
 async function renderMessages(ctx: Ctx, viewer: Viewer, rows: MessageRow[]) {
   const people = await authorMap(ctx, rows.map(r => r.sender_id).filter((x): x is string => !!x));
@@ -48,6 +48,7 @@ async function renderMessages(ctx: Ctx, viewer: Viewer, rows: MessageRow[]) {
     out.push({
       id: m.id, conversationId: m.conversation_id, sender: m.sender_id ? people.get(m.sender_id) ?? null : null, type: m.message_type,
       body: removed ? null : m.body, removed, publication: shared, media: m.media_id ? media.get(m.media_id) ?? null : null, agendaEventId: removed ? null : m.agenda_event_id,
+      musicSection: removed || !m.music_section_id ? null : {id:m.music_section_id,title:m.music_section_title||'Partie du chant'},
       sentAt: iso(m.sent_at), editedAt: iso(m.edited_at), mine: m.sender_id === viewer.id, clientMessageId: m.sender_id === viewer.id ? m.client_message_id : null,
       reactions: reactions.filter(x => x.message_id === m.id).map(x => ({ reaction: x.reaction, count: x.n, mine: !!x.mine })),
     });
@@ -147,7 +148,12 @@ export function registerMessaging(r: Router): void {
     const mediaId = v.id('mediaId');
     const agendaEventId = v.id('agendaEventId');
     const clientMessageId = v.str('clientMessageId', { max: 80 });
+    const musicSectionId = v.str('musicSectionId', { max: 120 });
+    const musicSectionTitle = v.str('musicSectionTitle', { max: 120 });
     v.done();
+    if ((musicSectionId || musicSectionTitle) &&
+      (!conv.id.startsWith('music-') || type !== 'text' || !musicSectionId || !musicSectionTitle))
+      throw unprocessable('invalid_music_section_reference');
     if (type === 'text' && !body?.trim()) throw unprocessable('body_required');
     if (type === 'publication') {
       if (!publicationId) throw unprocessable('publication_required');
@@ -170,8 +176,9 @@ export function registerMessaging(r: Router): void {
     const now = sqlNowMs();
     const recipients = await ctx.sql.all<{ user_id: string }>('SELECT user_id FROM conversation_members WHERE conversation_id=? AND user_id<>? AND left_at IS NULL AND (muted_until IS NULL OR muted_until<?)', conv.id, viewer.id, now);
     await ctx.sql.batch([
-      ctx.sql.stmt('INSERT INTO messages(id,conversation_id,sender_id,message_type,body,publication_id,media_id,agenda_event_id,sent_at,client_message_id) VALUES(?,?,?,?,?,?,?,?,?,?)',
-        id, conv.id, viewer.id, type, body ?? null, publicationId ?? null, mediaId ?? null, agendaEventId ?? null, now, clientMessageId ?? null),
+      ctx.sql.stmt('INSERT INTO messages(id,conversation_id,sender_id,message_type,body,publication_id,media_id,agenda_event_id,sent_at,client_message_id,music_section_id,music_section_title) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)',
+        id, conv.id, viewer.id, type, body ?? null, publicationId ?? null, mediaId ?? null, agendaEventId ?? null, now, clientMessageId ?? null,
+        musicSectionId||null,musicSectionTitle||null),
       ctx.sql.stmt('UPDATE conversations SET last_message_at=? WHERE id=?', now, conv.id),
       ctx.sql.stmt('UPDATE conversation_members SET last_read_at=?,archived_at=NULL WHERE conversation_id=? AND user_id=?', now, conv.id, viewer.id),
       // One unread notification per conversation per recipient, not one per message.

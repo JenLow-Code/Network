@@ -18,7 +18,7 @@ const demoFeed: Publication[] = [...samplePublications, ...sampleTalents].filter
 );
 
 /**
- * Interleave the D1-backed demo dreams with Scripture and talent previews.
+ * Interleave the D1-backed demo dreams with music, Scripture and talent previews.
  * Stable order (no random shuffling) keeps the masonry layout predictable.
  */
 function interleaveEditorial(dreams: Publication[], editorial: Publication[]): Publication[] {
@@ -68,7 +68,7 @@ export function useDiscovery(params: { type?: string; q?: string } = {}) {
     try {
       if (betaDiscovery) {
         const remote = await fetchDemoDiscovery();
-        // Bible and Talent are visibly demo previews; D1 currently has only dream data.
+        // Music, Bible and Talent are visibly demo previews; D1 currently has only dream data.
         const demoEditorial = demoFeed.filter(p => p.type !== 'dream');
         const mixed = interleaveEditorial(remote, demoEditorial).filter(p =>
           (!params.type || p.type === params.type) &&

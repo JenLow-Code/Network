@@ -1,13 +1,15 @@
 /**
  * JenLow Network demo publications (mock data).
  *
- * A publication has exactly one content type: a Dream, Bible reference or talent. Photos are illustrative Unsplash images.
+ * A publication has exactly one content type: a Dream, a Music recording,
+ * or a Bible image/reference. Photos are illustrative Unsplash images.
  * A shared Bible image can later be populated by the native share-in extension.
  */
 import type {
   Publication,
   PersonPublication,
   DreamPublication,
+  MusicPublication,
   BiblePublication,
 } from '@/domain/publication';
 
@@ -47,6 +49,17 @@ export const publications: Publication[] = [
     imageAlt: 'Bookshelves in a library',
   },
   {
+    id: 'premier-chant',
+    type: 'music',
+    title: 'Mon premier morceau',
+    author: 'David',
+    songAuthor: 'Auteur non renseigné',
+    audioIndex: 0,
+    description: 'Un premier essai partagé pour encourager les autres à se lancer.',
+    image: 'https://images.unsplash.com/photo-1520523839897-bd0b52f945a0?w=900&q=82',
+    imageAlt: 'Piano keyboard',
+  },
+  {
     id: 'jardin',
     type: 'dream',
     title: 'Un jardin pour accueillir',
@@ -62,6 +75,17 @@ export const publications: Publication[] = [
     needs: ['Jardinage', 'Entraide'],
     image: 'https://images.unsplash.com/photo-1490750967868-88aa4486c946?w=900&q=82',
     imageAlt: 'Colourful flowers in a garden',
+  },
+  {
+    id: 'espoir',
+    type: 'music',
+    title: 'Espérance',
+    author: 'Helena',
+    songAuthor: 'Auteur non renseigné',
+    audioIndex: 1,
+    description: 'Une mélodie instrumentale en cours de création.',
+    image: 'https://images.unsplash.com/photo-1516280440614-37939bbacd81?w=900&q=82',
+    imageAlt: 'Musician performing',
   },
   {
     id: 'ensemble',
@@ -90,6 +114,17 @@ export const publications: Publication[] = [
     highlightedVerse: 1,
     image: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=900&q=82',
     imageAlt: 'Sunlight in the forest',
+  },
+  {
+    id: 'lumiere',
+    type: 'music',
+    title: 'Lumière',
+    author: 'Mila',
+    songAuthor: 'Auteur non renseigné',
+    audioIndex: 2,
+    description: 'Une petite idée musicale, encore imparfaite mais partagée.',
+    image: 'https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=900&q=82',
+    imageAlt: 'Music recording studio',
   },
   {
     id: 'photos',
@@ -154,6 +189,7 @@ export const personPublications: PersonPublication[] = [
   },
 ];
 export const dreams = publications.filter((p): p is DreamPublication => p.type === 'dream');
+export const musics = publications.filter((p): p is MusicPublication => p.type === 'music');
 export const biblePosts = publications.filter((p): p is BiblePublication => p.type === 'bible');
 export const findPublication = (id: string) => publications.find(item => item.id === id);
 export const verseText = 'Que tout ce qui respire loue l’Éternel ! Louez l’Éternel !';

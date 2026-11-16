@@ -140,3 +140,8 @@ export const BIBLE = [
   { id: 'psaume-150-6', owner: '01', verse: 6, photo: 'library' as PhotoKey, caption: 'Le verset que je garde avant chaque répétition.' },
   { id: 'psaume-150-1', owner: '08', verse: 1, photo: 'forest' as PhotoKey, caption: null },
 ];
+export const MUSIC = [
+  { id: 'douceur', owner: '04', title: 'Douceur', asset: 'pierre-01-douceur', photo: 'piano' as PhotoKey, description: 'Un premier essai partagé pour encourager les autres à se lancer.' },
+  { id: 'esperance', owner: '09', title: 'Espérance', asset: 'pierre-02-esperance', photo: 'perform' as PhotoKey, description: 'Une mélodie instrumentale en cours de création.' },
+  { id: 'lumiere', owner: '02', title: 'Lumière', asset: 'pierre-03-lumiere', photo: 'studio' as PhotoKey, description: 'Une petite idée musicale, encore imparfaite mais partagée.' },
+];

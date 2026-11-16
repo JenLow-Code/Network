@@ -174,7 +174,7 @@ test('Fire, prayer and shares: undo paths, folder rename/delete, talent prayers,
   assert.equal((await app.call('POST', `/api/publications/demo-pub-dream-01-1/shares`, { token: u.token, body: { channel: 'external' } })).body.error.code, 'action_not_allowed', 'Semence is not shared externally');
 });
 
-test('talents: sample removal, encouragement undo, and showcase removal', async () => {
+test('talents and music: removals, encouragement undo, music hub, detail, edit, delete, inspired Dream, proposal lists/reject/submit/withdraw', async () => {
   const app = createApp();
   const pub = await app.register('Publisher'), prop = await app.register('Proposer');
   const drums = (await app.call('GET', '/api/talents?category=music')).body.items.find((t: any) => t.name === 'Batterie').id;
@@ -187,6 +187,28 @@ test('talents: sample removal, encouragement undo, and showcase removal', async 
   ok(await app.call('DELETE', `/api/talent-posts/${showcase}/encouragements`, { token: prop.token }));
   ok(await app.call('DELETE', `/api/me/talents/${drums}`, { token: pub.token }));
   assert.equal((await app.call('GET', `/api/talent-posts/${showcase}`)).status, 404);
+  // Music
+  const audio = await upload(app, pub.token, 'music_audio', 'audio/wav', wav());
+  const t = await app.call('POST', '/api/music', { token: pub.token, body: { title: 'Psaume du soir', audioMediaId: audio, rightsConfirmed: true, credits: [{ displayName: 'Publisher', contribution: 'Voix' }], rights: { originalCreatorName: 'Publisher', rightsHolderName: 'Publisher', licenseType: 'own_work', attributionText: '© Publisher' } } });
+  const id = t.body.item.id;
+  assert.equal((await app.call('GET', '/api/music')).body.items[0].id, id);
+  ok(await app.call('PATCH', `/api/music/${id}`, { token: pub.token, body: { description: 'Version guitare-voix', lyrics: [{ time: 0, text: 'Le soir tombe' }] } }));
+  assert.equal((await app.call('GET', `/api/music/${id}`)).body.item.lyrics[0].text, 'Le soir tombe');
+  ok(await app.call('POST', `/api/music/${id}/inspired-dreams`, { token: prop.token, body: { title: 'Écrire mon propre psaume' } }), 201);
+  const pa = await upload(app, prop.token, 'music_proposal', 'audio/wav', wav());
+  const draft = await app.call('POST', `/api/music/${id}/proposals`, { token: prop.token, body: { description: 'Harmonies', audioMediaId: pa, submit: false, credits: [{ displayName: 'Proposer', contribution: 'Chœurs' }] } });
+  assert.equal(draft.body.proposal.status, 'draft');
+  assert.equal((await app.call('GET', `/api/music/${id}/proposals`, { token: pub.token })).body.items.length, 0, 'drafts are private to the proposer');
+  ok(await app.call('POST', `/api/music-proposals/${draft.body.proposal.id}/submit`, { token: prop.token }));
+  assert.equal((await app.call('GET', '/api/me/music-proposals?role=received', { token: pub.token })).body.items.length, 1);
+  assert.equal((await app.call('GET', '/api/me/music-proposals?role=sent', { token: prop.token })).body.items[0].credits[0].displayName, 'Proposer');
+  assert.ok((await app.call('GET', `/api/music-proposals/${draft.body.proposal.id}/playback`, { token: pub.token })).body.url);
+  ok(await app.call('POST', `/api/music-proposals/${draft.body.proposal.id}/reject`, { token: pub.token, body: { response: 'Merci, pas cette fois.' } }));
+  const second = await app.call('POST', `/api/music/${id}/proposals`, { token: prop.token, body: { description: 'Autre idée', audioMediaId: pa, credits: [{ displayName: 'Proposer', contribution: 'Basse' }] } });
+  ok(await app.call('POST', `/api/music-proposals/${second.body.proposal.id}/withdraw`, { token: prop.token }));
+  assert.equal((await app.call('GET', `/api/music/${id}/proposals`, { token: prop.token })).body.items.length, 2);
+  ok(await app.call('DELETE', `/api/music/${id}`, { token: pub.token }));
+  assert.equal((await app.call('GET', `/api/music/${id}`)).status, 404);
 });
 
 test('Bible reads and share-intent reject', async () => {

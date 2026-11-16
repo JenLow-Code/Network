@@ -578,7 +578,8 @@ export default function SemenceInspirations({dream,editable,onShareInspiration,a
             {draft&&picker==='publication'?<PublicationSearchPicker
               selectedId={draft.content}
               onManual={content=>patchBlock({content})}
-              onSelect={item=>{const image=item.type==='talent'?item.avatar:item.image;
+              onSelect={item=>{const image=item.type==='talent'?item.avatar:
+                item.type==='music'?(item.coverArt||item.image):item.image;
                 if(item.type==='talent'&&item.authorHandle){
                   patchBlock({kind:'profile-ref',content:item.authorHandle,
                     title:item.author,media:image?[image]:[],icon:undefined});

@@ -20,9 +20,11 @@ export function ActionRail({ item, horizontal = false, labeledFooter = false }: 
 
   const sharePath = item.type === 'dream'
     ? '/dream/' + encodeURIComponent(item.id)
-    : item.type === 'talent'
-      ? '/person/' + encodeURIComponent(item.author)
-      : '/bible/' + encodeURIComponent(item.referenceId) + '?verse=' + item.highlightedVerse;
+    : item.type === 'music'
+      ? '/music/' + encodeURIComponent(item.id)
+      : item.type === 'talent'
+        ? '/person/' + encodeURIComponent(item.author)
+        : '/bible/' + encodeURIComponent(item.referenceId) + '?verse=' + item.highlightedVerse;
   const share = () => {
     // Semence can be shared by its exact link, without appearing in Discovery.
     // Backend visibility rules must separately enforce unlisted access.

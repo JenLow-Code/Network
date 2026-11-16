@@ -20,9 +20,11 @@ export function DreamReactionRail({ item }: { item: Publication }) {
   const share = () => {
     const route = item.type === 'dream'
       ? '/dream/' + encodeURIComponent(item.id)
-      : item.type === 'talent'
-        ? '/person/' + encodeURIComponent(item.source === 'api' ? item.id : item.author)
-        : '/bible/' + encodeURIComponent(item.referenceId) + '?verse=' + item.highlightedVerse + (item.source === 'api' ? '&id=' + encodeURIComponent(item.id) : '');
+      : item.type === 'music'
+        ? '/music/' + encodeURIComponent(item.id)
+        : item.type === 'talent'
+          ? '/person/' + encodeURIComponent(item.source === 'api' ? item.id : item.author)
+          : '/bible/' + encodeURIComponent(item.referenceId) + '?verse=' + item.highlightedVerse + (item.source === 'api' ? '&id=' + encodeURIComponent(item.id) : '');
     const url = 'https://network.jenlow.net' + route;
     void Share.share({ message: item.title + ' — JenLow Network\n' + url });
   };

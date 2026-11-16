@@ -1,7 +1,8 @@
 import React, { useId } from 'react';
 import { Image, Platform, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
+import Svg, { ClipPath, Defs, G, Image as SvgImage, LinearGradient, Rect, Stop } from 'react-native-svg';
+import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import { router } from 'expo-router';
 import type { Publication } from '@/domain/publication';
 import { PHASE_LABELS } from '@/domain/publication';
@@ -9,12 +10,21 @@ import { DreamPhaseIcon } from '@/icons/DreamPhaseIcon';
 import { TalentArt } from '@/components/talent/TalentArt';
 import { useAppTheme } from '@/theme/AppTheme';
 import { verseExcerpt } from '@/mocks/publications';
+import { approvedCassetteImage } from '@/assets/approvedCassette';
 import { HANDWRITING_FAMILY } from '@/theme/handwriting';
 import { DreamPhaseCard } from '@/components/publication/DreamPhaseCard';
+
+const audio = [
+  require('../../../assets/audio/pierre-01-douceur.wav'),
+  require('../../../assets/audio/pierre-02-esperance.wav'),
+  require('../../../assets/audio/pierre-03-lumiere.wav'),
+];
 
 export const publicationPath = (p: Publication) =>
   p.type === 'dream'
     ? ({ pathname: '/dream/[id]', params: { id: p.id } } as const)
+    : p.type === 'music'
+      ? ({ pathname: '/music/[id]', params: { id: p.id } } as const)
       : p.type === 'talent'
         ? ({ pathname: '/person/[name]', params: { name: p.source === 'api' ? p.id : p.author } } as const)
         : ({
@@ -36,11 +46,156 @@ function category(item: Publication): string {
   switch (item.type) {
     case 'dream':
       return PHASE_LABELS[item.phase];
+    case 'music':
+      return 'Musique';
     case 'bible':
       return item.reference;
     case 'talent':
       return item.skill;
   }
+}
+
+function MusicPlayback({ index, uri, size = 42 }: { index: 0 | 1 | 2; uri?: string; size?: number }) {
+  const player = useAudioPlayer(uri ? { uri } : audio[index]);
+  const status = useAudioPlayerStatus(player);
+  const toggle = () => {
+    if (status.playing) player.pause();
+    else {
+      if (status.didJustFinish) void player.seekTo(0);
+      player.play();
+    }
+  };
+
+  return (
+    <Pressable
+      onPress={toggle}
+      accessibilityRole="button"
+      accessibilityLabel={status.playing ? 'Pause sample' : 'Play 8 second sample'}
+      style={[styles.playButton, { width: size, height: size, borderRadius: size / 2 }]}
+    >
+      <Ionicons name={status.playing ? 'pause' : 'play'} size={Math.round(size * 0.50)} color="#FFFFFF" />
+    </Pressable>
+  );
+}
+
+/** Sibling audio control: never nest a button inside the story's Pressable on web. */
+function AudioCorner({ item, width, height }: { item: Publication; width: number; height: number }) {
+  if (item.type !== 'music') return null;
+  // Center the control on the tape reels, below the handwritten title strip.
+  const size = Math.min(42, Math.max(31, width * 0.20));
+  const tiny = width < 225;
+  return (
+    <View style={{
+      position: 'absolute', zIndex: 5,
+      left: (width - size) / 2,
+      top: (height - size) / 2 + (tiny ? 7 : 11),
+    }}>
+      <MusicPlayback index={item.audioIndex} uri={item.audioUrl} size={size} />
+    </View>
+  );
+}
+
+
+
+/**
+ * One reusable photographed cassette, not a screenshot of an entire card.
+ *
+ * Crop the approved image down to its REAL cassette housing: this excludes
+ * both the baked-in MUSIQUE heading and the fake play icon. A blank paper
+ * label is laid over the original printed one, with the mechanism restored
+ * above the user's album image so it stays visibly a cassette.
+ *
+ * Title, artist and cover artwork all come from the publication data.
+ */
+export function CassetteArtwork({
+  width,
+  height,
+  title,
+  artwork,
+  transparent = false,
+}: {
+  width: number;
+  height: number;
+  title: string;
+  artwork?: string;
+  transparent?: boolean;
+}) {
+  const theme = useAppTheme();
+  const cassetteId = useId().replace(/[^A-Za-z0-9_-]/g, '');
+  const clipId = 'cassette-' + cassetteId;
+  const reelId = 'reels-' + cassetteId;
+  const tiny = width < 225;
+  const cassetteWidth = Math.min(width * (tiny ? 0.86 : 0.74), height * 1.30, 340);
+  const cassetteHeight = cassetteWidth * (255 / 420);
+
+  return (
+    <View style={[styles.musicCanvas, { width, height, backgroundColor: transparent ? 'transparent' : theme.dark ? '#2C2D33' : '#F0EAE0' }]}>
+      <View style={{ width: cassetteWidth, height: cassetteHeight, position: 'relative', transform: [{ translateY: tiny ? 7 : 11 }] }}>
+        <Svg width="100%" height="100%" viewBox="0 0 420 255">
+          <Defs>
+            <ClipPath id={clipId}>
+              <Rect x={2} y={2} width={415} height={250} rx={11} />
+            </ClipPath>
+            <ClipPath id={reelId}>
+              <Rect x={94} y={90} width={227} height={68} rx={12} />
+            </ClipPath>
+          </Defs>
+          <G clipPath={'url(#' + clipId + ')'}>
+            {/* 480x331 original: the actual shell starts around x=33, y=69. */}
+            <SvgImage href={approvedCassetteImage} x={-33} y={-69} width={480} height={331} />
+            {/* Neutral, reusable cassette label. No fixed title, author or album art. */}
+            <Rect x={29} y={31} width={359} height={120} fill="#F2E7D8" />
+            <Rect x={29} y={145} width={359} height={21} fill="#C9847C" />
+            {artwork && (
+              <SvgImage
+                href={artwork}
+                x={45}
+                y={51}
+                width={72}
+                height={94}
+                preserveAspectRatio="xMidYMid slice"
+              />
+            )}
+            {/* The photographed tape mechanism sits in front of the label. */}
+            <SvgImage
+              href={approvedCassetteImage}
+              x={-33}
+              y={-69}
+              width={480}
+              height={331}
+              clipPath={'url(#' + reelId + ')'}
+            />
+          </G>
+        </Svg>
+        <View
+          pointerEvents="none"
+          style={{
+            position: 'absolute',
+            left: '34%',
+            top: '13%',
+            right: '9%',
+            height: '24%',
+            justifyContent: 'center',
+          }}
+        >
+          <Text
+            adjustsFontSizeToFit
+            minimumFontScale={0.65}
+            numberOfLines={2}
+            style={{
+              fontFamily: HANDWRITING_FAMILY,
+              color: '#28231F',
+              fontSize: tiny ? 13 : cassetteWidth < 280 ? 17 : 21,
+              lineHeight: tiny ? 14 : cassetteWidth < 280 ? 18 : 22,
+            }}
+          >
+            {title}
+          </Text>
+          <View style={{ height: 1, backgroundColor: '#8F8276', opacity: 0.75, marginTop: 2 }} />
+        </View>
+      </View>
+    </View>
+  );
 }
 
 export function BibleVerseCard({
@@ -139,7 +294,8 @@ function StoryCover({
   }
   const isTalent = item.type === 'talent';
   const isBible = item.type === 'bible';
-  const illustrated = isTalent || isBible;
+  const isMusic = item.type === 'music';
+  const illustrated = isTalent || isBible || isMusic;
   const ink = illustrated ? (theme.dark ? '#ECE7E1' : '#26211D') : '#FFFFFF';
   const small = scale === 'small';
   const inset = small ? (width < 205 ? 13 : 17) : scale === 'wide' ? 24 : 21;
@@ -197,6 +353,13 @@ function StoryCover({
             </View>
           ) : isBible ? (
             <BibleVerseCard item={item} width={width} height={height} adaptive={adaptive} showReference={false} />
+          ) : isMusic ? (
+            <CassetteArtwork
+              width={width}
+              height={height}
+              title={item.title}
+              artwork={item.coverArt || item.image}
+            />
           ) : null}
         </View>
         {!illustrated && (
@@ -255,6 +418,8 @@ function StoryCover({
           </View>
         )}
       </Pressable>
+      {/* Audio control remains an independent sibling, never a nested button. */}
+      <AudioCorner item={item} width={width} height={height} />
     </View>
   );
 }
@@ -353,6 +518,7 @@ function adaptiveTileHeight(item: Publication, width: number): number {
     // Room for the phase badge, readable title, and photography.
     return Math.max(Math.round(width * 1.08), 98 + lines * (fontSize + 6));
   }
+  if (item.type === 'music') return Math.max(184, Math.round(width * 1.12));
   return Math.max(190, Math.round(width * 1.17));
 }
 
@@ -620,6 +786,8 @@ export function ProfilePublicationFeed({
 }
 
 const styles = StyleSheet.create({
+  musicCanvas: { backgroundColor: '#F0EAE0', alignItems: 'center', justifyContent: 'center' },
+  musicKicker: { position: 'absolute', fontWeight: '600', letterSpacing: 1.1, color: '#34302B' },
   bibleReference: { fontWeight: '600', letterSpacing: 1.2, color: '#6B625B' },
   storyLink: { width: '100%', height: '100%', overflow: 'hidden', position: 'relative' },
   photoFrame: { ...StyleSheet.absoluteFill, overflow: 'hidden' },
@@ -641,5 +809,14 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,252,245,0.93)',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  audioCorner: { position: 'absolute', top: 9, right: 9, zIndex: 4 },
+  playButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: 'rgba(0,0,0,0.63)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

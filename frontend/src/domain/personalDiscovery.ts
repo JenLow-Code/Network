@@ -51,5 +51,8 @@ export function matchesForMe(item: Publication, talents: SavedTalent[]): boolean
     // The owner explicitly wants tandem/teacher/learner relationships, not a generic profile.
     return item.seeking.length > 0 && requestedSkillMatches(item.skill, talents);
   }
+  if (item.type === 'music') {
+    return (item.requestedTalents || []).some(request => requestedSkillMatches(request, talents));
+  }
   return false;
 }
