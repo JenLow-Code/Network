@@ -1,558 +1,351 @@
-import React,{useMemo,useState} from 'react';
-import {Linking,Platform,Pressable,ScrollView,Text,TextInput,View} from 'react-native';
+import React,{useEffect,useMemo,useState} from 'react';
+import {Platform,Pressable,Text,TextInput,View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {useAppTheme} from '@/theme/AppTheme';
 import {MusicAudioCapture} from './MusicAudioCapture';
 import {MusicAudioPreview} from './MusicAudioPreview';
+import {MusicFileViewer} from './MusicFileViewer';
 import {MusicVersionsSection} from './MusicVersionsSection';
-import {MusicOwnerProposals} from './MusicOwnerProposals';
-import {TalentLevelSelector} from '@/components/talent/TalentLevelSelector';
-import {TranslatorLanguageFields} from '@/components/talent/TranslatorLanguageFields';
-import {chooseMusicFile} from '@/domain/musicMedia';
-import {getDraftAttachment} from '@/domain/musicLocalStorage';
-import {importSongFile,classifySongFile,matchesMusicSection,lyricsForMusicSection,lyricStanzas} from '@/domain/musicImportedFiles';
-import {fileAudioDuration,formatMusicDuration} from '@/domain/musicProjectSelectors';
+import {MusicMissingTalentAction} from './MusicMissingTalentAction';
+import {importSongFile,classifySongFile} from '@/domain/musicImportedFiles';
+import {formatMusicDuration} from '@/domain/musicProjectSelectors';
+import {api} from '@/lib/api/client';
 import {newMusicId} from '@/domain/musicWorkspace';
-import type {
-  MusicProject,MusicProjectFile,MusicNeed,MusicSuggestion,MusicLyric,
-} from '@/domain/musicWorkspace';
+import type {MusicProject,MusicProjectFile,MusicNeed,MusicSuggestion} from '@/domain/musicWorkspace';
 
-type Kind=MusicProjectFile['kind']|'version'|'proposal'|'talent'|'style';
-type Element = {key:string;id:string;kind:Kind;name:string;subtitle:string;
-  scopeIds:string[];origin:'file'|'version'|'need'|'suggestion'|'layer'|'lyric'|'score'|'note'|'remote'};
 type Props={project:MusicProject;patch:(change:Partial<MusicProject>)=>void;
   sectionId?:string;openSection:(id:string)=>void};
+type Kind=MusicProjectFile['kind']|'version'|'talent'|'proposal'|'document';
+type Item={key:string;id:string;kind:Kind;name:string;description:string;
+  source:'file'|'version'|'need'|'suggestion'|'lyric'|'layer'|'score'|'note'|'remote'};
+type RemoteProposal={id:string;trackPublicationId:string;trackTitle:string;
+  proposer?:{displayName?:string};description:string;status:string;createdAt:string;
+  credits?:{displayName:string;contribution:string}[]};
 const pink='#CB245C';
-const types:{kind:Kind;label:string;icon:keyof typeof Ionicons.glyphMap}[]=[
-  {kind:'version',label:'Version',icon:'layers-outline'},
-  {kind:'lyrics',label:'Paroles',icon:'document-text-outline'},
-  {kind:'audio',label:'Audio',icon:'musical-note-outline'},
-  {kind:'track',label:'Piste MIDI / audio',icon:'git-branch-outline'},
-  {kind:'score',label:'Partition',icon:'document-outline'},
-  {kind:'note',label:'Note',icon:'reader-outline'},
-  {kind:'idea',label:'Idée',icon:'bulb-outline'},
-  {kind:'proposal',label:'Proposition',icon:'git-branch-outline'},
-  {kind:'talent',label:'Talent recherché',icon:'person-add-outline'},
-  {kind:'document',label:'Document',icon:'document-attach-outline'},
-  {kind:'style',label:'Style musical',icon:'pricetag-outline'},
-];
-const nameOf=(kind:Kind)=>types.find(t=>t.kind===kind)?.label||'Élément';
-const iconOf=(kind:Kind)=>types.find(t=>t.kind===kind)?.icon||'document-outline';
+const labels:Record<Kind,string>={
+  document:'Document',lyrics:'Paroles',audio:'Audio',track:'Piste',
+  version:'Version',score:'Partition',note:'Note',idea:'Idée',
+  talent:'Talent recherché',proposal:'Collaboration',
+};
+const icons:Record<Kind,keyof typeof Ionicons.glyphMap>={
+  document:'document-outline',lyrics:'document-text-outline',audio:'musical-note-outline',
+  track:'pulse-outline',version:'layers-outline',score:'document-attach-outline',
+  note:'reader-outline',idea:'bulb-outline',talent:'person-add-outline',
+  proposal:'git-pull-request-outline',
+};
 
-/** One single song element list. A version, score, lyric, request or proposal is an item,
- * not a separate permanent panel or module. Never re-upload local data to mock a publish. */
-export function MusicSongElements({project,patch,sectionId,openSection}:Props) {
+export function MusicSongElements({project,patch,sectionId,openSection}:Props){
   const theme=useAppTheme();
-  const files=project.files||[];
-  const [adding,setAdding]=useState(false);
-  const [creationMode,setCreationMode]=useState<'none'|'text'|'talent'|'record'>('none');
-  const [regionSection,setRegionSection]=useState('');
-  const [rangeStart,setRangeStart]=useState('');
-  const [rangeEnd,setRangeEnd]=useState('');
-  const [kind,setKind]=useState<Kind>('lyrics');
-  const [title,setTitle]=useState('');
-  const [body,setBody]=useState('');
-  const [language,setLanguage]=useState(project.originalLanguage||'Français');
-  const [instrument,setInstrument]=useState('');
-  const [level,setLevel]=useState('Quelques notions');
-  const [sourceLang,setSourceLang]=useState('');
-  const [targetLang,setTargetLang]=useState('');
-  const [chosenSections,setChosenSections]=useState<string[]>(sectionId?[sectionId]:[]);
-  const [expanded,setExpanded]=useState<string|null>(null);
+  const [addMenu,setAddMenu]=useState(false);
+  const [record,setRecord]=useState(false);
   const [uploading,setUploading]=useState(false);
+  const [expanded,setExpanded]=useState<string|null>(null);
   const [error,setError]=useState('');
-  const inputStyle={borderWidth:1,borderColor:theme.border,borderRadius:10,
-    paddingVertical:10,paddingHorizontal:11,fontSize:13,
-    color:theme.foreground,backgroundColor:theme.background} as const;
-  const scopeName=(id:string)=>project.sections.find(s=>s.id===id)?.title||'Partie supprimée';
-  const scopeLabel=(ids:string[])=>ids.length?ids.map(scopeName).join(', '):'Chant entier';
-  const cardBg=theme.dark?'#332B31':'#F8F5F2';
-  const parseTime=(value:string):number|undefined=>{
-    const raw=value.trim();
-    if(!/^(?:\d+:)?\d+(?:\.\d+)?$/.test(raw))return undefined;
-    const bits=raw.split(':').map(Number);
-    const seconds=bits.length===2?bits[0]*60+bits[1]:bits[0];
-    return Number.isFinite(seconds)&&seconds>=0&&(!raw.includes(':')||bits[1]<60)
-      ?seconds:undefined;
-  };
+  const [remote,setRemote]=useState<RemoteProposal[]>([]);
+  const [remoteError,setRemoteError]=useState('');
+  const [busyProposal,setBusyProposal]=useState('');
+  const [audioProposal,setAudioProposal]=useState<{id:string;url:string}|null>(null);
+  const [editingLegacy,setEditingLegacy]=useState<string|null>(null);
+  const files=project.files||[];
+  const refs=[project.publishedId,...project.versions.map(v=>v.publishedId)]
+    .filter((x):x is string=>!!x);
+  const publicKey=[...new Set(refs)].sort().join('|');
+  const sections=project.sections||[];
+  const sectionName=(id:string)=>sections.find(s=>s.id===id)?.title||'Partie supprimée';
+  const projectRefs=new Set(refs);
+  useEffect(()=>{
+    if(!publicKey){setRemote([]);return;}
+    let alive=true;
+    void api<{items:RemoteProposal[]}>('/api/me/music-proposals?role=received',{
+      auth:'required',
+    }).then(result=>{if(alive){setRemote((result.items||[]).filter(x=>
+      projectRefs.has(x.trackPublicationId)));setRemoteError('');}})
+      .catch(e=>{if(alive)setRemoteError(e instanceof Error?e.message:
+        'Les collaborations reçues ne peuvent pas être chargées.');});
+    return()=>{alive=false;};
+  },[publicKey]);
 
-  const elements=useMemo<Element[]>(()=>{
-    const result:Element[]=[
-      ...project.versions.map(v=>({key:'v:'+v.id,id:v.id,origin:'version' as const,
-        kind:'version' as const,name:v.title,
-        subtitle:(v.publishedId?'Publiée':'Brouillon')+' · '+formatMusicDuration(v.durationSeconds),
-        scopeIds:[]})),
-      ...files.map(f=>({key:'f:'+f.id,id:f.id,origin:'file' as const,kind:f.kind,
-        name:f.title,subtitle:f.language||f.instrument||formatMusicDuration(f.durationSeconds),
-        scopeIds:[...new Set([...(f.sectionIds||[]),
-          ...(f.lyricSegments||[]).flatMap(s=>s.sectionIds),
-          ...(f.regions||[]).map(r=>r.sectionId)])]})),
-      ...project.layers.map(l=>({key:'l:'+l.id,id:l.id,origin:'layer' as const,
-        kind:'audio' as const,name:l.title,subtitle:l.role||'Piste',
-        scopeIds:l.sectionId?[l.sectionId]:[]})),
-      ...project.lyrics.map(l=>({key:'y:'+l.id,id:l.id,origin:'lyric' as const,
-        kind:'lyrics' as const,name:l.sectionId?'Paroles · '+scopeName(l.sectionId):'Paroles du chant',
-        subtitle:l.language,scopeIds:l.sectionId?[l.sectionId]:[]})),
-      ...project.suggestions.map(s=>({key:'p:'+s.id,id:s.id,origin:'suggestion' as const,
-        kind:'proposal' as const,name:s.title,
-        subtitle:s.status==='pending'?'En attente':s.status==='integrated'?'Retenue':'Archivée',
-        scopeIds:s.sectionId?[s.sectionId]:[]})),
-      ...project.needs.map(n=>({key:'t:'+n.id,id:n.id,origin:'need' as const,
-        kind:n.kind==='talent'?'talent' as const:'style' as const,name:n.label,
-        subtitle:n.sourceLanguage&&n.targetLanguage?n.sourceLanguage+' → '+n.targetLanguage:n.level||'',
-        scopeIds:n.sectionId?[n.sectionId]:[]})),
-      ...project.sections.filter(s=>s.scoreLocalId||s.scoreUrl)
-        .map(s=>({key:'sc:'+s.id,id:s.id,origin:'score' as const,kind:'score' as const,
-          name:s.scoreFileName||'Partition',subtitle:'Partition de '+s.title,scopeIds:[s.id]})),
-      ...project.sections.filter(s=>s.notes?.trim())
-        .map(s=>({key:'no:'+s.id,id:s.id,origin:'note' as const,kind:'note' as const,
-          name:'Notes · '+s.title,subtitle:'Note de la partie',scopeIds:[s.id]})),
+  const items=useMemo<Item[]>(()=>{
+    const result:Item[]=[
+      ...project.versions.map(v=>({key:'v:'+v.id,id:v.id,kind:'version' as const,
+        source:'version' as const,name:v.title,
+        description:(v.publishedId?'Publiée':'Brouillon')+' · '+formatMusicDuration(v.durationSeconds)})),
+      ...files.filter(f=>!sectionId||(f.sectionIds||[]).includes(sectionId)||
+        (f.lyricSegments||[]).some(s=>s.sectionIds.includes(sectionId))||
+        (f.regions||[]).some(r=>r.sectionId===sectionId))
+        .map(f=>({key:'f:'+f.id,id:f.id,kind:f.kind,source:'file' as const,name:f.title,
+          description:f.instrument||f.language||f.originalFilename||''})),
+      ...project.layers.filter(l=>!sectionId||l.sectionId===sectionId)
+        .map(l=>({key:'l:'+l.id,id:l.id,kind:'track' as const,source:'layer' as const,
+          name:l.title,description:l.role||'Piste'})),
+      ...project.lyrics.filter(l=>!sectionId||l.sectionId===sectionId)
+        .map(l=>({key:'y:'+l.id,id:l.id,kind:'lyrics' as const,source:'lyric' as const,
+          name:l.sectionId?'Paroles · '+sectionName(l.sectionId):'Paroles',
+          description:l.language})),
+      ...project.needs.filter(n=>!sectionId||n.sectionId===sectionId)
+        .map(n=>({key:'n:'+n.id,id:n.id,kind:'talent' as const,source:'need' as const,
+          name:n.label,description:n.level||'Talent recherché'})),
+      ...project.suggestions.filter(p=>!sectionId||p.sectionId===sectionId)
+        .map(p=>({key:'s:'+p.id,id:p.id,kind:'proposal' as const,source:'suggestion' as const,
+          name:p.title,description:p.status})),
+      ...(!sectionId?[]:project.sections.filter(s=>s.id===sectionId&&(s.scoreUrl||s.scoreLocalId))
+        .map(s=>({key:'score:'+s.id,id:s.id,kind:'score' as const,source:'score' as const,
+          name:s.scoreFileName||'Partition',description:s.title}))),
+      ...(!sectionId?[]:project.sections.filter(s=>s.id===sectionId&&s.notes?.trim())
+        .map(s=>({key:'note:'+s.id,id:s.id,kind:'note' as const,source:'note' as const,
+          name:'Notes · '+s.title,description:'Note de la partie'})),
+      ...(!sectionId?remote.filter(x=>!project.archivedRemoteProposals?.includes(x.id))
+        .map(x=>({key:'r:'+x.id,id:x.id,kind:'proposal' as const,source:'remote' as const,
+          name:'Proposition de '+(x.proposer?.displayName||'musicien'),
+          description:x.status+' · '+x.trackTitle})):[]),
     ];
-    if(project.publishedId)result.push({
-      key:'remote',id:'remote',origin:'remote',kind:'proposal',
-      name:'Contributions reçues',subtitle:'Propositions en ligne',scopeIds:[],
-    });
-    return result.filter(e=>!sectionId||e.scopeIds.includes(sectionId));
-  },[project,files,sectionId]);
+    return result.filter(x=>!sectionId||x.source!=='version');
+  },[project,sectionId,remote]);
 
-  const clearForm=()=>{setAdding(false);setCreationMode('none');setTitle('');setBody('');setInstrument('');
-    setChosenSections(sectionId?[sectionId]:[]);setError('');};
-  const saveNew=()=>{
-    const name=title.trim();
-    if(!name)return;
-    if(kind==='version'){
-      patch({versions:[...project.versions,{id:newMusicId(),title:name,
-        createdAt:new Date().toISOString(),selectedForPublication:false}]});
-    } else if(kind==='talent'){
-      const translator=name.toLowerCase()==='traducteur';
-      if(translator&&(!sourceLang.trim()||!targetLang.trim())){
-        setError('Indique les deux langues du traducteur.');return;
-      }
-      const request:MusicNeed={id:newMusicId(),kind:'talent',label:name,level,
-        sectionId:chosenSections[0],
-        sourceLanguage:translator?sourceLang.trim():undefined,
-        targetLanguage:translator?targetLang.trim():undefined};
-      patch({needs:[...project.needs,request]});
-    } else if(kind==='proposal'){
-      const suggestion:MusicSuggestion={id:newMusicId(),title:name,note:body.trim(),
-        kind:'section',sectionId:chosenSections[0],status:'pending',
-        createdAt:new Date().toISOString()};
-      patch({suggestions:[...project.suggestions,suggestion]});
-    } else if(kind==='style') {
-      setError('Ajoute les styles musicaux dans les informations du morceau.');return;
-    } else {
-      const file:MusicProjectFile={id:newMusicId(),title:name,kind,
-        sectionIds:[...chosenSections],text:body,language:kind==='lyrics'?language.trim():undefined,
-        lyricSegments:kind==='lyrics'?lyricStanzas(body):undefined,
-        instrument:kind==='audio'||kind==='track'?instrument.trim():undefined,
-        createdAt:new Date().toISOString()};
-      patch({files:[...files,file]});
-    }
-    clearForm();
-  };
-
-  /** One tap: import first, classify/associate optionally in the saved item's details. */
-  const importFor=(id?:string)=>{
+  const importFile=()=>{
     if(Platform.OS!=='web'||typeof document==='undefined'){
-      setError('Import disponible dans le navigateur web.');return;
+      setError('L’import de fichiers est disponible depuis le navigateur web.');return;
     }
-    const input=document.createElement('input');
-    input.type='file';
-    input.accept='.doc,.docx,.txt,.md,.pdf,.png,.jpg,.jpeg,.webp,.mp3,.wav,.m4a,.ogg,.webm,.aac,.mid,.midi';
-    input.multiple=!id;
-    input.onchange=()=>{
-      const chosen=Array.from(input.files||[]);
-      if(!chosen.length)return;
+    const picker=document.createElement('input');
+    picker.type='file';
+    picker.accept='.doc,.docx,.txt,.md,.pdf,.png,.jpg,.jpeg,.webp,.mp3,.wav,.m4a,.ogg,.webm,.aac,.mid,.midi';
+    picker.multiple=true;
+    picker.onchange=()=>{
+      const selected=Array.from(picker.files||[]);
+      if(!selected.length)return;
       setUploading(true);setError('');
       void (async()=>{
         const imported:MusicProjectFile[]=[];
-        for(const file of chosen)imported.push(await importSongFile(file,project.originalLanguage));
-        if(id){
-          const current=files.find(f=>f.id===id);
-          if(!current)return;
-          patch({files:files.map(f=>f.id===id?{
-            ...f,localFileId:imported[0].localFileId,
-            originalFilename:imported[0].originalFilename,mimeType:imported[0].mimeType,
-            text:imported[0].text??f.text,
-            durationSeconds:imported[0].durationSeconds??f.durationSeconds,
-            lyricSegments:f.kind==='lyrics'&&imported[0].text
-              ?lyricStanzas(imported[0].text):f.lyricSegments,
-          }:f)});
-          setExpanded('f:'+id);
-        }else{
-          patch({files:[...files,...imported.map(f=>({
-            ...f,sectionIds:sectionId?[sectionId]:[],
-          }))]});
-          setExpanded('f:'+imported[0].id);
-          clearForm();
-        }
+        for(const file of selected)imported.push(await importSongFile(file,project.originalLanguage));
+        patch({files:[...files,...imported.map(f=>({
+          ...f,sectionIds:sectionId?[sectionId]:[],
+        }))]});
+        setExpanded('f:'+imported[0].id);
+        setAddMenu(false);
       })().catch(e=>setError(e instanceof Error?e.message:'Import impossible.'))
         .finally(()=>setUploading(false));
     };
-    input.click();
+    picker.click();
   };
-  const selectScope=(ids:string[],onChange:(next:string[])=>void)=>
-    <View style={{flexDirection:'row',gap:6,flexWrap:'wrap'}}>
-      {project.sections.map(s=><Pressable key={s.id}
-        onPress={()=>onChange(ids.includes(s.id)?ids.filter(x=>x!==s.id):[...ids,s.id])}
-        style={{paddingHorizontal:9,paddingVertical:8,borderWidth:1,
-          borderRadius:8,borderColor:ids.includes(s.id)?pink:theme.border}}>
-        <Text style={{fontSize:11,color:ids.includes(s.id)?pink:theme.foreground}}>{s.title}</Text>
-      </Pressable>)}
-      {!project.sections.length?<Text style={{color:theme.muted,fontSize:11}}>
-        Aucune partie créée pour l’instant.
-      </Text>:null}
-    </View>;
-  const selectOneScope=(id:string|undefined,onChange:(next?:string)=>void)=>
-    <View style={{flexDirection:'row',flexWrap:'wrap',gap:6}}>
-      <Pressable onPress={()=>onChange(undefined)} style={{padding:8,borderWidth:1,
-        borderColor:!id?pink:theme.border,borderRadius:8}}>
-        <Text style={{fontSize:11,color:!id?pink:theme.foreground}}>Chant entier</Text>
-      </Pressable>
-      {project.sections.map(s=><Pressable key={s.id} onPress={()=>onChange(s.id)}
-        style={{padding:8,borderWidth:1,borderColor:id===s.id?pink:theme.border,borderRadius:8}}>
-        <Text style={{fontSize:11,color:id===s.id?pink:theme.foreground}}>{s.title}</Text>
-      </Pressable>)}
-    </View>;
-  const updateFile=(id:string,changes:Partial<MusicProjectFile>)=>
-    patch({files:files.map(f=>f.id===id?{...f,...changes}:f)});
-  const openAttachment=async(item:MusicProjectFile)=>{
-    if(item.externalUrl&&/^https:\/\//i.test(item.externalUrl)){
-      await Linking.openURL(item.externalUrl);return;
+  const updateFile=(id:string,change:Partial<MusicProjectFile>)=>
+    patch({files:files.map(f=>f.id===id?{...f,...change}:f)});
+  const classify=(f:MusicProjectFile,kind:MusicProjectFile['kind']|'version')=>{
+    setError('');
+    if(kind==='version'){
+      const playable=!!f.mimeType?.startsWith('audio/')||
+        /\.(wav|mp3|m4a|webm|ogg|aac)$/i.test(f.originalFilename||'');
+      if(!playable){setError('Une version doit être un véritable fichier audio.');return;}
+      const num=project.versions.reduce((n,v)=>{
+        const match=v.title.match(/^Version\s+(\d+)$/i);
+        return match?Math.max(n,Number(match[1])):n;
+      },project.versions.length)+1;
+      const id=newMusicId();
+      patch({files:files.filter(x=>x.id!==f.id),
+        versions:[...project.versions,{
+          id,title:'Version '+num,localAudioId:f.localFileId,
+          audioUrl:f.externalUrl,durationSeconds:f.durationSeconds,
+          createdAt:new Date().toISOString(),selectedForPublication:false,
+        }]});
+      setExpanded('v:'+id);
+      return;
     }
-    if(!item.localFileId||typeof document==='undefined')return;
-    const blob=await getDraftAttachment(item.localFileId);
-    if(!blob)throw Error('Pièce jointe introuvable sur cet appareil.');
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement('a');a.href=url;a.target='_blank';a.rel='noopener noreferrer';
-    a.click();setTimeout(()=>URL.revokeObjectURL(url),60000);
+    updateFile(f.id,classifySongFile(f,kind));
   };
-  const smallAction=(text:string,fn:()=>void)=><Pressable accessibilityRole="button"
-    onPress={fn} style={{paddingVertical:9,paddingHorizontal:11,borderWidth:1,
-      borderColor:theme.border,borderRadius:9,alignSelf:'flex-start'}}>
-    <Text style={{color:theme.foreground,fontSize:11,fontWeight:'600'}}>{text}</Text>
+  const doProposal=async(p:RemoteProposal,action:'accept'|'reject'|'publish')=>{
+    setBusyProposal(p.id);setRemoteError('');
+    try{
+      await api('/api/music-proposals/'+encodeURIComponent(p.id)+'/'+action,{
+        auth:'required',method:'POST',body:{},
+      });
+      setRemote(old=>old.map(x=>x.id===p.id?{...x,status:action==='accept'?'accepted':
+        action==='reject'?'rejected':'published'}:x));
+    }catch(e){setRemoteError(e instanceof Error?e.message:'Action impossible.');}
+    finally{setBusyProposal('');}
+  };
+  const playProposal=async(p:RemoteProposal)=>{
+    setBusyProposal(p.id);
+    try{
+      const result=await api<{url:string|null}>('/api/music-proposals/'+encodeURIComponent(p.id)+
+        '/playback',{auth:'required'});
+      if(!result.url)throw Error('Audio indisponible.');
+      setAudioProposal({id:p.id,url:result.url});
+    }catch(e){setRemoteError(e instanceof Error?e.message:'Lecture indisponible.');}
+    finally{setBusyProposal('');}
+  };
+  const action=(title:string,onClick:()=>void)=><Pressable accessibilityRole="button"
+    onPress={onClick} style={{paddingHorizontal:11,paddingVertical:9,borderRadius:9,
+      borderWidth:1,borderColor:theme.border,alignSelf:'flex-start'}}>
+    <Text style={{fontSize:11,color:theme.foreground,fontWeight:'600'}}>{title}</Text>
   </Pressable>;
-
-  const editor=(item:Element):React.ReactNode=>{
-    if(item.origin==='version'){
-      return <MusicVersionsSection project={project} patch={patch}
-        focusVersionId={item.id} inline/>;
+  const detail=(item:Item):React.ReactNode=>{
+    if(item.source==='file'){
+      const f=files.find(x=>x.id===item.id);
+      return f?<MusicFileViewer key={f.id} file={f} project={project} sectionId={sectionId}
+        onUpdate={change=>updateFile(f.id,change)}
+        onClassify={kind=>classify(f,kind)}
+        onRemove={()=>{patch({files:files.filter(x=>x.id!==f.id)});setExpanded(null);}}/>:null;
     }
-    if(item.origin==='remote'){
-      return <MusicOwnerProposals project={project} patch={patch}/>;
+    if(item.source==='version'){
+      return <MusicVersionsSection project={project} patch={patch} focusVersionId={item.id} inline/>;
     }
-    if(item.origin==='file'){
-      const f=files.find(x=>x.id===item.id);if(!f)return null;
-      return <View style={{gap:10}}>
-        <TextInput style={inputStyle} value={f.title} placeholder="Nom de l'élément"
-          onChangeText={title=>updateFile(f.id,{title})}/>
-        {f.originalFilename?<Text style={{color:theme.muted,fontSize:11}}>
-          Fichier original : {f.originalFilename}
-        </Text>:null}
-        {f.conversionWarning?<Text style={{color:'#B34D67',fontSize:11,lineHeight:18}}>
-          {f.conversionWarning}
-        </Text>:null}
-        <Text style={{color:theme.muted,fontSize:11}}>Type d’élément</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{gap:7}}>
-          {types.filter(t=>!['version','proposal','talent','style'].includes(t.kind))
-            .map(t=><Pressable key={t.kind} onPress={()=>
-              updateFile(f.id,classifySongFile(f,t.kind as MusicProjectFile['kind']))}
-              style={{borderWidth:1,borderRadius:8,padding:8,
-                borderColor:f.kind===t.kind?pink:theme.border}}>
-              <Text style={{color:f.kind===t.kind?pink:theme.foreground,fontSize:11}}>{t.label}</Text>
-            </Pressable>)}
-        </ScrollView>
-        <Text style={{fontSize:11,color:theme.muted}}>Associer le fichier entier à une partie (facultatif)</Text>
-        {selectScope(f.sectionIds||[],sectionIds=>updateFile(f.id,{sectionIds}))}
-        {f.kind==='lyrics'?<TextInput style={inputStyle} value={f.language||''}
-          onChangeText={language=>updateFile(f.id,{language})} placeholder="Langue des paroles"
-          placeholderTextColor={theme.muted}/>:null}
-        {f.kind==='lyrics'&&f.text?.trim()&&!(f.lyricSegments||[]).length?
-          smallAction('Organiser les paroles en strophes',()=>updateFile(f.id,{
-            lyricSegments:lyricStanzas(f.text||''),
-          })):null}
-        {f.kind==='lyrics'&&f.lyricSegments?.length?<View style={{gap:11}}>
-          <Text style={{fontWeight:'700',fontSize:12,color:theme.foreground}}>
-            Paroles · {f.language||project.originalLanguage}
-          </Text>
-          {f.lyricSegments
-            .filter(segment=>!sectionId||segment.sectionIds.includes(sectionId)||
-              (f.sectionIds||[]).includes(sectionId))
-            .map((segment,index)=><View key={segment.id}
-            style={{gap:7,paddingVertical:9,borderTopWidth:1,borderColor:theme.border}}>
-            <Text style={{fontSize:10,color:theme.muted}}>Strophe {index+1}</Text>
-            <TextInput multiline textAlignVertical="top" value={segment.text}
-              onChangeText={text=>updateFile(f.id,{
-                lyricSegments:(f.lyricSegments||[]).map(s=>s.id===segment.id?{...s,text}:s),
-              })} style={{...inputStyle,minHeight:70,lineHeight:22}}
-              placeholderTextColor={theme.muted} placeholder="Texte de la strophe…"/>
-            <Text style={{fontSize:10,color:theme.muted}}>Associer cette strophe (facultatif)</Text>
-            {selectScope(segment.sectionIds,sectionIds=>updateFile(f.id,{
-              lyricSegments:(f.lyricSegments||[]).map(s=>s.id===segment.id?{...s,sectionIds}:s)
-            }))}
-          </View>)}
-          {!sectionId?smallAction('Ajouter une strophe',()=>updateFile(f.id,{
-            lyricSegments:[...(f.lyricSegments||[]),{id:newMusicId(),text:'',sectionIds:[]}],
-          })):null}
-          <Text style={{fontSize:10,color:theme.muted}}>
-            Les strophes non associées restent dans le chant entier.
-            Le document importé d'origine reste disponible.
-          </Text>
-        </View>:null}
-        {(f.kind==='audio'||f.kind==='track')?<TextInput style={inputStyle} value={f.instrument||''}
-          onChangeText={instrument=>updateFile(f.id,{instrument})} placeholder="Instrument / rôle"
-          placeholderTextColor={theme.muted}/>:null}
-        {['note','idea','document','score'].includes(f.kind)?<TextInput
-          multiline textAlignVertical="top" value={f.text||''}
-          onChangeText={text=>updateFile(f.id,{text})} style={{...inputStyle,minHeight:110}}
-          placeholder="Contenu" placeholderTextColor={theme.muted}/>:null}
-        {(f.kind==='audio'||(f.kind==='track'&&f.mimeType?.startsWith('audio/')))?<MusicAudioPreview source={{localAudioId:f.localFileId,
-          audioUrl:f.externalUrl}}/>:null}
-        {(f.kind==='audio'||f.kind==='track')?<View style={{gap:8,paddingTop:7}}>
-          <Text style={{fontWeight:'700',fontSize:12,color:theme.foreground}}>
-            Repères temporels (facultatif)
-          </Text>
-          {(f.regions||[]).map(region=><View key={region.id}
-            style={{flexDirection:'row',alignItems:'center',gap:8}}>
-            <Text style={{flex:1,color:theme.foreground,fontSize:11}}>
-              {scopeName(region.sectionId)} · {formatMusicDuration(region.startSeconds)}
-              {' – '}{formatMusicDuration(region.endSeconds)}
-            </Text>
-            <Pressable onPress={()=>updateFile(f.id,{regions:(f.regions||[])
-              .filter(r=>r.id!==region.id)})}>
-              <Ionicons name="close" size={16} color={theme.muted}/>
-            </Pressable>
-          </View>)}
-          <Text style={{fontSize:10,color:theme.muted}}>
-            Sélectionne une partie, puis un passage de la piste. Exemple : 2:50 à 3:14.
-          </Text>
-          <View style={{flexDirection:'row',flexWrap:'wrap',gap:6}}>
-            {project.sections.map(s=><Pressable key={s.id} onPress={()=>setRegionSection(s.id)}
-              style={{borderRadius:8,borderWidth:1,paddingHorizontal:9,paddingVertical:8,
-                borderColor:regionSection===s.id?pink:theme.border}}>
-              <Text style={{fontSize:11,color:regionSection===s.id?pink:theme.foreground}}>{s.title}</Text>
-            </Pressable>)}
-          </View>
-          {project.sections.length?<View style={{flexDirection:'row',gap:7}}>
-            <TextInput value={rangeStart} onChangeText={setRangeStart} style={{...inputStyle,flex:1}}
-              placeholder="Début 2:50" placeholderTextColor={theme.muted} keyboardType="numbers-and-punctuation"/>
-            <TextInput value={rangeEnd} onChangeText={setRangeEnd} style={{...inputStyle,flex:1}}
-              placeholder="Fin 3:14" placeholderTextColor={theme.muted} keyboardType="numbers-and-punctuation"/>
-            <Pressable onPress={()=>{
-              const start=parseTime(rangeStart),end=parseTime(rangeEnd);
-              if(!regionSection||start===undefined||end===undefined||end<=start||
-                (f.durationSeconds!==undefined&&end>f.durationSeconds)){
-                setError('Sélectionne une partie et une plage valide dans la durée du fichier.');return;
-              }
-              updateFile(f.id,{regions:[...(f.regions||[]),{
-                id:newMusicId(),sectionId:regionSection,startSeconds:start,endSeconds:end,
-              }]});
-              setRangeStart('');setRangeEnd('');setError('');
-            }} style={{backgroundColor:pink,paddingHorizontal:11,borderRadius:9,
-              justifyContent:'center'}}>
-              <Ionicons name="checkmark" size={18} color="#fff"/>
-            </Pressable>
-          </View>:null}
-        </View>:null}
-
-        <View style={{flexDirection:'row',flexWrap:'wrap',gap:7}}>
-          {Platform.OS==='web'?smallAction(uploading?'Import…':'Joindre un fichier',()=>importFor(f.id)):null}
-          {(f.localFileId||f.externalUrl)&&f.kind!=='audio'&&(!f.mimeType?.startsWith('audio/'))?smallAction('Ouvrir le fichier original',
-            ()=>{void openAttachment(f).catch(e=>setError(e instanceof Error?e.message:'Ouverture impossible.'));}):null}
-          {smallAction('Retirer',()=>patch({files:files.filter(x=>x.id!==f.id)}))}
-        </View>
-        {(f.kind==='audio'||f.kind==='track')?<MusicAudioCapture onSaved={(localFileId,_name,durationSeconds)=>
-          updateFile(f.id,{localFileId,durationSeconds})}/>:null}
-      </View>;
-    }
-    if(item.origin==='need'){
-      const n=project.needs.find(x=>x.id===item.id);if(!n)return null;
-      const update=(changes:Partial<MusicNeed>)=>patch({needs:project.needs.map(x=>x.id===n.id?{...x,...changes}:x)});
-      return <View style={{gap:9}}>
-        <TextInput value={n.label} onChangeText={label=>update({label})} style={inputStyle}/>
-        {n.kind==='talent'?<TalentLevelSelector value={n.level||'Quelques notions'}
-          onChange={level=>update({level})}/>:null}
-        {n.kind==='talent'&&n.label.trim().toLowerCase()==='traducteur'?
-          <TranslatorLanguageFields sourceLanguage={n.sourceLanguage||''}
-            targetLanguage={n.targetLanguage||''}
-            onChangeSource={sourceLanguage=>update({sourceLanguage})}
-            onChangeTarget={targetLanguage=>update({targetLanguage})}/>:null}
-        <Text style={{color:theme.muted,fontSize:11}}>Partie concernée</Text>
-        {selectOneScope(n.sectionId,sectionId=>update({sectionId}))}
-        {smallAction('Retirer',()=>patch({needs:project.needs.filter(x=>x.id!==n.id)}))}
-        <Text style={{color:theme.muted,fontSize:10}}>
-          Demande enregistrée dans le dossier local ; pas encore envoyée publiquement.
+    if(item.source==='need'){
+      const need=project.needs.find(x=>x.id===item.id);
+      return need?<View style={{gap:9}}>
+        <Text style={{fontSize:12,color:theme.foreground}}>
+          {need.level||'Niveau libre'}
+          {need.sourceLanguage&&need.targetLanguage?' · '+need.sourceLanguage+' → '+need.targetLanguage:''}
         </Text>
-      </View>;
+        {action('Retirer le besoin',()=>patch({
+          needs:project.needs.filter(x=>x.id!==need.id),
+        }))}
+        <Text style={{fontSize:10,color:theme.muted}}>
+          Besoin enregistré localement ; la demande publique sera reliée ultérieurement.
+        </Text>
+      </View>:null;
     }
-    if(item.origin==='suggestion'){
-      const p=project.suggestions.find(x=>x.id===item.id);if(!p)return null;
-      const update=(changes:Partial<MusicSuggestion>)=>patch({suggestions:project.suggestions.map(x=>x.id===p.id?{...x,...changes}:x)});
-      return <View style={{gap:9}}>
-        <TextInput value={p.title} onChangeText={title=>update({title})} style={inputStyle}/>
-        <TextInput value={p.note} onChangeText={note=>update({note})}
-          style={{...inputStyle,minHeight:100}} multiline textAlignVertical="top"/>
-        <Text style={{fontSize:11,color:theme.muted}}>Partie concernée</Text>
-        {selectOneScope(p.sectionId,sectionId=>update({sectionId}))}
+    if(item.source==='remote'){
+      const proposal=remote.find(x=>x.id===item.id);if(!proposal)return null;
+      return <View style={{gap:10}}>
+        <Text style={{fontSize:13,lineHeight:21,color:theme.foreground}}>
+          {proposal.description}
+        </Text>
+        {(proposal.credits||[]).map((credit,i)=><Text key={i}
+          style={{color:theme.muted,fontSize:11}}>
+          {credit.displayName} · {credit.contribution}
+        </Text>)}
+        {audioProposal?.id===proposal.id?<MusicAudioPreview source={{audioUrl:audioProposal.url}}/>:null}
         <View style={{flexDirection:'row',flexWrap:'wrap',gap:7}}>
-          {smallAction('Retenir',()=>update({status:'integrated'}))}
-          {smallAction(p.status==='archived'?'Réactiver':'Archiver',()=>
-            update({status:p.status==='archived'?'pending':'archived'}))}
-          {smallAction('Retirer',()=>patch({suggestions:project.suggestions.filter(x=>x.id!==p.id)}))}
+          {action(busyProposal===proposal.id?'Ouverture…':'Écouter la proposition',
+            ()=>{void playProposal(proposal);})}
+          {proposal.status==='submitted'?<>
+            {action('Accepter',()=>{void doProposal(proposal,'accept');})}
+            {action('Refuser',()=>{void doProposal(proposal,'reject');})}
+          </>:null}
+          {proposal.status==='accepted'?
+            action('Publier cette collaboration',()=>{void doProposal(proposal,'publish');}):null}
+          {action('Archiver',()=>patch({
+            archivedRemoteProposals:[...(project.archivedRemoteProposals||[]),proposal.id],
+          }))}
         </View>
-        <Text style={{color:theme.muted,fontSize:10}}>Note de travail privée, non envoyée.</Text>
       </View>;
     }
-    if(item.origin==='layer'){
-      const layer=project.layers.find(x=>x.id===item.id);if(!layer)return null;
-      return <View style={{gap:9}}>
-        <MusicAudioPreview source={layer}/>
-        {smallAction('Retrouver cette piste dans sa partie',()=>openSection(layer.sectionId||''))}
-      </View>;
+    if(item.source==='layer'){
+      const layer=project.layers.find(x=>x.id===item.id);
+      return layer?<MusicAudioPreview source={layer}/>:null;
     }
-    if(item.origin==='lyric'){
-      const l=project.lyrics.find(x=>x.id===item.id);if(!l)return null;
-      return <View style={{gap:9}}>
-        <Text style={{fontSize:11,color:theme.muted}}>{l.language}</Text>
-        <TextInput multiline value={l.text} textAlignVertical="top" style={{...inputStyle,minHeight:110}}
-          onChangeText={text=>patch({lyrics:project.lyrics.map(x=>x.id===l.id?
-            {...x,text,updatedAt:new Date().toISOString()}:x)})}/>
-        {smallAction('Ouvrir la partie',()=>openSection(l.sectionId||''))}
-      </View>;
+    if(item.source==='lyric'){
+      const lyric=project.lyrics.find(x=>x.id===item.id);
+      return lyric?<View style={{gap:9}}>
+        {editingLegacy===item.id?<TextInput value={lyric.text} multiline
+          onChangeText={text=>patch({lyrics:project.lyrics.map(x=>x.id===lyric.id?{
+            ...x,text,updatedAt:new Date().toISOString(),
+          }:x)})} style={{minHeight:100,padding:12,borderWidth:1,
+            borderColor:theme.border,borderRadius:10,color:theme.foreground}}/>:
+          <Text style={{fontSize:15,lineHeight:25,color:theme.foreground}}>{lyric.text}</Text>}
+        {action(editingLegacy===item.id?'Terminer':'Modifier les paroles',
+          ()=>setEditingLegacy(editingLegacy===item.id?null:item.id))}
+      </View>:null;
     }
-    if(item.origin==='score'||item.origin==='note')
-      return smallAction('Ouvrir dans la partie',()=>openSection(item.id));
-    return null;
+    if(item.source==='suggestion'){
+      const s=project.suggestions.find(x=>x.id===item.id);
+      return s?<View style={{gap:8}}>
+        <Text style={{fontSize:12,lineHeight:20,color:theme.foreground}}>{s.note}</Text>
+        {action(s.status==='archived'?'Réactiver':'Archiver',()=>patch({
+          suggestions:project.suggestions.map(x=>x.id===s.id?{
+            ...x,status:s.status==='archived'?'pending':'archived',
+          }:x),
+        }))}
+      </View>:null;
+    }
+    return action('Ouvrir dans la partie',()=>openSection(item.id));
   };
 
   return <View style={{gap:10}}>
-    <View style={{flexDirection:'row',alignItems:'center',gap:9}}>
-      <View style={{flex:1,gap:2}}>
+    <View style={{flexDirection:'row',alignItems:'center',gap:10}}>
+      <View style={{flex:1,gap:3}}>
         <Text style={{fontSize:16,fontWeight:'700',color:theme.foreground}}>
-          {sectionId?'Éléments · '+scopeName(sectionId):'Éléments du morceau'}
+          {sectionId?'Éléments · '+sectionName(sectionId):'Éléments du morceau'}
         </Text>
         <Text style={{fontSize:11,color:theme.muted}}>
-          {elements.length} élément{elements.length>1?'s':''}
+          {items.length} élément{items.length>1?'s':''}
         </Text>
       </View>
-      <Pressable onPress={()=>{setAdding(!adding);setChosenSections(sectionId?[sectionId]:[]);}}
-        accessibilityRole="button" style={{flexDirection:'row',alignItems:'center',gap:5,
-          paddingHorizontal:12,paddingVertical:10,borderRadius:10,backgroundColor:pink}}>
-        <Ionicons name={adding?'close':'add'} size={17} color="#fff"/>
-        <Text style={{color:'#fff',fontSize:12,fontWeight:'700'}}>{adding?'Fermer':'Ajouter'}</Text>
+      <Pressable accessibilityRole="button" onPress={()=>setAddMenu(!addMenu)}
+        accessibilityLabel="Ajouter un fichier ou un enregistrement"
+        style={{backgroundColor:pink,borderRadius:11,minWidth:42,minHeight:40,
+          justifyContent:'center',alignItems:'center'}}>
+        <Ionicons name={addMenu?'close':'add'} size={22} color="#fff"/>
       </Pressable>
     </View>
-    {adding?<View style={{gap:11,backgroundColor:theme.surface,padding:13,
-      borderWidth:1,borderColor:theme.border,borderRadius:14}}>
-      <Text style={{color:theme.foreground,fontSize:13,fontWeight:'700'}}>
-        {creationMode==='none'?'Ajouter au morceau':
-         creationMode==='talent'?'Quel talent recherches-tu ?':
-         creationMode==='record'?'Enregistrer une prise':'Nouvel élément'}
-      </Text>
-      {creationMode==='none'?<View style={{gap:3}}>
-        {([
-          ['cloud-upload-outline','Importer un fichier','Word, PDF, audio, MIDI, image ou texte','upload'],
-          ['document-text-outline','Écrire des paroles','Créer un fichier de paroles','lyrics'],
-          ['reader-outline','Ajouter une idée / note','Commencer par du texte libre','note'],
-          ['layers-outline','Créer une version','Nouvelle version du morceau','version'],
-          ['person-add-outline','Chercher un talent','Une demande rapide avec le niveau','talent'],
-          ['git-pull-request-outline','Proposer une modification','Arrangement ou nouvelle piste','proposal'],
-          ['mic-outline','Enregistrer une prise','Enregistrement avec le microphone','record'],
-        ] as const).map(([icon,label,desc,action])=><Pressable key={action}
-          accessibilityRole="button" onPress={()=>{
-            if(action==='upload'){importFor();return;}
-            if(action==='record'){setCreationMode('record');return;}
-            setKind(action==='lyrics'?'lyrics':action==='note'?'note':
-              action==='version'?'version':action==='talent'?'talent':'proposal');
-            setCreationMode(action==='talent'?'talent':'text');
-          }} style={{flexDirection:'row',gap:11,alignItems:'center',
-            minHeight:54,borderBottomWidth:1,borderColor:theme.border,paddingVertical:8}}>
-          <Ionicons name={icon} color={pink} size={22}/>
-          <View style={{flex:1,gap:3}}>
-            <Text style={{color:theme.foreground,fontSize:13,fontWeight:'600'}}>{label}</Text>
-            <Text style={{color:theme.muted,fontSize:11}}>{desc}</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={17} color={theme.muted}/>
-        </Pressable>)}
-      </View>:null}
-      {(creationMode==='text'||creationMode==='talent')?<View style={{gap:9}}>
-        <TextInput value={title} onChangeText={setTitle}
-          placeholder={kind==='talent'?'Batteur, guitariste, traducteur…':
-            kind==='version'?'Nom de la version':'Titre de l’élément'}
-          placeholderTextColor={theme.muted} style={inputStyle}/>
-        {kind==='lyrics'?<TextInput value={language} onChangeText={setLanguage}
-          placeholder="Langue des paroles" placeholderTextColor={theme.muted} style={inputStyle}/>:null}
-        {kind==='talent'?<>
-          <TalentLevelSelector value={level} onChange={setLevel}/>
-          {title.toLowerCase().trim()==='traducteur'?
-            <TranslatorLanguageFields sourceLanguage={sourceLang} targetLanguage={targetLang}
-              onChangeSource={setSourceLang} onChangeTarget={setTargetLang}/>:null}
-        </>:null}
-        {['lyrics','note','idea','document','proposal'].includes(kind)?
-          <TextInput value={body} onChangeText={setBody} multiline
-            placeholder="Écris librement…" placeholderTextColor={theme.muted}
-            textAlignVertical="top" style={{...inputStyle,minHeight:100}}/>:null}
-        <View style={{flexDirection:'row',alignItems:'center',gap:8}}>
-          <Pressable disabled={!title.trim()} onPress={saveNew}
-            style={{paddingHorizontal:15,paddingVertical:11,borderRadius:9,
-              backgroundColor:title.trim()?pink:theme.border}}>
-            <Text style={{color:'#fff',fontSize:12,fontWeight:'700'}}>Ajouter</Text>
-          </Pressable>
-          <Pressable onPress={()=>{setCreationMode('none');setTitle('');setBody('');}}>
-            <Text style={{color:theme.muted,fontSize:12}}>Retour</Text>
-          </Pressable>
-        </View>
-        <Text style={{color:theme.muted,fontSize:10}}>
-          Tu pourras modifier le type et lier cet élément à une partie plus tard.
+    {addMenu?<View style={{gap:0,borderWidth:1,borderColor:theme.border,
+      borderRadius:12,paddingHorizontal:12,backgroundColor:theme.surface}}>
+      <Pressable onPress={importFile} disabled={uploading} accessibilityRole="button"
+        style={{flexDirection:'row',gap:11,alignItems:'center',paddingVertical:14}}>
+        <Ionicons name="cloud-upload-outline" size={21} color={pink}/>
+        <Text style={{flex:1,color:theme.foreground,fontSize:13,fontWeight:'600'}}>
+          {uploading?'Import en cours…':'Choisir un fichier'}
         </Text>
-      </View>:null}
-      {creationMode==='record'?<View style={{gap:9}}>
-        <MusicAudioCapture onSaved={(localFileId,filename,durationSeconds)=>{
-          const item:MusicProjectFile={id:newMusicId(),title:filename.replace(/\.[^.]+$/,''),
-            kind:'audio',sectionIds:sectionId?[sectionId]:[],localFileId,durationSeconds,
-            createdAt:new Date().toISOString()};
-          patch({files:[...files,item]});
-          setExpanded('f:'+item.id);clearForm();
+        <Ionicons name="chevron-forward" size={16} color={theme.muted}/>
+      </Pressable>
+      <View style={{height:1,backgroundColor:theme.border}}/>
+      <Pressable onPress={()=>setRecord(true)} accessibilityRole="button"
+        style={{flexDirection:'row',gap:11,alignItems:'center',paddingVertical:14}}>
+        <Ionicons name="mic-outline" size={21} color={pink}/>
+        <Text style={{flex:1,color:theme.foreground,fontSize:13,fontWeight:'600'}}>
+          Enregistrer un son
+        </Text>
+        <Ionicons name="chevron-forward" size={16} color={theme.muted}/>
+      </Pressable>
+      {record?<View style={{paddingBottom:13,gap:9}}>
+        <MusicAudioCapture onSaved={(localFileId,name,durationSeconds)=>{
+          const file:MusicProjectFile={id:newMusicId(),title:name.replace(/\.[^.]+$/,''),
+            kind:'audio',sectionIds:sectionId?[sectionId]:[],
+            localFileId,originalFilename:name,mimeType:name.endsWith('m4a')?'audio/mp4':'audio/webm',
+            durationSeconds,createdAt:new Date().toISOString()};
+          patch({files:[...files,file]});
+          setExpanded('f:'+file.id);setRecord(false);setAddMenu(false);
         }}/>
-        <Pressable onPress={()=>setCreationMode('none')}>
-          <Text style={{color:theme.muted,fontSize:12}}>Retour</Text>
-        </Pressable>
+        {action('Annuler',()=>setRecord(false))}
       </View>:null}
-      {uploading?<Text style={{fontSize:11,color:theme.muted}}>Import en cours…</Text>:null}
     </View>:null}
-    <View style={{borderTopWidth:elements.length?1:0,borderColor:theme.border}}>
-      {elements.map((element,i)=><View key={element.key}>
-        {i>0?<View style={{height:1,backgroundColor:theme.border}}/>:null}
-        <Pressable onPress={()=>setExpanded(expanded===element.key?null:element.key)}
-          accessibilityRole="button"
-          style={{flexDirection:'row',alignItems:'center',gap:11,minHeight:65,paddingVertical:9}}>
-          <View style={{backgroundColor:cardBg,borderRadius:11,width:40,height:40,
-            justifyContent:'center',alignItems:'center'}}>
-            <Ionicons name={iconOf(element.kind)} size={19} color={theme.muted}/>
+    <View style={{gap:0}}>
+      {items.map((item,index)=><View key={item.key}>
+        {index>0?<View style={{height:1,backgroundColor:theme.border}}/>:null}
+        <Pressable accessibilityRole="button"
+          onPress={()=>setExpanded(expanded===item.key?null:item.key)}
+          style={{minHeight:62,flexDirection:'row',alignItems:'center',
+            paddingVertical:10,gap:11}}>
+          <View style={{width:39,height:39,borderRadius:11,justifyContent:'center',
+            alignItems:'center',backgroundColor:theme.dark?'#302A30':'#F7F4F1'}}>
+            <Ionicons name={icons[item.kind]} color={theme.muted} size={19}/>
           </View>
           <View style={{flex:1,gap:4}}>
-            <Text numberOfLines={1} style={{color:theme.foreground,fontWeight:'600',fontSize:13}}>
-              {element.name}
-            </Text>
-            <Text numberOfLines={2} style={{color:theme.muted,fontSize:11}}>
-              {nameOf(element.kind)} · {scopeLabel(element.scopeIds)}
-              {element.subtitle?' · '+element.subtitle:''}
-            </Text>
+            <Text style={{fontWeight:'600',fontSize:13,color:theme.foreground}}
+              numberOfLines={1}>{item.name}</Text>
+            <View style={{flexDirection:'row',alignItems:'center',gap:7,flexWrap:'wrap'}}>
+              <View style={{borderRadius:13,borderWidth:1,borderColor:theme.border,
+                paddingHorizontal:7,paddingVertical:2}}>
+                <Text style={{fontSize:10,color:theme.muted}}>{labels[item.kind]}</Text>
+              </View>
+              {item.description?<Text style={{fontSize:10,color:theme.muted}}
+                numberOfLines={1}>{item.description}</Text>:null}
+            </View>
           </View>
-          <Ionicons name={expanded===element.key?'chevron-up':'chevron-forward'}
-            size={18} color={theme.muted}/>
+          <Ionicons name={expanded===item.key?'chevron-up':'chevron-down'}
+            color={theme.muted} size={17}/>
         </Pressable>
-        {expanded===element.key?<View style={{paddingBottom:15,paddingLeft:6,gap:11}}>
-          {editor(element)}
+        {expanded===item.key?<View style={{paddingBottom:16,paddingHorizontal:3,gap:9}}>
+          {detail(item)}
         </View>:null}
       </View>)}
     </View>
-    {!elements.length?<View style={{paddingVertical:26,alignItems:'center',gap:7}}>
-      <Ionicons name="folder-open-outline" size={27} color={pink}/>
-      <Text style={{fontSize:12,color:theme.muted,textAlign:'center',lineHeight:20}}>
-        Aucun élément pour le moment. Ajoute une idée, des paroles, une piste ou une version.
+    {!items.length?<View style={{alignItems:'center',paddingVertical:19,gap:8}}>
+      <Ionicons name="folder-open-outline" size={28} color={pink}/>
+      <Text style={{fontSize:12,color:theme.muted,textAlign:'center'}}>
+        Aucun élément pour le moment. Ajoute simplement un fichier ou une prise audio.
       </Text>
     </View>:null}
     {error?<Text style={{color:'#B34D67',fontSize:12}}>{error}</Text>:null}
+    {remoteError?<Text style={{color:'#B34D67',fontSize:12}}>{remoteError}</Text>:null}
   </View>;
 }
