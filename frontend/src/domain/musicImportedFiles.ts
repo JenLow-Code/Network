@@ -23,7 +23,7 @@ export async function importSongFile(file:File, originalLanguage:string):Promise
   let text:string|undefined;
   let conversionWarning:string|undefined;
   if(docx){
-    try{text=await textFromDocx(await file.arrayBuffer());}
+    try{text=await textFromDocx(await file.arrayBuffer(),{preserveStanzas:true});}
     catch{conversionWarning='Document Word importé. L’extraction du texte n’est pas disponible pour ce fichier ; tu peux quand même le conserver et le classer.';}
   }else if(plain) text=await file.text();
   else if(/\.doc$/i.test(lower)){

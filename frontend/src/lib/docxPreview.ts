@@ -3,7 +3,7 @@
  * Reads word/document.xml from a ZIP without uploading the file anywhere.
  * Does not promise to preserve Word styles, images or page layout.
  */
-export async function textFromDocx(arrayBuffer:ArrayBuffer):Promise<string>{
+export async function textFromDocx(arrayBuffer:ArrayBuffer, options?:{preserveStanzas?:boolean}):Promise<string>{
  if(arrayBuffer.byteLength>3_000_000)throw new Error('Document too large');
  const v=new DataView(arrayBuffer);
  const bytes=new Uint8Array(arrayBuffer);
@@ -54,7 +54,8 @@ export async function textFromDocx(arrayBuffer:ArrayBuffer):Promise<string>{
   const runs=Array.from(paragraph.getElementsByTagNameNS(wordNS,'t'));
   const line=runs.map(r=>r.textContent||'').join('');
   if(line.trim())lines.push(line);
+  else if(options?.preserveStanzas&&lines.length&&lines[lines.length-1]!=='')lines.push('');
   if(lines.length>=250)break;
  }
- return lines.join('\n\n').slice(0,24000);
+ return (options?.preserveStanzas?lines.join('\n').trim():lines.join('\n\n')).slice(0,24000);
 }
