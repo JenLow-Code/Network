@@ -29,7 +29,7 @@ export function MusicFileViewer({file,project,sectionId,onUpdate,onClassify,onRe
   const theme=useAppTheme();
   const [tagsOpen,setTagsOpen]=useState(false);
   const [editingTitle,setEditingTitle]=useState(false);
-  const [editingText,setEditingText]=useState(false);
+  const [editingText,setEditingText]=useState(file.kind==='note'&&!file.text?.trim());
   const [editingStanza,setEditingStanza]=useState<string|null>(null);
   const [assignStanza,setAssignStanza]=useState<string|null>(null);
   const [assignFile,setAssignFile]=useState(false);
