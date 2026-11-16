@@ -25,6 +25,8 @@ export function MusicStudioNext({project,patch,onCapture}:Props){
   const version=versions.find(v=>v.id===state.activeVersionId)||versions[0];
   const [showVersions,setShowVersions]=useState(false);
   const [showSources,setShowSources]=useState(false);
+  const [sourceMode,setSourceMode]=useState<'new'|'add'>('add');
+  const [deletingVersion,setDeletingVersion]=useState('');
   const [showRecord,setShowRecord]=useState(false);
   const [pending,setPending]=useState<Pending|null>(null);
   const [confirmDiscard,setConfirmDiscard]=useState(false);
@@ -228,11 +230,34 @@ export function MusicStudioNext({project,patch,onCapture}:Props){
         <Text style={{flex:1,color:theme.foreground,fontSize:12}}>{v.title}</Text>
         <Text style={{color:theme.muted,fontSize:10}}>{v.tracks.length} piste(s)</Text>
       </Pressable>)}
+      {versions.length>0?<Pressable
+        onPress={()=>setDeletingVersion(deletingVersion?'':version?.id||'')}
+        style={{alignSelf:'flex-start',paddingVertical:7}}>
+        <Text style={{color:theme.muted,fontSize:11}}>Supprimer une version…</Text>
+      </Pressable>:null}
+      {!!deletingVersion?<View style={{gap:9}}>
+        <Text style={{fontSize:11,color:theme.muted}}>
+          Supprimer définitivement cette version et son historique ? Les enregistrements
+          originaux restent disponibles dans la matière créative.
+        </Text>
+        <View style={{flexDirection:'row',gap:8,flexWrap:'wrap'}}>
+          {action('Supprimer définitivement',()=>{
+            const remain=state.versions.filter(v=>v.id!==deletingVersion);
+            patch({musicNext:{...state,versions:remain,
+              history:(state.history||[]).filter(e=>e.versionId!==deletingVersion),
+              activeVersionId:remain[0]?.id}});
+            setDeletingVersion('');setShowVersions(false);
+          },true)}
+          {action('Annuler',()=>setDeletingVersion(''))}
+        </View>
+      </View>:null}
       <View style={{borderTopWidth:1,borderColor:theme.border,paddingTop:10,gap:8}}>
         <Text style={{fontSize:11,color:theme.muted}}>
           Pour une autre version, choisis une première prise de ta matière créative.
         </Text>
-        {action('Créer une autre version',()=>{setShowSources(true);setShowVersions(false);})}
+        {action('Créer une autre version',()=>{
+          setSourceMode('new');setShowSources(true);setShowVersions(false);
+        })}
         {!!project.versions.length?action('Versions de l’ancien atelier',
           ()=>setLegacyOpen(!legacyOpen)):null}
         {legacyOpen?project.versions.map(v=><View key={v.id} style={{gap:7}}>
@@ -251,7 +276,9 @@ export function MusicStudioNext({project,patch,onCapture}:Props){
         Choisis une prise audio existante comme première piste. Tu peux continuer à capturer des
         idées sans créer de version.
       </Text>
-      {action('Choisir ma première piste',()=>setShowSources(true),true)}
+      {action('Choisir ma première piste',()=>{
+        setSourceMode('new');setShowSources(true);
+      },true)}
       {action('Continuer à capturer',onCapture)}
     </View>:null}
     {version?<View style={{gap:12}}>
@@ -304,7 +331,7 @@ export function MusicStudioNext({project,patch,onCapture}:Props){
           <Ionicons name="radio-button-on" color="#fff" size={20}/>
           <Text style={{fontSize:13,color:'#fff',fontWeight:'700'}}>Enregistrer</Text>
         </Pressable>
-        <Pressable onPress={()=>setShowSources(!showSources)}
+        <Pressable onPress={()=>{setSourceMode('add');setShowSources(!showSources);}}
           accessibilityRole="button" accessibilityLabel="Ajouter une piste existante"
           style={{width:49,height:48,alignItems:'center',justifyContent:'center',
             borderWidth:1,borderColor:theme.border,borderRadius:12,
@@ -347,13 +374,13 @@ export function MusicStudioNext({project,patch,onCapture}:Props){
     {showSources?<View style={{gap:10,borderRadius:13,borderWidth:1,
       borderColor:theme.border,backgroundColor:theme.surface,padding:12}}>
       <Text style={{fontWeight:'700',fontSize:13,color:theme.foreground}}>
-        {version?'Utiliser une prise existante':'Choisir la première piste'}
+        {sourceMode==='new'||!version?'Choisir la première piste':'Utiliser une prise existante'}
       </Text>
       {!playable.length?<Text style={{fontSize:12,color:theme.muted}}>
         Aucune prise audio disponible. Enregistre ou importe un son d’abord.
       </Text>:null}
       {playable.map(f=><Pressable key={f.id}
-        accessibilityRole="button" onPress={()=>{if(version)addTrack(f);else startVersion(f);}}
+        accessibilityRole="button" onPress={()=>{if(sourceMode==='new'||!version)startVersion(f);else addTrack(f);}}
         style={{flexDirection:'row',alignItems:'center',gap:9,minHeight:43,
           borderBottomWidth:1,borderColor:theme.border}}>
         <Ionicons name="musical-note-outline" color={pink} size={18}/>
