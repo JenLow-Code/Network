@@ -1,10 +1,11 @@
-import React,{useState} from 'react';
-import {Pressable,ScrollView,Text,TextInput,View} from 'react-native';
+import React,{useEffect,useState} from 'react';
+import {Platform,Pressable,ScrollView,Text,TextInput,View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {useAppTheme} from '@/theme/AppTheme';
 import {MusicAudioCapture} from './MusicAudioCapture';
 import {MusicAudioPreview} from './MusicAudioPreview';
 import {MusicStudioTransport} from './MusicStudioTransportNext';
+import {MusicAudioPeaks} from './MusicAudioPeaksNext';
 import {MusicSongTabs} from './MusicSongTabs';
 import {deleteUnassignedMusicTake} from '@/domain/musicLocalStorage';
 import {formatMusicDuration} from '@/domain/musicProjectSelectors';
@@ -42,6 +43,19 @@ export function MusicStudioNext({project,patch,onCapture}:Props){
   const [confirmRemove,setConfirmRemove]=useState('');
   const [legacyOpen,setLegacyOpen]=useState(false);
   const files=project.files||[];
+  useEffect(()=>{
+    if(Platform.OS!=='web'||typeof window==='undefined'||!version)return;
+    const handle=(e:KeyboardEvent)=>{
+      const node=e.target as HTMLElement|null;
+      if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'&&
+        !['INPUT','TEXTAREA'].includes(node?.tagName||'')){
+        e.preventDefault();
+        patch({musicNext:undoWorkingVersion(state,version.id)});
+      }
+    };
+    window.addEventListener('keydown',handle);
+    return()=>window.removeEventListener('keydown',handle);
+  },[version?.id,state]);
   const playable=files.filter(isPlayableMusicFile);
   const input={backgroundColor:theme.surface,borderColor:theme.border,borderWidth:1,
     borderRadius:10,paddingHorizontal:11,paddingVertical:9,
@@ -156,13 +170,8 @@ export function MusicStudioNext({project,patch,onCapture}:Props){
         {iconButton('ellipsis-horizontal','Options de '+track.title,()=>setTrackMenu(
           trackMenu===track.id?'':track.id))}
       </View>
-      <View style={{flexDirection:'row',alignItems:'center',gap:6,
-        paddingLeft:42,paddingRight:4}}>
-        <View style={{flex:1,height:7,borderRadius:5,
-          backgroundColor:theme.dark?'#40343C':'#F2E5E9'}}>
-          <View style={{width:'100%',height:7,borderRadius:5,
-            backgroundColor:muted?'#B2AEB0':'#CB82A0'}}/>
-        </View>
+      <View style={{paddingLeft:42,paddingRight:4}}>
+        <MusicAudioPeaks file={source} muted={muted}/>
       </View>
       {renamingTrack===track.id?<View style={{gap:8}}>
         <TextInput value={track.title} onChangeText={title=>updateTracks(
