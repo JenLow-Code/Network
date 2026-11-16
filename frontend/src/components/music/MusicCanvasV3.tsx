@@ -183,7 +183,7 @@ export function MusicCanvasV3({project,patch,onStartVersion,onUseFile,activeVers
               borderColor:theme.border,overflow:'hidden',
               padding:illustration?0:17,gap:11}}>
             {illustration?<View style={{width:'100%',height:164,overflow:'hidden'}}>
-              <MusicLocalArt file={f} size={164}/>
+              <MusicLocalArt file={f} cover/>
             </View>:null}
             <View style={{gap:10,padding:illustration?16:0}}>
               <View style={{flexDirection:'row',alignItems:'center',gap:9}}>
