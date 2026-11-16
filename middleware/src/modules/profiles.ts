@@ -25,7 +25,7 @@ const PROFILE_SQL = `SELECT u.*, p.locale,p.timezone,p.profile_visibility,p.show
   p.browsing_reminder_enabled,p.appearance,p.notification_opt_outs,p.quiet_hours_start,p.quiet_hours_end
   FROM users u LEFT JOIN user_preferences p ON p.user_id=u.id`;
 
-const CATEGORIES = ['dreams', 'collaboration', 'music', 'social', 'messages', 'agenda', 'prayer'] as const;
+const CATEGORIES = ['dreams', 'collaboration', 'social', 'messages', 'agenda', 'prayer'] as const;
 
 function preferences(r: ProfileRow) {
   return {

@@ -209,7 +209,7 @@ test('profiles: featured post rules, preferences, church optional, blocks hide c
   let profile = await app.call('GET', '/api/users/alice.chante');
   assert.equal(profile.body.profile.church, null);
   assert.equal(profile.body.profile.email, undefined);
-  await app.call('PATCH', '/api/me/preferences', { token: a.token, body: { showChurch: true, locale: 'en', timezone: 'Europe/Zurich', appearance: 'dark', notificationOptOuts: ['music'] } });
+  await app.call('PATCH', '/api/me/preferences', { token: a.token, body: { showChurch: true, locale: 'en', timezone: 'Europe/Zurich', appearance: 'dark', notificationOptOuts: ['social'] } });
   profile = await app.call('GET', '/api/users/alice.chante');
   assert.equal(profile.body.profile.church, 'Église du quartier');
   assert.equal((await app.call('PATCH', '/api/me/preferences', { token: a.token, body: { timezone: 'Mars/Olympus' } })).status, 422);
