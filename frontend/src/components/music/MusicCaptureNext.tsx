@@ -6,7 +6,7 @@ import {MusicAudioCapture} from './MusicAudioCapture';
 import {MusicAudioPreview} from './MusicAudioPreview';
 import {importSongFile,classifySongFile,lyricStanzas} from '@/domain/musicImportedFiles';
 import {newMusicId} from '@/domain/musicWorkspace';
-import {isPlayableMusicFile} from '@/domain/musicNext';
+import {isPlayableMusicFile,isMusicTrackCandidate} from '@/domain/musicNext';
 import {formatMusicDuration} from '@/domain/musicProjectSelectors';
 import {getDraftAttachment} from '@/domain/musicLocalStorage';
 import type {MusicProject,MusicProjectFile,MusicSection} from '@/domain/musicWorkspace';
@@ -245,7 +245,7 @@ export function MusicCaptureSpace({project,patch,onStartVersion,onUseFile,active
           </View>
         </View>:null}
         <View style={{flexDirection:'row',gap:8,flexWrap:'wrap'}}>
-          {isPlayableMusicFile(f)?chip(activeVersion?'Ajouter à la version':'Créer Version 1',
+          {isMusicTrackCandidate(f)?chip(activeVersion?'Ajouter à la version':'Créer Version 1',
             false,()=>activeVersion?onUseFile(f):onStartVersion(f)):null}
           {f.localFileId?chip('Fichier original',false,()=>{void openOriginal(f);}):null}
         </View>
