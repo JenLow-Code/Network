@@ -160,7 +160,7 @@ export function useMemberProfile(handle: string | undefined) {
         api<{ profile: ApiProfile }>(`/api/users/${encodeURIComponent(handle)}`),
         api<{ items: ApiFeedItem[] }>(`/api/users/${encodeURIComponent(handle)}/publications?limit=50`),
       ]);
-      const mapped = toPublications(feed.items).filter(p => p.type !== 'music');
+      const mapped = toPublications(feed.items);
       mapped.forEach(x => cache.set(x.id, x));
       setProfile(p.profile);
       setPosts(mapped);

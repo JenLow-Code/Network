@@ -42,6 +42,7 @@ export type ApiFeedItem = {
   caption?: string | null;
   image?: Media;
   // talent
+  description?: string | null;
   talent?: { name: string };
   levelLabel?: string | null;
   illustration?: string | null;

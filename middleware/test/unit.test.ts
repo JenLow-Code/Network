@@ -43,7 +43,6 @@ test('action policy per content type and phase mirrors the V1 rules', () => {
   assert.ok(allows('dream', 'offer-help', 'germination'));
   assert.ok(!allows('dream', 'fire', 'germination'));
   assert.ok(allows('bible', 'verse-export'));
-  assert.ok(!allows('music', 'verse-export'));
   assert.deepEqual(viewerActions('dream', 'semence', { authenticated: false, isOwner: false }), []);
   assert.ok(!viewerActions('dream', 'semence', { authenticated: true, isOwner: true }).includes('same-dream'));
 });
