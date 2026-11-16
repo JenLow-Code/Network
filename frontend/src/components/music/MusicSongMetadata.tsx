@@ -2,6 +2,7 @@ import React,{useEffect,useState} from 'react';
 import {Pressable,ScrollView,Text,TextInput,View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {useAppTheme} from '@/theme/AppTheme';
+import {MusicMissingTalentAction} from './MusicMissingTalentAction';
 import {projectInstruments,formatMusicDuration,songDurationSeconds} from '@/domain/musicProjectSelectors';
 import type {MusicProject} from '@/domain/musicWorkspace';
 
@@ -98,6 +99,7 @@ export function MusicSongMetadata({project,patch}:{
         <Text style={{color:accent,fontSize:11}}>Retirer l'ajout manuel : {item}</Text>
       </Pressable>)}
     </View>:null}
+    <MusicMissingTalentAction project={project} patch={patch}/>
     {editing?<View style={{gap:11,padding:12,borderRadius:12,borderWidth:1,borderColor:theme.border}}>
       <Text style={{color:theme.muted,fontSize:11}}>Langue originale</Text>
       <TextInput value={project.originalLanguage}
