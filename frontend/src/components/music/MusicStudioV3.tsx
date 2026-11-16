@@ -34,6 +34,8 @@ export function MusicStudioV3({project,patch,onCapture}:{project:MusicProject;
   const [key,setKey]=useState('');
   const [meter,setMeter]=useState('');
   const [renaming,setRenaming]=useState(false);
+  const [versionName,setVersionName]=useState('');
+  const [deleting,setDeleting]=useState(false);
   const [error,setError]=useState('');
   const [legacy,setLegacy]=useState(false);
   const files=project.files||[];
@@ -157,6 +159,42 @@ export function MusicStudioV3({project,patch,onCapture}:{project:MusicProject;
       {small('Nouvelle version',()=>{
         setVersionMenu(false);setChooseMode('first');
       })}
+      {version?<View style={{gap:9,paddingTop:8,
+        borderTopWidth:1,borderColor:theme.border}}>
+        <Pressable onPress={()=>{setVersionName(version.title);setRenaming(!renaming);}}
+          style={{paddingVertical:7}}>
+          <Text style={{fontSize:12,color:theme.muted}}>Renommer la version</Text>
+        </Pressable>
+        {renaming?<View style={{flexDirection:'row',gap:8,alignItems:'center'}}>
+          <TextInput value={versionName} onChangeText={setVersionName}
+            placeholder="Nom de la version" placeholderTextColor={theme.muted}
+            style={{...field,flex:1}}/>
+          {small('OK',()=>{
+            if(versionName.trim())current({...version,title:versionName.trim()});
+            setRenaming(false);
+          },true)}
+        </View>:null}
+        <Pressable onPress={()=>setDeleting(!deleting)} style={{paddingVertical:7}}>
+          <Text style={{fontSize:12,color:theme.muted}}>Supprimer cette version…</Text>
+        </Pressable>
+        {deleting?<View style={{gap:8,padding:11,borderRadius:12,
+          backgroundColor:theme.dark?'#3A262C':'#FBEDEF'}}>
+          <Text style={{fontSize:12,lineHeight:19,color:theme.foreground}}>
+            Supprimer définitivement {version.title} et son historique ?
+            Les enregistrements d’origine resteront dans le carnet.
+          </Text>
+          <View style={{flexDirection:'row',gap:9,flexWrap:'wrap'}}>
+            {small('Supprimer définitivement',()=>{
+              const remaining=state.versions.filter(v=>v.id!==version.id);
+              patch({musicNext:{...state,versions:remaining,
+                activeVersionId:remaining[0]?.id,
+                history:(state.history||[]).filter(e=>e.versionId!==version.id)}});
+              setDeleting(false);setVersionMenu(false);
+            },true)}
+            {small('Annuler',()=>setDeleting(false))}
+          </View>
+        </View>:null}
+      </View>:null}
       {!!project.versions.length?<Pressable
         onPress={()=>setLegacy(!legacy)} style={{paddingVertical:10}}>
         <Text style={{fontSize:12,color:theme.muted}}>
