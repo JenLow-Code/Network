@@ -26,7 +26,6 @@ test('scenario 16: Discovery loads the seeded demo from D1; every item opens a r
   const byType = (t: string) => all.filter(i => i.type === t).length;
   assert.equal(byType('dream'), 30);
   assert.equal(byType('bible'), 2);
-  assert.equal(byType('music'), 3);
   assert.equal(byType('talent'), 5);
   const sorted = [...all].sort((a, b) => (a.createdAt < b.createdAt ? 1 : a.createdAt > b.createdAt ? -1 : 0));
   assert.deepEqual(all.map(i => i.createdAt), sorted.map(i => i.createdAt), 'chronological order');
@@ -62,10 +61,7 @@ test('scenario 16: Discovery loads the seeded demo from D1; every item opens a r
 
 test('Discovery filters (type, phase, search) and the demo switch', async () => {
   const app = seeded();
-  const music = await app.call('GET', '/api/discovery?type=music');
-  assert.ok(music.body.items.every((i: any) => i.type === 'music'));
-  assert.equal(music.body.items[0].downloadable, false);
-  assert.equal(music.body.items.find((i: any) => i.title === 'Douceur').playback.appAsset, 'pierre-01-douceur');
+  assert.equal((await app.call('GET', '/api/discovery?type=music')).status, 422, 'removed content type is rejected');
   const germ = await app.call('GET', '/api/discovery?phase=germination');
   assert.equal(germ.body.items.length, 8);
   const search = await app.call('GET', '/api/discovery?q=piano');
@@ -156,53 +152,6 @@ test('scenario 11: Bible post with edition and range; detail shows the whole cha
   const inspired = await app.call('POST', `/api/publications/${post.body.item.id}/inspired-dreams`, { token: (await app.register('Other')).token, body: { title: 'Monter un orchestre de quartier' } });
   assert.equal(inspired.status, 201, JSON.stringify(inspired.body));
   assert.equal(inspired.body.dream.inspiredBy[0].publicationId, post.body.item.id);
-});
-
-test('scenario 10: music rights, adaptation proposal, publisher-only republish with all credits; no download', async () => {
-  const app = createApp();
-  const pub = await app.register('Publisher');
-  const prop = await app.register('Proposer');
-  const third = await app.register('Third');
-  const audio = await upload(app, pub.token, 'music_audio', 'audio/wav', wav());
-  const noRights = await app.call('POST', '/api/music', { token: pub.token, body: { title: 'Aurore', audioMediaId: audio, rightsConfirmed: false, credits: [{ displayName: 'Publisher', contribution: 'Voix' }], rights: { originalCreatorName: 'Publisher', rightsHolderName: 'Publisher', licenseType: 'own_work', attributionText: 'Publisher' } } });
-  assert.equal(noRights.body.error.code, 'rights_confirmation_required');
-  const external = await app.call('POST', '/api/music', { token: pub.token, body: { title: 'Reprise', externalStreamUrl: 'https://cdn.example/x.mp3', rightsConfirmed: true, credits: [{ displayName: 'X', contribution: 'Y' }], rights: { originalCreatorName: 'Autre', rightsHolderName: 'Label', licenseType: 'explicit_permission', attributionText: 'Autre / Label' } } });
-  assert.equal(external.body.error.code, 'rights_evidence_required');
-  const track = await app.call('POST', '/api/music', { token: pub.token, body: {
-    title: 'Aurore', description: 'Démo guitare-voix', audioMediaId: audio, rightsConfirmed: true, lyrics: [{ time: 0, text: 'Au matin' }],
-    credits: [{ displayName: 'Publisher', contribution: 'Composition, voix', handle: pub.handle }],
-    rights: { originalCreatorName: 'Publisher', rightsHolderName: 'Publisher', licenseType: 'own_work', attributionText: '© Publisher' } } });
-  assert.equal(track.status, 201, JSON.stringify(track.body));
-  const id = track.body.item.id;
-  assert.equal(track.body.item.downloadable, false);
-  assert.ok(track.body.item.playback.url.includes('/api/media/'));
-  const playback = await app.call('GET', `/api/music/${id}/playback`);
-  assert.equal(playback.body.downloadable, false);
-  const routes = (await app.call('GET', '/api/openapi.json')).body.paths;
-  assert.ok(!Object.keys(routes).some(p => /download/i.test(p)), 'no download endpoint exists');
-  // Proposal → accept → only the publisher can publish; all credits kept.
-  const propAudio = await upload(app, prop.token, 'music_proposal', 'audio/wav', wav());
-  assert.equal((await app.call('POST', `/api/music/${id}/proposals`, { token: pub.token, body: { description: 'self', audioMediaId: audio, credits: [{ displayName: 'P', contribution: 'x' }] } })).body.error.code, 'own_track');
-  const proposal = await app.call('POST', `/api/music/${id}/proposals`, { token: prop.token, body: { description: 'Violoncelle ajouté', audioMediaId: propAudio, credits: [{ displayName: 'Proposer', contribution: 'Violoncelle', handle: prop.handle }] } });
-  assert.equal(proposal.status, 201, JSON.stringify(proposal.body));
-  const pid = proposal.body.proposal.id;
-  assert.equal((await app.call('GET', `/api/music-proposals/${pid}/playback`, { token: third.token })).status, 404);
-  assert.equal((await app.call('POST', `/api/music-proposals/${pid}/publish`, { token: pub.token })).body.error.code, 'proposal_not_accepted');
-  assert.equal((await app.call('POST', `/api/music-proposals/${pid}/accept`, { token: third.token })).status, 404);
-  assert.equal((await app.call('POST', `/api/music-proposals/${pid}/accept`, { token: pub.token })).status, 200);
-  assert.equal((await app.call('POST', `/api/music-proposals/${pid}/publish`, { token: prop.token })).body.error.code, 'publisher_only');
-  const published = await app.call('POST', `/api/music-proposals/${pid}/publish`, { token: pub.token, headers: { 'Idempotency-Key': 'publish-key-01' } });
-  assert.equal(published.status, 201, JSON.stringify(published.body));
-  assert.deepEqual(published.body.item.credits.map((c: any) => c.displayName), ['Publisher', 'Proposer']);
-  assert.equal(published.body.item.originalTrackId, track.body.item.trackId);
-  assert.match(published.body.item.rights.attribution, /Proposer \(Violoncelle\)/);
-  const again = await app.call('POST', `/api/music-proposals/${pid}/publish`, { token: pub.token, headers: { 'Idempotency-Key': 'publish-key-01' } });
-  assert.equal(again.body.item.id, published.body.item.id, 'retry returns the same publication');
-  // The SQL trigger also refuses a repost by anyone else.
-  assert.throws(() => app.db.exec(`INSERT INTO music_tracks(id,publication_id,publisher_id,rights_id,original_track_id,external_stream_url) VALUES('t-x','${published.body.item.id}','${third.id}','r','${track.body.item.trackId}','https://x')`), /only original publisher/);
-  // Withdrawal hides the track and closes adaptations.
-  assert.equal((await app.call('POST', `/api/music/${id}/withdraw`, { token: pub.token })).status, 200);
-  assert.equal((await app.call('GET', `/api/publications/${id}`)).status, 404);
 });
 
 test('scenario 9: talents with five levels, give/learn/tandem, samples, showcase in the feed, need matching', async () => {
