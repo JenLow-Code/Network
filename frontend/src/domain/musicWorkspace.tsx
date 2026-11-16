@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { readMusicWorkspace, writeMusicWorkspace } from './musicLocalStorage';
+import type { MusicNextState } from './musicNext';
 import { useApp } from '@/context/AppContext';
 
 /**
@@ -98,6 +99,8 @@ export type MusicProjectFile = {
   createdAt: string;
 };
 export type MusicProject = {
+  /** New Music UI state, retained alongside legacy versions and files. */
+  musicNext?: MusicNextState;
   id: string;
   ownerEmail: string;
   ownerName: string;

@@ -1,131 +1,110 @@
-import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Image, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { router, useLocalSearchParams } from 'expo-router';
-import { Nav } from '@/components/navigation/Nav';
-import { PageHeader } from '@/components/navigation/PageHeader';
-import { useAppTheme } from '@/theme/AppTheme';
-import { useMusicWorkspaces, newMusicId } from '@/domain/musicWorkspace';
-import { MusicSongOverview } from '@/components/music/MusicSongOverview';
-import { MusicSongChat } from '@/components/music/MusicSongChat';
-import { api } from '@/lib/api/client';
-import { MusicSectionFocus } from '@/components/music/MusicSectionFocus';
-import { MusicSongMetadata } from '@/components/music/MusicSongMetadata';
-import { MusicSongTabs } from '@/components/music/MusicSongTabs';
-import { MusicFolderCover } from '@/components/music/MusicFolderCover';
-
+import React,{useState} from 'react';
+import {ActivityIndicator,Pressable,ScrollView,Text,View,useWindowDimensions} from 'react-native';
+import {Ionicons} from '@expo/vector-icons';
+import {SafeAreaView} from 'react-native-safe-area-context';
+import {router,useLocalSearchParams} from 'expo-router';
+import {Nav} from '@/components/navigation/Nav';
+import {PageHeader} from '@/components/navigation/PageHeader';
+import {useAppTheme} from '@/theme/AppTheme';
+import {useMusicWorkspaces} from '@/domain/musicWorkspace';
+import {makeWorkingVersion,musicNextState,makeWorkingTrack,
+  changeWorkingVersion} from '@/domain/musicNext';
+import {MusicFolderCover} from '@/components/music/MusicFolderCover';
+import {MusicCaptureSpace} from '@/components/music/MusicCaptureNext';
+import {MusicStudioNext} from '@/components/music/MusicStudioNext';
+import {MusicCollaborateNext} from '@/components/music/MusicCollaborateNext';
+import type {MusicProjectFile} from '@/domain/musicWorkspace';
 const pink='#CB245C';
+type Space='capture'|'studio'|'collaborate';
 
-/**
- * A personal song is a rounded creative workspace.
- * The public cassette belongs exclusively to /music/[id] and Discovery.
- * Song sections are navigable sub-workspaces, never just rows in a generic form.
- */
+/** JenLow Network / Music — a clean new UI generation.
+ * Old recordings, files and published versions are deliberately preserved. */
 export default function MusicWorkspace(){
-  const {id,sectionId:sectionFromChat}=useLocalSearchParams<{id:string;sectionId?:string}>();
+  const {id}=useLocalSearchParams<{id:string}>();
   const {items,patch,ready,error}=useMusicWorkspaces();
   const theme=useAppTheme();
   const {width}=useWindowDimensions();
   const compact=width<640;
   const project=items.find(item=>item.id===id);
-  const [sectionId,setSectionId]=useState(sectionFromChat||'');
-  const [chatOpen,setChatOpen]=useState(false);
-  const [chatReference,setChatReference]=useState('');
-  const [chatError,setChatError]=useState('');
-  const section=project?.sections.find(x=>x.id===sectionId);
-
-  useEffect(()=>{
-    if(!project?.sections.some(x=>x.id===sectionId) && sectionId) setSectionId('');
-  },[project?.sections,sectionId]);
-  useEffect(()=>{if(sectionFromChat)setSectionId(sectionFromChat);
-    else setSectionId('');setChatOpen(false);},[id,sectionFromChat]);
-
+  const [space,setSpace]=useState<Space>('capture');
   if(!ready)return <SafeAreaView style={{flex:1,backgroundColor:theme.background,
-    alignItems:'center',justifyContent:'center'}}>
+    justifyContent:'center',alignItems:'center'}}>
     <ActivityIndicator color={pink}/><Nav/>
   </SafeAreaView>;
-
   if(!project)return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
-    <View style={{padding:21,gap:15}}>
+    <View style={{padding:21,gap:14}}>
       <PageHeader onBack={()=>router.replace('/music-hub')}/>
-      <Text style={{color:theme.foreground,fontSize:17,fontWeight:'700'}}>Morceau introuvable</Text>
-      <Text style={{color:theme.muted,fontSize:12,lineHeight:20}}>
-        Les dossiers de création sont conservés localement. Ouvre le même navigateur pour retrouver ce projet.
+      <Text style={{fontSize:17,fontWeight:'700',color:theme.foreground}}>
+        Morceau introuvable
       </Text>
-      <Pressable onPress={()=>router.replace('/music-hub')}>
-        <Text style={{color:pink}}>Retour à Musique</Text>
-      </Pressable>
+      <Text style={{fontSize:12,color:theme.muted}}>
+        Les morceaux enregistrés localement restent liés à leur navigateur.
+      </Text>
     </View><Nav/>
   </SafeAreaView>;
-
+  const state=musicNextState(project);
+  const activeVersion=state.versions.find(v=>v.id===state.activeVersionId)||
+    state.versions[0];
   const update=(change:Partial<typeof project>)=>patch(project.id,change);
-  const chooseSection=(selected:string)=>{setChatOpen(false);setSectionId(selected);};
-  const openSongChat=async(fromSection?:string)=>{
-    if(project.publishedId){
-      setChatError('');
-      try {
-        const result=await api<{conversationId:string}>('/api/music/'+
-          encodeURIComponent(project.publishedId)+'/conversation',{auth:'required'});
-        const source=project.sections.find(s=>s.id===fromSection);
-        router.push({pathname:'/chat/[id]',params:{
-          id:result.conversationId,
-          ...(source?{sectionId:source.id,sectionTitle:source.title,projectId:project.id}:{}),
-        }});
-      } catch (e) {
-        setChatError(e instanceof Error?e.message:'Le chat partagé est indisponible.');
-      }
-    } else {
-      setChatReference(fromSection||'');setChatOpen(true);
-    }
+  const startVersion=(source:MusicProjectFile)=>{
+    const v=makeWorkingVersion(source,state.versions.length+1);
+    update({musicNext:{...state,versions:[...state.versions,v],activeVersionId:v.id}});
+    setSpace('studio');
   };
-  const newPart=()=>{
-    const sectionId=newMusicId();
-    update({sections:[...project.sections,{id:sectionId,title:'Nouvelle partie'}]});
-    setSectionId(sectionId);
+  const useSource=(source:MusicProjectFile)=>{
+    if(!activeVersion){startVersion(source);return;}
+    if(activeVersion.tracks.some(t=>t.sourceFileId===source.id))return;
+    update({musicNext:changeWorkingVersion(state,{
+      ...activeVersion,tracks:[...activeVersion.tracks,makeWorkingTrack(source)],
+    })});
+    setSpace('studio');
   };
+  const tabs:{id:Space;label:string}[]=[
+    {id:'capture',label:'Matière créative'},
+    {id:'studio',label:'Versions'},
+    {id:'collaborate',label:'Collaborer'},
+  ];
   return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
     <ScrollView keyboardShouldPersistTaps="handled" style={{flex:1}}
-      contentContainerStyle={{width:'100%',maxWidth:890,alignSelf:'center',
-        paddingHorizontal:compact?17:30,paddingTop:12,paddingBottom:110,gap:19}}>
-      <PageHeader onBack={()=>router.replace('/music-hub')} title="Atelier musical"/>
-      {chatError?<Text style={{color:'#B34D67',fontSize:12}}>{chatError}</Text>:null}
-      <View style={{flexDirection:'row',gap:16,alignItems:'center'}}>
-        <MusicFolderCover project={project} size={compact?78:102}/>
-        <View style={{flex:1,gap:7}}>
-          <Text numberOfLines={2} style={{color:theme.foreground,fontSize:compact?23:29,
-            lineHeight:compact?30:36,fontWeight:'700'}}>{project.title}</Text>
-          {project.description?.trim()?<Text style={{color:theme.muted,fontSize:12,lineHeight:18}}
-            numberOfLines={2}>{project.description}</Text>:null}
-          <Text style={{fontSize:11,color:project.publishedId?pink:theme.muted}}>
-            {project.publishedId?'Dossier de création · versions publiques liées':'Espace de création · privé'}
+      contentContainerStyle={{width:'100%',maxWidth:900,alignSelf:'center',
+        paddingHorizontal:compact?16:30,paddingTop:11,paddingBottom:110,gap:17}}>
+      <PageHeader onBack={()=>router.replace('/music-hub')} title="Musique"/>
+      <View style={{flexDirection:'row',alignItems:'center',gap:13}}>
+        <MusicFolderCover project={project} size={compact?66:87}/>
+        <View style={{flex:1,gap:5}}>
+          <Text style={{fontSize:compact?22:27,lineHeight:compact?29:36,
+            fontWeight:'700',color:theme.foreground}} numberOfLines={2}>
+            {project.title}
+          </Text>
+          {project.description?<Text numberOfLines={2}
+            style={{fontSize:12,lineHeight:18,color:theme.muted}}>
+            {project.description}
+          </Text>:null}
+          <Text style={{fontSize:11,color:theme.muted}}>
+            {state.versions.length?state.versions.length+' version(s) de travail':'Création libre'}
           </Text>
         </View>
-        <Pressable accessibilityRole="button" accessibilityLabel="Chat du morceau"
-          onPress={()=>{void openSongChat();}}
-          style={{width:43,height:43,borderRadius:12,borderWidth:1,borderColor:theme.border,
-            alignItems:'center',justifyContent:'center',backgroundColor:theme.surface}}>
-          <Ionicons name="chatbubbles-outline" size={22} color={pink}/>
-        </Pressable>
       </View>
-      {error?<View style={{backgroundColor:theme.dark?'#3D292F':'#FCECEE',
-        borderWidth:1,borderColor:'#E2A2B0',padding:11,borderRadius:12}}>
-        <Text style={{color:theme.dark?'#F7B7C3':'#A83C55',fontSize:12}}>{error}</Text>
-      </View>:null}
-
-      <MusicSongMetadata project={project} patch={update}/>
-      <MusicSongTabs project={project} activeSectionId={sectionId}
-        onSelect={chooseSection} patch={update}/>
-
-      {chatOpen?<MusicSongChat key={chatReference||'whole'} project={project} patch={update}
-        referenceId={chatReference} openSection={chooseSection}/>:
-        section?<MusicSectionFocus key={section.id} project={project} section={section}
-          patch={update} openSection={chooseSection}
-          onOpenChat={(source)=>{void openSongChat(source);}}/>:
-        <MusicSongOverview project={project} patch={update} openSection={chooseSection}
-          openChat={()=>{void openSongChat();}}/>}
-
-    </ScrollView>
-    <Nav/>
+      {error?<Text style={{color:'#B34D67',fontSize:12}}>{error}</Text>:null}
+      <View style={{flexDirection:'row',borderBottomWidth:1,borderColor:theme.border}}>
+        {tabs.map(tab=><Pressable key={tab.id}
+          onPress={()=>setSpace(tab.id)} accessibilityRole="tab"
+          accessibilityState={{selected:space===tab.id}}
+          style={{flex:1,minHeight:47,paddingHorizontal:3,paddingVertical:12,
+            borderBottomWidth:space===tab.id?3:0,
+            borderBottomColor:pink,alignItems:'center',justifyContent:'center'}}>
+          <Text style={{fontSize:12,fontWeight:space===tab.id?'700':'500',
+            color:space===tab.id?pink:theme.muted}} numberOfLines={1}>
+            {tab.label}
+          </Text>
+        </Pressable>)}
+      </View>
+      {space==='capture'?<MusicCaptureSpace project={project} patch={update}
+        activeVersion={!!activeVersion} onStartVersion={startVersion}
+        onUseFile={useSource}/>:
+      space==='studio'?<MusicStudioNext project={project} patch={update}
+        onCapture={()=>setSpace('capture')}/>:
+        <MusicCollaborateNext project={project} patch={update}/>}
+    </ScrollView><Nav/>
   </SafeAreaView>;
 }

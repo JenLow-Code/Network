@@ -6,6 +6,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useDiscovery } from '@/lib/api/hooks';
 import { useApp } from '@/context/AppContext';
 import { useMusicWorkspaces } from '@/domain/musicWorkspace';
+import { musicNextState } from '@/domain/musicNext';
 import { Nav } from '@/components/navigation/Nav';
 import { PageHeader } from '@/components/navigation/PageHeader';
 import { musics } from '@/mocks/publications';
@@ -119,7 +120,7 @@ export default function MusicHub() {
               <View style={{ flex: 1, gap: 5 }}>
                 <Text style={{ color: theme.foreground, fontSize: 15, fontWeight: '700' }}>{project.title}</Text>
                 <Text style={{ color: theme.muted, fontSize: 11 }}>
-                  {project.layers.length} piste{project.layers.length === 1 ? '' : 's'} · {project.lyrics.length} langue{project.lyrics.length === 1 ? '' : 's'}
+                  {(project.files||[]).length} élément(s) · {musicNextState(project).versions.length} version(s)
                 </Text>
                 <Text style={{ color: project.publishedId ? pink : theme.muted, fontSize: 11 }}>
                   {project.publishedId ? 'Publication liée' : 'Brouillon privé'}
