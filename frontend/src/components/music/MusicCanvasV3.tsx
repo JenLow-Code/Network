@@ -192,7 +192,7 @@ export function MusicCanvasV3({project,patch,onStartVersion,onUseFile,activeVers
                 <Text style={{fontSize:11,color:theme.muted,flex:1}}>
                   {label(f)}
                 </Text>
-                <Ionicons name="arrow-up-forward-outline" size={15} color={theme.muted}/>
+                <Ionicons name="arrow-forward-outline" size={15} color={theme.muted}/>
               </View>
               <Text style={{fontSize:14,fontWeight:'700',color:theme.foreground}}
                 numberOfLines={1}>{f.title}</Text>
