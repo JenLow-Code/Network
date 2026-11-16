@@ -37,8 +37,6 @@ type AppState = {
   dreamInspirations: Record<string, string[]>;
   encouragementIds: string[];
   encourage: (id: string) => void;
-  musicProposalIds: string[];
-  proposeMusic: (id: string) => void;
   myDreamIds: string[];
   joinDream: (id: string) => void;
   prayerIds: string[];
@@ -88,7 +86,6 @@ export function Provider({ children }: { children: React.ReactNode }) {
   const [dreamInspirations, setDreamInspirations] = useState<Record<string, string[]>>({});
   const [myDreamIds, setMyDreamIds] = useState<string[]>([]);
   const [encouragementIds, setEncouragementIds] = useState<string[]>([]);
-  const [musicProposalIds, setMusicProposalIds] = useState<string[]>([]);
   const [prayerByDate, setPrayerByDate] = useState<Record<string, string[]>>({});
   const prayerIds = Array.from(new Set(Object.values(prayerByDate).flat()));
   const [prayerRepetitions, setPrayerRepetitions] = useState<
@@ -104,7 +101,6 @@ export function Provider({ children }: { children: React.ReactNode }) {
       setFireBibleVerses([]);
       setDreamInspirations({});
       setEncouragementIds([]);
-      setMusicProposalIds([]);
       setMyDreamIds([]);
       setPrayerByDate({});
       setPrayerRepetitions({});
@@ -119,11 +115,10 @@ export function Provider({ children }: { children: React.ReactNode }) {
       AsyncStorage.getItem('jenlow.mine.' + email),
       AsyncStorage.getItem('jenlow.prayer.' + email),
       AsyncStorage.getItem('jenlow.encouragement.' + email),
-      AsyncStorage.getItem('jenlow.proposals.' + email),
       AsyncStorage.getItem('jenlow.prayer.repeats.' + email),
       AsyncStorage.getItem(FIRE_BIBLE_VERSES_KEY(email)),
     ])
-      .then(([fire, folders, dreams, mine, prayers, encouragement, proposals, repeats, bibleVerses]) => {
+      .then(([fire, folders, dreams, mine, prayers, encouragement, repeats, bibleVerses]) => {
         if (canceled) return;
         let ids: string[] = [];
         let links: Record<string, string[]> = {};
@@ -177,11 +172,6 @@ export function Provider({ children }: { children: React.ReactNode }) {
           setEncouragementIds([]);
         }
         try {
-          setMusicProposalIds(proposals ? JSON.parse(proposals) : []);
-        } catch {
-          setMusicProposalIds([]);
-        }
-        try {
           const parsed = repeats ? JSON.parse(repeats) : {};
           setPrayerRepetitions(parsed && typeof parsed === 'object' ? parsed : {});
         } catch {
@@ -229,13 +219,6 @@ export function Provider({ children }: { children: React.ReactNode }) {
         JSON.stringify(encouragementIds),
       ).catch(() => {});
   }, [email, readyFor, encouragementIds]);
-  useEffect(() => {
-    if (email && readyFor === email)
-      void AsyncStorage.setItem(
-        'jenlow.proposals.' + email,
-        JSON.stringify(musicProposalIds),
-      ).catch(() => {});
-  }, [email, readyFor, musicProposalIds]);
   useEffect(() => {
     if (email && readyFor === email)
       void AsyncStorage.setItem(
@@ -304,10 +287,6 @@ export function Provider({ children }: { children: React.ReactNode }) {
       setEncouragementIds(p => (p.includes(id) ? p.filter(x => x !== id) : [...p, id])),
     [],
   );
-  const proposeMusic = useCallback(
-    (id: string) => setMusicProposalIds(p => (p.includes(id) ? p : [...p, id])),
-    [],
-  );
   const togglePrayer = useCallback(
     (id: string) =>
       setPrayerByDate(prev => {
@@ -370,8 +349,6 @@ export function Provider({ children }: { children: React.ReactNode }) {
       send: text => setMessages(prev => [...prev, { id: String(Date.now()), text, fromMe: true }]),
       encouragementIds,
       encourage,
-      musicProposalIds,
-      proposeMusic,
       myDreamIds,
       joinDream,
       prayerIds,
@@ -444,9 +421,7 @@ export function Provider({ children }: { children: React.ReactNode }) {
       joinDream,
       togglePrayer,
       encouragementIds,
-      musicProposalIds,
       encourage,
-      proposeMusic,
       prayerRepetitions,
       setPrayerRepetition,
     ],

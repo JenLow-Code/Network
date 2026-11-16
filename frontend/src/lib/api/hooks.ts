@@ -18,7 +18,7 @@ const demoFeed: Publication[] = [...samplePublications, ...sampleTalents].filter
 );
 
 /**
- * Interleave the D1-backed demo dreams with music, Scripture and talent previews.
+ * Interleave the D1-backed demo dreams with Scripture and talent previews.
  * Stable order (no random shuffling) keeps the masonry layout predictable.
  */
 function interleaveEditorial(dreams: Publication[], editorial: Publication[]): Publication[] {
@@ -68,9 +68,10 @@ export function useDiscovery(params: { type?: string; q?: string } = {}) {
     try {
       if (betaDiscovery) {
         const remote = await fetchDemoDiscovery();
-        // Music, Bible and Talent are visibly demo previews; D1 currently has only dream data.
+        // Bible and Talent are visibly demo previews; D1 currently has only dream data.
         const demoEditorial = demoFeed.filter(p => p.type !== 'dream');
         const mixed = interleaveEditorial(remote, demoEditorial).filter(p =>
+          p.type !== 'music' &&
           (!params.type || p.type === params.type) &&
           (!params.q || [p.title, p.author].join(' ').toLowerCase().includes(params.q.toLowerCase())),
         );
@@ -81,7 +82,7 @@ export function useDiscovery(params: { type?: string; q?: string } = {}) {
         return;
       }
       const page = await api<{ items: ApiFeedItem[]; nextCursor: string | null }>(`/api/discovery?limit=40${key ? '&' + key : ''}`);
-      const mapped = toPublications(page.items);
+      const mapped = toPublications(page.items).filter(p => p.type !== 'music');
       mapped.forEach(p => cache.set(p.id, p));
       setItems(mapped);
       setCursor(page.nextCursor);
@@ -160,7 +161,7 @@ export function useMemberProfile(handle: string | undefined) {
         api<{ profile: ApiProfile }>(`/api/users/${encodeURIComponent(handle)}`),
         api<{ items: ApiFeedItem[] }>(`/api/users/${encodeURIComponent(handle)}/publications?limit=50`),
       ]);
-      const mapped = toPublications(feed.items);
+      const mapped = toPublications(feed.items).filter(p => p.type !== 'music');
       mapped.forEach(x => cache.set(x.id, x));
       setProfile(p.profile);
       setPosts(mapped);
