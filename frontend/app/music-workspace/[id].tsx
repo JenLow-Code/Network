@@ -1,110 +1,107 @@
-import React,{useState} from 'react';
-import {ActivityIndicator,Pressable,ScrollView,Text,View,useWindowDimensions} from 'react-native';
-import {Ionicons} from '@expo/vector-icons';
-import {SafeAreaView} from 'react-native-safe-area-context';
-import {router,useLocalSearchParams} from 'expo-router';
-import {Nav} from '@/components/navigation/Nav';
-import {PageHeader} from '@/components/navigation/PageHeader';
-import {useAppTheme} from '@/theme/AppTheme';
-import {useMusicWorkspaces} from '@/domain/musicWorkspace';
-import {makeWorkingVersion,musicNextState,makeWorkingTrack,
-  changeWorkingVersion} from '@/domain/musicNext';
-import {MusicFolderCover} from '@/components/music/MusicFolderCover';
-import {MusicCanvasV3} from '@/components/music/MusicCanvasV3';
-import {MusicStudioV3} from '@/components/music/MusicStudioV3';
-import {MusicCollaborationV3} from '@/components/music/MusicCollaborationV3';
-import type {MusicProjectFile} from '@/domain/musicWorkspace';
-const pink='#CB245C';
-type Space='capture'|'studio'|'collaborate';
+import React, { useState } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import { router, useLocalSearchParams } from 'expo-router';
+import { Nav } from '@/components/navigation/Nav';
+import { PageHeader } from '@/components/navigation/PageHeader';
+import { MusicFolderCover } from '@/components/music/MusicFolderCover';
+import { MusicCaptureExperience } from '@/components/music/MusicCaptureExperience';
+import { MusicCreateExperience } from '@/components/music/MusicCreateExperience';
+import { MusicCollaborateExperience } from '@/components/music/MusicCollaborateExperience';
+import { useMusicWorkspaces } from '@/domain/musicWorkspace';
+import { musicNextState, makeWorkingVersion, makeWorkingTrack, changeWorkingVersion } from '@/domain/musicNext';
+import { useAppTheme } from '@/theme/AppTheme';
+import type { MusicProjectFile } from '@/domain/musicWorkspace';
 
-/** JenLow Network / Music — a clean new UI generation.
- * Old recordings, files and published versions are deliberately preserved. */
-export default function MusicWorkspace(){
+type Space = 'capture'|'create'|'collaborate';
+const PINK='#CB245C';
+
+export default function MusicWorkspace() {
   const {id}=useLocalSearchParams<{id:string}>();
   const {items,patch,ready,error}=useMusicWorkspaces();
   const theme=useAppTheme();
   const {width}=useWindowDimensions();
-  const compact=width<640;
-  const project=items.find(item=>item.id===id);
+  const compact=width<600;
   const [space,setSpace]=useState<Space>('capture');
-  if(!ready)return <SafeAreaView style={{flex:1,backgroundColor:theme.background,
+  const project=items.find(item=>item.id===id);
+  if (!ready) return <SafeAreaView style={{flex:1,backgroundColor:theme.background,
     justifyContent:'center',alignItems:'center'}}>
-    <ActivityIndicator color={pink}/><Nav/>
+    <ActivityIndicator color={PINK}/><Nav/>
   </SafeAreaView>;
-  if(!project)return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
-    <View style={{padding:21,gap:14}}>
+  if (!project) return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
+    <View style={{padding:22,gap:13}}>
       <PageHeader onBack={()=>router.replace('/music-hub')}/>
-      <Text style={{fontSize:17,fontWeight:'700',color:theme.foreground}}>
-        Morceau introuvable
+      <Text style={{color:theme.foreground,fontSize:19,fontWeight:'700'}}>Chanson introuvable</Text>
+      <Text style={{color:theme.muted,fontSize:13,lineHeight:20}}>
+        Les brouillons enregistrés localement restent liés à cet appareil.
       </Text>
-      <Text style={{fontSize:12,color:theme.muted}}>
-        Les morceaux enregistrés localement restent liés à leur navigateur.
-      </Text>
-    </View><Nav/>
+    </View>
+    <Nav/>
   </SafeAreaView>;
-  const state=musicNextState(project);
-  const activeVersion=state.versions.find(v=>v.id===state.activeVersionId)||
-    state.versions[0];
-  const update=(change:Partial<typeof project>)=>patch(project.id,change);
-  const startVersion=(source:MusicProjectFile)=>{
-    const v=makeWorkingVersion(source,state.versions.length+1);
-    update({musicNext:{...state,versions:[...state.versions,v],activeVersionId:v.id}});
-    setSpace('studio');
+  const music=musicNextState(project);
+  const version=music.versions.find(v=>v.id===music.activeVersionId)||music.versions[0];
+  const update=(value:Partial<typeof project>)=>patch(project.id,value);
+  const start=(file:MusicProjectFile)=>{
+    const created=makeWorkingVersion(file,music.versions.length+1);
+    update({musicNext:{...music,versions:[...music.versions,created],activeVersionId:created.id}});
+    setSpace('create');
   };
-  const useSource=(source:MusicProjectFile)=>{
-    if(!activeVersion){startVersion(source);return;}
-    if(activeVersion.tracks.some(t=>t.sourceFileId===source.id))return;
-    update({musicNext:changeWorkingVersion(state,{
-      ...activeVersion,tracks:[...activeVersion.tracks,makeWorkingTrack(source)],
+  const useFile=(file:MusicProjectFile)=>{
+    if(!version){start(file);return;}
+    if(version.tracks.some(track=>track.sourceFileId===file.id)){setSpace('create');return;}
+    update({musicNext:changeWorkingVersion(music,{
+      ...version,tracks:[...version.tracks,makeWorkingTrack(file)]
     })});
-    setSpace('studio');
+    setSpace('create');
   };
-  const tabs:{id:Space;label:string}[]=[
-    {id:'capture',label:'Matière créative'},
-    {id:'studio',label:'Versions'},
-    {id:'collaborate',label:'Collaborer'},
+  const spaces: {id:Space; title:string; icon:keyof typeof Ionicons.glyphMap}[]=[
+    {id:'capture',title:'Capturer',icon:'mic-outline'},
+    {id:'create',title:'Créer',icon:'options-outline'},
+    {id:'collaborate',title:'Collaborer',icon:'people-outline'},
   ];
   return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
-    <ScrollView keyboardShouldPersistTaps="handled" style={{flex:1}}
-      contentContainerStyle={{width:'100%',maxWidth:900,alignSelf:'center',
-        paddingHorizontal:compact?16:30,paddingTop:11,paddingBottom:110,gap:17}}>
+    <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{
+      width:'100%',maxWidth:860,alignSelf:'center',paddingHorizontal:compact?18:34,
+      paddingTop:8,paddingBottom:120,gap:25}}>
       <PageHeader onBack={()=>router.replace('/music-hub')} title="Musique"/>
-      <View style={{flexDirection:'row',alignItems:'center',gap:13}}>
-        <MusicFolderCover project={project} size={compact?66:87}/>
-        <View style={{flex:1,gap:5}}>
-          <Text style={{fontSize:compact?22:27,lineHeight:compact?29:36,
-            fontWeight:'700',color:theme.foreground}} numberOfLines={2}>
+      <View style={{flexDirection:'row',gap:15,alignItems:'center'}}>
+        <MusicFolderCover project={project} size={compact?65:82}/>
+        <View style={{gap:5,flex:1}}>
+          <Text style={{fontSize:compact?24:30,lineHeight:compact?29:37,
+            fontWeight:'700',letterSpacing:-0.65,color:theme.foreground}} numberOfLines={2}>
             {project.title}
           </Text>
-          {project.description?<Text numberOfLines={2}
-            style={{fontSize:12,lineHeight:18,color:theme.muted}}>
-            {project.description}
-          </Text>:null}
-          <Text style={{fontSize:11,color:theme.muted}}>
-            {state.versions.length?state.versions.length+' version(s) de travail':'Création libre'}
+          <Text style={{fontSize:12,lineHeight:18,color:theme.muted}} numberOfLines={2}>
+            {project.description || (music.versions.length
+              ? music.versions.length + (music.versions.length===1 ? ' version' : ' versions')+' de travail'
+              : 'Une création en devenir')}
           </Text>
         </View>
       </View>
-      {error?<Text style={{color:'#B34D67',fontSize:12}}>{error}</Text>:null}
-      <View style={{flexDirection:'row',borderBottomWidth:1,borderColor:theme.border}}>
-        {tabs.map(tab=><Pressable key={tab.id}
-          onPress={()=>setSpace(tab.id)} accessibilityRole="tab"
-          accessibilityState={{selected:space===tab.id}}
-          style={{flex:1,minHeight:47,paddingHorizontal:3,paddingVertical:12,
-            borderBottomWidth:space===tab.id?3:0,
-            borderBottomColor:pink,alignItems:'center',justifyContent:'center'}}>
-          <Text style={{fontSize:12,fontWeight:space===tab.id?'700':'500',
-            color:space===tab.id?pink:theme.muted}} numberOfLines={1}>
-            {tab.label}
-          </Text>
-        </Pressable>)}
+      <View style={{flexDirection:'row',borderBottomWidth:1,borderColor:theme.border,gap:3}}>
+        {spaces.map(item=>{
+          const selected=space===item.id;
+          return <Pressable key={item.id} onPress={()=>setSpace(item.id)}
+            accessibilityRole="tab" accessibilityState={{selected}}
+            style={{flex:1,flexDirection:'row',alignItems:'center',
+              justifyContent:'center',gap:compact?5:9,
+              minHeight:52,borderBottomWidth:selected?3:0,
+              borderBottomColor:selected?PINK:'transparent',paddingHorizontal:3}}>
+            <Ionicons name={item.icon} size={compact?17:19}
+              color={selected?PINK:theme.muted}/>
+            <Text style={{fontSize:compact?12:14,fontWeight:selected?'700':'500',
+              color:selected?theme.foreground:theme.muted}}>{item.title}</Text>
+          </Pressable>;
+        })}
       </View>
-      {space==='capture'?<MusicCanvasV3 project={project} patch={update}
-        activeVersion={!!activeVersion} onStartVersion={startVersion}
-        onUseFile={useSource}/>:
-      space==='studio'?<MusicStudioV3 project={project} patch={update}
-        onCapture={()=>setSpace('capture')}/>:
-        <MusicCollaborationV3 project={project} patch={update}/>}
-    </ScrollView><Nav/>
+      {error ? <Text style={{color:'#B94D63',fontSize:12}}>{error}</Text> : null}
+      {space==='capture' ? <MusicCaptureExperience project={project} patch={update}
+        onStartVersion={start} onUseFile={useFile} hasVersion={!!version}/> : null}
+      {space==='create' ? <MusicCreateExperience project={project} patch={update}
+        onCapture={()=>setSpace('capture')}/> : null}
+      {space==='collaborate' ? <MusicCollaborateExperience project={project} patch={update}/> : null}
+    </ScrollView>
+    <Nav/>
   </SafeAreaView>;
 }
