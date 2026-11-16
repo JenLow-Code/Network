@@ -19,7 +19,7 @@ import { useLocale } from '@/i18n/locale';
 import { useAppTheme } from '@/theme/AppTheme';
 import { HANDWRITING_FAMILY } from '@/theme/handwriting';
 import { matchesForMe, profileTalentStorageKey, type SavedTalent } from '@/domain/personalDiscovery';
-const filters = ['Tout', 'Pour moi', 'Rêves', 'Musique', 'Bible', 'Talents'] as const;
+const filters = ['Tout', 'Pour moi', 'Rêves', 'Bible', 'Talents'] as const;
 
 /** Stable, well-distributed editorial shuffle: no jumping cards on each render. */
 function discoveryRank(id: string): number {
@@ -69,7 +69,7 @@ export default function Discover() {
   // "Tout" view appended all talents *after* all dreams, undoing API interleaving.
   const shuffledFeed = useMemo(() =>
     feed.items
-      .filter(p => p.type !== 'dream' || p.phase !== 'Rêve')
+      .filter(p => p.type !== 'music' && (p.type !== 'dream' || p.phase !== 'Rêve'))
       .slice()
       .sort((a, b) => discoveryRank(a.id) - discoveryRank(b.id) || a.id.localeCompare(b.id)),
     [feed.items],
@@ -83,7 +83,6 @@ export default function Discover() {
           (filter === 'Tout' ||
             (filter === 'Pour moi' && matchesForMe(p, savedTalents)) ||
             (filter === 'Rêves' && p.type === 'dream') ||
-            (filter === 'Musique' && p.type === 'music') ||
             (filter === 'Bible' && p.type === 'bible')) &&
           [p.title, p.author, p.type, p.type === 'dream' ? p.phase : '']
             .join(' ')
@@ -177,8 +176,6 @@ export default function Discover() {
                     ? 'Pour moi'
                   : f === 'Rêves'
                     ? tr('dreamsFilter')
-                    : f === 'Musique'
-                      ? tr('musicFilter')
                       : f === 'Bible'
                         ? tr('bibleFilter')
                         : 'Talents'

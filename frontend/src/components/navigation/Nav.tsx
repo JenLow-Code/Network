@@ -7,7 +7,7 @@ import { router, usePathname } from 'expo-router';
 import { useLocale } from '@/i18n/locale';
 import { useAppTheme } from '@/theme/AppTheme';
 
-/** Five durable destinations. Fire and Messages live in the global header. */
+/** Four durable destinations. Fire and Messages live in the global header. */
 export function Nav() {
   const theme = useAppTheme();
   const path = usePathname();
@@ -19,18 +19,10 @@ export function Nav() {
       active: path === '/agenda' || path === '/prayers',
     },
     {
-      icon: 'musical-note-outline' as const, title: t('music'),
-      path: '/music-hub' as const,
-      active: path === '/music-hub' || path.startsWith('/publish/music') ||
-        path.startsWith('/music-proposal/') || path === '/music/new' || path.startsWith('/music-workspace/') ||
-        path.startsWith('/music-collaboration/'),
-    },
-    {
       icon: 'ellipse-outline' as const, title: t('discover'),
       path: '/discover' as const,
       active: path === '/discover' || path.startsWith('/dream/') ||
-        path.startsWith('/bible/') || path.startsWith('/person/') ||
-        (path.startsWith('/music/') && path !== '/music/new'),
+        path.startsWith('/bible/') || path.startsWith('/person/'),
     },
     {
       icon: 'layers-outline' as const, title: 'Mes rêves',
@@ -116,7 +108,6 @@ export function Nav() {
             <Ionicons
               name={
                 x.path === '/agenda' && x.active ? 'calendar'
-                : x.path === '/music-hub' && x.active ? 'musical-note'
                 : x.path === '/my-space' && x.active ? 'layers'
                 : x.icon
               }
