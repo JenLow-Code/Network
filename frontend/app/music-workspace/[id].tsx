@@ -12,7 +12,7 @@ import {makeWorkingVersion,musicNextState,makeWorkingTrack,
 import {MusicFolderCover} from '@/components/music/MusicFolderCover';
 import {MusicCanvasV3} from '@/components/music/MusicCanvasV3';
 import {MusicStudioV3} from '@/components/music/MusicStudioV3';
-import {MusicCollaborateNext} from '@/components/music/MusicCollaborateNext';
+import {MusicCollaborationV3} from '@/components/music/MusicCollaborationV3';
 import type {MusicProjectFile} from '@/domain/musicWorkspace';
 const pink='#CB245C';
 type Space='capture'|'studio'|'collaborate';
@@ -104,7 +104,7 @@ export default function MusicWorkspace(){
         onUseFile={useSource}/>:
       space==='studio'?<MusicStudioV3 project={project} patch={update}
         onCapture={()=>setSpace('capture')}/>:
-        <MusicCollaborateNext project={project} patch={update}/>}
+        <MusicCollaborationV3 project={project} patch={update}/>}
     </ScrollView><Nav/>
   </SafeAreaView>;
 }
