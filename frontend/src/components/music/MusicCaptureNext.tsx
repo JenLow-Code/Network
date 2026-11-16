@@ -4,6 +4,7 @@ import {Ionicons} from '@expo/vector-icons';
 import {useAppTheme} from '@/theme/AppTheme';
 import {MusicAudioCapture} from './MusicAudioCapture';
 import {MusicAudioPreview} from './MusicAudioPreview';
+import {MusicLocalArt} from './MusicLocalArtNext';
 import {importSongFile,classifySongFile,lyricStanzas} from '@/domain/musicImportedFiles';
 import {newMusicId} from '@/domain/musicWorkspace';
 import {isPlayableMusicFile,isMusicTrackCandidate} from '@/domain/musicNext';
@@ -179,10 +180,11 @@ export function MusicCaptureSpace({project,patch,onStartVersion,onUseFile,active
         setShowSections('');setShowType('');}} accessibilityRole="button"
         accessibilityState={{expanded:expanded===f.id}}
         style={{flexDirection:'row',alignItems:'center',gap:11,minHeight:49}}>
-        <View style={{width:42,height:42,borderRadius:12,backgroundColor:theme.surface,
-          alignItems:'center',justifyContent:'center',borderWidth:1,borderColor:theme.border}}>
-          <Ionicons name={iconFor(f)} color={pink} size={21}/>
-        </View>
+        {isImage(f)?<MusicLocalArt file={f} size={42}/>:
+          <View style={{width:42,height:42,borderRadius:12,backgroundColor:theme.surface,
+            alignItems:'center',justifyContent:'center',borderWidth:1,borderColor:theme.border}}>
+            <Ionicons name={iconFor(f)} color={pink} size={21}/>
+          </View>}
         <View style={{flex:1,gap:4}}>
           <Text numberOfLines={1} style={{color:theme.foreground,fontSize:13,fontWeight:'600'}}>
             {f.title}
@@ -199,6 +201,7 @@ export function MusicCaptureSpace({project,patch,onStartVersion,onUseFile,active
       {expanded===f.id?<View style={{gap:12,paddingHorizontal:3,paddingBottom:11}}>
         <TextInput style={input} value={f.title} onChangeText={title=>update(f.id,{title})}
           accessibilityLabel="Nom de cet élément"/>
+        {isImage(f)?<MusicLocalArt file={f} size={160}/>:null}
         {isPlayableMusicFile(f)?<MusicAudioPreview source={{localAudioId:f.localFileId}}/>:null}
         {f.kind==='lyrics'||f.kind==='note'||f.kind==='idea'||f.kind==='document'?
           <TextInput multiline textAlignVertical="top"
