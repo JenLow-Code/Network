@@ -24,7 +24,7 @@ const label=(f:MusicProjectFile)=>{
     score:'Partition',idea:'Idée',note:'Note',document:'Document'} as const)[f.kind];
 };
 const glyph=(f:MusicProjectFile):keyof typeof Ionicons.glyphMap=>
-  f.kind==='lyrics'?'document-text-outline':audio(f)?'audio-lines-outline':
+  f.kind==='lyrics'?'document-text-outline':audio(f)?'mic-outline':
   f.kind==='track'?'musical-notes-outline':f.kind==='note'?'create-outline':
   f.kind==='idea'?'bulb-outline':'document-outline';
 const preview=(f:MusicProjectFile)=>
