@@ -93,7 +93,7 @@ export function MusicSongElements({project,patch,sectionId,openSection}:Props){
           name:s.scoreFileName||'Partition',description:s.title}))),
       ...(!sectionId?[]:project.sections.filter(s=>s.id===sectionId&&s.notes?.trim())
         .map(s=>({key:'note:'+s.id,id:s.id,kind:'note' as const,source:'note' as const,
-          name:'Notes · '+s.title,description:'Note de la partie'})),
+          name:'Notes · '+s.title,description:'Note de la partie'}))),
       ...(!sectionId?remote.filter(x=>!project.archivedRemoteProposals?.includes(x.id))
         .map(x=>({key:'r:'+x.id,id:x.id,kind:'proposal' as const,source:'remote' as const,
           name:'Proposition de '+(x.proposer?.displayName||'musicien'),
