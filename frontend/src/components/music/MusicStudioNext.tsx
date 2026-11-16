@@ -10,7 +10,7 @@ import {MusicSongTabs} from './MusicSongTabs';
 import {deleteUnassignedMusicTake} from '@/domain/musicLocalStorage';
 import {formatMusicDuration} from '@/domain/musicProjectSelectors';
 import {musicNextState,changeWorkingVersion,undoWorkingVersion,
-  makeWorkingTrack,makeWorkingVersion,isPlayableMusicFile} from '@/domain/musicNext';
+  makeWorkingTrack,makeWorkingVersion,isPlayableMusicFile,isMusicTrackCandidate} from '@/domain/musicNext';
 import {newMusicId} from '@/domain/musicWorkspace';
 import type {MusicProject,MusicProjectFile} from '@/domain/musicWorkspace';
 import type {WorkingMusicVersion,WorkingMusicTrack} from '@/domain/musicNext';
@@ -56,7 +56,7 @@ export function MusicStudioNext({project,patch,onCapture}:Props){
     window.addEventListener('keydown',handle);
     return()=>window.removeEventListener('keydown',handle);
   },[version?.id,state]);
-  const playable=files.filter(isPlayableMusicFile);
+  const playable=files.filter(isMusicTrackCandidate);
   const input={backgroundColor:theme.surface,borderColor:theme.border,borderWidth:1,
     borderRadius:10,paddingHorizontal:11,paddingVertical:9,
     color:theme.foreground,fontSize:12} as const;
