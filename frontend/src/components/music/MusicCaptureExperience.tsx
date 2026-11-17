@@ -14,6 +14,8 @@ import { isMusicTrackCandidate } from '@/domain/musicNext';
 import { formatMusicDuration } from '@/domain/musicProjectSelectors';
 import { newMusicId } from '@/domain/musicWorkspace';
 import type { MusicProject, MusicProjectFile, MusicSection, MusicAudioMarker } from '@/domain/musicWorkspace';
+import type {MusicNotationEvent} from '@/domain/musicNotation';
+import {MusicScoreView} from './MusicSketchStudio';
 
 const PINK='#CB245C';
 type Props={project:MusicProject;patch:(changes:Partial<MusicProject>)=>void;
@@ -86,9 +88,28 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,h
       translationOfFileId:translated?(result.translationOfFileId||current?.translationOfFileId):undefined,
       createdAt:current?.createdAt||new Date().toISOString(),
     };
+    item.lyricReferences=result.lyricReferences||current?.lyricReferences||[];
+    const created=result.newSections||[];
+    patch({
+      files:current?files.map(file=>file.id===current.id?item:file):[...files,item],
+      sections:[...project.sections,...created.filter(section=>
+        !project.sections.some(existing=>existing.id===section.id||
+          existing.title.trim().toLocaleLowerCase()===section.title.trim().toLocaleLowerCase()))],
+    });
+    setComposer('none');setTranslationSourceId('');setEditingFileId('');
+  };
+  const saveScore=(result:{title:string;events:MusicNotationEvent[];bpm:number})=>{
+    if(!result.events.length)return;
+    const current=files.find(file=>file.id===editingFileId);
+    const item:MusicProjectFile={
+      id:current?.id||newMusicId(),kind:'score',
+      sectionIds:current?.sectionIds||[],title:result.title,
+      musicEvents:result.events,tempoBpm:result.bpm,
+      createdAt:current?.createdAt||new Date().toISOString(),
+    };
     patch({files:current
       ?files.map(file=>file.id===current.id?item:file):[...files,item]});
-    setComposer('none');setTranslationSourceId('');setEditingFileId('');
+    setComposer('none');setEditingFileId('');setTranslationSourceId('');
   };
   const requestTranslator=(sourceId:string,targetLanguage:string)=>{
     const source=files.find(file=>file.id===sourceId);
@@ -264,7 +285,9 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,h
             </View>
 
           </View>:null}
-          {!image&&!sound&&!text?<View style={{flexDirection:'row',gap:10,alignItems:'center'}}>
+          {file.musicEvents?.length?<MusicScoreView events={file.musicEvents} compact/>:null}
+          {!file.musicEvents?.length&&!image&&!sound&&!text?
+            <View style={{flexDirection:'row',gap:10,alignItems:'center'}}>
             <Ionicons name="document-outline" color={theme.muted} size={20}/>
             <Text numberOfLines={2} style={{color:theme.foreground,fontSize:14}}>{file.title}</Text>
           </View>:null}
@@ -324,7 +347,7 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,h
     {composer==='write'?<MusicWritingOverlay key={editingFileId||translationSourceId||'new'}
       project={project} mode={writing} onModeChange={setWriting}
       source={translationSource} initialFile={editingFile}
-      onSave={addWritten} onRequestTranslator={requestTranslator}
+      onSave={addWritten} onSaveScore={saveScore} onRequestTranslator={requestTranslator}
       requestedLanguages={(project.needs||[]).filter(need=>
         need.sourceFileId===translationSourceId&&need.kind==='talent'&&
         need.label.toLowerCase()==='traducteur')
