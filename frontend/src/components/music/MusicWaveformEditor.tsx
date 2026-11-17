@@ -19,8 +19,8 @@ export function MusicWaveformEditor({file,duration,cursor,onSeek,zoom,onZoom,
   const px=Math.max(viewport,Math.round(viewport*zoom));
   const [data,setData]=useState<Float32Array|null>(null);
   const [decoding,setDecoding]=useState(false);
-  const pane=useRef<View|null>(null);
-  const scroll=useRef<ScrollView|null>(null);
+  const pane=useRef<any>(null);
+  const scroll=useRef<any>(null);
   const scrollX=useRef(0);
   const suppressClick=useRef(false);
   const pendingAnchor=useRef<{timeRatio:number;clientOffset:number}|null>(null);
