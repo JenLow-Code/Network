@@ -98,14 +98,28 @@ export function MusicWaveformEditor({file,duration,cursor,onSeek,zoom,onZoom,
       };
       onZoom(Math.round(next*100)/100);
     };
-    const touchEnd=()=>{pinching.current=null;};
+    const touchEnd=()=>{
+      if(pinching.current){
+        pinching.current=null;
+        // Suppress only the synthetic click at the end of a pinch,
+        // not the user's next intentional tap on the waveform.
+        setTimeout(()=>{suppressClick.current=false;},180);
+      }
+    };
+    const dbl=(e:MouseEvent)=>{
+      e.preventDefault();
+      const rect=element.getBoundingClientRect();
+      setScale(2,clamp(e.clientX-rect.left,0,viewport));
+    };
     element.addEventListener('wheel',wheel,{passive:false});
+    element.addEventListener('dblclick',dbl);
     element.addEventListener('touchstart',touchStart,{passive:true});
     element.addEventListener('touchmove',touchMove,{passive:false});
     element.addEventListener('touchend',touchEnd);
     element.addEventListener('touchcancel',touchEnd);
     return ()=>{
       element.removeEventListener('wheel',wheel);
+      element.removeEventListener('dblclick',dbl);
       element.removeEventListener('touchstart',touchStart);
       element.removeEventListener('touchmove',touchMove);
       element.removeEventListener('touchend',touchEnd);
@@ -183,7 +197,7 @@ export function MusicWaveformEditor({file,duration,cursor,onSeek,zoom,onZoom,
                 <Line x1={x} y1={0} x2={x} y2={9}
                   stroke={theme.muted} strokeWidth={1}/>
                 <SvgText x={x+3} y={20} fontSize={10} fill={theme.muted}>
-                  {musicStamp(t).slice(0,5)}
+                  {zoom>=30?musicStampMs(t):zoom>=10?musicStamp(t):musicStamp(t).slice(0,5)}
                 </SvgText>
               </React.Fragment>;
             })}
