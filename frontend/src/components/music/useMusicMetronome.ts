@@ -21,15 +21,19 @@ export function useMusicMetronome(){
     settings.current={bpm:clamp(Math.round(bpm)||100,30,300),
       muted,meter:clamp(Math.round(meter)||4,1,12)};
   };
-  const start=(bpm:number,muted:boolean,meter=4)=>{
+  const start=(bpm:number,muted:boolean,meter=4,startAtSeconds=0)=>{
     stop();
     setSettings(bpm,muted,meter);
     if(typeof AudioContext==='undefined')return false;
     try{
       const ctx=new AudioContext();
       void ctx.resume().catch(()=>{});
+      const beatDuration=60/settings.current.bpm;
+      const startPos=Math.max(0,startAtSeconds);
+      const firstBeat=Math.ceil((startPos-.000001)/beatDuration);
+      const delay=Math.max(0,firstBeat*beatDuration-startPos);
       const e:Engine={context:ctx,interval:null as unknown as ReturnType<typeof setInterval>,
-        next:ctx.currentTime+.06,index:0};
+        next:ctx.currentTime+.06+delay,index:firstBeat};
       const schedule=()=>{
         if(engine.current!==e)return;
         let count=0;
