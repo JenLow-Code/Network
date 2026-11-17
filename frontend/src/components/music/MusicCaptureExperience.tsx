@@ -65,7 +65,7 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,h
     const item:MusicProjectFile={
       id:newMusicId(),title:'Prise '+(files.filter(isAudio).length+1),
       kind:'audio',sectionIds:[],localFileId:id,originalFilename:filename,
-      mimeType:/\.m4a$/i.test(filename)?'audio/mp4':'audio/webm',
+      mimeType:/\.wav$/i.test(filename)?'audio/wav':/\.m4a$/i.test(filename)?'audio/mp4':/\.ogg$/i.test(filename)?'audio/ogg':'audio/webm',
       durationSeconds,markers:markers||[],createdAt:new Date().toISOString(),
     };
     patch({files:[...files,item]});setComposer('none');setSelected(item.id);

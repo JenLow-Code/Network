@@ -77,7 +77,7 @@ export default function NewMusic(){
       ...(audioId?{files:[{
         id:newMusicId(),title:fileName.replace(/\\.[^.]+$/,'')||'Première prise',
         kind:'audio' as const,localFileId:audioId,originalFilename:fileName,
-        mimeType:/\\.m4a$/i.test(fileName)?'audio/mp4':'audio/webm',
+        mimeType:/\.wav$/i.test(fileName)?'audio/wav':/\.m4a$/i.test(fileName)?'audio/mp4':/\.ogg$/i.test(fileName)?'audio/ogg':'audio/webm',
         sectionIds:[],durationSeconds:audioDuration,markers:audioMarkers,createdAt:new Date().toISOString(),
       }]}:{}),
     });
