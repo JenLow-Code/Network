@@ -14,13 +14,16 @@ type Props={
   onPaused?:()=>void;
   /** Only used for recording a NEW track inside an existing musical timeline. */
   timelineStartSeconds?:number;
+  /** Current song-time playhead, independently of the take's recording clock. */
+  backingPositionSeconds?:number;
 };
 const PINK='#CB245C';
 type Status='idle'|'recording'|'paused';
 
 /** Real microphone recording with pause and local non-destructive punch-in.
  * Web-only until a native capture engine is implemented and verified. */
-export function MusicAudioCapture({onSaved,onStarted,onPaused,timelineStartSeconds=0}:Props){
+export function MusicAudioCapture({onSaved,onStarted,onPaused,timelineStartSeconds=0,
+  backingPositionSeconds}:Props){
   const theme=useAppTheme();
   const recorder=useRef<MediaRecorder|null>(null);
   const stream=useRef<MediaStream|null>(null);
@@ -194,9 +197,15 @@ export function MusicAudioCapture({onSaved,onStarted,onPaused,timelineStartSecon
           {musicStamp(status==='recording'?running:cursor)}
         </Text>
       </View>
-      <Text style={{fontSize:12,color:theme.muted}}>
-        Durée {musicStamp(shownLength)}
-      </Text>
+      <View style={{alignItems:'flex-end',gap:4}}>
+        <Text style={{fontSize:12,color:theme.muted}}>
+          Durée {musicStamp(shownLength)}
+        </Text>
+        {backingPositionSeconds!==undefined?<Text style={{fontSize:13,
+          color:PINK,fontWeight:'700',fontVariant:['tabular-nums']}}>
+          Morceau {musicStamp(backingPositionSeconds)}
+        </Text>:null}
+      </View>
     </View>
     {status==='recording'?<View style={{height:87,borderRadius:13,backgroundColor:theme.dark?'#252029':'#FCF4F7',
       overflow:'hidden',paddingHorizontal:7,flexDirection:'row',alignItems:'center',gap:2}}>

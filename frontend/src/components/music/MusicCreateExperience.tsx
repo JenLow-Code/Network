@@ -248,6 +248,54 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
       <Text style={{fontSize:12,color:theme.muted,lineHeight:19}}>
         Choisis le point précis sur la chronologie avant d’enregistrer une nouvelle piste.
       </Text>
+      <View style={{flexDirection:'row',flexWrap:'wrap',gap:9}}>
+        {button(recording?'Fermer l’enregistreur':'Enregistrer une prise',()=>{
+          if(pending)return;
+          if(!recording){setRecordOrigin(timelineCursor);setPauseRequest(n=>n+1);}
+          setRecording(!recording);
+        },true,'radio-button-on-outline')}
+        {button('Ajouter une piste',()=>setPickMode(pickMode==='add'?'none':'add'),false,'add-outline')}
+      </View>
+      {recording?<View style={{backgroundColor:theme.surface,borderRadius:15,
+        borderWidth:1,borderColor:theme.border,padding:compact?13:19,gap:13}}>
+        <Text style={{fontSize:15,fontWeight:'700',color:theme.foreground}}>
+          Nouvelle prise · à partir de {musicStamp(recordOrigin)}
+        </Text>
+        <Text style={{fontSize:12,lineHeight:19,color:theme.muted}}>
+          L’écoute des pistes existantes commencera au même point lors du déclenchement du micro.
+          Utilise un casque et ajuste le décalage de la piste si nécessaire.
+        </Text>
+        {!pending?<MusicAudioCapture
+          timelineStartSeconds={recordOrigin}
+          backingPositionSeconds={timelineCursor}
+          onStarted={at=>setPlaybackRequest(previous=>({
+            at:recordOrigin+at,serial:(previous?.serial||0)+1
+          }))}
+          onPaused={()=>setPauseRequest(n=>n+1)}
+          onSaved={(id,filename,durationSeconds,startAt)=>
+            setPending({id,filename,durationSeconds,startAt:startAt??recordOrigin})}/>:
+          <View style={{gap:13}}>
+            <MusicAudioPreview source={{localAudioId:pending.id}}/>
+            <Text style={{color:theme.foreground,fontWeight:'600',fontSize:13}}>
+              Que veux-tu conserver ?
+            </Text>
+            <View style={{flexDirection:'row',flexWrap:'wrap',gap:8}}>
+              {button('Dans cette version',()=>keep('version'),true)}
+              {button('Dans le carnet',()=>keep('notebook'))}
+              {button('Jeter la prise',()=>setConfirmDiscard(true))}
+            </View>
+            {confirmDiscard?<View style={{gap:10}}>
+              <Text style={{fontSize:12,color:theme.muted}}>
+                Supprimer définitivement cette prise encore non attribuée ?
+              </Text>
+              <View style={{flexDirection:'row',gap:8,flexWrap:'wrap'}}>
+                {button('Oui, supprimer',()=>{void discard();},true)}
+                {button('Annuler',()=>setConfirmDiscard(false))}
+              </View>
+            </View>:null}
+          </View>}
+      </View>:null}
+
       <View style={{flexDirection:'row',alignItems:'center',gap:10,flexWrap:'wrap'}}>
         <Text style={{fontSize:12,color:theme.muted}}>
           {version.bpm?version.bpm+' BPM':'Tempo libre'}
@@ -368,52 +416,6 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
           </View>;
         })}
       </View>
-      <View style={{flexDirection:'row',flexWrap:'wrap',gap:9}}>
-        {button(recording?'Fermer l’enregistreur':'Enregistrer une prise',()=>{
-          if(pending)return;
-          if(!recording){setRecordOrigin(timelineCursor);setPauseRequest(n=>n+1);}
-          setRecording(!recording);
-        },true,'radio-button-on-outline')}
-        {button('Ajouter une piste',()=>setPickMode(pickMode==='add'?'none':'add'),false,'add-outline')}
-      </View>
-      {recording?<View style={{backgroundColor:theme.surface,borderRadius:15,
-        borderWidth:1,borderColor:theme.border,padding:compact?13:19,gap:13}}>
-        <Text style={{fontSize:15,fontWeight:'700',color:theme.foreground}}>
-          Nouvelle prise · à partir de {musicStamp(recordOrigin)}
-        </Text>
-        <Text style={{fontSize:12,lineHeight:19,color:theme.muted}}>
-          L’écoute des pistes existantes commencera au même point lors du déclenchement du micro.
-          Utilise un casque et ajuste le décalage de la piste si nécessaire.
-        </Text>
-        {!pending?<MusicAudioCapture
-          timelineStartSeconds={recordOrigin}
-          onStarted={at=>setPlaybackRequest(previous=>({
-            at:recordOrigin+at,serial:(previous?.serial||0)+1
-          }))}
-          onPaused={()=>setPauseRequest(n=>n+1)}
-          onSaved={(id,filename,durationSeconds,startAt)=>
-            setPending({id,filename,durationSeconds,startAt:startAt??recordOrigin})}/>:
-          <View style={{gap:13}}>
-            <MusicAudioPreview source={{localAudioId:pending.id}}/>
-            <Text style={{color:theme.foreground,fontWeight:'600',fontSize:13}}>
-              Que veux-tu conserver ?
-            </Text>
-            <View style={{flexDirection:'row',flexWrap:'wrap',gap:8}}>
-              {button('Dans cette version',()=>keep('version'),true)}
-              {button('Dans le carnet',()=>keep('notebook'))}
-              {button('Jeter la prise',()=>setConfirmDiscard(true))}
-            </View>
-            {confirmDiscard?<View style={{gap:10}}>
-              <Text style={{fontSize:12,color:theme.muted}}>
-                Supprimer définitivement cette prise encore non attribuée ?
-              </Text>
-              <View style={{flexDirection:'row',gap:8,flexWrap:'wrap'}}>
-                {button('Oui, supprimer',()=>{void discard();},true)}
-                {button('Annuler',()=>setConfirmDiscard(false))}
-              </View>
-            </View>:null}
-          </View>}
-      </View>:null}
       <View style={{borderTopWidth:1,borderColor:theme.border,paddingTop:14}}>
         <Pressable onPress={()=>setShowSections(!showSections)}
           style={{flexDirection:'row',alignItems:'center',gap:9,minHeight:40}}>
