@@ -4,15 +4,19 @@ import Svg,{Rect,Line,Circle,Text as SvgText} from 'react-native-svg';
 import {Ionicons} from '@expo/vector-icons';
 import {useAppTheme} from '@/theme/AppTheme';
 import {musicStamp,musicStampMs} from '@/domain/musicEditing';
+import {MusicWaveformMarkerHandles} from './MusicWaveformMarkerHandles';
 import type {MusicAudioMarker} from '@/domain/musicWorkspace';
 
 const pink='#CB245C';
 type Props={file:File;duration:number;cursor:number;onSeek:(seconds:number)=>void;
   zoom:number;onZoom:(zoom:number)=>void;playing:boolean;onTogglePlayback:()=>void;
-  markers?:MusicAudioMarker[];compact?:boolean};
+  markers?:MusicAudioMarker[];compact?:boolean;
+  onChangeMarkers?:(markers:MusicAudioMarker[])=>void;
+  onEditMarker?:(id:string)=>void;
+};
 const clamp=(v:number,lo:number,hi:number)=>Math.max(lo,Math.min(hi,v));
 export function MusicWaveformEditor({file,duration,cursor,onSeek,zoom,onZoom,
-  playing,onTogglePlayback,markers=[],compact=false}:Props){
+  playing,onTogglePlayback,markers=[],compact=false,onChangeMarkers,onEditMarker}:Props){
   const theme=useAppTheme();
   const {width}=useWindowDimensions();
   // The ruler and waveform must fill the actual panel, not a hard-coded
@@ -22,6 +26,10 @@ export function MusicWaveformEditor({file,duration,cursor,onSeek,zoom,onZoom,
   const px=Math.max(viewport,Math.round(viewport*zoom));
   const [data,setData]=useState<Float32Array|null>(null);
   const [decoding,setDecoding]=useState(false);
+  const [selectedMarkerId,setSelectedMarkerId]=useState<string|null>(null);
+  const [confirmDelete,setConfirmDelete]=useState(false);
+  const selectedMarker=markers.find(m=>m.id===selectedMarkerId);
+  const selectMarker=(id:string)=>{setSelectedMarkerId(id);setConfirmDelete(false);};
   const pane=useRef<any>(null);
   const scroll=useRef<any>(null);
   const scrollX=useRef(0);
@@ -173,6 +181,7 @@ export function MusicWaveformEditor({file,duration,cursor,onSeek,zoom,onZoom,
       <ScrollView ref={scroll} horizontal showsHorizontalScrollIndicator
         onScroll={e=>{scrollX.current=e.nativeEvent.contentOffset.x;}}
         scrollEventThrottle={16} keyboardShouldPersistTaps="handled">
+        <View style={{width:px,height:112,position:'relative'}}>
         <Pressable accessibilityRole="adjustable" accessibilityLabel="Chronologie de l’enregistrement"
           onPress={e=>{
             // SVG bars can be the native event target. Derive the absolute
@@ -227,10 +236,63 @@ export function MusicWaveformEditor({file,duration,cursor,onSeek,zoom,onZoom,
             <Circle cx={cursorX} cy={6} r={4} fill={pink}/>
           </Svg>
         </Pressable>
+        <MusicWaveformMarkerHandles markers={markers} width={px} duration={duration}
+          selectedId={selectedMarkerId} onSelect={selectMarker}
+          onChange={onChangeMarkers}/>
+        </View>
       </ScrollView>
     </View>
+    {selectedMarker?<View style={{backgroundColor:theme.surface,
+      borderWidth:1,borderColor:theme.border,borderRadius:11,padding:11,gap:9}}>
+      <View style={{flexDirection:'row',gap:10,alignItems:'flex-start'}}>
+        <Ionicons name="bookmark-outline" size={17} color={pink}/>
+        <View style={{flex:1,gap:5}}>
+          <Text style={{fontSize:12,fontWeight:'600',color:theme.foreground}}>
+            {selectedMarker.note}
+          </Text>
+          <Text style={{fontSize:11,color:theme.muted,fontVariant:['tabular-nums']}}>
+            {musicStampMs(selectedMarker.startSeconds)}
+            {selectedMarker.endSeconds!==undefined?
+              ' – '+musicStampMs(selectedMarker.endSeconds):''}
+          </Text>
+        </View>
+        <Pressable accessibilityRole="button" accessibilityLabel="Fermer le repère"
+          onPress={()=>{setSelectedMarkerId(null);setConfirmDelete(false);}}
+          style={{padding:4}}>
+          <Ionicons name="close-outline" color={theme.muted} size={19}/>
+        </Pressable>
+      </View>
+      {onChangeMarkers?<View style={{flexDirection:'row',
+        alignItems:'center',gap:12,flexWrap:'wrap'}}>
+        {onEditMarker?<Pressable onPress={()=>onEditMarker(selectedMarker.id)}
+          accessibilityRole="button" style={{paddingVertical:6}}>
+          <Text style={{fontSize:12,fontWeight:'600',color:pink}}>Modifier la note</Text>
+        </Pressable>:null}
+        <Pressable onPress={()=>setConfirmDelete(true)}
+          accessibilityRole="button" style={{paddingVertical:6}}>
+          <Text style={{fontSize:12,color:theme.muted}}>Supprimer</Text>
+        </Pressable>
+        {confirmDelete?<View style={{flexDirection:'row',gap:12,
+          alignItems:'center',flexWrap:'wrap'}}>
+          <Text style={{fontSize:11,color:theme.foreground}}>Supprimer ce repère ?</Text>
+          <Pressable onPress={()=>{
+            onChangeMarkers(markers.filter(m=>m.id!==selectedMarker.id));
+            setSelectedMarkerId(null);setConfirmDelete(false);
+          }} accessibilityRole="button" style={{paddingVertical:6}}>
+            <Text style={{fontSize:12,fontWeight:'700',color:pink}}>Confirmer</Text>
+          </Pressable>
+          <Pressable onPress={()=>setConfirmDelete(false)}
+            accessibilityRole="button" style={{paddingVertical:6}}>
+            <Text style={{fontSize:12,color:theme.muted}}>Annuler</Text>
+          </Pressable>
+        </View>:null}
+      </View>:null}
+      <Text style={{fontSize:11,color:theme.muted,lineHeight:17}}>
+        Glisse les extrémités pour modifier l’intervalle ; glisse la ligne pour le déplacer.
+      </Text>
+    </View>:null}
     {!compact?<Text style={{fontSize:11,color:theme.muted,lineHeight:18}}>
-      Zoom : pincement ou molette · Glisser : parcourir · Toucher : positionner.
+      Zoom : pincement ou molette · Glisser : parcourir · Toucher un repère : modifier.
     </Text>:null}
   </View>;
 }
