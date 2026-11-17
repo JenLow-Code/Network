@@ -3,8 +3,8 @@ import { Platform, Pressable, Text, TextInput, View, useWindowDimensions } from 
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/theme/AppTheme';
 import { MusicAudioCapture } from './MusicAudioCapture';
-import { MusicAudioPreview } from './MusicAudioPreview';
-import { MusicAudioPeaks } from './MusicAudioPeaksNext';
+import { MusicAudioTake } from './MusicAudioTake';
+
 import { MusicLocalArt } from './MusicLocalArtNext';
 import { MusicMaterialViewer } from './MusicMaterialViewerV3';
 import { importSongFile, classifySongFile, lyricStanzas } from '@/domain/musicImportedFiles';
@@ -246,7 +246,7 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,h
                 {formatMusicDuration(file.durationSeconds)}
               </Text>:null}
             </View>
-            <MusicAudioPeaks file={file}/>
+
           </View>:null}
           {!image&&!sound&&!text?<View style={{flexDirection:'row',gap:10,alignItems:'center'}}>
             <Ionicons name="document-outline" color={theme.muted} size={20}/>
@@ -256,7 +256,7 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,h
             Disponible pour une version · ouvrir pour choisir
           </Text>:null}
           </Pressable>
-          {sound&&file.localFileId?<MusicAudioPreview source={{localAudioId:file.localFileId}}/>:null}
+          {sound&&file.localFileId?<MusicAudioTake file={file} compact/>:null}
         </View>;
       })}
     </View>
