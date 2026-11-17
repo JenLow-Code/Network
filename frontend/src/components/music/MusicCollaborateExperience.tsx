@@ -1,7 +1,6 @@
 import React,{useEffect,useState} from 'react';
 import {Pressable,Text,View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
-import {router} from 'expo-router';
 import {useAppTheme} from '@/theme/AppTheme';
 import {MusicAudioPreview} from './MusicAudioPreview';
 import {MusicMissingTalentAction} from './MusicMissingTalentAction';
@@ -49,17 +48,14 @@ export function MusicCollaborateExperience({project,patch}:Props){
     finally{setLoading(false);}
   };
   const needs=project.needs||[];
-  return <View style={{gap:24}}>
-    <View style={{gap:7}}>
-      <Text style={{fontSize:22,fontWeight:'700',color:theme.foreground}}>Collaborer</Text>
-      <Text style={{fontSize:13,color:theme.muted,lineHeight:21,maxWidth:550}}>
-        Consulte les propositions reçues et les talents recherchés. Aucune proposition ne modifie automatiquement tes versions.
-      </Text>
-    </View>
-    <View style={{gap:13}}>
-      <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
-        <Text style={{fontSize:17,fontWeight:'700',color:theme.foreground}}>Propositions reçues</Text>
-        {proposals.length?<Text style={{fontSize:12,color:theme.muted}}>{proposals.length}</Text>:null}
+  return <View style={{gap:18}}>
+    <MusicMissingTalentAction project={project} patch={patch} primary/>
+    {proposals.length?<View style={{gap:12}}>
+      <View style={{flexDirection:'row',alignItems:'center',gap:8}}>
+        <Text style={{fontSize:17,fontWeight:'700',color:theme.foreground}}>
+          Propositions reçues
+        </Text>
+        <Text style={{fontSize:12,color:theme.muted}}>{proposals.length}</Text>
       </View>
       {proposals.map(proposal=>{
         const opened=selected===proposal.id;
@@ -103,31 +99,14 @@ export function MusicCollaborateExperience({project,patch}:Props){
           </View>:null}
         </View>;
       })}
-      {!proposals.length?<View style={{paddingVertical:27,gap:11,
-        borderTopWidth:1,borderColor:theme.border,alignItems:'center'}}>
-        <Ionicons name="people-outline" size={28} color={PINK}/>
-        <Text style={{fontSize:14,fontWeight:'600',color:theme.foreground,textAlign:'center'}}>
-          {ids?'Aucune proposition pour le moment':'Aucune proposition reçue.'}
+
+    </View>:null}
+    {needs.length?<View style={{gap:12,paddingTop:4}}>
+      <View style={{flexDirection:'row',alignItems:'center',gap:8}}>
+        <Text style={{fontSize:15,fontWeight:'700',color:theme.foreground}}>
+          Talents recherchés
         </Text>
-        <Text style={{fontSize:12,lineHeight:21,color:theme.muted,textAlign:'center',maxWidth:345}}>
-          {ids?'Lorsqu’un musicien te proposera une nouvelle prise ou une variation, elle apparaîtra ici.':
-            'Partage une version pour recevoir des contributions. L’auteur original reste attribué.'}
-        </Text>
-        {project.publishedId?<Pressable accessibilityRole="button" onPress={()=>
-          router.push({pathname:'/music/[id]',params:{id:project.publishedId!}})}
-          style={{paddingHorizontal:12,paddingVertical:10}}>
-          <Text style={{fontSize:12,color:PINK,fontWeight:'700'}}>Voir ma publication</Text>
-        </Pressable>:null}
-      </View>:null}
-      {error?<Text style={{fontSize:12,lineHeight:18,color:'#B64B61'}}>{error}</Text>:null}
-    </View>
-    <View style={{gap:13,borderTopWidth:1,borderColor:theme.border,paddingTop:21}}>
-      <View style={{gap:6}}>
-        <Text style={{fontSize:17,fontWeight:'700',color:theme.foreground}}>De qui as-tu besoin ?</Text>
-        <Text style={{fontSize:12,lineHeight:20,color:theme.muted}}>
-          Un bassiste, une voix, un traducteur humain… Ces besoins appartiennent à la chanson,
-          pas à un document.
-        </Text>
+        <Text style={{fontSize:12,color:theme.muted}}>{needs.length}</Text>
       </View>
       {needs.map(need=><View key={need.id} style={{flexDirection:'row',alignItems:'center',
         minHeight:43,gap:11,borderBottomWidth:1,borderColor:theme.border,paddingBottom:7}}>
@@ -146,11 +125,8 @@ export function MusicCollaborateExperience({project,patch}:Props){
           <Ionicons name="close-outline" color={theme.muted} size={19}/>
         </Pressable>
       </View>)}
-      <MusicMissingTalentAction project={project} patch={patch}/>
-      <Text style={{fontSize:11,lineHeight:18,color:theme.muted}}>
-        Les besoins sont conservés localement. Leur diffusion aux autres musiciens
-        sera proposée lorsque les invitations seront connectées.
-      </Text>
-    </View>
+
+    </View>:null}
+    {error?<Text style={{fontSize:12,lineHeight:18,color:'#B64B61'}}>{error}</Text>:null}
   </View>;
 }
