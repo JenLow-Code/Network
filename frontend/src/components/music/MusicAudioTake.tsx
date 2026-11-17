@@ -33,6 +33,7 @@ export function MusicAudioTake({file,compact=false,editable=false,onUpdate}:Prop
   const [editing,setEditing]=useState(false);
   const [draftActive,setDraftActive]=useState(false);
   const [confirmExit,setConfirmExit]=useState(false);
+  const [editMarkerRequest,setEditMarkerRequest]=useState<{id:string;nonce:number}|null>(null);
   const audio=useRef<HTMLAudioElement|null>(null);
   useEffect(()=>{
     let live=true;
@@ -128,10 +129,16 @@ export function MusicAudioTake({file,compact=false,editable=false,onUpdate}:Prop
         <MusicWaveformEditor file={blob} duration={duration} cursor={cursor}
           onSeek={seek} zoom={zoom} onZoom={setZoom}
           onTogglePlayback={toggle} playing={playing} markers={file.markers||[]}
+          onChangeMarkers={onUpdate?markers=>onUpdate({markers}):undefined}
+          onEditMarker={onUpdate?id=>setEditMarkerRequest(previous=>({
+            id,nonce:(previous?.nonce||0)+1
+          })):undefined}
           compact={compact}/>
+        {onUpdate&&(editable||editMarkerRequest)?<MusicAudioMarkers
+          markers={file.markers||[]} duration={duration} cursor={cursor}
+          onChange={markers=>onUpdate({markers})} onSeek={seek}
+          editRequest={editMarkerRequest}/>:null}
         {editable&&onUpdate?<>
-          <MusicAudioMarkers markers={file.markers||[]} duration={duration} cursor={cursor}
-            onChange={markers=>onUpdate({markers})} onSeek={seek}/>
           <Pressable onPress={()=>{audio.current?.pause();setPlaying(false);setEditing(true);}}
             accessibilityRole="button" style={{alignSelf:'flex-start',minHeight:38,
               flexDirection:'row',gap:7,alignItems:'center'}}>
