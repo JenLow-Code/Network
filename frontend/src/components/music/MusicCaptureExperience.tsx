@@ -11,7 +11,7 @@ import { importSongFile, classifySongFile, lyricStanzas } from '@/domain/musicIm
 import { isMusicTrackCandidate } from '@/domain/musicNext';
 import { formatMusicDuration } from '@/domain/musicProjectSelectors';
 import { newMusicId } from '@/domain/musicWorkspace';
-import type { MusicProject, MusicProjectFile, MusicSection } from '@/domain/musicWorkspace';
+import type { MusicProject, MusicProjectFile, MusicSection, MusicAudioMarker } from '@/domain/musicWorkspace';
 
 const PINK='#CB245C';
 type Props={project:MusicProject;patch:(changes:Partial<MusicProject>)=>void;
@@ -60,12 +60,13 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,h
     patch({files:[...files,item]});
     setDraft('');setComposer('none');setSelected(item.id);
   };
-  const addRecorded=(id:string,filename:string,durationSeconds?:number)=>{
+  const addRecorded=(id:string,filename:string,durationSeconds?:number,
+    _offset?:number,markers?:MusicAudioMarker[])=>{
     const item:MusicProjectFile={
       id:newMusicId(),title:'Prise '+(files.filter(isAudio).length+1),
       kind:'audio',sectionIds:[],localFileId:id,originalFilename:filename,
       mimeType:/\.m4a$/i.test(filename)?'audio/mp4':'audio/webm',
-      durationSeconds,createdAt:new Date().toISOString(),
+      durationSeconds,markers:markers||[],createdAt:new Date().toISOString(),
     };
     patch({files:[...files,item]});setComposer('none');setSelected(item.id);
   };
@@ -123,9 +124,9 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,h
     paddingHorizontal:16,paddingVertical:14} as const;
   return <View style={{gap:23}}>
     <View style={{gap:7}}>
-      <Text style={{fontSize:22,fontWeight:'700',color:theme.foreground}}>Un endroit pour tes idées.</Text>
+      <Text style={{fontSize:22,fontWeight:'700',color:theme.foreground}}>Capturer</Text>
       <Text style={{fontSize:13,lineHeight:21,color:theme.muted,maxWidth:560}}>
-        Enregistre, écris ou importe ce qui t'inspire. Rien ne rejoint une version sans ton choix.
+        Enregistre, écris ou importe. Les éléments restent indépendants des versions.
       </Text>
     </View>
     <View style={{flexDirection:'row',flexWrap:'wrap',gap:9}}>
@@ -137,7 +138,7 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,h
       borderWidth:1,borderColor:theme.border,borderRadius:18,backgroundColor:theme.surface}}>
       <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
         <Text style={{fontSize:16,fontWeight:'700',color:theme.foreground}}>
-          {composer==='record'?'Une prise, comme elle vient':'Mettre une idée sur papier'}
+          {composer==='record'?'Enregistrement audio':'Écrire'}
         </Text>
         <Pressable onPress={()=>setComposer('none')} accessibilityLabel="Fermer" style={{padding:6}}>
           <Ionicons name="close" size={20} color={theme.muted}/>
@@ -189,7 +190,7 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,h
         minHeight:160,alignItems:'center',justifyContent:'center',gap:12}}>
         <Ionicons name="leaf-outline" size={30} color={PINK}/>
         <Text style={{fontSize:13,color:theme.muted,textAlign:'center',lineHeight:21,maxWidth:280}}>
-          Une mélodie, quelques paroles ou une photo : tout peut être un commencement.
+          Aucun élément. Enregistre, écris ou importe pour commencer.
         </Text>
       </View> : null}
       {files.map(file=>{
