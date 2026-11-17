@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { readMusicWorkspace, writeMusicWorkspace } from './musicLocalStorage';
 import type { MusicNextState } from './musicNext';
+import type { MusicNotationEvent } from './musicNotation';
 import { useApp } from '@/context/AppContext';
 
 /**
@@ -114,6 +115,9 @@ export type MusicProjectFile = {
   language?: string;
   /** Links a human translation to its source lyric document without replacing it. */
   translationOfFileId?: string;
+  /** Original musical idea, stored as structured notation, not rendered audio. */
+  musicEvents?: MusicNotationEvent[];
+  tempoBpm?: number;
   instrument?: string;
   localFileId?: string;
   externalUrl?: string;
