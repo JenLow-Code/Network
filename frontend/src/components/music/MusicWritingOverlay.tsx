@@ -94,14 +94,10 @@ export function MusicWritingOverlay({
           </Text>
           <View style={{width:42}}/>
         </View>
-        <ScrollView keyboardShouldPersistTaps="handled"
-          contentContainerStyle={{
-            width:'100%',maxWidth:source?1100:860,alignSelf:'center',
-            paddingHorizontal:compact?19:45,
-            paddingTop:compact?16:34,paddingBottom:compact?50:80,
-            flexGrow:1,gap:compact?16:23,
-          }}>
-          {canTranscribe?<View style={{gap:9}}>
+          {canTranscribe?<View style={{gap:8,width:'100%',maxWidth:source?1100:860,
+            alignSelf:'center',paddingHorizontal:compact?19:45,
+            paddingTop:8,paddingBottom:7,
+            borderBottomWidth:1,borderBottomColor:theme.border}}>
             <Pressable onPress={() => {
               setListen(previous => !previous); setChoosing(false);
             }} accessibilityRole="checkbox" accessibilityState={{checked:listen}}
@@ -129,9 +125,11 @@ export function MusicWritingOverlay({
                   <Ionicons name={choosing?'chevron-up':'chevron-down'}
                     color={theme.muted} size={17}/>
                 </Pressable>
-                {choosing?<View style={{gap:3}}>
+                {choosing?<ScrollView nestedScrollEnabled
+                  style={{maxHeight:compact?175:215}}
+                  contentContainerStyle={{gap:3}}>
                   {audioFiles.map(sourceChoice)}
-                </View>:null}
+                </ScrollView>:null}
                 {selectedAudio?.localFileId?
                   <MusicAudioPreview key={selectedAudio.id}
                     source={{localAudioId:selectedAudio.localFileId}} transcription/>:null}
@@ -142,6 +140,13 @@ export function MusicWritingOverlay({
                 </Text>}
             </View>:null}
           </View>:null}
+        <ScrollView keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{
+            width:'100%',maxWidth:source?1100:860,alignSelf:'center',
+            paddingHorizontal:compact?19:45,
+            paddingTop:compact?16:34,paddingBottom:compact?50:80,
+            flexGrow:1,gap:compact?16:23,
+          }}>
           <MusicWritingStudio
             mode={mode} onModeChange={onModeChange}
             originalLanguage={project.originalLanguage}
