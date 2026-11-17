@@ -168,19 +168,34 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,h
       <Text numberOfLines={1} style={{fontSize:toolbar&&compact?11:13,
         fontWeight:'600',color:primary?'#fff':theme.foreground}}>{label}</Text>
     </Pressable>;
+  const railAction=(label:string,icon:keyof typeof Ionicons.glyphMap,
+    onPress:()=>void,active=false,disabled=false)=>
+    <Pressable onPress={onPress} disabled={disabled}
+      accessibilityRole="button" accessibilityLabel={label}
+      accessibilityState={{selected:active,disabled}}
+      style={{width:48,height:48,borderRadius:24,
+        backgroundColor:active?PINK:theme.surface,
+        borderWidth:1,borderColor:active?PINK:theme.border,
+        alignItems:'center',justifyContent:'center',
+        opacity:disabled?.5:1}}>
+      <Ionicons name={icon} size={23} color={active?'#fff':PINK}/>
+    </Pressable>;
   const field={fontSize:15,lineHeight:24,color:theme.foreground,
     backgroundColor:theme.surface,borderRadius:13,borderWidth:1,borderColor:theme.border,
     paddingHorizontal:16,paddingVertical:14} as const;
-  return <View style={{gap:18}}>
-    <View style={{flexDirection:'row',gap:compact?7:9}}>
+  return <View style={{gap:compact?15:18}}>
+    {!compact?<View style={{flexDirection:'row',gap:9}}>
       {action('Enregistrer','mic-outline',()=>{
         if(composer==='record'){closeComposer();return;}
         if(composer==='write')return;
         setComposer('record');setTranslationSourceId('');
       },composer==='record',true)}
       {action('Écrire','pencil-outline',()=>openWrite(),composer==='write',true)}
-      {action(busy?'Import…':'Importer','add-outline',pickFiles,false,true)}
-    </View>
+      {action(busy?'Import…':'Importer','cloud-upload-outline',pickFiles,false,true)}
+    </View>:null}
+    <View style={{flexDirection:compact?'row':'column',alignItems:'flex-start',
+      gap:compact?10:0}}>
+      <View style={{flex:1,minWidth:0,width:compact?undefined:'100%',gap:18}}>
     {composer==='record'?<View style={{gap:16,padding:compact?16:22,
       borderWidth:1,borderColor:theme.border,borderRadius:18,backgroundColor:theme.surface}}>
       <View style={{flexDirection:'row',alignItems:'center',justifyContent:'flex-end'}}>
@@ -283,6 +298,19 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,h
         </View>;
       })}
     </View>:null}
+      </View>
+      {compact?<View style={{width:51,gap:11,alignItems:'center'}}>
+        {railAction('Enregistrer une prise','mic-outline',()=>{
+          if(composer==='record'){closeComposer();return;}
+          if(composer==='write')return;
+          setComposer('record');setTranslationSourceId('');
+        },composer==='record')}
+        {railAction('Écrire des paroles ou une note','pencil-outline',
+          ()=>openWrite(),composer==='write')}
+        {railAction(busy?'Import en cours':'Importer un fichier','cloud-upload-outline',
+          pickFiles,false,busy)}
+      </View>:null}
+    </View>
     <MusicMaterialViewer key={selectedFile?.id||'closed'} visible={!!selectedFile}
       file={selectedFile} project={project} onClose={()=>setSelected('')}
       onUpdate={changeFile} onChangeType={(id,kind)=>{
