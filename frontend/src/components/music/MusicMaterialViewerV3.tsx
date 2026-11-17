@@ -32,8 +32,8 @@ type Props={
   onSection:(file:MusicProjectFile,section:MusicSection)=>void;
   onNewSection:(file:MusicProjectFile,name:string,stanzaId?:string)=>void;
   onStartVersion:(file:MusicProjectFile)=>void;onUseFile:(file:MusicProjectFile)=>void;
-  onTranslate:(file:MusicProjectFile)=>void;
-  onOpenFile:(id:string)=>void;
+  onTranslate?:(file:MusicProjectFile)=>void;
+  onOpenFile?:(id:string)=>void;
   hasVersion:boolean;
 };
 export function MusicMaterialViewer({visible,file,project,onClose,onUpdate,onChangeType,
@@ -290,7 +290,7 @@ export function MusicMaterialViewer({visible,file,project,onClose,onUpdate,onCha
             {translations.length?<View style={{gap:9}}>
               <Text style={{fontSize:12,color:theme.muted,fontWeight:'700'}}>Traductions</Text>
               {translations.map(trans=><Pressable key={trans.id}
-                onPress={()=>onOpenFile(trans.id)} accessibilityRole="button"
+                onPress={()=>onOpenFile?.(trans.id)} disabled={!onOpenFile} accessibilityRole="button"
                 style={{minHeight:43,flexDirection:'row',gap:10,
                   alignItems:'center',borderBottomWidth:1,borderColor:theme.border}}>
                 <Ionicons name="language-outline" size={17} color={pink}/>
@@ -315,7 +315,7 @@ export function MusicMaterialViewer({visible,file,project,onClose,onUpdate,onCha
               <Ionicons name="pencil-outline" size={16} color={pink}/>
               <Text style={{color:pink,fontSize:12,fontWeight:'600'}}>Modifier</Text>
             </Pressable>:null}
-            {file.kind==='lyrics'&&!file.translationOfFileId?
+            {file.kind==='lyrics'&&!file.translationOfFileId&&onTranslate?
               <Pressable onPress={()=>{onClose();onTranslate(file);}}
                 accessibilityRole="button"
                 style={{flexDirection:'row',alignItems:'center',gap:7,paddingVertical:9}}>
