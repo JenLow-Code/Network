@@ -5,7 +5,9 @@ import {getDraftAttachment} from '@/domain/musicLocalStorage';
 import {useAppTheme} from '@/theme/AppTheme';
 import type {MusicProjectFile} from '@/domain/musicWorkspace';
 const pink='#CB245C';
-export function MusicLocalArt({file,size=42,cover=false}:{file:MusicProjectFile;size?:number;cover?:boolean}){
+export function MusicLocalArt({file,size=42,cover=false,thumbnail=false}:{
+  file:MusicProjectFile;size?:number;cover?:boolean;thumbnail?:boolean;
+}){
   const theme=useAppTheme();
   const [uri,setUri]=useState('');
   useEffect(()=>{
@@ -20,7 +22,9 @@ export function MusicLocalArt({file,size=42,cover=false}:{file:MusicProjectFile;
     }
     return()=>{active=false;if(url)URL.revokeObjectURL(url);};
   },[file.localFileId]);
-  return <View style={{width:cover?'100%':size,height:cover?164:size,borderRadius:cover?0:11,overflow:'hidden',
+  return <View style={{width:thumbnail?100:cover?'100%':size,
+    height:thumbnail?70:cover?164:size,borderRadius:thumbnail?11:cover?0:11,
+    overflow:'hidden',
     alignItems:'center',justifyContent:'center',backgroundColor:theme.surface,
     borderWidth:1,borderColor:theme.border}}>
     {uri?<Image source={{uri}} style={{width:'100%',height:'100%'}}
