@@ -5,7 +5,7 @@ import {useAppTheme} from '@/theme/AppTheme';
 import {MusicLocalArt} from './MusicLocalArtNext';
 import {MusicAudioTake} from './MusicAudioTake';
 import {MusicLyricSelection} from './MusicLyricSelection';
-import {MusicNotePreview} from './MusicWritingStudio';
+import {MusicNotePreview,MusicWritingStudio,type MusicWritingResult} from './MusicWritingStudio';
 import {getDraftAttachment} from '@/domain/musicLocalStorage';
 import {newMusicId} from '@/domain/musicWorkspace';
 import {isMusicTrackCandidate} from '@/domain/musicNext';
@@ -86,6 +86,21 @@ export function MusicMaterialViewer({visible,file,project,onClose,onUpdate,onCha
     }else onUpdate(file.id,{text:content});
     setEditing(false);
   };
+  const saveStructured=(result:MusicWritingResult)=>{
+    const content=formats(result.text);
+    const title=result.title.trim()||file.title;
+    if(file.kind==='lyrics'){
+      const chunks=content.split(/\n\s*\n/).filter(Boolean);
+      onUpdate(file.id,{title,text:content,language:result.language,
+        lyricSegments:chunks.map((chunk,i)=>({
+          id:file.lyricSegments?.[i]?.id||newMusicId(),text:chunk,
+          sectionIds:file.lyricSegments?.[i]?.sectionIds||[],
+        }))});
+    }else{
+      onUpdate(file.id,{title,text:content});
+    }
+    setEditing(false);
+  };
   const download=async()=>{
     setError('');
     if(typeof document==='undefined'||!file.localFileId){
@@ -152,8 +167,9 @@ export function MusicMaterialViewer({visible,file,project,onClose,onUpdate,onCha
           {menu==='rename'?<TextInput autoFocus value={file.title}
             onChangeText={title=>onUpdate(file.id,{title})}
             onSubmitEditing={()=>setMenu('none')} style={field}/>:
-            <Text style={{fontSize:compact?24:29,lineHeight:compact?31:37,
-              fontWeight:'700',color:theme.foreground}}>{file.title}</Text>}
+            !(editing&&(file.kind==='lyrics'||file.kind==='note'))?
+              <Text style={{fontSize:compact?24:29,lineHeight:compact?31:37,
+                fontWeight:'700',color:theme.foreground}}>{file.title}</Text>:null}
           {selectedNames.length?<Text style={{fontSize:12,color:theme.muted}}>
             {selectedNames.join(' · ')}
           </Text>:null}
@@ -218,7 +234,12 @@ export function MusicMaterialViewer({visible,file,project,onClose,onUpdate,onCha
                 {selecting?'Annuler la sélection':'Associer un extrait'}
               </Text>
             </Pressable>:null}
-          {editing?<TextInput value={draft} onChangeText={setDraft}
+          {editing&&(file.kind==='lyrics'||file.kind==='note')?
+            <MusicWritingStudio key={file.id} mode={file.kind==='note'?'note':'lyrics'}
+              onModeChange={()=>{}} initialFile={file} source={original}
+              originalLanguage={project.originalLanguage}
+              onSave={saveStructured} onDirtyChange={()=>{}}/>:
+            editing?<TextInput value={draft} onChangeText={setDraft}
             multiline autoFocus textAlignVertical="top"
             placeholder="Écris librement…" placeholderTextColor={theme.muted}
             style={{...field,minHeight:235,fontSize:16,lineHeight:26,
