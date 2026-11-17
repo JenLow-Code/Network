@@ -10,7 +10,7 @@ type Props={
   onSaved:(localAudioId:string,filename:string,durationSeconds?:number,
     startOffsetSeconds?:number)=>void;
   /** Called when microphone recording actually begins/pauses, for optional backing playback. */
-  onStarted?:()=>void;
+  onStarted?:(takePositionSeconds:number)=>void;
   onPaused?:()=>void;
   /** Only used for recording a NEW track inside an existing musical timeline. */
   timelineStartSeconds?:number;
@@ -132,7 +132,7 @@ export function MusicAudioCapture({onSaved,onStarted,onPaused,timelineStartSecon
         const level=Math.max(.03,Math.min(1,Math.sqrt(sum/samples.length)*3.2));
         setLevels(prev=>[...prev.slice(-103),level]);
       },70);
-      onStarted?.();
+      onStarted?.(at);
     }catch(e){
       clearMic();
       setError(e instanceof Error?'Microphone inaccessible : '+e.message:'Microphone indisponible.');
