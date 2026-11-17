@@ -67,6 +67,9 @@ export function MusicArrangementTimeline({version,files,duration,position,onSeek
   }));
   const contentWidth=Math.round(viewport*zoom);
   const pixelsPerSecond=contentWidth/maxEnd;
+  const beatSeconds=60/(version.bpm||100);
+  const snap=(seconds:number)=>version.snapToBeat?
+    precise(Math.round(seconds/beatSeconds)*beatSeconds):precise(seconds);
   const commitName=(id:string)=>{
     const value=draftName.trim();
     if(value)onRenameTrack?.(id,value);
@@ -118,7 +121,7 @@ export function MusicArrangementTimeline({version,files,duration,position,onSeek
     if(!d||d.pointerId!==pointerId||!onChangeTrack)return;
     const delta=precise((eventX-d.x)/pixelsPerSecond);
     let next:Timing={};
-    if(d.mode==='move')next={offsetSeconds:precise(Math.max(0,d.offset+delta))};
+    if(d.mode==='move')next={offsetSeconds:snap(Math.max(0,d.offset+delta))};
     if(d.mode==='start'){
       const shift=clamp(delta,-d.offset,Math.max(0,d.end-d.start-.025));
       next={offsetSeconds:precise(d.offset+shift),
@@ -216,7 +219,7 @@ export function MusicArrangementTimeline({version,files,duration,position,onSeek
         const step=e.shiftKey?.01:.1;
         const dir=e.key==='ArrowRight'?1:-1;
         const info=clipInfo(t,file);
-        if(mode==='move')onChangeTrack?.(t.id,{offsetSeconds:precise(
+        if(mode==='move')onChangeTrack?.(t.id,{offsetSeconds:snap(
           Math.max(0,info.offset+dir*step))});
         if(mode==='start'){
           const delta=clamp(dir*step,-info.offset,Math.max(0,info.end-info.start-.025));
@@ -400,6 +403,11 @@ export function MusicArrangementTimeline({version,files,duration,position,onSeek
               </View>;
             })}
           </Pressable>
+          {Array.from({length:Math.min(1000,Math.ceil(maxEnd/beatSeconds)+1)},(_,i)=>i)
+            .map(i=><View key={'beat-'+i} pointerEvents="none"
+              style={{position:'absolute',left:i*beatSeconds*pixelsPerSecond,
+                top:rulerHeight,height:rowHeight*rows,width:i%4===0?1.5:1,
+                backgroundColor:theme.muted,opacity:i%4===0?0.24:0.10}}/>)}
           {version.tracks.map(t=>{
             const source=files.find(f=>f.id===t.sourceFileId);
             const info=clipInfo(t,source);
