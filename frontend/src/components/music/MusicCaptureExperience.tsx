@@ -256,7 +256,8 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,h
             Disponible pour une version · ouvrir pour choisir
           </Text>:null}
           </Pressable>
-          {sound&&file.localFileId?<MusicAudioTake file={file} compact/>:null}
+          {sound&&file.localFileId?<MusicAudioTake file={file} compact
+            onUpdate={changes=>changeFile(file.id,changes)}/>:null}
         </View>;
       })}
     </View>
