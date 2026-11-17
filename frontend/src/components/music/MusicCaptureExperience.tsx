@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/theme/AppTheme';
 import { MusicAudioCapture } from './MusicAudioCapture';
 import { MusicAudioTake } from './MusicAudioTake';
+import { MusicWritingStudio, MusicNotePreview, type MusicWritingResult } from './MusicWritingStudio';
 
 import { MusicLocalArt } from './MusicLocalArtNext';
 import { MusicMaterialViewer } from './MusicMaterialViewerV3';
@@ -18,7 +19,7 @@ type Props={project:MusicProject;patch:(changes:Partial<MusicProject>)=>void;
   onStartVersion:(source:MusicProjectFile)=>void;onUseFile:(source:MusicProjectFile)=>void;
   hasVersion:boolean};
 type Composer='none'|'write'|'record';
-type Writing='lyrics'|'note'|'translation';
+type Writing='lyrics'|'note';
 const isImage=(file:MusicProjectFile)=>/\.(jpg|jpeg|png|webp)$/i.test(file.originalFilename||'');
 const isAudio=(file:MusicProjectFile)=>!!file.mimeType?.startsWith('audio/')||
   /\.(wav|mp3|m4a|webm|ogg|aac)$/i.test(file.originalFilename||'');
@@ -39,32 +40,57 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,h
   const [unsavedRecording,setUnsavedRecording]=useState(false);
   const [confirmClose,setConfirmClose]=useState(false);
   const [writing,setWriting]=useState<Writing>('lyrics');
-  const [draft,setDraft]=useState('');
-  const [language,setLanguage]=useState(project.originalLanguage||'Français');
+  const [draftDirty,setDraftDirty]=useState(false);
+  const [translationSourceId,setTranslationSourceId]=useState('');
   const [selected,setSelected]=useState('');
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState('');
   const selectedFile=files.find(f=>f.id===selected)||null;
+  const translationSource=files.find(f=>f.id===translationSourceId)||null;
   const closeComposer=()=>{
+    if((composer==='record'&&unsavedRecording)||(composer==='write'&&draftDirty)){
+      setConfirmClose(true);return;
+    }
+    setComposer('none');setTranslationSourceId('');setConfirmClose(false);
+  };
+  const openWrite=(sourceId='')=>{
     if(composer==='record'&&unsavedRecording){setConfirmClose(true);return;}
-    setComposer('none');setConfirmClose(false);
+    if(composer==='write'&&draftDirty&&translationSourceId!==sourceId){
+      setConfirmClose(true);return;
+    }
+    setTranslationSourceId(sourceId);setComposer('write');setConfirmClose(false);
   };
   const changeFile=(id:string,change:Partial<MusicProjectFile>)=>
     patch({files:files.map(file=>file.id===id?{...file,...change}:file)});
-  const addWritten=()=>{
-    if(!draft.trim())return;
-    const translated=writing==='translation';
-    const lyrics=writing!=='note';
+  const addWritten=(result:MusicWritingResult)=>{
+    if(!result.text.trim())return;
+    const translated=result.mode==='translation';
+    const lyrics=result.mode!=='note';
+    const title=result.title.trim()||(translated
+      ?'Traduction · '+result.language
+      :lyrics?'Paroles':result.text.trim().split('\n')[0].slice(0,52)||'Note');
     const item:MusicProjectFile={
       id:newMusicId(),kind:lyrics?'lyrics':'note',sectionIds:[],
-      title:translated?'Traduction · '+(language||'à préciser'):
-        lyrics?'Paroles':draft.trim().split('\n')[0].slice(0,52),
-      text:draft.trim(),lyricSegments:lyrics?lyricStanzas(draft.trim()):undefined,
-      language:lyrics?(language.trim()||project.originalLanguage):undefined,
+      title,text:result.text.trim(),
+      lyricSegments:lyrics?lyricStanzas(result.text.trim()):undefined,
+      language:lyrics?(result.language||project.originalLanguage):undefined,
+      translationOfFileId:translated?result.translationOfFileId:undefined,
       createdAt:new Date().toISOString(),
     };
     patch({files:[...files,item]});
-    setDraft('');setComposer('none');setSelected(item.id);
+    setDraftDirty(false);setComposer('none');setTranslationSourceId('');
+    setSelected(item.id);
+  };
+  const requestTranslator=(sourceId:string,targetLanguage:string)=>{
+    const source=files.find(file=>file.id===sourceId);
+    if(!source||!targetLanguage.trim())return;
+    if((project.needs||[]).some(need=>need.kind==='talent'&&
+      need.label.toLowerCase()==='traducteur'&&need.sourceFileId===sourceId&&
+      need.targetLanguage===targetLanguage.trim()))return;
+    patch({needs:[...(project.needs||[]),{id:newMusicId(),kind:'talent',
+      label:'Traducteur',sourceFileId:sourceId,
+      sourceLanguage:source.language||project.originalLanguage,
+      targetLanguage:targetLanguage.trim()}]});
   };
   const addRecorded=(id:string,filename:string,durationSeconds?:number,
     _offset?:number,markers?:MusicAudioMarker[],name?:string)=>{
@@ -137,19 +163,20 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,h
       </Text>
     </View>
     <View style={{flexDirection:'row',flexWrap:'wrap',gap:9}}>
-      {action('Enregistrer','mic-outline',()=>composer==='record'?closeComposer():setComposer('record'),true)}
+      {action('Enregistrer','mic-outline',()=>{
+        if(composer==='record'){closeComposer();return;}
+        if(composer==='write'&&draftDirty){setConfirmClose(true);return;}
+        setComposer('record');setTranslationSourceId('');
+      },true)}
       {action('Écrire','pencil-outline',()=>{
-        if(composer==='record'&&unsavedRecording){setConfirmClose(true);return;}
-        setComposer(composer==='write'?'none':'write');
+        if(composer==='write'&&!translationSourceId){closeComposer();return;}
+        openWrite();
       })}
       {action(busy?'Import…':'Importer','add-outline',pickFiles)}
     </View>
     {composer!=='none'?<View style={{gap:16,padding:compact?16:22,
       borderWidth:1,borderColor:theme.border,borderRadius:18,backgroundColor:theme.surface}}>
-      <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
-        {composer==='write'?<Text style={{fontSize:16,fontWeight:'700',color:theme.foreground}}>
-          Écrire
-        </Text>:<View style={{flex:1}}/>}
+      <View style={{flexDirection:'row',alignItems:'center',justifyContent:'flex-end'}}>
         <Pressable onPress={closeComposer} accessibilityLabel="Fermer" style={{padding:6}}>
           <Ionicons name="close" size={20} color={theme.muted}/>
         </Pressable>
@@ -157,52 +184,26 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,h
       {confirmClose?<View style={{borderRadius:12,borderWidth:1,borderColor:theme.border,
         padding:12,gap:10}}>
         <Text style={{fontSize:12,color:theme.foreground,lineHeight:19}}>
-          Abandonner la prise non enregistrée ?
+          {composer==='record'?'Abandonner la prise non enregistrée ?':'Abandonner ce brouillon ?'}
         </Text>
         <View style={{flexDirection:'row',gap:9,flexWrap:'wrap'}}>
           {action('Continuer', 'arrow-back-outline',()=>setConfirmClose(false))}
           {action('Abandonner','close-outline',()=>{
-            setUnsavedRecording(false);setComposer('none');setConfirmClose(false);
+            setUnsavedRecording(false);setDraftDirty(false);setTranslationSourceId('');
+            setComposer('none');setConfirmClose(false);
           })}
         </View>
       </View>:null}
       {composer==='record' ? <MusicAudioCapture onSaved={addRecorded}
         onDraftChange={setUnsavedRecording}
         suggestedTitle={'Prise '+(files.filter(isAudio).length+1)}/> :
-        <View style={{gap:13}}>
-          <View style={{flexDirection:'row',flexWrap:'wrap',gap:7}}>
-            {([
-              {key:'lyrics' as Writing,text:'Paroles'},
-              {key:'note' as Writing,text:'Note'},
-              {key:'translation' as Writing,text:'Traduction humaine'}
-            ]).map(item=><Pressable key={item.key} onPress={()=>setWriting(item.key)}
-              accessibilityRole="radio" accessibilityState={{checked:writing===item.key}}
-              style={{minHeight:36,paddingHorizontal:12,justifyContent:'center',
-                borderRadius:19,borderWidth:1,
-                borderColor:writing===item.key?PINK:theme.border,
-                backgroundColor:writing===item.key?(theme.dark?'#382530':'#F9EBF0'):theme.background}}>
-              <Text style={{fontSize:12,color:writing===item.key?PINK:theme.foreground}}>{item.text}</Text>
-            </Pressable>)}
-          </View>
-          {writing!=='note'?<TextInput value={language} onChangeText={setLanguage}
-            placeholder="Langue de ces paroles" placeholderTextColor={theme.muted}
-            accessibilityLabel="Langue des paroles" style={{...field,fontSize:13,minHeight:43,lineHeight:18}}/>:null}
-          <TextInput multiline autoFocus textAlignVertical="top" value={draft} onChangeText={setDraft}
-            placeholder={writing==='translation'?'Écris ta traduction ici…':
-              writing==='note'?'Écris une note…':'Écris les paroles…'}
-            placeholderTextColor={theme.muted} style={{...field,minHeight:compact?165:220,
-              fontSize:writing==='note'?15:19,lineHeight:writing==='note'?24:30}}/>
-          {writing==='translation'?<Text style={{fontSize:11,lineHeight:18,color:theme.muted}}>
-            Traduction écrite par une personne. Aucune parole n'est générée automatiquement.
-          </Text>:null}
-          <View style={{alignSelf:'flex-end'}}>
-            <Pressable disabled={!draft.trim()} onPress={addWritten}
-              accessibilityRole="button" style={{paddingHorizontal:18,minHeight:43,borderRadius:11,
-                backgroundColor:draft.trim()?PINK:theme.border,justifyContent:'center'}}>
-              <Text style={{color:'#fff',fontWeight:'700',fontSize:12}}>Conserver</Text>
-            </Pressable>
-          </View>
-        </View>}
+        <MusicWritingStudio mode={writing} onModeChange={setWriting}
+          originalLanguage={project.originalLanguage}
+          source={translationSource} onSave={addWritten}
+          onRequestTranslator={requestTranslator} onDirtyChange={setDraftDirty}
+          requestPending={!!(project.needs||[]).find(need=>
+            need.sourceFileId===translationSourceId&&need.kind==='talent'&&
+            need.label.toLowerCase()==='traducteur')}/>}
     </View>:null}
     {error?<Text style={{fontSize:12,color:'#B64A60'}}>{error}</Text>:null}
     <View style={{gap:11}}>
@@ -217,8 +218,10 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,h
           Aucun élément. Enregistre, écris ou importe pour commencer.
         </Text>
       </View> : null}
-      {files.map(file=>{
+      {files.filter(file=>!file.translationOfFileId||
+        !files.some(original=>original.id===file.translationOfFileId)).map(file=>{
         const image=isImage(file), sound=isAudio(file), text=content(file).trim();
+        const translations=files.filter(candidate=>candidate.translationOfFileId===file.id);
         return <View key={file.id} style={{paddingVertical:18,borderTopWidth:1,
           borderColor:theme.border,gap:12}}>
           <Pressable onPress={()=>setSelected(file.id)} accessibilityRole="button"
@@ -232,7 +235,10 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,h
           {image?<View style={{borderRadius:16,overflow:'hidden'}}>
             <MusicLocalArt file={file} cover/>
           </View>:null}
-          {text ? <Text numberOfLines={file.kind==='lyrics'?6:4}
+          {text&&file.kind==='note'?<View style={{maxWidth:650}}>
+            <MusicNotePreview text={text.split('\n').slice(0,5).join('\n')}
+              color={theme.foreground}/>
+          </View>:text ? <Text numberOfLines={6}
             style={{fontFamily:file.kind==='lyrics'?'Georgia':undefined,
               fontSize:file.kind==='lyrics'?18:14,
               lineHeight:file.kind==='lyrics'?28:23,color:theme.foreground,
@@ -258,6 +264,29 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,h
           </Pressable>
           {sound&&file.localFileId?<MusicAudioTake file={file} compact
             onUpdate={changes=>changeFile(file.id,changes)}/>:null}
+          {file.kind==='lyrics'&&!file.translationOfFileId?
+            <Pressable onPress={()=>openWrite(file.id)} accessibilityRole="button"
+              style={{alignSelf:'flex-start',minHeight:40,flexDirection:'row',
+                alignItems:'center',gap:8}}>
+              <Ionicons name="language-outline" size={17} color={PINK}/>
+              <Text style={{fontSize:12,fontWeight:'600',color:PINK}}>Traduire ces paroles</Text>
+            </Pressable>:null}
+          {translations.length?<View style={{gap:6,paddingTop:8}}>
+            <Text style={{fontSize:11,color:theme.muted,fontWeight:'600'}}>Traductions</Text>
+            {translations.map(translation=><Pressable key={translation.id}
+              accessibilityRole="button"
+              accessibilityLabel={'Ouvrir '+translation.title}
+              onPress={()=>setSelected(translation.id)}
+              style={{flexDirection:'row',alignItems:'center',gap:8,
+                paddingVertical:9,paddingHorizontal:12,borderRadius:10,
+                backgroundColor:theme.surface,borderWidth:1,borderColor:theme.border}}>
+              <Ionicons name="language-outline" color={PINK} size={16}/>
+              <Text numberOfLines={1} style={{color:theme.foreground,fontSize:13,
+                flex:1}}>{translation.title}</Text>
+              <Text style={{color:theme.muted,fontSize:11}}>{translation.language}</Text>
+              <Ionicons name="chevron-forward" color={theme.muted} size={16}/>
+            </Pressable>)}
+          </View>:null}
         </View>;
       })}
     </View>
