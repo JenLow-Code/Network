@@ -10,7 +10,9 @@ type Source = { audioUrl?: string; audioMediaId?: string; localAudioId?: string 
 const pink = '#CB245C';
 
 /** Only real uploaded or stored audio is played; missing references are never simulated. */
-export function MusicAudioPreview({ source }: { source: Source }) {
+export function MusicAudioPreview({ source, transcription=false }: {
+  source: Source; transcription?: boolean;
+}) {
   const theme = useAppTheme();
   const [uri, setUri] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -43,13 +45,13 @@ export function MusicAudioPreview({ source }: { source: Source }) {
   if (error) return <Text style={{color:'#B34D67',fontSize:11}}>{error}</Text>;
   if (loading) return <ActivityIndicator color={pink} size="small"/>;
   if (!uri) return <Text style={{color:theme.muted,fontSize:11}}>Pas d’enregistrement joint.</Text>;
-  return <Playback key={uri} uri={uri}/>;
+  return <Playback key={uri} uri={uri} transcription={transcription}/>;
 }
 function fmt(value:number) {
   const safe=Number.isFinite(value)?Math.max(0,value):0;
   return Math.floor(safe/60)+':'+String(Math.floor(safe%60)).padStart(2,'0');
 }
-function Playback({uri}:{uri:string}) {
+function Playback({uri,transcription}:{uri:string;transcription:boolean}) {
   const theme=useAppTheme();
   const player=useAudioPlayer({uri});
   const status=useAudioPlayerStatus(player);
@@ -64,6 +66,16 @@ function Playback({uri}:{uri:string}) {
       alignItems:'center',justifyContent:'center',backgroundColor:pink}}>
       <Ionicons name={status.playing?'pause':'play'} size={17} color="#fff"/>
     </Pressable>
+    {transcription?<Pressable onPress={()=>void player.seekTo(Math.max(0,status.currentTime-5))}
+      accessibilityRole="button" accessibilityLabel="Reculer de cinq secondes"
+      style={{width:40,height:40,alignItems:'center',justifyContent:'center'}}>
+      <Ionicons name="play-back-outline" size={21} color={theme.foreground}/>
+    </Pressable>:null}
+    {transcription?<Pressable onPress={()=>void player.seekTo(Math.min(length||Infinity,status.currentTime+5))}
+      accessibilityRole="button" accessibilityLabel="Avancer de cinq secondes"
+      style={{width:40,height:40,alignItems:'center',justifyContent:'center'}}>
+      <Ionicons name="play-forward-outline" size={21} color={theme.foreground}/>
+    </Pressable>:null}
     <View style={{flex:1,gap:7}}>
       <View style={{height:3,borderRadius:2,backgroundColor:theme.border}}>
         <View style={{height:3,borderRadius:2,backgroundColor:pink,width:(percent*100)+'%'}}/>
