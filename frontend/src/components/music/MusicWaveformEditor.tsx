@@ -30,6 +30,8 @@ export function MusicWaveformEditor({file,duration,cursor,onSeek,zoom,onZoom,
   const [selectedMarkerId,setSelectedMarkerId]=useState<string|null>(null);
   const [confirmDelete,setConfirmDelete]=useState(false);
   const [drawingRange,setDrawingRange]=useState<{start:number;end:number}|null>(null);
+  const onSeekRef=useRef(onSeek);onSeekRef.current=onSeek;
+  const onRangeRef=useRef(onCreateRange);onRangeRef.current=onCreateRange;
   const drawingRef=useRef<{pointerId:number;startClientX:number;
     start:number;end:number;active:boolean;type:string;
     timer:ReturnType<typeof setTimeout>|null}|null>(null);
@@ -132,7 +134,7 @@ export function MusicWaveformEditor({file,duration,cursor,onSeek,zoom,onZoom,
         durationRef.current,0,durationRef.current);
     };
     const pointerDown=(e:PointerEvent)=>{
-      if(!onCreateRange||e.button!==0||pinching.current)return;
+      if(!onRangeRef.current||e.button!==0||pinching.current)return;
       if(!(e.target as HTMLElement)?.closest?.('svg'))return;
       const point=relative(e.clientX);
       const pending={pointerId:e.pointerId,startClientX:e.clientX,
@@ -151,9 +153,17 @@ export function MusicWaveformEditor({file,duration,cursor,onSeek,zoom,onZoom,
     };
     const pointerMove=(e:PointerEvent)=>{
       const p=drawingRef.current;
-      if(!p||p.pointerId!==e.pointerId||!onCreateRange)return;
+      if(!p||p.pointerId!==e.pointerId||!onRangeRef.current)return;
       if(!p.active){
-        if(p.type!=='mouse'||Math.abs(e.clientX-p.startClientX)<7)return;
+        if(p.type!=='mouse'){
+          // Scrolling before a long press must not turn into an annotation.
+          if(Math.abs(e.clientX-p.startClientX)>12){
+            if(p.timer)clearTimeout(p.timer);
+            drawingRef.current=null;
+          }
+          return;
+        }
+        if(Math.abs(e.clientX-p.startClientX)<7)return;
         p.active=true;
         try{element.setPointerCapture(e.pointerId);}catch{}
       }
@@ -169,8 +179,8 @@ export function MusicWaveformEditor({file,duration,cursor,onSeek,zoom,onZoom,
         suppressClick.current=true;
         const start=Math.min(p.start,p.end),end=Math.max(p.start,p.end);
         if(!cancel&&end-start>=.025){
-          onCreateRange?.(Math.round(start*1000)/1000,Math.round(end*1000)/1000);
-        }else if(!cancel)onSeek(Math.round(p.start*1000)/1000);
+          onRangeRef.current?.(Math.round(start*1000)/1000,Math.round(end*1000)/1000);
+        }else if(!cancel)onSeekRef.current(Math.round(p.start*1000)/1000);
         setTimeout(()=>{suppressClick.current=false;},160);
       }
       try{element.releasePointerCapture(e.pointerId);}catch{}
@@ -207,7 +217,7 @@ export function MusicWaveformEditor({file,duration,cursor,onSeek,zoom,onZoom,
       element.removeEventListener('touchend',touchEnd);
       element.removeEventListener('touchcancel',touchEnd);
     };
-  },[onZoom,onSeek,onCreateRange,viewport]);
+  },[onZoom,viewport]);
   const seek=(x:number)=>{
     if(suppressClick.current){suppressClick.current=false;return;}
     onSeek(clamp(Math.round(x/Math.max(px,1)*duration*1000)/1000,0,duration));
