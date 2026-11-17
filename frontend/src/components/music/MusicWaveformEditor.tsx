@@ -15,7 +15,10 @@ export function MusicWaveformEditor({file,duration,cursor,onSeek,zoom,onZoom,
   playing,onTogglePlayback,markers=[],compact=false}:Props){
   const theme=useAppTheme();
   const {width}=useWindowDimensions();
-  const viewport=Math.min(730,Math.max(245,width-(compact?40:82)));
+  // The ruler and waveform must fill the actual panel, not a hard-coded
+  // viewport width. Measured layout also accounts for margins and modals.
+  const [panelWidth,setPanelWidth]=useState(0);
+  const viewport=panelWidth||Math.max(240,width-(compact?40:82));
   const px=Math.max(viewport,Math.round(viewport*zoom));
   const [data,setData]=useState<Float32Array|null>(null);
   const [decoding,setDecoding]=useState(false);
@@ -160,7 +163,10 @@ export function MusicWaveformEditor({file,duration,cursor,onSeek,zoom,onZoom,
       </View>
       <Text style={{fontSize:11,color:theme.muted}}>×{Math.round(zoom*10)/10}</Text>
     </View>
-    <View ref={pane} style={{maxWidth:'100%',borderRadius:12,
+    <View ref={pane} onLayout={e=>{
+      const measured=Math.round(e.nativeEvent.layout.width);
+      if(measured>0)setPanelWidth(old=>old===measured?old:measured);
+    }} style={{width:'100%',borderRadius:12,
       borderWidth:1,borderColor:theme.border,
       backgroundColor:theme.dark?'#252329':'#F8F7F5',overflow:'hidden',
       ...({touchAction:'pan-x'} as any)}}>
@@ -190,11 +196,14 @@ export function MusicWaveformEditor({file,duration,cursor,onSeek,zoom,onZoom,
               const end=m.endSeconds===undefined?x:
                 clamp(m.endSeconds/Math.max(.001,duration)*px,x,px);
               return <React.Fragment key={m.id}>
-                {end>x?<Rect x={x} y={18} width={end-x} height={88}
-                  fill={pink} opacity={.10}/>:null}
-                <Line x1={x} y1={13} x2={x} y2={106}
-                  stroke={pink} strokeWidth={1} strokeDasharray="4,3"/>
-                <Circle cx={x} cy={12} r={3} fill={pink}/>
+                {end>x?<>
+                  <Line x1={x} y1={23} x2={end} y2={23}
+                    stroke={pink} strokeWidth={2} opacity={.85}/>
+                  <Circle cx={end} cy={23} r={3} fill={pink}/>
+                </>:null}
+                <Line x1={x} y1={15} x2={x} y2={end>x?31:38}
+                  stroke={pink} strokeWidth={1.5}/>
+                <Circle cx={x} cy={13} r={3} fill={pink}/>
               </React.Fragment>;
             })}
             {bars.map((v,i)=>{
