@@ -22,6 +22,7 @@ type Props={
   onDraftChange?:(hasUnsavedTake:boolean)=>void;
   initialTake?:{file:File;durationSeconds:number;markers:MusicAudioMarker[];title:string};
   suggestedTitle?:string;
+  initialCursorSeconds?:number;
 };
 const PINK='#CB245C';
 type Status='idle'|'recording'|'paused';
@@ -29,7 +30,8 @@ type Status='idle'|'recording'|'paused';
 /** Real microphone recording with pause and local non-destructive punch-in.
  * Web-only until a native capture engine is implemented and verified. */
 export function MusicAudioCapture({onSaved,onStarted,onPaused,timelineStartSeconds=0,
-  backingPositionSeconds,onDraftChange,initialTake,suggestedTitle='Prise 1'}:Props){
+  backingPositionSeconds,onDraftChange,initialTake,suggestedTitle='Prise 1',
+  initialCursorSeconds=0}:Props){
   const theme=useAppTheme();
   const recorder=useRef<MediaRecorder|null>(null);
   const stream=useRef<MediaStream|null>(null);
@@ -68,7 +70,8 @@ export function MusicAudioCapture({onSaved,onStarted,onPaused,timelineStartSecon
     timelineStart.current=Math.max(0,timelineStartSeconds);
     setFile(initialTake.file);
     setDuration(initialTake.durationSeconds);
-    setCursor(0);setStatus('paused');
+    setCursor(Math.max(0,Math.min(initialTake.durationSeconds,initialCursorSeconds)));
+    setStatus('paused');
     markerRef.current=initialTake.markers;
     setMarkers(initialTake.markers);
     setTitle(initialTake.title);

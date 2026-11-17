@@ -89,7 +89,8 @@ export function MusicAudioTake({file,compact=false,editable=false,onUpdate}:Prop
     {editing?<View style={{gap:9}}>
       <MusicAudioCapture initialTake={{
         file:blob,durationSeconds:duration,markers:file.markers||[],title:file.title
-      }} onSaved={saveEdited} onDraftChange={setDraftActive}/>
+      }} initialCursorSeconds={cursor}
+         onSaved={saveEdited} onDraftChange={setDraftActive}/>
       {confirmExit?<View style={{padding:12,borderWidth:1,borderColor:theme.border,
         borderRadius:11,gap:9}}>
         <Text style={{fontSize:12,color:theme.foreground}}>
