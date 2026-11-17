@@ -249,11 +249,11 @@ export function MusicAudioCapture({onSaved,onStarted,onPaused,timelineStartSecon
       </View>
       <View style={{alignItems:'flex-end',gap:4}}>
         <Text style={{fontSize:12,color:theme.muted}}>
-          Durée {musicStamp(shownLength)}
+          Durée {musicStampMs(shownLength)}
         </Text>
         {backingPositionSeconds!==undefined?<Text style={{fontSize:13,
           color:PINK,fontWeight:'700',fontVariant:['tabular-nums']}}>
-          Morceau {musicStamp(backingPositionSeconds)}
+          Morceau {musicStampMs(backingPositionSeconds)}
         </Text>:null}
       </View>
     </View>
