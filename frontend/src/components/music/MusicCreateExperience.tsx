@@ -1,4 +1,6 @@
-import React,{useState} from 'react';
+import React,{useEffect,useState} from 'react';
+import {Platform} from 'react-native';
+import {getDraftAttachment} from '@/domain/musicLocalStorage';
 import {musicStamp} from '@/domain/musicEditing';
 import {Pressable,Text,TextInput,View,useWindowDimensions} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
@@ -25,6 +27,40 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
   const state=musicNextState(project);
   const version=state.versions.find(v=>v.id===state.activeVersionId)||state.versions[0];
   const sources=project.files.filter(isMusicTrackCandidate);
+  // Older takes may have been saved before their duration was known.
+  // Decode the real file instead of drawing a zero-width phantom track.
+  const unknownDurationIds=version?.tracks
+    .map(track=>project.files.find(file=>file.id===track.sourceFileId))
+    .filter((file):file is MusicProjectFile=>
+      !!file?.localFileId&&!(file.durationSeconds&&file.durationSeconds>0))
+    .map(file=>file.id) || [];
+  const unknownKey=unknownDurationIds.join('|');
+  useEffect(()=>{
+    if(Platform.OS!=='web'||typeof AudioContext==='undefined'||!unknownKey)return;
+    let alive=true;
+    void (async()=>{
+      const context=new AudioContext();
+      try{
+        const resolved:{id:string;duration:number}[]=[];
+        for(const file of project.files.filter(x=>unknownDurationIds.includes(x.id))){
+          const blob=file.localFileId?await getDraftAttachment(file.localFileId):null;
+          if(!blob)continue;
+          try{
+            const buffer=await context.decodeAudioData(await blob.arrayBuffer());
+            if(Number.isFinite(buffer.duration)&&buffer.duration>0)
+              resolved.push({id:file.id,duration:buffer.duration});
+          }catch{}
+        }
+        if(alive&&resolved.length){
+          patch({files:project.files.map(file=>{
+            const match=resolved.find(result=>result.id===file.id);
+            return match?{...file,durationSeconds:match.duration}:file;
+          })});
+        }
+      }finally{await context.close();}
+    })().catch(()=>{});
+    return()=>{alive=false;};
+  },[unknownKey,project.id]);
   const [versionMenu,setVersionMenu]=useState(false);
   const [pickMode,setPickMode]=useState<PickMode>('none');
   const [recording,setRecording]=useState(false);
