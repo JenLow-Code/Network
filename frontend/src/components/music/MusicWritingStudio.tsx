@@ -75,7 +75,7 @@ export function MusicWritingStudio({ mode, onModeChange, originalLanguage, sourc
   const [preview, setPreview] = useState(false);
   const [sourceExpanded, setSourceExpanded] = useState(true);
   const [selection, setSelection] = useState({ start: 0, end: 0 });
-  const input = useRef<TextInput>(null);
+  const input = useRef<React.ElementRef<typeof TextInput>>(null);
   const [requestNotice, setRequestNotice] = useState(false);
 
   const isNote = !translating && mode === 'note';
