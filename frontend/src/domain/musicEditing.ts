@@ -9,16 +9,19 @@ export async function punchInAudio(previous: File | null, take: File, atSeconds:
   const ctx = new AudioContext();
   try {
     const fresh = await ctx.decodeAudioData(await take.arrayBuffer());
-    if (!previous) return {file: take, durationSeconds: fresh.duration};
-    const original = await ctx.decodeAudioData(await previous.arrayBuffer());
+    // Encode short first takes as PCM WAV so seeking is reliable in browsers whose
+    // MediaRecorder WebM files have missing duration/seek metadata.
+    const original = previous ? await ctx.decodeAudioData(await previous.arrayBuffer()) : fresh;
     const sampleRate = original.sampleRate;
     if (fresh.sampleRate !== sampleRate) throw Error('Fréquences audio incompatibles.');
     const channels = Math.min(2, Math.max(original.numberOfChannels, fresh.numberOfChannels));
     const start = Math.max(0, Math.min(original.length, Math.round(atSeconds * sampleRate)));
     const end = Math.min(original.length, start + fresh.length);
     const total = Math.max(original.length, start + fresh.length);
-    if (total * channels * 2 + 44 > 100 * 1024 * 1024)
+    if (total * channels * 2 + 44 > 100 * 1024 * 1024) {
+      if (!previous) return {file:take,durationSeconds:fresh.duration};
       throw Error('Prise finale trop longue pour le stockage local (100 Mo maximum).');
+    }
     const pcm = Array.from({length:channels},(_,c)=>{
       const result = new Float32Array(total);
       const before = original.getChannelData(Math.min(c,original.numberOfChannels-1));
