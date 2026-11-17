@@ -100,7 +100,7 @@ export function MusicArrangementTimeline({version,files,duration,position,onSeek
       el.removeEventListener('dragleave',leave);
       el.removeAttribute('data-jenlow-music-dropzone');
       el.removeAttribute('data-jenlow-seconds-per-pixel');};
-  },[rows,zoom,panelWidth]);
+  },[version.tracks.length,zoom,panelWidth]);
   const tick=zoom>=8?2:zoom>=4?5:zoom>=2?10:30;
   const rows=version.tracks.length;
   const rowHeight=77,rulerHeight=43;
