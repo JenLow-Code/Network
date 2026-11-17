@@ -6,6 +6,8 @@ import {MusicLocalArt} from './MusicLocalArtNext';
 import {MusicAudioTake} from './MusicAudioTake';
 import {MusicLyricSelection} from './MusicLyricSelection';
 import {MusicNotePreview,MusicWritingStudio,type MusicWritingResult} from './MusicWritingStudio';
+import {MusicScoreView} from './MusicSketchStudio';
+import {downloadMusicMidi} from '@/domain/musicNotation';
 import {getDraftAttachment} from '@/domain/musicLocalStorage';
 import {newMusicId} from '@/domain/musicWorkspace';
 import {isMusicTrackCandidate} from '@/domain/musicNext';
@@ -223,6 +225,23 @@ export function MusicMaterialViewer({visible,file,project,onClose,onUpdate,onCha
             </>:null}
           </View>:null}
           {isArtwork(file)?<MusicLocalArt file={file} size={compact?270:360}/>:null}
+          {file.musicEvents?.length?<View style={{gap:12}}>
+            <Text style={{fontSize:12,color:theme.muted}}>
+              {file.musicEvents.length} notes / frappes · {file.tempoBpm||100} BPM
+            </Text>
+            <MusicScoreView events={file.musicEvents} compact={compact}/>
+            <Pressable accessibilityRole="button"
+              onPress={()=>{
+                try{
+                  downloadMusicMidi(file.musicEvents||[],file.tempoBpm||100,file.title);
+                  setError('');
+                }catch(e){setError(e instanceof Error?e.message:'Export MIDI impossible.');}
+              }} style={{minHeight:42,flexDirection:'row',alignItems:'center',
+                alignSelf:'flex-start',gap:9,paddingHorizontal:9}}>
+              <Ionicons name="download-outline" size={18} color={pink}/>
+              <Text style={{fontSize:13,fontWeight:'600',color:pink}}>Exporter en MIDI (.mid)</Text>
+            </Pressable>
+          </View>:null}
           {isAudio(file)&&file.localFileId?
             <MusicAudioTake key={file.id} file={file} editable
               onUpdate={changes=>onUpdate(file.id,changes)}/>:null}
@@ -323,7 +342,7 @@ export function MusicMaterialViewer({visible,file,project,onClose,onUpdate,onCha
               </Pressable>)}
             </View>:null}
           </>:null}
-          {!editing&&!textOf(file).trim()&&!isArtwork(file)&&!isAudio(file)?
+          {!editing&&!textOf(file).trim()&&!isArtwork(file)&&!isAudio(file)&&!file.musicEvents?.length?
             <Text style={{color:theme.muted,fontSize:13}}>
               Le fichier est conservé. Ouvre son original ou écris une note associée.
             </Text>:null}
