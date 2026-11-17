@@ -103,9 +103,9 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
     setVersionMenu(false);setShowSettings(false);
   };
   const saveTake=(id:string,filename:string,durationSeconds?:number,
-    startAt?:number,markers?:MusicAudioMarker[])=>{
+    startAt?:number,markers?:MusicAudioMarker[],name?:string)=>{
     if(!version)return;
-    const item:MusicProjectFile={id:newMusicId(),title:'Nouvelle prise',kind:'audio',
+    const item:MusicProjectFile={id:newMusicId(),title:name?.trim()||'Nouvelle prise',kind:'audio',
       sectionIds:[],localFileId:id,originalFilename:filename,
       mimeType:/\.wav$/i.test(filename)?'audio/wav':/\.m4a$/i.test(filename)?'audio/mp4':'audio/webm',
       durationSeconds,markers:markers||[],createdAt:new Date().toISOString()};

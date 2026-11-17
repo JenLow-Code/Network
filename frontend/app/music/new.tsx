@@ -30,6 +30,7 @@ export default function NewMusic(){
   const [mode,setMode]=useState<StartMode>('blank');
   const [fileName,setFileName]=useState('');
   const [audioId,setAudioId]=useState('');
+  const [audioTitle,setAudioTitle]=useState('');
   const [audioDuration,setAudioDuration]=useState<number|undefined>();
   const [audioMarkers,setAudioMarkers]=useState<MusicAudioMarker[]>([]);
   const [coverLocalId,setCoverLocalId]=useState('');
@@ -63,7 +64,8 @@ export default function NewMusic(){
     chooseMusicFile(file=>{
       setBusy(true);setError('');
       void Promise.all([saveDraftAudio(file),fileAudioDuration(file)]).then(([localId,duration])=>{
-        setAudioId(localId);setFileName(file.name);setAudioDuration(duration);setAudioMarkers([]);})
+        setAudioId(localId);setFileName(file.name);setAudioDuration(duration);setAudioMarkers([]);
+         setAudioTitle(file.name.replace(/\.[^.]+$/,''));})
         .catch(e=>setError(e instanceof Error?e.message:'Import audio impossible.'))
         .finally(()=>setBusy(false));
     });
@@ -75,7 +77,7 @@ export default function NewMusic(){
     patch(id,{
       ...(coverLocalId?{coverLocalId}:{}),
       ...(audioId?{files:[{
-        id:newMusicId(),title:fileName.replace(/\\.[^.]+$/,'')||'Première prise',
+        id:newMusicId(),title:audioTitle.trim()||fileName.replace(/\.[^.]+$/,'')||'Première prise',
         kind:'audio' as const,localFileId:audioId,originalFilename:fileName,
         mimeType:/\.wav$/i.test(fileName)?'audio/wav':/\.m4a$/i.test(fileName)?'audio/mp4':/\.ogg$/i.test(fileName)?'audio/ogg':'audio/webm',
         sectionIds:[],durationSeconds:audioDuration,markers:audioMarkers,createdAt:new Date().toISOString(),
@@ -181,9 +183,9 @@ export default function NewMusic(){
             <Ionicons name="checkmark-circle" size={15} color="#237B56"/> {fileName}
           </Text>:null}
         </View>:null}
-        {mode==='record'?<MusicAudioCapture onSaved={(id,filename,duration,_offset,markers)=>{
+        {mode==='record'?<MusicAudioCapture onSaved={(id,filename,duration,_offset,markers,name)=>{
           setAudioId(id);setFileName(filename);setAudioDuration(duration);
-          setAudioMarkers(markers||[]);}}/>:null}
+          setAudioMarkers(markers||[]);setAudioTitle(name?.trim()||'Première prise');}}/>:null}
       </View>
       {storageError?<Text style={{fontSize:12,color:'#B34D67'}}>{storageError}</Text>:null}
       {error?<Text style={{fontSize:12,color:'#B34D67'}}>{error}</Text>:null}
