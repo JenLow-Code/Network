@@ -82,13 +82,14 @@ export function MusicSourceBank({files,onAdd}:Props){
           onDragEnd:()=>setMoving(null),
           onPointerDown:(e:React.PointerEvent<HTMLDivElement>)=>{
             if(e.pointerType==='mouse'||(e.target as HTMLElement)?.closest?.('button'))return;
+            const element=e.currentTarget;
             const d={id:file.id,pointerId:e.pointerId,active:false,
               startX:e.clientX,startY:e.clientY,timer:null as ReturnType<typeof setTimeout>|null};
             drag.current=d;
             d.timer=setTimeout(()=>{
               if(drag.current!==d)return;
               d.active=true;setMoving(file.id);
-              try{e.currentTarget.setPointerCapture(e.pointerId);}catch{}
+              try{element.setPointerCapture(d.pointerId);}catch{}
             },320);
           },
           onPointerMove:(e:React.PointerEvent<HTMLDivElement>)=>{
