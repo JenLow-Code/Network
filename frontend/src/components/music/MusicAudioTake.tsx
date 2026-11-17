@@ -27,6 +27,7 @@ export function MusicAudioTake({file,compact=false,editable=false,onUpdate}:Prop
   const [url,setUrl]=useState('');
   const [error,setError]=useState('');
   const [cursor,setCursor]=useState(0);
+  const [measuredDuration,setMeasuredDuration]=useState<number|undefined>();
   const [zoom,setZoom]=useState(1);
   const [playing,setPlaying]=useState(false);
   const [editing,setEditing]=useState(false);
@@ -35,7 +36,7 @@ export function MusicAudioTake({file,compact=false,editable=false,onUpdate}:Prop
   const audio=useRef<HTMLAudioElement|null>(null);
   useEffect(()=>{
     let live=true;
-    setBlob(null);setError('');setCursor(0);setPlaying(false);
+    setBlob(null);setMeasuredDuration(undefined);setError('');setCursor(0);setPlaying(false);
     if(Platform.OS!=='web'||!file.localFileId)return;
     void getDraftAudio(file.localFileId).then(async b=>{
       if(!b)throw Error('Enregistrement introuvable sur cet appareil.');
@@ -43,9 +44,12 @@ export function MusicAudioTake({file,compact=false,editable=false,onUpdate}:Prop
         {type:b.type||file.mimeType||'audio/webm'});
       // Older WebM recordings may lack a seekable duration index. Make a
       // temporary WAV for the editor without changing the saved original.
-      const playable=/\.wav$/i.test(original.name)?original:
-        (await punchInAudio(null,original,0)).file;
-      if(live)setBlob(playable);
+      const normalised=/\.wav$/i.test(original.name)?null:
+        await punchInAudio(null,original,0);
+      if(live){
+        setBlob(normalised?.file||original);
+        if(normalised)setMeasuredDuration(normalised.durationSeconds);
+      }
     }).catch(e=>{if(live)setError(e instanceof Error?e.message:'Enregistrement indisponible.');});
     return()=>{live=false;audio.current?.pause();};
   },[file.localFileId,file.originalFilename,file.mimeType]);
@@ -55,7 +59,7 @@ export function MusicAudioTake({file,compact=false,editable=false,onUpdate}:Prop
     setUrl(obj);
     return()=>URL.revokeObjectURL(obj);
   },[blob]);
-  const duration=file.durationSeconds||0;
+  const duration=measuredDuration||file.durationSeconds||0;
   const seek=(seconds:number)=>{
     const at=Math.min(Math.max(0,seconds),duration);
     setCursor(at);
