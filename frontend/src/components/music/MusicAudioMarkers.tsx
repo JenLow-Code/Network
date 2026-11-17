@@ -12,9 +12,11 @@ function parse(value:string):number|null{
  return Number.isFinite(n)&&n>=0?n:null;
 }
 type Props={markers:MusicAudioMarker[];duration:number;cursor:number;
- onChange:(markers:MusicAudioMarker[])=>void;onSeek?:(seconds:number)=>void;disabled?:boolean};
+ onChange:(markers:MusicAudioMarker[])=>void;onSeek?:(seconds:number)=>void;disabled?:boolean;
+ editRequest?:{id:string;nonce:number}|null};
 /** Point and interval notes, stored locally on their original recording. */
-export function MusicAudioMarkers({markers,duration,cursor,onChange,onSeek,disabled=false}:Props){
+export function MusicAudioMarkers({markers,duration,cursor,onChange,onSeek,
+ disabled=false,editRequest}:Props){
  const theme=useAppTheme();
  const [open,setOpen]=useState(false),[editing,setEditing]=useState('');
  const [interval,setIntervalMode]=useState(false),[from,setFrom]=useState(''),[to,setTo]=useState('');
@@ -33,6 +35,11 @@ export function MusicAudioMarkers({markers,duration,cursor,onChange,onSeek,disab
    setTo(m?.endSeconds===undefined?'':musicStampMs(m.endSeconds));
    setNote(m?.note||'');setError('');setOpen(true);
  };
+ useEffect(()=>{
+   if(!editRequest)return;
+   const target=markers.find(m=>m.id===editRequest.id);
+   if(target)begin(target);
+ },[editRequest?.nonce]);
  const save=()=>{
    const a=parse(from),b=interval?parse(to):null;
    if(a===null||a>duration+.01||(interval&&(b===null||b<=a||b>duration+.01))){
