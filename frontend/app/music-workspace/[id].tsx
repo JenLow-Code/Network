@@ -91,8 +91,9 @@ export default function MusicWorkspace() {
               borderBottomColor:selected?PINK:'transparent',paddingHorizontal:3}}>
             <Ionicons name={item.icon} size={compact?24:19}
               color={selected?PINK:theme.muted}/>
-            {!compact?<Text style={{fontSize:14,fontWeight:selected?'700':'500',
-              color:selected?theme.foreground:theme.muted}}>{item.title}</Text>:null}
+            {(!compact||selected)?<Text numberOfLines={1}
+              style={{fontSize:compact?12:14,fontWeight:selected?'700':'500',
+                color:selected?theme.foreground:theme.muted}}>{item.title}</Text>:null}
           </Pressable>;
         })}
       </View>
