@@ -143,36 +143,37 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,h
       })
     });
   };
-  const action=(label:string,icon:keyof typeof Ionicons.glyphMap,fn:()=>void,primary=false)=>
+  const action=(label:string,icon:keyof typeof Ionicons.glyphMap,fn:()=>void,
+    primary=false,toolbar=false)=>
     <Pressable onPress={fn} accessibilityRole="button" accessibilityLabel={label}
-      style={{minHeight:45,flexDirection:'row',alignItems:'center',justifyContent:'center',
-        gap:9,paddingHorizontal:15,paddingVertical:10,borderRadius:12,
+      style={{flex:toolbar&&compact?1:undefined,minWidth:0,
+        minHeight:toolbar&&compact?70:45,
+        flexDirection:toolbar&&compact?'column':'row',
+        alignItems:'center',justifyContent:'center',
+        gap:toolbar&&compact?6:9,paddingHorizontal:toolbar&&compact?5:15,
+        paddingVertical:10,borderRadius:12,
         backgroundColor:primary?PINK:theme.surface,borderWidth:primary?0:1,
         borderColor:theme.border}}>
-      <Ionicons name={icon} size={18} color={primary?'#fff':PINK}/>
-      <Text style={{fontSize:13,fontWeight:'600',color:primary?'#fff':theme.foreground}}>{label}</Text>
+      <Ionicons name={icon} size={toolbar&&compact?23:18}
+        color={primary?'#fff':PINK}/>
+      <Text numberOfLines={1} style={{fontSize:toolbar&&compact?11:13,
+        fontWeight:'600',color:primary?'#fff':theme.foreground}}>{label}</Text>
     </Pressable>;
   const field={fontSize:15,lineHeight:24,color:theme.foreground,
     backgroundColor:theme.surface,borderRadius:13,borderWidth:1,borderColor:theme.border,
     paddingHorizontal:16,paddingVertical:14} as const;
-  return <View style={{gap:23}}>
-    <View style={{gap:7}}>
-      <Text style={{fontSize:22,fontWeight:'700',color:theme.foreground}}>Capturer</Text>
-      <Text style={{fontSize:13,lineHeight:21,color:theme.muted,maxWidth:560}}>
-        Enregistre, écris ou importe. Les éléments restent indépendants des versions.
-      </Text>
-    </View>
-    <View style={{flexDirection:'row',flexWrap:'wrap',gap:9}}>
+  return <View style={{gap:18}}>
+    <View style={{flexDirection:'row',gap:compact?7:9}}>
       {action('Enregistrer','mic-outline',()=>{
         if(composer==='record'){closeComposer();return;}
         if(composer==='write'&&draftDirty){setConfirmClose(true);return;}
         setComposer('record');setTranslationSourceId('');
-      },true)}
+      },composer==='record',true)}
       {action('Écrire','pencil-outline',()=>{
         if(composer==='write'&&!translationSourceId){closeComposer();return;}
         openWrite();
-      })}
-      {action(busy?'Import…':'Importer','add-outline',pickFiles)}
+      },composer==='write',true)}
+      {action(busy?'Import…':'Importer','add-outline',pickFiles,false,true)}
     </View>
     {composer!=='none'?<View style={{gap:16,padding:compact?16:22,
       borderWidth:1,borderColor:theme.border,borderRadius:18,backgroundColor:theme.surface}}>
@@ -207,18 +208,11 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,h
             .map(need=>need.targetLanguage||'')}/>}
     </View>:null}
     {error?<Text style={{fontSize:12,color:'#B64A60'}}>{error}</Text>:null}
-    <View style={{gap:11}}>
+    {files.length?<View style={{gap:11}}>
       <View style={{flexDirection:'row',alignItems:'baseline',gap:9}}>
         <Text style={{color:theme.foreground,fontSize:17,fontWeight:'700'}}>Éléments enregistrés</Text>
-        {files.length ? <Text style={{fontSize:12,color:theme.muted}}>{files.length}</Text> : null}
+        <Text style={{fontSize:12,color:theme.muted}}>{files.length}</Text>
       </View>
-      {!files.length ? <View style={{borderTopWidth:1,borderColor:theme.border,
-        minHeight:160,alignItems:'center',justifyContent:'center',gap:12}}>
-        <Ionicons name="leaf-outline" size={30} color={PINK}/>
-        <Text style={{fontSize:13,color:theme.muted,textAlign:'center',lineHeight:21,maxWidth:280}}>
-          Aucun élément. Enregistre, écris ou importe pour commencer.
-        </Text>
-      </View> : null}
       {files.filter(file=>!file.translationOfFileId||
         !files.some(original=>original.id===file.translationOfFileId)).map(file=>{
         const image=isImage(file), sound=isAudio(file), text=content(file).trim();
@@ -290,7 +284,7 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,h
           </View>:null}
         </View>;
       })}
-    </View>
+    </View>:null}
     <MusicMaterialViewer key={selectedFile?.id||'closed'} visible={!!selectedFile}
       file={selectedFile} project={project} onClose={()=>setSelected('')}
       onUpdate={changeFile} onChangeType={(id,kind)=>{
