@@ -1,182 +1,250 @@
-import React, { useState } from 'react';
+import React,{useState} from 'react';
 import {
-  KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView,
-  Text, View, useWindowDimensions,
+  KeyboardAvoidingView,Modal,Platform,Pressable,ScrollView,
+  Text,View,useWindowDimensions,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { MusicAudioPreview } from './MusicAudioPreview';
-import { MusicWritingStudio, type MusicWritingResult } from './MusicWritingStudio';
-import { useAppTheme } from '@/theme/AppTheme';
-import type { MusicProject, MusicProjectFile } from '@/domain/musicWorkspace';
+import {SafeAreaView} from 'react-native-safe-area-context';
+import {Ionicons} from '@expo/vector-icons';
+import {MusicAudioPreview} from './MusicAudioPreview';
+import {MusicWritingStudio,type MusicWritingResult} from './MusicWritingStudio';
+import {MusicSketchStudio} from './MusicSketchStudio';
+import {useAppTheme} from '@/theme/AppTheme';
+import type {MusicProject,MusicProjectFile} from '@/domain/musicWorkspace';
+import type {MusicNotationEvent} from '@/domain/musicNotation';
 
-const PINK = '#CB245C';
-type WritingMode = 'lyrics' | 'note';
-type Props = {
-  project: MusicProject;
-  mode: WritingMode;
-  onModeChange: (mode: WritingMode) => void;
-  source?: MusicProjectFile | null;
-  initialFile?: MusicProjectFile | null;
-  onSave: (result: MusicWritingResult) => void;
-  onRequestTranslator: (sourceId: string, language: string) => void;
-  requestedLanguages: string[];
-  onClose: () => void;
+const PINK='#CB245C';
+type WritingMode='lyrics'|'note';
+type Tab='lyrics'|'note'|'score'|'translation';
+type Props={
+  project:MusicProject;
+  mode:WritingMode;
+  onModeChange:(mode:WritingMode)=>void;
+  source?:MusicProjectFile|null;
+  initialFile?:MusicProjectFile|null;
+  onSave:(result:MusicWritingResult)=>void;
+  onSaveScore:(result:{title:string;events:MusicNotationEvent[];bpm:number})=>void;
+  onRequestTranslator:(sourceId:string,language:string)=>void;
+  requestedLanguages:string[];
+  onClose:()=>void;
 };
-
-function isCaptureAudio(file: MusicProjectFile): boolean {
-  return !!file.localFileId && (
-    !!file.mimeType?.startsWith('audio/') ||
-    /\.(wav|mp3|m4a|webm|ogg|aac)$/i.test(file.originalFilename || '')
-  );
+function isCaptureAudio(file:MusicProjectFile){
+  return !!file.localFileId && (!!file.mimeType?.startsWith('audio/')||
+    /\.(wav|mp3|m4a|webm|ogg|aac)$/i.test(file.originalFilename||''));
 }
-
-/**
- * Separate writing surface. The song overview, navigation and Capture tools
- * remain behind the full-screen native/web modal and cannot distract the writer.
- * Audio is opt-in, and sources come exclusively from this song's Capture files.
- */
-export function MusicWritingOverlay({
-  project, mode, onModeChange, source, initialFile,
-  onSave, onRequestTranslator, requestedLanguages, onClose,
-}: Props) {
-  const theme = useAppTheme();
-  const { width } = useWindowDimensions();
-  const compact = width < 650;
-  const [dirty, setDirty] = useState(false);
-  const [confirmExit, setConfirmExit] = useState(false);
-  const [listen, setListen] = useState(false);
-  const [choosing, setChoosing] = useState(false);
-  const [audioId, setAudioId] = useState('');
-  const audioFiles = (project.files || []).filter(isCaptureAudio);
-  const selectedAudio = audioFiles.find(file => file.id === audioId);
-  const canTranscribe = mode === 'lyrics' && !source;
-  const exit = () => {
-    if (dirty) setConfirmExit(true);
+/** One immersive workspace, four distinct tools, independent persistent drafts. */
+export function MusicWritingOverlay({project,mode,onModeChange,source,initialFile,
+  onSave,onSaveScore,onRequestTranslator,requestedLanguages,onClose}:Props){
+  const theme=useAppTheme();
+  const {width}=useWindowDimensions();
+  const compact=width<650;
+  const initialTab:Tab=initialFile?.musicEvents?'score':
+    (source||initialFile?.translationOfFileId)?'translation':mode;
+  const [tab,setTab]=useState<Tab>(initialTab);
+  const [writerDirty,setWriterDirty]=useState(false);
+  const [translationDirty,setTranslationDirty]=useState(false);
+  const [scoreDirty,setScoreDirty]=useState(false);
+  const [confirmExit,setConfirmExit]=useState(false);
+  const [listen,setListen]=useState(false);
+  const [choosing,setChoosing]=useState(false);
+  const [audioId,setAudioId]=useState('');
+  const [sourceId,setSourceId]=useState(source?.id||initialFile?.translationOfFileId||'');
+  const [sourceOpen,setSourceOpen]=useState(false);
+  const [sourceWarning,setSourceWarning]=useState('');
+  const dirty=writerDirty||translationDirty||scoreDirty;
+  const audioFiles=(project.files||[]).filter(isCaptureAudio);
+  const selectedAudio=audioFiles.find(file=>file.id===audioId);
+  const lyricSources=(project.files||[]).filter(file=>file.kind==='lyrics'&&
+    !file.translationOfFileId&&
+    !!(file.text?.trim()||file.lyricSegments?.some(segment=>segment.text.trim())));
+  const selectedSource=lyricSources.find(file=>file.id===sourceId)||null;
+  const tabs:{id:Tab;title:string;icon:keyof typeof Ionicons.glyphMap}[]=[
+    {id:'lyrics',title:'Paroles',icon:'text-outline'},
+    {id:'note',title:'Notes',icon:'reader-outline'},
+    {id:'score',title:'Partition',icon:'musical-notes-outline'},
+    {id:'translation',title:'Traduction',icon:'language-outline'},
+  ];
+  const exit=()=>{
+    if(dirty)setConfirmExit(true);
     else onClose();
   };
-
-  const sourceChoice = (file: MusicProjectFile) => (
-    <Pressable key={file.id} accessibilityRole="button"
-      accessibilityLabel={'Utiliser '+file.title+' pour la transcription'}
-      onPress={() => { setAudioId(file.id); setChoosing(false); }}
-      style={{
-        minHeight:47, paddingHorizontal:12, paddingVertical:8,
-        flexDirection:'row', alignItems:'center', gap:10,
-        borderRadius:10, backgroundColor:file.id===audioId
-          ?(theme.dark?'#37242C':'#FAE9EF'):theme.surface,
-      }}>
-      <Ionicons name={file.id===audioId?'radio-button-on-outline':'radio-button-off-outline'}
-        color={file.id===audioId?PINK:theme.muted} size={20}/>
-      <Text numberOfLines={2} style={{flex:1,fontSize:13,color:theme.foreground}}>
-        {file.title}
-      </Text>
-    </Pressable>
-  );
-
+  const changeTab=(next:Tab)=>{
+    if(initialFile&&next!==tab)return;
+    setTab(next);
+    if(next==='lyrics'||next==='note')onModeChange(next);
+    setSourceWarning('');
+    setChoosing(false);
+  };
+  const chooseSource=(id:string)=>{
+    if(id!==sourceId&&translationDirty){
+      setSourceWarning('Enregistre ou termine cette traduction avant de choisir un autre original.');
+      return;
+    }
+    setSourceId(id);setSourceOpen(false);setSourceWarning('');
+  };
+  const playableLabel=(file:MusicProjectFile)=>
+    file.kind==='track'?'Piste audio':'Enregistrement';
   return <Modal visible animationType="slide" presentationStyle="fullScreen"
     onRequestClose={exit}>
     <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
       <KeyboardAvoidingView behavior={Platform.OS==='ios'?'padding':undefined}
         style={{flex:1}}>
-        <View style={{
-          minHeight:58, flexDirection:'row', alignItems:'center', gap:10,
-          paddingHorizontal:compact?14:27,
-          borderBottomWidth:1, borderBottomColor:theme.border,
-        }}>
-          <Pressable onPress={exit} accessibilityRole="button" accessibilityLabel="Fermer l’éditeur"
-            style={{width:42,height:42,alignItems:'center',justifyContent:'center'}}>
-            <Ionicons name="close" size={24} color={theme.foreground}/>
+        <View style={{height:54,flexDirection:'row',alignItems:'center',
+          paddingHorizontal:compact?11:24,borderBottomWidth:1,borderColor:theme.border}}>
+          <Pressable onPress={exit} accessibilityRole="button"
+            accessibilityLabel="Fermer l’éditeur"
+            style={{width:43,height:43,justifyContent:'center',alignItems:'center'}}>
+            <Ionicons name="close" size={23} color={theme.foreground}/>
           </Pressable>
-          <Text numberOfLines={1} style={{flex:1,color:theme.foreground,
-            fontSize:compact?15:16,fontWeight:'600',textAlign:'center'}}>
-            {source?'Traduction':mode==='note'?'Notes':'Paroles'}
-          </Text>
-          <View style={{width:42}}/>
+          <Text style={{flex:1,textAlign:'center',color:theme.foreground,
+            fontWeight:'600',fontSize:compact?15:17}}>Écrire & composer</Text>
+          <View style={{width:43}}/>
         </View>
-          {canTranscribe?<View style={{gap:8,width:'100%',maxWidth:source?1100:860,
-            alignSelf:'center',paddingHorizontal:compact?19:45,
-            paddingTop:8,paddingBottom:7,
-            borderBottomWidth:1,borderBottomColor:theme.border}}>
-            <Pressable onPress={() => {
-              setListen(previous => !previous); setChoosing(false);
-            }} accessibilityRole="checkbox" accessibilityState={{checked:listen}}
-              accessibilityLabel="Écouter un audio de Capture pendant l’écriture"
-              style={{minHeight:40,flexDirection:'row',alignItems:'center',gap:10,
-                alignSelf:'flex-start'}}>
-              <Ionicons name={listen?'checkbox':'square-outline'} color={listen?PINK:theme.muted} size={22}/>
-              <Text style={{fontSize:13,fontWeight:'500',color:theme.foreground}}>
-                Écouter un audio en écrivant
-              </Text>
-            </Pressable>
-            {listen?<View style={{padding:compact?12:16,borderWidth:1,
-              borderColor:theme.border,borderRadius:13,
-              backgroundColor:theme.surface,gap:12}}>
-              {audioFiles.length?<View style={{gap:9}}>
-                <Pressable onPress={()=>setChoosing(!choosing)}
-                  accessibilityRole="button" accessibilityState={{expanded:choosing}}
-                  accessibilityLabel="Choisir un enregistrement de Capture"
-                  style={{flexDirection:'row',alignItems:'center',gap:9,minHeight:36}}>
-                  <Ionicons name="musical-note-outline" size={18} color={PINK}/>
-                  <Text numberOfLines={1} style={{flex:1,fontSize:13,
-                    color:theme.foreground,fontWeight:'600'}}>
-                    {selectedAudio?.title||'Choisir un audio de Capture'}
-                  </Text>
-                  <Ionicons name={choosing?'chevron-up':'chevron-down'}
-                    color={theme.muted} size={17}/>
-                </Pressable>
-                {choosing?<ScrollView nestedScrollEnabled
-                  style={{maxHeight:compact?175:215}}
-                  contentContainerStyle={{gap:3}}>
-                  {audioFiles.map(sourceChoice)}
-                </ScrollView>:null}
-                {selectedAudio?.localFileId?
-                  <MusicAudioPreview key={selectedAudio.id}
-                    source={{localAudioId:selectedAudio.localFileId}} transcription/>:null}
-              </View>:
-                <Text style={{fontSize:12,lineHeight:20,color:theme.muted}}>
-                  Aucun audio enregistré dans Capture pour ce morceau.
-                  Importe ou enregistre un audio depuis Capture, puis reviens écrire.
-                </Text>}
-            </View>:null}
-          </View>:null}
-        <ScrollView keyboardShouldPersistTaps="handled"
-          contentContainerStyle={{
-            width:'100%',maxWidth:source?1100:860,alignSelf:'center',
-            paddingHorizontal:compact?19:45,
-            paddingTop:compact?16:34,paddingBottom:compact?50:80,
-            flexGrow:1,gap:compact?16:23,
-          }}>
-          <MusicWritingStudio
-            mode={mode} onModeChange={onModeChange}
-            originalLanguage={project.originalLanguage}
-            source={source} initialFile={initialFile||undefined}
-            onSave={onSave} onRequestTranslator={onRequestTranslator}
-            requestedLanguages={requestedLanguages}
-            onDirtyChange={setDirty} immersive/>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{gap:2,alignItems:'stretch',paddingHorizontal:compact?8:24}}
+          style={{flexGrow:0,borderBottomWidth:1,borderColor:theme.border}}>
+          {tabs.map(item=>{
+            const active=tab===item.id;
+            const disabled=!!initialFile&&!active;
+            return <Pressable key={item.id} onPress={()=>changeTab(item.id)}
+              disabled={disabled} accessibilityRole="tab" accessibilityState={{selected:active,disabled}}
+              style={{minHeight:48,flexDirection:'row',alignItems:'center',
+                justifyContent:'center',gap:6,paddingHorizontal:compact?11:16,
+                borderBottomWidth:active?2:0,borderBottomColor:PINK,opacity:disabled?.35:1}}>
+              <Ionicons name={item.icon} size={16} color={active?PINK:theme.muted}/>
+              <Text style={{fontSize:compact?12:13,fontWeight:active?'700':'500',
+                color:active?theme.foreground:theme.muted}}>{item.title}</Text>
+            </Pressable>;
+          })}
         </ScrollView>
-        {confirmExit?<View style={{
-          position:'absolute',top:0,right:0,left:0,bottom:0,
-          alignItems:'center',justifyContent:'center',
-          padding:20,backgroundColor:'rgba(18,12,17,.55)',
-        }}>
-          <View style={{width:'100%',maxWidth:390,gap:17,padding:24,
-            borderRadius:18,backgroundColor:theme.background}}>
+        {tab==='lyrics'?<View style={{gap:7,width:'100%',maxWidth:860,
+          alignSelf:'center',paddingHorizontal:compact?19:45,
+          paddingVertical:6,borderBottomWidth:1,borderColor:theme.border}}>
+          <Pressable onPress={()=>{setListen(v=>!v);setChoosing(false);}}
+            accessibilityRole="checkbox" accessibilityState={{checked:listen}}
+            accessibilityLabel="Écouter une piste ou un enregistrement de Capture"
+            style={{minHeight:39,flexDirection:'row',alignItems:'center',gap:9,
+              alignSelf:'flex-start'}}>
+            <Ionicons name={listen?'checkbox':'square-outline'} size={20}
+              color={listen?PINK:theme.muted}/>
+            <Text style={{color:theme.foreground,fontSize:13}}>
+              Écouter pendant l’écriture
+            </Text>
+          </Pressable>
+          {listen?<View style={{borderWidth:1,borderColor:theme.border,
+            borderRadius:12,padding:compact?11:15,gap:9,
+            backgroundColor:theme.surface}}>
+            {audioFiles.length?<View style={{gap:8}}>
+              <Pressable onPress={()=>setChoosing(v=>!v)}
+                accessibilityRole="button" accessibilityState={{expanded:choosing}}
+                accessibilityLabel="Choisir un audio ou une piste de Capture"
+                style={{minHeight:35,flexDirection:'row',gap:8,alignItems:'center'}}>
+                <Ionicons name="headset-outline" color={PINK} size={18}/>
+                <Text numberOfLines={1} style={{flex:1,color:theme.foreground,fontSize:13}}>
+                  {selectedAudio?.title||'Choisir un audio ou une piste de Capture'}
+                </Text>
+                <Ionicons name={choosing?'chevron-up':'chevron-down'} color={theme.muted} size={16}/>
+              </Pressable>
+              {choosing?<ScrollView nestedScrollEnabled
+                style={{maxHeight:compact?155:185}} contentContainerStyle={{gap:3}}>
+                {audioFiles.map(file=><Pressable key={file.id}
+                  onPress={()=>{setAudioId(file.id);setChoosing(false);}}
+                  accessibilityRole="button"
+                  style={{minHeight:45,flexDirection:'row',alignItems:'center',
+                    borderRadius:9,paddingHorizontal:9,gap:10,
+                    backgroundColor:file.id===audioId?(theme.dark?'#35242D':'#FAEAF0'):theme.surface}}>
+                  <Ionicons name={file.id===audioId?'radio-button-on':'radio-button-off'}
+                    size={18} color={PINK}/>
+                  <View style={{flex:1}}>
+                    <Text style={{fontSize:13,color:theme.foreground}}>{file.title}</Text>
+                    <Text style={{fontSize:10,color:theme.muted}}>{playableLabel(file)}</Text>
+                  </View>
+                </Pressable>)}
+              </ScrollView>:null}
+              {selectedAudio?.localFileId?<MusicAudioPreview key={selectedAudio.id}
+                source={{localAudioId:selectedAudio.localFileId}} transcription/>:null}
+            </View>:<Text style={{fontSize:12,lineHeight:20,color:theme.muted}}>
+              Aucun audio jouable dans Capture pour ce morceau. Ajoute d’abord un enregistrement ou une piste audio.
+            </Text>}
+          </View>:null}
+        </View>:null}
+        {tab==='translation'?<View style={{width:'100%',maxWidth:1100,alignSelf:'center',
+          paddingHorizontal:compact?19:45,paddingVertical:9,gap:7,
+          borderBottomWidth:1,borderColor:theme.border}}>
+          <Pressable onPress={()=>setSourceOpen(v=>!v)}
+            disabled={!!initialFile} accessibilityRole="button"
+            accessibilityState={{expanded:sourceOpen}}
+            style={{minHeight:39,flexDirection:'row',alignItems:'center',gap:9}}>
+            <Ionicons name="document-text-outline" size={19} color={PINK}/>
+            <Text style={{fontSize:13,color:theme.foreground,flex:1}} numberOfLines={1}>
+              {selectedSource?'Original : '+selectedSource.title:'Choisir les paroles originales'}
+            </Text>
+            {!initialFile?<Ionicons name={sourceOpen?'chevron-up':'chevron-down'}
+              color={theme.muted} size={17}/>:null}
+          </Pressable>
+          {sourceOpen?<ScrollView nestedScrollEnabled style={{maxHeight:180}}>
+            {lyricSources.map(file=><Pressable key={file.id} onPress={()=>chooseSource(file.id)}
+              accessibilityRole="button" style={{paddingVertical:12,paddingHorizontal:7,
+                borderBottomWidth:1,borderColor:theme.border}}>
+              <Text style={{fontSize:13,color:theme.foreground}}>{file.title}</Text>
+            </Pressable>)}
+          </ScrollView>:null}
+          {sourceWarning?<Text style={{fontSize:12,color:'#AD3857'}}>{sourceWarning}</Text>:null}
+        </View>:null}
+        <ScrollView keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{width:'100%',maxWidth:tab==='translation'?1100:860,
+            alignSelf:'center',paddingHorizontal:compact?19:45,
+            paddingTop:compact?14:25,paddingBottom:70,flexGrow:1}}>
+          <View style={{display:tab==='lyrics'||tab==='note'?'flex':'none'}}>
+            <MusicWritingStudio mode={tab==='note'?'note':'lyrics'}
+              onModeChange={onModeChange} showTabs={false}
+              initialFile={initialFile&&!initialFile.translationOfFileId
+                &&!initialFile.musicEvents?initialFile:undefined}
+              sections={project.sections}
+              originalLanguage={project.originalLanguage}
+              onSave={onSave} onDirtyChange={setWriterDirty} immersive/>
+          </View>
+          {tab==='score'?<MusicSketchStudio initialFile={initialFile?.musicEvents?initialFile:null}
+            onSave={onSaveScore} onDirtyChange={setScoreDirty}/>:null}
+          {selectedSource?<View style={{display:tab==='translation'?'flex':'none'}}>
+            <MusicWritingStudio key={'translate-'+selectedSource.id}
+              mode="lyrics" onModeChange={onModeChange} showTabs={false}
+              source={selectedSource} sections={project.sections}
+              initialFile={initialFile?.translationOfFileId===selectedSource.id
+                ?initialFile:undefined}
+              originalLanguage={project.originalLanguage}
+              onSave={onSave} onRequestTranslator={onRequestTranslator}
+              requestedLanguages={requestedLanguages}
+              onDirtyChange={setTranslationDirty} immersive/>
+          </View>:tab==='translation'?<View style={{paddingVertical:36,gap:11}}>
+            <Ionicons name="language-outline" size={27} color={PINK}/>
+            <Text style={{color:theme.foreground,fontSize:16,fontWeight:'600'}}>
+              {lyricSources.length?'Choisis les paroles à traduire':'Aucune parole enregistrée'}
+            </Text>
+            <Text style={{fontSize:13,color:theme.muted,lineHeight:21}}>
+              {lyricSources.length
+                ?'Sélectionne un document de paroles dans la barre du haut.'
+                :'Conserve d’abord des paroles dans Capture pour pouvoir les traduire en gardant l’original visible.'}
+            </Text>
+          </View>:null}
+        </ScrollView>
+        {confirmExit?<View style={{position:'absolute',top:0,right:0,left:0,bottom:0,
+          justifyContent:'center',alignItems:'center',padding:20,
+          backgroundColor:'rgba(18,12,17,.55)'}}>
+          <View style={{width:'100%',maxWidth:390,gap:16,padding:22,
+            borderRadius:16,backgroundColor:theme.background}}>
             <Text style={{fontSize:17,fontWeight:'700',color:theme.foreground}}>
               Abandonner les modifications ?
             </Text>
-            <Text style={{fontSize:13,lineHeight:21,color:theme.muted}}>
-              Ton texte n’a pas encore été enregistré dans Capture.
+            <Text style={{fontSize:13,lineHeight:20,color:theme.muted}}>
+              La capture n’a pas encore été enregistrée.
             </Text>
-            <View style={{flexDirection:'row',justifyContent:'flex-end',
-              flexWrap:'wrap',gap:12}}>
-              <Pressable onPress={()=>setConfirmExit(false)} accessibilityRole="button"
-                style={{minHeight:43,justifyContent:'center',paddingHorizontal:10}}>
-                <Text style={{color:theme.foreground,fontWeight:'600'}}>Continuer à écrire</Text>
+            <View style={{flexDirection:'row',justifyContent:'flex-end',gap:12,flexWrap:'wrap'}}>
+              <Pressable onPress={()=>setConfirmExit(false)}
+                style={{minHeight:44,justifyContent:'center',paddingHorizontal:8}}>
+                <Text style={{fontWeight:'600',color:theme.foreground}}>Continuer</Text>
               </Pressable>
-              <Pressable onPress={onClose} accessibilityRole="button"
-                style={{minHeight:43,justifyContent:'center',
-                  paddingHorizontal:14,borderRadius:10,backgroundColor:PINK}}>
+              <Pressable onPress={onClose} style={{minHeight:44,justifyContent:'center',
+                paddingHorizontal:15,borderRadius:10,backgroundColor:PINK}}>
                 <Text style={{color:'#fff',fontWeight:'700'}}>Abandonner</Text>
               </Pressable>
             </View>
