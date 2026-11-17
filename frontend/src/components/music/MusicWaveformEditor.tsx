@@ -3,19 +3,19 @@ import {Pressable,ScrollView,Text,View,useWindowDimensions} from 'react-native';
 import Svg,{Rect,Line,Circle,Text as SvgText} from 'react-native-svg';
 import {Ionicons} from '@expo/vector-icons';
 import {useAppTheme} from '@/theme/AppTheme';
-import {musicStamp} from '@/domain/musicEditing';
+import {musicStamp,musicStampMs} from '@/domain/musicEditing';
 import type {MusicAudioMarker} from '@/domain/musicWorkspace';
 
 const pink='#CB245C';
 type Props={file:File;duration:number;cursor:number;onSeek:(seconds:number)=>void;
   zoom:number;onZoom:(zoom:number)=>void;playing:boolean;onTogglePlayback:()=>void;
-  markers?:MusicAudioMarker[]};
+  markers?:MusicAudioMarker[];compact?:boolean};
 const clamp=(v:number,lo:number,hi:number)=>Math.max(lo,Math.min(hi,v));
 export function MusicWaveformEditor({file,duration,cursor,onSeek,zoom,onZoom,
-  playing,onTogglePlayback,markers=[]}:Props){
+  playing,onTogglePlayback,markers=[],compact=false}:Props){
   const theme=useAppTheme();
   const {width}=useWindowDimensions();
-  const viewport=Math.min(650,Math.max(260,width-82));
+  const viewport=Math.min(730,Math.max(245,width-(compact?40:82)));
   const px=Math.max(viewport,Math.round(viewport*zoom));
   const [data,setData]=useState<Float32Array|null>(null);
   const [decoding,setDecoding]=useState(false);
@@ -54,7 +54,7 @@ export function MusicWaveformEditor({file,duration,cursor,onSeek,zoom,onZoom,
     });
   },[data,px]);
   const setScale=(factor:number,offset:number)=>{
-    const next=clamp(zoomRef.current*factor,1,64);
+    const next=clamp(zoomRef.current*factor,1,128);
     if(Math.abs(next-zoomRef.current)<.0001)return;
     const anchor=(scrollX.current+offset)/Math.max(1,pxRef.current);
     pendingAnchor.current={timeRatio:anchor,clientOffset:offset};
@@ -90,7 +90,7 @@ export function MusicWaveformEditor({file,duration,cursor,onSeek,zoom,onZoom,
       const rect=element.getBoundingClientRect();
       const mid=(e.touches[0].clientX+e.touches[1].clientX)/2;
       const factor=distance(e.touches[0],e.touches[1])/Math.max(1,g.distance);
-      const next=clamp(g.scale*factor,1,64);
+      const next=clamp(g.scale*factor,1,128);
       const offset=clamp(mid-rect.left,0,viewport);
       pendingAnchor.current={
         timeRatio:(scrollX.current+offset)/Math.max(1,pxRef.current),
@@ -114,7 +114,7 @@ export function MusicWaveformEditor({file,duration,cursor,onSeek,zoom,onZoom,
   },[onZoom,viewport]);
   const seek=(x:number)=>{
     if(suppressClick.current){suppressClick.current=false;return;}
-    onSeek(clamp(Math.round(x/Math.max(px,1)*duration*100)/100,0,duration));
+    onSeek(clamp(Math.round(x/Math.max(px,1)*duration*1000)/1000,0,duration));
   };
   const cursorX=clamp(cursor/Math.max(.001,duration)*px,0,px);
   useEffect(()=>{
@@ -125,7 +125,7 @@ export function MusicWaveformEditor({file,duration,cursor,onSeek,zoom,onZoom,
       scroll.current?.scrollTo({x:next,animated:false});scrollX.current=next;
     }
   },[cursorX,playing,px,viewport]);
-  const interval=zoom>=10?1:zoom>=4?5:zoom>=2?10:30;
+  const interval=zoom>=30?.1:zoom>=10?1:zoom>=4?5:zoom>=2?10:30;
   const ticks=Array.from({length:Math.min(1200,Math.ceil(duration/interval)+1)},
     (_,i)=>i*interval).filter(t=>t<=duration);
   return <View style={{gap:7}}>
@@ -139,16 +139,17 @@ export function MusicWaveformEditor({file,duration,cursor,onSeek,zoom,onZoom,
         </Pressable>
         <View style={{gap:2}}>
           <Text style={{fontSize:12,fontWeight:'700',color:theme.foreground}}>
-            {musicStamp(cursor)} / {musicStamp(duration)}
+            {musicStampMs(cursor)} / {musicStampMs(duration)}
           </Text>
-          <Text style={{fontSize:11,color:theme.muted}}>Clique sur la forme d’onde pour te placer.</Text>
+          {!compact?<Text style={{fontSize:11,color:theme.muted}}>Touche la forme d’onde pour te placer.</Text>:null}
         </View>
       </View>
       <Text style={{fontSize:11,color:theme.muted}}>×{Math.round(zoom*10)/10}</Text>
     </View>
     <View ref={pane} style={{maxWidth:'100%',borderRadius:12,
       borderWidth:1,borderColor:theme.border,
-      backgroundColor:theme.dark?'#252329':'#F8F7F5',overflow:'hidden'}}>
+      backgroundColor:theme.dark?'#252329':'#F8F7F5',overflow:'hidden',
+      ...({touchAction:'pan-x'} as any)}}>
       <ScrollView ref={scroll} horizontal showsHorizontalScrollIndicator
         onScroll={e=>{scrollX.current=e.nativeEvent.contentOffset.x;}}
         scrollEventThrottle={16} keyboardShouldPersistTaps="handled">
@@ -193,8 +194,8 @@ export function MusicWaveformEditor({file,duration,cursor,onSeek,zoom,onZoom,
         </Pressable>
       </ScrollView>
     </View>
-    <Text style={{fontSize:11,color:theme.muted,lineHeight:18}}>
-      Molette ou pincement pour zoomer · glisser pour parcourir.
-    </Text>
+    {!compact?<Text style={{fontSize:11,color:theme.muted,lineHeight:18}}>
+      Zoom : pincement ou molette · Glisser : parcourir · Toucher : positionner.
+    </Text>:null}
   </View>;
 }
