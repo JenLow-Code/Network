@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Platform, Pressable, Text, TextInput, View, useWindowDimensions } from 'react-native';
+import { Platform, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/theme/AppTheme';
 import { MusicAudioCapture } from './MusicAudioCapture';
@@ -11,7 +11,6 @@ import { MusicLocalArt } from './MusicLocalArtNext';
 import { MusicMaterialViewer } from './MusicMaterialViewerV3';
 import { importSongFile, classifySongFile, lyricStanzas } from '@/domain/musicImportedFiles';
 import { isMusicTrackCandidate } from '@/domain/musicNext';
-import { formatMusicDuration } from '@/domain/musicProjectSelectors';
 import { newMusicId } from '@/domain/musicWorkspace';
 import type { MusicProject, MusicProjectFile, MusicSection, MusicAudioMarker } from '@/domain/musicWorkspace';
 import type {MusicNotationEvent} from '@/domain/musicNotation';
@@ -28,10 +27,23 @@ const isAudio=(file:MusicProjectFile)=>!!file.mimeType?.startsWith('audio/')||
   /\.(wav|mp3|m4a|webm|ogg|aac)$/i.test(file.originalFilename||'');
 const content=(file:MusicProjectFile)=>file.text??
   (file.kind==='lyrics'?file.lyricSegments?.map(v=>v.text).join('\n\n')||'':'');
-function category(file:MusicProjectFile) {
-  if(isImage(file))return 'Image';
-  return ({lyrics:'Paroles',audio:'Audio',track:'Piste',score:'Partition',
-    note:'Note',idea:'Idée',document:'Document'} as const)[file.kind];
+type CaptureFilter='all'|'audio'|'image'|'lyrics'|'score'|'note'|'other';
+const filterOptions:{id:CaptureFilter;label:string}[]=[
+  {id:'all',label:'Tous'},
+  {id:'audio',label:'Audio'},
+  {id:'image',label:'Images'},
+  {id:'lyrics',label:'Paroles'},
+  {id:'score',label:'Partitions'},
+  {id:'note',label:'Notes'},
+  {id:'other',label:'Autres'},
+];
+function fileGroup(file:MusicProjectFile):CaptureFilter {
+  if(isImage(file))return 'image';
+  if(file.kind==='score'||/\.midi?$/i.test(file.originalFilename||''))return 'score';
+  if(isAudio(file)||file.kind==='audio'||file.kind==='track')return 'audio';
+  if(file.kind==='lyrics')return 'lyrics';
+  if(file.kind==='note')return 'note';
+  return 'other';
 }
 
 export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,hasVersion}:Props) {
@@ -48,6 +60,11 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,h
   const [selected,setSelected]=useState('');
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState('');
+  const [filter,setFilter]=useState<CaptureFilter>('all');
+  const [actionsOpen,setActionsOpen]=useState(false);
+  const visibleFiles=files.filter(file=>!file.translationOfFileId||
+    !files.some(original=>original.id===file.translationOfFileId))
+    .filter(file=>filter==='all'||fileGroup(file)===filter);
   const selectedFile=files.find(f=>f.id===selected)||null;
   const translationSource=files.find(f=>f.id===translationSourceId)||null;
   const editingFile=files.find(f=>f.id===editingFileId)||null;
@@ -190,47 +207,75 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,h
         fontWeight:'600',color:primary?'#fff':theme.foreground}}>{label}</Text>
     </Pressable>;
   const railAction=(label:string,icon:keyof typeof Ionicons.glyphMap,
-    onPress:()=>void,active=false,disabled=false)=>
-    <Pressable onPress={onPress} disabled={disabled}
+    fn:()=>void,active=false,disabled=false)=>
+    <Pressable onPress={()=>{fn();setActionsOpen(false);}} disabled={disabled}
       accessibilityRole="button" accessibilityLabel={label}
-      accessibilityState={{selected:active,disabled}}
-      style={{width:48,height:48,borderRadius:24,
-        backgroundColor:active?PINK:theme.surface,
-        borderWidth:1,borderColor:active?PINK:theme.border,
-        alignItems:'center',justifyContent:'center',
+      accessibilityState={{disabled}}
+      style={{flexDirection:'row',alignItems:'center',gap:11,minHeight:46,
         opacity:disabled?.5:1}}>
-      <Ionicons name={icon} size={23} color={active?'#fff':PINK}/>
+      <Text style={{fontSize:12,fontWeight:'600',color:theme.foreground}}>{label}</Text>
+      <View style={{width:46,height:46,borderRadius:23,alignItems:'center',
+        justifyContent:'center',borderWidth:1,
+        borderColor:active?PINK:theme.border,
+        backgroundColor:active?PINK:theme.surface}}>
+        <Ionicons name={icon} size={21} color={active?'#fff':PINK}/>
+      </View>
     </Pressable>;
-  const field={fontSize:15,lineHeight:24,color:theme.foreground,
-    backgroundColor:theme.surface,borderRadius:13,borderWidth:1,borderColor:theme.border,
-    paddingHorizontal:16,paddingVertical:14} as const;
-  return <View style={{gap:compact?15:18}}>
-    {!compact?<View style={{flexDirection:'row',gap:9}}>
-      {action('Enregistrer','mic-outline',()=>{
-        if(composer==='record'){closeComposer();return;}
-        if(composer==='write')return;
-        setComposer('record');setTranslationSourceId('');
-      },composer==='record',true)}
-      {action('Écrire','pencil-outline',()=>openWrite(),composer==='write',true)}
-      {action(busy?'Import…':'Importer','cloud-upload-outline',pickFiles,false,true)}
-    </View>:null}
-    <View style={{flexDirection:compact?'row':'column',alignItems:'flex-start',
-      gap:compact?10:0}}>
-      <View style={{flex:1,minWidth:0,width:compact?undefined:'100%',gap:18}}>
+  return <View style={{gap:compact?12:18}}>
+    {compact?<View style={{gap:8}}>
+      <View style={{flexDirection:'row',alignItems:'center',
+        justifyContent:'space-between',minHeight:46}}>
+        <View style={{flexDirection:'row',alignItems:'baseline',gap:8}}>
+          <Text style={{fontSize:15,fontWeight:'700',color:theme.foreground}}>
+            Éléments enregistrés
+          </Text>
+          <Text style={{fontSize:12,color:theme.muted}}>{files.length}</Text>
+        </View>
+        <Pressable onPress={()=>setActionsOpen(!actionsOpen)}
+          accessibilityRole="button"
+          accessibilityLabel={actionsOpen?'Fermer les actions':'Ajouter un élément'}
+          accessibilityState={{expanded:actionsOpen}}
+          style={{width:46,height:46,borderRadius:23,backgroundColor:PINK,
+            alignItems:'center',justifyContent:'center'}}>
+          <Ionicons name={actionsOpen?'close':'add'} size={25} color="#fff"/>
+        </Pressable>
+      </View>
+      {actionsOpen?<View style={{alignItems:'flex-end',gap:7,
+        paddingBottom:5}}>
+        {railAction('Enregistrer','mic-outline',()=>{
+          if(composer==='record'){closeComposer();return;}
+          if(composer==='write')return;
+          setComposer('record');setTranslationSourceId('');
+        },composer==='record')}
+        {railAction('Écrire','pencil-outline',()=>openWrite(),composer==='write')}
+        {railAction('Importer','cloud-upload-outline',pickFiles,false,busy)}
+      </View>:null}
+    </View>:
+      <View style={{flexDirection:'row',gap:9,alignItems:'center'}}>
+        {action('Enregistrer','mic-outline',()=>{
+          if(composer==='record'){closeComposer();return;}
+          if(composer==='write')return;
+          setComposer('record');setTranslationSourceId('');
+        },composer==='record')}
+        {action('Écrire','pencil-outline',()=>openWrite(),composer==='write')}
+        {action(busy?'Import…':'Importer','cloud-upload-outline',pickFiles)}
+      </View>}
     {composer==='record'?<View style={{gap:16,padding:compact?16:22,
-      borderWidth:1,borderColor:theme.border,borderRadius:18,backgroundColor:theme.surface}}>
+      borderWidth:1,borderColor:theme.border,borderRadius:18,
+      backgroundColor:theme.surface}}>
       <View style={{flexDirection:'row',alignItems:'center',justifyContent:'flex-end'}}>
-        <Pressable onPress={closeComposer} accessibilityLabel="Fermer" style={{padding:6}}>
+        <Pressable onPress={closeComposer} accessibilityLabel="Fermer"
+          style={{padding:6}}>
           <Ionicons name="close" size={20} color={theme.muted}/>
         </Pressable>
       </View>
-      {confirmClose?<View style={{borderRadius:12,borderWidth:1,borderColor:theme.border,
-        padding:12,gap:10}}>
+      {confirmClose?<View style={{borderRadius:12,borderWidth:1,
+        borderColor:theme.border,padding:12,gap:10}}>
         <Text style={{fontSize:12,color:theme.foreground,lineHeight:19}}>
           Abandonner la prise non enregistrée ?
         </Text>
         <View style={{flexDirection:'row',gap:9,flexWrap:'wrap'}}>
-          {action('Continuer', 'arrow-back-outline',()=>setConfirmClose(false))}
+          {action('Continuer','arrow-back-outline',()=>setConfirmClose(false))}
           {action('Abandonner','close-outline',()=>{
             setUnsavedRecording(false);setTranslationSourceId('');
             setComposer('none');setConfirmClose(false);
@@ -242,98 +287,108 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,h
         suggestedTitle={'Prise '+(files.filter(isAudio).length+1)}/>
     </View>:null}
     {error?<Text style={{fontSize:12,color:'#B64A60'}}>{error}</Text>:null}
-    {files.length?<View style={{gap:11}}>
-      <View style={{flexDirection:'row',alignItems:'baseline',gap:9}}>
-        <Text style={{color:theme.foreground,fontSize:17,fontWeight:'700'}}>Éléments enregistrés</Text>
+    {files.length?<ScrollView horizontal showsHorizontalScrollIndicator={false}
+      style={{flexGrow:0}}
+      contentContainerStyle={{gap:7,alignItems:'center',paddingRight:6}}>
+      {filterOptions.map(option=>{
+        const selected=filter===option.id;
+        return <Pressable key={option.id} onPress={()=>setFilter(option.id)}
+          accessibilityRole="button"
+          accessibilityLabel={'Afficher '+option.label.toLowerCase()}
+          accessibilityState={{selected}}
+          style={{paddingHorizontal:13,minHeight:36,alignItems:'center',
+            justifyContent:'center',borderRadius:18,
+            backgroundColor:selected?(theme.dark?'#492735':'#F9E8EE'):'transparent',
+            borderWidth:1,borderColor:selected?PINK:theme.border}}>
+          <Text style={{color:selected?PINK:theme.muted,fontSize:12,
+            fontWeight:selected?'700':'500'}}>{option.label}</Text>
+        </Pressable>;
+      })}
+    </ScrollView>:null}
+    {files.length?<View style={{gap:0}}>
+      {!compact?<View style={{flexDirection:'row',alignItems:'baseline',gap:9,
+        paddingBottom:4}}>
+        <Text style={{color:theme.foreground,fontSize:17,fontWeight:'700'}}>
+          Éléments enregistrés
+        </Text>
         <Text style={{fontSize:12,color:theme.muted}}>{files.length}</Text>
-      </View>
-      {files.filter(file=>!file.translationOfFileId||
-        !files.some(original=>original.id===file.translationOfFileId)).map(file=>{
-        const image=isImage(file), sound=isAudio(file), text=content(file).trim();
+      </View>:null}
+      {visibleFiles.map(file=>{
+        const image=isImage(file);
+        const sound=isAudio(file)||file.kind==='audio';
+        const text=content(file).trim();
         const translations=files.filter(candidate=>candidate.translationOfFileId===file.id);
-        return <View key={file.id} style={{paddingVertical:18,borderTopWidth:1,
-          borderColor:theme.border,gap:12}}>
+        return <View key={file.id} style={{paddingVertical:compact?12:18,
+          borderTopWidth:1,borderColor:theme.border,gap:compact?7:12}}>
           <Pressable onPress={()=>setSelected(file.id)} accessibilityRole="button"
-            accessibilityLabel={'Ouvrir '+file.title} style={{gap:11}}>
-          <View style={{flexDirection:'row',alignItems:'center',gap:9}}>
-            <Text style={{color:PINK,fontSize:11,fontWeight:'700'}}>{category(file)}</Text>
-            {file.language?<Text style={{color:theme.muted,fontSize:11}}>· {file.language}</Text>:null}
-            <View style={{flex:1}}/>
-            <Ionicons name="ellipsis-horizontal" color={theme.muted} size={20}/>
-          </View>
-          {image?<View style={{borderRadius:16,overflow:'hidden'}}>
-            <MusicLocalArt file={file} cover/>
-          </View>:null}
-          {file.kind==='note'?<Text style={{fontSize:16,fontWeight:'700',
-            color:theme.foreground}}>{file.title}</Text>:null}
-          {text&&file.kind==='note'?<View style={{maxWidth:650}}>
-            <MusicNotePreview text={text.split('\n').slice(0,5).join('\n')}
-              color={theme.foreground}/>
-          </View>:text ? <Text numberOfLines={6}
-            style={{fontFamily:file.kind==='lyrics'?'Georgia':undefined,
-              fontSize:file.kind==='lyrics'?18:14,
-              lineHeight:file.kind==='lyrics'?28:23,color:theme.foreground,
-              maxWidth:650}}>{text}</Text> : null}
-          {sound?<View style={{gap:10}}>
-            <View style={{flexDirection:'row',alignItems:'center',gap:9}}>
-              <Ionicons name="mic-outline" size={18} color={theme.muted}/>
-              <Text style={{fontSize:13,fontWeight:'600',color:theme.foreground,flex:1}}
-                numberOfLines={1}>{file.title}</Text>
-              {file.durationSeconds!==undefined?<Text style={{fontSize:11,color:theme.muted}}>
-                {formatMusicDuration(file.durationSeconds)}
-              </Text>:null}
-            </View>
-
-          </View>:null}
-          {file.musicEvents?.length?<MusicScoreView events={file.musicEvents} compact/>:null}
-          {!file.musicEvents?.length&&!image&&!sound&&!text?
-            <View style={{flexDirection:'row',gap:10,alignItems:'center'}}>
-            <Ionicons name="document-outline" color={theme.muted} size={20}/>
-            <Text numberOfLines={2} style={{color:theme.foreground,fontSize:14}}>{file.title}</Text>
-          </View>:null}
-
+            accessibilityLabel={'Ouvrir '+file.title}
+            style={{gap:compact?7:11}}>
+            {image?
+              <View style={{flexDirection:'row',alignItems:'center',gap:12}}>
+                <MusicLocalArt file={file} thumbnail/>
+                <Text numberOfLines={2} style={{flex:1,fontSize:compact?14:16,
+                  fontWeight:'600',color:theme.foreground}}>{file.title}</Text>
+                <Ionicons name="chevron-forward" size={17} color={theme.muted}/>
+              </View>:
+              <View style={{flexDirection:'row',gap:9,alignItems:'center'}}>
+                {!sound?<Ionicons name={file.kind==='score'?'musical-notes-outline':
+                  file.kind==='lyrics'?'document-text-outline':
+                  file.kind==='note'?'reader-outline':'document-outline'}
+                  size={17} color={theme.muted}/>:null}
+                <View style={{flex:1,gap:2}}>
+                  <Text numberOfLines={2} style={{fontSize:compact?14:16,
+                    fontWeight:'600',color:theme.foreground}}>{file.title}</Text>
+                  {file.kind==='lyrics'&&file.language?
+                    <Text style={{fontSize:11,color:theme.muted}}>{file.language}</Text>:null}
+                </View>
+                <Ionicons name="chevron-forward" color={theme.muted} size={16}/>
+              </View>}
+            {text&&!image&&!sound&&(file.kind==='note'||file.kind==='lyrics')?
+              (file.kind==='note'&&!compact?
+                <MusicNotePreview text={text.split('\n').slice(0,3).join('\n')}
+                  color={theme.foreground}/>:
+                <Text numberOfLines={compact?2:5}
+                  style={{fontFamily:file.kind==='lyrics'?'Georgia':undefined,
+                    fontSize:file.kind==='lyrics'?(compact?15:17):13,
+                    lineHeight:compact?21:25,color:theme.foreground}}>
+                  {text}
+                </Text>):null}
+            {file.musicEvents?.length&&!compact?
+              <MusicScoreView events={file.musicEvents} compact/>:null}
           </Pressable>
           {sound&&file.localFileId?<MusicAudioTake file={file} compact
             onOpen={()=>setSelected(file.id)}/>:null}
           {file.kind==='lyrics'&&!file.translationOfFileId?
             <Pressable onPress={()=>openWrite(file.id)} accessibilityRole="button"
-              style={{alignSelf:'flex-start',minHeight:40,flexDirection:'row',
-                alignItems:'center',gap:8}}>
-              <Ionicons name="language-outline" size={17} color={PINK}/>
-              <Text style={{fontSize:12,fontWeight:'600',color:PINK}}>Traduire ces paroles</Text>
+              style={{alignSelf:'flex-start',minHeight:38,flexDirection:'row',
+                alignItems:'center',gap:7}}>
+              <Ionicons name="language-outline" size={16} color={PINK}/>
+              <Text style={{fontSize:12,fontWeight:'600',color:PINK}}>
+                Traduire
+              </Text>
             </Pressable>:null}
-          {translations.length?<View style={{gap:6,paddingTop:8}}>
-            <Text style={{fontSize:11,color:theme.muted,fontWeight:'600'}}>Traductions</Text>
+          {translations.length?<View style={{gap:6}}>
             {translations.map(translation=><Pressable key={translation.id}
               accessibilityRole="button"
               accessibilityLabel={'Ouvrir '+translation.title}
               onPress={()=>setSelected(translation.id)}
               style={{flexDirection:'row',alignItems:'center',gap:8,
-                paddingVertical:9,paddingHorizontal:12,borderRadius:10,
-                backgroundColor:theme.surface,borderWidth:1,borderColor:theme.border}}>
+                paddingVertical:8,paddingHorizontal:10,borderRadius:10,
+                backgroundColor:theme.surface,borderWidth:1,
+                borderColor:theme.border}}>
               <Ionicons name="language-outline" color={PINK} size={16}/>
-              <Text numberOfLines={1} style={{color:theme.foreground,fontSize:13,
-                flex:1}}>{translation.title}</Text>
-              <Text style={{color:theme.muted,fontSize:11}}>{translation.language}</Text>
-              <Ionicons name="chevron-forward" color={theme.muted} size={16}/>
+              <Text numberOfLines={1} style={{color:theme.foreground,
+                fontSize:12,flex:1}}>{translation.title}</Text>
+              <Ionicons name="chevron-forward" color={theme.muted} size={15}/>
             </Pressable>)}
           </View>:null}
         </View>;
       })}
+      {!visibleFiles.length?
+        <Text style={{color:theme.muted,fontSize:13,paddingVertical:15}}>
+          Aucun élément dans ce filtre.
+        </Text>:null}
     </View>:null}
-      </View>
-      {compact?<View style={{width:51,gap:11,alignItems:'center'}}>
-        {railAction('Enregistrer une prise','mic-outline',()=>{
-          if(composer==='record'){closeComposer();return;}
-          if(composer==='write')return;
-          setComposer('record');setTranslationSourceId('');
-        },composer==='record')}
-        {railAction('Écrire des paroles ou une note','pencil-outline',
-          ()=>openWrite(),composer==='write')}
-        {railAction(busy?'Import en cours':'Importer un fichier','cloud-upload-outline',
-          pickFiles,false,busy)}
-      </View>:null}
-    </View>
     <MusicMaterialViewer key={selectedFile?.id||'closed'} visible={!!selectedFile}
       file={selectedFile} project={project} onClose={()=>setSelected('')}
       onUpdate={changeFile} onChangeType={(id,kind)=>{
