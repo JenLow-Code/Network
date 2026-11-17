@@ -2,7 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Pressable, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/theme/AppTheme';
-import type { MusicProjectFile } from '@/domain/musicWorkspace';
+import {newMusicId} from '@/domain/musicWorkspace';
+import type { MusicProjectFile, MusicLyricReference, MusicSection } from '@/domain/musicWorkspace';
 
 const PINK = '#CB245C';
 const LANGUAGES = ['Français', 'English', 'Português', 'Deutsch', 'Español', 'Italiano'];
@@ -13,6 +14,8 @@ export type MusicWritingResult = {
   text: string;
   language?: string;
   translationOfFileId?: string;
+  lyricReferences?: MusicLyricReference[];
+  newSections?: MusicSection[];
 };
 type Props = {
   mode: Mode;
@@ -25,6 +28,8 @@ type Props = {
   requestedLanguages?: string[];
   onDirtyChange: (dirty: boolean) => void;
   immersive?: boolean;
+  sections?: MusicSection[];
+  showTabs?: boolean;
 };
 
 function lyricText(file: MusicProjectFile) {
@@ -60,7 +65,7 @@ export function MusicNotePreview({ text, color }: { text: string; color: string 
 
 export function MusicWritingStudio({ mode, onModeChange, originalLanguage, source,
   initialFile, onSave, onRequestTranslator, requestedLanguages=[], onDirtyChange,
-  immersive=false }: Props) {
+  immersive=false,sections=[],showTabs=true }: Props) {
   const theme = useAppTheme();
   const { width, height } = useWindowDimensions();
   const compact = width < 650;
@@ -78,6 +83,12 @@ export function MusicWritingStudio({ mode, onModeChange, originalLanguage, sourc
   const [preview, setPreview] = useState(false);
   const [sourceExpanded, setSourceExpanded] = useState(true);
   const [selection, setSelection] = useState({ start: 0, end: 0 });
+  const [lyricSelection, setLyricSelection] = useState({start:0,end:0});
+  const [references,setReferences] = useState<MusicLyricReference[]>(initialFile?.lyricReferences||[]);
+  const [createdSections,setCreatedSections] = useState<MusicSection[]>([]);
+  const [sectionPicker,setSectionPicker] = useState(false);
+  const [customSection,setCustomSection] = useState('');
+  const [selectionError,setSelectionError] = useState('');
   const input = useRef<React.ElementRef<typeof TextInput>>(null);
   const [requestNotice, setRequestNotice] = useState(false);
 
@@ -90,9 +101,12 @@ export function MusicWritingStudio({ mode, onModeChange, originalLanguage, sourc
   const setLanguage = translating ? setTargetLanguage : setLyricLanguage;
   const dirty = initialFile
     ? title !== initialFile.title || body !== lyricText(initialFile) ||
-      (!isNote && language !== (initialFile.language || originalLanguage))
+      (!isNote && language !== (initialFile.language || originalLanguage)) ||
+      JSON.stringify(references)!==JSON.stringify(initialFile.lyricReferences||[]) ||
+      createdSections.length>0
     : !!(lyricBody.trim() || lyricTitle.trim() || noteBody.trim() || noteTitle.trim() ||
-      translationBody.trim() || translationTitle.trim());
+      translationBody.trim() || translationTitle.trim() ||
+      references.length || createdSections.length);
   const requestPending=requestedLanguages.some(value=>
     value.toLocaleLowerCase()===language.trim().toLocaleLowerCase());
 
@@ -117,6 +131,7 @@ export function MusicWritingStudio({ mode, onModeChange, originalLanguage, sourc
       setLyricTitle(initialFile.title);
       setLyricBody(lyricText(initialFile));
       setLyricLanguage(initialFile.language || originalLanguage);
+      setReferences(initialFile.lyricReferences||[]);
     }
   }, [initialFile?.id]);
 
@@ -152,10 +167,32 @@ export function MusicWritingStudio({ mode, onModeChange, originalLanguage, sourc
     onSave({ mode: translating ? 'translation' : isNote ? 'note' : 'lyrics',
       title: title.trim(), text: body.trim(),
       language: isNote ? undefined : language.trim(),
-      translationOfFileId: source?.id });
+      translationOfFileId: source?.id,
+      lyricReferences:translating||isNote?undefined:references,
+      newSections:translating||isNote?undefined:createdSections });
     if (translating) { setTranslationBody(''); setTranslationTitle(''); }
     else if (isNote) { setNoteBody(''); setNoteTitle(''); }
     else { setLyricBody(''); setLyricTitle(''); }
+  };
+  const selectedExcerpt=lyricBody.slice(lyricSelection.start,lyricSelection.end);
+  const validSelection=!!selectedExcerpt.trim()&&lyricSelection.end>lyricSelection.start;
+  const attach=(section:MusicSection)=>{
+    if(!validSelection){setSelectionError('Sélectionne un passage de paroles.');return;}
+    const ref:MusicLyricReference={
+      id:newMusicId(),sectionId:section.id,
+      start:lyricSelection.start,end:lyricSelection.end,text:selectedExcerpt,
+    };
+    setReferences(old=>[...old,ref]);setSectionPicker(false);setSelectionError('');
+  };
+  const createSection=()=>{
+    const name=customSection.trim();
+    if(!name||!validSelection)return;
+    const existing=[...sections,...createdSections].find(section=>
+      section.title.trim().toLocaleLowerCase()===name.toLocaleLowerCase());
+    if(existing){attach(existing);setCustomSection('');return;}
+    const section:MusicSection={id:newMusicId(),title:name};
+    setCreatedSections(old=>[...old,section]);
+    attach(section);setCustomSection('');
   };
   const choose = (value: Mode, caption: string) => {
     const active = mode === value;
@@ -171,7 +208,12 @@ export function MusicWritingStudio({ mode, onModeChange, originalLanguage, sourc
   const editor = (placeholder: string, minimum: number) => <TextInput ref={input}
     multiline textAlignVertical="top" scrollEnabled={false}
     value={body} onChangeText={setBody}
-    onSelectionChange={event => setSelection(event.nativeEvent.selection)}
+    onSelectionChange={event => {
+      const range=event.nativeEvent.selection;
+      setSelection(range);
+      if(!isNote&&!translating&&range.end>range.start)
+        setLyricSelection({start:range.start,end:range.end});
+    }}
     placeholder={placeholder} placeholderTextColor={theme.muted}
     accessibilityLabel={translating?'Traduction':isNote?'Contenu de la note':'Paroles'}
     style={{fontFamily:isNote?undefined:'Georgia',fontSize:isNote?16:18,
@@ -207,7 +249,7 @@ export function MusicWritingStudio({ mode, onModeChange, originalLanguage, sourc
   </View>;
 
   return <View style={{gap:14}}>
-    {!translating && !initialFile ? <View style={{flexDirection:'row',gap:13,
+    {showTabs&&!translating && !initialFile ? <View style={{flexDirection:'row',gap:13,
       borderBottomWidth:1,borderBottomColor:theme.border,alignSelf:'flex-start'}}>
       {choose('lyrics','Paroles')}
       {choose('note','Notes')}
@@ -222,7 +264,8 @@ export function MusicWritingStudio({ mode, onModeChange, originalLanguage, sourc
         <Text style={{color:theme.muted,fontSize:12}}>Vers</Text>
         {languageControl}
       </View>
-      <View style={{flexDirection:compact?'column-reverse':'row',gap:compact?12:20,alignItems:'stretch'}}>
+      <View style={{flexDirection:compact?'column-reverse':'row-reverse',
+        gap:compact?12:20,alignItems:'stretch'}}>
         <View style={{flex:1,minWidth:0,gap:10}}>
           <Text style={{fontSize:12,color:PINK,fontWeight:'700'}}>TRADUCTION</Text>
           <TextInput value={title} onChangeText={setTitle}
@@ -275,7 +318,7 @@ export function MusicWritingStudio({ mode, onModeChange, originalLanguage, sourc
           accessibilityLabel="Titre du document"
           style={{fontSize:compact?19:22,fontWeight:'600',lineHeight:30,
             color:theme.foreground,paddingVertical:10}}/>
-        {!isNote ? languageControl : <View style={{height:5}}/>}
+        {!isNote ? <View style={{height:6}}/> : <View style={{height:5}}/>}
         {isNote?<View style={{flexDirection:'row',alignItems:'center',
           justifyContent:'space-between',flexWrap:'wrap',
           borderBottomWidth:1,borderBottomColor:theme.border,paddingVertical:5}}>
@@ -292,6 +335,69 @@ export function MusicWritingStudio({ mode, onModeChange, originalLanguage, sourc
               {preview?'Écrire':'Aperçu'}
             </Text>
           </Pressable>
+        </View>:null}
+        {!isNote?<View style={{gap:9,paddingVertical:5}}>
+          <View style={{flexDirection:'row',alignItems:'center',flexWrap:'wrap',gap:8}}>
+            <Pressable onPress={()=>{
+              if(!validSelection){setSelectionError('Sélectionne d’abord quelques mots dans les paroles.');return;}
+              setSelectionError('');setSectionPicker(!sectionPicker);
+            }} accessibilityRole="button" accessibilityLabel="Associer le passage sélectionné à une partie"
+              style={{minHeight:39,flexDirection:'row',gap:7,
+                alignItems:'center',paddingHorizontal:9}}>
+              <Ionicons name="link-outline" color={PINK} size={17}/>
+              <Text style={{color:PINK,fontSize:12,fontWeight:'600'}}>
+                Associer le passage sélectionné
+              </Text>
+            </Pressable>
+            {references.length?<Text style={{color:theme.muted,fontSize:11}}>
+              {references.length} {references.length===1?'passage associé':'passages associés'}
+            </Text>:null}
+          </View>
+          {selectionError?<Text style={{color:'#AD3857',fontSize:11}}>{selectionError}</Text>:null}
+          {sectionPicker&&validSelection?<View style={{
+            backgroundColor:theme.surface,borderWidth:1,borderColor:theme.border,
+            borderRadius:12,padding:12,gap:11}}>
+            <Text style={{color:theme.foreground,fontSize:13}} numberOfLines={3}>
+              « {selectedExcerpt.trim()} »
+            </Text>
+            <Text style={{color:theme.muted,fontSize:11}}>Associer à une partie :</Text>
+            <View style={{flexDirection:'row',flexWrap:'wrap',gap:8}}>
+              {[...sections,...createdSections].map(section=><Pressable
+                key={section.id} onPress={()=>attach(section)} accessibilityRole="button"
+                style={{borderRadius:9,borderWidth:1,borderColor:PINK,
+                  paddingHorizontal:12,minHeight:38,justifyContent:'center'}}>
+                <Text style={{fontSize:12,color:PINK}}>{section.title}</Text>
+              </Pressable>)}
+            </View>
+            <View style={{flexDirection:'row',alignItems:'center',gap:8}}>
+              <TextInput value={customSection} onChangeText={setCustomSection}
+                placeholder="Nouvelle partie : refrain, pont…" placeholderTextColor={theme.muted}
+                style={{minHeight:42,paddingHorizontal:10,borderWidth:1,
+                  borderRadius:9,borderColor:theme.border,color:theme.foreground,flex:1}}/>
+              <Pressable onPress={createSection} disabled={!customSection.trim()}
+                accessibilityLabel="Créer cette partie et y associer le passage"
+                style={{minHeight:42,minWidth:42,alignItems:'center',justifyContent:'center'}}>
+                <Ionicons name="add-circle-outline" size={22} color={PINK}/>
+              </Pressable>
+            </View>
+          </View>:null}
+          {references.length?<View style={{gap:6}}>
+            {references.map(ref=><View key={ref.id} style={{flexDirection:'row',
+              alignItems:'center',gap:9,paddingVertical:6}}>
+              <View style={{flex:1,gap:2}}>
+                <Text style={{fontSize:11,fontWeight:'700',color:PINK}}>
+                  {[...sections,...createdSections].find(s=>s.id===ref.sectionId)?.title||'Partie'}
+                </Text>
+                <Text numberOfLines={2} style={{fontSize:12,color:theme.muted}}>
+                  {ref.text}
+                </Text>
+              </View>
+              <Pressable onPress={()=>setReferences(old=>old.filter(x=>x.id!==ref.id))}
+                accessibilityRole="button" accessibilityLabel="Retirer cette association" style={{padding:8}}>
+                <Ionicons name="close-outline" size={18} color={theme.muted}/>
+              </Pressable>
+            </View>)}
+          </View>:null}
         </View>:null}
         {isNote&&preview?<View style={{minHeight:compact?135:190,paddingVertical:15}}>
           {body.trim()?<MusicNotePreview text={body} color={theme.foreground}/>:
