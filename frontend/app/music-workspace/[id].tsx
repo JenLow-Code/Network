@@ -56,7 +56,7 @@ export default function MusicWorkspace() {
     setSpace('create');
   };
   const spaces: {id:Space; title:string; icon:keyof typeof Ionicons.glyphMap}[]=[
-    {id:'capture',title:'Capturer',icon:'mic-outline'},
+    {id:'capture',title:'Capturer',icon:'archive-outline'},
     {id:'create',title:'Créer',icon:'options-outline'},
     {id:'collaborate',title:'Collaborer',icon:'people-outline'},
   ];
@@ -64,7 +64,7 @@ export default function MusicWorkspace() {
     <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{
       width:'100%',maxWidth:860,alignSelf:'center',paddingHorizontal:compact?18:34,
       paddingTop:8,paddingBottom:120,gap:compact?18:25}}>
-      <PageHeader onBack={()=>router.replace('/music-hub')} title="Musique"/>
+      <PageHeader onBack={()=>router.replace('/music-hub')}/>
       <View style={{flexDirection:'row',gap:15,alignItems:'center'}}>
         <MusicFolderCover project={project} size={compact?65:82}/>
         <View style={{gap:5,flex:1}}>
