@@ -26,8 +26,8 @@ type Writing='lyrics'|'note';
 const isImage=(file:MusicProjectFile)=>/\.(jpg|jpeg|png|webp)$/i.test(file.originalFilename||'');
 const isAudio=(file:MusicProjectFile)=>!!file.mimeType?.startsWith('audio/')||
   /\.(wav|mp3|m4a|webm|ogg|aac)$/i.test(file.originalFilename||'');
-const content=(file:MusicProjectFile)=>file.kind==='lyrics'&&file.lyricSegments?.length
-  ?file.lyricSegments.map(v=>v.text).join('\n\n'):(file.text||'');
+const content=(file:MusicProjectFile)=>file.text??
+  (file.kind==='lyrics'?file.lyricSegments?.map(v=>v.text).join('\n\n')||'':'');
 function category(file:MusicProjectFile) {
   if(isImage(file))return 'Image';
   return ({lyrics:'Paroles',audio:'Audio',track:'Piste',score:'Partition',
@@ -78,7 +78,7 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,h
       ...(current||{}),
       id:current?.id||newMusicId(),kind:lyrics?'lyrics':'note',
       sectionIds:current?.sectionIds||[],
-      title,text:result.text.trim(),
+      title,text:result.text,
       lyricSegments:stanzas?.map((stanza,index)=>({
         ...stanza,
         id:current?.lyricSegments?.[index]?.id||stanza.id,
