@@ -2,7 +2,7 @@ import React,{useEffect,useRef,useState} from 'react';
 import {ActivityIndicator,Platform,Pressable,Text,View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {getDraftAudio} from '@/domain/musicLocalStorage';
-import {musicStampMs} from '@/domain/musicEditing';
+import {punchInAudio} from '@/domain/musicEditing';
 import {MusicWaveformEditor} from './MusicWaveformEditor';
 import {MusicAudioCapture} from './MusicAudioCapture';
 import {MusicAudioMarkers} from './MusicAudioMarkers';
@@ -37,10 +37,15 @@ export function MusicAudioTake({file,compact=false,editable=false,onUpdate}:Prop
     let live=true;
     setBlob(null);setError('');setCursor(0);setPlaying(false);
     if(Platform.OS!=='web'||!file.localFileId)return;
-    void getDraftAudio(file.localFileId).then(b=>{
+    void getDraftAudio(file.localFileId).then(async b=>{
       if(!b)throw Error('Enregistrement introuvable sur cet appareil.');
-      if(live)setBlob(new File([b],file.originalFilename||'enregistrement.webm',
-        {type:b.type||file.mimeType||'audio/webm'}));
+      const original=new File([b],file.originalFilename||'enregistrement.webm',
+        {type:b.type||file.mimeType||'audio/webm'});
+      // Older WebM recordings may lack a seekable duration index. Make a
+      // temporary WAV for the editor without changing the saved original.
+      const playable=/\.wav$/i.test(original.name)?original:
+        (await punchInAudio(null,original,0)).file;
+      if(live)setBlob(playable);
     }).catch(e=>{if(live)setError(e instanceof Error?e.message:'Enregistrement indisponible.');});
     return()=>{live=false;audio.current?.pause();};
   },[file.localFileId,file.originalFilename,file.mimeType]);
