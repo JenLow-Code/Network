@@ -4,6 +4,8 @@ import {Ionicons} from '@expo/vector-icons';
 import {useAppTheme} from '@/theme/AppTheme';
 import {MusicLocalArt} from './MusicLocalArtNext';
 import {MusicAudioPreview} from './MusicAudioPreview';
+import {MusicAudioMarkers} from './MusicAudioMarkers';
+import {MusicLyricSelection} from './MusicLyricSelection';
 import {getDraftAttachment} from '@/domain/musicLocalStorage';
 import {newMusicId} from '@/domain/musicWorkspace';
 import {isMusicTrackCandidate} from '@/domain/musicNext';
@@ -39,13 +41,14 @@ export function MusicMaterialViewer({visible,file,project,onClose,onUpdate,onCha
   const compact=width<650;
   const [menu,setMenu]=useState<'none'|'type'|'section'|'rename'|'excerpt'>('none');
   const [editing,setEditing]=useState(false);
+  const [selecting,setSelecting]=useState(false);
   const [draft,setDraft]=useState('');
   const [sectionName,setSectionName]=useState('');
   const [stanzaId,setStanzaId]=useState('');
   const [error,setError]=useState('');
   useEffect(()=>{
     setMenu('none');setEditing(false);setDraft(file?textOf(file):'');
-    setStanzaId('');setSectionName('');setError('');
+    setStanzaId('');setSectionName('');setError('');setSelecting(false);
   },[file?.id,visible]);
   if(!file)return null;
   const selectedNames=(file.sectionIds||[]).map(id=>project.sections.find(x=>x.id===id)?.title)
@@ -159,8 +162,9 @@ export function MusicMaterialViewer({visible,file,project,onClose,onUpdate,onCha
                 setDraft(textOf(file));setEditing(true);setMenu('none');
               })}
               {row('text-outline','Renommer',()=>setMenu('rename'))}
-              {row('musical-notes-outline','Associer à une partie',()=>setMenu('section'),
-                selectedNames.length?selectedNames.join(', '):undefined)}
+              {file.kind!=='lyrics'&&project.sections.length>0?
+                row('musical-notes-outline','Associer à une partie existante',
+                  ()=>setMenu('section'),selectedNames.length?selectedNames.join(', '):undefined):null}
               {row('pricetag-outline','Définir le type',()=>setMenu('excerpt'))}
               {isMusicTrackCandidate(file)?row('add-circle-outline',
                 hasVersion?'Utiliser dans la version active':'Commencer Version 1',()=>{
@@ -191,23 +195,6 @@ export function MusicMaterialViewer({visible,file,project,onClose,onUpdate,onCha
                   color={pink} size={18}/>
                 <Text style={{fontSize:13,color:theme.foreground}}>{part.title}</Text>
               </Pressable>)}
-              {['Intro','Couplet','Refrain','Pont','Solo','Outro']
-                .filter(n=>!project.sections.some(s=>s.title.toLowerCase()===n.toLowerCase()))
-                .map(name=><Pressable key={name}
-                  onPress={()=>{onNewSection(file,name,stanzaId||undefined);setStanzaId('');setMenu('none');}}
-                  style={{paddingVertical:9}}>
-                  <Text style={{color:theme.foreground,fontSize:13}}>+ {name}</Text>
-                </Pressable>)}
-              <View style={{flexDirection:'row',gap:8,alignItems:'center'}}>
-                <TextInput value={sectionName} onChangeText={setSectionName}
-                  placeholder="Autre partie…" placeholderTextColor={theme.muted}
-                  style={{...field,flex:1}}/>
-                <Pressable onPress={createPart} accessibilityRole="button"
-                  accessibilityLabel="Ajouter cette partie"
-                  disabled={!sectionName.trim()} style={{padding:10}}>
-                  <Ionicons name="add-circle" color={pink} size={23}/>
-                </Pressable>
-              </View>
             </>:null}
           </View>:null}
           {isArtwork(file)?<MusicLocalArt file={file} size={compact?270:360}/>:null}
@@ -216,34 +203,56 @@ export function MusicMaterialViewer({visible,file,project,onClose,onUpdate,onCha
             borderWidth:1,borderColor:theme.border}}>
             <MusicAudioPreview source={{localAudioId:file.localFileId}}/>
           </View>:null}
+          {isAudio(file)&&file.durationSeconds!==undefined?
+            <MusicAudioMarkers markers={file.markers||[]}
+              duration={file.durationSeconds} cursor={0}
+              onChange={markers=>onUpdate(file.id,{markers})}/>:null}
           {editing?<TextInput value={draft} onChangeText={setDraft}
             multiline autoFocus textAlignVertical="top"
             placeholder="Écris librement…" placeholderTextColor={theme.muted}
             style={{...field,minHeight:235,fontSize:16,lineHeight:26,
               padding:15}}/>:
-            file.kind==='lyrics'&&file.lyricSegments?.length?
-              <View style={{gap:23}}>
-                {file.lyricSegments.map((s,i)=><View key={s.id} style={{gap:8}}>
-                  <View style={{flexDirection:'row',alignItems:'center',
-                    justifyContent:'space-between'}}>
-                    <Text style={{fontSize:11,color:theme.muted}}>
-                      {s.sectionIds.map(id=>project.sections.find(p=>p.id===id)?.title)
-                        .filter(Boolean).join(' · ')||' '}
+            textOf(file).trim()?<Text selectable
+              style={{fontSize:file.kind==='lyrics'?17:15,
+                lineHeight:file.kind==='lyrics'?29:25,
+                fontFamily:file.kind==='lyrics'?'Georgia':undefined,
+                color:theme.foreground}}>
+              {textOf(file)}
+            </Text>:null}
+          {!editing&&file.kind==='lyrics'&&project.sections.length>0?<>
+            {selecting?<MusicLyricSelection lyrics={textOf(file)}
+              sections={project.sections} references={file.lyricReferences||[]}
+              onChange={references=>onUpdate(file.id,{lyricReferences:references})}
+              onClose={()=>setSelecting(false)}/>:null}
+            {(file.lyricReferences||[]).length>0?<View style={{gap:10}}>
+              <Text style={{fontSize:12,fontWeight:'700',color:theme.foreground}}>
+                Extraits associés
+              </Text>
+              {(file.lyricReferences||[]).map(ref=>{
+                const part=project.sections.find(s=>s.id===ref.sectionId);
+                const actual=textOf(file).slice(ref.start,ref.end);
+                const stale=actual!==ref.text;
+                return <View key={ref.id} style={{flexDirection:'row',
+                  alignItems:'center',gap:10,borderTopWidth:1,
+                  borderColor:theme.border,paddingTop:9}}>
+                  <View style={{flex:1,gap:4}}>
+                    <Text style={{fontSize:11,color:pink,fontWeight:'700'}}>
+                      {part?.title||'Partie supprimée'}{stale?' · texte modifié':''}
                     </Text>
-                    <Pressable accessibilityRole="button"
-                      accessibilityLabel={'Associer la strophe '+(i+1)}
-                      onPress={()=>{setStanzaId(s.id);setMenu('section');}}>
-                      <Ionicons name="ellipsis-horizontal" size={18} color={theme.muted}/>
-                    </Pressable>
+                    <Text style={{fontSize:13,color:theme.foreground,lineHeight:21}}>
+                      {ref.text}
+                    </Text>
                   </View>
-                  <Text selectable style={{fontSize:17,lineHeight:29,
-                    color:theme.foreground}}>{s.text}</Text>
-                </View>)}
-              </View>:
-              textOf(file).trim()?<Text selectable style={{fontSize:file.kind==='lyrics'?17:15,
-                lineHeight:file.kind==='lyrics'?29:25,color:theme.foreground}}>
-                {textOf(file)}
-              </Text>:null}
+                  <Pressable onPress={()=>onUpdate(file.id,{lyricReferences:
+                    (file.lyricReferences||[]).filter(r=>r.id!==ref.id)})}
+                    accessibilityRole="button" accessibilityLabel="Retirer l’association"
+                    style={{padding:9}}>
+                    <Ionicons name="close-outline" size={19} color={theme.muted}/>
+                  </Pressable>
+                </View>;
+              })}
+            </View>:null}
+          </>:null}
           {!editing&&!textOf(file).trim()&&!isArtwork(file)&&!isAudio(file)?
             <Text style={{color:theme.muted,fontSize:13}}>
               Le fichier est conservé. Ouvre son original ou écris une note associée.
@@ -254,6 +263,14 @@ export function MusicMaterialViewer({visible,file,project,onClose,onUpdate,onCha
           {error?<Text style={{color:'#B34D67',fontSize:12}}>{error}</Text>:null}
           {!editing?<View style={{flexDirection:'row',gap:12,flexWrap:'wrap',
             borderTopWidth:1,borderColor:theme.border,paddingTop:15}}>
+            {file.kind==='lyrics'&&project.sections.length>0?
+              <Pressable onPress={()=>setSelecting(!selecting)} accessibilityRole="button"
+                style={{flexDirection:'row',gap:7,alignItems:'center',paddingVertical:9}}>
+                <Ionicons name="link-outline" size={17} color={pink}/>
+                <Text style={{color:pink,fontSize:12,fontWeight:'600'}}>
+                  {selecting?'Masquer la sélection':'Associer un extrait'}
+                </Text>
+              </Pressable>:null}
             <Pressable onPress={()=>{setDraft(textOf(file));setEditing(true);setMenu('none');}}
               style={{flexDirection:'row',alignItems:'center',gap:7,paddingVertical:9}}>
               <Ionicons name="pencil-outline" size={16} color={pink}/>
