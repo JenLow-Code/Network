@@ -77,7 +77,7 @@ export function MusicWaveformMarkerHandles({markers,width,duration,selectedId,on
         clamp(rendered.endSeconds/Math.max(duration,.001)*width,beginX,width);
       const active=selectedId===m.id;
       const handle=(at:number,mode:Mode,label:string)=>{
-        const style:React.CSSProperties={position:'absolute',left:at-13,top:2,
+        const style:React.CSSProperties={position:'absolute',left:clamp(at-13,0,Math.max(0,width-26)),top:2,
           width:26,height:36,display:'flex',alignItems:'flex-start',
           paddingTop:10,justifyContent:'center',cursor:'ew-resize',
           touchAction:'none',userSelect:'none',zIndex:mode==='start'?3:2};
@@ -98,7 +98,14 @@ export function MusicWaveformMarkerHandles({markers,width,duration,selectedId,on
             e.preventDefault();e.stopPropagation();
             const dir=e.key==='ArrowRight'?1:-1;
             const step=e.shiftKey?.001:.01;
-            const change=mode==='end'&&m.endSeconds!==undefined?
+            const change:MusicAudioMarker=mode==='move'?
+              (()=>{
+                const last=m.endSeconds??m.startSeconds;
+                const shift=clamp(dir*step,-m.startSeconds,duration-last);
+                return {...m,startSeconds:precise(m.startSeconds+shift),
+                  ...(m.endSeconds!==undefined?{endSeconds:precise(m.endSeconds+shift)}:{})};
+              })():
+              mode==='end'&&m.endSeconds!==undefined?
               {...m,endSeconds:precise(clamp(m.endSeconds+dir*step,
                 m.startSeconds+.001,duration))}:
               {...m,startSeconds:precise(clamp(m.startSeconds+dir*step,
@@ -108,7 +115,8 @@ export function MusicWaveformMarkerHandles({markers,width,duration,selectedId,on
         },point);
         return <Pressable key={m.id+'-'+mode}
           accessibilityRole="button" accessibilityLabel={label}
-          onPress={()=>onSelect(m.id)} style={{position:'absolute',left:at-13,top:2,
+          onPress={()=>onSelect(m.id)} style={{position:'absolute',
+            left:clamp(at-13,0,Math.max(0,width-26)),top:2,
             width:26,height:36,alignItems:'center',paddingTop:10}}>
           <View style={{height:11,width:11,borderRadius:6,backgroundColor:PINK}}/>
         </Pressable>;
