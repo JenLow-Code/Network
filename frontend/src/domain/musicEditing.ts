@@ -56,3 +56,14 @@ export function musicStamp(time: number): string {
   return String(mins).padStart(2,'0')+':'+String(secs).padStart(2,'0')+
     '.'+String(cs).padStart(2,'0');
 }
+
+/** Exact displayed selection, in milliseconds. Not a guarantee of codec/sample accuracy. */
+export function musicStampMs(time: number): string {
+  const total = Math.max(0, Math.round((Number.isFinite(time) ? time : 0) * 1000));
+  const minutes = Math.floor(total / 60000);
+  const seconds = Math.floor((total % 60000) / 1000);
+  const milliseconds = total % 1000;
+  return String(minutes).padStart(2, '0') + ':' +
+    String(seconds).padStart(2, '0') + '.' +
+    String(milliseconds).padStart(3, '0');
+}
