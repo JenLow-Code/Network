@@ -60,6 +60,7 @@ export function MusicAudioCapture({onSaved,onStarted,onPaused,timelineStartSecon
   const [title,setTitle]=useState(initialTake?.title||suggestedTitle);
   const [markers,setMarkers]=useState<MusicAudioMarker[]>([]);
   const [editMarkerRequest,setEditMarkerRequest]=useState<{id:string;nonce:number}|null>(null);
+  const [rangeRequest,setRangeRequest]=useState<{start:number;end:number;nonce:number}|null>(null);
   const [playing,setPlaying]=useState(false);
   const [processing,setProcessing]=useState(false);
   const [saving,setSaving]=useState(false);
@@ -281,6 +282,9 @@ export function MusicAudioCapture({onSaved,onStarted,onPaused,timelineStartSecon
       onSeek={seek} zoom={zoom} onZoom={setZoom} playing={playing}
       onTogglePlayback={togglePlayback} markers={markers}
       onChangeMarkers={onMarkers}
+      onCreateRange={(start,end)=>setRangeRequest(previous=>({
+        start,end,nonce:(previous?.nonce||0)+1
+      }))}
       onEditMarker={id=>setEditMarkerRequest(previous=>({
         id,nonce:(previous?.nonce||0)+1
       }))}/>:
@@ -349,6 +353,7 @@ export function MusicAudioCapture({onSaved,onStarted,onPaused,timelineStartSecon
       </View>}
     {file?<MusicAudioMarkers markers={markers} duration={duration} cursor={cursor}
       onSeek={seek} onChange={onMarkers} editRequest={editMarkerRequest}
+      rangeRequest={rangeRequest}
       disabled={status==='recording'||processing||saving}/>:null}
     {error?<Text style={{fontSize:12,lineHeight:20,color:'#B54B65'}}>{error}</Text>:null}
     {file?<Text style={{fontSize:11,lineHeight:18,color:theme.muted}}>
