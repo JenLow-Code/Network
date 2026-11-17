@@ -3,7 +3,7 @@ import {Platform,Pressable,Text,View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {useAppTheme} from '@/theme/AppTheme';
 import {getDraftAttachment} from '@/domain/musicLocalStorage';
-import {musicStamp} from '@/domain/musicEditing';
+import {musicStampMs} from '@/domain/musicEditing';
 import {isPlayableMusicFile} from '@/domain/musicNext';
 import {MusicArrangementTimeline} from './MusicArrangementTimeline';
 import type {WorkingMusicTrack,WorkingMusicVersion} from '@/domain/musicNext';
@@ -40,7 +40,6 @@ export function MusicStudioTransport({version,files,onPositionChange,onTrackChan
   const engine=useRef<Engine|null>(null);
   const playingRef=useRef(false);
   const posRef=useRef(0);
-  const seekingWidth=useRef(1);
   const [position,setPosition]=useState(0);
   const [duration,setDuration]=useState(versionLength(version,files));
   const [playing,setPlaying]=useState(false);
@@ -172,36 +171,26 @@ export function MusicStudioTransport({version,files,onPositionChange,onTrackChan
     if(oldSignature.current!==timeSignature&&playingRef.current)pause();
     oldSignature.current=timeSignature;
   },[timeSignature]);
-  return <View style={{gap:17}}>
-    <View style={{padding:14,borderWidth:1,borderColor:theme.border,
-      borderRadius:15,backgroundColor:theme.surface,gap:12}}>
+  return <View style={{gap:12}}>
+    <View style={{paddingHorizontal:4,paddingVertical:5,gap:8}}>
       <View style={{flexDirection:'row',gap:13,alignItems:'center'}}>
         <Pressable onPress={toggle} disabled={busy} accessibilityRole="button"
           accessibilityLabel={playing?'Mettre la version en pause':'Lire la version'}
-          style={{width:48,height:48,borderRadius:24,backgroundColor:PINK,
+          style={{width:42,height:42,borderRadius:21,backgroundColor:PINK,
             opacity:busy?.5:1,alignItems:'center',justifyContent:'center'}}>
           <Ionicons name={playing?'pause':'play'} color="#fff" size={21}/>
         </Pressable>
-        <View style={{flex:1,gap:7}}>
+        <View style={{flex:1,gap:2}}>
           <View style={{flexDirection:'row',justifyContent:'space-between',gap:10}}>
             <Text style={{fontSize:13,color:theme.foreground,fontWeight:'700',
               fontVariant:['tabular-nums']}}>
-              {musicStamp(position)} / {musicStamp(duration)}
+              {musicStampMs(position)} / {musicStampMs(duration)}
             </Text>
             <Pressable onPress={()=>seek(0)} accessibilityLabel="Revenir au début">
               <Ionicons name="play-skip-back-outline" size={19} color={theme.muted}/>
             </Pressable>
           </View>
-          <Pressable accessibilityRole="adjustable" accessibilityLabel="Position de lecture"
-            accessibilityValue={{min:0,max:100,now:duration?Math.round(position/duration*100):0}}
-            onLayout={e=>{seekingWidth.current=e.nativeEvent.layout.width||1;}}
-            onPress={e=>seek(duration*e.nativeEvent.locationX/seekingWidth.current)}
-            style={{height:20,justifyContent:'center'}}>
-            <View style={{height:4,borderRadius:3,backgroundColor:theme.border}}>
-              <View style={{height:4,borderRadius:3,
-                width:(duration?position/duration*100:0)+'%',backgroundColor:PINK}}/>
-            </View>
-          </Pressable>
+
         </View>
       </View>
       {error?<Text style={{fontSize:11,color:'#B44B61',lineHeight:18}}>{error}</Text>:null}
