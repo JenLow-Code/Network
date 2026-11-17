@@ -3,8 +3,7 @@ import {Modal,Platform,Pressable,ScrollView,Text,TextInput,View,useWindowDimensi
 import {Ionicons} from '@expo/vector-icons';
 import {useAppTheme} from '@/theme/AppTheme';
 import {MusicLocalArt} from './MusicLocalArtNext';
-import {MusicAudioPreview} from './MusicAudioPreview';
-import {MusicAudioMarkers} from './MusicAudioMarkers';
+import {MusicAudioTake} from './MusicAudioTake';
 import {MusicLyricSelection} from './MusicLyricSelection';
 import {getDraftAttachment} from '@/domain/musicLocalStorage';
 import {newMusicId} from '@/domain/musicWorkspace';
@@ -158,9 +157,9 @@ export function MusicMaterialViewer({visible,file,project,onClose,onUpdate,onCha
               <Text style={{fontSize:12,color:theme.muted}}>Retour à l’élément</Text>
             </Pressable>
             {menu==='type'?<>
-              {row('create-outline','Modifier le contenu',()=>{
+              {file.kind!=='audio'?row('create-outline','Modifier le contenu',()=>{
                 setDraft(textOf(file));setEditing(true);setMenu('none');
-              })}
+              }):null}
               {row('text-outline','Renommer',()=>setMenu('rename'))}
               {file.kind!=='lyrics'&&project.sections.length>0?
                 row('musical-notes-outline','Associer à une partie existante',
@@ -198,15 +197,9 @@ export function MusicMaterialViewer({visible,file,project,onClose,onUpdate,onCha
             </>:null}
           </View>:null}
           {isArtwork(file)?<MusicLocalArt file={file} size={compact?270:360}/>:null}
-          {isAudio(file)&&file.localFileId?<View style={{padding:17,
-            borderRadius:15,backgroundColor:theme.surface,
-            borderWidth:1,borderColor:theme.border}}>
-            <MusicAudioPreview source={{localAudioId:file.localFileId}}/>
-          </View>:null}
-          {isAudio(file)&&file.durationSeconds!==undefined?
-            <MusicAudioMarkers markers={file.markers||[]}
-              duration={file.durationSeconds} cursor={0}
-              onChange={markers=>onUpdate(file.id,{markers})}/>:null}
+          {isAudio(file)&&file.localFileId?
+            <MusicAudioTake key={file.id} file={file} editable
+              onUpdate={changes=>onUpdate(file.id,changes)}/>:null}
           {!editing&&file.kind==='lyrics'&&project.sections.length>0?
             <Pressable onPress={()=>setSelecting(!selecting)}
               accessibilityRole="button"
@@ -274,11 +267,11 @@ export function MusicMaterialViewer({visible,file,project,onClose,onUpdate,onCha
           {error?<Text style={{color:'#B34D67',fontSize:12}}>{error}</Text>:null}
           {!editing?<View style={{flexDirection:'row',gap:12,flexWrap:'wrap',
             borderTopWidth:1,borderColor:theme.border,paddingTop:15}}>
-            <Pressable onPress={()=>{setDraft(textOf(file));setEditing(true);setMenu('none');}}
+            {!isAudio(file)?<Pressable onPress={()=>{setDraft(textOf(file));setEditing(true);setMenu('none');}}
               style={{flexDirection:'row',alignItems:'center',gap:7,paddingVertical:9}}>
               <Ionicons name="pencil-outline" size={16} color={pink}/>
               <Text style={{color:pink,fontSize:12,fontWeight:'600'}}>Modifier</Text>
-            </Pressable>
+            </Pressable>:null}
             {file.localFileId?<Pressable onPress={()=>{void download();}}
               style={{flexDirection:'row',alignItems:'center',gap:7,paddingVertical:9}}>
               <Ionicons name="download-outline" size={16} color={theme.muted}/>
