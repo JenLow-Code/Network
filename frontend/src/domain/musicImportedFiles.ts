@@ -48,11 +48,14 @@ export function classifySongFile(file:MusicProjectFile,kind:MusicProjectFile['ki
   };
 }
 export function matchesMusicSection(file:MusicProjectFile,sectionId:string):boolean {
-  return (file.sectionIds||[]).includes(sectionId)
+  return (file.lyricReferences||[]).some(ref=>ref.sectionId===sectionId)
+    || (file.sectionIds||[]).includes(sectionId)
     || (file.lyricSegments||[]).some(s=>(s.sectionIds||[]).includes(sectionId))
     || (file.regions||[]).some(r=>r.sectionId===sectionId);
 }
 export function lyricsForMusicSection(file:MusicProjectFile,sectionId:string):string {
+  const excerpts=(file.lyricReferences||[]).filter(ref=>ref.sectionId===sectionId);
+  if(excerpts.length)return excerpts.map(ref=>ref.text).join('\n\n');
   if(file.lyricSegments?.length){
     return file.lyricSegments.filter(s=>s.sectionIds.includes(sectionId)).map(s=>s.text).join('\n\n');
   }
