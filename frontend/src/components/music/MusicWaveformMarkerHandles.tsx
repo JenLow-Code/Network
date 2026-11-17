@@ -80,7 +80,8 @@ export function MusicWaveformMarkerHandles({markers,width,duration,selectedId,on
         const style:React.CSSProperties={position:'absolute',left:clamp(at-13,0,Math.max(0,width-26)),top:2,
           width:26,height:36,display:'flex',alignItems:'flex-start',
           paddingTop:10,justifyContent:'center',cursor:'ew-resize',
-          touchAction:'none',userSelect:'none',zIndex:mode==='start'?3:2};
+          touchAction:'none',userSelect:'none',pointerEvents:'auto',
+          zIndex:mode==='start'?3:2};
         const point=React.createElement('span',{style:{
           height:active?12:10,width:active?12:10,borderRadius:8,
           backgroundColor:PINK,border:'2px solid #FFF',
@@ -132,7 +133,8 @@ export function MusicWaveformMarkerHandles({markers,width,duration,selectedId,on
             onClick:(e:React.MouseEvent)=>{e.stopPropagation();onSelect(m.id);},
             style:{position:'absolute',left:beginX+8,top:12,width:Math.max(1,lastX-beginX-16),
               height:21,backgroundColor:active?'rgba(203,36,92,.15)':'rgba(203,36,92,.09)',
-              borderRadius:5,cursor:'grab',touchAction:'none',userSelect:'none',zIndex:1}}
+              borderRadius:5,cursor:'grab',touchAction:'none',userSelect:'none',
+              pointerEvents:'auto',zIndex:1}}
           ):null}
         {handle(beginX,'start','Déplacer le début du repère '+m.note+
           ' ('+musicStampMs(rendered.startSeconds)+')')}
