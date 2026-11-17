@@ -1,10 +1,10 @@
 import React,{useState} from 'react';
+import {musicStamp} from '@/domain/musicEditing';
 import {Pressable,Text,TextInput,View,useWindowDimensions} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {useAppTheme} from '@/theme/AppTheme';
 import {MusicAudioCapture} from './MusicAudioCapture';
 import {MusicAudioPreview} from './MusicAudioPreview';
-import {MusicAudioPeaks} from './MusicAudioPeaksNext';
 import {MusicStudioTransport} from './MusicStudioTransportNext';
 import {MusicSongTabs} from './MusicSongTabs';
 import {deleteUnassignedMusicTake} from '@/domain/musicLocalStorage';
@@ -17,7 +17,7 @@ import type {WorkingMusicTrack,WorkingMusicVersion} from '@/domain/musicNext';
 
 const PINK='#CB245C';
 type Props={project:MusicProject;patch:(changes:Partial<MusicProject>)=>void;onCapture:()=>void};
-type Pending={id:string;filename:string;durationSeconds?:number};
+type Pending={id:string;filename:string;durationSeconds?:number;startAt:number};
 type PickMode='none'|'start'|'add';
 
 export function MusicCreateExperience({project,patch,onCapture}:Props) {
@@ -35,6 +35,13 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
   const [confirmDelete,setConfirmDelete]=useState(false);
   const [editTrack,setEditTrack]=useState('');
   const [trackTitle,setTrackTitle]=useState('');
+  const [trackOffset,setTrackOffset]=useState('0');
+  const [trimStart,setTrimStart]=useState('0');
+  const [trimEnd,setTrimEnd]=useState('0');
+  const [timelineCursor,setTimelineCursor]=useState(0);
+  const [recordOrigin,setRecordOrigin]=useState(0);
+  const [playbackRequest,setPlaybackRequest]=useState<{at:number;serial:number}|null>(null);
+  const [pauseRequest,setPauseRequest]=useState(0);
   const [showSettings,setShowSettings]=useState(false);
   const [showSections,setShowSections]=useState(false);
   const [sectionId,setSectionId]=useState('');
@@ -49,6 +56,31 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
     patch({musicNext:changeWorkingVersion(state,updated)});
   const editTracks=(tracks:WorkingMusicTrack[])=>{
     if(version)edit({...version,tracks});
+  };
+  const editOneTrack=(id:string,changes:Partial<WorkingMusicTrack>)=>{
+    if(!version)return;
+    editTracks(version.tracks.map(t=>t.id===id?{...t,...changes}:t));
+  };
+  const openTrack=(t:WorkingMusicTrack,file?:MusicProjectFile)=>{
+    setEditTrack(editTrack===t.id?'':t.id);
+    setTrackTitle(t.title);
+    setTrackOffset(String(t.offsetSeconds||0));
+    setTrimStart(String(t.trimStartSeconds||0));
+    setTrimEnd(String(t.trimEndSeconds??file?.durationSeconds??0));
+  };
+  const saveTrackTiming=(t:WorkingMusicTrack,file?:MusicProjectFile)=>{
+    const offset=Number(trackOffset.replace(',','.'));
+    const start=Number(trimStart.replace(',','.'));
+    const end=Number(trimEnd.replace(',','.'));
+    const length=file?.durationSeconds;
+    if(!Number.isFinite(offset)||offset<0||!Number.isFinite(start)||start<0||
+      !Number.isFinite(end)||end<=start||length===undefined||end>length+.001){
+      setError('Vérifie le début, la fin et la position. La fin ne peut pas dépasser la durée du fichier.');
+      return;
+    }
+    editOneTrack(t.id,{offsetSeconds:Math.round(offset*100)/100,
+      trimStartSeconds:Math.round(start*100)/100,trimEndSeconds:Math.round(end*100)/100});
+    setError('');setEditTrack('');
   };
   const first=(file:MusicProjectFile)=>{
     const created=makeWorkingVersion(file,state.versions.length+1);
@@ -76,11 +108,11 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
     if(!pending)return;
     const item:MusicProjectFile={id:newMusicId(),title:'Nouvelle prise',kind:'audio',
       sectionIds:[],localFileId:pending.id,originalFilename:pending.filename,
-      mimeType:/\.m4a$/i.test(pending.filename)?'audio/mp4':'audio/webm',
+      mimeType:/\.wav$/i.test(pending.filename)?'audio/wav':/\.m4a$/i.test(pending.filename)?'audio/mp4':'audio/webm',
       durationSeconds:pending.durationSeconds,createdAt:new Date().toISOString()};
     if(target==='version'&&version){
       patch({files:[...project.files,item],musicNext:changeWorkingVersion(state,{
-        ...version,tracks:[...version.tracks,makeWorkingTrack(item)]
+        ...version,tracks:[...version.tracks,{...makeWorkingTrack(item),offsetSeconds:pending.startAt}]
       })});
     }else patch({files:[...project.files,item]});
     setPending(null);setRecording(false);setConfirmDiscard(false);setError('');
@@ -209,7 +241,13 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
       </View>
     </View>:null}
     {version?<View style={{gap:20}}>
-      <MusicStudioTransport key={version.id} version={version} files={project.files}/>
+      <MusicStudioTransport key={version.id} version={version} files={project.files}
+        onPositionChange={setTimelineCursor}
+        onTrackChange={editOneTrack}
+        playbackRequest={playbackRequest} pauseRequest={pauseRequest}/>
+      <Text style={{fontSize:12,color:theme.muted,lineHeight:19}}>
+        Choisis le point précis sur la chronologie avant d’enregistrer une nouvelle piste.
+      </Text>
       <View style={{flexDirection:'row',alignItems:'center',gap:10,flexWrap:'wrap'}}>
         <Text style={{fontSize:12,color:theme.muted}}>
           {version.bpm?version.bpm+' BPM':'Tempo libre'}
@@ -251,8 +289,7 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
                 <Ionicons name={track.instrument?.toLowerCase().includes('voix')?'mic-outline':
                   'musical-notes-outline'} size={17} color={PINK}/>
               </View>
-              <Pressable onPress={()=>{setEditTrack(editTrack===track.id?'':track.id);
-                setTrackTitle(track.title);}} style={{flex:1,gap:4}}>
+              <Pressable onPress={()=>openTrack(track,source)} style={{flex:1,gap:4}}>
                 <Text style={{fontSize:14,fontWeight:'600',color:theme.foreground}}
                   numberOfLines={1}>{track.title}</Text>
                 <Text style={{fontSize:11,color:theme.muted}}>
@@ -266,7 +303,10 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
               {tiny('headset-outline','Solo '+track.title,()=>
                 editTracks(version.tracks.map(t=>t.id===track.id?{...t,solo:!t.solo}:t)),track.solo)}
             </View>
-            <MusicAudioPeaks file={source} muted={track.muted}/>
+            <Text style={{fontSize:11,color:theme.muted}}>
+              Position {musicStamp(track.offsetSeconds)} · Coupe
+              {musicStamp(track.trimStartSeconds||0)} – {musicStamp(track.trimEndSeconds??source?.durationSeconds??0)}
+            </Text>
             {source&&!source.mimeType?.startsWith('audio/')&&/\.midi?$/i.test(source.originalFilename||'')?
               <Text style={{fontSize:11,color:theme.muted}}>
                 Lecture MIDI à intégrer ultérieurement ; les notes originales restent conservées.
@@ -275,6 +315,42 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
               backgroundColor:theme.surface,borderRadius:12}}>
               <TextInput style={input} value={trackTitle} onChangeText={setTrackTitle}
                 placeholder="Nom de la piste"/>
+              <Text style={{fontSize:12,fontWeight:'700',color:theme.foreground}}>
+                Position et coupe de cette piste
+              </Text>
+              <Text style={{fontSize:11,lineHeight:18,color:theme.muted}}>
+                Ajuste directement sur la chronologie ou saisis des secondes exactes.
+                L’audio d’origine n’est jamais modifié.
+              </Text>
+              <View style={{flexDirection:'row',gap:8,flexWrap:'wrap'}}>
+                <View style={{flex:1,minWidth:95,gap:5}}>
+                  <Text style={{fontSize:11,color:theme.muted}}>Position dans le morceau</Text>
+                  <TextInput style={input} keyboardType="decimal-pad"
+                    value={trackOffset} onChangeText={setTrackOffset}
+                    accessibilityLabel="Position en secondes"/>
+                </View>
+                <View style={{flex:1,minWidth:95,gap:5}}>
+                  <Text style={{fontSize:11,color:theme.muted}}>Début source</Text>
+                  <TextInput style={input} keyboardType="decimal-pad"
+                    value={trimStart} onChangeText={setTrimStart}
+                    accessibilityLabel="Début de coupe en secondes"/>
+                </View>
+                <View style={{flex:1,minWidth:95,gap:5}}>
+                  <Text style={{fontSize:11,color:theme.muted}}>Fin source</Text>
+                  <TextInput style={input} keyboardType="decimal-pad"
+                    value={trimEnd} onChangeText={setTrimEnd}
+                    accessibilityLabel="Fin de coupe en secondes"/>
+                </View>
+              </View>
+              <View style={{flexDirection:'row',flexWrap:'wrap',gap:8}}>
+                {button('− 0,05 s',()=>editOneTrack(track.id,{
+                  offsetSeconds:Math.max(0,Math.round((track.offsetSeconds-.05)*100)/100)
+                }))}
+                {button('+ 0,05 s',()=>editOneTrack(track.id,{
+                  offsetSeconds:Math.round((track.offsetSeconds+.05)*100)/100
+                }))}
+                {button('Appliquer la position et les coupes',()=>saveTrackTiming(track,source),true)}
+              </View>
               <View style={{flexDirection:'row',flexWrap:'wrap',gap:8}}>
                 {button('Renommer',()=>{
                   if(trackTitle.trim())editTracks(version.tracks.map(t=>t.id===track.id
@@ -294,15 +370,29 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
       </View>
       <View style={{flexDirection:'row',flexWrap:'wrap',gap:9}}>
         {button(recording?'Fermer l’enregistreur':'Enregistrer une prise',()=>{
-          if(pending)return;setRecording(!recording);
+          if(pending)return;
+          if(!recording){setRecordOrigin(timelineCursor);setPauseRequest(n=>n+1);}
+          setRecording(!recording);
         },true,'radio-button-on-outline')}
         {button('Ajouter une piste',()=>setPickMode(pickMode==='add'?'none':'add'),false,'add-outline')}
       </View>
       {recording?<View style={{backgroundColor:theme.surface,borderRadius:15,
         borderWidth:1,borderColor:theme.border,padding:compact?13:19,gap:13}}>
-        <Text style={{fontSize:15,fontWeight:'700',color:theme.foreground}}>Nouvelle prise</Text>
-        {!pending?<MusicAudioCapture onSaved={(id,filename,durationSeconds)=>
-          setPending({id,filename,durationSeconds})}/>:
+        <Text style={{fontSize:15,fontWeight:'700',color:theme.foreground}}>
+          Nouvelle prise · à partir de {musicStamp(recordOrigin)}
+        </Text>
+        <Text style={{fontSize:12,lineHeight:19,color:theme.muted}}>
+          L’écoute des pistes existantes commencera au même point lors du déclenchement du micro.
+          Utilise un casque et ajuste le décalage de la piste si nécessaire.
+        </Text>
+        {!pending?<MusicAudioCapture
+          timelineStartSeconds={recordOrigin}
+          onStarted={at=>setPlaybackRequest(previous=>({
+            at:recordOrigin+at,serial:(previous?.serial||0)+1
+          }))}
+          onPaused={()=>setPauseRequest(n=>n+1)}
+          onSaved={(id,filename,durationSeconds,startAt)=>
+            setPending({id,filename,durationSeconds,startAt:startAt??recordOrigin})}/>:
           <View style={{gap:13}}>
             <MusicAudioPreview source={{localAudioId:pending.id}}/>
             <Text style={{color:theme.foreground,fontWeight:'600',fontSize:13}}>
@@ -366,9 +456,9 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
     </View>:null}
     {error?<Text style={{fontSize:12,color:'#B94A60',lineHeight:20}}>{error}</Text>:null}
     {version?<Text style={{fontSize:11,color:theme.muted,lineHeight:18}}>
-      La lecture multipiste est actuellement prise en charge sur navigateur compatible.
-      Pour enregistrer par-dessus une piste, utilise un casque : la compensation automatique de latence
-      n'est pas encore disponible.
+      La lecture multipiste et l’enregistrement de retouches fonctionnent sur navigateur compatible.
+      La lecture d’accompagnement commence au point choisi, mais sa latence peut varier selon
+      le navigateur et le microphone ; un réglage manuel de la position reste possible.
     </Text>:null}
   </View>;
 }
