@@ -2,7 +2,7 @@ import React,{useState} from 'react';
 import {Pressable,Text,TextInput,View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {useAppTheme} from '@/theme/AppTheme';
-import {musicStamp} from '@/domain/musicEditing';
+import {musicStampMs} from '@/domain/musicEditing';
 import {newMusicId} from '@/domain/musicWorkspace';
 import type {MusicAudioMarker} from '@/domain/musicWorkspace';
 const pink='#CB245C';
@@ -21,8 +21,8 @@ export function MusicAudioMarkers({markers,duration,cursor,onChange,onSeek,disab
  const [note,setNote]=useState(''),[error,setError]=useState('');
  const begin=(m?:MusicAudioMarker)=>{
    setEditing(m?.id||'');setIntervalMode(m?.endSeconds!==undefined);
-   setFrom(musicStamp(m?.startSeconds??cursor));
-   setTo(m?.endSeconds===undefined?'':musicStamp(m.endSeconds));
+   setFrom(musicStampMs(m?.startSeconds??cursor));
+   setTo(m?.endSeconds===undefined?'':musicStampMs(m.endSeconds));
    setNote(m?.note||'');setError('');setOpen(true);
  };
  const save=()=>{
@@ -31,8 +31,8 @@ export function MusicAudioMarkers({markers,duration,cursor,onChange,onSeek,disab
      setError('Début ou fin invalide.');return;
    }
    if(!note.trim()){setError('Écris une note.');return;}
-   const marker:MusicAudioMarker={id:editing||newMusicId(),startSeconds:Math.round(a*100)/100,
-     ...(interval?{endSeconds:Math.round((b as number)*100)/100}:{}),note:note.trim()};
+   const marker:MusicAudioMarker={id:editing||newMusicId(),startSeconds:Math.round(a*1000)/1000,
+     ...(interval?{endSeconds:Math.round((b as number)*1000)/1000}:{}),note:note.trim()};
    onChange([...markers.filter(m=>m.id!==marker.id),marker].sort((x,y)=>x.startSeconds-y.startSeconds));
    setOpen(false);setError('');
  };
@@ -55,7 +55,7 @@ export function MusicAudioMarkers({markers,duration,cursor,onChange,onSeek,disab
      <Pressable onPress={()=>{onSeek?.(m.startSeconds);begin(m);}}
        accessibilityRole="button" disabled={disabled} style={{flex:1,gap:3}}>
        <Text style={{fontSize:11,fontWeight:'700',color:pink}}>
-         {musicStamp(m.startSeconds)}{m.endSeconds!==undefined?' – '+musicStamp(m.endSeconds):''}
+         {musicStampMs(m.startSeconds)}{m.endSeconds!==undefined?' – '+musicStampMs(m.endSeconds):''}
        </Text>
        <Text numberOfLines={2} style={{fontSize:12,color:theme.foreground}}>{m.note}</Text>
      </Pressable>
@@ -67,25 +67,25 @@ export function MusicAudioMarkers({markers,duration,cursor,onChange,onSeek,disab
    {open?<View style={{padding:13,borderWidth:1,borderColor:theme.border,
      borderRadius:13,backgroundColor:theme.surface,gap:11}}>
      <Text style={{fontSize:14,fontWeight:'700',color:theme.foreground}}>
-       {editing?'Modifier le repère':'Nouveau repère'}
+       {editing?'Modifier le repère':'Ajouter une note'}
      </Text>
      <View style={{flexDirection:'row',gap:12}}>
        <Pressable onPress={()=>setIntervalMode(false)} style={{padding:8,borderBottomWidth:!interval?2:0,borderColor:pink}}>
          <Text style={{color:!interval?pink:theme.muted,fontSize:12}}>Moment</Text>
        </Pressable>
-       <Pressable onPress={()=>{setIntervalMode(true);if(!to)setTo(musicStamp(Math.min(duration,(parse(from)||0)+2)));}}
+       <Pressable onPress={()=>{setIntervalMode(true);if(!to)setTo(musicStampMs(Math.min(duration,(parse(from)||0)+2)));}}
          style={{padding:8,borderBottomWidth:interval?2:0,borderColor:pink}}>
          <Text style={{color:interval?pink:theme.muted,fontSize:12}}>Intervalle</Text>
        </Pressable>
      </View>
      <View style={{flexDirection:'row',gap:9,flexWrap:'wrap'}}>
        <View style={{flex:1,minWidth:110,gap:4}}>
-         <Text style={{color:theme.muted,fontSize:11}}>Début (mm:ss.cc)</Text>
+         <Text style={{color:theme.muted,fontSize:11}}>Début (mm:ss.mmm)</Text>
          <TextInput keyboardType="numbers-and-punctuation" value={from} onChangeText={setFrom}
            accessibilityLabel="Début de l'annotation" style={input}/>
        </View>
        {interval?<View style={{flex:1,minWidth:110,gap:4}}>
-         <Text style={{color:theme.muted,fontSize:11}}>Fin (mm:ss.cc)</Text>
+         <Text style={{color:theme.muted,fontSize:11}}>Fin (mm:ss.mmm)</Text>
          <TextInput keyboardType="numbers-and-punctuation" value={to} onChangeText={setTo}
            accessibilityLabel="Fin de l'annotation" style={input}/>
        </View>:null}
