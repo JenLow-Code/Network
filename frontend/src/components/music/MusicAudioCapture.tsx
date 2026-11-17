@@ -74,8 +74,10 @@ export function MusicAudioCapture({onSaved,onStarted,onPaused,timelineStartSecon
     setTitle(initialTake.title);
   },[initialTake?.file]);
   useEffect(()=>{
-    onDraftChange?.(status==='recording'||processing||saving||!!file);
-  },[status,processing,saving,file,onDraftChange]);
+    const editedAudio = !!file && (!initialTake || file !== initialTake.file);
+    const editedMarkers = !!initialTake && markerRef.current !== initialTake.markers;
+    onDraftChange?.(status==='recording'||processing||saving||editedAudio||editedMarkers);
+  },[status,processing,saving,file,markers,initialTake?.file,onDraftChange]);
   const clearMic=()=>{
     if(ticker.current){clearInterval(ticker.current);ticker.current=null;}
     stream.current?.getTracks().forEach(t=>t.stop());stream.current=null;
