@@ -36,6 +36,8 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,h
   const compact=width<630;
   const files=project.files||[];
   const [composer,setComposer]=useState<Composer>('none');
+  const [unsavedRecording,setUnsavedRecording]=useState(false);
+  const [confirmClose,setConfirmClose]=useState(false);
   const [writing,setWriting]=useState<Writing>('lyrics');
   const [draft,setDraft]=useState('');
   const [language,setLanguage]=useState(project.originalLanguage||'Français');
@@ -43,6 +45,10 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,h
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState('');
   const selectedFile=files.find(f=>f.id===selected)||null;
+  const closeComposer=()=>{
+    if(composer==='record'&&unsavedRecording){setConfirmClose(true);return;}
+    setComposer('none');setConfirmClose(false);
+  };
   const changeFile=(id:string,change:Partial<MusicProjectFile>)=>
     patch({files:files.map(file=>file.id===id?{...file,...change}:file)});
   const addWritten=()=>{
@@ -68,7 +74,8 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,h
       mimeType:/\.wav$/i.test(filename)?'audio/wav':/\.m4a$/i.test(filename)?'audio/mp4':/\.ogg$/i.test(filename)?'audio/ogg':'audio/webm',
       durationSeconds,markers:markers||[],createdAt:new Date().toISOString(),
     };
-    patch({files:[...files,item]});setComposer('none');setSelected(item.id);
+    patch({files:[...files,item]});setComposer('none');setUnsavedRecording(false);
+    setConfirmClose(false);setSelected(item.id);
   };
   const pickFiles=()=>{
     if(Platform.OS!=='web'||typeof document==='undefined'){
@@ -130,7 +137,7 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,h
       </Text>
     </View>
     <View style={{flexDirection:'row',flexWrap:'wrap',gap:9}}>
-      {action('Enregistrer','mic-outline',()=>setComposer(composer==='record'?'none':'record'),true)}
+      {action('Enregistrer','mic-outline',()=>composer==='record'?closeComposer():setComposer('record'),true)}
       {action('Écrire','pencil-outline',()=>setComposer(composer==='write'?'none':'write'))}
       {action(busy?'Import…':'Importer','add-outline',pickFiles)}
     </View>
@@ -140,11 +147,24 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,h
         <Text style={{fontSize:16,fontWeight:'700',color:theme.foreground}}>
           {composer==='record'?'Enregistrement audio':'Écrire'}
         </Text>
-        <Pressable onPress={()=>setComposer('none')} accessibilityLabel="Fermer" style={{padding:6}}>
+        <Pressable onPress={closeComposer} accessibilityLabel="Fermer" style={{padding:6}}>
           <Ionicons name="close" size={20} color={theme.muted}/>
         </Pressable>
       </View>
-      {composer==='record' ? <MusicAudioCapture onSaved={addRecorded}/> :
+      {confirmClose?<View style={{borderRadius:12,borderWidth:1,borderColor:theme.border,
+        padding:12,gap:10}}>
+        <Text style={{fontSize:12,color:theme.foreground,lineHeight:19}}>
+          Abandonner la prise non enregistrée ?
+        </Text>
+        <View style={{flexDirection:'row',gap:9,flexWrap:'wrap'}}>
+          {action('Continuer', 'arrow-back-outline',()=>setConfirmClose(false))}
+          {action('Abandonner','close-outline',()=>{
+            setUnsavedRecording(false);setComposer('none');setConfirmClose(false);
+          })}
+        </View>
+      </View>:null}
+      {composer==='record' ? <MusicAudioCapture onSaved={addRecorded}
+        onDraftChange={setUnsavedRecording}/> :
         <View style={{gap:13}}>
           <View style={{flexDirection:'row',flexWrap:'wrap',gap:7}}>
             {([
