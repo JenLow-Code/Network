@@ -32,6 +32,7 @@ export type WorkingMusicVersion = {
   updatedAt: string;
   bpm?: number;
   metronomeMuted?: boolean;
+  snapToBeat?: boolean;
   lyricCues?: TimedLyricCue[];
   key?: string;
   meter?: string;
