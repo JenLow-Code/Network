@@ -24,6 +24,7 @@ type Props = {
   onRequestTranslator?: (sourceId: string, language: string) => void;
   requestedLanguages?: string[];
   onDirtyChange: (dirty: boolean) => void;
+  immersive?: boolean;
 };
 
 function lyricText(file: MusicProjectFile) {
@@ -58,9 +59,10 @@ export function MusicNotePreview({ text, color }: { text: string; color: string 
 }
 
 export function MusicWritingStudio({ mode, onModeChange, originalLanguage, source,
-  initialFile, onSave, onRequestTranslator, requestedLanguages=[], onDirtyChange }: Props) {
+  initialFile, onSave, onRequestTranslator, requestedLanguages=[], onDirtyChange,
+  immersive=false }: Props) {
   const theme = useAppTheme();
-  const { width } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
   const compact = width < 650;
   const translating = !!source;
   const [lyricTitle, setLyricTitle] = useState('');
@@ -86,8 +88,11 @@ export function MusicWritingStudio({ mode, onModeChange, originalLanguage, sourc
   const setTitle = translating ? setTranslationTitle : isNote ? setNoteTitle : setLyricTitle;
   const language = translating ? targetLanguage : lyricLanguage;
   const setLanguage = translating ? setTargetLanguage : setLyricLanguage;
-  const dirty = !!(lyricBody.trim() || lyricTitle.trim() || noteBody.trim() || noteTitle.trim() ||
-    translationBody.trim() || translationTitle.trim());
+  const dirty = initialFile
+    ? title !== initialFile.title || body !== lyricText(initialFile) ||
+      (!isNote && language !== (initialFile.language || originalLanguage))
+    : !!(lyricBody.trim() || lyricTitle.trim() || noteBody.trim() || noteTitle.trim() ||
+      translationBody.trim() || translationTitle.trim());
   const requestPending=requestedLanguages.some(value=>
     value.toLocaleLowerCase()===language.trim().toLocaleLowerCase());
 
@@ -206,12 +211,12 @@ export function MusicWritingStudio({ mode, onModeChange, originalLanguage, sourc
       borderBottomWidth:1,borderBottomColor:theme.border,alignSelf:'flex-start'}}>
       {choose('lyrics','Paroles')}
       {choose('note','Notes')}
-    </View> : <View style={{gap:4}}>
+    </View> : translating?<View style={{gap:4}}>
       <Text style={{color:theme.foreground,fontSize:19,fontWeight:'700'}}>Traduire les paroles</Text>
       <Text style={{color:theme.muted,fontSize:12,lineHeight:19}}>
         Une traduction liée à l’original, pas une nouvelle chanson.
       </Text>
-    </View>}
+    </View>:null}
     {translating ? <>
       <View style={{flexDirection:'row',alignItems:'center',flexWrap:'wrap',gap:10}}>
         <Text style={{color:theme.muted,fontSize:12}}>Vers</Text>
@@ -226,7 +231,7 @@ export function MusicWritingStudio({ mode, onModeChange, originalLanguage, sourc
             accessibilityLabel="Titre de la traduction"
             style={{fontSize:16,fontWeight:'600',color:theme.foreground,
               paddingVertical:8,borderBottomWidth:1,borderColor:theme.border}}/>
-          {editor('Écris ta traduction ici…',compact?145:230)}
+          {editor('Écris ta traduction ici…',immersive?(compact?330:490):compact?145:230)}
         </View>
         <View style={{flex:1,minWidth:0,backgroundColor:theme.dark?'#292326':'#F7F4F1',
           borderRadius:13,padding:compact?13:17,gap:10}}>
@@ -292,7 +297,8 @@ export function MusicWritingStudio({ mode, onModeChange, originalLanguage, sourc
           {body.trim()?<MusicNotePreview text={body} color={theme.foreground}/>:
             <Text style={{fontSize:14,color:theme.muted}}>Un aperçu de ta note apparaîtra ici.</Text>}
         </View>:editor(isNote?'Une idée, un souvenir, quelque chose à garder…':
-          'Commence à écrire tes paroles…',compact?145:210)}
+          'Commence à écrire tes paroles…',immersive?
+            Math.max(compact?330:450,height-(compact?310:355)):compact?145:210)}
       </View>
     </>}
     <View style={{flexDirection:'row',alignItems:'center',
