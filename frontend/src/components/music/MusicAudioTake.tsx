@@ -36,6 +36,7 @@ export function MusicAudioTake({file,compact=false,editable=false,onUpdate,onOpe
   const [draftActive,setDraftActive]=useState(false);
   const [confirmExit,setConfirmExit]=useState(false);
   const [editMarkerRequest,setEditMarkerRequest]=useState<{id:string;nonce:number}|null>(null);
+  const [rangeRequest,setRangeRequest]=useState<{start:number;end:number;nonce:number}|null>(null);
   const audio=useRef<HTMLAudioElement|null>(null);
   useEffect(()=>{
     let live=true;
@@ -162,6 +163,9 @@ export function MusicAudioTake({file,compact=false,editable=false,onUpdate,onOpe
           onSeek={seek} zoom={zoom} onZoom={setZoom}
           onTogglePlayback={toggle} playing={playing} markers={file.markers||[]}
           onChangeMarkers={onUpdate?markers=>onUpdate({markers}):undefined}
+          onCreateRange={onUpdate?(start,end)=>setRangeRequest(previous=>({
+            start,end,nonce:(previous?.nonce||0)+1
+          })):undefined}
           onEditMarker={onUpdate?id=>setEditMarkerRequest(previous=>({
             id,nonce:(previous?.nonce||0)+1
           })):undefined}
@@ -169,7 +173,7 @@ export function MusicAudioTake({file,compact=false,editable=false,onUpdate,onOpe
         {onUpdate&&(editable||editMarkerRequest)?<MusicAudioMarkers
           markers={file.markers||[]} duration={duration} cursor={cursor}
           onChange={markers=>onUpdate({markers})} onSeek={seek}
-          editRequest={editMarkerRequest}/>:null}
+          editRequest={editMarkerRequest} rangeRequest={rangeRequest}/>:null}
         {editable&&onUpdate?<>
           <Pressable onPress={()=>{audio.current?.pause();setPlaying(false);setEditing(true);}}
             accessibilityRole="button" style={{alignSelf:'flex-start',minHeight:38,
