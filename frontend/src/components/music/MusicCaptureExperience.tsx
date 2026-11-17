@@ -258,12 +258,10 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,h
             <Ionicons name="document-outline" color={theme.muted} size={20}/>
             <Text numberOfLines={2} style={{color:theme.foreground,fontSize:14}}>{file.title}</Text>
           </View>:null}
-          {isMusicTrackCandidate(file)?<Text style={{fontSize:11,color:theme.muted}}>
-            Disponible pour une version · ouvrir pour choisir
-          </Text>:null}
+
           </Pressable>
           {sound&&file.localFileId?<MusicAudioTake file={file} compact
-            onUpdate={changes=>changeFile(file.id,changes)}/>:null}
+            onOpen={()=>setSelected(file.id)}/>:null}
           {file.kind==='lyrics'&&!file.translationOfFileId?
             <Pressable onPress={()=>openWrite(file.id)} accessibilityRole="button"
               style={{alignSelf:'flex-start',minHeight:40,flexDirection:'row',
