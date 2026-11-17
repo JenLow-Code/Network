@@ -261,8 +261,6 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
           onPaused={()=>setPauseRequest(n=>n+1)}
           onSaved={saveTake}/>
       </View>:null}
-          </View>}
-      </View>:null}
 
       <View style={{flexDirection:'row',alignItems:'center',gap:10,flexWrap:'wrap'}}>
         <Text style={{fontSize:12,color:theme.muted}}>
