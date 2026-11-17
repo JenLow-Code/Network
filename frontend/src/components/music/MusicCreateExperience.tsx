@@ -445,7 +445,7 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
           backingPositionSeconds={timelineCursor}
           onStarted={at=>{
             if(version&&!version.bpm)edit({...version,bpm:effectiveBpm});
-            metronome.start(effectiveBpm,!!version?.metronomeMuted,meterBeats);
+            metronome.start(effectiveBpm,!!version?.metronomeMuted,meterBeats,recordOrigin+at);
             setPlaybackRequest(previous=>({
               at:recordOrigin+at,serial:(previous?.serial||0)+1
             }));
