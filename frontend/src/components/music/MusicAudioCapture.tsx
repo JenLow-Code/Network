@@ -18,6 +18,8 @@ type Props={
   timelineStartSeconds?:number;
   /** Current song-time playhead, independently of the take's recording clock. */
   backingPositionSeconds?:number;
+  /** Lets the parent prevent accidentally closing an unsaved take. */
+  onDraftChange?:(hasUnsavedTake:boolean)=>void;
 };
 const PINK='#CB245C';
 type Status='idle'|'recording'|'paused';
@@ -25,7 +27,7 @@ type Status='idle'|'recording'|'paused';
 /** Real microphone recording with pause and local non-destructive punch-in.
  * Web-only until a native capture engine is implemented and verified. */
 export function MusicAudioCapture({onSaved,onStarted,onPaused,timelineStartSeconds=0,
-  backingPositionSeconds}:Props){
+  backingPositionSeconds,onDraftChange}:Props){
   const theme=useAppTheme();
   const recorder=useRef<MediaRecorder|null>(null);
   const stream=useRef<MediaStream|null>(null);
@@ -55,6 +57,9 @@ export function MusicAudioCapture({onSaved,onStarted,onPaused,timelineStartSecon
   const [processing,setProcessing]=useState(false);
   const [saving,setSaving]=useState(false);
   const [error,setError]=useState('');
+  useEffect(()=>{
+    onDraftChange?.(status==='recording'||processing||saving||!!file);
+  },[status,processing,saving,file,onDraftChange]);
   const clearMic=()=>{
     if(ticker.current){clearInterval(ticker.current);ticker.current=null;}
     stream.current?.getTracks().forEach(t=>t.stop());stream.current=null;
