@@ -4,7 +4,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/theme/AppTheme';
 import { MusicAudioCapture } from './MusicAudioCapture';
 import { MusicAudioTake } from './MusicAudioTake';
-import { MusicWritingStudio, MusicNotePreview, type MusicWritingResult } from './MusicWritingStudio';
+import { MusicNotePreview, type MusicWritingResult } from './MusicWritingStudio';
+import { MusicWritingOverlay } from './MusicWritingOverlay';
 
 import { MusicLocalArt } from './MusicLocalArtNext';
 import { MusicMaterialViewer } from './MusicMaterialViewerV3';
@@ -40,24 +41,24 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,h
   const [unsavedRecording,setUnsavedRecording]=useState(false);
   const [confirmClose,setConfirmClose]=useState(false);
   const [writing,setWriting]=useState<Writing>('lyrics');
-  const [draftDirty,setDraftDirty]=useState(false);
   const [translationSourceId,setTranslationSourceId]=useState('');
+  const [editingFileId,setEditingFileId]=useState('');
   const [selected,setSelected]=useState('');
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState('');
   const selectedFile=files.find(f=>f.id===selected)||null;
   const translationSource=files.find(f=>f.id===translationSourceId)||null;
+  const editingFile=files.find(f=>f.id===editingFileId)||null;
   const closeComposer=()=>{
-    if((composer==='record'&&unsavedRecording)||(composer==='write'&&draftDirty)){
-      setConfirmClose(true);return;
-    }
-    setComposer('none');setTranslationSourceId('');setConfirmClose(false);
-  };
-  const openWrite=(sourceId='')=>{
     if(composer==='record'&&unsavedRecording){setConfirmClose(true);return;}
-    if(composer==='write'&&draftDirty&&translationSourceId!==sourceId){
-      setConfirmClose(true);return;
-    }
+    setComposer('none');setTranslationSourceId('');setEditingFileId('');
+    setConfirmClose(false);
+  };
+  const openWrite=(sourceId='',fileId='')=>{
+    if(composer==='record'&&unsavedRecording){setConfirmClose(true);return;}
+    const file=files.find(candidate=>candidate.id===fileId);
+    setEditingFileId(fileId);
+    setWriting(file?.kind==='note'?'note':'lyrics');
     setTranslationSourceId(sourceId);setComposer('write');setConfirmClose(false);
   };
   const changeFile=(id:string,change:Partial<MusicProjectFile>)=>
@@ -66,20 +67,28 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,h
     if(!result.text.trim())return;
     const translated=result.mode==='translation';
     const lyrics=result.mode!=='note';
+    const current=files.find(file=>file.id===editingFileId);
     const title=result.title.trim()||(translated
       ?'Traduction · '+result.language
       :lyrics?'Paroles':result.text.trim().split('\n')[0].slice(0,52)||'Note');
+    const stanzas=lyrics?lyricStanzas(result.text.trim()):undefined;
     const item:MusicProjectFile={
-      id:newMusicId(),kind:lyrics?'lyrics':'note',sectionIds:[],
+      ...(current||{}),
+      id:current?.id||newMusicId(),kind:lyrics?'lyrics':'note',
+      sectionIds:current?.sectionIds||[],
       title,text:result.text.trim(),
-      lyricSegments:lyrics?lyricStanzas(result.text.trim()):undefined,
+      lyricSegments:stanzas?.map((stanza,index)=>({
+        ...stanza,
+        id:current?.lyricSegments?.[index]?.id||stanza.id,
+        sectionIds:current?.lyricSegments?.[index]?.sectionIds||[],
+      })),
       language:lyrics?(result.language||project.originalLanguage):undefined,
-      translationOfFileId:translated?result.translationOfFileId:undefined,
-      createdAt:new Date().toISOString(),
+      translationOfFileId:translated?(result.translationOfFileId||current?.translationOfFileId):undefined,
+      createdAt:current?.createdAt||new Date().toISOString(),
     };
-    patch({files:[...files,item]});
-    setDraftDirty(false);setComposer('none');setTranslationSourceId('');
-    setSelected(item.id);
+    patch({files:current
+      ?files.map(file=>file.id===current.id?item:file):[...files,item]});
+    setComposer('none');setTranslationSourceId('');setEditingFileId('');
   };
   const requestTranslator=(sourceId:string,targetLanguage:string)=>{
     const source=files.find(file=>file.id===sourceId);
@@ -166,16 +175,13 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,h
     <View style={{flexDirection:'row',gap:compact?7:9}}>
       {action('Enregistrer','mic-outline',()=>{
         if(composer==='record'){closeComposer();return;}
-        if(composer==='write'&&draftDirty){setConfirmClose(true);return;}
+        if(composer==='write')return;
         setComposer('record');setTranslationSourceId('');
       },composer==='record',true)}
-      {action('Écrire','pencil-outline',()=>{
-        if(composer==='write'&&!translationSourceId){closeComposer();return;}
-        openWrite();
-      },composer==='write',true)}
+      {action('Écrire','pencil-outline',()=>openWrite(),composer==='write',true)}
       {action(busy?'Import…':'Importer','add-outline',pickFiles,false,true)}
     </View>
-    {composer!=='none'?<View style={{gap:16,padding:compact?16:22,
+    {composer==='record'?<View style={{gap:16,padding:compact?16:22,
       borderWidth:1,borderColor:theme.border,borderRadius:18,backgroundColor:theme.surface}}>
       <View style={{flexDirection:'row',alignItems:'center',justifyContent:'flex-end'}}>
         <Pressable onPress={closeComposer} accessibilityLabel="Fermer" style={{padding:6}}>
@@ -185,27 +191,19 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,h
       {confirmClose?<View style={{borderRadius:12,borderWidth:1,borderColor:theme.border,
         padding:12,gap:10}}>
         <Text style={{fontSize:12,color:theme.foreground,lineHeight:19}}>
-          {composer==='record'?'Abandonner la prise non enregistrée ?':'Abandonner ce brouillon ?'}
+          Abandonner la prise non enregistrée ?
         </Text>
         <View style={{flexDirection:'row',gap:9,flexWrap:'wrap'}}>
           {action('Continuer', 'arrow-back-outline',()=>setConfirmClose(false))}
           {action('Abandonner','close-outline',()=>{
-            setUnsavedRecording(false);setDraftDirty(false);setTranslationSourceId('');
+            setUnsavedRecording(false);setTranslationSourceId('');
             setComposer('none');setConfirmClose(false);
           })}
         </View>
       </View>:null}
-      {composer==='record' ? <MusicAudioCapture onSaved={addRecorded}
+      <MusicAudioCapture onSaved={addRecorded}
         onDraftChange={setUnsavedRecording}
-        suggestedTitle={'Prise '+(files.filter(isAudio).length+1)}/> :
-        <MusicWritingStudio mode={writing} onModeChange={setWriting}
-          originalLanguage={project.originalLanguage}
-          source={translationSource} onSave={addWritten}
-          onRequestTranslator={requestTranslator} onDirtyChange={setDraftDirty}
-          requestedLanguages={(project.needs||[]).filter(need=>
-            need.sourceFileId===translationSourceId&&need.kind==='talent'&&
-            need.label.toLowerCase()==='traducteur')
-            .map(need=>need.targetLanguage||'')}/>}
+        suggestedTitle={'Prise '+(files.filter(isAudio).length+1)}/>
     </View>:null}
     {error?<Text style={{fontSize:12,color:'#B64A60'}}>{error}</Text>:null}
     {files.length?<View style={{gap:11}}>
@@ -292,7 +290,17 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,h
         if(item)changeFile(id,classifySongFile(item,kind));
       }} onSection={associate} onNewSection={newSection}
       onStartVersion={onStartVersion} onUseFile={onUseFile}
-      onTranslate={file=>openWrite(file.id)} onOpenFile={setSelected}
-      hasVersion={hasVersion}/>
+      onTranslate={file=>{setSelected('');openWrite(file.id);}}
+      onEdit={file=>{setSelected('');openWrite(file.translationOfFileId||'',file.id);}}
+      onOpenFile={setSelected} hasVersion={hasVersion}/>
+    {composer==='write'?<MusicWritingOverlay key={editingFileId||translationSourceId||'new'}
+      project={project} mode={writing} onModeChange={setWriting}
+      source={translationSource} initialFile={editingFile}
+      onSave={addWritten} onRequestTranslator={requestTranslator}
+      requestedLanguages={(project.needs||[]).filter(need=>
+        need.sourceFileId===translationSourceId&&need.kind==='talent'&&
+        need.label.toLowerCase()==='traducteur')
+        .map(need=>need.targetLanguage||'')}
+      onClose={closeComposer}/>:null}
   </View>;
 }
