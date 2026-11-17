@@ -248,7 +248,7 @@ export function MusicAudioCapture({onSaved,onStarted,onPaused,timelineStartSecon
         onEnded:()=>setPlaying(false),
         style:{display:'none'}
       }):null}
-    {status==='recording'?<View style={{height:87,borderRadius:13,backgroundColor:theme.dark?'#252029':'#FCF4F7',
+    {status==='recording'?<View style={{height:87,borderRadius:13,backgroundColor:theme.dark?'#252029':'#F2F4F5',
       overflow:'hidden',paddingHorizontal:7,flexDirection:'row',alignItems:'center',gap:2}}>
       {levels.map((v,i)=><View key={i} style={{flex:1,
         height:Math.max(2,Math.round(v*69)),maxWidth:5,borderRadius:2,backgroundColor:PINK,
@@ -256,7 +256,7 @@ export function MusicAudioCapture({onSaved,onStarted,onPaused,timelineStartSecon
     </View>:file?<MusicWaveformEditor file={file} duration={duration} cursor={cursor}
       onSeek={seek} zoom={zoom} onZoom={setZoom} playing={playing}
       onTogglePlayback={togglePlayback} markers={markers}/>:
-      <View style={{height:70,borderRadius:13,backgroundColor:theme.dark?'#252029':'#FCF4F7',
+      <View style={{height:70,borderRadius:13,backgroundColor:theme.dark?'#252029':'#F2F4F5',
         justifyContent:'center',alignItems:'center'}}>
         <Text style={{fontSize:12,color:theme.muted}}>La forme d’onde suivra ta voix en direct.</Text>
       </View>}

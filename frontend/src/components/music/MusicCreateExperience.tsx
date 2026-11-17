@@ -220,10 +220,10 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
       borderBottomWidth:1,borderColor:theme.border}}>
       <Ionicons name="radio-outline" color={PINK} size={30}/>
       <Text style={{fontSize:17,color:theme.foreground,fontWeight:'700'}}>
-        Ta première version commence avec une piste.
+        Aucune version créée.
       </Text>
       <Text style={{fontSize:13,color:theme.muted,lineHeight:21,maxWidth:480}}>
-        Choisis une prise enregistrée dans Capturer. Aucun autre élément ne sera ajouté automatiquement.
+        Choisis une piste enregistrée pour créer la première version.
       </Text>
       <View style={{alignSelf:'flex-start',gap:9}}>
         {button('Choisir ma première piste',()=>setPickMode('start'),true,'add-outline')}
@@ -299,7 +299,7 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
             <View style={{flexDirection:'row',alignItems:'center',gap:9}}>
               <View style={{width:36,height:36,borderRadius:10,
                 alignItems:'center',justifyContent:'center',
-                backgroundColor:theme.dark?'#392A33':'#F5E7EC'}}>
+                backgroundColor:theme.dark?'#392A33':'#ECF0F2'}}>
                 <Ionicons name={track.instrument?.toLowerCase().includes('voix')?'mic-outline':
                   'musical-notes-outline'} size={17} color={PINK}/>
               </View>

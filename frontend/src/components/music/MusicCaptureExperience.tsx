@@ -165,7 +165,7 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,h
             accessibilityLabel="Langue des paroles" style={{...field,fontSize:13,minHeight:43,lineHeight:18}}/>:null}
           <TextInput multiline autoFocus textAlignVertical="top" value={draft} onChangeText={setDraft}
             placeholder={writing==='translation'?'Écris ta traduction ici…':
-              writing==='note'?'Une pensée, une inspiration…':'Quelques mots, un refrain…'}
+              writing==='note'?'Écris une note…':'Écris les paroles…'}
             placeholderTextColor={theme.muted} style={{...field,minHeight:compact?165:220,
               fontSize:writing==='note'?15:19,lineHeight:writing==='note'?24:30}}/>
           {writing==='translation'?<Text style={{fontSize:11,lineHeight:18,color:theme.muted}}>
@@ -183,7 +183,7 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,h
     {error?<Text style={{fontSize:12,color:'#B64A60'}}>{error}</Text>:null}
     <View style={{gap:11}}>
       <View style={{flexDirection:'row',alignItems:'baseline',gap:9}}>
-        <Text style={{color:theme.foreground,fontSize:17,fontWeight:'700'}}>Dans cette chanson</Text>
+        <Text style={{color:theme.foreground,fontSize:17,fontWeight:'700'}}>Éléments enregistrés</Text>
         {files.length ? <Text style={{fontSize:12,color:theme.muted}}>{files.length}</Text> : null}
       </View>
       {!files.length ? <View style={{borderTopWidth:1,borderColor:theme.border,

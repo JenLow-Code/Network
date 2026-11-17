@@ -51,10 +51,9 @@ export function MusicCollaborateExperience({project,patch}:Props){
   const needs=project.needs||[];
   return <View style={{gap:24}}>
     <View style={{gap:7}}>
-      <Text style={{fontSize:22,fontWeight:'700',color:theme.foreground}}>La musique se construit ensemble.</Text>
+      <Text style={{fontSize:22,fontWeight:'700',color:theme.foreground}}>Collaborer</Text>
       <Text style={{fontSize:13,color:theme.muted,lineHeight:21,maxWidth:550}}>
-        Écoute les idées des autres, explore ce qu'ils ont créé et décide ce que tu souhaites garder.
-        Ta version ne change jamais sans toi.
+        Consulte les propositions reçues et les talents recherchés. Aucune proposition ne modifie automatiquement tes versions.
       </Text>
     </View>
     <View style={{gap:13}}>
@@ -108,11 +107,11 @@ export function MusicCollaborateExperience({project,patch}:Props){
         borderTopWidth:1,borderColor:theme.border,alignItems:'center'}}>
         <Ionicons name="people-outline" size={28} color={PINK}/>
         <Text style={{fontSize:14,fontWeight:'600',color:theme.foreground,textAlign:'center'}}>
-          {ids?'Aucune proposition pour le moment':'Un morceau peut grandir à plusieurs.'}
+          {ids?'Aucune proposition pour le moment':'Aucune proposition reçue.'}
         </Text>
         <Text style={{fontSize:12,lineHeight:21,color:theme.muted,textAlign:'center',maxWidth:345}}>
           {ids?'Lorsqu’un musicien te proposera une nouvelle prise ou une variation, elle apparaîtra ici.':
-            'Quand une version sera partagée, d’autres musiciens pourront proposer leurs idées. Tu restes l’auteur de ta chanson.'}
+            'Partage une version pour recevoir des contributions. L’auteur original reste attribué.'}
         </Text>
         {project.publishedId?<Pressable accessibilityRole="button" onPress={()=>
           router.push({pathname:'/music/[id]',params:{id:project.publishedId!}})}

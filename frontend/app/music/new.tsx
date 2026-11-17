@@ -125,7 +125,7 @@ export default function NewMusic(){
       <View style={{gap:7}}>
         <Text style={{color:theme.foreground,fontSize:12,fontWeight:'700'}}>Description</Text>
         <TextInput value={description} onChangeText={setDescription} multiline maxLength={2000}
-          textAlignVertical="top" placeholder="L’idée, le sens, l’inspiration de ce chant…"
+          textAlignVertical="top" placeholder="Notes sur ce morceau (facultatif)"
           placeholderTextColor={theme.muted} style={{...field,minHeight:72}}/>
       </View>
       <View style={{gap:7}}>

@@ -64,7 +64,7 @@ export default function MusicHub() {
         <Text style={{fontSize:compact?34:40,fontWeight:'700',color:theme.foreground,
           letterSpacing:-1.2}}>Musique</Text>
         <Text style={{fontSize:14,lineHeight:23,color:theme.muted,maxWidth:520}}>
-          Les idées deviennent des chansons, une voix à la fois.
+          Mes morceaux, mes collaborations et mes favoris.
         </Text>
       </View>
       <Pressable onPress={() => router.push('/music/new')} accessibilityRole="button"
@@ -81,15 +81,15 @@ export default function MusicHub() {
         {tab('saved','Enregistrés',saved.length)}
       </ScrollView>
       {shelf === 'songs' ? <View style={{gap:17}}>
-        {sectionHeading('Mes chansons','Un espace personnel pour chaque idée, même inachevée.')}
+        {sectionHeading('Mes chansons','Morceaux en cours et brouillons enregistrés sur cet appareil.')}
         {!ready ? <ActivityIndicator color={PINK}/> : null}
         {error ? <Text style={{fontSize:12,color:'#B84D63'}}>{error}</Text> : null}
         {ready && !items.length ? <View style={{paddingVertical:40,gap:15,
           alignItems:'center',borderTopWidth:1,borderColor:theme.border}}>
           <Ionicons name="musical-notes-outline" color={PINK} size={31}/>
-          <Text style={{color:theme.foreground,fontWeight:'600',fontSize:16}}>Tout commence par une idée.</Text>
+          <Text style={{color:theme.foreground,fontWeight:'600',fontSize:16}}>Aucune chanson pour le moment.</Text>
           <Text style={{color:theme.muted,lineHeight:21,textAlign:'center',fontSize:13,maxWidth:290}}>
-            Une phrase, une photo ou quelques secondes de mélodie suffisent.
+            Crée un morceau, puis ajoute des paroles, des fichiers ou des enregistrements.
           </Text>
           <Pressable onPress={() => router.push('/music/new')}
             accessibilityRole="button" style={{padding:12}}>

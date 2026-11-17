@@ -84,8 +84,8 @@ export function MusicArrangementTimeline({version,files,duration,position,onSeek
     accessibilityLabel={mode==='move'?'Déplacer cette piste':
       mode==='start'?'Raccourcir le début':'Raccourcir la fin'}
     style={{width:25,height:52,justifyContent:'center',alignItems:'center',
-      borderColor:theme.dark?'#B55E79':'#D87B9A',
-      borderWidth:1,borderRadius:7,backgroundColor:theme.dark?'#4B2735':'#F9E8EE'}}>
+      borderColor:theme.dark?'#B55E79':'#AEB7BE',
+      borderWidth:1,borderRadius:7,backgroundColor:theme.dark?'#4B2735':'#E9ECEF'}}>
     <Ionicons name={mode==='move'?'move-outline':'reorder-two-outline'}
       size={16} color={PINK}/>
   </View>;
@@ -149,7 +149,7 @@ export function MusicArrangementTimeline({version,files,duration,position,onSeek
             {w>0?<View style={{position:'absolute',left,top:7,height:52,
               width:Math.max(w,3),borderRadius:9,borderWidth:1,
               borderColor:track.muted?theme.border:PINK,
-              backgroundColor:theme.dark?'#382C36':'#F8E7ED',
+              backgroundColor:theme.dark?'#382C36':'#EAEEF0',
               overflow:'hidden',opacity:track.muted?.55:1}}>
               <View style={{position:'absolute',left:0,right:0,top:1,bottom:1,
                 justifyContent:'center'}}>

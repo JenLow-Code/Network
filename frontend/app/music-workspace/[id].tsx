@@ -75,7 +75,7 @@ export default function MusicWorkspace() {
           <Text style={{fontSize:12,lineHeight:18,color:theme.muted}} numberOfLines={2}>
             {project.description || (music.versions.length
               ? music.versions.length + (music.versions.length===1 ? ' version' : ' versions')+' de travail'
-              : 'Une création en devenir')}
+              : 'Aucune version')}
           </Text>
         </View>
       </View>
