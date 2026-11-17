@@ -5,6 +5,7 @@ import {useAppTheme} from '@/theme/AppTheme';
 import {MusicLocalArt} from './MusicLocalArtNext';
 import {MusicAudioTake} from './MusicAudioTake';
 import {MusicLyricSelection} from './MusicLyricSelection';
+import {MusicNotePreview} from './MusicWritingStudio';
 import {getDraftAttachment} from '@/domain/musicLocalStorage';
 import {newMusicId} from '@/domain/musicWorkspace';
 import {isMusicTrackCandidate} from '@/domain/musicNext';
@@ -31,10 +32,12 @@ type Props={
   onSection:(file:MusicProjectFile,section:MusicSection)=>void;
   onNewSection:(file:MusicProjectFile,name:string,stanzaId?:string)=>void;
   onStartVersion:(file:MusicProjectFile)=>void;onUseFile:(file:MusicProjectFile)=>void;
+  onTranslate:(file:MusicProjectFile)=>void;
+  onOpenFile:(id:string)=>void;
   hasVersion:boolean;
 };
 export function MusicMaterialViewer({visible,file,project,onClose,onUpdate,onChangeType,
-  onSection,onNewSection,onStartVersion,onUseFile,hasVersion}:Props){
+  onSection,onNewSection,onStartVersion,onUseFile,onTranslate,onOpenFile,hasVersion}:Props){
   const theme=useAppTheme();
   const {width,height}=useWindowDimensions();
   const compact=width<650;
@@ -50,6 +53,9 @@ export function MusicMaterialViewer({visible,file,project,onClose,onUpdate,onCha
     setStanzaId('');setSectionName('');setError('');setSelecting(false);
   },[file?.id,visible]);
   if(!file)return null;
+  const original=file.translationOfFileId
+    ?project.files.find(candidate=>candidate.id===file.translationOfFileId):undefined;
+  const translations=project.files.filter(candidate=>candidate.translationOfFileId===file.id);
   const selectedNames=(file.sectionIds||[]).map(id=>project.sections.find(x=>x.id===id)?.title)
     .filter((s):s is string=>!!s);
   const updateStanza=(id:string,part:MusicSection)=>{
@@ -102,7 +108,7 @@ export function MusicMaterialViewer({visible,file,project,onClose,onUpdate,onCha
       </View>
       <Ionicons name="chevron-forward" size={16} color={theme.muted}/>
     </Pressable>;
-  const cardWidth=compact?'100%':Math.min(width-100,650);
+  const cardWidth=compact?'100%':Math.min(width-100,original?960:700);
   const field={borderWidth:1,borderColor:theme.border,
     borderRadius:12,paddingHorizontal:12,paddingVertical:10,
     color:theme.foreground,backgroundColor:theme.surface,fontSize:14} as const;
@@ -120,7 +126,9 @@ export function MusicMaterialViewer({visible,file,project,onClose,onUpdate,onCha
         <View style={{flexDirection:'row',alignItems:'center',
           paddingHorizontal:compact?19:26,paddingBottom:14,gap:10}}>
           <View style={{flex:1}}>
-            <Text style={{fontSize:11,color:theme.muted}}>{palette[file.kind]}</Text>
+            <Text style={{fontSize:11,color:theme.muted}}>
+              {original?'Traduction · '+(file.language||''):palette[file.kind]}
+            </Text>
           </View>
           {editing?<Pressable accessibilityLabel="Enregistrer les modifications"
             onPress={save} style={{paddingHorizontal:11,paddingVertical:9,
@@ -220,6 +228,27 @@ export function MusicMaterialViewer({visible,file,project,onClose,onUpdate,onCha
                 sections={project.sections} references={file.lyricReferences||[]}
                 onChange={references=>onUpdate(file.id,{lyricReferences:references})}
                 onClose={()=>setSelecting(false)}/>:
+            original?<View style={{flexDirection:compact?'column':'row',gap:20}}>
+              <View style={{flex:1,minWidth:0,gap:12}}>
+                <Text style={{fontSize:11,color:pink,fontWeight:'700'}}>TRADUCTION · {file.language}</Text>
+                <Text selectable style={{fontSize:17,lineHeight:29,
+                  fontFamily:'Georgia',color:theme.foreground}}>{textOf(file)}</Text>
+              </View>
+              <View style={{flex:1,minWidth:0,gap:11,
+                backgroundColor:theme.dark?'#292326':'#F7F4F1',padding:compact?14:20,
+                borderRadius:13}}>
+                <Text style={{fontSize:11,color:theme.muted,fontWeight:'700'}}>
+                  ORIGINAL · {original.language||project.originalLanguage}
+                </Text>
+                <Text style={{fontSize:14,color:theme.foreground,fontWeight:'700'}}>
+                  {original.title}
+                </Text>
+                <Text selectable style={{fontFamily:'Georgia',fontSize:16,
+                  lineHeight:27,color:theme.foreground}}>{textOf(original)}</Text>
+              </View>
+            </View>:
+            textOf(file).trim()&&file.kind==='note'?
+              <MusicNotePreview text={textOf(file)} color={theme.foreground}/>:
             textOf(file).trim()?<Text selectable
               style={{fontSize:file.kind==='lyrics'?17:15,
                 lineHeight:file.kind==='lyrics'?29:25,
@@ -257,6 +286,20 @@ export function MusicMaterialViewer({visible,file,project,onClose,onUpdate,onCha
               })}
             </View>:null}
           </>:null}
+          {!editing&&file.kind==='lyrics'&&!file.translationOfFileId?<>
+            {translations.length?<View style={{gap:9}}>
+              <Text style={{fontSize:12,color:theme.muted,fontWeight:'700'}}>Traductions</Text>
+              {translations.map(trans=><Pressable key={trans.id}
+                onPress={()=>onOpenFile(trans.id)} accessibilityRole="button"
+                style={{minHeight:43,flexDirection:'row',gap:10,
+                  alignItems:'center',borderBottomWidth:1,borderColor:theme.border}}>
+                <Ionicons name="language-outline" size={17} color={pink}/>
+                <Text style={{color:theme.foreground,fontSize:13,flex:1}}>{trans.title}</Text>
+                <Text style={{color:theme.muted,fontSize:11}}>{trans.language}</Text>
+                <Ionicons name="chevron-forward" color={theme.muted} size={16}/>
+              </Pressable>)}
+            </View>:null}
+          </>:null}
           {!editing&&!textOf(file).trim()&&!isArtwork(file)&&!isAudio(file)?
             <Text style={{color:theme.muted,fontSize:13}}>
               Le fichier est conservé. Ouvre son original ou écris une note associée.
@@ -272,6 +315,13 @@ export function MusicMaterialViewer({visible,file,project,onClose,onUpdate,onCha
               <Ionicons name="pencil-outline" size={16} color={pink}/>
               <Text style={{color:pink,fontSize:12,fontWeight:'600'}}>Modifier</Text>
             </Pressable>:null}
+            {file.kind==='lyrics'&&!file.translationOfFileId?
+              <Pressable onPress={()=>{onClose();onTranslate(file);}}
+                accessibilityRole="button"
+                style={{flexDirection:'row',alignItems:'center',gap:7,paddingVertical:9}}>
+                <Ionicons name="language-outline" size={16} color={pink}/>
+                <Text style={{color:pink,fontSize:12,fontWeight:'600'}}>Traduire</Text>
+              </Pressable>:null}
             {file.localFileId?<Pressable onPress={()=>{void download();}}
               style={{flexDirection:'row',alignItems:'center',gap:7,paddingVertical:9}}>
               <Ionicons name="download-outline" size={16} color={theme.muted}/>
