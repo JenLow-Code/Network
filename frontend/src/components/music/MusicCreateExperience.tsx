@@ -28,6 +28,8 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
   const [versionMenu,setVersionMenu]=useState(false);
   const [pickMode,setPickMode]=useState<PickMode>('none');
   const [recording,setRecording]=useState(false);
+  const [unsavedRecording,setUnsavedRecording]=useState(false);
+  const [confirmClose,setConfirmClose]=useState(false);
   const [confirmDelete,setConfirmDelete]=useState(false);
   const [editTrack,setEditTrack]=useState('');
   const [trackTitle,setTrackTitle]=useState('');
@@ -112,7 +114,7 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
         ...makeWorkingTrack(item),offsetSeconds:startAt??recordOrigin
       }]
     })});
-    setRecording(false);setError('');
+    setRecording(false);setUnsavedRecording(false);setConfirmClose(false);setError('');
   };
   const openSettings=()=>{
     if(!version)return;
@@ -273,11 +275,24 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
       </Text>
       <View style={{flexDirection:'row',flexWrap:'wrap',gap:9}}>
         {button(recording?'Fermer l’enregistreur':'Enregistrer une prise',()=>{
+          if(recording&&unsavedRecording){setConfirmClose(true);return;}
           if(!recording){setRecordOrigin(timelineCursor);setPauseRequest(n=>n+1);}
           setRecording(!recording);
         },true,'radio-button-on-outline')}
         {button('Ajouter une piste',()=>setPickMode(pickMode==='add'?'none':'add'),false,'add-outline')}
       </View>
+      {confirmClose?<View style={{borderWidth:1,borderColor:theme.border,
+        borderRadius:12,padding:12,gap:9}}>
+        <Text style={{color:theme.foreground,fontSize:12,lineHeight:19}}>
+          Abandonner la prise non enregistrée ?
+        </Text>
+        <View style={{flexDirection:'row',flexWrap:'wrap',gap:8}}>
+          {button('Continuer',()=>setConfirmClose(false))}
+          {button('Abandonner',()=>{
+            setRecording(false);setUnsavedRecording(false);setConfirmClose(false);
+          })}
+        </View>
+      </View>:null}
       {recording?<View style={{backgroundColor:theme.surface,borderRadius:15,
         borderWidth:1,borderColor:theme.border,padding:compact?13:19,gap:13}}>
         <Text style={{fontSize:15,fontWeight:'700',color:theme.foreground}}>
@@ -287,6 +302,7 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
           La prise sera ajoutée automatiquement à cette version. Utilise un casque pour écouter les autres pistes.
         </Text>
         <MusicAudioCapture timelineStartSeconds={recordOrigin}
+          onDraftChange={setUnsavedRecording}
           backingPositionSeconds={timelineCursor}
           onStarted={at=>setPlaybackRequest(previous=>({
             at:recordOrigin+at,serial:(previous?.serial||0)+1
