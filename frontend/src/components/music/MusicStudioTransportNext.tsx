@@ -3,157 +3,208 @@ import {Platform,Pressable,Text,View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {useAppTheme} from '@/theme/AppTheme';
 import {getDraftAttachment} from '@/domain/musicLocalStorage';
-import {formatMusicDuration} from '@/domain/musicProjectSelectors';
+import {musicStamp} from '@/domain/musicEditing';
 import {isPlayableMusicFile} from '@/domain/musicNext';
-import type {WorkingMusicVersion} from '@/domain/musicNext';
+import {MusicArrangementTimeline} from './MusicArrangementTimeline';
+import type {WorkingMusicTrack,WorkingMusicVersion} from '@/domain/musicNext';
 import type {MusicProjectFile} from '@/domain/musicWorkspace';
-const pink='#CB245C';
 
+const PINK='#CB245C';
 type Voice={source:AudioBufferSourceNode;gain:GainNode};
-type Engine={ctx:AudioContext;voices:Map<string,Voice>;startedAt:number;
-  position:number;duration:number;timer:ReturnType<typeof setInterval>|null};
-export function MusicStudioTransport({version,files}:{version:WorkingMusicVersion;
-  files:MusicProjectFile[]}){
+type Engine={ctx:AudioContext;voices:Map<string,Voice>;startTime:number;
+  from:number;duration:number;interval:ReturnType<typeof setInterval>|null};
+type Props={
+  version:WorkingMusicVersion;files:MusicProjectFile[];
+  onPositionChange?:(position:number)=>void;
+  onTrackChange?:(id:string,change:Partial<WorkingMusicTrack>)=>void;
+  playbackRequest?:{at:number;serial:number}|null;
+  pauseRequest?:number;
+};
+function versionLength(version:WorkingMusicVersion,files:MusicProjectFile[]){
+  return Math.max(0,...version.tracks.map(t=>{
+    const file=files.find(x=>x.id===t.sourceFileId);
+    const length=file?.durationSeconds||0;
+    const trim=Math.max(0,Math.min(t.trimEndSeconds??length,length)-(t.trimStartSeconds||0));
+    return Math.max(0,t.offsetSeconds)+trim;
+  }));
+}
+export function MusicStudioTransport({version,files,onPositionChange,onTrackChange,
+  playbackRequest,pauseRequest}:Props){
   const theme=useAppTheme();
   const engine=useRef<Engine|null>(null);
-  const width=useRef(1);
-  const positionRef=useRef(0);
   const playingRef=useRef(false);
+  const posRef=useRef(0);
+  const seekingWidth=useRef(1);
   const [position,setPosition]=useState(0);
-  const [duration,setDuration]=useState(Math.max(0,...version.tracks.map(t=>
-    (files.find(f=>f.id===t.sourceFileId)?.durationSeconds||0)+t.offsetSeconds)));
+  const [duration,setDuration]=useState(versionLength(version,files));
   const [playing,setPlaying]=useState(false);
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState('');
-  const active=version.tracks.filter(t=>isPlayableMusicFile(
-    files.find(f=>f.id===t.sourceFileId)||({} as MusicProjectFile)));
-  const clear=(reset=false)=>{
-    const e=engine.current;
-    if(e){
-      if(e.timer)clearInterval(e.timer);
-      e.voices.forEach(v=>{try{v.source.stop();}catch{}v.source.disconnect();v.gain.disconnect();});
-      void e.ctx.close().catch(()=>{});
-      engine.current=null;
+  const active=version.tracks.filter(t=>
+    isPlayableMusicFile(files.find(f=>f.id===t.sourceFileId)||({} as MusicProjectFile)));
+  const close=(reset=false)=>{
+    const running=engine.current;
+    if(running){
+      if(running.interval)clearInterval(running.interval);
+      running.voices.forEach(v=>{
+        try{v.source.stop();}catch{}
+        v.source.disconnect();v.gain.disconnect();
+      });
+      void running.ctx.close().catch(()=>{});engine.current=null;
     }
     playingRef.current=false;setPlaying(false);
-    if(reset){positionRef.current=0;setPosition(0);}
+    if(reset){posRef.current=0;setPosition(0);}
   };
-  useEffect(()=>()=>{const e=engine.current;if(!e)return;
-    if(e.timer)clearInterval(e.timer);
-    e.voices.forEach(v=>{try{v.source.stop();}catch{}});
-    void e.ctx.close().catch(()=>{});engine.current=null;
-  },[version.id]);
   useEffect(()=>{
-    const e=engine.current;if(!e)return;
+    return ()=>{
+      const running=engine.current;
+      if(!running)return;
+      if(running.interval)clearInterval(running.interval);
+      running.voices.forEach(v=>{try{v.source.stop();}catch{}});
+      void running.ctx.close().catch(()=>{});
+      engine.current=null;playingRef.current=false;
+    };
+  },[version.id]);
+  const metadataDuration=versionLength(version,files);
+  useEffect(()=>setDuration(metadataDuration),[metadataDuration,version.id]);
+  useEffect(()=>{onPositionChange?.(position);},[position,onPositionChange]);
+  useEffect(()=>{
+    const running=engine.current;
+    if(!running)return;
     const anySolo=version.tracks.some(t=>t.solo);
     version.tracks.forEach(t=>{
-      const voice=e.voices.get(t.id);
-      if(voice)voice.gain.gain.setTargetAtTime(t.muted||(anySolo&&!t.solo)?0:1,
-        e.ctx.currentTime,.012);
+      const voice=running.voices.get(t.id);
+      if(voice)voice.gain.gain.setTargetAtTime(
+        t.muted||(anySolo&&!t.solo)?0:1,running.ctx.currentTime,.012);
     });
   },[version.tracks]);
   const pause=()=>{
-    const e=engine.current;
-    if(e){positionRef.current=Math.min(e.duration,e.position+(e.ctx.currentTime-e.startedAt));}
-    setPosition(positionRef.current);clear();
+    const running=engine.current;
+    if(running)posRef.current=Math.max(0,Math.min(running.duration,
+      running.from+Math.max(0,running.ctx.currentTime-running.startTime)));
+    setPosition(posRef.current);close();
   };
-  const begin=async(at:number)=>{
-    if(busy||playingRef.current)return;
+  const play=async(at:number)=>{
+    if(playingRef.current||busy)return;
     if(Platform.OS!=='web'||typeof AudioContext==='undefined'){
-      setError('Lecture multipiste disponible dans le navigateur compatible Web Audio.');return;
+      setError('Lecture multipiste actuellement disponible sur navigateur Web Audio.');return;
     }
-    if(!active.length){setError('Ajoute une piste audio pour écouter cette version.');return;}
+    if(!active.length){setError('Ajoute au moins une piste audio pour écouter la version.');return;}
     setBusy(true);setError('');
     let ctx:AudioContext|null=null;
     try{
-      ctx=new AudioContext();
-      await ctx.resume();
+      ctx=new AudioContext();await ctx.resume();
       const loaded=await Promise.all(active.map(async t=>{
         const f=files.find(file=>file.id===t.sourceFileId);
         if(!f?.localFileId)throw Error('Enregistrement introuvable : '+t.title);
         const blob=await getDraftAttachment(f.localFileId);
-        if(!blob)throw Error('Audio absent de ce navigateur : '+t.title);
-        const data=await blob.arrayBuffer();
-        const buffer=await ctx!.decodeAudioData(data);
-        return {t,buffer};
+        if(!blob)throw Error('Audio absent de cet appareil : '+t.title);
+        const buffer=await ctx!.decodeAudioData(await blob.arrayBuffer());
+        return {track:t,buffer};
       }));
-      const maximum=Math.max(0,...loaded.map(({t,buffer})=>
-        Math.max(0,t.offsetSeconds)+(t.trimEndSeconds??buffer.duration)-
-        (t.trimStartSeconds??0)));
-      if(at>=maximum){at=0;setPosition(0);positionRef.current=0;}
-      const startTime=ctx.currentTime+0.09;
-      const solo=version.tracks.some(t=>t.solo);
+      const maximum=Math.max(0,...loaded.map(({track,buffer})=>{
+        const start=Math.max(0,track.trimStartSeconds||0);
+        const end=Math.min(buffer.duration,track.trimEndSeconds??buffer.duration);
+        return Math.max(0,track.offsetSeconds)+Math.max(0,end-start);
+      }));
+      if(maximum<=0)throw Error('Aucun passage écoutable dans les pistes.');
+      const from=at>=maximum?0:Math.max(0,at);
+      const startTime=ctx.currentTime+.085;
+      const anySolo=version.tracks.some(t=>t.solo);
       const voices=new Map<string,Voice>();
-      loaded.forEach(({t,buffer})=>{
-        const clipStart=Math.max(0,t.trimStartSeconds||0);
-        const clipEnd=Math.min(buffer.duration,t.trimEndSeconds??buffer.duration);
-        const source=ctx!.createBufferSource();source.buffer=buffer;
-        const gain=ctx!.createGain();gain.gain.value=t.muted||(solo&&!t.solo)?0:1;
-        source.connect(gain);gain.connect(ctx!.destination);
-        const timelineStart=Math.max(0,t.offsetSeconds);
-        const playAt=Math.max(timelineStart,at);
-        const offsetInAudio=clipStart+Math.max(0,playAt-timelineStart);
-        const remain=clipEnd-offsetInAudio;
-        if(remain>0){source.start(startTime+(playAt-at),offsetInAudio,remain);
-          voices.set(t.id,{source,gain});
-        }
-      });
-      const session:Engine={ctx,voices,startedAt:startTime,position:at,
-        duration:maximum,timer:null};
-      engine.current=session;playingRef.current=true;
-      setDuration(maximum);setPlaying(true);setPosition(at);positionRef.current=at;
-      session.timer=setInterval(()=>{
-        if(engine.current!==session)return;
-        const elapsed=Math.max(0,ctx!.currentTime-session.startedAt);
-        const current=Math.min(maximum,session.position+elapsed);
-        positionRef.current=current;setPosition(current);
-        if(current>=maximum){clear(true);}
-      },140);
+      for(const {track,buffer} of loaded){
+        const clipStart=Math.max(0,track.trimStartSeconds||0);
+        const clipEnd=Math.min(buffer.duration,track.trimEndSeconds??buffer.duration);
+        const starts=Math.max(0,track.offsetSeconds);
+        const playAt=Math.max(from,starts);
+        const offset=clipStart+Math.max(0,playAt-starts);
+        const remaining=clipEnd-offset;
+        if(remaining<=0)continue;
+        const source=ctx.createBufferSource();
+        source.buffer=buffer;
+        const gain=ctx.createGain();
+        gain.gain.value=track.muted||(anySolo&&!track.solo)?0:1;
+        source.connect(gain);gain.connect(ctx.destination);
+        source.start(startTime+(playAt-from),offset,remaining);
+        voices.set(track.id,{source,gain});
+      }
+      const running:Engine={ctx,voices,startTime,from,duration:maximum,interval:null};
+      engine.current=running;playingRef.current=true;
+      setPosition(from);posRef.current=from;setDuration(maximum);setPlaying(true);
+      running.interval=setInterval(()=>{
+        if(engine.current!==running)return;
+        const now=Math.min(maximum,
+          from+Math.max(0,ctx!.currentTime-running.startTime));
+        posRef.current=now;setPosition(now);
+        if(now>=maximum)close(true);
+      },60);
     }catch(e){
       if(ctx)void ctx.close().catch(()=>{});
-      setError(e instanceof Error?e.message:'Lecture multipiste impossible.');
+      setError(e instanceof Error?e.message:'Impossible de lire cette version.');
     }finally{setBusy(false);}
   };
-  const toggle=()=>{if(playingRef.current)pause();else void begin(positionRef.current);};
-  const seek=(fraction:number)=>{
-    const next=duration*Math.min(1,Math.max(0,fraction));
-    const wasPlaying=playingRef.current;
-    clear();positionRef.current=next;setPosition(next);
-    if(wasPlaying)void begin(next);
+  const toggle=()=>{if(playingRef.current)pause();else void play(posRef.current);};
+  const seek=(seconds:number)=>{
+    const next=Math.max(0,Math.min(duration,seconds));
+    const resume=playingRef.current;
+    close();posRef.current=next;setPosition(next);
+    if(resume)void play(next);
   };
-  return <View style={{padding:13,backgroundColor:theme.surface,borderWidth:1,
-    borderColor:theme.border,borderRadius:16,gap:12}}>
-    <View style={{flexDirection:'row',alignItems:'center',gap:12}}>
-      <Pressable onPress={toggle} disabled={busy}
-        accessibilityRole="button" accessibilityLabel={playing?'Pause':'Lire cette version'}
-        style={{width:47,height:47,borderRadius:24,backgroundColor:pink,
-          alignItems:'center',justifyContent:'center',opacity:busy?.5:1}}>
-        <Ionicons name={playing?'pause':'play'} color="#fff" size={21}/>
-      </Pressable>
-      <View style={{flex:1,gap:8}}>
-        <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}>
-          <Text style={{color:theme.foreground,fontSize:12,fontWeight:'600'}}>
-            {formatMusicDuration(position)} / {formatMusicDuration(duration)}
-          </Text>
-          <Pressable onPress={()=>clear(true)} accessibilityLabel="Revenir au début">
-            <Ionicons name="play-skip-back-outline" color={theme.muted} size={19}/>
+  useEffect(()=>{
+    if(!playbackRequest)return;
+    close();
+    const next=Math.max(0,playbackRequest.at);
+    posRef.current=next;setPosition(next);
+    void play(next);
+  // A new serial is a new explicit backing-track playback request.
+  },[playbackRequest?.serial]);
+  useEffect(()=>{if(pauseRequest)pause();},[pauseRequest]);
+  const timeSignature=version.tracks.map(t=>
+    [t.id,t.sourceFileId,t.offsetSeconds,t.trimStartSeconds,t.trimEndSeconds].join(':')).join('|');
+  const oldSignature=useRef(timeSignature);
+  useEffect(()=>{
+    if(oldSignature.current!==timeSignature&&playingRef.current)pause();
+    oldSignature.current=timeSignature;
+  },[timeSignature]);
+  return <View style={{gap:17}}>
+    <View style={{padding:14,borderWidth:1,borderColor:theme.border,
+      borderRadius:15,backgroundColor:theme.surface,gap:12}}>
+      <View style={{flexDirection:'row',gap:13,alignItems:'center'}}>
+        <Pressable onPress={toggle} disabled={busy} accessibilityRole="button"
+          accessibilityLabel={playing?'Mettre la version en pause':'Lire la version'}
+          style={{width:48,height:48,borderRadius:24,backgroundColor:PINK,
+            opacity:busy?.5:1,alignItems:'center',justifyContent:'center'}}>
+          <Ionicons name={playing?'pause':'play'} color="#fff" size={21}/>
+        </Pressable>
+        <View style={{flex:1,gap:7}}>
+          <View style={{flexDirection:'row',justifyContent:'space-between',gap:10}}>
+            <Text style={{fontSize:13,color:theme.foreground,fontWeight:'700',
+              fontVariant:['tabular-nums']}}>
+              {musicStamp(position)} / {musicStamp(duration)}
+            </Text>
+            <Pressable onPress={()=>seek(0)} accessibilityLabel="Revenir au début">
+              <Ionicons name="play-skip-back-outline" size={19} color={theme.muted}/>
+            </Pressable>
+          </View>
+          <Pressable accessibilityRole="adjustable" accessibilityLabel="Position de lecture"
+            accessibilityValue={{min:0,max:100,now:duration?Math.round(position/duration*100):0}}
+            onLayout={e=>{seekingWidth.current=e.nativeEvent.layout.width||1;}}
+            onPress={e=>seek(duration*e.nativeEvent.locationX/seekingWidth.current)}
+            style={{height:20,justifyContent:'center'}}>
+            <View style={{height:4,borderRadius:3,backgroundColor:theme.border}}>
+              <View style={{height:4,borderRadius:3,
+                width:(duration?position/duration*100:0)+'%',backgroundColor:PINK}}/>
+            </View>
           </Pressable>
         </View>
-        <Pressable accessibilityRole="adjustable" accessibilityLabel="Position de lecture"
-          accessibilityValue={{min:0,max:100,now:duration?Math.round(position/duration*100):0}}
-          onLayout={e=>{width.current=e.nativeEvent.layout.width||1;}}
-          onPress={e=>seek(e.nativeEvent.locationX/width.current)}
-          style={{height:23,justifyContent:'center'}}>
-          <View style={{height:4,borderRadius:2,backgroundColor:theme.border}}>
-            <View style={{width:(duration?position/duration*100:0)+'%',
-              height:4,borderRadius:2,backgroundColor:pink}}/>
-          </View>
-        </Pressable>
       </View>
+      {error?<Text style={{fontSize:11,color:'#B44B61',lineHeight:18}}>{error}</Text>:null}
+      {!active.length?<Text style={{fontSize:11,color:theme.muted}}>
+        Aucune piste audio écoutable sur cet appareil.
+      </Text>:null}
     </View>
-    {error?<Text style={{color:'#B34D67',fontSize:11}}>{error}</Text>:null}
-    {!active.length?<Text style={{fontSize:11,color:theme.muted}}>
-      Ajoute une prise audio pour commencer l’écoute de cette version.
-    </Text>:null}
+    <MusicArrangementTimeline version={version} files={files}
+      duration={duration} position={position} onSeek={seek}
+      onChangeTrack={onTrackChange}/>
   </View>;
 }
