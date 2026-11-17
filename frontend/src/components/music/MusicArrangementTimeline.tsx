@@ -19,6 +19,7 @@ type Props={
   onSelectTrack?:(id:string)=>void;
   onToggleMute?:(id:string)=>void;
   onToggleSolo?:(id:string)=>void;
+  onMarkTrackRange?:(trackId:string,startSeconds:number,endSeconds:number)=>void;
 };
 const clamp=(x:number,a:number,b:number)=>Math.max(a,Math.min(b,x));
 const precise=(x:number)=>Math.round(x*100)/100;
@@ -35,7 +36,7 @@ const clipInfo=(track:WorkingMusicTrack,file?:MusicProjectFile)=>{
  * Mouse and touch on web use pointer capture; native uses responder callbacks.
  */
 export function MusicArrangementTimeline({version,files,duration,position,onSeek,
-  onChangeTrack,onSelectTrack,onToggleMute,onToggleSolo}:Props){
+  onChangeTrack,onSelectTrack,onToggleMute,onToggleSolo,onMarkTrackRange}:Props){
   const theme=useAppTheme();
   const {width}=useWindowDimensions();
   const compact=width<650;
@@ -43,6 +44,9 @@ export function MusicArrangementTimeline({version,files,duration,position,onSeek
   const [zoom,setZoom]=useState(1);
   const [preview,setPreview]=useState<{id:string;value:Timing}|null>(null);
   const drag=useRef<Snapshot|null>(null);
+  const rangeHold=useRef<{pointerId:number;id:string;start:number;end:number;
+    pressedX:number;active:boolean;timer:ReturnType<typeof setTimeout>|null}|null>(null);
+  const [rangePreview,setRangePreview]=useState<{id:string;start:number;end:number}|null>(null);
   const labelWidth=compact?116:177;
   const viewport=Math.max(150,(panelWidth||Math.min(860,width-36))-labelWidth);
   const maxEnd=Math.max(duration,10,...version.tracks.map(t=>{
@@ -102,19 +106,63 @@ export function MusicArrangementTimeline({version,files,duration,position,onSeek
       onPointerDown:(e:React.PointerEvent<HTMLDivElement>)=>{
         if(!editable)return;
         e.preventDefault();e.stopPropagation();
-        try{e.currentTarget.setPointerCapture(e.pointerId);}catch{}
-        begin(e.clientX,mode,t,file,e.pointerId);
+        const element=e.currentTarget;
+        const pointerId=e.pointerId;
+        try{element.setPointerCapture(pointerId);}catch{}
+        begin(e.clientX,mode,t,file,pointerId);
+        if(mode==='move'&&onMarkTrackRange){
+          const info=clipInfo(t,file);
+          const rect=element.getBoundingClientRect();
+          const at=clamp(info.start+(e.clientX-rect.left)/pixelsPerSecond,
+            info.start,info.end);
+          const hold={pointerId,id:t.id,start:at,end:at,
+            pressedX:e.clientX,active:false,
+            timer:null as ReturnType<typeof setTimeout>|null};
+          rangeHold.current=hold;
+          hold.timer=setTimeout(()=>{
+            if(rangeHold.current!==hold)return;
+            hold.active=true;drag.current=null;
+            setPreview(null);setRangePreview({id:t.id,start:at,end:at});
+          },350);
+        }
       },
       onPointerMove:(e:React.PointerEvent<HTMLDivElement>)=>{
+        const hold=rangeHold.current;
+        if(hold?.pointerId===e.pointerId){
+          if(hold.active){
+            e.preventDefault();e.stopPropagation();
+            const info=clipInfo(t,file);
+            hold.end=clamp(hold.start+(e.clientX-hold.pressedX)/pixelsPerSecond,
+              info.start,info.end);
+            setRangePreview({id:t.id,start:Math.min(hold.start,hold.end),
+              end:Math.max(hold.start,hold.end)});
+            return;
+          }
+          if(Math.abs(e.clientX-hold.pressedX)>5){
+            if(hold.timer)clearTimeout(hold.timer);
+            rangeHold.current=null;
+          }
+        }
         if(!drag.current)return;
         e.preventDefault();e.stopPropagation();move(e.clientX,e.pointerId);
       },
       onPointerUp:(e:React.PointerEvent<HTMLDivElement>)=>{
         e.preventDefault();e.stopPropagation();
+        const hold=rangeHold.current;
+        if(hold?.timer)clearTimeout(hold.timer);
+        rangeHold.current=null;
+        if(hold?.active){
+          const a=Math.min(hold.start,hold.end),b=Math.max(hold.start,hold.end);
+          if(b-a>=.03)onMarkTrackRange?.(t.id,Math.round(a*1000)/1000,
+            Math.round(b*1000)/1000);
+          setRangePreview(null);
+        }else stop(e.pointerId,true);
         try{e.currentTarget.releasePointerCapture(e.pointerId);}catch{}
-        stop(e.pointerId,true);
       },
-      onPointerCancel:(e:React.PointerEvent<HTMLDivElement>)=>stop(e.pointerId,false),
+      onPointerCancel:(e:React.PointerEvent<HTMLDivElement>)=>{
+        if(rangeHold.current?.timer)clearTimeout(rangeHold.current.timer);
+        rangeHold.current=null;setRangePreview(null);stop(e.pointerId,false);
+      },
       onKeyDown:(e:React.KeyboardEvent<HTMLDivElement>)=>{
         if(!editable||!['ArrowLeft','ArrowRight'].includes(e.key))return;
         e.preventDefault();e.stopPropagation();
@@ -257,6 +305,21 @@ export function MusicArrangementTimeline({version,files,duration,position,onSeek
                 borderRadius:8,borderWidth:1,borderColor:t.muted?theme.border:PINK,
                 backgroundColor:theme.dark?'#44303B':'#F5E8EC',
                 opacity:t.muted?.48:1,overflow:'hidden'}}>
+                {rangePreview?.id===t.id?<View pointerEvents="none"
+                  style={{position:'absolute',
+                    left:Math.max(0,(Math.min(rangePreview.start,rangePreview.end)-from)*pixelsPerSecond),
+                    top:0,height:51,
+                    width:Math.max(1,(Math.abs(rangePreview.end-rangePreview.start))*pixelsPerSecond),
+                    backgroundColor:'rgba(203,36,92,.18)',
+                    borderLeftWidth:2,borderRightWidth:2,borderColor:PINK,zIndex:3}}/>:null}
+                {(t.markers||[]).map(m=>{
+                  const a=Math.max(from,m.startSeconds),b=Math.min(end,m.endSeconds??m.startSeconds);
+                  if(a>end||b<from)return null;
+                  return <View key={m.id} pointerEvents="none" style={{
+                    position:'absolute',left:Math.max(0,(a-from)*pixelsPerSecond),
+                    top:1,height:6,width:Math.max(2,(b-a)*pixelsPerSecond),
+                    backgroundColor:PINK,opacity:.85,borderRadius:3}}/>;
+                })}
                 <View pointerEvents="none" style={{position:'absolute',
                   top:3,left:3,right:3,bottom:3,justifyContent:'center'}}>
                   <MusicAudioPeaks file={source} muted={t.muted} height={34}
@@ -287,8 +350,8 @@ export function MusicArrangementTimeline({version,files,duration,position,onSeek
       </ScrollView>
     </View>
     <Text style={{fontSize:11,lineHeight:18,color:theme.muted}}>
-      Chaque piste a sa propre ligne. Déplace son bloc pour la décaler ;
-      glisse les bords pour couper le début ou la fin.
+      Glisse un bloc pour le déplacer ; glisse ses bords pour le couper.
+      Maintiens puis glisse à l’intérieur pour marquer un intervalle.
     </Text>
   </View>;
 }
