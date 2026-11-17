@@ -207,11 +207,26 @@ export function MusicMaterialViewer({visible,file,project,onClose,onUpdate,onCha
             <MusicAudioMarkers markers={file.markers||[]}
               duration={file.durationSeconds} cursor={0}
               onChange={markers=>onUpdate(file.id,{markers})}/>:null}
+          {!editing&&file.kind==='lyrics'&&project.sections.length>0?
+            <Pressable onPress={()=>setSelecting(!selecting)}
+              accessibilityRole="button"
+              style={{alignSelf:'flex-start',flexDirection:'row',
+                alignItems:'center',gap:8,paddingVertical:9}}>
+              <Ionicons name={selecting?'close-outline':'link-outline'} size={17} color={pink}/>
+              <Text style={{color:pink,fontSize:12,fontWeight:'600'}}>
+                {selecting?'Annuler la sélection':'Associer un extrait'}
+              </Text>
+            </Pressable>:null}
           {editing?<TextInput value={draft} onChangeText={setDraft}
             multiline autoFocus textAlignVertical="top"
             placeholder="Écris librement…" placeholderTextColor={theme.muted}
             style={{...field,minHeight:235,fontSize:16,lineHeight:26,
               padding:15}}/>:
+            selecting&&file.kind==='lyrics'&&project.sections.length>0?
+              <MusicLyricSelection lyrics={textOf(file)}
+                sections={project.sections} references={file.lyricReferences||[]}
+                onChange={references=>onUpdate(file.id,{lyricReferences:references})}
+                onClose={()=>setSelecting(false)}/>:
             textOf(file).trim()?<Text selectable
               style={{fontSize:file.kind==='lyrics'?17:15,
                 lineHeight:file.kind==='lyrics'?29:25,
@@ -220,10 +235,6 @@ export function MusicMaterialViewer({visible,file,project,onClose,onUpdate,onCha
               {textOf(file)}
             </Text>:null}
           {!editing&&file.kind==='lyrics'&&project.sections.length>0?<>
-            {selecting?<MusicLyricSelection lyrics={textOf(file)}
-              sections={project.sections} references={file.lyricReferences||[]}
-              onChange={references=>onUpdate(file.id,{lyricReferences:references})}
-              onClose={()=>setSelecting(false)}/>:null}
             {(file.lyricReferences||[]).length>0?<View style={{gap:10}}>
               <Text style={{fontSize:12,fontWeight:'700',color:theme.foreground}}>
                 Extraits associés
@@ -263,14 +274,6 @@ export function MusicMaterialViewer({visible,file,project,onClose,onUpdate,onCha
           {error?<Text style={{color:'#B34D67',fontSize:12}}>{error}</Text>:null}
           {!editing?<View style={{flexDirection:'row',gap:12,flexWrap:'wrap',
             borderTopWidth:1,borderColor:theme.border,paddingTop:15}}>
-            {file.kind==='lyrics'&&project.sections.length>0?
-              <Pressable onPress={()=>setSelecting(!selecting)} accessibilityRole="button"
-                style={{flexDirection:'row',gap:7,alignItems:'center',paddingVertical:9}}>
-                <Ionicons name="link-outline" size={17} color={pink}/>
-                <Text style={{color:pink,fontSize:12,fontWeight:'600'}}>
-                  {selecting?'Masquer la sélection':'Associer un extrait'}
-                </Text>
-              </Pressable>:null}
             <Pressable onPress={()=>{setDraft(textOf(file));setEditing(true);setMenu('none');}}
               style={{flexDirection:'row',alignItems:'center',gap:7,paddingVertical:9}}>
               <Ionicons name="pencil-outline" size={16} color={pink}/>
