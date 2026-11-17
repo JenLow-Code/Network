@@ -1,6 +1,6 @@
 import React,{useEffect,useMemo,useRef,useState} from 'react';
 import {Pressable,ScrollView,Text,View,useWindowDimensions} from 'react-native';
-import Svg,{Rect,Line,Circle} from 'react-native-svg';
+import Svg,{Rect,Line,Circle,Text as SvgText} from 'react-native-svg';
 import {Ionicons} from '@expo/vector-icons';
 import {useAppTheme} from '@/theme/AppTheme';
 import {musicStamp} from '@/domain/musicEditing';
@@ -117,6 +117,14 @@ export function MusicWaveformEditor({file,duration,cursor,onSeek,zoom,onZoom,
     onSeek(clamp(Math.round(x/Math.max(px,1)*duration*100)/100,0,duration));
   };
   const cursorX=clamp(cursor/Math.max(.001,duration)*px,0,px);
+  useEffect(()=>{
+    if(!playing)return;
+    const current=scrollX.current;
+    if(cursorX>current+viewport*.88||cursorX<current+viewport*.08){
+      const next=clamp(cursorX-viewport*.34,0,Math.max(0,px-viewport));
+      scroll.current?.scrollTo({x:next,animated:false});scrollX.current=next;
+    }
+  },[cursorX,playing,px,viewport]);
   const interval=zoom>=10?1:zoom>=4?5:zoom>=2?10:30;
   const ticks=Array.from({length:Math.min(1200,Math.ceil(duration/interval)+1)},
     (_,i)=>i*interval).filter(t=>t<=duration);
@@ -171,8 +179,11 @@ export function MusicWaveformEditor({file,duration,cursor,onSeek,zoom,onZoom,
             {ticks.map(t=>{
               const x=t/Math.max(.001,duration)*px;
               return <React.Fragment key={t}>
-                <Line x1={x} y1={0} x2={x} y2={8}
+                <Line x1={x} y1={0} x2={x} y2={9}
                   stroke={theme.muted} strokeWidth={1}/>
+                <SvgText x={x+3} y={20} fontSize={10} fill={theme.muted}>
+                  {musicStamp(t).slice(0,5)}
+                </SvgText>
               </React.Fragment>;
             })}
             <Line x1={cursorX} y1={0} x2={cursorX} y2={112}
