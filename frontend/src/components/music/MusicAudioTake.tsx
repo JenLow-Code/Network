@@ -6,6 +6,7 @@ import {punchInAudio} from '@/domain/musicEditing';
 import {MusicWaveformEditor} from './MusicWaveformEditor';
 import {MusicAudioCapture} from './MusicAudioCapture';
 import {MusicAudioMarkers} from './MusicAudioMarkers';
+import {MusicAudioPeaks} from './MusicAudioPeaksNext';
 import {useAppTheme} from '@/theme/AppTheme';
 import type {MusicProjectFile,MusicAudioMarker} from '@/domain/musicWorkspace';
 
@@ -14,6 +15,7 @@ type Props={
   file:MusicProjectFile;
   compact?:boolean;
   editable?:boolean;
+  onOpen?:()=>void;
   onUpdate?:(change:Partial<MusicProjectFile>)=>void;
 };
 /**
@@ -21,7 +23,7 @@ type Props={
  * in the Capture list, the saved-audio detail, and its non-destructive editor.
  * Never renders a second playback/progress bar.
  */
-export function MusicAudioTake({file,compact=false,editable=false,onUpdate}:Props){
+export function MusicAudioTake({file,compact=false,editable=false,onUpdate,onOpen}:Props){
   const theme=useAppTheme();
   const [blob,setBlob]=useState<File|null>(null);
   const [url,setUrl]=useState('');
@@ -90,6 +92,36 @@ export function MusicAudioTake({file,compact=false,editable=false,onUpdate}:Prop
     </Text>;
   if(error)return <Text style={{fontSize:12,color:'#AD3857'}}>{error}</Text>;
   if(!blob)return <ActivityIndicator size="small" color={PINK}/>;
+  // Overview is a preview, never an editor. Markers, seeking, zoom and
+  // punch-in controls belong exclusively to the audio detail view.
+  if(compact)return <View style={{flexDirection:'row',alignItems:'center',
+    gap:12,minHeight:43}}>
+    {url?React.createElement('audio',{
+      ref:audio,src:url,preload:'metadata',
+      onTimeUpdate:(e:React.SyntheticEvent<HTMLAudioElement>)=>
+        setCursor(e.currentTarget.currentTime),
+      onEnded:()=>setPlaying(false),
+      style:{display:'none'}
+    }):null}
+    <Pressable onPress={toggle} accessibilityRole="button"
+      accessibilityLabel={playing?'Mettre en pause '+file.title:'Écouter '+file.title}
+      style={{width:37,height:37,borderRadius:19,backgroundColor:PINK,
+        justifyContent:'center',alignItems:'center'}}>
+      <Ionicons name={playing?'pause':'play'} size={17} color="#fff"/>
+    </Pressable>
+    <Pressable onPress={onOpen} accessibilityRole="button"
+      accessibilityLabel={'Ouvrir '+file.title+' pour éditer l’audio'}
+      style={{flex:1,minHeight:42,gap:7,justifyContent:'center'}}>
+      <MusicAudioPeaks file={file} height={24} barCount={76}/>
+      <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
+        <Text style={{fontSize:10,color:theme.muted,fontVariant:['tabular-nums']}}>
+          {Math.floor(cursor/60)}:{String(Math.floor(cursor%60)).padStart(2,'0')}
+          {' / '}{Math.floor(duration/60)}:{String(Math.floor(duration%60)).padStart(2,'0')}
+        </Text>
+        <Text style={{fontSize:11,color:theme.muted}}>Ouvrir</Text>
+      </View>
+    </Pressable>
+  </View>;
   return <View style={{gap:compact?8:13}}>
     {editing?<View style={{gap:9}}>
       <MusicAudioCapture initialTake={{
