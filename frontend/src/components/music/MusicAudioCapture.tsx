@@ -59,6 +59,7 @@ export function MusicAudioCapture({onSaved,onStarted,onPaused,timelineStartSecon
   const [review,setReview]=useState(false);
   const [title,setTitle]=useState(initialTake?.title||suggestedTitle);
   const [markers,setMarkers]=useState<MusicAudioMarker[]>([]);
+  const [editMarkerRequest,setEditMarkerRequest]=useState<{id:string;nonce:number}|null>(null);
   const [playing,setPlaying]=useState(false);
   const [processing,setProcessing]=useState(false);
   const [saving,setSaving]=useState(false);
@@ -278,7 +279,11 @@ export function MusicAudioCapture({onSaved,onStarted,onPaused,timelineStartSecon
         opacity:.7}}/>)}
     </View>:file?<MusicWaveformEditor file={file} duration={duration} cursor={cursor}
       onSeek={seek} zoom={zoom} onZoom={setZoom} playing={playing}
-      onTogglePlayback={togglePlayback} markers={markers}/>:
+      onTogglePlayback={togglePlayback} markers={markers}
+      onChangeMarkers={onMarkers}
+      onEditMarker={id=>setEditMarkerRequest(previous=>({
+        id,nonce:(previous?.nonce||0)+1
+      }))}/>:
       <View style={{height:70,borderRadius:13,backgroundColor:theme.dark?'#252029':'#F2F4F5',
         justifyContent:'center',alignItems:'center'}}>
         <Text style={{fontSize:12,color:theme.muted}}>La forme d’onde suivra ta voix en direct.</Text>
@@ -343,7 +348,8 @@ export function MusicAudioCapture({onSaved,onStarted,onPaused,timelineStartSecon
         </View>:null}
       </View>}
     {file?<MusicAudioMarkers markers={markers} duration={duration} cursor={cursor}
-      onSeek={seek} onChange={onMarkers} disabled={status==='recording'||processing||saving}/>:null}
+      onSeek={seek} onChange={onMarkers} editRequest={editMarkerRequest}
+      disabled={status==='recording'||processing||saving}/>:null}
     {error?<Text style={{fontSize:12,lineHeight:20,color:'#B54B65'}}>{error}</Text>:null}
     {file?<Text style={{fontSize:11,lineHeight:18,color:theme.muted}}>
       Place le curseur sur la forme d’onde pour réenregistrer un passage. Le reste de la prise est conservé.
