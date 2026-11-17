@@ -74,6 +74,22 @@ export type MusicVersion = {
 };
 
 /** A document or creative resource, optionally mapped to one or more song sections. */
+export type MusicAudioMarker = {
+  id: string;
+  /** Position relative to the original recording, in seconds. */
+  startSeconds: number;
+  /** When present and greater than startSeconds, annotates a time range. */
+  endSeconds?: number;
+  note: string;
+};
+export type MusicLyricReference = {
+  id: string;
+  sectionId: string;
+  /** Text offsets refer to the source lyrics. No generated lyrics or rewrite. */
+  start: number;
+  end: number;
+  text: string;
+};
 export type MusicLyricSegment = { id: string; text: string; sectionIds: string[] };
 export type MusicFileRegion = { id: string; sectionId: string; startSeconds: number; endSeconds: number };
 export type MusicProjectFile = {
@@ -88,6 +104,8 @@ export type MusicProjectFile = {
   lyricSegments?: MusicLyricSegment[];
   /** Optional ranges for audio tracks; segment <-> section mapping without cutting the source file. */
   regions?: MusicFileRegion[];
+  markers?: MusicAudioMarker[];
+  lyricReferences?: MusicLyricReference[];
   originalFilename?: string;
   mimeType?: string;
   conversionWarning?: string;
