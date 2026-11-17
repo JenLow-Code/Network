@@ -32,6 +32,7 @@ export function MusicAudioCapture({onSaved,onStarted,onPaused,timelineStartSecon
   const recordAt=useRef(0);
   const startedAt=useRef(0);
   const timelineStart=useRef(0);
+  const elapsedRef=useRef(0);
   const takeCount=useRef(0);
   const audioElement=useRef<HTMLAudioElement|null>(null);
   const [status,setStatus]=useState<Status>('idle');
@@ -108,7 +109,7 @@ export function MusicAudioCapture({onSaved,onStarted,onPaused,timelineStartSecon
             base.current=result.file;
             takeCount.current+=1;
             setFile(result.file);setDuration(result.durationSeconds);
-            const next=Math.min(result.durationSeconds,Math.max(0,at+elapsed));
+            const next=Math.min(result.durationSeconds,Math.max(0,at+elapsedRef.current));
             setCursor(next);setStatus('paused');setLevels([]);
           })
           .catch(e=>{
@@ -118,11 +119,12 @@ export function MusicAudioCapture({onSaved,onStarted,onPaused,timelineStartSecon
           .finally(()=>setProcessing(false));
       };
       startedAt.current=performance.now();
+      elapsedRef.current=0;
       r.start(250);setElapsed(0);setLevels([]);
       setStatus('recording');
       ticker.current=setInterval(()=>{
         const secs=Math.max(0,(performance.now()-startedAt.current)/1000);
-        setElapsed(secs);
+        elapsedRef.current=secs;setElapsed(secs);
         analyser.getByteTimeDomainData(samples);
         let sum=0;for(let i=0;i<samples.length;i++){
           const x=(samples[i]-128)/128;sum+=x*x;
@@ -139,7 +141,8 @@ export function MusicAudioCapture({onSaved,onStarted,onPaused,timelineStartSecon
   const pause=()=>{
     if(recorder.current?.state==='recording'){
       const secs=Math.max(0,(performance.now()-startedAt.current)/1000);
-      setElapsed(secs);
+      elapsedRef.current=secs;setElapsed(secs);
+      setStatus('paused');
       // Stop creates a self-contained segment. MediaRecorder.pause() alone cannot
       // support recording over an earlier passage of the existing file.
       recorder.current.stop();setProcessing(true);
