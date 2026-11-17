@@ -93,9 +93,10 @@ export function MusicArrangementTimeline({version,files,duration,position,onSeek
   // A full clip is draggable. The two end handles adjust its trim.
   const gesture=(mode:Mode,t:WorkingMusicTrack,file:MusicProjectFile|undefined,
     left:number,w:number)=>{
+    const grip=Math.min(23,Math.max(11,w/3));
     const common={position:'absolute' as const,
-      left:mode==='start'?0:mode==='end'?Math.max(0,w-23):23,
-      top:0,bottom:0,width:mode==='move'?Math.max(0,w-46):23};
+      left:mode==='start'?0:mode==='end'?Math.max(0,w-grip):grip,
+      top:0,bottom:0,width:mode==='move'?Math.max(9,w-2*grip):grip};
     const editable=!!onChangeTrack;
     if(Platform.OS==='web')return React.createElement('div',{
       key:t.id+mode,role:'button',tabIndex:0,
@@ -191,10 +192,57 @@ export function MusicArrangementTimeline({version,files,duration,position,onSeek
     return <View key={t.id+mode} {...{
         onStartShouldSetResponder:()=>editable,
         onMoveShouldSetResponder:()=>editable,
-        onResponderGrant:(e:any)=>begin(e.nativeEvent.pageX,mode,t,file,0),
-        onResponderMove:(e:any)=>move(e.nativeEvent.pageX,0),
-        onResponderRelease:()=>stop(0,true),
-        onResponderTerminate:()=>stop(0,false)
+        onResponderGrant:(e:any)=>{
+          const x=e.nativeEvent.pageX;
+          begin(x,mode,t,file,0);
+          if(mode==='move'&&onMarkTrackRange){
+            const info=clipInfo(t,file);
+            const at=clamp(info.start+(e.nativeEvent.locationX||0)/pixelsPerSecond,
+              info.start,info.end);
+            const hold={pointerId:0,id:t.id,start:at,end:at,
+              pressedX:x,active:false,
+              timer:null as ReturnType<typeof setTimeout>|null};
+            rangeHold.current=hold;
+            hold.timer=setTimeout(()=>{
+              if(rangeHold.current!==hold)return;
+              hold.active=true;drag.current=null;setPreview(null);
+              setRangePreview({id:t.id,start:at,end:at});
+            },350);
+          }
+        },
+        onResponderMove:(e:any)=>{
+          const hold=rangeHold.current;
+          if(hold){
+            if(hold.active){
+              const info=clipInfo(t,file);
+              hold.end=clamp(hold.start+(e.nativeEvent.pageX-hold.pressedX)/pixelsPerSecond,
+                info.start,info.end);
+              setRangePreview({id:t.id,start:Math.min(hold.start,hold.end),
+                end:Math.max(hold.start,hold.end)});
+              return;
+            }
+            if(Math.abs(e.nativeEvent.pageX-hold.pressedX)>5){
+              if(hold.timer)clearTimeout(hold.timer);
+              rangeHold.current=null;
+            }
+          }
+          move(e.nativeEvent.pageX,0);
+        },
+        onResponderRelease:()=>{
+          const hold=rangeHold.current;
+          if(hold?.timer)clearTimeout(hold.timer);
+          rangeHold.current=null;
+          if(hold?.active){
+            const a=Math.min(hold.start,hold.end),b=Math.max(hold.start,hold.end);
+            if(b-a>=.03)onMarkTrackRange?.(t.id,
+              Math.round(a*1000)/1000,Math.round(b*1000)/1000);
+            setRangePreview(null);
+          }else stop(0,true);
+        },
+        onResponderTerminate:()=>{
+          if(rangeHold.current?.timer)clearTimeout(rangeHold.current.timer);
+          rangeHold.current=null;setRangePreview(null);stop(0,false);
+        }
       }} style={{...common,backgroundColor:mode==='move'?'transparent':'rgba(203,36,92,.12)'}}>
       {mode!=='move'?<View style={{width:4,height:12,marginLeft:8,marginTop:19,
         borderRadius:3,backgroundColor:PINK}}/>:null}
