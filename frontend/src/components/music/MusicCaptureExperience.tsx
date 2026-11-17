@@ -201,9 +201,10 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,h
           originalLanguage={project.originalLanguage}
           source={translationSource} onSave={addWritten}
           onRequestTranslator={requestTranslator} onDirtyChange={setDraftDirty}
-          requestPending={!!(project.needs||[]).find(need=>
+          requestedLanguages={(project.needs||[]).filter(need=>
             need.sourceFileId===translationSourceId&&need.kind==='talent'&&
-            need.label.toLowerCase()==='traducteur')}/>}
+            need.label.toLowerCase()==='traducteur')
+            .map(need=>need.targetLanguage||'')}/>}
     </View>:null}
     {error?<Text style={{fontSize:12,color:'#B64A60'}}>{error}</Text>:null}
     <View style={{gap:11}}>
@@ -235,6 +236,8 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,h
           {image?<View style={{borderRadius:16,overflow:'hidden'}}>
             <MusicLocalArt file={file} cover/>
           </View>:null}
+          {file.kind==='note'?<Text style={{fontSize:16,fontWeight:'700',
+            color:theme.foreground}}>{file.title}</Text>:null}
           {text&&file.kind==='note'?<View style={{maxWidth:650}}>
             <MusicNotePreview text={text.split('\n').slice(0,5).join('\n')}
               color={theme.foreground}/>
