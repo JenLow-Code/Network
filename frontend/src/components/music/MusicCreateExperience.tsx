@@ -8,6 +8,7 @@ import {useAppTheme} from '@/theme/AppTheme';
 import {MusicAudioCapture} from './MusicAudioCapture';
 import {MusicAudioPreview} from './MusicAudioPreview';
 import {MusicStudioTransport} from './MusicStudioTransportNext';
+import {MusicAudioMarkers} from './MusicAudioMarkers';
 import {MusicSongTabs} from './MusicSongTabs';
 import {musicNextState,makeWorkingVersion,makeWorkingTrack,
   changeWorkingVersion,undoWorkingVersion,isMusicTrackCandidate} from '@/domain/musicNext';
@@ -69,6 +70,9 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
   const [confirmDelete,setConfirmDelete]=useState(false);
   const [editTrack,setEditTrack]=useState('');
   const [showTracks,setShowTracks]=useState(false);
+  const [rangeRequest,setRangeRequest]=useState<{
+    trackId:string;start:number;end:number;nonce:number
+  }|null>(null);
   const [trackTitle,setTrackTitle]=useState('');
   const [trackOffset,setTrackOffset]=useState('0');
   const [trimStart,setTrimStart]=useState('0');
@@ -290,6 +294,9 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
       <MusicStudioTransport key={version.id} version={version} files={project.files}
         onPositionChange={setTimelineCursor}
         onTrackChange={editOneTrack}
+        onMarkTrackRange={(trackId,start,end)=>setRangeRequest(previous=>({
+          trackId,start,end,nonce:(previous?.nonce||0)+1
+        }))}
         onSelectTrack={id=>{
           const selected=version.tracks.find(t=>t.id===id);
           if(selected){
@@ -298,6 +305,31 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
           }
         }}
         playbackRequest={playbackRequest} pauseRequest={pauseRequest}/>
+      {rangeRequest&&version.tracks.some(t=>t.id===rangeRequest.trackId)?(()=>{
+        const track=version.tracks.find(t=>t.id===rangeRequest.trackId)!;
+        const source=project.files.find(f=>f.id===track.sourceFileId);
+        return <View style={{padding:13,borderRadius:13,
+          borderWidth:1,borderColor:theme.border,backgroundColor:theme.surface,gap:8}}>
+          <View style={{flexDirection:'row',alignItems:'center',gap:10}}>
+            <Text style={{flex:1,fontSize:13,fontWeight:'700',color:theme.foreground}}>
+              Repère · {track.title}
+            </Text>
+            <Pressable accessibilityRole="button" accessibilityLabel="Fermer l’ajout du repère"
+              onPress={()=>setRangeRequest(null)} style={{padding:7}}>
+              <Ionicons name="close-outline" size={18} color={theme.muted}/>
+            </Pressable>
+          </View>
+          <MusicAudioMarkers markers={track.markers||[]}
+            cursor={rangeRequest.start}
+            duration={Math.max(source?.durationSeconds||0,rangeRequest.end)}
+            rangeRequest={rangeRequest}
+            onChange={markers=>{
+              editOneTrack(track.id,{markers});setRangeRequest(null);
+            }}
+            onSeek={seconds=>setTimelineCursor(Math.max(0,
+              track.offsetSeconds+seconds-(track.trimStartSeconds||0)))}/>
+        </View>;
+      })():null}
       <Text style={{fontSize:12,color:theme.muted,lineHeight:19}}>
         Choisis le point précis sur la chronologie avant d’enregistrer une nouvelle piste.
       </Text>
