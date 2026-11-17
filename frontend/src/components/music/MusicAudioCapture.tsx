@@ -75,7 +75,8 @@ export function MusicAudioCapture({onSaved,onStarted,onPaused,timelineStartSecon
   },[initialTake?.file]);
   useEffect(()=>{
     const editedAudio = !!file && (!initialTake || file !== initialTake.file);
-    const editedMarkers = !!initialTake && markerRef.current !== initialTake.markers;
+    const editedMarkers = !!initialTake &&
+      JSON.stringify(markers)!==JSON.stringify(initialTake.markers);
     onDraftChange?.(status==='recording'||processing||saving||editedAudio||editedMarkers);
   },[status,processing,saving,file,markers,initialTake?.file,onDraftChange]);
   const clearMic=()=>{
