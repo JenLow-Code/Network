@@ -7,17 +7,15 @@ import {MusicAudioCapture} from './MusicAudioCapture';
 import {MusicAudioPreview} from './MusicAudioPreview';
 import {MusicStudioTransport} from './MusicStudioTransportNext';
 import {MusicSongTabs} from './MusicSongTabs';
-import {deleteUnassignedMusicTake} from '@/domain/musicLocalStorage';
 import {musicNextState,makeWorkingVersion,makeWorkingTrack,
   changeWorkingVersion,undoWorkingVersion,isMusicTrackCandidate} from '@/domain/musicNext';
 import {formatMusicDuration} from '@/domain/musicProjectSelectors';
 import {newMusicId} from '@/domain/musicWorkspace';
-import type {MusicProject,MusicProjectFile} from '@/domain/musicWorkspace';
+import type {MusicProject,MusicProjectFile,MusicAudioMarker} from '@/domain/musicWorkspace';
 import type {WorkingMusicTrack,WorkingMusicVersion} from '@/domain/musicNext';
 
 const PINK='#CB245C';
 type Props={project:MusicProject;patch:(changes:Partial<MusicProject>)=>void;onCapture:()=>void};
-type Pending={id:string;filename:string;durationSeconds?:number;startAt:number};
 type PickMode='none'|'start'|'add';
 
 export function MusicCreateExperience({project,patch,onCapture}:Props) {
@@ -30,8 +28,6 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
   const [versionMenu,setVersionMenu]=useState(false);
   const [pickMode,setPickMode]=useState<PickMode>('none');
   const [recording,setRecording]=useState(false);
-  const [pending,setPending]=useState<Pending|null>(null);
-  const [confirmDiscard,setConfirmDiscard]=useState(false);
   const [confirmDelete,setConfirmDelete]=useState(false);
   const [editTrack,setEditTrack]=useState('');
   const [trackTitle,setTrackTitle]=useState('');
@@ -104,25 +100,19 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
     patch({musicNext:{...state,versions:[...state.versions,next],activeVersionId:next.id}});
     setVersionMenu(false);setShowSettings(false);
   };
-  const keep=(target:'version'|'notebook')=>{
-    if(!pending)return;
+  const saveTake=(id:string,filename:string,durationSeconds?:number,
+    startAt?:number,markers?:MusicAudioMarker[])=>{
+    if(!version)return;
     const item:MusicProjectFile={id:newMusicId(),title:'Nouvelle prise',kind:'audio',
-      sectionIds:[],localFileId:pending.id,originalFilename:pending.filename,
-      mimeType:/\.wav$/i.test(pending.filename)?'audio/wav':/\.m4a$/i.test(pending.filename)?'audio/mp4':'audio/webm',
-      durationSeconds:pending.durationSeconds,createdAt:new Date().toISOString()};
-    if(target==='version'&&version){
-      patch({files:[...project.files,item],musicNext:changeWorkingVersion(state,{
-        ...version,tracks:[...version.tracks,{...makeWorkingTrack(item),offsetSeconds:pending.startAt}]
-      })});
-    }else patch({files:[...project.files,item]});
-    setPending(null);setRecording(false);setConfirmDiscard(false);setError('');
-  };
-  const discard=async()=>{
-    if(!pending)return;
-    try{
-      await deleteUnassignedMusicTake(pending.id);
-      setPending(null);setConfirmDiscard(false);setRecording(false);
-    }catch{setError('Impossible de supprimer cette prise sur cet appareil.');}
+      sectionIds:[],localFileId:id,originalFilename:filename,
+      mimeType:/\\.wav$/i.test(filename)?'audio/wav':/\\.m4a$/i.test(filename)?'audio/mp4':'audio/webm',
+      durationSeconds,markers:markers||[],createdAt:new Date().toISOString()};
+    patch({files:[...project.files,item],musicNext:changeWorkingVersion(state,{
+      ...version,tracks:[...version.tracks,{
+        ...makeWorkingTrack(item),offsetSeconds:startAt??recordOrigin
+      }]
+    })});
+    setRecording(false);setError('');
   };
   const openSettings=()=>{
     if(!version)return;
@@ -158,9 +148,9 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
     </Pressable>;
   return <View style={{gap:22}}>
     <View style={{gap:7}}>
-      <Text style={{fontSize:22,fontWeight:'700',color:theme.foreground}}>Faire vivre la chanson.</Text>
+      <Text style={{fontSize:22,fontWeight:'700',color:theme.foreground}}>Créer</Text>
       <Text style={{fontSize:13,lineHeight:21,color:theme.muted,maxWidth:560}}>
-        Assemble tes prises dans des versions différentes. Les idées originales restent dans le carnet.
+        Assemble les pistes, ajuste leur position et crée des versions. Les fichiers originaux restent dans Capturer.
       </Text>
     </View>
     <View style={{gap:11}}>
@@ -250,7 +240,6 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
       </Text>
       <View style={{flexDirection:'row',flexWrap:'wrap',gap:9}}>
         {button(recording?'Fermer l’enregistreur':'Enregistrer une prise',()=>{
-          if(pending)return;
           if(!recording){setRecordOrigin(timelineCursor);setPauseRequest(n=>n+1);}
           setRecording(!recording);
         },true,'radio-button-on-outline')}
@@ -262,37 +251,16 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
           Nouvelle prise · à partir de {musicStamp(recordOrigin)}
         </Text>
         <Text style={{fontSize:12,lineHeight:19,color:theme.muted}}>
-          L’écoute des pistes existantes commencera au même point lors du déclenchement du micro.
-          Utilise un casque et ajuste le décalage de la piste si nécessaire.
+          La prise sera ajoutée automatiquement à cette version. Utilise un casque pour écouter les autres pistes.
         </Text>
-        {!pending?<MusicAudioCapture
-          timelineStartSeconds={recordOrigin}
+        <MusicAudioCapture timelineStartSeconds={recordOrigin}
           backingPositionSeconds={timelineCursor}
           onStarted={at=>setPlaybackRequest(previous=>({
             at:recordOrigin+at,serial:(previous?.serial||0)+1
           }))}
           onPaused={()=>setPauseRequest(n=>n+1)}
-          onSaved={(id,filename,durationSeconds,startAt)=>
-            setPending({id,filename,durationSeconds,startAt:startAt??recordOrigin})}/>:
-          <View style={{gap:13}}>
-            <MusicAudioPreview source={{localAudioId:pending.id}}/>
-            <Text style={{color:theme.foreground,fontWeight:'600',fontSize:13}}>
-              Que veux-tu conserver ?
-            </Text>
-            <View style={{flexDirection:'row',flexWrap:'wrap',gap:8}}>
-              {button('Dans cette version',()=>keep('version'),true)}
-              {button('Dans le carnet',()=>keep('notebook'))}
-              {button('Jeter la prise',()=>setConfirmDiscard(true))}
-            </View>
-            {confirmDiscard?<View style={{gap:10}}>
-              <Text style={{fontSize:12,color:theme.muted}}>
-                Supprimer définitivement cette prise encore non attribuée ?
-              </Text>
-              <View style={{flexDirection:'row',gap:8,flexWrap:'wrap'}}>
-                {button('Oui, supprimer',()=>{void discard();},true)}
-                {button('Annuler',()=>setConfirmDiscard(false))}
-              </View>
-            </View>:null}
+          onSaved={saveTake}/>
+      </View>:null}
           </View>}
       </View>:null}
 
