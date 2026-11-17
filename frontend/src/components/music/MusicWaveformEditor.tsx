@@ -13,10 +13,11 @@ type Props={file:File;duration:number;cursor:number;onSeek:(seconds:number)=>voi
   markers?:MusicAudioMarker[];compact?:boolean;
   onChangeMarkers?:(markers:MusicAudioMarker[])=>void;
   onEditMarker?:(id:string)=>void;
+  onCreateRange?:(startSeconds:number,endSeconds:number)=>void;
 };
 const clamp=(v:number,lo:number,hi:number)=>Math.max(lo,Math.min(hi,v));
 export function MusicWaveformEditor({file,duration,cursor,onSeek,zoom,onZoom,
-  playing,onTogglePlayback,markers=[],compact=false,onChangeMarkers,onEditMarker}:Props){
+  playing,onTogglePlayback,markers=[],compact=false,onChangeMarkers,onEditMarker,onCreateRange}:Props){
   const theme=useAppTheme();
   const {width}=useWindowDimensions();
   // The ruler and waveform must fill the actual panel, not a hard-coded
@@ -28,6 +29,10 @@ export function MusicWaveformEditor({file,duration,cursor,onSeek,zoom,onZoom,
   const [decoding,setDecoding]=useState(false);
   const [selectedMarkerId,setSelectedMarkerId]=useState<string|null>(null);
   const [confirmDelete,setConfirmDelete]=useState(false);
+  const [drawingRange,setDrawingRange]=useState<{start:number;end:number}|null>(null);
+  const drawingRef=useRef<{pointerId:number;startClientX:number;
+    start:number;end:number;active:boolean;type:string;
+    timer:ReturnType<typeof setTimeout>|null}|null>(null);
   const selectedMarker=markers.find(m=>m.id===selectedMarkerId);
   const selectMarker=(id:string)=>{setSelectedMarkerId(id);setConfirmDelete(false);};
   const pane=useRef<any>(null);
@@ -92,6 +97,9 @@ export function MusicWaveformEditor({file,duration,cursor,onSeek,zoom,onZoom,
     const distance=(a:Touch,b:Touch)=>Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);
     const touchStart=(e:TouchEvent)=>{
       if(e.touches.length!==2){pinching.current=null;return;}
+      const pending=drawingRef.current;
+      if(pending?.timer)clearTimeout(pending.timer);
+      drawingRef.current=null;setDrawingRange(null);
       pinching.current={distance:distance(e.touches[0],e.touches[1]),scale:zoomRef.current};
     };
     const touchMove=(e:TouchEvent)=>{
@@ -117,11 +125,68 @@ export function MusicWaveformEditor({file,duration,cursor,onSeek,zoom,onZoom,
         setTimeout(()=>{suppressClick.current=false;},180);
       }
     };
+    // Tap seeks as usual; hold for 300ms on touch, or drag with mouse, to mark a range.
+    const relative=(clientX:number)=>{
+      const left=element.getBoundingClientRect().left;
+      return clamp((clientX-left+scrollX.current)/Math.max(pxRef.current,1)*
+        durationRef.current,0,durationRef.current);
+    };
+    const pointerDown=(e:PointerEvent)=>{
+      if(!onCreateRange||e.button!==0||pinching.current)return;
+      if(!(e.target as HTMLElement)?.closest?.('svg'))return;
+      const point=relative(e.clientX);
+      const pending={pointerId:e.pointerId,startClientX:e.clientX,
+        start:point,end:point,active:false,type:e.pointerType,
+        timer:null as ReturnType<typeof setTimeout>|null};
+      if(drawingRef.current?.timer)clearTimeout(drawingRef.current.timer);
+      drawingRef.current=pending;
+      if(e.pointerType!=='mouse'){
+        pending.timer=setTimeout(()=>{
+          if(drawingRef.current!==pending||pinching.current)return;
+          pending.active=true;
+          try{element.setPointerCapture(e.pointerId);}catch{}
+          setDrawingRange({start:point,end:point});
+        },300);
+      }
+    };
+    const pointerMove=(e:PointerEvent)=>{
+      const p=drawingRef.current;
+      if(!p||p.pointerId!==e.pointerId||!onCreateRange)return;
+      if(!p.active){
+        if(p.type!=='mouse'||Math.abs(e.clientX-p.startClientX)<7)return;
+        p.active=true;
+        try{element.setPointerCapture(e.pointerId);}catch{}
+      }
+      e.preventDefault();e.stopPropagation();
+      p.end=relative(e.clientX);
+      setDrawingRange({start:Math.min(p.start,p.end),end:Math.max(p.start,p.end)});
+    };
+    const pointerFinish=(e:PointerEvent,cancel=false)=>{
+      const p=drawingRef.current;
+      if(!p||p.pointerId!==e.pointerId)return;
+      if(p.timer)clearTimeout(p.timer);
+      if(p.active){
+        suppressClick.current=true;
+        const start=Math.min(p.start,p.end),end=Math.max(p.start,p.end);
+        if(!cancel&&end-start>=.025){
+          onCreateRange?.(Math.round(start*1000)/1000,Math.round(end*1000)/1000);
+        }else if(!cancel)onSeek(Math.round(p.start*1000)/1000);
+        setTimeout(()=>{suppressClick.current=false;},160);
+      }
+      try{element.releasePointerCapture(e.pointerId);}catch{}
+      drawingRef.current=null;setDrawingRange(null);
+    };
+    const pointerUp=(e:PointerEvent)=>pointerFinish(e);
+    const pointerCancel=(e:PointerEvent)=>pointerFinish(e,true);
     const dbl=(e:MouseEvent)=>{
       e.preventDefault();
       const rect=element.getBoundingClientRect();
       setScale(2,clamp(e.clientX-rect.left,0,viewport));
     };
+    element.addEventListener('pointerdown',pointerDown);
+    element.addEventListener('pointermove',pointerMove);
+    element.addEventListener('pointerup',pointerUp);
+    element.addEventListener('pointercancel',pointerCancel);
     element.addEventListener('wheel',wheel,{passive:false});
     element.addEventListener('dblclick',dbl);
     element.addEventListener('touchstart',touchStart,{passive:true});
@@ -129,6 +194,12 @@ export function MusicWaveformEditor({file,duration,cursor,onSeek,zoom,onZoom,
     element.addEventListener('touchend',touchEnd);
     element.addEventListener('touchcancel',touchEnd);
     return ()=>{
+      if(drawingRef.current?.timer)clearTimeout(drawingRef.current.timer);
+      drawingRef.current=null;
+      element.removeEventListener('pointerdown',pointerDown);
+      element.removeEventListener('pointermove',pointerMove);
+      element.removeEventListener('pointerup',pointerUp);
+      element.removeEventListener('pointercancel',pointerCancel);
       element.removeEventListener('wheel',wheel);
       element.removeEventListener('dblclick',dbl);
       element.removeEventListener('touchstart',touchStart);
@@ -136,7 +207,7 @@ export function MusicWaveformEditor({file,duration,cursor,onSeek,zoom,onZoom,
       element.removeEventListener('touchend',touchEnd);
       element.removeEventListener('touchcancel',touchEnd);
     };
-  },[onZoom,viewport]);
+  },[onZoom,onSeek,onCreateRange,viewport]);
   const seek=(x:number)=>{
     if(suppressClick.current){suppressClick.current=false;return;}
     onSeek(clamp(Math.round(x/Math.max(px,1)*duration*1000)/1000,0,duration));
@@ -177,7 +248,7 @@ export function MusicWaveformEditor({file,duration,cursor,onSeek,zoom,onZoom,
     }} style={{width:'100%',borderRadius:12,
       borderWidth:1,borderColor:theme.border,
       backgroundColor:theme.dark?'#252329':'#F8F7F5',overflow:'hidden',
-      ...({touchAction:'pan-x'} as any)}}>
+      ...({touchAction:'pan-x',userSelect:'none'} as any)}}>
       <ScrollView ref={scroll} horizontal showsHorizontalScrollIndicator
         onScroll={e=>{scrollX.current=e.nativeEvent.contentOffset.x;}}
         scrollEventThrottle={16} keyboardShouldPersistTaps="handled">
@@ -215,6 +286,17 @@ export function MusicWaveformEditor({file,duration,cursor,onSeek,zoom,onZoom,
                 <Circle cx={x} cy={13} r={3} fill={pink}/>
               </React.Fragment>;
             })}
+            {drawingRange?<React.Fragment>
+              <Rect x={Math.min(drawingRange.start,drawingRange.end)/
+                Math.max(duration,.001)*px} y={29}
+                width={Math.max(1,Math.abs(drawingRange.end-drawingRange.start)/
+                  Math.max(duration,.001)*px)} height={77}
+                fill={pink} opacity={.13}/>
+              {[drawingRange.start,drawingRange.end].map((value,i)=>
+                <Line key={i} x1={value/Math.max(duration,.001)*px}
+                  x2={value/Math.max(duration,.001)*px}
+                  y1={25} y2={108} stroke={pink} strokeWidth={2}/>)}
+            </React.Fragment>:null}
             {bars.map((v,i)=>{
               const w=px/bars.length;
               return <Rect key={i} x={i*w+.5} y={59-v*31}
@@ -292,7 +374,7 @@ export function MusicWaveformEditor({file,duration,cursor,onSeek,zoom,onZoom,
       </Text>
     </View>:null}
     {!compact?<Text style={{fontSize:11,color:theme.muted,lineHeight:18}}>
-      Zoom : pincement ou molette · Glisser : parcourir · Toucher un repère : modifier.
+      Toucher : placer le curseur · Maintenir et glisser : sélectionner un intervalle · Pincer : zoomer.
     </Text>:null}
   </View>;
 }
