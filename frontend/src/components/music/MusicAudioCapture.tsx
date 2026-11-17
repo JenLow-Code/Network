@@ -5,10 +5,12 @@ import {useAppTheme} from '@/theme/AppTheme';
 import {saveDraftAudio} from '@/domain/musicLocalStorage';
 import {musicStamp,punchInAudio} from '@/domain/musicEditing';
 import {MusicWaveformEditor} from './MusicWaveformEditor';
+import {MusicAudioMarkers} from './MusicAudioMarkers';
+import type {MusicAudioMarker} from '@/domain/musicWorkspace';
 
 type Props={
   onSaved:(localAudioId:string,filename:string,durationSeconds?:number,
-    startOffsetSeconds?:number)=>void;
+    startOffsetSeconds?:number,markers?:MusicAudioMarker[])=>void;
   /** Called when microphone recording actually begins/pauses, for optional backing playback. */
   onStarted?:(takePositionSeconds:number)=>void;
   onPaused?:()=>void;
@@ -36,6 +38,8 @@ export function MusicAudioCapture({onSaved,onStarted,onPaused,timelineStartSecon
   const startedAt=useRef(0);
   const timelineStart=useRef(0);
   const elapsedRef=useRef(0);
+  const finishRequested=useRef(false);
+  const markerRef=useRef<MusicAudioMarker[]>([]);
   const takeCount=useRef(0);
   const audioElement=useRef<HTMLAudioElement|null>(null);
   const [status,setStatus]=useState<Status>('idle');
@@ -45,7 +49,9 @@ export function MusicAudioCapture({onSaved,onStarted,onPaused,timelineStartSecon
   const [cursor,setCursor]=useState(0);
   const [elapsed,setElapsed]=useState(0);
   const [levels,setLevels]=useState<number[]>([]);
-  const [zoom,setZoom]=useState(0);
+  const [zoom,setZoom]=useState(1);
+  const [markers,setMarkers]=useState<MusicAudioMarker[]>([]);
+  const [playing,setPlaying]=useState(false);
   const [processing,setProcessing]=useState(false);
   const [saving,setSaving]=useState(false);
   const [error,setError]=useState('');
@@ -87,6 +93,8 @@ export function MusicAudioCapture({onSaved,onStarted,onPaused,timelineStartSecon
       const mime=formats.find(format=>MediaRecorder.isTypeSupported(format));
       const r=mime?new MediaRecorder(microphone,{mimeType:mime}):new MediaRecorder(microphone);
       recorder.current=r;parts.current=[];
+      finishRequested.current=false;
+      audioElement.current?.pause();setPlaying(false);
       const first=takeCount.current===0;
       if(first)timelineStart.current=Math.max(0,timelineStartSeconds);
       const at=base.current?cursor:0;
@@ -114,6 +122,14 @@ export function MusicAudioCapture({onSaved,onStarted,onPaused,timelineStartSecon
             setFile(result.file);setDuration(result.durationSeconds);
             const next=Math.min(result.durationSeconds,Math.max(0,at+elapsedRef.current));
             setCursor(next);setStatus('paused');setLevels([]);
+            if(finishRequested.current){
+              setSaving(true);
+              void saveDraftAudio(result.file).then(id=>{
+                onSaved(id,result.file.name,result.durationSeconds,
+                  timelineStart.current,markerRef.current);
+              }).catch(e=>setError(e instanceof Error?e.message:'Sauvegarde impossible.'))
+                .finally(()=>setSaving(false));
+            }
           })
           .catch(e=>{
             setError(e instanceof Error?e.message:'Retouche impossible. L’audio initial est intact.');
@@ -141,6 +157,17 @@ export function MusicAudioCapture({onSaved,onStarted,onPaused,timelineStartSecon
       setError(e instanceof Error?'Microphone inaccessible : '+e.message:'Microphone indisponible.');
     }
   };
+  const onMarkers=(next:MusicAudioMarker[])=>{
+    markerRef.current=next;setMarkers(next);
+  };
+  const togglePlayback=()=>{
+    const el=audioElement.current;
+    if(!el||status==='recording'||processing)return;
+    if(!el.paused){el.pause();setPlaying(false);return;}
+    if(el.currentTime>=duration-.02)el.currentTime=0;
+    void el.play().then(()=>setPlaying(true))
+      .catch(()=>setError('Lecture audio indisponible sur ce navigateur.'));
+  };
   const pause=()=>{
     if(recorder.current?.state==='recording'){
       const secs=Math.max(0,(performance.now()-startedAt.current)/1000);
@@ -151,6 +178,10 @@ export function MusicAudioCapture({onSaved,onStarted,onPaused,timelineStartSecon
       recorder.current.stop();setProcessing(true);
       clearMic();onPaused?.();
     }
+  };
+  const stop=()=>{
+    finishRequested.current=true;
+    pause();
   };
   const seek=(position:number)=>{
     if(status==='recording'||processing)return;
@@ -172,14 +203,16 @@ export function MusicAudioCapture({onSaved,onStarted,onPaused,timelineStartSecon
     setSaving(true);setError('');
     try{
       const id=await saveDraftAudio(file);
-      onSaved(id,file.name,duration,timelineStart.current);
+      onSaved(id,file.name,duration,timelineStart.current,markerRef.current);
     }catch(e){setError(e instanceof Error?e.message:'Sauvegarde audio impossible.');}
     finally{setSaving(false);}
   };
   const discard=()=>{
     if(status==='recording'||processing)return;
     history.current=[];base.current=null;takeCount.current=0;
+    audioElement.current?.pause();setPlaying(false);
     setFile(null);setDuration(0);setCursor(0);setElapsed(0);setLevels([]);
+    onMarkers([]);
     setStatus('idle');setError('');
   };
   const running=recordAt.current+elapsed;
@@ -207,24 +240,42 @@ export function MusicAudioCapture({onSaved,onStarted,onPaused,timelineStartSecon
         </Text>:null}
       </View>
     </View>
+    {previewUrl&&status!=='recording'&&Platform.OS==='web'
+      ?React.createElement('audio',{
+        ref:audioElement,src:previewUrl,preload:'metadata',
+        onTimeUpdate:(e:React.SyntheticEvent<HTMLAudioElement>)=>
+          setCursor(e.currentTarget.currentTime),
+        onEnded:()=>setPlaying(false),
+        style:{display:'none'}
+      }):null}
     {status==='recording'?<View style={{height:87,borderRadius:13,backgroundColor:theme.dark?'#252029':'#FCF4F7',
       overflow:'hidden',paddingHorizontal:7,flexDirection:'row',alignItems:'center',gap:2}}>
       {levels.map((v,i)=><View key={i} style={{flex:1,
         height:Math.max(2,Math.round(v*69)),maxWidth:5,borderRadius:2,backgroundColor:PINK,
         opacity:.7}}/>)}
     </View>:file?<MusicWaveformEditor file={file} duration={duration} cursor={cursor}
-      onSeek={seek} zoom={zoom} onZoom={setZoom}/>:
+      onSeek={seek} zoom={zoom} onZoom={setZoom} playing={playing}
+      onTogglePlayback={togglePlayback} markers={markers}/>:
       <View style={{height:70,borderRadius:13,backgroundColor:theme.dark?'#252029':'#FCF4F7',
         justifyContent:'center',alignItems:'center'}}>
         <Text style={{fontSize:12,color:theme.muted}}>La forme d’onde suivra ta voix en direct.</Text>
       </View>}
-    {status==='recording'?<Pressable onPress={pause} accessibilityRole="button"
-      accessibilityLabel="Pause de l’enregistrement"
-      style={{backgroundColor:'#27232A',borderRadius:13,minHeight:48,flexDirection:'row',
-        justifyContent:'center',alignItems:'center',gap:9}}>
-      <Ionicons name="pause" size={20} color="#fff"/>
-      <Text style={{fontSize:13,color:'#fff',fontWeight:'700'}}>Pause</Text>
-    </Pressable>:
+    {status==='recording'?<View style={{flexDirection:'row',gap:9}}>
+      <Pressable onPress={pause} accessibilityRole="button"
+        accessibilityLabel="Pause de l’enregistrement"
+        style={{flex:1,backgroundColor:'#27232A',borderRadius:12,minHeight:48,
+          flexDirection:'row',justifyContent:'center',alignItems:'center',gap:8}}>
+        <Ionicons name="pause" size={19} color="#fff"/>
+        <Text style={{fontSize:13,color:'#fff',fontWeight:'700'}}>Pause</Text>
+      </Pressable>
+      <Pressable onPress={stop} accessibilityRole="button"
+        accessibilityLabel="Terminer et sauvegarder l’enregistrement"
+        style={{flex:1,backgroundColor:PINK,borderRadius:12,minHeight:48,
+          flexDirection:'row',justifyContent:'center',alignItems:'center',gap:8}}>
+        <Ionicons name="stop" size={19} color="#fff"/>
+        <Text style={{fontSize:13,color:'#fff',fontWeight:'700'}}>Terminer</Text>
+      </Pressable>
+    </View>:
       <View style={{gap:9}}>
         <Pressable onPress={()=>{void start();}} disabled={processing||saving}
           accessibilityRole="button"
@@ -238,16 +289,12 @@ export function MusicAudioCapture({onSaved,onStarted,onPaused,timelineStartSecon
           </Text>
         </Pressable>
         {file?<View style={{gap:10}}>
-          {previewUrl&&Platform.OS==='web'?React.createElement('audio',{
-            ref:audioElement,controls:true,src:previewUrl,preload:'metadata',
-            style:{width:'100%',height:38}
-          }):null}
           <View style={{flexDirection:'row',flexWrap:'wrap',gap:8}}>
             <Pressable onPress={()=>{void finish();}} disabled={saving||processing}
               style={{minHeight:43,borderRadius:11,backgroundColor:PINK,
                 paddingHorizontal:18,justifyContent:'center'}}>
               <Text style={{color:'#fff',fontWeight:'700',fontSize:12}}>
-                {saving?'Sauvegarde…':'Terminer · conserver'}
+                {saving?'Sauvegarde…':'Conserver'}
               </Text>
             </Pressable>
             {history.current.length>0?<Pressable onPress={undo}
@@ -261,11 +308,11 @@ export function MusicAudioCapture({onSaved,onStarted,onPaused,timelineStartSecon
           </View>
         </View>:null}
       </View>}
+    {file?<MusicAudioMarkers markers={markers} duration={duration} cursor={cursor}
+      onSeek={seek} onChange={onMarkers} disabled={status==='recording'||processing||saving}/>:null}
     {error?<Text style={{fontSize:12,lineHeight:20,color:'#B54B65'}}>{error}</Text>:null}
-    <Text style={{fontSize:11,lineHeight:19,color:theme.muted}}>
-      {file?
-        'En pause, choisis un point sur la forme d’onde. La prochaine prise remplacera uniquement la portion de même durée, sans effacer la suite. Une retouche peut être annulée.':
-        'Le micro enregistre le son réel. Utilise un casque si tu écoutes une piste en même temps.'}
-    </Text>
+    {file?<Text style={{fontSize:11,lineHeight:18,color:theme.muted}}>
+      Place le curseur sur la forme d’onde pour réenregistrer un passage. Le reste de la prise est conservé.
+    </Text>:null}
   </View>;
 }
