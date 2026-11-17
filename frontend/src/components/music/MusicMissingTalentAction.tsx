@@ -9,8 +9,9 @@ import type {MusicProject} from '@/domain/musicWorkspace';
 const pink='#CB245C';
 
 /** Finding a musician is a need, not an uploaded file. It lives by instruments/section. */
-export function MusicMissingTalentAction({project,patch,sectionId}:{
+export function MusicMissingTalentAction({project,patch,sectionId,primary=false}:{
   project:MusicProject;patch:(change:Partial<MusicProject>)=>void;sectionId?:string;
+  primary?:boolean;
 }){
   const theme=useAppTheme();
   const [open,setOpen]=useState(false);
@@ -31,12 +32,20 @@ export function MusicMissingTalentAction({project,patch,sectionId}:{
   return <View style={{gap:8}}>
     <Pressable onPress={()=>setOpen(!open)} accessibilityRole="button"
       accessibilityState={{expanded:open}}
-      style={{alignSelf:'flex-start',flexDirection:'row',alignItems:'center',gap:6,paddingVertical:6}}>
-      <Ionicons name="person-add-outline" size={17} color={pink}/>
-      <Text style={{fontSize:12,color:pink,fontWeight:'600'}}>
-        {sectionId?'Un talent manque pour cette partie ?':'Un instrument ou un talent manque ?'}
+      style={{alignSelf:primary?'stretch':'flex-start',flexDirection:'row',
+        alignItems:'center',justifyContent:primary?'center':'flex-start',gap:9,
+        minHeight:primary?52:38,paddingHorizontal:primary?18:0,
+        paddingVertical:primary?13:6,borderRadius:primary?14:0,
+        backgroundColor:primary?pink:'transparent'}}>
+      <Ionicons name="person-add-outline" size={primary?21:17}
+        color={primary?'#fff':pink}/>
+      <Text style={{fontSize:primary?14:12,color:primary?'#fff':pink,
+        fontWeight:'700'}}>
+        {primary?'Je recherche un talent':sectionId?
+          'Un talent manque pour cette partie ?':'Un instrument ou un talent manque ?'}
       </Text>
-      <Ionicons name={open?'chevron-up':'chevron-down'} size={14} color={pink}/>
+      <Ionicons name={open?'chevron-up':'chevron-down'}
+        size={primary?17:14} color={primary?'#fff':pink}/>
     </Pressable>
     {open?<View style={{borderRadius:12,padding:12,borderWidth:1,
       borderColor:theme.border,backgroundColor:theme.surface,gap:9}}>
