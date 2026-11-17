@@ -296,6 +296,8 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,h
         const item=files.find(f=>f.id===id);
         if(item)changeFile(id,classifySongFile(item,kind));
       }} onSection={associate} onNewSection={newSection}
-      onStartVersion={onStartVersion} onUseFile={onUseFile} hasVersion={hasVersion}/>
+      onStartVersion={onStartVersion} onUseFile={onUseFile}
+      onTranslate={file=>openWrite(file.id)} onOpenFile={setSelected}
+      hasVersion={hasVersion}/>
   </View>;
 }
