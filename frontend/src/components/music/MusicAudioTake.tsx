@@ -33,6 +33,7 @@ export function MusicAudioTake({file,compact=false,editable=false,onUpdate,onOpe
   const [zoom,setZoom]=useState(1);
   const [playing,setPlaying]=useState(false);
   const [editing,setEditing]=useState(false);
+  const [showNotes,setShowNotes]=useState(false);
   const [draftActive,setDraftActive]=useState(false);
   const [confirmExit,setConfirmExit]=useState(false);
   const [editMarkerRequest,setEditMarkerRequest]=useState<{id:string;nonce:number}|null>(null);
@@ -170,10 +171,20 @@ export function MusicAudioTake({file,compact=false,editable=false,onUpdate,onOpe
             id,nonce:(previous?.nonce||0)+1
           })):undefined}
           compact={compact}/>
-        {onUpdate&&(editable||editMarkerRequest)?<MusicAudioMarkers
-          markers={file.markers||[]} duration={duration} cursor={cursor}
-          onChange={markers=>onUpdate({markers})} onSeek={seek}
-          editRequest={editMarkerRequest} rangeRequest={rangeRequest}/>:null}
+        {editable&&onUpdate?<Pressable onPress={()=>setShowNotes(!showNotes)}
+          accessibilityRole="button"
+          accessibilityState={{expanded:showNotes}}
+          style={{flexDirection:'row',alignItems:'center',gap:7,paddingVertical:7}}>
+          <Ionicons name="bookmark-outline" size={17} color={PINK}/>
+          <Text style={{fontSize:12,color:theme.foreground,fontWeight:'600'}}>
+            Notes sur la prise{file.markers?.length?' · '+file.markers.length:''}
+          </Text>
+          <Ionicons name={showNotes?'chevron-up':'chevron-down'} color={theme.muted} size={16}/>
+        </Pressable>:null}
+        {onUpdate&&(showNotes||!!editMarkerRequest||!!rangeRequest)?
+          <MusicAudioMarkers markers={file.markers||[]} duration={duration} cursor={cursor}
+            onChange={markers=>onUpdate({markers})} onSeek={seek}
+            editRequest={editMarkerRequest} rangeRequest={rangeRequest}/>:null}
         {editable&&onUpdate?<>
           <Pressable onPress={()=>{audio.current?.pause();setPlaying(false);setEditing(true);}}
             accessibilityRole="button" style={{alignSelf:'flex-start',minHeight:38,
