@@ -138,7 +138,10 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,h
     </View>
     <View style={{flexDirection:'row',flexWrap:'wrap',gap:9}}>
       {action('Enregistrer','mic-outline',()=>composer==='record'?closeComposer():setComposer('record'),true)}
-      {action('Écrire','pencil-outline',()=>setComposer(composer==='write'?'none':'write'))}
+      {action('Écrire','pencil-outline',()=>{
+        if(composer==='record'&&unsavedRecording){setConfirmClose(true);return;}
+        setComposer(composer==='write'?'none':'write');
+      })}
       {action(busy?'Import…':'Importer','add-outline',pickFiles)}
     </View>
     {composer!=='none'?<View style={{gap:16,padding:compact?16:22,
