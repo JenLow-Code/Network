@@ -68,6 +68,7 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
   const [confirmClose,setConfirmClose]=useState(false);
   const [confirmDelete,setConfirmDelete]=useState(false);
   const [editTrack,setEditTrack]=useState('');
+  const [showTracks,setShowTracks]=useState(false);
   const [trackTitle,setTrackTitle]=useState('');
   const [trackOffset,setTrackOffset]=useState('0');
   const [trimStart,setTrimStart]=useState('0');
@@ -95,8 +96,8 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
     if(!version)return;
     editTracks(version.tracks.map(t=>t.id===id?{...t,...changes}:t));
   };
-  const openTrack=(t:WorkingMusicTrack,file?:MusicProjectFile)=>{
-    setEditTrack(editTrack===t.id?'':t.id);
+  const openTrack=(t:WorkingMusicTrack,file?:MusicProjectFile,force=false)=>{
+    setEditTrack(force?t.id:editTrack===t.id?'':t.id);
     setTrackTitle(t.title);
     setTrackOffset(String(t.offsetSeconds||0));
     setTrimStart(String(t.trimStartSeconds||0));
@@ -289,6 +290,13 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
       <MusicStudioTransport key={version.id} version={version} files={project.files}
         onPositionChange={setTimelineCursor}
         onTrackChange={editOneTrack}
+        onSelectTrack={id=>{
+          const selected=version.tracks.find(t=>t.id===id);
+          if(selected){
+            setShowTracks(true);
+            openTrack(selected,project.files.find(f=>f.id===selected.sourceFileId),true);
+          }
+        }}
         playbackRequest={playbackRequest} pauseRequest={pauseRequest}/>
       <Text style={{fontSize:12,color:theme.muted,lineHeight:19}}>
         Choisis le point précis sur la chronologie avant d’enregistrer une nouvelle piste.
@@ -357,11 +365,18 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
         <View style={{alignSelf:'flex-start'}}>{button('Conserver les repères',saveSettings,true)}</View>
       </View>:null}
       <View style={{gap:12}}>
-        <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
-          <Text style={{fontSize:17,fontWeight:'700',color:theme.foreground}}>Pistes</Text>
-          <Text style={{fontSize:12,color:theme.muted}}>{version.tracks.length}</Text>
-        </View>
-        {version.tracks.map(track=>{
+        <Pressable onPress={()=>setShowTracks(!showTracks)} accessibilityRole="button"
+          accessibilityState={{expanded:showTracks}}
+          style={{flexDirection:'row',alignItems:'center',gap:9,
+            borderTopWidth:1,borderColor:theme.border,paddingVertical:11}}>
+          <Ionicons name="options-outline" color={PINK} size={17}/>
+          <Text style={{fontSize:14,fontWeight:'600',color:theme.foreground,flex:1}}>
+            Réglages des pistes
+          </Text>
+          <Ionicons name={showTracks?'chevron-up':'chevron-down'}
+            color={theme.muted} size={17}/>
+        </Pressable>
+        {showTracks?version.tracks.map(track=>{
           const source=project.files.find(file=>file.id===track.sourceFileId);
           return <View key={track.id} style={{paddingVertical:13,gap:9,
             borderTopWidth:1,borderColor:theme.border,opacity:track.muted?.65:1}}>
@@ -449,7 +464,7 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
               </Text>
             </View>:null}
           </View>;
-        })}
+        }):null}
       </View>
       {sectionPanel()}
     </View>:null}
