@@ -180,14 +180,8 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
         borderRadius:10}}>
       <Ionicons name={icon} size={19} color={active?PINK:theme.muted}/>
     </Pressable>;
-  return <View style={{gap:22}}>
-    <View style={{gap:7}}>
-      <Text style={{fontSize:22,fontWeight:'700',color:theme.foreground}}>Créer</Text>
-      <Text style={{fontSize:13,lineHeight:21,color:theme.muted,maxWidth:560}}>
-        Assemble les pistes, ajuste leur position et crée des versions. Les fichiers originaux restent dans Capturer.
-      </Text>
-    </View>
-    <View style={{gap:11}}>
+  return <View style={{gap:compact?16:22}}>
+    {version?<View style={{gap:11}}>
       <View style={{flexDirection:'row',gap:10,alignItems:'center'}}>
         <Pressable onPress={()=>setVersionMenu(!versionMenu)} accessibilityRole="button"
           accessibilityState={{expanded:versionMenu}}
@@ -249,21 +243,11 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
           </View>)}
         </View>:null}
       </View>:null}
-    </View>
-    {!version?<View style={{gap:14,paddingVertical:26,borderTopWidth:1,
-      borderBottomWidth:1,borderColor:theme.border}}>
-      <Ionicons name="radio-outline" color={PINK} size={30}/>
-      <Text style={{fontSize:17,color:theme.foreground,fontWeight:'700'}}>
-        Aucune version créée.
-      </Text>
-      <Text style={{fontSize:13,color:theme.muted,lineHeight:21,maxWidth:480}}>
-        Choisis une piste enregistrée pour créer la première version.
-      </Text>
-      <View style={{alignSelf:'flex-start',gap:9}}>
-        {button('Choisir ma première piste',()=>setPickMode('start'),true,'add-outline')}
-        {button('Retourner à Capturer',onCapture)}
-      </View>
-      {sectionPanel()}
+    </View>:null}
+    {!version?<View style={{alignSelf:'flex-start',paddingTop:compact?4:10}}>
+      {sources.length?
+        button('Choisir une prise · 1re version',()=>setPickMode('start'),true,'add-outline'):
+        button('Capturer ma première prise',onCapture,true,'mic-outline')}
     </View>:null}
     {version?<View style={{gap:20}}>
       <MusicStudioTransport key={version.id} version={version} files={project.files}
