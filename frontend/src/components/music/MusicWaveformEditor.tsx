@@ -32,6 +32,7 @@ export function MusicWaveformEditor({file,duration,cursor,onSeek,zoom,onZoom,
   const [drawingRange,setDrawingRange]=useState<{start:number;end:number}|null>(null);
   const onSeekRef=useRef(onSeek);onSeekRef.current=onSeek;
   const onRangeRef=useRef(onCreateRange);onRangeRef.current=onCreateRange;
+  const nativeRangeRef=useRef<{start:number;end:number;pageX:number}|null>(null);
   const drawingRef=useRef<{pointerId:number;startClientX:number;
     start:number;end:number;active:boolean;type:string;
     timer:ReturnType<typeof setTimeout>|null}|null>(null);
@@ -264,6 +265,31 @@ export function MusicWaveformEditor({file,duration,cursor,onSeek,zoom,onZoom,
         scrollEventThrottle={16} keyboardShouldPersistTaps="handled">
         <View style={{width:px,height:112,position:'relative'}}>
         <Pressable accessibilityRole="adjustable" accessibilityLabel="Chronologie de l’enregistrement"
+          delayLongPress={320}
+          onLongPress={e=>{
+            if(Platform.OS==='web'||!onCreateRange)return;
+            const start=clamp(e.nativeEvent.locationX/Math.max(px,1)*duration,0,duration);
+            nativeRangeRef.current={start,end:start,pageX:e.nativeEvent.pageX};
+            setDrawingRange({start,end:start});
+          }}
+          onTouchMove={e=>{
+            if(Platform.OS==='web'||!nativeRangeRef.current)return;
+            const range=nativeRangeRef.current;
+            range.end=clamp(range.start+
+              (e.nativeEvent.pageX-range.pageX)/Math.max(px,1)*duration,0,duration);
+            setDrawingRange({start:Math.min(range.start,range.end),
+              end:Math.max(range.start,range.end)});
+          }}
+          onTouchEnd={()=>{
+            const range=nativeRangeRef.current;
+            if(Platform.OS==='web'||!range)return;
+            nativeRangeRef.current=null;setDrawingRange(null);
+            suppressClick.current=true;
+            const a=Math.min(range.start,range.end),b=Math.max(range.start,range.end);
+            if(b-a>=.025)onCreateRange?.(Math.round(a*1000)/1000,Math.round(b*1000)/1000);
+            else onSeek(Math.round(range.start*1000)/1000);
+            setTimeout(()=>{suppressClick.current=false;},160);
+          }}
           onPress={e=>{
             // SVG bars can be the native event target. Derive the absolute
             // position from the viewport plus its actual scroll offset.
