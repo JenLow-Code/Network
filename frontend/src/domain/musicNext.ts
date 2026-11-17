@@ -1,4 +1,4 @@
-import type { MusicProject, MusicProjectFile } from './musicWorkspace';
+import type { MusicProject, MusicProjectFile, MusicAudioMarker } from './musicWorkspace';
 import { newMusicId } from './musicWorkspace';
 
 /** A new music generation deliberately lives alongside the legacy workspace metadata.
@@ -14,6 +14,8 @@ export type WorkingMusicTrack = {
   offsetSeconds: number;
   trimStartSeconds?: number;
   trimEndSeconds?: number;
+  /** Optional annotations for this particular arranged track, independent of the source file. */
+  markers?: MusicAudioMarker[];
 };
 export type WorkingMusicVersion = {
   id: string;
