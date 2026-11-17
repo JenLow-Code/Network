@@ -78,6 +78,8 @@ export function MusicArrangementTimeline({version,files,duration,position,onSeek
     if(Platform.OS!=='web'||!scrollRef.current)return;
     const el=scrollRef.current as HTMLElement;
     if(!el.addEventListener)return;
+    el.setAttribute('data-jenlow-music-dropzone','true');
+    el.setAttribute('data-jenlow-seconds-per-pixel',String(1/pxReady.current));
     const over=(e:DragEvent)=>{
       if(!e.dataTransfer?.types?.includes('application/x-jenlow-music-file'))return;
       e.preventDefault();
@@ -95,7 +97,9 @@ export function MusicArrangementTimeline({version,files,duration,position,onSeek
     el.addEventListener('dragover',over);el.addEventListener('drop',drop);
     el.addEventListener('dragleave',leave);
     return()=>{el.removeEventListener('dragover',over);el.removeEventListener('drop',drop);
-      el.removeEventListener('dragleave',leave);};
+      el.removeEventListener('dragleave',leave);
+      el.removeAttribute('data-jenlow-music-dropzone');
+      el.removeAttribute('data-jenlow-seconds-per-pixel');};
   },[rows,zoom,panelWidth]);
   const tick=zoom>=8?2:zoom>=4?5:zoom>=2?10:30;
   const rows=version.tracks.length;
