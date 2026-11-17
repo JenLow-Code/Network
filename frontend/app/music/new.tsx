@@ -11,6 +11,7 @@ import { chooseMusicFile } from '@/domain/musicMedia';
 import { saveDraftAudio, saveDraftAttachment } from '@/domain/musicLocalStorage';
 import { fileAudioDuration } from '@/domain/musicProjectSelectors';
 import { MusicAudioCapture } from '@/components/music/MusicAudioCapture';
+import type { MusicAudioMarker } from '@/domain/musicWorkspace';
 
 type StartMode='blank'|'upload'|'record';
 const pink='#CB245C';
@@ -30,6 +31,7 @@ export default function NewMusic(){
   const [fileName,setFileName]=useState('');
   const [audioId,setAudioId]=useState('');
   const [audioDuration,setAudioDuration]=useState<number|undefined>();
+  const [audioMarkers,setAudioMarkers]=useState<MusicAudioMarker[]>([]);
   const [coverLocalId,setCoverLocalId]=useState('');
   const [coverPreview,setCoverPreview]=useState('');
   const [coverBusy,setCoverBusy]=useState(false);
@@ -61,7 +63,7 @@ export default function NewMusic(){
     chooseMusicFile(file=>{
       setBusy(true);setError('');
       void Promise.all([saveDraftAudio(file),fileAudioDuration(file)]).then(([localId,duration])=>{
-        setAudioId(localId);setFileName(file.name);setAudioDuration(duration);})
+        setAudioId(localId);setFileName(file.name);setAudioDuration(duration);setAudioMarkers([]);})
         .catch(e=>setError(e instanceof Error?e.message:'Import audio impossible.'))
         .finally(()=>setBusy(false));
     });
@@ -76,7 +78,7 @@ export default function NewMusic(){
         id:newMusicId(),title:fileName.replace(/\\.[^.]+$/,'')||'Première prise',
         kind:'audio' as const,localFileId:audioId,originalFilename:fileName,
         mimeType:/\\.m4a$/i.test(fileName)?'audio/mp4':'audio/webm',
-        sectionIds:[],durationSeconds:audioDuration,createdAt:new Date().toISOString(),
+        sectionIds:[],durationSeconds:audioDuration,markers:audioMarkers,createdAt:new Date().toISOString(),
       }]}:{}),
     });
     router.replace({pathname:'/music-workspace/[id]',params:{id}});
@@ -179,8 +181,9 @@ export default function NewMusic(){
             <Ionicons name="checkmark-circle" size={15} color="#237B56"/> {fileName}
           </Text>:null}
         </View>:null}
-        {mode==='record'?<MusicAudioCapture onSaved={(id,filename,duration)=>{
-          setAudioId(id);setFileName(filename);setAudioDuration(duration);}}/>:null}
+        {mode==='record'?<MusicAudioCapture onSaved={(id,filename,duration,_offset,markers)=>{
+          setAudioId(id);setFileName(filename);setAudioDuration(duration);
+          setAudioMarkers(markers||[]);}}/>:null}
       </View>
       {storageError?<Text style={{fontSize:12,color:'#B34D67'}}>{storageError}</Text>:null}
       {error?<Text style={{fontSize:12,color:'#B34D67'}}>{error}</Text>:null}
