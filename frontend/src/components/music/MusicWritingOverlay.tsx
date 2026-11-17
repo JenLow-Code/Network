@@ -215,8 +215,10 @@ export function MusicWritingOverlay({project,mode,onModeChange,source,initialFil
               originalLanguage={project.originalLanguage}
               onSave={onSave} onDirtyChange={setWriterDirty} immersive/>
           </View>
-          {tab==='score'?<MusicSketchStudio initialFile={initialFile?.musicEvents?initialFile:null}
-            onSave={onSaveScore} onDirtyChange={setScoreDirty}/>:null}
+          <View style={{display:tab==='score'?'flex':'none'}}>
+            <MusicSketchStudio initialFile={initialFile?.musicEvents?initialFile:null}
+              onSave={onSaveScore} onDirtyChange={setScoreDirty}/>
+          </View>
           {selectedSource?<View style={{display:tab==='translation'?'flex':'none'}}>
             <MusicWritingStudio key={'translate-'+selectedSource.id}
               mode="lyrics" onModeChange={onModeChange} showTabs={false}
