@@ -9,6 +9,9 @@ import {MusicAudioCapture} from './MusicAudioCapture';
 import {MusicAudioPreview} from './MusicAudioPreview';
 import {MusicStudioTransport} from './MusicStudioTransportNext';
 import {MusicAudioMarkers} from './MusicAudioMarkers';
+import {MusicSourceBank} from './MusicSourceBank';
+import {MusicLyricTimeline} from './MusicLyricTimeline';
+import {useMusicMetronome} from './useMusicMetronome';
 import {MusicSongTabs} from './MusicSongTabs';
 import {musicNextState,makeWorkingVersion,makeWorkingTrack,
   changeWorkingVersion,undoWorkingVersion,isMusicTrackCandidate} from '@/domain/musicNext';
@@ -88,6 +91,14 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
   const [meter,setMeter]=useState('');
   const [tone,setTone]=useState('');
   const [error,setError]=useState('');
+  const metronome=useMusicMetronome();
+  const [bpmInput,setBpmInput]=useState(String(version?.bpm||100));
+  useEffect(()=>setBpmInput(String(version?.bpm||100)),[version?.id]);
+  const effectiveBpm=version?.bpm||100;
+  const meterBeats=Math.max(1,Math.min(12,parseInt(version?.meter||'4',10)||4));
+  useEffect(()=>{
+    metronome.setSettings(effectiveBpm,!!version?.metronomeMuted,meterBeats);
+  },[effectiveBpm,version?.metronomeMuted,meterBeats]);
   const input={backgroundColor:theme.surface,borderWidth:1,borderColor:theme.border,
     borderRadius:10,paddingHorizontal:12,paddingVertical:10,fontSize:13,
     color:theme.foreground} as const;
@@ -126,12 +137,10 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
     patch({musicNext:{...state,versions:[...state.versions,created],activeVersionId:created.id}});
     setPickMode('none');setVersionMenu(false);setError('');
   };
-  const add=(file:MusicProjectFile)=>{
+  const add=(file:MusicProjectFile,at=timelineCursor)=>{
     if(!version){first(file);return;}
-    if(version.tracks.some(t=>t.sourceFileId===file.id)){
-      setError('Cette prise est déjà présente dans cette version.');return;
-    }
-    editTracks([...version.tracks,makeWorkingTrack(file)]);
+    editTracks([...version.tracks,{...makeWorkingTrack(file),
+      offsetSeconds:Math.max(0,Math.round(at*100)/100)}]);
     setPickMode('none');setError('');
   };
   const copyVersion=()=>{
@@ -156,6 +165,24 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
       }]
     })});
     setRecording(false);setUnsavedRecording(false);setConfirmClose(false);setError('');
+  };
+  const applyBpm=()=>{
+    if(!version)return;
+    const parsed=Number(bpmInput.replace(',','.'));
+    if(!Number.isFinite(parsed)||parsed<30||parsed>300){
+      setError('Le BPM doit être entre 30 et 300.');return;
+    }
+    const bpm=Math.round(parsed);
+    setBpmInput(String(bpm));setError('');
+    edit({...version,bpm});
+    metronome.setSettings(bpm,!!version.metronomeMuted,meterBeats);
+  };
+  const toggleClick=()=>{
+    if(!version)return;
+    if(metronome.running)metronome.stop();
+    else if(!metronome.start(Number(bpmInput)||effectiveBpm,
+      !!version.metronomeMuted,meterBeats))
+      setError('Le métronome nécessite Web Audio.');
   };
   const openSettings=()=>{
     if(!version)return;
@@ -294,6 +321,15 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
       <MusicStudioTransport key={version.id} version={version} files={project.files}
         onPositionChange={setTimelineCursor}
         onTrackChange={editOneTrack}
+        onRenameTrack={(id,title)=>editOneTrack(id,{title})}
+        onRemoveTrack={id=>{
+          editTracks(version.tracks.filter(t=>t.id!==id));
+          setEditTrack('');metronome.stop();
+        }}
+        onDropSource={(id,time)=>{
+          const file=project.files.find(f=>f.id===id);
+          if(file&&isMusicTrackCandidate(file))add(file,time);
+        }}
         onMarkTrackRange={(trackId,start,end)=>setRangeRequest(previous=>({
           trackId,start,end,nonce:(previous?.nonce||0)+1
         }))}
@@ -330,16 +366,48 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
               track.offsetSeconds+seconds-(track.trimStartSeconds||0)))}/>
         </View>;
       })():null}
-      <Text style={{fontSize:12,color:theme.muted,lineHeight:19}}>
-        Choisis le point précis sur la chronologie avant d’enregistrer une nouvelle piste.
-      </Text>
+      <MusicSourceBank files={sources} onAdd={add}/>
+      <View style={{padding:12,borderRadius:12,
+        backgroundColor:theme.surface,borderWidth:1,borderColor:theme.border}}>
+        <View style={{flexDirection:'row',alignItems:'center',gap:7,flexWrap:'wrap'}}>
+          <Ionicons name="speedometer-outline" color={PINK} size={18}/>
+          <Text style={{fontSize:12,fontWeight:'700',color:theme.foreground}}>Tempo</Text>
+          <TextInput value={bpmInput} onChangeText={setBpmInput}
+            onSubmitEditing={applyBpm} onBlur={applyBpm}
+            keyboardType="numeric" accessibilityLabel="Tempo en BPM"
+            style={{width:65,textAlign:'center',borderRadius:9,
+              borderWidth:1,borderColor:theme.border,backgroundColor:theme.background,
+              color:theme.foreground,fontSize:14,fontWeight:'700',paddingVertical:6}}/>
+          <Text style={{fontSize:12,color:theme.muted}}>BPM</Text>
+          <Pressable onPress={toggleClick} accessibilityRole="button"
+            accessibilityLabel={metronome.running?'Arrêter le métronome':'Tester le métronome'}
+            style={{flexDirection:'row',gap:5,alignItems:'center',padding:8}}>
+            <Ionicons name={metronome.running?'stop-circle-outline':'play-circle-outline'}
+              color={PINK} size={19}/>
+            <Text style={{fontSize:11,color:PINK}}>{metronome.running?'Arrêter':'Écouter'}</Text>
+          </Pressable>
+          <Pressable onPress={()=>edit({...version,
+            metronomeMuted:!version.metronomeMuted})}
+            accessibilityRole="button"
+            accessibilityLabel={version.metronomeMuted?
+              'Activer le clic du métronome':'Couper le clic du métronome'}
+            style={{flexDirection:'row',gap:5,alignItems:'center',padding:8}}>
+            <Ionicons name={version.metronomeMuted?'volume-mute-outline':'volume-high-outline'}
+              color={version.metronomeMuted?theme.muted:PINK} size={19}/>
+            <Text style={{fontSize:11,color:theme.muted}}>
+              {version.metronomeMuted?'Muet':'Clic activé'}
+            </Text>
+          </Pressable>
+        </View>
+      </View>
       <View style={{flexDirection:'row',flexWrap:'wrap',gap:9}}>
         {button(recording?'Fermer l’enregistreur':'Enregistrer une prise',()=>{
           if(recording&&unsavedRecording){setConfirmClose(true);return;}
-          if(!recording){setRecordOrigin(timelineCursor);setPauseRequest(n=>n+1);}
+          if(!recording){setRecordOrigin(timelineCursor);setPauseRequest(n=>n+1);
+            metronome.stop();}
           setRecording(!recording);
         },true,'radio-button-on-outline')}
-        {button('Ajouter une piste',()=>setPickMode(pickMode==='add'?'none':'add'),false,'add-outline')}
+
       </View>
       {confirmClose?<View style={{borderWidth:1,borderColor:theme.border,
         borderRadius:12,padding:12,gap:9}}>
@@ -349,7 +417,7 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
         <View style={{flexDirection:'row',flexWrap:'wrap',gap:8}}>
           {button('Continuer',()=>setConfirmClose(false))}
           {button('Abandonner',()=>{
-            setRecording(false);setUnsavedRecording(false);setConfirmClose(false);
+            metronome.stop();setRecording(false);setUnsavedRecording(false);setConfirmClose(false);
           })}
         </View>
       </View>:null}
@@ -364,23 +432,26 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
         <MusicAudioCapture timelineStartSeconds={recordOrigin}
           onDraftChange={setUnsavedRecording}
           backingPositionSeconds={timelineCursor}
-          onStarted={at=>setPlaybackRequest(previous=>({
-            at:recordOrigin+at,serial:(previous?.serial||0)+1
-          }))}
-          onPaused={()=>setPauseRequest(n=>n+1)}
-          onSaved={saveTake}/>
+          onStarted={at=>{
+            if(version&&!version.bpm)edit({...version,bpm:effectiveBpm});
+            metronome.start(effectiveBpm,!!version?.metronomeMuted,meterBeats);
+            setPlaybackRequest(previous=>({
+              at:recordOrigin+at,serial:(previous?.serial||0)+1
+            }));
+          }}
+          onPaused={()=>{metronome.stop();setPauseRequest(n=>n+1);}}
+          onSaved={(...args)=>{metronome.stop();saveTake(...args);}}/>
       </View>:null}
 
       <View style={{flexDirection:'row',alignItems:'center',gap:10,flexWrap:'wrap'}}>
         <Text style={{fontSize:12,color:theme.muted}}>
-          {version.bpm?version.bpm+' BPM':'Tempo libre'}
-          {version.key?' · '+version.key:''}
+          {version.key||'Tonalité non définie'}
           {version.meter?' · '+version.meter:''}
         </Text>
         <Pressable onPress={openSettings} accessibilityRole="button"
           style={{flexDirection:'row',alignItems:'center',gap:4,paddingVertical:6}}>
           <Ionicons name="options-outline" size={16} color={PINK}/>
-          <Text style={{fontSize:12,color:PINK}}>Repères musicaux</Text>
+          <Text style={{fontSize:12,color:PINK}}>Réglages du morceau</Text>
         </Pressable>
       </View>
       {showSettings?<View style={{gap:10,padding:14,borderRadius:14,
@@ -388,13 +459,12 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
         <Text style={{fontSize:12,color:theme.muted,lineHeight:19}}>
           Ces indications sont facultatives. Aucune tonalité ni aucun tempo ne sont déduits sans analyse.
         </Text>
-        <TextInput style={input} keyboardType="numeric" value={tempo} onChangeText={setTempo}
-          placeholder="Tempo en BPM (si connu)" placeholderTextColor={theme.muted}/>
+
         <TextInput style={input} value={tone} onChangeText={setTone}
           placeholder="Tonalité (si connue)" placeholderTextColor={theme.muted}/>
         <TextInput style={input} value={meter} onChangeText={setMeter}
           placeholder="Mesure, p. ex. 4/4" placeholderTextColor={theme.muted}/>
-        <View style={{alignSelf:'flex-start'}}>{button('Conserver les repères',saveSettings,true)}</View>
+        <View style={{alignSelf:'flex-start'}}>{button('Enregistrer les réglages',saveSettings,true)}</View>
       </View>:null}
       <View style={{gap:12}}>
         <Pressable onPress={()=>setShowTracks(!showTracks)} accessibilityRole="button"
@@ -498,6 +568,12 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
           </View>;
         }):null}
       </View>
+      <MusicLyricTimeline files={project.files} cues={version.lyricCues||[]}
+        cursor={timelineCursor}
+        onChange={lyricCues=>edit({...version,lyricCues})}
+        onSeek={seconds=>setPlaybackRequest(previous=>({
+          at:seconds,serial:(previous?.serial||0)+1
+        }))}/>
       {sectionPanel()}
     </View>:null}
     {pickMode!=='none'?<View style={{borderWidth:1,borderColor:theme.border,borderRadius:15,
