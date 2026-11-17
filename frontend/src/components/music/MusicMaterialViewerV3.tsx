@@ -33,11 +33,12 @@ type Props={
   onNewSection:(file:MusicProjectFile,name:string,stanzaId?:string)=>void;
   onStartVersion:(file:MusicProjectFile)=>void;onUseFile:(file:MusicProjectFile)=>void;
   onTranslate?:(file:MusicProjectFile)=>void;
+  onEdit?:(file:MusicProjectFile)=>void;
   onOpenFile?:(id:string)=>void;
   hasVersion:boolean;
 };
 export function MusicMaterialViewer({visible,file,project,onClose,onUpdate,onChangeType,
-  onSection,onNewSection,onStartVersion,onUseFile,onTranslate,onOpenFile,hasVersion}:Props){
+  onSection,onNewSection,onStartVersion,onUseFile,onTranslate,onEdit,onOpenFile,hasVersion}:Props){
   const theme=useAppTheme();
   const {width,height}=useWindowDimensions();
   const compact=width<650;
@@ -182,7 +183,8 @@ export function MusicMaterialViewer({visible,file,project,onClose,onUpdate,onCha
             </Pressable>
             {menu==='type'?<>
               {file.kind!=='audio'?row('create-outline','Modifier le contenu',()=>{
-                setDraft(textOf(file));setEditing(true);setMenu('none');
+                if(onEdit){onClose();onEdit(file);}
+                else{setDraft(textOf(file));setEditing(true);setMenu('none');}
               }):null}
               {row('text-outline','Renommer',()=>setMenu('rename'))}
               {file.kind!=='lyrics'&&project.sections.length>0?
@@ -331,7 +333,10 @@ export function MusicMaterialViewer({visible,file,project,onClose,onUpdate,onCha
           {error?<Text style={{color:'#B34D67',fontSize:12}}>{error}</Text>:null}
           {!editing?<View style={{flexDirection:'row',gap:12,flexWrap:'wrap',
             borderTopWidth:1,borderColor:theme.border,paddingTop:15}}>
-            {!isAudio(file)?<Pressable onPress={()=>{setDraft(textOf(file));setEditing(true);setMenu('none');}}
+            {!isAudio(file)?<Pressable onPress={()=>{
+              if(onEdit){onClose();onEdit(file);}
+              else{setDraft(textOf(file));setEditing(true);setMenu('none');}
+            }}
               style={{flexDirection:'row',alignItems:'center',gap:7,paddingVertical:9}}>
               <Ionicons name="pencil-outline" size={16} color={pink}/>
               <Text style={{color:pink,fontSize:12,fontWeight:'600'}}>Modifier</Text>
