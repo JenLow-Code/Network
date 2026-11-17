@@ -17,12 +17,22 @@ export type WorkingMusicTrack = {
   /** Optional annotations for this particular arranged track, independent of the source file. */
   markers?: MusicAudioMarker[];
 };
+/** Manually timed lyrics; no automatic voice recognition is implied. */
+export type TimedLyricCue = {
+  id:string;
+  sourceFileId?:string;
+  text:string;
+  startSeconds:number;
+  endSeconds:number;
+};
 export type WorkingMusicVersion = {
   id: string;
   title: string;
   createdAt: string;
   updatedAt: string;
   bpm?: number;
+  metronomeMuted?: boolean;
+  lyricCues?: TimedLyricCue[];
   key?: string;
   meter?: string;
   tracks: WorkingMusicTrack[];
