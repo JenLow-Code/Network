@@ -1,5 +1,5 @@
 import React,{useEffect,useMemo,useRef,useState} from 'react';
-import {Pressable,ScrollView,Text,View,useWindowDimensions} from 'react-native';
+import {Platform,Pressable,ScrollView,Text,View,useWindowDimensions} from 'react-native';
 import Svg,{Rect,Line,Circle,Text as SvgText} from 'react-native-svg';
 import {Ionicons} from '@expo/vector-icons';
 import {useAppTheme} from '@/theme/AppTheme';
@@ -168,7 +168,19 @@ export function MusicWaveformEditor({file,duration,cursor,onSeek,zoom,onZoom,
         onScroll={e=>{scrollX.current=e.nativeEvent.contentOffset.x;}}
         scrollEventThrottle={16} keyboardShouldPersistTaps="handled">
         <Pressable accessibilityRole="adjustable" accessibilityLabel="Chronologie de l’enregistrement"
-          onPress={e=>seek(e.nativeEvent.locationX)}
+          onPress={e=>{
+            // SVG bars can be the native event target. Derive the absolute
+            // position from the viewport plus its actual scroll offset.
+            let x=e.nativeEvent.locationX;
+            const el=pane.current as HTMLElement|null;
+            if(Platform.OS==='web'&&el?.getBoundingClientRect&&
+              Number.isFinite(e.nativeEvent.pageX)){
+              const left=el.getBoundingClientRect().left;
+              x=e.nativeEvent.pageX-(typeof window!=='undefined'?window.scrollX:0)-
+                left+scrollX.current;
+            }
+            seek(x);
+          }}
           style={{width:px,height:112,justifyContent:'center'}}>
           <Svg width={px} height={112} viewBox={'0 0 '+px+' 112'}>
             <Line x1={0} y1={59} x2={px} y2={59}
