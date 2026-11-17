@@ -1,4 +1,4 @@
-import React,{useState} from 'react';
+import React,{useEffect,useState} from 'react';
 import {Pressable,Text,TextInput,View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {useAppTheme} from '@/theme/AppTheme';
@@ -19,8 +19,16 @@ export function MusicAudioMarkers({markers,duration,cursor,onChange,onSeek,disab
  const [open,setOpen]=useState(false),[editing,setEditing]=useState('');
  const [interval,setIntervalMode]=useState(false),[from,setFrom]=useState(''),[to,setTo]=useState('');
  const [note,setNote]=useState(''),[error,setError]=useState('');
+ const [picking,setPicking]=useState<{field:'from'|'to';cursor:number}|null>(null);
+ useEffect(()=>{
+   if(!open||!picking||Math.abs(cursor-picking.cursor)<.0005)return;
+   if(picking.field==='from')setFrom(musicStampMs(cursor));
+   else setTo(musicStampMs(cursor));
+   setPicking(null);
+ },[cursor,open,picking]);
  const begin=(m?:MusicAudioMarker)=>{
    setEditing(m?.id||'');setIntervalMode(m?.endSeconds!==undefined);
+   setPicking(null);
    setFrom(musicStampMs(m?.startSeconds??cursor));
    setTo(m?.endSeconds===undefined?'':musicStampMs(m.endSeconds));
    setNote(m?.note||'');setError('');setOpen(true);
@@ -34,7 +42,7 @@ export function MusicAudioMarkers({markers,duration,cursor,onChange,onSeek,disab
    const marker:MusicAudioMarker={id:editing||newMusicId(),startSeconds:Math.round(a*1000)/1000,
      ...(interval?{endSeconds:Math.round((b as number)*1000)/1000}:{}),note:note.trim()};
    onChange([...markers.filter(m=>m.id!==marker.id),marker].sort((x,y)=>x.startSeconds-y.startSeconds));
-   setOpen(false);setError('');
+   setOpen(false);setError('');setPicking(null);
  };
  const input={borderWidth:1,borderColor:theme.border,borderRadius:9,
    backgroundColor:theme.background,color:theme.foreground,paddingHorizontal:11,
@@ -66,9 +74,7 @@ export function MusicAudioMarkers({markers,duration,cursor,onChange,onSeek,disab
    </View>)}
    {open?<View style={{padding:13,borderWidth:1,borderColor:theme.border,
      borderRadius:13,backgroundColor:theme.surface,gap:11}}>
-     <Text style={{fontSize:14,fontWeight:'700',color:theme.foreground}}>
-       {editing?'Modifier le repère':'Ajouter une note'}
-     </Text>
+
      <View style={{flexDirection:'row',gap:12}}>
        <Pressable onPress={()=>setIntervalMode(false)} style={{padding:8,borderBottomWidth:!interval?2:0,borderColor:pink}}>
          <Text style={{color:!interval?pink:theme.muted,fontSize:12}}>Moment</Text>
@@ -80,17 +86,32 @@ export function MusicAudioMarkers({markers,duration,cursor,onChange,onSeek,disab
      </View>
      <View style={{flexDirection:'row',gap:9,flexWrap:'wrap'}}>
        <View style={{flex:1,minWidth:110,gap:4}}>
-         <Text style={{color:theme.muted,fontSize:11}}>Début (mm:ss.mmm)</Text>
+         <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
+           <Text style={{color:theme.muted,fontSize:11}}>Début (mm:ss.mmm)</Text>
+           <Pressable onPress={()=>setPicking({field:'from',cursor})}
+             accessibilityLabel="Définir le début sur la forme d’onde" style={{padding:5}}>
+             <Ionicons name="locate-outline" size={16} color={pink}/>
+           </Pressable>
+         </View>
          <TextInput keyboardType="numbers-and-punctuation" value={from} onChangeText={setFrom}
            accessibilityLabel="Début de l'annotation" style={input}/>
        </View>
        {interval?<View style={{flex:1,minWidth:110,gap:4}}>
-         <Text style={{color:theme.muted,fontSize:11}}>Fin (mm:ss.mmm)</Text>
+         <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
+           <Text style={{color:theme.muted,fontSize:11}}>Fin (mm:ss.mmm)</Text>
+           <Pressable onPress={()=>setPicking({field:'to',cursor})}
+             accessibilityLabel="Définir la fin sur la forme d’onde" style={{padding:5}}>
+             <Ionicons name="locate-outline" size={16} color={pink}/>
+           </Pressable>
+         </View>
          <TextInput keyboardType="numbers-and-punctuation" value={to} onChangeText={setTo}
            accessibilityLabel="Fin de l'annotation" style={input}/>
        </View>:null}
      </View>
-     <TextInput multiline value={note} onChangeText={setNote} style={{...input,minHeight:74,textAlignVertical:'top'}}
+     {picking?<Text style={{fontSize:11,color:pink}}>
+       Touche la forme d’onde pour définir {picking.field==='from'?'le début':'la fin'}.
+     </Text>:null}
+     <TextInput multiline value={note} onChangeText={setNote} style={{...input,minHeight:56,textAlignVertical:'top'}}
        placeholder="Note…" placeholderTextColor={theme.muted}/>
      {error?<Text style={{color:'#B34D61',fontSize:12}}>{error}</Text>:null}
      <View style={{flexDirection:'row',gap:13,justifyContent:'flex-end'}}>
