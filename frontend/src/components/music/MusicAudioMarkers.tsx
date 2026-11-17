@@ -65,7 +65,7 @@ export function MusicAudioMarkers({markers,duration,cursor,onChange,onSeek,
    paddingVertical:10,fontSize:13} as const;
  return <View style={{gap:10}}>
    <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
-     <Text style={{fontSize:13,fontWeight:'600',color:theme.foreground}}>Repères
+     <Text style={{fontSize:13,fontWeight:'600',color:theme.foreground}}>Notes temporelles
        {markers.length?' ('+markers.length+')':''}
      </Text>
      <Pressable disabled={disabled} onPress={()=>begin()} accessibilityRole="button"
