@@ -398,6 +398,17 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
               {version.metronomeMuted?'Muet':'Clic activé'}
             </Text>
           </Pressable>
+          <Pressable onPress={()=>edit({...version,snapToBeat:!version.snapToBeat})}
+            accessibilityRole="button"
+            accessibilityLabel={version.snapToBeat?'Désactiver la grille magnétique':'Aligner les pistes sur le BPM'}
+            style={{flexDirection:'row',gap:5,alignItems:'center',padding:8}}>
+            <Ionicons name="grid-outline" size={18}
+              color={version.snapToBeat?PINK:theme.muted}/>
+            <Text style={{fontSize:11,
+              color:version.snapToBeat?PINK:theme.muted}}>
+              {version.snapToBeat?'Grille active':'Grille libre'}
+            </Text>
+          </Pressable>
         </View>
       </View>
       <View style={{flexDirection:'row',flexWrap:'wrap',gap:9}}>
