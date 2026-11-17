@@ -1,9 +1,9 @@
-import React,{useRef,useState} from 'react';
-import {Platform,Pressable,ScrollView,Text,View,useWindowDimensions} from 'react-native';
+import React,{useEffect,useRef,useState} from 'react';
+import {Platform,Pressable,ScrollView,Text,TextInput,View,useWindowDimensions} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {useAppTheme} from '@/theme/AppTheme';
 import {MusicAudioPeaks} from './MusicAudioPeaksNext';
-import {musicStamp} from '@/domain/musicEditing';
+import {musicStamp,musicStampMs} from '@/domain/musicEditing';
 import type {WorkingMusicTrack,WorkingMusicVersion} from '@/domain/musicNext';
 import type {MusicProjectFile} from '@/domain/musicWorkspace';
 
@@ -20,6 +20,10 @@ type Props={
   onToggleMute?:(id:string)=>void;
   onToggleSolo?:(id:string)=>void;
   onMarkTrackRange?:(trackId:string,startSeconds:number,endSeconds:number)=>void;
+  onRenameTrack?:(id:string,name:string)=>void;
+  onRemoveTrack?:(id:string)=>void;
+  onReorderTrack?:(fromId:string,toId:string)=>void;
+  onDropSource?:(fileId:string,atSeconds:number)=>void;
 };
 const clamp=(x:number,a:number,b:number)=>Math.max(a,Math.min(b,x));
 const precise=(x:number)=>Math.round(x*100)/100;
@@ -36,12 +40,20 @@ const clipInfo=(track:WorkingMusicTrack,file?:MusicProjectFile)=>{
  * Mouse and touch on web use pointer capture; native uses responder callbacks.
  */
 export function MusicArrangementTimeline({version,files,duration,position,onSeek,
-  onChangeTrack,onSelectTrack,onToggleMute,onToggleSolo,onMarkTrackRange}:Props){
+  onChangeTrack,onSelectTrack,onToggleMute,onToggleSolo,onMarkTrackRange,
+  onRenameTrack,onRemoveTrack,onReorderTrack,onDropSource}:Props){
   const theme=useAppTheme();
   const {width}=useWindowDimensions();
   const compact=width<650;
   const [panelWidth,setPanelWidth]=useState(0);
   const [zoom,setZoom]=useState(1);
+  const [renaming,setRenaming]=useState<string|null>(null);
+  const [draftName,setDraftName]=useState('');
+  const [confirmRemove,setConfirmRemove]=useState<string|null>(null);
+  const [dragOver,setDragOver]=useState(false);
+  const scrollX=useRef(0);
+  const timelineRef=useRef<any>(null);
+  const scrollRef=useRef<any>(null);
   const [preview,setPreview]=useState<{id:string;value:Timing}|null>(null);
   const drag=useRef<Snapshot|null>(null);
   const rangeHold=useRef<{pointerId:number;id:string;start:number;end:number;
@@ -55,6 +67,36 @@ export function MusicArrangementTimeline({version,files,duration,position,onSeek
   }));
   const contentWidth=Math.round(viewport*zoom);
   const pixelsPerSecond=contentWidth/maxEnd;
+  const commitName=(id:string)=>{
+    const value=draftName.trim();
+    if(value)onRenameTrack?.(id,value);
+    setRenaming(null);
+  };
+  const dropReady=useRef(onDropSource);dropReady.current=onDropSource;
+  const pxReady=useRef(pixelsPerSecond);pxReady.current=pixelsPerSecond;
+  useEffect(()=>{
+    if(Platform.OS!=='web'||!scrollRef.current)return;
+    const el=scrollRef.current as HTMLElement;
+    if(!el.addEventListener)return;
+    const over=(e:DragEvent)=>{
+      if(!e.dataTransfer?.types?.includes('application/x-jenlow-music-file'))return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect='copy';setDragOver(true);
+    };
+    const leave=(e:DragEvent)=>{if(!el.contains(e.relatedTarget as Node))setDragOver(false);};
+    const drop=(e:DragEvent)=>{
+      setDragOver(false);
+      if(!e.dataTransfer?.types?.includes('application/x-jenlow-music-file'))return;
+      e.preventDefault();
+      const id=e.dataTransfer.getData('application/x-jenlow-music-file');
+      const x=e.clientX-el.getBoundingClientRect().left+el.scrollLeft;
+      if(id)dropReady.current?.(id,precise(Math.max(0,x/pxReady.current)));
+    };
+    el.addEventListener('dragover',over);el.addEventListener('drop',drop);
+    el.addEventListener('dragleave',leave);
+    return()=>{el.removeEventListener('dragover',over);el.removeEventListener('drop',drop);
+      el.removeEventListener('dragleave',leave);};
+  },[rows,zoom,panelWidth]);
   const tick=zoom>=8?2:zoom>=4?5:zoom>=2?10:30;
   const rows=version.tracks.length;
   const rowHeight=77,rulerHeight=43;
@@ -271,7 +313,7 @@ export function MusicArrangementTimeline({version,files,duration,position,onSeek
         </Pressable>
       </View>
     </View>
-    <View style={{flexDirection:'row',borderRadius:12,borderWidth:1,
+    <View ref={timelineRef} style={{flexDirection:'row',borderRadius:12,borderWidth:1,
       borderColor:theme.border,overflow:'hidden',
       backgroundColor:theme.dark?'#242227':'#F9F8F6'}}>
       <View style={{width:labelWidth,backgroundColor:theme.surface,
@@ -284,14 +326,28 @@ export function MusicArrangementTimeline({version,files,duration,position,onSeek
           return <View key={t.id} style={{height:rowHeight,
             borderTopWidth:1,borderColor:theme.border,
             paddingHorizontal:compact?7:10,justifyContent:'center',gap:5}}>
-            <Pressable onPress={()=>onSelectTrack?.(t.id)}
-              accessibilityRole="button" accessibilityLabel={'Ouvrir les réglages de '+t.title}
-              style={{flexDirection:'row',gap:4,alignItems:'center'}}>
-              <Text numberOfLines={1} style={{flex:1,fontSize:compact?11:12,
-                fontWeight:'700',color:theme.foreground}}>{i+1}. {t.title}</Text>
-              <Ionicons name="options-outline" color={theme.muted} size={14}/>
-            </Pressable>
-            <View style={{flexDirection:'row',gap:8,alignItems:'center'}}>
+            <View style={{flexDirection:'row',alignItems:'center',gap:4}}>
+              {renaming===t.id?<TextInput autoFocus selectTextOnFocus
+                value={draftName} onChangeText={setDraftName}
+                onSubmitEditing={()=>commitName(t.id)}
+                onBlur={()=>commitName(t.id)}
+                accessibilityLabel={'Renommer '+t.title}
+                style={{flex:1,fontSize:12,color:theme.foreground,borderBottomWidth:1,
+                  borderColor:PINK,paddingVertical:3}}/>:
+                <Pressable onPress={()=>onSelectTrack?.(t.id)} accessibilityRole="button"
+                  style={{flex:1}}>
+                  <Text numberOfLines={1} style={{fontSize:compact?11:12,
+                    fontWeight:'700',color:theme.foreground}}>{i+1}. {t.title}</Text>
+                </Pressable>}
+              <Pressable accessibilityRole="button" accessibilityLabel={'Renommer '+t.title}
+                onPress={()=>{
+                  setDraftName(t.title);
+                  setRenaming(t.id);
+                }} style={{padding:4}}>
+                <Ionicons name="pencil-outline" color={PINK} size={15}/>
+              </Pressable>
+            </View>
+            <View style={{flexDirection:'row',gap:compact?3:8,alignItems:'center'}}>
               <Pressable onPress={()=>onToggleMute?.(t.id)} accessibilityRole="button"
                 accessibilityLabel={'Muet '+t.title}
                 style={{padding:5,borderRadius:6,
@@ -305,14 +361,22 @@ export function MusicArrangementTimeline({version,files,duration,position,onSeek
                   backgroundColor:t.solo?theme.border:'transparent'}}>
                 <Ionicons name="headset-outline" color={t.solo?PINK:theme.muted} size={17}/>
               </Pressable>
+              <Pressable accessibilityRole="button"
+                accessibilityLabel={'Retirer '+t.title+' de la version'}
+                onPress={()=>setConfirmRemove(t.id)} style={{padding:5}}>
+                <Ionicons name="trash-outline" color={theme.muted} size={16}/>
+              </Pressable>
               {!file?.durationSeconds?<Ionicons name="alert-circle-outline"
                 color={theme.muted} size={15}/>:null}
             </View>
           </View>;
         })}
       </View>
-      <ScrollView horizontal showsHorizontalScrollIndicator
-        keyboardShouldPersistTaps="handled" style={{flex:1}}
+      <ScrollView ref={scrollRef} horizontal showsHorizontalScrollIndicator
+        onScroll={e=>{scrollX.current=e.nativeEvent.contentOffset.x;}}
+        scrollEventThrottle={16}
+        keyboardShouldPersistTaps="handled" style={{flex:1,
+          backgroundColor:dragOver?'rgba(203,36,92,.10)':'transparent'}}
         contentContainerStyle={{width:contentWidth}}>
         <View style={{width:contentWidth,height:rulerHeight+rowHeight*rows}}>
           <Pressable accessibilityRole="adjustable" accessibilityLabel="Position dans la chanson"
@@ -342,6 +406,7 @@ export function MusicArrangementTimeline({version,files,duration,position,onSeek
             const left=offset*pixelsPerSecond;
             const width=Math.max(0,(end-from)*pixelsPerSecond);
             const visibleWidth=Math.max(36,width);
+            const dragging=preview?.id===t.id;
             return <View key={t.id} style={{height:rowHeight,
               borderTopWidth:1,borderColor:theme.border,
               justifyContent:'center'}}>
@@ -353,6 +418,14 @@ export function MusicArrangementTimeline({version,files,duration,position,onSeek
                 borderRadius:8,borderWidth:1,borderColor:t.muted?theme.border:PINK,
                 backgroundColor:theme.dark?'#44303B':'#F5E8EC',
                 opacity:t.muted?.48:1,overflow:'hidden'}}>
+                {dragging?<View pointerEvents="none" style={{
+                  position:'absolute',top:0,left:Math.min(18,visibleWidth/4),
+                  backgroundColor:theme.dark?'#251921':'#FFFFFF',zIndex:6,
+                  borderRadius:5,paddingHorizontal:5,paddingVertical:2}}>
+                  <Text style={{fontSize:10,fontWeight:'700',color:PINK}}>
+                    {musicStampMs(offset)}
+                  </Text>
+                </View>:null}
                 {rangePreview?.id===t.id?<View pointerEvents="none"
                   style={{position:'absolute',
                     left:Math.max(0,(Math.min(rangePreview.start,rangePreview.end)-from)*pixelsPerSecond),
@@ -397,9 +470,26 @@ export function MusicArrangementTimeline({version,files,duration,position,onSeek
         </View>
       </ScrollView>
     </View>
+    {confirmRemove?<View style={{borderWidth:1,borderColor:theme.border,
+      borderRadius:10,padding:11,gap:10}}>
+      <Text style={{fontSize:12,color:theme.foreground}}>
+        Retirer « {version.tracks.find(t=>t.id===confirmRemove)?.title} » de cette version ?
+        L’enregistrement reste disponible dans Capturer.
+      </Text>
+      <View style={{flexDirection:'row',gap:14}}>
+        <Pressable accessibilityRole="button" onPress={()=>{
+          onRemoveTrack?.(confirmRemove);setConfirmRemove(null);
+        }} style={{padding:8}}>
+          <Text style={{fontSize:12,color:PINK,fontWeight:'700'}}>Retirer</Text>
+        </Pressable>
+        <Pressable accessibilityRole="button" onPress={()=>setConfirmRemove(null)}
+          style={{padding:8}}>
+          <Text style={{fontSize:12,color:theme.muted}}>Annuler</Text>
+        </Pressable>
+      </View>
+    </View>:null}
     <Text style={{fontSize:11,lineHeight:18,color:theme.muted}}>
-      Glisse un bloc pour le déplacer ; glisse ses bords pour le couper.
-      Maintiens puis glisse à l’intérieur pour marquer un intervalle.
+      Glisser : déplacer · Bords : couper · Maintenir et glisser : intervalle
     </Text>
   </View>;
 }
