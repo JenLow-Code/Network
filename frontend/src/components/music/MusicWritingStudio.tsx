@@ -19,9 +19,10 @@ type Props = {
   onModeChange: (mode: Mode) => void;
   originalLanguage: string;
   source?: MusicProjectFile | null;
+  initialFile?: MusicProjectFile;
   onSave: (result: MusicWritingResult) => void;
-  onRequestTranslator: (sourceId: string, language: string) => void;
-  requestPending: boolean;
+  onRequestTranslator?: (sourceId: string, language: string) => void;
+  requestedLanguages?: string[];
   onDirtyChange: (dirty: boolean) => void;
 };
 
@@ -57,7 +58,7 @@ export function MusicNotePreview({ text, color }: { text: string; color: string 
 }
 
 export function MusicWritingStudio({ mode, onModeChange, originalLanguage, source,
-  onSave, onRequestTranslator, requestPending, onDirtyChange }: Props) {
+  initialFile, onSave, onRequestTranslator, requestedLanguages=[], onDirtyChange }: Props) {
   const theme = useAppTheme();
   const { width } = useWindowDimensions();
   const compact = width < 650;
@@ -87,6 +88,8 @@ export function MusicWritingStudio({ mode, onModeChange, originalLanguage, sourc
   const setLanguage = translating ? setTargetLanguage : setLyricLanguage;
   const dirty = !!(lyricBody.trim() || lyricTitle.trim() || noteBody.trim() || noteTitle.trim() ||
     translationBody.trim() || translationTitle.trim());
+  const requestPending=requestedLanguages.some(value=>
+    value.toLocaleLowerCase()===language.trim().toLocaleLowerCase());
 
   useEffect(() => { onDirtyChange(dirty); }, [dirty, onDirtyChange]);
   useEffect(() => {
@@ -96,6 +99,21 @@ export function MusicWritingStudio({ mode, onModeChange, originalLanguage, sourc
     setTargetLanguage('');
     setRequestNotice(false);
   }, [source?.id]);
+  useEffect(() => {
+    if (!initialFile) return;
+    if (initialFile.kind === 'note') {
+      setNoteTitle(initialFile.title);
+      setNoteBody(initialFile.text || '');
+    } else if (initialFile.translationOfFileId) {
+      setTranslationTitle(initialFile.title);
+      setTranslationBody(lyricText(initialFile));
+      setTargetLanguage(initialFile.language || '');
+    } else if (initialFile.kind === 'lyrics') {
+      setLyricTitle(initialFile.title);
+      setLyricBody(lyricText(initialFile));
+      setLyricLanguage(initialFile.language || originalLanguage);
+    }
+  }, [initialFile?.id]);
 
   const chooseLanguage = (next: string) => {
     if (next === 'Autre…') {
@@ -184,7 +202,7 @@ export function MusicWritingStudio({ mode, onModeChange, originalLanguage, sourc
   </View>;
 
   return <View style={{gap:14}}>
-    {!translating ? <View style={{flexDirection:'row',gap:13,
+    {!translating && !initialFile ? <View style={{flexDirection:'row',gap:13,
       borderBottomWidth:1,borderBottomColor:theme.border,alignSelf:'flex-start'}}>
       {choose('lyrics','Paroles')}
       {choose('note','Notes')}
@@ -199,7 +217,7 @@ export function MusicWritingStudio({ mode, onModeChange, originalLanguage, sourc
         <Text style={{color:theme.muted,fontSize:12}}>Vers</Text>
         {languageControl}
       </View>
-      <View style={{flexDirection:compact?'column':'row',gap:compact?12:20,alignItems:'stretch'}}>
+      <View style={{flexDirection:compact?'column-reverse':'row',gap:compact?12:20,alignItems:'stretch'}}>
         <View style={{flex:1,minWidth:0,gap:10}}>
           <Text style={{fontSize:12,color:PINK,fontWeight:'700'}}>TRADUCTION</Text>
           <TextInput value={title} onChangeText={setTitle}
@@ -230,11 +248,11 @@ export function MusicWritingStudio({ mode, onModeChange, originalLanguage, sourc
           </> : null}
         </View>
       </View>
-      <View style={{borderTopWidth:1,borderTopColor:theme.border,paddingTop:13,gap:7}}>
+      {onRequestTranslator?<View style={{borderTopWidth:1,borderTopColor:theme.border,paddingTop:13,gap:7}}>
         <Pressable accessibilityRole="button" disabled={!language.trim()||requestPending}
-          onPress={()=>{if(source&&language.trim()){onRequestTranslator(source.id,language.trim());setRequestNotice(true);}}}
+          onPress={()=>{if(source&&language.trim()){onRequestTranslator?.(source.id,language.trim());setRequestNotice(true);}}}
           style={{flexDirection:'row',gap:8,alignItems:'center',
-            alignSelf:'flex-start',paddingVertical:8,opacity:!language.trim()||requestPending?.5:1}}>
+            alignSelf:'flex-start',paddingVertical:8,opacity:(!language.trim()||requestPending)?0.5:1}}>
           <Ionicons name="people-outline" size={18} color={PINK}/>
           <Text style={{fontSize:13,color:PINK,fontWeight:'600'}}>
             {requestPending?'Demande préparée':'Préparer une demande à un traducteur'}
@@ -243,7 +261,7 @@ export function MusicWritingStudio({ mode, onModeChange, originalLanguage, sourc
         {(requestPending||requestNotice)?<Text style={{fontSize:11,color:theme.muted,lineHeight:18}}>
           Demande enregistrée dans Collaborer, sur cet appareil. Elle n’a pas encore été envoyée.
         </Text>:null}
-      </View>
+      </View>:null}
     </> : <>
       <View style={{gap:0,paddingHorizontal:compact?0:11}}>
         <TextInput value={title} onChangeText={setTitle}
@@ -288,7 +306,7 @@ export function MusicWritingStudio({ mode, onModeChange, originalLanguage, sourc
         style={{minHeight:44,paddingHorizontal:18,justifyContent:'center',
           borderRadius:11,backgroundColor:body.trim()&&(isNote||language.trim())?PINK:theme.border}}>
         <Text style={{color:'#fff',fontSize:13,fontWeight:'700'}}>
-          {translating?'Conserver la traduction':isNote?'Conserver la note':'Conserver les paroles'}
+          {initialFile?'Enregistrer':translating?'Conserver la traduction':isNote?'Conserver la note':'Conserver les paroles'}
         </Text>
       </Pressable>
     </View>
