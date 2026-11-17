@@ -33,9 +33,7 @@ type Props = {
 };
 
 function lyricText(file: MusicProjectFile) {
-  return file.lyricSegments?.length
-    ? file.lyricSegments.map(s => s.text).join('\n\n')
-    : file.text || '';
+  return file.text ?? (file.lyricSegments?.map(s => s.text).join('\n\n') || '');
 }
 
 /** The note preview uses the same small subset of Markdown supported by the toolbar. */
@@ -165,7 +163,7 @@ export function MusicWritingStudio({ mode, onModeChange, originalLanguage, sourc
   const save = () => {
     if (!body.trim() || (!isNote && !language.trim())) return;
     onSave({ mode: translating ? 'translation' : isNote ? 'note' : 'lyrics',
-      title: title.trim(), text: body.trim(),
+      title: title.trim(), text: body,
       language: isNote ? undefined : language.trim(),
       translationOfFileId: source?.id,
       lyricReferences:translating||isNote?undefined:references,
