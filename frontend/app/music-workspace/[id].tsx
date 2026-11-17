@@ -63,7 +63,7 @@ export default function MusicWorkspace() {
   return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
     <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{
       width:'100%',maxWidth:860,alignSelf:'center',paddingHorizontal:compact?18:34,
-      paddingTop:8,paddingBottom:120,gap:25}}>
+      paddingTop:8,paddingBottom:120,gap:compact?18:25}}>
       <PageHeader onBack={()=>router.replace('/music-hub')} title="Musique"/>
       <View style={{flexDirection:'row',gap:15,alignItems:'center'}}>
         <MusicFolderCover project={project} size={compact?65:82}/>
@@ -83,15 +83,16 @@ export default function MusicWorkspace() {
         {spaces.map(item=>{
           const selected=space===item.id;
           return <Pressable key={item.id} onPress={()=>setSpace(item.id)}
-            accessibilityRole="tab" accessibilityState={{selected}}
+            accessibilityRole="tab" accessibilityLabel={item.title}
+            accessibilityState={{selected}}
             style={{flex:1,flexDirection:'row',alignItems:'center',
               justifyContent:'center',gap:compact?5:9,
               minHeight:52,borderBottomWidth:selected?3:0,
               borderBottomColor:selected?PINK:'transparent',paddingHorizontal:3}}>
-            <Ionicons name={item.icon} size={compact?17:19}
+            <Ionicons name={item.icon} size={compact?24:19}
               color={selected?PINK:theme.muted}/>
-            <Text style={{fontSize:compact?12:14,fontWeight:selected?'700':'500',
-              color:selected?theme.foreground:theme.muted}}>{item.title}</Text>
+            {!compact?<Text style={{fontSize:14,fontWeight:selected?'700':'500',
+              color:selected?theme.foreground:theme.muted}}>{item.title}</Text>:null}
           </Pressable>;
         })}
       </View>
