@@ -24,9 +24,8 @@ const isAudio=(file:MusicProjectFile)=>/\.(mp3|wav|m4a|webm|ogg|aac)$/i.test(fil
   !!file.mimeType?.startsWith('audio/');
 const formats=(s:string)=>s.replace(/\r\n?/g,'\n').trim();
 const textOf=(file:MusicProjectFile)=>
-  file.lyricSegments?.length&&file.kind==='lyrics'
-    ?file.lyricSegments.map(segment=>segment.text).join('\n\n')
-    :file.text||'';
+  file.text??(file.kind==='lyrics'
+    ?file.lyricSegments?.map(segment=>segment.text).join('\n\n')||'':'');
 type Props={
   visible:boolean;file:MusicProjectFile|null;project:MusicProject;
   onClose:()=>void;onUpdate:(id:string,change:Partial<MusicProjectFile>)=>void;
