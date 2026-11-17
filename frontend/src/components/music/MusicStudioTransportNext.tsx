@@ -17,6 +17,7 @@ type Props={
   version:WorkingMusicVersion;files:MusicProjectFile[];
   onPositionChange?:(position:number)=>void;
   onTrackChange?:(id:string,change:Partial<WorkingMusicTrack>)=>void;
+  onSelectTrack?:(id:string)=>void;
   playbackRequest?:{at:number;serial:number}|null;
   pauseRequest?:number;
 };
@@ -29,6 +30,7 @@ function versionLength(version:WorkingMusicVersion,files:MusicProjectFile[]){
   }));
 }
 export function MusicStudioTransport({version,files,onPositionChange,onTrackChange,
+  onSelectTrack,
   playbackRequest,pauseRequest}:Props){
   const theme=useAppTheme();
   const engine=useRef<Engine|null>(null);
@@ -205,6 +207,10 @@ export function MusicStudioTransport({version,files,onPositionChange,onTrackChan
     </View>
     <MusicArrangementTimeline version={version} files={files}
       duration={duration} position={position} onSeek={seek}
-      onChangeTrack={onTrackChange}/>
+      onChangeTrack={onTrackChange} onSelectTrack={onSelectTrack}
+      onToggleMute={id=>{const t=version.tracks.find(t=>t.id===id);
+        if(t)onTrackChange?.(id,{muted:!t.muted});}}
+      onToggleSolo={id=>{const t=version.tracks.find(t=>t.id===id);
+        if(t)onTrackChange?.(id,{solo:!t.solo});}}/>
   </View>;
 }
