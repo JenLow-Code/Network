@@ -46,6 +46,8 @@ export type MusicNeed = {
   level?: string;
   sourceLanguage?: string;
   targetLanguage?: string;
+  /** Optional local lyric document for a requested translation. */
+  sourceFileId?: string;
   /** Empty for the whole song; otherwise the exact requested section. */
   sectionId?: string;
 };
@@ -110,6 +112,8 @@ export type MusicProjectFile = {
   mimeType?: string;
   conversionWarning?: string;
   language?: string;
+  /** Links a human translation to its source lyric document without replacing it. */
+  translationOfFileId?: string;
   instrument?: string;
   localFileId?: string;
   externalUrl?: string;
