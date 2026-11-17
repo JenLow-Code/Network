@@ -1,16 +1,16 @@
 import React,{useEffect,useRef,useState} from 'react';
-import {Platform,Pressable,Text,View} from 'react-native';
+import {Platform,Pressable,Text,TextInput,View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {useAppTheme} from '@/theme/AppTheme';
 import {saveDraftAudio} from '@/domain/musicLocalStorage';
-import {musicStamp,punchInAudio} from '@/domain/musicEditing';
+import {musicStampMs,punchInAudio} from '@/domain/musicEditing';
 import {MusicWaveformEditor} from './MusicWaveformEditor';
 import {MusicAudioMarkers} from './MusicAudioMarkers';
 import type {MusicAudioMarker} from '@/domain/musicWorkspace';
 
 type Props={
   onSaved:(localAudioId:string,filename:string,durationSeconds?:number,
-    startOffsetSeconds?:number,markers?:MusicAudioMarker[])=>void;
+    startOffsetSeconds?:number,markers?:MusicAudioMarker[],title?:string)=>void;
   /** Called when microphone recording actually begins/pauses, for optional backing playback. */
   onStarted?:(takePositionSeconds:number)=>void;
   onPaused?:()=>void;
@@ -20,6 +20,8 @@ type Props={
   backingPositionSeconds?:number;
   /** Lets the parent prevent accidentally closing an unsaved take. */
   onDraftChange?:(hasUnsavedTake:boolean)=>void;
+  initialTake?:{file:File;durationSeconds:number;markers:MusicAudioMarker[];title:string};
+  suggestedTitle?:string;
 };
 const PINK='#CB245C';
 type Status='idle'|'recording'|'paused';
@@ -27,7 +29,7 @@ type Status='idle'|'recording'|'paused';
 /** Real microphone recording with pause and local non-destructive punch-in.
  * Web-only until a native capture engine is implemented and verified. */
 export function MusicAudioCapture({onSaved,onStarted,onPaused,timelineStartSeconds=0,
-  backingPositionSeconds,onDraftChange}:Props){
+  backingPositionSeconds,onDraftChange,initialTake,suggestedTitle='Prise 1'}:Props){
   const theme=useAppTheme();
   const recorder=useRef<MediaRecorder|null>(null);
   const stream=useRef<MediaStream|null>(null);
@@ -52,11 +54,25 @@ export function MusicAudioCapture({onSaved,onStarted,onPaused,timelineStartSecon
   const [elapsed,setElapsed]=useState(0);
   const [levels,setLevels]=useState<number[]>([]);
   const [zoom,setZoom]=useState(1);
+  const [review,setReview]=useState(false);
+  const [title,setTitle]=useState(initialTake?.title||suggestedTitle);
   const [markers,setMarkers]=useState<MusicAudioMarker[]>([]);
   const [playing,setPlaying]=useState(false);
   const [processing,setProcessing]=useState(false);
   const [saving,setSaving]=useState(false);
   const [error,setError]=useState('');
+  useEffect(()=>{
+    if(!initialTake)return;
+    base.current=initialTake.file;
+    history.current=[];takeCount.current=1;
+    timelineStart.current=Math.max(0,timelineStartSeconds);
+    setFile(initialTake.file);
+    setDuration(initialTake.durationSeconds);
+    setCursor(0);setStatus('paused');
+    markerRef.current=initialTake.markers;
+    setMarkers(initialTake.markers);
+    setTitle(initialTake.title);
+  },[initialTake?.file]);
   useEffect(()=>{
     onDraftChange?.(status==='recording'||processing||saving||!!file);
   },[status,processing,saving,file,onDraftChange]);
@@ -99,6 +115,7 @@ export function MusicAudioCapture({onSaved,onStarted,onPaused,timelineStartSecon
       const r=mime?new MediaRecorder(microphone,{mimeType:mime}):new MediaRecorder(microphone);
       recorder.current=r;parts.current=[];
       finishRequested.current=false;
+      setReview(false);
       audioElement.current?.pause();setPlaying(false);
       const first=takeCount.current===0;
       if(first)timelineStart.current=Math.max(0,timelineStartSeconds);
@@ -127,14 +144,7 @@ export function MusicAudioCapture({onSaved,onStarted,onPaused,timelineStartSecon
             setFile(result.file);setDuration(result.durationSeconds);
             const next=Math.min(result.durationSeconds,Math.max(0,at+elapsedRef.current));
             setCursor(next);setStatus('paused');setLevels([]);
-            if(finishRequested.current){
-              setSaving(true);
-              void saveDraftAudio(result.file).then(id=>{
-                onSaved(id,result.file.name,result.durationSeconds,
-                  timelineStart.current,markerRef.current);
-              }).catch(e=>setError(e instanceof Error?e.message:'Sauvegarde impossible.'))
-                .finally(()=>setSaving(false));
-            }
+            if(finishRequested.current)setReview(true);
           })
           .catch(e=>{
             setError(e instanceof Error?e.message:'Retouche impossible. L’audio initial est intact.');
@@ -205,16 +215,18 @@ export function MusicAudioCapture({onSaved,onStarted,onPaused,timelineStartSecon
   };
   const finish=async()=>{
     if(!file||saving||processing||status==='recording')return;
+    if(!title.trim()){setError('Donne un nom à cette prise.');return;}
     setSaving(true);setError('');
     try{
       const id=await saveDraftAudio(file);
-      onSaved(id,file.name,duration,timelineStart.current,markerRef.current);
+      onSaved(id,file.name,duration,timelineStart.current,markerRef.current,title.trim());
     }catch(e){setError(e instanceof Error?e.message:'Sauvegarde audio impossible.');}
     finally{setSaving(false);}
   };
   const discard=()=>{
     if(status==='recording'||processing)return;
     history.current=[];base.current=null;takeCount.current=0;
+    setReview(false);setTitle(suggestedTitle);
     audioElement.current?.pause();setPlaying(false);
     setFile(null);setDuration(0);setCursor(0);setElapsed(0);setLevels([]);
     onMarkers([]);
@@ -228,11 +240,11 @@ export function MusicAudioCapture({onSaved,onStarted,onPaused,timelineStartSecon
       <View style={{gap:3}}>
         <Text style={{fontSize:11,fontWeight:'700',color:status==='recording'?PINK:theme.muted}}>
           {status==='recording'?'● ENREGISTREMENT':
-            processing?'TRAITEMENT DE LA PRISE':status==='paused'?'EN PAUSE':'PRÊT À ENREGISTRER'}
+            processing?'FINALISATION':review?'TERMINÉ':status==='paused'?'EN PAUSE':'PRÊT'}
         </Text>
         <Text style={{fontSize:25,fontWeight:'700',color:theme.foreground,
           fontVariant:['tabular-nums']}}>
-          {musicStamp(status==='recording'?running:cursor)}
+          {musicStampMs(status==='recording'?running:cursor)}
         </Text>
       </View>
       <View style={{alignItems:'flex-end',gap:4}}>
@@ -282,7 +294,7 @@ export function MusicAudioCapture({onSaved,onStarted,onPaused,timelineStartSecon
       </Pressable>
     </View>:
       <View style={{gap:9}}>
-        <Pressable onPress={()=>{void start();}} disabled={processing||saving}
+        {!review?<Pressable onPress={()=>{void start();}} disabled={processing||saving}
           accessibilityRole="button"
           style={{backgroundColor:PINK,opacity:processing||saving?.5:1,
             minHeight:48,borderRadius:13,alignItems:'center',justifyContent:'center',
@@ -292,24 +304,35 @@ export function MusicAudioCapture({onSaved,onStarted,onPaused,timelineStartSecon
             {file?(cursor+0.02<duration?'Réenregistrer depuis ce point':'Continuer à enregistrer'):
               'Démarrer l’enregistrement'}
           </Text>
-        </Pressable>
+        </Pressable>:null}
         {file?<View style={{gap:10}}>
+          {review?<View style={{gap:10}}>
+            <TextInput value={title} onChangeText={setTitle} accessibilityLabel="Nom de la prise"
+              placeholder="Nom de la prise" placeholderTextColor={theme.muted}
+              style={{borderWidth:1,borderColor:theme.border,borderRadius:11,
+                backgroundColor:theme.background,color:theme.foreground,
+                paddingHorizontal:13,paddingVertical:11,fontSize:14}}/>
+          </View>:null}
           <View style={{flexDirection:'row',flexWrap:'wrap',gap:8}}>
             <Pressable onPress={()=>{void finish();}} disabled={saving||processing}
               style={{minHeight:43,borderRadius:11,backgroundColor:PINK,
                 paddingHorizontal:18,justifyContent:'center'}}>
               <Text style={{color:'#fff',fontWeight:'700',fontSize:12}}>
-                {saving?'Sauvegarde…':'Conserver'}
+                {saving?'Sauvegarde…':review?'Enregistrer':'Conserver'}
               </Text>
             </Pressable>
-            {history.current.length>0?<Pressable onPress={undo}
+            {review?<Pressable onPress={()=>{setReview(false);finishRequested.current=false;}}
+              style={{minHeight:43,paddingHorizontal:10,justifyContent:'center'}}>
+              <Text style={{color:theme.muted,fontSize:12}}>Annuler</Text>
+            </Pressable>:null}
+            {!review&&history.current.length>0?<Pressable onPress={undo}
               style={{minHeight:43,paddingHorizontal:10,justifyContent:'center'}}>
               <Text style={{color:theme.foreground,fontSize:12}}>Annuler la dernière prise</Text>
             </Pressable>:null}
-            <Pressable onPress={discard} style={{minHeight:43,paddingHorizontal:10,
+            {!review?<Pressable onPress={discard} style={{minHeight:43,paddingHorizontal:10,
               justifyContent:'center'}}>
               <Text style={{color:theme.muted,fontSize:12}}>Recommencer</Text>
-            </Pressable>
+            </Pressable>:null}
           </View>
         </View>:null}
       </View>}
