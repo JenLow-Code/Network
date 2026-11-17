@@ -121,11 +121,12 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange}:Props){
   const beatOriginRef=useRef(0);
   const [volume,setVolume]=useState({piano:.8,drum:.7});
   const [last,setLast]=useState('');
+  const [lastDrum,setLastDrum]=useState('');
   const [message,setMessage]=useState('');
   const audioRef=useRef<AudioContext|null>(null);
   const pristineEvents=JSON.stringify(initialFile?.musicEvents||[]);
-  const dirty=!!events.length&&(title!== (initialFile?.title||'') ||
-    JSON.stringify(events)!==pristineEvents || bpm!==(initialFile?.tempoBpm||100));
+  const dirty=title!==(initialFile?.title||'') ||
+    JSON.stringify(events)!==pristineEvents || bpm!==(initialFile?.tempoBpm||100);
   useEffect(()=>onDirtyChange(dirty),[dirty,onDirtyChange]);
   useEffect(()=>()=>{void audioRef.current?.close();},[]);
   const nextBeat=()=>{
@@ -133,7 +134,8 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange}:Props){
   };
   const trigger=(instrument:'piano'|'drum',midi:number)=>{
     setMessage('');
-    setLast(instrument==='drum'?(DRUM_PADS.find(p=>p.midi===midi)?.label||'Percussion'):musicNoteName(midi));
+    if(instrument==='piano')setLast(musicNoteName(midi));
+    else setLastDrum(DRUM_PADS.find(p=>p.midi===midi)?.label||'Percussion');
     if(Platform.OS==='web'){
       try{
         if(!audioRef.current)audioRef.current=new AudioContext();
@@ -233,7 +235,9 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange}:Props){
       </ScrollView>
     </View>
     <View style={{gap:10}}>
-      <Text style={{fontSize:11,fontWeight:'700',color:PINK}}>PADS · BATTERIE</Text>
+      <Text style={{fontSize:11,fontWeight:'700',color:PINK}}>
+        PADS · BATTERIE {lastDrum?'· '+lastDrum:''}
+      </Text>
       <View style={{flexDirection:'row',flexWrap:'wrap',gap:8}}>
         {DRUM_PADS.map(pad=><Pressable key={pad.midi}
           onPress={()=>trigger('drum',pad.midi)} accessibilityRole="button"
