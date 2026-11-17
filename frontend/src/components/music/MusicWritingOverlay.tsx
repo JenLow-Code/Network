@@ -11,6 +11,7 @@ import {MusicSketchStudio} from './MusicSketchStudio';
 import {useAppTheme} from '@/theme/AppTheme';
 import type {MusicProject,MusicProjectFile} from '@/domain/musicWorkspace';
 import type {MusicNotationEvent} from '@/domain/musicNotation';
+import {musicNextState} from '@/domain/musicNext';
 
 const PINK='#CB245C';
 type WritingMode='lyrics'|'note';
@@ -52,7 +53,20 @@ export function MusicWritingOverlay({project,mode,onModeChange,source,initialFil
   const [sourceWarning,setSourceWarning]=useState('');
   const dirty=writerDirty||translationDirty||scoreDirty;
   const audioFiles=(project.files||[]).filter(isCaptureAudio);
-  const selectedAudio=audioFiles.find(file=>file.id===audioId);
+  const audioChoices=[
+    ...audioFiles.map(file=>({
+      id:'capture-'+file.id,title:file.title,file,
+      type:file.kind==='track'?'Piste de Capture':'Audio de Capture',
+    })),
+    ...musicNextState(project).versions.flatMap(version=>version.tracks.flatMap(track=>{
+      const file=audioFiles.find(candidate=>candidate.id===track.sourceFileId);
+      return file?[{
+        id:'track-'+track.id,title:track.title,file,
+        type:'Piste · '+version.title,
+      }]:[];
+    })),
+  ];
+  const selectedAudio=audioChoices.find(option=>option.id===audioId);
   const lyricSources=(project.files||[]).filter(file=>file.kind==='lyrics'&&
     !file.translationOfFileId&&
     !!(file.text?.trim()||file.lyricSegments?.some(segment=>segment.text.trim())));
@@ -81,8 +95,6 @@ export function MusicWritingOverlay({project,mode,onModeChange,source,initialFil
     }
     setSourceId(id);setSourceOpen(false);setSourceWarning('');
   };
-  const playableLabel=(file:MusicProjectFile)=>
-    file.kind==='track'?'Piste audio':'Enregistrement';
   return <Modal visible animationType="slide" presentationStyle="fullScreen"
     onRequestClose={exit}>
     <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
@@ -133,37 +145,37 @@ export function MusicWritingOverlay({project,mode,onModeChange,source,initialFil
           {listen?<View style={{borderWidth:1,borderColor:theme.border,
             borderRadius:12,padding:compact?11:15,gap:9,
             backgroundColor:theme.surface}}>
-            {audioFiles.length?<View style={{gap:8}}>
+            {audioChoices.length?<View style={{gap:8}}>
               <Pressable onPress={()=>setChoosing(v=>!v)}
                 accessibilityRole="button" accessibilityState={{expanded:choosing}}
                 accessibilityLabel="Choisir un audio ou une piste de Capture"
                 style={{minHeight:35,flexDirection:'row',gap:8,alignItems:'center'}}>
                 <Ionicons name="headset-outline" color={PINK} size={18}/>
                 <Text numberOfLines={1} style={{flex:1,color:theme.foreground,fontSize:13}}>
-                  {selectedAudio?.title||'Choisir un audio ou une piste de Capture'}
+                  {selectedAudio?.title||'Choisir un audio ou une piste du morceau'}
                 </Text>
                 <Ionicons name={choosing?'chevron-up':'chevron-down'} color={theme.muted} size={16}/>
               </Pressable>
               {choosing?<ScrollView nestedScrollEnabled
                 style={{maxHeight:compact?155:185}} contentContainerStyle={{gap:3}}>
-                {audioFiles.map(file=><Pressable key={file.id}
-                  onPress={()=>{setAudioId(file.id);setChoosing(false);}}
+                {audioChoices.map(option=><Pressable key={option.id}
+                  onPress={()=>{setAudioId(option.id);setChoosing(false);}}
                   accessibilityRole="button"
                   style={{minHeight:45,flexDirection:'row',alignItems:'center',
                     borderRadius:9,paddingHorizontal:9,gap:10,
-                    backgroundColor:file.id===audioId?(theme.dark?'#35242D':'#FAEAF0'):theme.surface}}>
-                  <Ionicons name={file.id===audioId?'radio-button-on':'radio-button-off'}
+                    backgroundColor:option.id===audioId?(theme.dark?'#35242D':'#FAEAF0'):theme.surface}}>
+                  <Ionicons name={option.id===audioId?'radio-button-on':'radio-button-off'}
                     size={18} color={PINK}/>
                   <View style={{flex:1}}>
-                    <Text style={{fontSize:13,color:theme.foreground}}>{file.title}</Text>
-                    <Text style={{fontSize:10,color:theme.muted}}>{playableLabel(file)}</Text>
+                    <Text style={{fontSize:13,color:theme.foreground}}>{option.title}</Text>
+                    <Text style={{fontSize:10,color:theme.muted}}>{option.type}</Text>
                   </View>
                 </Pressable>)}
               </ScrollView>:null}
-              {selectedAudio?.localFileId?<MusicAudioPreview key={selectedAudio.id}
-                source={{localAudioId:selectedAudio.localFileId}} transcription/>:null}
+              {selectedAudio?.file.localFileId?<MusicAudioPreview key={selectedAudio.id}
+                source={{localAudioId:selectedAudio.file.localFileId}} transcription/>:null}
             </View>:<Text style={{fontSize:12,lineHeight:20,color:theme.muted}}>
-              Aucun audio jouable dans Capture pour ce morceau. Ajoute d’abord un enregistrement ou une piste audio.
+              Aucun audio jouable. Importe ou enregistre une source dans Capture pour pouvoir l’écouter.
             </Text>}
           </View>:null}
         </View>:null}
