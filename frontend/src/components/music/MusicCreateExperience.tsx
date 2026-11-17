@@ -138,6 +138,38 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
       {icon?<Ionicons name={icon} size={17} color={primary?'#fff':PINK}/>:null}
       <Text style={{fontSize:12,fontWeight:'700',color:primary?'#fff':theme.foreground}}>{label}</Text>
     </Pressable>;
+  const sectionPanel=()=> <View style={{borderTopWidth:1,borderColor:theme.border,paddingTop:13,gap:10}}>
+    <Pressable accessibilityRole="button" accessibilityState={{expanded:showSections}}
+      onPress={()=>setShowSections(!showSections)}
+      style={{flexDirection:'row',alignItems:'center',gap:8,minHeight:43}}>
+      <Ionicons name="list-outline" size={19} color={PINK}/>
+      <Text style={{flex:1,fontSize:13,fontWeight:'600',color:theme.foreground}}>
+        Structure du morceau{project.sections.length?' · '+project.sections.length+' parties':''}
+      </Text>
+      <Ionicons name={showSections?'chevron-up':'chevron-down'} size={17} color={theme.muted}/>
+    </Pressable>
+    {showSections?<View style={{gap:14}}>
+      <MusicSongTabs project={project} patch={patch}
+        activeSectionId={sectionId} onSelect={setSectionId}/>
+      {project.sections.some(part=>part.id===sectionId)?<View style={{gap:10}}>
+        <Text style={{fontSize:12,fontWeight:'700',color:theme.foreground}}>
+          Extraits de paroles de cette partie
+        </Text>
+        {project.files.flatMap(file=>(file.lyricReferences||[])
+          .filter(ref=>ref.sectionId===sectionId).map(ref=>({
+            id:ref.id,title:file.title,text:ref.text
+          }))).map(ref=><View key={ref.id}
+          style={{paddingVertical:10,borderTopWidth:1,borderColor:theme.border,gap:5}}>
+          <Text style={{fontSize:11,color:theme.muted}}>{ref.title}</Text>
+          <Text style={{fontSize:15,lineHeight:24,color:theme.foreground}}>{ref.text}</Text>
+        </View>)}
+        {!project.files.some(file=>(file.lyricReferences||[])
+          .some(ref=>ref.sectionId===sectionId))?<Text style={{fontSize:12,color:theme.muted}}>
+          Aucun extrait associé. Sélectionne un passage dans Capturer pour le lier ici.
+        </Text>:null}
+      </View>:null}
+    </View>:null}
+  </View>;
   const tiny=(icon:keyof typeof Ionicons.glyphMap,label:string,fn:()=>void,active=false)=>
     <Pressable onPress={fn} accessibilityRole="button" accessibilityLabel={label}
       accessibilityState={{selected:active}}
@@ -227,8 +259,9 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
       </Text>
       <View style={{alignSelf:'flex-start',gap:9}}>
         {button('Choisir ma première piste',()=>setPickMode('start'),true,'add-outline')}
-        {button('Retourner à mes idées',onCapture)}
+        {button('Retourner à Capturer',onCapture)}
       </View>
+      {sectionPanel()}
     </View>:null}
     {version?<View style={{gap:20}}>
       <MusicStudioTransport key={version.id} version={version} files={project.files}
@@ -382,18 +415,7 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
           </View>;
         })}
       </View>
-      <View style={{borderTopWidth:1,borderColor:theme.border,paddingTop:14}}>
-        <Pressable onPress={()=>setShowSections(!showSections)}
-          style={{flexDirection:'row',alignItems:'center',gap:9,minHeight:40}}>
-          <Ionicons name="list-outline" size={18} color={PINK}/>
-          <Text style={{flex:1,fontSize:13,fontWeight:'600',color:theme.foreground}}>
-            Parties de la chanson
-          </Text>
-          <Ionicons name={showSections?'chevron-up':'chevron-down'} color={theme.muted} size={17}/>
-        </Pressable>
-        {showSections?<MusicSongTabs project={project} patch={patch}
-          activeSectionId={sectionId} onSelect={setSectionId}/>:null}
-      </View>
+      {sectionPanel()}
     </View>:null}
     {pickMode!=='none'?<View style={{borderWidth:1,borderColor:theme.border,borderRadius:15,
       padding:15,backgroundColor:theme.surface,gap:10}}>
