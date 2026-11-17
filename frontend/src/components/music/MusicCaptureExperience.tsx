@@ -67,15 +67,15 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,h
     setDraft('');setComposer('none');setSelected(item.id);
   };
   const addRecorded=(id:string,filename:string,durationSeconds?:number,
-    _offset?:number,markers?:MusicAudioMarker[])=>{
+    _offset?:number,markers?:MusicAudioMarker[],name?:string)=>{
     const item:MusicProjectFile={
-      id:newMusicId(),title:'Prise '+(files.filter(isAudio).length+1),
+       id:newMusicId(),title:name?.trim()||'Prise '+(files.filter(isAudio).length+1),
       kind:'audio',sectionIds:[],localFileId:id,originalFilename:filename,
       mimeType:/\.wav$/i.test(filename)?'audio/wav':/\.m4a$/i.test(filename)?'audio/mp4':/\.ogg$/i.test(filename)?'audio/ogg':'audio/webm',
       durationSeconds,markers:markers||[],createdAt:new Date().toISOString(),
     };
     patch({files:[...files,item]});setComposer('none');setUnsavedRecording(false);
-    setConfirmClose(false);setSelected(item.id);
+    setConfirmClose(false);
   };
   const pickFiles=()=>{
     if(Platform.OS!=='web'||typeof document==='undefined'){
@@ -147,9 +147,9 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,h
     {composer!=='none'?<View style={{gap:16,padding:compact?16:22,
       borderWidth:1,borderColor:theme.border,borderRadius:18,backgroundColor:theme.surface}}>
       <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
-        <Text style={{fontSize:16,fontWeight:'700',color:theme.foreground}}>
-          {composer==='record'?'Enregistrement audio':'Écrire'}
-        </Text>
+        {composer==='write'?<Text style={{fontSize:16,fontWeight:'700',color:theme.foreground}}>
+          Écrire
+        </Text>:<View style={{flex:1}}/>}
         <Pressable onPress={closeComposer} accessibilityLabel="Fermer" style={{padding:6}}>
           <Ionicons name="close" size={20} color={theme.muted}/>
         </Pressable>
@@ -167,7 +167,8 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,h
         </View>
       </View>:null}
       {composer==='record' ? <MusicAudioCapture onSaved={addRecorded}
-        onDraftChange={setUnsavedRecording}/> :
+        onDraftChange={setUnsavedRecording}
+        suggestedTitle={'Prise '+(files.filter(isAudio).length+1)}/> :
         <View style={{gap:13}}>
           <View style={{flexDirection:'row',flexWrap:'wrap',gap:7}}>
             {([
