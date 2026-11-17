@@ -105,7 +105,7 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
     if(!version)return;
     const item:MusicProjectFile={id:newMusicId(),title:'Nouvelle prise',kind:'audio',
       sectionIds:[],localFileId:id,originalFilename:filename,
-      mimeType:/\\.wav$/i.test(filename)?'audio/wav':/\\.m4a$/i.test(filename)?'audio/mp4':'audio/webm',
+      mimeType:/\.wav$/i.test(filename)?'audio/wav':/\.m4a$/i.test(filename)?'audio/mp4':'audio/webm',
       durationSeconds,markers:markers||[],createdAt:new Date().toISOString()};
     patch({files:[...project.files,item],musicNext:changeWorkingVersion(state,{
       ...version,tracks:[...version.tracks,{
