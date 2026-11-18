@@ -99,34 +99,95 @@ export function MusicWaveformEditor({file,duration,cursor,onSeek,zoom,onZoom,
     };
     const distance=(a:Touch,b:Touch)=>Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);
     const touchStart=(e:TouchEvent)=>{
-      if(e.touches.length!==2){pinching.current=null;return;}
-      const pending=drawingRef.current;
-      if(pending?.timer)clearTimeout(pending.timer);
-      drawingRef.current=null;setDrawingRange(null);
-      pinching.current={distance:distance(e.touches[0],e.touches[1]),scale:zoomRef.current};
+      if(e.touches.length===2){
+        const pending=drawingRef.current;
+        if(pending?.timer)clearTimeout(pending.timer);
+        drawingRef.current=null;setDrawingRange(null);
+        pinching.current={distance:distance(e.touches[0],e.touches[1]),scale:zoomRef.current};
+        return;
+      }
+      pinching.current=null;
+      const touch=e.touches[0];
+      if(!touch||!onRangeRef.current||
+        !(e.target as HTMLElement)?.closest?.('svg'))return;
+      const left=element.getBoundingClientRect().left;
+      const start=clamp((touch.clientX-left+scrollX.current)/
+        Math.max(pxRef.current,1)*durationRef.current,0,durationRef.current);
+      if(drawingRef.current?.timer)clearTimeout(drawingRef.current.timer);
+      const pending={pointerId:touch.identifier,startClientX:touch.clientX,
+        start,startClientY:touch.clientY,end:start,active:false,type:'touch',
+        timer:null as ReturnType<typeof setTimeout>|null};
+      drawingRef.current=pending;
+      pending.timer=setTimeout(()=>{
+        if(drawingRef.current!==pending||pinching.current)return;
+        pending.active=true;
+        suppressClick.current=true;
+        setDrawingRange({start:pending.start,end:pending.end});
+      },330);
     };
     const touchMove=(e:TouchEvent)=>{
       const g=pinching.current;
-      if(!g||e.touches.length!==2)return;
-      e.preventDefault();suppressClick.current=true;
-      const rect=element.getBoundingClientRect();
-      const mid=(e.touches[0].clientX+e.touches[1].clientX)/2;
-      const factor=distance(e.touches[0],e.touches[1])/Math.max(1,g.distance);
-      const next=clamp(g.scale*factor,1,128);
-      const offset=clamp(mid-rect.left,0,viewport);
-      pendingAnchor.current={
-        timeRatio:(scrollX.current+offset)/Math.max(1,pxRef.current),
-        clientOffset:offset
-      };
-      onZoom(Math.round(next*100)/100);
+      if(g&&e.touches.length===2){
+        if(e.cancelable)e.preventDefault();
+        suppressClick.current=true;
+        const rect=element.getBoundingClientRect();
+        const mid=(e.touches[0].clientX+e.touches[1].clientX)/2;
+        const factor=distance(e.touches[0],e.touches[1])/Math.max(1,g.distance);
+        const next=clamp(g.scale*factor,1,128);
+        const offset=clamp(mid-rect.left,0,viewport);
+        pendingAnchor.current={
+          timeRatio:(scrollX.current+offset)/Math.max(1,pxRef.current),
+          clientOffset:offset
+        };
+        onZoom(Math.round(next*100)/100);
+        return;
+      }
+      const pending=drawingRef.current;
+      if(!pending||pending.type!=='touch')return;
+      const touch=Array.from(e.touches).find(t=>t.identifier===pending.pointerId);
+      if(!touch)return;
+      if(!pending.active){
+        // Before the hold threshold, let people scroll the audio normally.
+        if(Math.hypot(touch.clientX-pending.startClientX,
+          touch.clientY-(pending as typeof pending & {startClientY:number}).startClientY)>12){
+          if(pending.timer)clearTimeout(pending.timer);
+          drawingRef.current=null;
+        }
+        return;
+      }
+      // Stop browser selection/scrolling once the hold has become a range gesture.
+      if(e.cancelable)e.preventDefault();
+      suppressClick.current=true;
+      const left=element.getBoundingClientRect().left;
+      pending.end=clamp((touch.clientX-left+scrollX.current)/
+        Math.max(pxRef.current,1)*durationRef.current,0,durationRef.current);
+      setDrawingRange({start:Math.min(pending.start,pending.end),
+        end:Math.max(pending.start,pending.end)});
     };
-    const touchEnd=()=>{
+    const touchEnd=(e:TouchEvent)=>{
       if(pinching.current){
         pinching.current=null;
-        // Suppress only the synthetic click at the end of a pinch,
-        // not the user's next intentional tap on the waveform.
         setTimeout(()=>{suppressClick.current=false;},180);
+        return;
       }
+      const pending=drawingRef.current;
+      if(!pending||pending.type!=='touch')return;
+      if(!Array.from(e.changedTouches).some(t=>t.identifier===pending.pointerId))return;
+      if(pending.timer)clearTimeout(pending.timer);
+      drawingRef.current=null;setDrawingRange(null);
+      if(!pending.active)return; // A normal tap is handled by Pressable.
+      if(e.cancelable)e.preventDefault();
+      const a=Math.min(pending.start,pending.end),b=Math.max(pending.start,pending.end);
+      if(b-a>=.025)onRangeRef.current?.(Math.round(a*1000)/1000,
+        Math.round(b*1000)/1000);
+      else onSeekRef.current(Math.round(pending.start*1000)/1000);
+      setTimeout(()=>{suppressClick.current=false;},180);
+    };
+    const touchCancel=()=>{
+      if(drawingRef.current?.timer)clearTimeout(drawingRef.current.timer);
+      drawingRef.current=null;setDrawingRange(null);
+      pinching.current=null;
+      suppressClick.current=false;
     };
     // Tap seeks as usual; hold for 300ms on touch, or drag with mouse, to mark a range.
     const relative=(clientX:number)=>{
@@ -135,7 +196,8 @@ export function MusicWaveformEditor({file,duration,cursor,onSeek,zoom,onZoom,
         durationRef.current,0,durationRef.current);
     };
     const pointerDown=(e:PointerEvent)=>{
-      if(!onRangeRef.current||e.button!==0||pinching.current)return;
+      if(e.pointerType==='touch'||!onRangeRef.current||
+        e.button!==0||pinching.current)return;
       if(!(e.target as HTMLElement)?.closest?.('svg'))return;
       const point=relative(e.clientX);
       const pending={pointerId:e.pointerId,startClientX:e.clientX,
@@ -153,6 +215,7 @@ export function MusicWaveformEditor({file,duration,cursor,onSeek,zoom,onZoom,
       }
     };
     const pointerMove=(e:PointerEvent)=>{
+      if(e.pointerType==='touch')return;
       const p=drawingRef.current;
       if(!p||p.pointerId!==e.pointerId||!onRangeRef.current)return;
       if(!p.active){
@@ -187,8 +250,10 @@ export function MusicWaveformEditor({file,duration,cursor,onSeek,zoom,onZoom,
       try{element.releasePointerCapture(e.pointerId);}catch{}
       drawingRef.current=null;setDrawingRange(null);
     };
-    const pointerUp=(e:PointerEvent)=>pointerFinish(e);
-    const pointerCancel=(e:PointerEvent)=>pointerFinish(e,true);
+    const pointerUp=(e:PointerEvent)=>{if(e.pointerType!=='touch')pointerFinish(e);};
+    const pointerCancel=(e:PointerEvent)=>{
+      if(e.pointerType!=='touch')pointerFinish(e,true);
+    };
     const dbl=(e:MouseEvent)=>{
       e.preventDefault();
       const rect=element.getBoundingClientRect();
@@ -203,7 +268,7 @@ export function MusicWaveformEditor({file,duration,cursor,onSeek,zoom,onZoom,
     element.addEventListener('touchstart',touchStart,{passive:true});
     element.addEventListener('touchmove',touchMove,{passive:false});
     element.addEventListener('touchend',touchEnd);
-    element.addEventListener('touchcancel',touchEnd);
+    element.addEventListener('touchcancel',touchCancel);
     return ()=>{
       if(drawingRef.current?.timer)clearTimeout(drawingRef.current.timer);
       drawingRef.current=null;
@@ -216,7 +281,7 @@ export function MusicWaveformEditor({file,duration,cursor,onSeek,zoom,onZoom,
       element.removeEventListener('touchstart',touchStart);
       element.removeEventListener('touchmove',touchMove);
       element.removeEventListener('touchend',touchEnd);
-      element.removeEventListener('touchcancel',touchEnd);
+      element.removeEventListener('touchcancel',touchCancel);
     };
   },[onZoom,viewport]);
   const seek=(x:number)=>{
@@ -259,7 +324,7 @@ export function MusicWaveformEditor({file,duration,cursor,onSeek,zoom,onZoom,
     }} style={{width:'100%',borderRadius:12,
       borderWidth:1,borderColor:theme.border,
       backgroundColor:theme.dark?'#252329':'#F8F7F5',overflow:'hidden',
-      ...({touchAction:'pan-x',userSelect:'none'} as any)}}>
+      ...({touchAction:'pan-x',userSelect:'none',WebkitTouchCallout:'none'} as any)}}>
       <ScrollView ref={scroll} horizontal showsHorizontalScrollIndicator
         onScroll={e=>{scrollX.current=e.nativeEvent.contentOffset.x;}}
         scrollEventThrottle={16} keyboardShouldPersistTaps="handled">
