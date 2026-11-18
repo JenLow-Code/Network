@@ -56,6 +56,7 @@ export function MusicArrangementTimeline({version,files,duration,position,onSeek
   const [dragOver,setDragOver]=useState(false);
   const [scrubbing,setScrubbing]=useState(false);
   const scrubRef=useRef<{pointerId:number}|null>(null);
+  const nativeScrub=useRef<{pageX:number;seconds:number}|null>(null);
   const scrollX=useRef(0);
   const timelineRef=useRef<any>(null);
   const scrollRef=useRef<any>(null);
@@ -551,15 +552,18 @@ export function MusicArrangementTimeline({version,files,duration,position,onSeek
           <View {...{
             onStartShouldSetResponder:()=>true,
             onMoveShouldSetResponder:()=>true,
-            onResponderGrant:()=>setScrubbing(true),
-            onResponderMove:(e:any)=>{
-              const x=e.nativeEvent.pageX;
-              const left=scrollX.current+position*pixelsPerSecond;
-              onSeek(precise(clamp((left+e.nativeEvent.locationX-16)/
-                pixelsPerSecond,0,maxEnd)));
+            onResponderGrant:(e:any)=>{
+              nativeScrub.current={pageX:e.nativeEvent.pageX,seconds:position};
+              setScrubbing(true);
             },
-            onResponderRelease:()=>setScrubbing(false),
-            onResponderTerminate:()=>setScrubbing(false),
+            onResponderMove:(e:any)=>{
+              const starting=nativeScrub.current;
+              if(!starting)return;
+              onSeek(precise(clamp(starting.seconds+
+                (e.nativeEvent.pageX-starting.pageX)/pixelsPerSecond,0,maxEnd)));
+            },
+            onResponderRelease:()=>{nativeScrub.current=null;setScrubbing(false);},
+            onResponderTerminate:()=>{nativeScrub.current=null;setScrubbing(false);},
           }} style={{position:'absolute',top:0,zIndex:12,
             left:clamp(position*pixelsPerSecond-16,0,Math.max(0,contentWidth-32)),
             width:32,height:rulerHeight,alignItems:'center',paddingTop:4}}>
