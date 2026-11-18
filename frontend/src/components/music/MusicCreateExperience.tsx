@@ -76,7 +76,6 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
   const [rangeRequest,setRangeRequest]=useState<{
     trackId:string;start:number;end:number;nonce:number
   }|null>(null);
-  const [trackTitle,setTrackTitle]=useState('');
   const [trackOffset,setTrackOffset]=useState('0');
   const [trimStart,setTrimStart]=useState('0');
   const [trimEnd,setTrimEnd]=useState('0');
@@ -113,7 +112,6 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
   };
   const openTrack=(t:WorkingMusicTrack,file?:MusicProjectFile,force=false)=>{
     setEditTrack(force?t.id:editTrack===t.id?'':t.id);
-    setTrackTitle(t.title);
     setTrackOffset(String(t.offsetSeconds||0));
     setTrimStart(String(t.trimStartSeconds||0));
     setTrimEnd(String(t.trimEndSeconds??file?.durationSeconds??0));
@@ -499,8 +497,9 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
               <View style={{width:36,height:36,borderRadius:10,
                 alignItems:'center',justifyContent:'center',
                 backgroundColor:theme.dark?'#392A33':'#ECF0F2'}}>
-                <Ionicons name={track.instrument?.toLowerCase().includes('voix')?'mic-outline':
-                  'musical-notes-outline'} size={17} color={PINK}/>
+                {track.emoji?<Text style={{fontSize:20}}>{track.emoji}</Text>:
+                  <Ionicons name={track.instrument?.toLowerCase().includes('voix')?
+                    'mic-outline':'musical-notes-outline'} size={17} color={PINK}/>}
               </View>
               <Pressable onPress={()=>openTrack(track,source)} style={{flex:1,gap:4}}>
                 <Text style={{fontSize:14,fontWeight:'600',color:theme.foreground}}
@@ -526,8 +525,6 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
               </Text>:null}
             {editTrack===track.id?<View style={{gap:9,padding:12,
               backgroundColor:theme.surface,borderRadius:12}}>
-              <TextInput style={input} value={trackTitle} onChangeText={setTrackTitle}
-                placeholder="Nom de la piste"/>
               <Text style={{fontSize:12,fontWeight:'700',color:theme.foreground}}>
                 Position et coupe de cette piste
               </Text>
@@ -564,19 +561,6 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
                 }))}
                 {button('Appliquer la position et les coupes',()=>saveTrackTiming(track,source),true)}
               </View>
-              <View style={{flexDirection:'row',flexWrap:'wrap',gap:8}}>
-                {button('Renommer',()=>{
-                  if(trackTitle.trim())editTracks(version.tracks.map(t=>t.id===track.id
-                    ?{...t,title:trackTitle.trim()}:t));
-                  setEditTrack('');
-                })}
-                {button('Retirer de la version',()=>{
-                  editTracks(version.tracks.filter(t=>t.id!==track.id));setEditTrack('');
-                })}
-              </View>
-              <Text style={{fontSize:11,color:theme.muted}}>
-                L'enregistrement original restera disponible dans Capturer.
-              </Text>
             </View>:null}
           </View>;
         }):null}
