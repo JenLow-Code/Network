@@ -322,6 +322,7 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
         onPositionChange={setTimelineCursor}
         onTrackChange={editOneTrack}
         onRenameTrack={(id,title)=>editOneTrack(id,{title})}
+        onEmojiTrack={(id,emoji)=>editOneTrack(id,{emoji})}
         onRemoveTrack={id=>{
           editTracks(version.tracks.filter(t=>t.id!==id));
           setEditTrack('');metronome.stop();
