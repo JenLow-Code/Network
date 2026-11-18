@@ -8,6 +8,7 @@ import type {WorkingMusicTrack,WorkingMusicVersion} from '@/domain/musicNext';
 import type {MusicProjectFile} from '@/domain/musicWorkspace';
 
 const PINK='#CB245C';
+const TRACK_EMOJIS=['🎤','🎙️','🎹','🎸','🥁','🪘','🎺','🎷','🎻','🪕','🪈','🎶','🎧','🎼','🎛️','🔊','💻','🎵'];
 type Timing=Partial<Pick<WorkingMusicTrack,'offsetSeconds'|'trimStartSeconds'|'trimEndSeconds'>>;
 type Mode='move'|'start'|'end';
 type Snapshot={pointerId:number;id:string;mode:Mode;x:number;
@@ -21,6 +22,7 @@ type Props={
   onToggleSolo?:(id:string)=>void;
   onMarkTrackRange?:(trackId:string,startSeconds:number,endSeconds:number)=>void;
   onRenameTrack?:(id:string,name:string)=>void;
+  onEmojiTrack?:(id:string,emoji:string)=>void;
   onRemoveTrack?:(id:string)=>void;
   onReorderTrack?:(fromId:string,toId:string)=>void;
   onDropSource?:(fileId:string,atSeconds:number)=>void;
@@ -41,7 +43,7 @@ const clipInfo=(track:WorkingMusicTrack,file?:MusicProjectFile)=>{
  */
 export function MusicArrangementTimeline({version,files,duration,position,onSeek,
   onChangeTrack,onSelectTrack,onToggleMute,onToggleSolo,onMarkTrackRange,
-  onRenameTrack,onRemoveTrack,onReorderTrack,onDropSource}:Props){
+  onRenameTrack,onEmojiTrack,onRemoveTrack,onReorderTrack,onDropSource}:Props){
   const theme=useAppTheme();
   const {width}=useWindowDimensions();
   const compact=width<650;
@@ -49,8 +51,11 @@ export function MusicArrangementTimeline({version,files,duration,position,onSeek
   const [zoom,setZoom]=useState(1);
   const [renaming,setRenaming]=useState<string|null>(null);
   const [draftName,setDraftName]=useState('');
+  const [emojiOpen,setEmojiOpen]=useState<string|null>(null);
   const [confirmRemove,setConfirmRemove]=useState<string|null>(null);
   const [dragOver,setDragOver]=useState(false);
+  const [scrubbing,setScrubbing]=useState(false);
+  const scrubRef=useRef<{pointerId:number}|null>(null);
   const scrollX=useRef(0);
   const timelineRef=useRef<any>(null);
   const scrollRef=useRef<any>(null);
@@ -70,6 +75,10 @@ export function MusicArrangementTimeline({version,files,duration,position,onSeek
   const beatSeconds=60/(version.bpm||100);
   const snap=(seconds:number)=>version.snapToBeat?
     precise(Math.round(seconds/beatSeconds)*beatSeconds):precise(seconds);
+  const seekAtClient=(clientX:number,element:HTMLElement)=>{
+    const x=clientX-element.getBoundingClientRect().left+scrollX.current;
+    onSeek(precise(clamp(x/pixelsPerSecond,0,maxEnd)));
+  };
   const commitName=(id:string)=>{
     const value=draftName.trim();
     if(value)onRenameTrack?.(id,value);
@@ -307,7 +316,7 @@ export function MusicArrangementTimeline({version,files,duration,position,onSeek
           Pistes · {rows}
         </Text>
         <Text style={{fontSize:11,color:theme.muted}}>
-          Curseur {musicStamp(position)}
+          Départ : {musicStampMs(position)}
         </Text>
       </View>
       <View style={{flexDirection:'row',alignItems:'center',gap:9}}>
@@ -333,26 +342,30 @@ export function MusicArrangementTimeline({version,files,duration,position,onSeek
           return <View key={t.id} style={{height:rowHeight,
             borderTopWidth:1,borderColor:theme.border,
             paddingHorizontal:compact?7:10,justifyContent:'center',gap:5}}>
-            <View style={{flexDirection:'row',alignItems:'center',gap:4}}>
+            <View style={{flexDirection:'row',alignItems:'center',gap:3}}>
+              <Pressable accessibilityRole="button" accessibilityLabel={'Emoji de '+t.title}
+                accessibilityHint="Choisir une icône pour cette piste"
+                onPress={()=>setEmojiOpen(emojiOpen===t.id?null:t.id)}
+                style={{paddingVertical:5,paddingHorizontal:3,minWidth:28,
+                  alignItems:'center',justifyContent:'center'}}>
+                <Text style={{fontSize:18}}>{t.emoji||'🎵'}</Text>
+              </Pressable>
               {renaming===t.id?<TextInput autoFocus selectTextOnFocus
                 value={draftName} onChangeText={setDraftName}
                 onSubmitEditing={()=>commitName(t.id)}
                 onBlur={()=>commitName(t.id)}
-                accessibilityLabel={'Renommer '+t.title}
-                style={{flex:1,fontSize:12,color:theme.foreground,borderBottomWidth:1,
-                  borderColor:PINK,paddingVertical:3}}/>:
-                <Pressable onPress={()=>onSelectTrack?.(t.id)} accessibilityRole="button"
-                  style={{flex:1}}>
-                  <Text numberOfLines={1} style={{fontSize:compact?11:12,
-                    fontWeight:'700',color:theme.foreground}}>{i+1}. {t.title}</Text>
-                </Pressable>}
-              <Pressable accessibilityRole="button" accessibilityLabel={'Renommer '+t.title}
-                onPress={()=>{
+                accessibilityLabel={'Nom de la piste '+t.title}
+                style={{flex:1,minWidth:0,fontSize:12,color:theme.foreground,
+                  borderBottomWidth:1,borderColor:PINK,paddingVertical:3}}/>:
+                <Pressable onPress={()=>{
                   setDraftName(t.title);
                   setRenaming(t.id);
-                }} style={{padding:4}}>
-                <Ionicons name="pencil-outline" color={PINK} size={15}/>
-              </Pressable>
+                }} accessibilityRole="button"
+                  accessibilityLabel={'Toucher pour renommer '+t.title}
+                  style={{flex:1,minWidth:0,paddingVertical:5}}>
+                  <Text numberOfLines={1} style={{fontSize:compact?11:12,
+                    fontWeight:'700',color:theme.foreground}}>{t.title}</Text>
+                </Pressable>}
             </View>
             <View style={{flexDirection:'row',gap:compact?3:8,alignItems:'center'}}>
               <Pressable onPress={()=>onToggleMute?.(t.id)} accessibilityRole="button"
@@ -482,6 +495,33 @@ export function MusicArrangementTimeline({version,files,duration,position,onSeek
         </View>
       </ScrollView>
     </View>
+    {emojiOpen&&version.tracks.some(t=>t.id===emojiOpen)?<View style={{
+      borderRadius:12,borderWidth:1,borderColor:theme.border,
+      backgroundColor:theme.surface,padding:10,gap:9}}>
+      <View style={{flexDirection:'row',justifyContent:'space-between',
+        alignItems:'center'}}>
+        <Text style={{fontSize:12,fontWeight:'600',color:theme.foreground}}>
+          Emoji · {version.tracks.find(t=>t.id===emojiOpen)?.title}
+        </Text>
+        <Pressable onPress={()=>setEmojiOpen(null)}
+          accessibilityLabel="Fermer les emojis" style={{padding:6}}>
+          <Ionicons name="close-outline" size={18} color={theme.muted}/>
+        </Pressable>
+      </View>
+      <View style={{flexDirection:'row',flexWrap:'wrap',gap:5}}>
+        {TRACK_EMOJIS.map(emoji=><Pressable key={emoji}
+          accessibilityRole="button" accessibilityLabel={'Choisir '+emoji}
+          onPress={()=>{
+            onEmojiTrack?.(emojiOpen,emoji);
+            setEmojiOpen(null);
+          }} style={{width:42,height:42,justifyContent:'center',
+            alignItems:'center',borderRadius:9,
+            backgroundColor:version.tracks.find(t=>t.id===emojiOpen)?.emoji===emoji?
+              theme.border:'transparent'}}>
+          <Text style={{fontSize:23}}>{emoji}</Text>
+        </Pressable>)}
+      </View>
+    </View>:null}
     {confirmRemove?<View style={{borderWidth:1,borderColor:theme.border,
       borderRadius:10,padding:11,gap:10}}>
       <Text style={{fontSize:12,color:theme.foreground}}>
@@ -501,7 +541,7 @@ export function MusicArrangementTimeline({version,files,duration,position,onSeek
       </View>
     </View>:null}
     <Text style={{fontSize:11,lineHeight:18,color:theme.muted}}>
-      Glisser : déplacer · Bords : couper · Maintenir et glisser : intervalle
+      Toucher la règle : choisir le départ · Glisser la tête de lecture : avancer ou reculer
     </Text>
   </View>;
 }
