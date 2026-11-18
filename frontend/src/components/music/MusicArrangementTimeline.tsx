@@ -168,7 +168,7 @@ export function MusicArrangementTimeline({version,files,duration,position,onSeek
       title:mode==='move'?'Glisser pour décaler la piste':
         mode==='start'?'Glisser pour ajuster le début':'Glisser pour ajuster la fin',
       onPointerDown:(e:React.PointerEvent<HTMLDivElement>)=>{
-        if(!editable)return;
+        if(!editable||e.pointerType==='touch')return;
         e.preventDefault();e.stopPropagation();
         const element=e.currentTarget;
         const pointerId=e.pointerId;
@@ -191,6 +191,7 @@ export function MusicArrangementTimeline({version,files,duration,position,onSeek
         }
       },
       onPointerMove:(e:React.PointerEvent<HTMLDivElement>)=>{
+        if(e.pointerType==='touch')return;
         const hold=rangeHold.current;
         if(hold?.pointerId===e.pointerId){
           if(hold.active){
@@ -211,6 +212,7 @@ export function MusicArrangementTimeline({version,files,duration,position,onSeek
         e.preventDefault();e.stopPropagation();move(e.clientX,e.pointerId);
       },
       onPointerUp:(e:React.PointerEvent<HTMLDivElement>)=>{
+        if(e.pointerType==='touch')return;
         e.preventDefault();e.stopPropagation();
         const hold=rangeHold.current;
         if(hold?.timer)clearTimeout(hold.timer);
@@ -236,8 +238,86 @@ export function MusicArrangementTimeline({version,files,duration,position,onSeek
         try{e.currentTarget.releasePointerCapture(e.pointerId);}catch{}
       },
       onPointerCancel:(e:React.PointerEvent<HTMLDivElement>)=>{
+        if(e.pointerType==='touch')return;
         if(rangeHold.current?.timer)clearTimeout(rangeHold.current.timer);
         rangeHold.current=null;setRangePreview(null);stop(e.pointerId,false);
+      },
+      onTouchStart:(e:React.TouchEvent<HTMLDivElement>)=>{
+        if(!editable)return;
+        const finger=e.touches[0];
+        if(!finger||e.touches.length!==1)return;
+        e.stopPropagation();
+        begin(finger.clientX,mode,t,file,-1);
+        if(mode==='move'&&onMarkTrackRange){
+          const info=clipInfo(t,file);
+          const rect=e.currentTarget.getBoundingClientRect();
+          const at=clamp(info.start+(finger.clientX-rect.left)/pixelsPerSecond,
+            info.start,info.end);
+          const hold={pointerId:-1,id:t.id,start:at,end:at,
+            pressedX:finger.clientX,active:false,
+            timer:null as ReturnType<typeof setTimeout>|null};
+          rangeHold.current=hold;
+          hold.timer=setTimeout(()=>{
+            if(rangeHold.current!==hold)return;
+            hold.active=true;drag.current=null;setPreview(null);
+            setRangePreview({id:t.id,start:at,end:at});
+          },330);
+        }
+      },
+      onTouchMove:(e:React.TouchEvent<HTMLDivElement>)=>{
+        const finger=e.touches[0];
+        if(!finger)return;
+        e.stopPropagation();
+        const hold=rangeHold.current;
+        if(hold?.pointerId===-1){
+          if(hold.active){
+            const info=clipInfo(t,file);
+            hold.end=clamp(hold.start+
+              (finger.clientX-hold.pressedX)/pixelsPerSecond,info.start,info.end);
+            setRangePreview({id:t.id,start:Math.min(hold.start,hold.end),
+              end:Math.max(hold.start,hold.end)});
+            return;
+          }
+          if(Math.abs(finger.clientX-hold.pressedX)>7){
+            if(hold.timer)clearTimeout(hold.timer);
+            rangeHold.current=null;
+          }
+        }
+        move(finger.clientX,-1);
+      },
+      onTouchEnd:(e:React.TouchEvent<HTMLDivElement>)=>{
+        e.stopPropagation();
+        const hold=rangeHold.current;
+        if(hold?.timer)clearTimeout(hold.timer);
+        rangeHold.current=null;
+        if(hold?.active){
+          const start=Math.min(hold.start,hold.end),end=Math.max(hold.start,hold.end);
+          if(end-start>=.03)onMarkTrackRange?.(t.id,
+            Math.round(start*1000)/1000,Math.round(end*1000)/1000);
+          setRangePreview(null);
+          drag.current=null;
+          return;
+        }
+        const current=drag.current;
+        if(current?.pointerId===-1&&
+          current.mode==='move'&&Object.keys(current.next).length===0){
+          const finger=e.changedTouches[0];
+          if(finger){
+            const grip=Math.min(23,Math.max(11,w/3));
+            const rect=e.currentTarget.getBoundingClientRect();
+            const at=clipInfo(t,file).offset+
+              (finger.clientX-rect.left+grip)/pixelsPerSecond;
+            onSeek(precise(clamp(at,0,maxEnd)));
+          }
+          drag.current=null;setPreview(null);
+        }else stop(-1,true);
+      },
+      onTouchCancel:()=>{
+        if(rangeHold.current?.timer)clearTimeout(rangeHold.current.timer);
+        rangeHold.current=null;setRangePreview(null);stop(-1,false);
+      },
+      onContextMenu:(e:React.MouseEvent<HTMLDivElement>)=>{
+        e.preventDefault();
       },
       onKeyDown:(e:React.KeyboardEvent<HTMLDivElement>)=>{
         if(!editable||!['ArrowLeft','ArrowRight'].includes(e.key))return;
@@ -256,7 +336,8 @@ export function MusicArrangementTimeline({version,files,duration,position,onSeek
           clamp(info.end+dir*step,Math.min(info.total,info.start+.025),info.total))});
       },
       style:{...common,cursor:mode==='move'?'grab':'ew-resize',
-        touchAction:'none',userSelect:'none',zIndex:mode==='move'?1:2,
+        touchAction:'none',userSelect:'none',WebkitTouchCallout:'none',
+        zIndex:mode==='move'?1:2,
         borderLeft:mode==='start'?'2px solid '+PINK:undefined,
         borderRight:mode==='end'?'2px solid '+PINK:undefined,
         borderRadius:5,
