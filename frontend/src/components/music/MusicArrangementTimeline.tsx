@@ -50,6 +50,7 @@ export function MusicArrangementTimeline({version,files,duration,position,onSeek
   const [panelWidth,setPanelWidth]=useState(0);
   const [zoom,setZoom]=useState(1);
   const [renaming,setRenaming]=useState<string|null>(null);
+  const renamingRef=useRef<string|null>(null);
   const [draftName,setDraftName]=useState('');
   const [emojiOpen,setEmojiOpen]=useState<string|null>(null);
   const [confirmRemove,setConfirmRemove]=useState<string|null>(null);
@@ -81,8 +82,11 @@ export function MusicArrangementTimeline({version,files,duration,position,onSeek
     onSeek(precise(clamp(x/pixelsPerSecond,0,maxEnd)));
   };
   const commitName=(id:string)=>{
+    if(renamingRef.current!==id)return;
+    renamingRef.current=null;
     const value=draftName.trim();
-    if(value)onRenameTrack?.(id,value);
+    if(value&&value!==version.tracks.find(track=>track.id===id)?.title)
+      onRenameTrack?.(id,value);
     setRenaming(null);
   };
   const dropReady=useRef(onDropSource);dropReady.current=onDropSource;
@@ -342,6 +346,33 @@ export function MusicArrangementTimeline({version,files,duration,position,onSeek
         </Pressable>
       </View>
     </View>
+    {emojiOpen&&version.tracks.some(t=>t.id===emojiOpen)?<View style={{
+      borderRadius:12,borderWidth:1,borderColor:theme.border,
+      backgroundColor:theme.surface,padding:10,gap:9}}>
+      <View style={{flexDirection:'row',justifyContent:'space-between',
+        alignItems:'center'}}>
+        <Text style={{fontSize:12,fontWeight:'600',color:theme.foreground}}>
+          Emoji · {version.tracks.find(t=>t.id===emojiOpen)?.title}
+        </Text>
+        <Pressable onPress={()=>setEmojiOpen(null)}
+          accessibilityLabel="Fermer les emojis" style={{padding:6}}>
+          <Ionicons name="close-outline" size={18} color={theme.muted}/>
+        </Pressable>
+      </View>
+      <View style={{flexDirection:'row',flexWrap:'wrap',gap:5}}>
+        {TRACK_EMOJIS.map(emoji=><Pressable key={emoji}
+          accessibilityRole="button" accessibilityLabel={'Choisir '+emoji}
+          onPress={()=>{
+            onEmojiTrack?.(emojiOpen,emoji);
+            setEmojiOpen(null);
+          }} style={{width:42,height:42,justifyContent:'center',
+            alignItems:'center',borderRadius:9,
+            backgroundColor:version.tracks.find(t=>t.id===emojiOpen)?.emoji===emoji?
+              theme.border:'transparent'}}>
+          <Text style={{fontSize:23}}>{emoji}</Text>
+        </Pressable>)}
+      </View>
+    </View>:null}
     <View ref={timelineRef} style={{flexDirection:'row',borderRadius:12,borderWidth:1,
       borderColor:theme.border,overflow:'hidden',
       backgroundColor:theme.dark?'#242227':'#F9F8F6'}}>
@@ -371,6 +402,7 @@ export function MusicArrangementTimeline({version,files,duration,position,onSeek
                 style={{flex:1,minWidth:0,fontSize:12,color:theme.foreground,
                   borderBottomWidth:1,borderColor:PINK,paddingVertical:3}}/>:
                 <Pressable onPress={()=>{
+                  renamingRef.current=t.id;
                   setDraftName(t.title);
                   setRenaming(t.id);
                 }} accessibilityRole="button"
@@ -572,33 +604,6 @@ export function MusicArrangementTimeline({version,files,duration,position,onSeek
         </View>
       </ScrollView>
     </View>
-    {emojiOpen&&version.tracks.some(t=>t.id===emojiOpen)?<View style={{
-      borderRadius:12,borderWidth:1,borderColor:theme.border,
-      backgroundColor:theme.surface,padding:10,gap:9}}>
-      <View style={{flexDirection:'row',justifyContent:'space-between',
-        alignItems:'center'}}>
-        <Text style={{fontSize:12,fontWeight:'600',color:theme.foreground}}>
-          Emoji · {version.tracks.find(t=>t.id===emojiOpen)?.title}
-        </Text>
-        <Pressable onPress={()=>setEmojiOpen(null)}
-          accessibilityLabel="Fermer les emojis" style={{padding:6}}>
-          <Ionicons name="close-outline" size={18} color={theme.muted}/>
-        </Pressable>
-      </View>
-      <View style={{flexDirection:'row',flexWrap:'wrap',gap:5}}>
-        {TRACK_EMOJIS.map(emoji=><Pressable key={emoji}
-          accessibilityRole="button" accessibilityLabel={'Choisir '+emoji}
-          onPress={()=>{
-            onEmojiTrack?.(emojiOpen,emoji);
-            setEmojiOpen(null);
-          }} style={{width:42,height:42,justifyContent:'center',
-            alignItems:'center',borderRadius:9,
-            backgroundColor:version.tracks.find(t=>t.id===emojiOpen)?.emoji===emoji?
-              theme.border:'transparent'}}>
-          <Text style={{fontSize:23}}>{emoji}</Text>
-        </Pressable>)}
-      </View>
-    </View>:null}
     {confirmRemove?<View style={{borderWidth:1,borderColor:theme.border,
       borderRadius:10,padding:11,gap:10}}>
       <Text style={{fontSize:12,color:theme.foreground}}>
