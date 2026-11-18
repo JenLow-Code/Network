@@ -360,6 +360,12 @@ export function MusicArrangementTimeline({version,files,duration,position,onSeek
         </Pressable>
       </View>
       <View style={{flexDirection:'row',flexWrap:'wrap',gap:5}}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Sans emoji"
+          onPress={()=>{onEmojiTrack?.(emojiOpen,'');setEmojiOpen(null);}}
+          style={{minWidth:56,height:42,paddingHorizontal:6,
+            justifyContent:'center',alignItems:'center',borderRadius:9}}>
+          <Text style={{fontSize:11,color:theme.muted}}>Aucun</Text>
+        </Pressable>
         {TRACK_EMOJIS.map(emoji=><Pressable key={emoji}
           accessibilityRole="button" accessibilityLabel={'Choisir '+emoji}
           onPress={()=>{
@@ -392,7 +398,8 @@ export function MusicArrangementTimeline({version,files,duration,position,onSeek
                 onPress={()=>setEmojiOpen(emojiOpen===t.id?null:t.id)}
                 style={{paddingVertical:5,paddingHorizontal:3,minWidth:28,
                   alignItems:'center',justifyContent:'center'}}>
-                <Text style={{fontSize:18}}>{t.emoji||'🎵'}</Text>
+                {t.emoji?<Text style={{fontSize:18}}>{t.emoji}</Text>:
+                  <Ionicons name="musical-notes-outline" size={17} color={theme.muted}/>}
               </Pressable>
               {renaming===t.id?<TextInput autoFocus selectTextOnFocus
                 value={draftName} onChangeText={setDraftName}
