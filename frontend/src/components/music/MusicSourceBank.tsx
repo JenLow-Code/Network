@@ -20,6 +20,7 @@ export function MusicSourceBank({files,onAdd}:Props){
   const [search,setSearch]=useState('');
   const [moving,setMoving]=useState<TouchDrag|null>(null);
   const drag=useRef<TouchDrag|null>(null);
+  const pointerKind=useRef<'mouse'|'touch'|'pen'>('mouse');
   const shown=files.filter(f=>f.title.toLowerCase().includes(search.trim().toLowerCase()));
 
   const locate=(clientX:number,clientY:number)=>{
@@ -42,14 +43,17 @@ export function MusicSourceBank({files,onAdd}:Props){
     return Math.round(Math.max(0,(clientX-rect.left+area.scrollLeft)
       *secondsPerPx)*100)/100;
   };
+  const complete=(file:MusicProjectFile,clientX:number,clientY:number)=>{
+    const zone=locate(clientX,clientY);
+    drag.current=null;setMoving(null);
+    if(zone)onAdd(file,positionAt(zone,clientX));
+  };
   const finish=(event:React.PointerEvent<HTMLElement>,file:MusicProjectFile)=>{
     const current=drag.current;
     if(!current||current.pointerId!==event.pointerId)return;
     event.preventDefault();event.stopPropagation();
-    const zone=locate(event.clientX,event.clientY);
-    drag.current=null;setMoving(null);
     try{event.currentTarget.releasePointerCapture(event.pointerId);}catch{}
-    if(zone)onAdd(file,positionAt(zone,event.clientX));
+    complete(file,event.clientX,event.clientY);
   };
   const grip=(file:MusicProjectFile)=>{
     if(Platform.OS!=='web')
@@ -57,8 +61,37 @@ export function MusicSourceBank({files,onAdd}:Props){
     return React.createElement('div',{
       role:'button',tabIndex:0,'aria-label':'Glisser '+file.title+' vers la chronologie',
       title:'Maintenir et glisser vers la chronologie',
+      // The browser's native draggable interaction must never take over a finger.
+      // Use TouchEvents for iOS Safari, which may cancel PointerEvents while scrolling.
+      onTouchStart:(event:React.TouchEvent<HTMLDivElement>)=>{
+        const t=event.touches[0];
+        if(!t)return;
+        pointerKind.current='touch';
+        event.stopPropagation();
+        const value={id:file.id,pointerId:t.identifier,x:t.clientX,y:t.clientY,over:false};
+        drag.current=value;setMoving(value);
+      },
+      onTouchMove:(event:React.TouchEvent<HTMLDivElement>)=>{
+        const t=event.touches[0],current=drag.current;
+        if(!t||!current||current.id!==file.id)return;
+        event.stopPropagation();
+        const value={...current,x:t.clientX,y:t.clientY,
+          over:!!locate(t.clientX,t.clientY)};
+        drag.current=value;setMoving(value);
+      },
+      onTouchEnd:(event:React.TouchEvent<HTMLDivElement>)=>{
+        if(drag.current?.id!==file.id)return;
+        event.stopPropagation();
+        const t=event.changedTouches[0];
+        if(t)complete(file,t.clientX,t.clientY);
+        else{drag.current=null;setMoving(null);}
+      },
+      onTouchCancel:()=>{drag.current=null;setMoving(null);},
+      onContextMenu:(event:React.MouseEvent<HTMLDivElement>)=>event.preventDefault(),
       onPointerDown:(event:React.PointerEvent<HTMLDivElement>)=>{
-        // Desktop drag uses dataTransfer; direct pointer drag is for touch/pen.
+        if(event.pointerType==='touch')return;
+        pointerKind.current=event.pointerType as 'mouse'|'pen';
+        // Desktop mouse uses native drag-and-drop; pen uses PointerEvents.
         if(event.pointerType==='mouse')return;
         event.preventDefault();event.stopPropagation();
         const value={id:file.id,pointerId:event.pointerId,x:event.clientX,y:event.clientY,
@@ -67,13 +100,15 @@ export function MusicSourceBank({files,onAdd}:Props){
         try{event.currentTarget.setPointerCapture(event.pointerId);}catch{}
       },
       onPointerMove:(event:React.PointerEvent<HTMLDivElement>)=>{
-        if(!drag.current||drag.current.pointerId!==event.pointerId)return;
+        if(event.pointerType==='touch'||!drag.current||drag.current.pointerId!==event.pointerId)return;
         event.preventDefault();event.stopPropagation();
         const value={...drag.current,x:event.clientX,y:event.clientY,
           over:!!locate(event.clientX,event.clientY)};
         drag.current=value;setMoving(value);
       },
-      onPointerUp:(event:React.PointerEvent<HTMLDivElement>)=>finish(event,file),
+      onPointerUp:(event:React.PointerEvent<HTMLDivElement>)=>{
+        if(event.pointerType!=='touch')finish(event,file);
+      },
       onPointerCancel:()=>{
         drag.current=null;setMoving(null);
       },
@@ -144,12 +179,15 @@ export function MusicSourceBank({files,onAdd}:Props){
               key:file.id,draggable:true,
               'aria-label':'Prise source : '+file.title,
               onDragStart:(event:React.DragEvent<HTMLDivElement>)=>{
+                if(pointerKind.current==='touch'){
+                  event.preventDefault();return;
+                }
                 event.dataTransfer.effectAllowed='copy';
                 event.dataTransfer.setData('application/x-jenlow-music-file',file.id);
                 event.dataTransfer.setData('text/plain',file.title);
                 setMoving({id:file.id,pointerId:-1,x:0,y:0,over:false});
               },
-              onDragEnd:()=>setMoving(null),
+              onDragEnd:()=>{drag.current=null;setMoving(null);},
               style:{cursor:'grab',userSelect:'none',touchAction:'pan-x'}
             },content);
           })}
