@@ -7,6 +7,8 @@ export type WorkingMusicTrack = {
   id: string;
   sourceFileId: string;
   title: string;
+  /** User-chosen visual track marker; never inferred from audio. */
+  emoji?: string;
   instrument?: string;
   muted: boolean;
   solo: boolean;
