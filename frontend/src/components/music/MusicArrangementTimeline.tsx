@@ -215,7 +215,19 @@ export function MusicArrangementTimeline({version,files,duration,position,onSeek
           if(b-a>=.03)onMarkTrackRange?.(t.id,Math.round(a*1000)/1000,
             Math.round(b*1000)/1000);
           setRangePreview(null);
-        }else stop(e.pointerId,true);
+        }else{
+          const item=drag.current;
+          if(item?.mode==='move'&&Object.keys(item.next).length===0){
+            // Tapping the centre of a clip positions the song playhead.
+            const info=clipInfo(t,file);
+            const grip=Math.min(23,Math.max(11,w/3));
+            const rect=e.currentTarget.getBoundingClientRect();
+            const clickAt=info.offset+(e.clientX-rect.left+grip)/pixelsPerSecond;
+            onSeek(precise(clamp(clickAt,0,maxEnd)));
+          }else stop(e.pointerId,true);
+          if(item?.mode==='move'&&Object.keys(item.next).length===0)
+            drag.current=null;
+        }
         try{e.currentTarget.releasePointerCapture(e.pointerId);}catch{}
       },
       onPointerCancel:(e:React.PointerEvent<HTMLDivElement>)=>{
@@ -486,12 +498,73 @@ export function MusicArrangementTimeline({version,files,duration,position,onSeek
               </Pressable>}
             </View>;
           })}
-          <View pointerEvents="none" style={{position:'absolute',top:0,
-            left:clamp(position*pixelsPerSecond,0,contentWidth),height:rulerHeight+rowHeight*rows,
-            width:2,backgroundColor:PINK}}>
-            <View style={{position:'absolute',top:0,left:-4,width:10,height:10,
-              backgroundColor:PINK,borderRadius:5}}/>
-          </View>
+          <View pointerEvents="none" style={{position:'absolute',top:rulerHeight-2,
+            left:clamp(position*pixelsPerSecond,0,contentWidth),
+            height:rowHeight*rows+2,width:2,backgroundColor:PINK}}/>
+          {Platform.OS==='web'?React.createElement('div',{
+            role:'slider',tabIndex:0,
+            'aria-label':'Position de lecture, glisser pour définir le départ',
+            'aria-valuemin':0,'aria-valuemax':Math.ceil(maxEnd*1000),
+            'aria-valuenow':Math.round(position*1000),
+            'aria-valuetext':musicStampMs(position),
+            title:'Glisser pour choisir le point de départ',
+            onPointerDown:(e:React.PointerEvent<HTMLDivElement>)=>{
+              e.preventDefault();e.stopPropagation();
+              scrubRef.current={pointerId:e.pointerId};
+              setScrubbing(true);
+              try{e.currentTarget.setPointerCapture(e.pointerId);}catch{}
+            },
+            onPointerMove:(e:React.PointerEvent<HTMLDivElement>)=>{
+              if(scrubRef.current?.pointerId!==e.pointerId)return;
+              e.preventDefault();e.stopPropagation();
+              const el=scrollRef.current as HTMLElement|null;
+              if(el?.getBoundingClientRect)seekAtClient(e.clientX,el);
+            },
+            onPointerUp:(e:React.PointerEvent<HTMLDivElement>)=>{
+              if(scrubRef.current?.pointerId!==e.pointerId)return;
+              e.preventDefault();e.stopPropagation();
+              const el=scrollRef.current as HTMLElement|null;
+              if(el?.getBoundingClientRect)seekAtClient(e.clientX,el);
+              try{e.currentTarget.releasePointerCapture(e.pointerId);}catch{}
+              scrubRef.current=null;setScrubbing(false);
+            },
+            onPointerCancel:()=>{scrubRef.current=null;setScrubbing(false);},
+            onKeyDown:(e:React.KeyboardEvent<HTMLDivElement>)=>{
+              if(e.key!=='ArrowRight'&&e.key!=='ArrowLeft')return;
+              e.preventDefault();e.stopPropagation();
+              const delta=e.shiftKey?1:.1;
+              onSeek(precise(clamp(position+(e.key==='ArrowRight'?delta:-delta),0,maxEnd)));
+            },
+            style:{
+              position:'absolute',top:0,zIndex:12,
+              left:clamp(position*pixelsPerSecond-16,0,Math.max(0,contentWidth-32)),
+              width:32,height:rulerHeight,cursor:'ew-resize',
+              display:'flex',justifyContent:'center',alignItems:'flex-start',
+              paddingTop:2,touchAction:'none',userSelect:'none',
+            }
+          },React.createElement('div',{style:{
+            width:scrubbing?18:16,height:scrubbing?22:20,
+            backgroundColor:PINK,borderRadius:'5px 5px 8px 8px',
+            border:'2px solid #fff',boxShadow:'0 1px 4px rgba(0,0,0,.2)',
+            marginLeft:8,pointerEvents:'none'
+          }})):
+          <View {...{
+            onStartShouldSetResponder:()=>true,
+            onMoveShouldSetResponder:()=>true,
+            onResponderGrant:()=>setScrubbing(true),
+            onResponderMove:(e:any)=>{
+              const x=e.nativeEvent.pageX;
+              const left=scrollX.current+position*pixelsPerSecond;
+              onSeek(precise(clamp((left+e.nativeEvent.locationX-16)/
+                pixelsPerSecond,0,maxEnd)));
+            },
+            onResponderRelease:()=>setScrubbing(false),
+            onResponderTerminate:()=>setScrubbing(false),
+          }} style={{position:'absolute',top:0,zIndex:12,
+            left:clamp(position*pixelsPerSecond-16,0,Math.max(0,contentWidth-32)),
+            width:32,height:rulerHeight,alignItems:'center',paddingTop:4}}>
+            <View style={{width:16,height:21,borderRadius:5,backgroundColor:PINK}}/>
+          </View>}
         </View>
       </ScrollView>
     </View>
