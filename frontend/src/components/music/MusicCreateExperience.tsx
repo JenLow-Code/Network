@@ -317,7 +317,8 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
         button('Choisir une prise · 1re version',()=>setPickMode('start'),true,'add-outline'):
         button('Capturer ma première prise',onCapture,true,'mic-outline')}
     </View>:null}
-    {version?<View style={{gap:20}}>
+    {version?<View style={{gap:15}}>
+      <MusicSourceBank files={sources} onAdd={add}/>
       <MusicStudioTransport key={version.id} version={version} files={project.files}
         onPositionChange={setTimelineCursor}
         onTrackChange={editOneTrack}
@@ -367,7 +368,7 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
               track.offsetSeconds+seconds-(track.trimStartSeconds||0)))}/>
         </View>;
       })():null}
-      <MusicSourceBank files={sources} onAdd={add}/>
+
       <View style={{padding:12,borderRadius:12,
         backgroundColor:theme.surface,borderWidth:1,borderColor:theme.border}}>
         <View style={{flexDirection:'row',alignItems:'center',gap:7,flexWrap:'wrap'}}>
