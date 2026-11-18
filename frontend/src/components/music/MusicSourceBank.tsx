@@ -21,6 +21,12 @@ export function MusicSourceBank({files,onAdd}:Props){
   const [moving,setMoving]=useState<TouchDrag|null>(null);
   const drag=useRef<TouchDrag|null>(null);
   const pointerKind=useRef<'mouse'|'touch'|'pen'>('mouse');
+  const pendingHold=useRef<{id:string;identifier:number;x:number;y:number;
+    timer:ReturnType<typeof setTimeout>|null}|null>(null);
+  const cancelHold=()=>{
+    if(pendingHold.current?.timer)clearTimeout(pendingHold.current.timer);
+    pendingHold.current=null;
+  };
   const shown=files.filter(f=>f.title.toLowerCase().includes(search.trim().toLowerCase()));
 
   const locate=(clientX:number,clientY:number)=>{
@@ -178,6 +184,49 @@ export function MusicSourceBank({files,onAdd}:Props){
             return React.createElement('div',{
               key:file.id,draggable:true,
               'aria-label':'Prise source : '+file.title,
+              // On phones, long-pressing the card works as well as the grip.
+              // Movement before the threshold is treated as normal scrolling.
+              onTouchStart:(event:React.TouchEvent<HTMLDivElement>)=>{
+                const finger=event.touches[0];
+                if(!finger||(event.target as HTMLElement)?.closest?.('button'))return;
+                pointerKind.current='touch';
+                cancelHold();
+                const pending={id:file.id,identifier:finger.identifier,
+                  x:finger.clientX,y:finger.clientY,
+                  timer:null as ReturnType<typeof setTimeout>|null};
+                pendingHold.current=pending;
+                pending.timer=setTimeout(()=>{
+                  if(pendingHold.current!==pending)return;
+                  const value={id:file.id,pointerId:finger.identifier,
+                    x:pending.x,y:pending.y,over:false};
+                  drag.current=value;setMoving(value);
+                },350);
+              },
+              onTouchMove:(event:React.TouchEvent<HTMLDivElement>)=>{
+                const finger=event.touches[0],pending=pendingHold.current;
+                if(!finger)return;
+                if(pending?.id===file.id&&
+                  Math.hypot(finger.clientX-pending.x,finger.clientY-pending.y)>12){
+                  cancelHold();
+                }
+                if(drag.current?.id!==file.id)return;
+                const value={...drag.current,x:finger.clientX,y:finger.clientY,
+                  over:!!locate(finger.clientX,finger.clientY)};
+                drag.current=value;setMoving(value);
+              },
+              onTouchEnd:(event:React.TouchEvent<HTMLDivElement>)=>{
+                cancelHold();
+                if(drag.current?.id!==file.id)return;
+                const finger=event.changedTouches[0];
+                if(finger)complete(file,finger.clientX,finger.clientY);
+                else{drag.current=null;setMoving(null);}
+              },
+              onTouchCancel:()=>{
+                cancelHold();drag.current=null;setMoving(null);
+              },
+              onContextMenu:(event:React.MouseEvent<HTMLDivElement>)=>{
+                event.preventDefault();
+              },
               onDragStart:(event:React.DragEvent<HTMLDivElement>)=>{
                 if(pointerKind.current==='touch'){
                   event.preventDefault();return;
@@ -187,8 +236,8 @@ export function MusicSourceBank({files,onAdd}:Props){
                 event.dataTransfer.setData('text/plain',file.title);
                 setMoving({id:file.id,pointerId:-1,x:0,y:0,over:false});
               },
-              onDragEnd:()=>{drag.current=null;setMoving(null);},
-              style:{cursor:'grab',userSelect:'none',touchAction:'pan-x'}
+              onDragEnd:()=>{cancelHold();drag.current=null;setMoving(null);},
+              style:{cursor:'grab',userSelect:'none',touchAction:'pan-y',WebkitTouchCallout:'none'}
             },content);
           })}
         </View>
