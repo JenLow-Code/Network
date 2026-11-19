@@ -264,22 +264,19 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
         <Pressable onPress={()=>setVersionMenu(!versionMenu)} accessibilityRole="button"
           accessibilityState={{expanded:versionMenu}}
           style={{flex:1,flexDirection:'row',gap:10,alignItems:'center',paddingVertical:7}}>
-          <View style={{flex:1,gap:4}}>
-            <Text style={{fontSize:10,color:theme.muted,letterSpacing:1,fontWeight:'700'}}>
-              VERSION DE TRAVAIL
-            </Text>
-            <Text style={{fontSize:compact?21:25,fontWeight:'700',color:theme.foreground}}>
-              {version?.title||'Aucune version'}
-            </Text>
-          </View>
+          <Ionicons name="layers-outline" size={20} color={PINK}/>
+          <Text style={{fontSize:compact?15:18,fontWeight:'700',
+            color:theme.foreground}}>{version.title}</Text>
           <Ionicons name={versionMenu?'chevron-up':'chevron-down'} color={PINK} size={19}/>
         </Pressable>
+        {tiny('document-text-outline','Structure et informations musicales',()=>{
+          setInfoOpen(true);setShowSections(true);openSettings();
+        })}
         {version?tiny('arrow-undo-outline','Annuler la dernière modification',()=>{
           patch({musicNext:undoWorkingVersion(state,version.id)});
         }):null}
       </View>
-      {versionMenu?<View style={{padding:15,backgroundColor:theme.surface,borderRadius:15,
-        borderWidth:1,borderColor:theme.border,gap:8}}>
+      {versionMenu?<View style={{paddingVertical:7,gap:5}}>
         {versions.map(v=><Pressable key={v.id} accessibilityRole="button"
           onPress={()=>{patch({musicNext:{...state,activeVersionId:v.id}});setVersionMenu(false);}}
           style={{flexDirection:'row',alignItems:'center',gap:10,minHeight:39}}>
@@ -475,29 +472,6 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
           onSaved={(...args)=>{metronome.stop();saveTake(...args);}}/>
       </View>:null}
 
-      <View style={{flexDirection:'row',alignItems:'center',gap:10,flexWrap:'wrap'}}>
-        <Text style={{fontSize:12,color:theme.muted}}>
-          {version.key||'Tonalité non définie'}
-          {version.meter?' · '+version.meter:''}
-        </Text>
-        <Pressable onPress={openSettings} accessibilityRole="button"
-          style={{flexDirection:'row',alignItems:'center',gap:4,paddingVertical:6}}>
-          <Ionicons name="options-outline" size={16} color={PINK}/>
-          <Text style={{fontSize:12,color:PINK}}>Réglages du morceau</Text>
-        </Pressable>
-      </View>
-      {showSettings?<View style={{gap:10,padding:14,borderRadius:14,
-        borderWidth:1,borderColor:theme.border,backgroundColor:theme.surface}}>
-        <Text style={{fontSize:12,color:theme.muted,lineHeight:19}}>
-          Ces indications sont facultatives. Aucune tonalité ni aucun tempo ne sont déduits sans analyse.
-        </Text>
-
-        <TextInput style={input} value={tone} onChangeText={setTone}
-          placeholder="Tonalité (si connue)" placeholderTextColor={theme.muted}/>
-        <TextInput style={input} value={meter} onChangeText={setMeter}
-          placeholder="Mesure, p. ex. 4/4" placeholderTextColor={theme.muted}/>
-        <View style={{alignSelf:'flex-start'}}>{button('Enregistrer les réglages',saveSettings,true)}</View>
-      </View>:null}
       <View style={{gap:12}}>
         <Pressable onPress={()=>setShowTracks(!showTracks)} accessibilityRole="button"
           accessibilityState={{expanded:showTracks}}
@@ -586,13 +560,7 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
           </View>;
         }):null}
       </View>
-      <MusicLyricTimeline files={project.files} cues={version.lyricCues||[]}
-        cursor={timelineCursor}
-        onChange={lyricCues=>edit({...version,lyricCues})}
-        onSeek={seconds=>setPlaybackRequest(previous=>({
-          at:seconds,serial:(previous?.serial||0)+1
-        }))}/>
-      {sectionPanel()}
+
     </View>:null}
     {pickMode!=='none'?<View style={{borderWidth:1,borderColor:theme.border,borderRadius:15,
       padding:15,backgroundColor:theme.surface,gap:10}}>
@@ -621,6 +589,66 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
         {!sources.length?button('Aller à Capturer',()=>{setPickMode('none');onCapture();},true):null}
       </View>
     </View>:null}
+
+    <Modal visible={infoOpen} animationType="slide" presentationStyle="pageSheet"
+      onRequestClose={()=>setInfoOpen(false)}>
+      <View style={{flex:1,backgroundColor:theme.background}}>
+        <View style={{minHeight:57,flexDirection:'row',alignItems:'center',
+          paddingHorizontal:18,borderBottomWidth:1,borderColor:theme.border}}>
+          <Pressable onPress={()=>setInfoOpen(false)} accessibilityRole="button"
+            accessibilityLabel="Retour à la version" style={{width:43,height:43,
+              justifyContent:'center'}}>
+            <Ionicons name="arrow-back" color={theme.foreground} size={22}/>
+          </Pressable>
+          <Text style={{fontSize:16,fontWeight:'700',color:theme.foreground,
+            flex:1,textAlign:'center'}}>Structure et informations</Text>
+          <View style={{width:43}}/>
+        </View>
+        <ScrollView keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{padding:compact?16:27,
+            paddingBottom:90,maxWidth:930,width:'100%',alignSelf:'center',gap:21}}>
+          <MusicSongMetadata project={project} patch={patch} showTalent={false}/>
+          {version?<View style={{gap:12}}>
+            <Text style={{color:theme.foreground,fontSize:15,fontWeight:'700'}}>
+              {version.title} · réglages
+            </Text>
+      <View style={{flexDirection:'row',alignItems:'center',gap:10,flexWrap:'wrap'}}>
+        <Text style={{fontSize:12,color:theme.muted}}>
+          {version.key||'Tonalité non définie'}
+          {version.meter?' · '+version.meter:''}
+        </Text>
+        <Pressable onPress={openSettings} accessibilityRole="button"
+          style={{flexDirection:'row',alignItems:'center',gap:4,paddingVertical:6}}>
+          <Ionicons name="options-outline" size={16} color={PINK}/>
+          <Text style={{fontSize:12,color:PINK}}>Réglages du morceau</Text>
+        </Pressable>
+      </View>
+      {showSettings?<View style={{gap:10,padding:14,borderRadius:14,
+        borderWidth:1,borderColor:theme.border,backgroundColor:theme.surface}}>
+        <Text style={{fontSize:12,color:theme.muted,lineHeight:19}}>
+          Ces indications sont facultatives. Aucune tonalité ni aucun tempo ne sont déduits sans analyse.
+        </Text>
+
+        <TextInput style={input} value={tone} onChangeText={setTone}
+          placeholder="Tonalité (si connue)" placeholderTextColor={theme.muted}/>
+        <TextInput style={input} value={meter} onChangeText={setMeter}
+          placeholder="Mesure, p. ex. 4/4" placeholderTextColor={theme.muted}/>
+        <View style={{alignSelf:'flex-start'}}>{button('Enregistrer les réglages',saveSettings,true)}</View>
+      </View>:null}
+
+          </View>:null}
+          {version?<View style={{gap:14}}>
+      <MusicLyricTimeline files={project.files} cues={version.lyricCues||[]}
+        cursor={timelineCursor}
+        onChange={lyricCues=>edit({...version,lyricCues})}
+        onSeek={seconds=>setPlaybackRequest(previous=>({
+          at:seconds,serial:(previous?.serial||0)+1
+        }))}/>
+      {sectionPanel()}
+          </View>:null}
+        </ScrollView>
+      </View>
+    </Modal>
     {error?<Text style={{fontSize:12,color:'#B94A60',lineHeight:20}}>{error}</Text>:null}
     {version?<Text style={{fontSize:11,color:theme.muted,lineHeight:18}}>
       La lecture multipiste et l’enregistrement de retouches fonctionnent sur navigateur compatible.
