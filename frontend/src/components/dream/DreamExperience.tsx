@@ -390,7 +390,8 @@ export default function DreamExperience({
               <View key={r.id} style={{width:96,gap:4}}>
               <DreamTalentSquare resource={r} size={96}
                 onRemove={canEditCategory(category)&&!r.serverNeedId?()=>setResources(dream.id,resources.filter(x=>x.id!==r.id)):undefined}
-                onEditRequest={canEditCategory(category)?()=>setSelectedResourceId(r.id):undefined}/>
+                onEditRequest={ws.desktop||canEditCategory(category)?
+                ()=>setSelectedResourceId(r.id):undefined}/>
               {r.addedDuringPhase==='Croissance'?(
                 <Text style={{fontSize:9,lineHeight:12,color:theme.muted,textAlign:'center'}}>
                   Ajouté en Croissance
