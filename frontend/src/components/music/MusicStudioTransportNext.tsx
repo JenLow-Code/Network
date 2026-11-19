@@ -25,6 +25,8 @@ type Props={
   onDropSource?:(sourceFileId:string,atSeconds:number)=>void;
   playbackRequest?:{at:number;serial:number}|null;
   pauseRequest?:number;
+  seekRequest?:{at:number;serial:number}|null;
+  sections?:{id:string;title:string}[];
 };
 export function versionLength(version:WorkingMusicVersion,files:MusicProjectFile[]){
   return Math.max(0,...version.tracks.map(t=>{
@@ -36,7 +38,7 @@ export function versionLength(version:WorkingMusicVersion,files:MusicProjectFile
 }
 export function MusicStudioTransport({version,files,onPositionChange,onTrackChange,
   onSelectTrack,onMarkTrackRange,onRenameTrack,onEmojiTrack,onRemoveTrack,onDropSource,
-  playbackRequest,pauseRequest}:Props){
+  playbackRequest,pauseRequest,seekRequest,sections=[]}:Props){
   const theme=useAppTheme();
   const engine=useRef<Engine|null>(null);
   const playingRef=useRef(false);
@@ -165,6 +167,9 @@ export function MusicStudioTransport({version,files,onPositionChange,onTrackChan
   // A new serial is a new explicit backing-track playback request.
   },[playbackRequest?.serial]);
   useEffect(()=>{if(pauseRequest)pause();},[pauseRequest]);
+  useEffect(()=>{
+    if(seekRequest)seek(seekRequest.at);
+  },[seekRequest?.serial]);
   const timeSignature=version.tracks.map(t=>
     [t.id,t.sourceFileId,t.offsetSeconds,t.trimStartSeconds,t.trimEndSeconds].join(':')).join('|');
   const oldSignature=useRef(timeSignature);
@@ -201,7 +206,7 @@ export function MusicStudioTransport({version,files,onPositionChange,onTrackChan
           'Aucune piste audio écoutable sur cet appareil.'}
       </Text>:null}
     </View>
-    <MusicArrangementTimeline version={version} files={files}
+    <MusicArrangementTimeline version={version} files={files} sections={sections}
       duration={duration} position={position} onSeek={seek}
       onChangeTrack={onTrackChange} onSelectTrack={onSelectTrack}
       onMarkTrackRange={onMarkTrackRange}
