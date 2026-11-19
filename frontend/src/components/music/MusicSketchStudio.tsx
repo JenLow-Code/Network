@@ -158,8 +158,9 @@ export function MusicScoreView({events,compact=false,instrument,
 }
 /** WebAudio previews do not alter the saved MIDI event or the original audio. */
 function playSound(ctx:AudioContext,pitch:number,drum:boolean,level:number,
-  tone:string,sample:AudioBuffer|null,seconds?:number){
-  const now=ctx.currentTime;
+  tone:string,sample:AudioBuffer|null,seconds?:number,
+  startDelay=0,sampleRootMidi=60):AudioScheduledSourceNode{
+  const now=ctx.currentTime+Math.max(0,startDelay);
   const gain=ctx.createGain();
   gain.gain.setValueAtTime(Math.max(.0001,level*.25),now);
   const duration=Math.max(.09,Math.min(4,seconds??(drum?.24:tone==='Orgue'||tone==='Cordes'?.78:.62)));
@@ -168,9 +169,9 @@ function playSound(ctx:AudioContext,pitch:number,drum:boolean,level:number,
   if(!drum&&tone==='Échantillon'&&sample){
     const source=ctx.createBufferSource();
     source.buffer=sample;
-    source.playbackRate.value=Math.pow(2,(pitch-60)/12);
+    source.playbackRate.value=Math.pow(2,(pitch-sampleRootMidi)/12);
     source.connect(gain);source.start(now);source.stop(now+duration);
-    return;
+    return source;
   }
   if(drum&&pitch!==36){
     const length=Math.round(ctx.sampleRate*.24);
@@ -182,6 +183,7 @@ function playSound(ctx:AudioContext,pitch:number,drum:boolean,level:number,
     filter.type=(pitch===42||pitch===46||pitch===49)?'highpass':'bandpass';
     filter.frequency.value=(pitch===42||pitch===46||pitch===49)?5600:1200;
     noise.connect(filter);filter.connect(gain);noise.start(now);noise.stop(now+.23);
+    return noise;
   }else{
     const osc=ctx.createOscillator();
     osc.type=drum?'sine':tone==='Orgue'?'sine':
@@ -190,6 +192,7 @@ function playSound(ctx:AudioContext,pitch:number,drum:boolean,level:number,
     osc.frequency.setValueAtTime(hz,now);
     if(drum)osc.frequency.exponentialRampToValueAtTime(46,now+.13);
     osc.connect(gain);osc.start(now);osc.stop(now+duration);
+    return osc;
   }
 }
 
@@ -265,7 +268,8 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
         if(!audioRef.current)audioRef.current=new AudioContext();
         const ctx=audioRef.current;
         if(ctx.state==='suspended')void ctx.resume();
-        playSound(ctx,midi,instrument==='drum',volume[instrument],tone,sampleRef.current);
+        playSound(ctx,midi,instrument==='drum',volume[instrument],tone,
+          sampleRef.current,undefined,0,sampleRootMidi);
       }catch{setMessage('Aperçu sonore indisponible sur cet appareil.');}
       try{
         if(midiRef.current){
@@ -303,7 +307,7 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
       const ctx=audioRef.current;
       if(ctx.state==='suspended')void ctx.resume();
       playSound(ctx,event.midi,event.instrument==='drum',volume[event.instrument],
-        tone,sampleRef.current,event.lengthBeats*60/bpm);
+        tone,sampleRef.current,event.lengthBeats*60/bpm,0,sampleRootMidi);
     }catch{setMessage('Aperçu sonore indisponible sur cet appareil.');}
   };
   const importTone=()=>{
