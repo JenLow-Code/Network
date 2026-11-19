@@ -24,7 +24,7 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' }) 
   const desktop=Platform.OS==='web'&&workspaceLayout(width).desktop;
   const [collapsed,setCollapsed]=useState(false);
   const [dreamTreeOpen,setDreamTreeOpen]=useState(true);
-  const params=useGlobalSearchParams<{view?:string;section?:string}>();
+  const params=useGlobalSearchParams<{view?:string;section?:string;focus?:string}>();
   const {items:dreams}=useDreams();
   const {items:musicProjects,patch:patchMusic}=useMusicWorkspaces();
   const [songTreeOpen,setSongTreeOpen]=useState(true);
@@ -280,26 +280,44 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' }) 
                         borderLeftWidth:1,borderLeftColor:theme.dark?
                           'rgba(255,255,255,.15)':'rgba(71,77,78,.15)',
                         gap:1,marginVertical:2}}>
-                        {([
-                          {kind:'library' as const,
-                            title:phase==='Rêve'?'Inspirations':'Documents',
-                            active:path.startsWith('/my-dream/library/')},
-                          {kind:'notes' as const,title:'Notes personnelles',
-                            active:path.startsWith('/my-dream/notes/')},
-                        ]).map(resource=><Pressable key={resource.kind}
-                          onPress={()=>openResource(resource.kind)}
-                          accessibilityRole="button"
-                          accessibilityState={{selected:resource.active}}
-                          style={{minHeight:31,justifyContent:'center',
-                            paddingHorizontal:6,borderRadius:6,
-                            backgroundColor:resource.active?
-                              'rgba(203,36,92,.10)':'transparent'}}>
-                          <Text style={{fontSize:11,
-                            fontWeight:resource.active?'700':'400',
-                            color:resource.active?'#CB245C':theme.muted}}>
-                            {resource.title}
-                          </Text>
-                        </Pressable>)}
+                        {(phase==='Rêve'?[
+                            {kind:'inspirations' as const,title:'Inspirations'},
+                            {kind:'notes' as const,title:'Notes personnelles'},
+                          ]:phase==='Initiation'?[
+                            {kind:'documents' as const,title:'Documents'},
+                            {kind:'inspirations' as const,title:'Inspirations'},
+                            {kind:'notes' as const,title:'Notes personnelles'},
+                            {kind:'resources' as const,title:'Ressources'},
+                          ]:[
+                            {kind:'documents' as const,title:'Documents'},
+                            {kind:'inspirations' as const,title:'Inspirations'},
+                            {kind:'resources' as const,title:'Ressources'},
+                            {kind:'notes' as const,title:'Notes personnelles'},
+                          ]).map(resource=>{
+                            const active=phase===currentPhase&&(
+                              resource.kind==='notes'&&path.startsWith('/my-dream/notes/')||
+                              (resource.kind==='documents'||resource.kind==='inspirations')&&
+                                path.startsWith('/my-dream/library/')&&
+                                (params.section||'documents')===resource.kind||
+                              resource.kind==='resources'&&params.section==='resources'||
+                              resource.kind==='resources'&&params.focus==='resources'
+                            );
+                            return <Pressable key={resource.kind}
+                              onPress={()=>openResource(resource.kind,phase)}
+                              accessibilityRole="button"
+                              accessibilityLabel={resource.title+' · '+PHASE_LABELS[phase]}
+                              accessibilityState={{selected:active}}
+                              style={{minHeight:32,justifyContent:'center',
+                                paddingHorizontal:6,borderRadius:6,
+                                backgroundColor:active?
+                                  'rgba(203,36,92,.10)':'transparent'}}>
+                              <Text style={{fontSize:11,
+                                fontWeight:active?'700':'400',
+                                color:active?'#CB245C':theme.muted}}>
+                                {resource.title}
+                              </Text>
+                            </Pressable>;
+                          })}
                       </View>
                     </React.Fragment>;
                   })}
