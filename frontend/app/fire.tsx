@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Alert, Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Alert, Modal, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -9,8 +9,10 @@ import { TopActions } from '@/components/navigation/TopActions';
 import { publications } from '@/mocks/publications';
 import { PublicationGallery } from '@/components/publication/PublicationGallery';
 import { useAppTheme } from '@/theme/AppTheme';
+import {workspaceCanvas,WORKSPACE_TITLE_GAP} from '@/theme/workspaceLayout';
 export default function FireList() {
   const theme = useAppTheme();
+  const {width}=useWindowDimensions();
   const { fireIds, fireFolders, fireBibleVerses, removeBibleVerseFromFire, toggleFireFolderVerse, createFireFolder, renameFireFolder, deleteFireFolder, toggleFireFolderItem } = useApp();
   const [folderName, setFolderName] = useState('');
   const [createFolderOpen, setCreateFolderOpen] = useState(false);
@@ -33,7 +35,7 @@ export default function FireList() {
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ paddingHorizontal: 15, paddingBottom: 35 }}
+        contentContainerStyle={{ ...workspaceCanvas(width), paddingTop:12, paddingBottom:55 }}
       >
         <View
           style={{
