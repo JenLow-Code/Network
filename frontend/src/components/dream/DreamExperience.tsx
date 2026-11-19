@@ -498,17 +498,24 @@ export default function DreamExperience({
     ):null}
     </View>
    {!historical && phase==='Initiation' ? (
-     <View style={{gap:11,marginTop:12,marginBottom:21}}>
+     <View style={{gap:(ws.tablet||ws.desktop)?8:11,
+        flexDirection:(ws.tablet||ws.desktop)?'row':'column',
+        maxWidth:ws.desktop?700:undefined,width:'100%',
+        alignSelf:'center',marginTop:12,marginBottom:21}}>
        {resourceEditable ? <>
          <Pressable accessibilityRole="button" onPress={()=>setGoalDateDialog(true)}
-           style={{minHeight:48,backgroundColor:'#225D42',borderRadius:11,
+           style={{minHeight:(ws.tablet||ws.desktop)?43:48,
+              flex:(ws.tablet||ws.desktop)?1.2:undefined,
+              backgroundColor:'#225D42',borderRadius:11,
              alignItems:'center',justifyContent:'center',paddingHorizontal:16}}>
            <Text style={{color:'#FFFFFF',fontSize:13,fontWeight:'700'}}>Faire pousser</Text>
          </Pressable>
          <Pressable accessibilityRole="button" onPress={()=>{
            if((dream.pauseCount||0)>=3){Alert.alert('Limite atteinte','Cette germination a déjà été congelée trois fois.');return;}
            setFreezeDialog(true);
-         }} style={{minHeight:48,borderWidth:1.5,borderColor:'#397F9E',borderRadius:11,
+         }} style={{minHeight:(ws.tablet||ws.desktop)?43:48,
+              flex:(ws.tablet||ws.desktop)?1:undefined,
+              borderWidth:1,borderColor:'#397F9E',borderRadius:11,
            alignItems:'center',justifyContent:'center',paddingHorizontal:16}}>
            <Text style={{color:'#397F9E',fontSize:13,fontWeight:'700'}}>Geler</Text>
          </Pressable>
@@ -516,9 +523,13 @@ export default function DreamExperience({
            onPress={()=>confirm('Arracher cette plante ?',
              'Cette action supprimera définitivement ce rêve et ses données sur cet appareil.',
              ()=>{remove(dream.id);router.replace('/my-space');})}
-           style={{minHeight:48,backgroundColor:'#242322',borderRadius:11,
+           style={{minHeight:(ws.tablet||ws.desktop)?43:48,
+              flex:(ws.tablet||ws.desktop)?1:undefined,
+              backgroundColor:(ws.tablet||ws.desktop)?'transparent':'#242322',
+              borderWidth:(ws.tablet||ws.desktop)?1:0,
+              borderColor:theme.border,borderRadius:11,
              alignItems:'center',justifyContent:'center',paddingHorizontal:16}}>
-           <Text style={{color:'#FFFFFF',fontSize:13,fontWeight:'700'}}>Arracher</Text>
+           <Text style={{color:(ws.tablet||ws.desktop)?theme.muted:'#FFFFFF',fontSize:13,fontWeight:'700'}}>Arracher</Text>
          </Pressable>
        </>:null}
      </View>
