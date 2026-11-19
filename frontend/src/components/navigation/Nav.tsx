@@ -125,22 +125,19 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
     const mainLinks=links.filter(x=>x.path!=='/profile');
     const profile=links.find(x=>x.path==='/profile')!;
     const activeColor='#CB245C';
-    // Material-like glass keeps the navigation integrated in the desktop grid.
+    // Desktop-only translucent glass with actual dream imagery behind the navigation.
     // The content remains legible over a soft, context-aware colour wash.
-    const navSurface=theme.dark?'rgba(21,26,31,.28)':'rgba(255,255,255,.12)';
+    const navSurface=theme.dark?'rgba(12,21,20,.40)':'rgba(248,249,245,.29)';
     
-    const selectedBg=theme.dark?'rgba(215,65,127,.22)':'rgba(203,36,92,.095)';
-    const chrome=Platform.OS==='web'&&
-      typeof navigator!=='undefined'&&/Chrome|Chromium|Edg\//.test(navigator.userAgent);
+    const selectedBg=theme.dark?'rgba(215,65,127,.20)':'rgba(203,36,92,.075)';
+    // The dream cover is rendered *inside* the desktop navigation surface:
+    // a sibling column cannot blur imagery painted only in the workspace.
     const glassEffects=Platform.OS==='web'?({
-      backdropFilter:'blur(23px) saturate(125%) contrast(110%)',
-      WebkitBackdropFilter:'blur(23px) saturate(125%) contrast(110%)',
-      backgroundImage:theme.dark
-        ?'linear-gradient(105deg,rgba(255,255,255,.17) 0%,rgba(255,255,255,.025) 15%,rgba(255,255,255,.015) 68%,rgba(255,255,255,.13) 100%)'
-        :'linear-gradient(105deg,rgba(255,255,255,.59) 0%,rgba(255,255,255,.09) 14%,rgba(255,255,255,.045) 69%,rgba(255,255,255,.33) 100%)',
+      backdropFilter:'blur(24px) saturate(155%)',
+      WebkitBackdropFilter:'blur(24px) saturate(155%)',
       boxShadow:theme.dark
-        ?'inset 1px 0 0 rgba(255,255,255,.12), -8px 0 28px rgba(4,8,14,.11)'
-        :'inset 1px 0 0 rgba(255,255,255,.66), -9px 0 32px rgba(59,64,74,.055)',
+        ?'inset 1px 0 0 rgba(255,255,255,.10), -8px 0 30px rgba(3,10,9,.10)'
+        :'inset 1px 0 0 rgba(255,255,255,.22), -8px 0 30px rgba(18,31,27,.055)',
     } as any):{};
     const renderEntry=(item:typeof links[number])=><Pressable
       key={item.path}
@@ -167,54 +164,37 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
         </Text>:null}
       </Pressable>;
     return <View accessibilityRole="navigation" style={{
-      width:collapsed?72:212,minWidth:collapsed?72:212,
+      width:collapsed?72:236,minWidth:collapsed?72:236,
       height:'100%',backgroundColor:navSurface,
       borderLeftWidth:0,
       justifyContent:'space-between',paddingTop:28,paddingBottom:24,
       overflow:'hidden',...glassEffects,
     }}>
-      <BlurView pointerEvents="none" intensity={35}
+      {currentDream?.image?<Image pointerEvents="none"
+        source={{uri:currentDream.image}} resizeMode="cover"
+        style={{position:'absolute',top:-28,bottom:-28,left:-28,right:-28,
+          width:'125%',height:'110%',
+          opacity:theme.dark?.26:.32,
+          ...(Platform.OS==='web'?({filter:'blur(28px) saturate(125%)'} as any):{})}}/>:null}
+      <BlurView pointerEvents="none" intensity={25}
         tint={theme.dark?'systemUltraThinMaterialDark':'systemUltraThinMaterialLight'}
         style={{position:'absolute',top:0,left:0,right:0,bottom:0,
-          opacity:theme.dark?.13:.11}}/>
+          opacity:theme.dark?.10:.07}}/>
       <Svg pointerEvents="none" width="100%" height="100%"
         style={{position:'absolute',top:0,right:0,bottom:0,left:0}}>
         <Defs>
-          {/* Gentle real background refraction. Chrome/Edge can resolve SVG
-              displacement filters in backdrop-filter; other browsers simply
-              use the neutral frosted CSS layer. Text remains crisp. */}
-          <Filter id="jenlow-liquid-displace" x="-7%" y="-5%"
-            width="114%" height="110%">
-            <FeTurbulence type="fractalNoise" baseFrequency="0.008 0.02"
-              numOctaves={1} seed={7} result="waterSurface"/>
-            <FeDisplacementMap in="SourceGraphic" in2="waterSurface"
-              scale={7} xChannelSelector="R" yChannelSelector="G"/>
-          </Filter>
-          <LinearGradient id="jenlow-desktop-glass" x1="0%" y1="0%"
-            x2="100%" y2="100%">
-            <Stop offset="0%" stopColor="#FFFFFF"
-              stopOpacity={theme.dark?.15:.26}/>
-            <Stop offset="38%" stopColor="#E7E7E5"
-              stopOpacity={theme.dark?.04:.06}/>
-            <Stop offset="72%" stopColor="#E8E8E6"
-              stopOpacity={theme.dark?.035:.04}/>
-            <Stop offset="100%" stopColor="#FFFFFF"
-              stopOpacity={theme.dark?.19:.24}/>
+          <LinearGradient id="jenlow-premium-desktop-glass"
+            x1="0%" y1="0%" x2="100%" y2="100%">
+            <Stop offset="0%" stopColor={theme.dark?'#102522':'#FAFAF8'}
+              stopOpacity={theme.dark?.43:.40}/>
+            <Stop offset="43%" stopColor={theme.dark?'#182923':'#E8ECE7'}
+              stopOpacity={theme.dark?.18:.19}/>
+            <Stop offset="100%" stopColor={theme.dark?'#16201E':'#F8F9F5'}
+              stopOpacity={theme.dark?.53:.44}/>
           </LinearGradient>
         </Defs>
-        <Rect width="100%" height="100%" fill="url(#jenlow-desktop-glass)"/>
+        <Rect width="100%" height="100%" fill="url(#jenlow-premium-desktop-glass)"/>
       </Svg>
-      {/* Refractive-looking specular edge: different blur and luminance
-          at the rim, instead of making the entire panel white. */}
-      {chrome?<View pointerEvents="none" style={{
-        position:'absolute',top:0,left:0,right:0,bottom:0,
-        backgroundColor:'rgba(255,255,255,.008)',
-        ...({backdropFilter:'url(#jenlow-liquid-displace)',
-          WebkitBackdropFilter:'url(#jenlow-liquid-displace)'} as any),
-      }}/>:null}
-      
-      
-      
       <View style={{gap:21}}>
         <View style={{paddingHorizontal:collapsed?13:20,
           flexDirection:'row',alignItems:'center',
@@ -298,8 +278,8 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
             {item.path==='/my-space'&&currentDream?
               <View style={{marginLeft:collapsed?10:35,marginRight:collapsed?8:13,
                 marginTop:2,marginBottom:9,borderLeftWidth:collapsed?0:1,
-                borderLeftColor:theme.dark?'rgba(240,240,244,.28)':
-                  'rgba(92,91,100,.27)',paddingLeft:collapsed?0:8}}>
+                borderLeftColor:theme.dark?'rgba(240,240,244,.18)':
+                  'rgba(92,91,100,.14)',paddingLeft:collapsed?0:8}}>
                 <Pressable accessibilityRole="button"
                   accessibilityLabel={'Rêve actuel : '+currentDream.title}
                   {...(Platform.OS==='web'?({title:currentDream.title} as any):{})}
@@ -360,7 +340,7 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
                       {!reached?<Ionicons name="lock-closed-outline" size={11}
                         color={theme.muted}/>:null}
                     </Pressable>;
-                    if(!selected||!reached)return phaseNav;
+                    if(!reached||(!selected&&phase!=='Rêve'))return phaseNav;
                     return <React.Fragment key={phase}>
                       {phaseNav}
                       <View style={{marginLeft:14,paddingLeft:10,
@@ -389,12 +369,12 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
                               accessibilityRole="button"
                               accessibilityLabel={resource.title+' · '+PHASE_LABELS[phase]}
                               accessibilityState={{selected:active}}
-                              style={{minHeight:32,justifyContent:'center',
+                              style={{minHeight:34,justifyContent:'center',
                                 paddingHorizontal:6,borderRadius:6,
                                 backgroundColor:active?
                                   'rgba(203,36,92,.10)':'transparent'}}>
-                              <Text style={{fontSize:11,
-                                fontWeight:active?'700':'400',
+                              <Text style={{fontSize:11,lineHeight:16,
+                                fontWeight:active?'700':'500',
                                 color:active?'#CB245C':theme.muted}}>
                                 {resource.title}
                               </Text>
