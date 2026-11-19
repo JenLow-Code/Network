@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { api } from '@/lib/api/client';
 import { useAppTheme } from '@/theme/AppTheme';
+import {workspaceCanvas} from '@/theme/workspaceLayout';
 import { PageHeader } from '@/components/navigation/PageHeader';
 import { Nav } from '@/components/navigation/Nav';
 
@@ -15,6 +16,7 @@ type MusicDetail = { item?: { title?:string; lyrics?:{time:number;text:string}[]
 export default function SharedMusicFolder() {
   const {id} = useLocalSearchParams<{id:string}>();
   const theme=useAppTheme();
+  const {width}=useWindowDimensions();
   const [title,setTitle]=useState('Morceau partagé');
   const [conversationId,setConversationId]=useState<string|null>(null);
   const [proposals,setProposals]=useState<Proposal[]>([]);
@@ -48,8 +50,8 @@ export default function SharedMusicFolder() {
     <Text style={{color:outlined?'#CB245C':'#fff',fontWeight:'700',fontSize:13}}>{label}</Text>
   </Pressable>;
   return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
-    <ScrollView style={{flex:1}} contentContainerStyle={{paddingHorizontal:20,paddingTop:12,
-      paddingBottom:100,width:'100%',maxWidth:800,alignSelf:'center',gap:19}}>
+    <ScrollView style={{flex:1}} contentContainerStyle={{...workspaceCanvas(width),paddingTop:12,
+      paddingBottom:100,gap:19}}>
       <PageHeader onBack={()=>router.replace('/music-hub')} title="Collaboration"/>
       {loading?<ActivityIndicator color="#CB245C"/>:null}
       {error?<View style={card}>
