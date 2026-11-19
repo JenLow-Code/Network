@@ -60,7 +60,7 @@ export function MusicAudioCapture({onSaved,onStarted,onPaused,timelineStartSecon
   const [title,setTitle]=useState(initialTake?.title||suggestedTitle);
   const [markers,setMarkers]=useState<MusicAudioMarker[]>([]);
   const [editMarkerRequest,setEditMarkerRequest]=useState<{id:string;nonce:number}|null>(null);
-  const [rangeRequest,setRangeRequest]=useState<{start:number;end:number;nonce:number}|null>(null);
+  const [selectedRange,setSelectedRange]=useState<{start:number;end:number}|null>(null);
   const [playing,setPlaying]=useState(false);
   const [processing,setProcessing]=useState(false);
   const [saving,setSaving]=useState(false);
@@ -237,25 +237,27 @@ export function MusicAudioCapture({onSaved,onStarted,onPaused,timelineStartSecon
     setReview(false);setTitle(suggestedTitle);
     audioElement.current?.pause();setPlaying(false);
     setFile(null);setDuration(0);setCursor(0);setElapsed(0);setLevels([]);
-    onMarkers([]);
+    onMarkers([]);setSelectedRange(null);
     setStatus('idle');setError('');
   };
   const running=recordAt.current+elapsed;
   const shownLength=Math.max(duration,status==='recording'?running:0);
-  return <View style={{gap:14}}>
+  return <View style={{gap:9}}>
     <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',
-      flexWrap:'wrap',gap:9}}>
-      <View style={{gap:3}}>
-        <Text style={{fontSize:11,fontWeight:'700',color:status==='recording'?PINK:theme.muted}}>
+      flexWrap:'wrap',gap:6}}>
+      <View style={{flexDirection:'row',alignItems:'center',gap:9}}>
+        <Text style={{fontSize:11,fontWeight:'700',
+          color:status==='recording'?PINK:theme.foreground}}>
           {status==='recording'?'● ENREGISTREMENT':
-            processing?'FINALISATION':review?'TERMINÉ':status==='paused'?'EN PAUSE':'PRÊT'}
+            processing?'FINALISATION':review?'TERMINÉ':
+            status==='paused'?'EN PAUSE':'Test micro'}
         </Text>
-        <Text style={{fontSize:25,fontWeight:'700',color:theme.foreground,
+        <Text style={{fontSize:20,fontWeight:'700',color:theme.foreground,
           fontVariant:['tabular-nums']}}>
           {musicStampMs(status==='recording'?running:cursor)}
         </Text>
       </View>
-      <View style={{alignItems:'flex-end',gap:4}}>
+      <View style={{alignItems:'flex-end',gap:2}}>
         <Text style={{fontSize:12,color:theme.muted}}>
           Durée {musicStampMs(shownLength)}
         </Text>
@@ -282,16 +284,14 @@ export function MusicAudioCapture({onSaved,onStarted,onPaused,timelineStartSecon
       onSeek={seek} zoom={zoom} onZoom={setZoom} playing={playing}
       onTogglePlayback={togglePlayback} markers={markers}
       onChangeMarkers={onMarkers}
-      onCreateRange={(start,end)=>setRangeRequest(previous=>({
-        start,end,nonce:(previous?.nonce||0)+1
-      }))}
+      onCreateRange={(start,end)=>setSelectedRange({start,end})}
+      selectedRange={selectedRange}
+      onClearSelectedRange={()=>setSelectedRange(null)}
       onEditMarker={id=>setEditMarkerRequest(previous=>({
         id,nonce:(previous?.nonce||0)+1
       }))}/>:
-      <View style={{height:70,borderRadius:13,backgroundColor:theme.dark?'#252029':'#F2F4F5',
-        justifyContent:'center',alignItems:'center'}}>
-        <Text style={{fontSize:12,color:theme.muted}}>La forme d’onde suivra ta voix en direct.</Text>
-      </View>}
+      <View style={{height:70,borderRadius:13,
+        backgroundColor:theme.dark?'#252029':'#F2F4F5'}}/>
     {status==='recording'?<View style={{flexDirection:'row',gap:9}}>
       <Pressable onPress={pause} accessibilityRole="button"
         accessibilityLabel="Pause de l’enregistrement"
@@ -353,11 +353,9 @@ export function MusicAudioCapture({onSaved,onStarted,onPaused,timelineStartSecon
       </View>}
     {file?<MusicAudioMarkers markers={markers} duration={duration} cursor={cursor}
       onSeek={seek} onChange={onMarkers} editRequest={editMarkerRequest}
-      rangeRequest={rangeRequest}
+      selectedRange={selectedRange}
       disabled={status==='recording'||processing||saving}/>:null}
     {error?<Text style={{fontSize:12,lineHeight:20,color:'#B54B65'}}>{error}</Text>:null}
-    {file?<Text style={{fontSize:11,lineHeight:18,color:theme.muted}}>
-      Place le curseur sur la forme d’onde pour réenregistrer un passage. Le reste de la prise est conservé.
-    </Text>:null}
+
   </View>;
 }
