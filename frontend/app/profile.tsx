@@ -11,6 +11,7 @@ import { PageHeader } from '@/components/navigation/PageHeader';
 import { useApp } from '@/context/AppContext';
 import { useAuth } from '@/context/AuthProvider';
 import { useAppTheme } from '@/theme/AppTheme';
+import {workspaceCanvas,workspaceLayout,WORKSPACE_TITLE_GAP} from '@/theme/workspaceLayout';
 import { ProfileTalentTile } from '@/components/talent/ProfileTalentTile';
 import { TranslatorLanguageFields } from '@/components/talent/TranslatorLanguageFields';
 import { ProfilePublicationFeed } from '@/components/publication/PublicationGallery';
@@ -55,6 +56,7 @@ export default function Profile() {
     auth = useAuth(),
     theme = useAppTheme();
   const { width } = useWindowDimensions();
+  const ws=workspaceLayout(width);
   const [edit, setEdit] = useState<'bio' | 'city' | 'church' | null>(null);
   const [draft, setDraft] = useState('');
   const [talents, setTalents] = useState<Talent[]>(initial);
@@ -161,8 +163,9 @@ export default function Profile() {
     typeof auth.user?.user_metadata?.avatar_url === 'string'
       ? auth.user.user_metadata.avatar_url
       : undefined;
-  const areaWidth=Math.min(width-36,860);
-  const columns=areaWidth<350?2:3;
+  const usableViewport=Math.max(0,width-(ws.desktop?212:0));
+  const areaWidth=Math.max(0,Math.min(ws.maxWidth??usableViewport,usableViewport)-2*ws.gutter);
+  const columns=areaWidth<350?2:areaWidth<850?3:4;
   const cardWidth=Math.floor((areaWidth-10*(columns-1))/columns);
   const myPublicPosts=[
     ...serverPublications,
@@ -172,16 +175,14 @@ export default function Profile() {
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
       <ScrollView ref={scrollRef}
         contentContainerStyle={{
-          paddingHorizontal: 18,
+          ...workspaceCanvas(width),
           paddingTop: 12,
           paddingBottom: 55,
-          maxWidth: 900,
-          width: '100%',
-          alignSelf: 'center',
         }}
       >
         <PageHeader />
-        <Text style={{fontSize:29,fontWeight:'800',color:theme.foreground}}>Mon profil</Text>
+        <Text style={{fontSize:29,fontWeight:'800',color:theme.foreground,
+          marginTop:WORKSPACE_TITLE_GAP}}>Mon profil</Text>
         <View style={{ alignItems: 'center', marginTop: 23 }}>
           {avatar ? (
             <Image
