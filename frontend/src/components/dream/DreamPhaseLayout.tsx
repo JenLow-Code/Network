@@ -130,47 +130,86 @@ export function DreamPhaseHeader({
       {/* A restrained, permanent four-phase timeline on every screen,
           including desktop. The sidebar is a second way to navigate,
           never a replacement for the journey itself. */}
-      <View style={{marginBottom:19,marginTop:5,
-        flexDirection:'row',alignItems:'flex-end',gap:width<520?4:10,
-        paddingVertical:7,paddingHorizontal:width<520?4:9,
-        borderRadius:13,
-        borderWidth:Platform.OS==='web'?1:0,
-        borderColor:theme.dark?'rgba(255,255,255,.13)':'rgba(255,255,255,.32)',
-        backgroundColor:theme.dark?'rgba(19,24,25,.36)':'rgba(250,249,246,.32)',
-        ...(Platform.OS==='web'?({
-          backdropFilter:'blur(22px) saturate(140%)',
-          WebkitBackdropFilter:'blur(22px) saturate(140%)',
-        } as any):{})}}>
-        {DREAM_PHASES.map((item,i)=>{
-          const reached=i<=DREAM_PHASES.indexOf(dream.phase);
-          const selected=item===phase;
-          const phaseColor=phaseAccent[item];
-          return <Pressable key={item} onPress={()=>onNavigate?.(item)}
-            accessibilityRole="button"
-            accessibilityLabel={'Ouvrir '+PHASE_LABELS[item]}
-            accessibilityState={{selected,disabled:!reached||!onNavigate}}
-            disabled={!reached||!onNavigate}
-            style={{flex:1,minWidth:0,justifyContent:'flex-end',
-              gap:5,alignItems:'center',paddingHorizontal:2,
-              paddingTop:4,paddingBottom:0}}>
-            <View style={{flexDirection:'row',alignItems:'center',
-              justifyContent:'center',gap:6,minHeight:24}}>
-              <View style={{opacity:reached?1:.42}}><DreamPhaseIcon phase={item} size={width<520?23:27}/></View>
-              <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={.74}
-                style={{fontSize:width<520?10:12,
-                  fontWeight:selected?'700':'500',
-                  color:theme.dark?'#F6F4F0':'#262C2B',
-                  opacity:reached?1:.65,textAlign:'center'}}>
+      {desktop ? (
+        <View accessibilityRole="tablist" style={{
+          marginTop:8,marginBottom:27,paddingTop:10,
+          borderBottomWidth:1,borderBottomColor:theme.dark?
+            'rgba(255,255,255,.22)':'rgba(31,43,39,.20)',
+          flexDirection:'row',alignItems:'stretch',gap:22,
+        }}>
+          {DREAM_PHASES.map(item=>{
+            const reached=DREAM_PHASES.indexOf(item)<=DREAM_PHASES.indexOf(dream.phase);
+            const selected=item===phase;
+            const accentColor=phaseAccent[item];
+            return <Pressable key={item} onPress={()=>onNavigate?.(item)}
+              accessibilityRole="tab"
+              accessibilityLabel={'Ouvrir '+PHASE_LABELS[item]}
+              accessibilityState={{selected,disabled:!reached||!onNavigate}}
+              disabled={!reached||!onNavigate}
+              style={{flex:1,minWidth:0,minHeight:45,
+                flexDirection:'row',alignItems:'flex-start',justifyContent:'center',
+                gap:9,paddingTop:3,paddingBottom:13,position:'relative',
+                opacity:reached?1:.42}}>
+              <DreamPhaseIcon phase={item} size={31}
+                tintColor={item==='Croissance'?'#17613F':undefined}/>
+              <Text numberOfLines={1} style={{
+                fontSize:12,fontWeight:selected?'700':'500',lineHeight:24,
+                color:selected?theme.foreground:theme.muted}}>
                 {PHASE_LABELS[item]}
               </Text>
-            </View>
-            <View style={{width:'100%',height:selected?2.5:1.5,
-              borderRadius:1,backgroundColor:reached?phaseColor:
-                theme.dark?'rgba(240,240,240,.35)':'rgba(41,50,47,.25)',
-              opacity:selected?1:reached?.65:.72}}/>
-          </Pressable>;
-        })}
-      </View>
+              <View pointerEvents="none" style={{
+                position:'absolute',left:0,right:0,bottom:-1,
+                height:selected?3:reached?1.5:1,
+                borderRadius:2,
+                backgroundColor:reached?accentColor:theme.muted,
+                opacity:selected?1:reached?.50:.24,
+              }}/>
+            </Pressable>;
+          })}
+        </View>
+      ) : (
+        <View style={{marginBottom:19,marginTop:5,
+          flexDirection:'row',alignItems:'flex-end',gap:width<520?4:10,
+          paddingVertical:7,paddingHorizontal:width<520?4:9,
+          borderRadius:13,
+          borderWidth:Platform.OS==='web'?1:0,
+          borderColor:theme.dark?'rgba(255,255,255,.13)':'rgba(255,255,255,.32)',
+          backgroundColor:theme.dark?'rgba(19,24,25,.36)':'rgba(250,249,246,.32)',
+          ...(Platform.OS==='web'?({
+            backdropFilter:'blur(22px) saturate(140%)',
+            WebkitBackdropFilter:'blur(22px) saturate(140%)',
+          } as any):{})}}>
+          {DREAM_PHASES.map((item,i)=>{
+            const reached=i<=DREAM_PHASES.indexOf(dream.phase);
+            const selected=item===phase;
+            const phaseColor=phaseAccent[item];
+            return <Pressable key={item} onPress={()=>onNavigate?.(item)}
+              accessibilityRole="button"
+              accessibilityLabel={'Ouvrir '+PHASE_LABELS[item]}
+              accessibilityState={{selected,disabled:!reached||!onNavigate}}
+              disabled={!reached||!onNavigate}
+              style={{flex:1,minWidth:0,justifyContent:'flex-end',
+                gap:5,alignItems:'center',paddingHorizontal:2,
+                paddingTop:4,paddingBottom:0}}>
+              <View style={{flexDirection:'row',alignItems:'center',
+                justifyContent:'center',gap:6,minHeight:24}}>
+                <View style={{opacity:reached?1:.42}}><DreamPhaseIcon phase={item} size={width<520?23:27}/></View>
+                <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={.74}
+                  style={{fontSize:width<520?10:12,
+                    fontWeight:selected?'700':'500',
+                    color:theme.dark?'#F6F4F0':'#262C2B',
+                    opacity:reached?1:.65,textAlign:'center'}}>
+                  {PHASE_LABELS[item]}
+                </Text>
+              </View>
+              <View style={{width:'100%',height:selected?2.5:1.5,
+                borderRadius:1,backgroundColor:reached?phaseColor:
+                  theme.dark?'rgba(240,240,240,.35)':'rgba(41,50,47,.25)',
+                opacity:selected?1:reached?.65:.72}}/>
+            </Pressable>;
+          })}
+        </View>
+      )}
       {readOnly ? (
         <View style={{
           flexDirection:'row',alignItems:'center',gap:7,
