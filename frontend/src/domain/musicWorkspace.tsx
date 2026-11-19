@@ -123,6 +123,8 @@ export type MusicProjectFile = {
   /** Private audio sample attached to a musical sketch on this device. */
   instrumentSampleLocalId?: string;
   instrumentSampleName?: string;
+  instrumentSampleRootMidi?: number;
+  scoreClef?: 'treble'|'bass';
   instrument?: string;
   localFileId?: string;
   externalUrl?: string;
