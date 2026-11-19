@@ -33,6 +33,9 @@ export type ApiFeedItem = {
   gallery?: { url: string | null }[];
   motivation?: string | null;
   goalDate?: string | null;
+  startedAt?: string | null;
+  growingAt?: string | null;
+  completedAt?: string | null;
   needs?: Need[];
   journalPreview?: { text: string; date: string | null } | null;
   result?: { text: string; media: Media } | null;
@@ -88,6 +91,9 @@ export function toPublication(item: ApiFeedItem): Publication | null {
         dreamId: item.dreamId,
         title: item.title ?? '',
         phase: PHASE[item.phase],
+        phaseDate: (item.phase === 'germination' ? item.startedAt :
+          item.phase === 'croissance' ? item.growingAt :
+          item.phase === 'floraison' ? item.completedAt : null)?.slice(0, 10),
         summary: item.summary ?? '',
         category: item.category ?? undefined,
         image: url(item.cover) || url(item.result?.media),
