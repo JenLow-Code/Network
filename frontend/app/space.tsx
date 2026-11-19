@@ -111,7 +111,7 @@ export default function Space() {
             
           </View>
           <Pressable accessibilityRole="button" onPress={()=>router.push('/notifications')}
-            style={{marginHorizontal:16,marginBottom:10,borderRadius:11,borderWidth:1,borderColor:'#E7DFE2',
+            style={{marginBottom:10,borderRadius:11,borderWidth:1,borderColor:'#E7DFE2',
               padding:14,flexDirection:'row',alignItems:'center',gap:11,backgroundColor:'#FCF7F8'}}>
             <Ionicons name="notifications-outline" size={21} color="#CB245C"/>
             <View style={{flex:1,gap:3}}>
@@ -121,7 +121,7 @@ export default function Space() {
             <Ionicons name="chevron-forward" size={18} color="#748477"/>
           </Pressable>
           <Pressable accessibilityRole="button" onPress={()=>router.push('/talent-invitations')}
-            style={{marginHorizontal:16,marginBottom:16,borderRadius:11,borderWidth:1,borderColor:'#D9DFD8',
+            style={{marginBottom:16,borderRadius:11,borderWidth:1,borderColor:'#D9DFD8',
               padding:14,flexDirection:'row',alignItems:'center',gap:11,backgroundColor:'#F4F7F2'}}>
             <Ionicons name="people-outline" size={21} color="#27845B"/>
             <View style={{flex:1,gap:3}}>
@@ -130,7 +130,7 @@ export default function Space() {
             </View>
             <Ionicons name="chevron-forward" size={18} color="#748477"/>
           </Pressable>
-          <View style={{ flexDirection: 'row', gap: 6, marginHorizontal: 15, marginBottom: 20 }}>
+          <View style={{ flexDirection: 'row', gap: 6, marginBottom: 20 }}>
             {(['All', 'Chats', 'Collabs', 'Lessons'] as Kind[]).map(t => (
               <Pill key={t} text={t} active={tab === t} onPress={() => setTab(t)} />
             ))}
