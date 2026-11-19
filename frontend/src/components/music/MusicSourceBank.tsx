@@ -3,6 +3,7 @@ import {Platform,Pressable,ScrollView,Text,TextInput,View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {useAppTheme} from '@/theme/AppTheme';
 import {formatMusicDuration} from '@/domain/musicProjectSelectors';
+import {musicSourceDuration} from '@/domain/musicNext';
 import type {MusicProjectFile} from '@/domain/musicWorkspace';
 
 const ACCENT='#CB245C';
@@ -164,8 +165,11 @@ export function MusicSourceBank({files,onAdd}:Props){
                   <Text numberOfLines={1} style={{fontSize:12,fontWeight:'700',
                     color:theme.foreground}}>{file.title}</Text>
                   <Text style={{fontSize:10,color:theme.muted}}>
-                    {file.durationSeconds?formatMusicDuration(file.durationSeconds):
-                      'Durée inconnue'}
+                    {file.musicEvents?.length?'MIDI · '+file.musicEvents.length+' notes':
+                      musicSourceDuration(file)?
+                        formatMusicDuration(musicSourceDuration(file)):
+                        /\.midi?$/i.test(file.originalFilename||'')?
+                          'MIDI importé':'Durée inconnue'}
                   </Text>
                 </View>
               </View>
