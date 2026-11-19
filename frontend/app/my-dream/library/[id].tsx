@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Alert, Linking, Platform, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/theme/AppTheme';
 import { workspaceLayout } from '@/theme/workspaceLayout';
@@ -41,7 +41,7 @@ function openStoredDocument(version:DreamDocumentVersion) {
   }
 }
 export default function DreamLibrary(){
-  const {id}=useLocalSearchParams<{id:string}>();
+  const {id,view,section}=useLocalSearchParams<{id:string;view?:string;section?:string}>();
   const theme=useAppTheme();
   const {width}=useWindowDimensions();
   const ws=workspaceLayout(width);
@@ -111,22 +111,24 @@ export default function DreamLibrary(){
   // Checklists belong to the private Notes tab, not the inspiration archive.
   // The shared Inspirations editor is available in Germination and Croissance.
   return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
-    <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{
+    <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{
       paddingHorizontal:ws.gutter,paddingTop:10,paddingBottom:110,
       maxWidth:ws.maxWidth,width:'100%',alignSelf:'center',minHeight:'100%',
     }}>
-      <PageHeader/>
+      <PageHeader onBack={()=>router.replace({pathname:'/my-dream/[id]',
+        params:{id,view:view||dream?.phase||'Rêve'}})}/>
       <Text style={{fontFamily:'serif',fontSize:30,lineHeight:39,
         color:theme.foreground,marginBottom:7}}>
-        Inspirations & documents
+        {section==='documents'?'Documents':section==='inspirations'?'Inspirations':'Inspirations & documents'}
       </Text>
       <Text style={{color:theme.muted,fontSize:12,lineHeight:19,marginBottom:19}}>
         {dream?.title||'Rêve'} · Tes références et fichiers au même endroit.
       </Text>
-      <Text style={{fontSize:11,color:theme.muted,marginBottom:16,lineHeight:18}}>
-        Une seule bibliothèque pour tes documents et les inspirations de Semence.
-      </Text>
-        <View style={{gap:11}}>
+      {section!=='documents'&&section!=='inspirations'?<Text
+        style={{fontSize:11,color:theme.muted,marginBottom:16,lineHeight:18}}>
+        Documents et inspirations conservent leur histoire au fil des phases.
+      </Text>:null}
+        {section!=='inspirations'?<View style={{gap:11}}>
           <Text style={{color:theme.foreground,fontSize:17,fontWeight:'700',marginBottom:5}}>Documents</Text>
           {editable?<View style={{flexDirection:'row',flexWrap:'wrap',gap:9,marginBottom:4}}>
             <Pressable accessibilityRole="button" onPress={importFiles}
@@ -253,8 +255,8 @@ export default function DreamLibrary(){
             sont conservés localement sur cet appareil (1 Mo maximum par fichier).
             Ils ne sont pas encore synchronisés entre tes appareils.
           </Text>
-        </View>
-        <View style={{gap:11,marginTop:22}}>
+        </View>:null}
+        {section!=='documents'?<View style={{gap:11,marginTop:section==='inspirations'?8:22}}>
           <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}>
             <Text style={{color:theme.foreground,fontSize:17,fontWeight:'700'}}>Inspirations</Text>
             {editable?<Pressable accessibilityRole="button"
@@ -270,7 +272,7 @@ export default function DreamLibrary(){
           {!!dream?<SemenceInspirations dream={dream} editable={editable}
             addRequestToken={addRequestToken}/>:null}
           {!dream?<Text style={{fontSize:12,color:theme.muted}}>Rêve introuvable.</Text>:null}
-        </View>
+        </View>:null}
     </ScrollView>
     <Nav/>
   </SafeAreaView>;

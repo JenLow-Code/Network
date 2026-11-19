@@ -1,7 +1,7 @@
 import React from 'react';
 import { ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useAppTheme } from '@/theme/AppTheme';
 import { workspaceLayout } from '@/theme/workspaceLayout';
 import { useDreams } from '@/domain/dreamRepository';
@@ -11,7 +11,7 @@ import SemenceNotes from '@/components/dream/SemenceNotes';
 
 /** A focused notebook page shared by the three active dream stages. */
 export default function PrivateDreamNotebook(){
-  const {id}=useLocalSearchParams<{id:string}>();
+  const {id,view}=useLocalSearchParams<{id:string;view?:string}>();
   const theme=useAppTheme();
   const {width}=useWindowDimensions();
   const ws=workspaceLayout(width);
@@ -21,10 +21,11 @@ export default function PrivateDreamNotebook(){
   const frozen=!!dream?.paused&&!!dream?.pauseUntil&&dream.pauseUntil>=today;
   const editable=!!dream&&dream.phase!=='Témoignage'&&!frozen&&dream.viewerRole!=='participant';
   return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
-    <ScrollView keyboardShouldPersistTaps="handled"
+    <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled"
       contentContainerStyle={{paddingHorizontal:ws.gutter,paddingTop:10,
         paddingBottom:115,maxWidth:ws.maxWidth,width:'100%',alignSelf:'center',flexGrow:1}}>
-      <PageHeader/>
+      <PageHeader onBack={()=>router.replace({pathname:'/my-dream/[id]',
+        params:{id,view:view||dream?.phase||'Rêve'}})}/>
       <View style={{marginTop:18}}>
         {dream?<SemenceNotes dream={dream} editable={editable}/>:
         <Text style={{fontSize:14,color:theme.muted}}>Rêve introuvable.</Text>}
