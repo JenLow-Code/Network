@@ -1,10 +1,11 @@
 import React,{useEffect,useState} from 'react';
-import {Pressable,Text,View} from 'react-native';
+import {Pressable,Text,TextInput,View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {useAppTheme} from '@/theme/AppTheme';
 import {MusicAudioPreview} from './MusicAudioPreview';
 import {MusicMissingTalentAction} from './MusicMissingTalentAction';
 import {api} from '@/lib/api/client';
+import {newMusicId} from '@/domain/musicWorkspace';
 import type {MusicProject} from '@/domain/musicWorkspace';
 
 const PINK='#CB245C';
@@ -20,6 +21,9 @@ export function MusicCollaborateExperience({project,patch}:Props){
   const [proposals,setProposals]=useState<Proposal[]>([]);
   const [selected,setSelected]=useState('');
   const [editingNeedId,setEditingNeedId]=useState('');
+  const [shareOpen,setShareOpen]=useState(false);
+  const [recipient,setRecipient]=useState('');
+  const [shareRole,setShareRole]=useState<'participant'|'co-owner'>('participant');
   const [audioUrl,setAudioUrl]=useState('');
   const [loading,setLoading]=useState(false);
   const [error,setError]=useState('');
@@ -161,6 +165,83 @@ export function MusicCollaborateExperience({project,patch}:Props){
       </View>)}
 
     </View>:null}
+    <View style={{gap:8,paddingTop:5}}>
+      <Pressable onPress={()=>setShareOpen(!shareOpen)} accessibilityRole="button"
+        accessibilityState={{expanded:shareOpen}}
+        style={{alignSelf:'flex-start',minHeight:42,flexDirection:'row',
+          alignItems:'center',gap:9}}>
+        <Ionicons name="share-social-outline" size={19} color={PINK}/>
+        <Text style={{fontSize:13,fontWeight:'600',color:theme.foreground}}>
+          Partager le projet avec une personne
+        </Text>
+        <Ionicons name={shareOpen?'chevron-up':'chevron-down'} size={16}
+          color={theme.muted}/>
+      </Pressable>
+      {shareOpen?<View style={{gap:12,padding:13,borderRadius:13,
+        borderWidth:1,borderColor:theme.border,backgroundColor:theme.surface}}>
+        <Text style={{fontSize:12,color:theme.muted,lineHeight:20}}>
+          Prépare une invitation pour participer au projet ou devenir copropriétaire.
+        </Text>
+        <TextInput value={recipient} onChangeText={setRecipient}
+          placeholder="Identifiant de la personne" placeholderTextColor={theme.muted}
+          style={{fontSize:13,color:theme.foreground,minHeight:44,
+            borderWidth:1,borderColor:theme.border,borderRadius:10,
+            paddingHorizontal:12,backgroundColor:theme.background}}/>
+        <View style={{flexDirection:'row',gap:7}}>
+          {([{role:'participant',title:'Participant'},
+            {role:'co-owner',title:'Copropriétaire'}] as const).map(option=>
+            <Pressable key={option.role} onPress={()=>setShareRole(option.role)}
+              accessibilityRole="radio"
+              accessibilityState={{selected:shareRole===option.role}}
+              style={{flex:1,minHeight:42,alignItems:'center',
+                justifyContent:'center',borderRadius:10,borderWidth:1,
+                borderColor:shareRole===option.role?PINK:theme.border,
+                backgroundColor:shareRole===option.role?
+                  (theme.dark?'#492733':'#FAEAF0'):'transparent'}}>
+              <Text style={{fontSize:12,fontWeight:'600',color:theme.foreground}}>
+                {option.title}
+              </Text>
+            </Pressable>)}
+        </View>
+        <Pressable onPress={()=>{
+          if(!recipient.trim())return;
+          patch({shareInvitations:[...(project.shareInvitations||[]),{
+            id:newMusicId(),targetHandle:recipient.trim(),role:shareRole,
+            status:'local-draft',createdAt:new Date().toISOString()
+          }]});
+          setRecipient('');setShareOpen(false);
+        }} disabled={!recipient.trim()} accessibilityRole="button"
+          style={{minHeight:43,backgroundColor:PINK,borderRadius:10,
+            paddingHorizontal:14,alignSelf:'flex-start',justifyContent:'center',
+            opacity:recipient.trim()?1:.45}}>
+          <Text style={{color:'#fff',fontWeight:'700',fontSize:12}}>
+            Préparer l’invitation
+          </Text>
+        </Pressable>
+        <Text style={{fontSize:11,lineHeight:18,color:theme.muted}}>
+          Brouillon local uniquement : aucun accès n’est accordé et aucune
+          invitation n’est envoyée tant que les permissions serveur ne sont pas connectées.
+        </Text>
+      </View>:null}
+      {(project.shareInvitations||[]).map(invitation=><View key={invitation.id}
+        style={{flexDirection:'row',alignItems:'center',gap:9,minHeight:40}}>
+        <Ionicons name="time-outline" size={16} color={theme.muted}/>
+        <View style={{flex:1,gap:3}}>
+          <Text style={{fontSize:12,color:theme.foreground}}>
+            {invitation.targetHandle} · {invitation.role==='co-owner'?
+              'Copropriétaire':'Participant'}
+          </Text>
+          <Text style={{fontSize:10,color:theme.muted}}>Brouillon non envoyé</Text>
+        </View>
+        <Pressable onPress={()=>patch({shareInvitations:
+          (project.shareInvitations||[]).filter(x=>x.id!==invitation.id)})}
+          accessibilityRole="button"
+          accessibilityLabel={'Supprimer le brouillon pour '+invitation.targetHandle}
+          style={{width:40,height:40,alignItems:'center',justifyContent:'center'}}>
+          <Ionicons name="trash-outline" size={18} color={theme.muted}/>
+        </Pressable>
+      </View>)}
+    </View>
     {error?<Text style={{fontSize:12,lineHeight:18,color:'#B64B61'}}>{error}</Text>:null}
   </View>;
 }
