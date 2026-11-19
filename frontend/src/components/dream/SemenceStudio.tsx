@@ -54,16 +54,43 @@ export default function SemenceStudio({dream,onBack,onNavigate}:{
    <SemenceInspirations dream={dream} editable={editable}
      addRequestToken={addRequestToken}
      onShareInspiration={id=>{setShareIds([id]);setShareOpen(true);}}/>
-   {editable?<View style={{marginTop:6}}>
+   {editable?<View style={{marginTop:6,
+     maxWidth:ws.desktop?700:undefined,width:'100%',alignSelf:'center'}}>
+     <View style={{flexDirection:ws.tablet?'row':'column',gap:ws.tablet?8:0}}>
      <Pressable accessibilityRole="button" accessibilityLabel="Faire germer cette semence"
        onPress={()=>setConfirm(true)}
-       style={{minHeight:48,paddingHorizontal:17,paddingVertical:12,
+       style={{minHeight:ws.tablet?43:48,flex:ws.tablet?1.2:undefined,
+         paddingHorizontal:ws.tablet?8:17,paddingVertical:ws.tablet?9:12,
          borderRadius:12,alignItems:'center',justifyContent:'center',
          backgroundColor:'#A1BA44'}}>
        <Text style={{color:'#242322',fontSize:13,fontWeight:'700',textAlign:'center'}}>
          Faire germer cette semence
        </Text>
      </Pressable>
+     <Pressable onPress={()=>{setShareIds(null);setShareOpen(true);}}
+       accessibilityRole="button" accessibilityLabel="Publier cette semence"
+       style={{minHeight:ws.tablet?43:48,flex:ws.tablet?1:undefined,
+         marginTop:ws.tablet?0:13,paddingVertical:ws.tablet?9:12,
+         paddingHorizontal:ws.tablet?7:17,alignItems:'center',justifyContent:'center',borderRadius:12,
+         borderWidth:1.5,borderColor:accent,backgroundColor:'transparent'}}>
+       <Text style={{fontSize:13,fontWeight:'700',color:accent,textAlign:'center'}}>
+         Publier cette semence
+       </Text>
+     </Pressable>
+     <Pressable onPress={uproot} accessibilityRole="button"
+       accessibilityLabel="Arracher cette semence"
+       style={{alignItems:'center',justifyContent:'center',
+         minHeight:ws.tablet?43:44,flex:ws.tablet?1:undefined,
+         borderRadius:12,marginTop:ws.tablet?0:13,
+         paddingHorizontal:ws.tablet?7:17,paddingVertical:ws.tablet?9:11,
+         backgroundColor:ws.tablet?'transparent':
+           theme.dark?'#18191B':'#242322',
+         borderWidth:ws.tablet?1:0,borderColor:theme.border}}>
+       <Text style={{color:ws.tablet?theme.muted:'#FFFFFF',fontSize:ws.tablet?11:12,fontWeight:'700'}}>
+         Arracher cette semence
+       </Text>
+     </Pressable>
+     </View>
      {confirm?<View style={{backgroundColor:theme.surface,padding:16,marginTop:12,
        borderRadius:12,borderWidth:1,borderColor:theme.border,gap:8}}>
        <Text style={{color:theme.foreground,fontWeight:'700',fontSize:16}}>
@@ -87,24 +114,6 @@ export default function SemenceStudio({dream,onBack,onNavigate}:{
          <Text style={{color:theme.muted,textAlign:'center'}}>Pas encore</Text>
        </Pressable>
      </View>:null}
-     <Pressable onPress={()=>{setShareIds(null);setShareOpen(true);}}
-       accessibilityRole="button" accessibilityLabel="Publier cette semence"
-       style={{minHeight:48,marginTop:13,paddingVertical:12,paddingHorizontal:17,
-         alignItems:'center',justifyContent:'center',borderRadius:12,
-         borderWidth:1.5,borderColor:accent,backgroundColor:'transparent'}}>
-       <Text style={{fontSize:13,fontWeight:'700',color:accent,textAlign:'center'}}>
-         Publier cette semence
-       </Text>
-     </Pressable>
-     <Pressable onPress={uproot} accessibilityRole="button"
-       accessibilityLabel="Arracher cette semence"
-       style={{alignItems:'center',justifyContent:'center',minHeight:44,
-         borderRadius:12,marginTop:13,paddingHorizontal:17,paddingVertical:11,
-         backgroundColor:theme.dark?'#18191B':'#242322'}}>
-       <Text style={{color:'#FFFFFF',fontSize:12,fontWeight:'700'}}>
-         Arracher cette semence
-       </Text>
-     </Pressable>
    </View>:null}
    {shareOpen?<SemenceShare key={(shareIds||[]).join('-')||'all'}
      dream={dream} initialIds={shareIds}
