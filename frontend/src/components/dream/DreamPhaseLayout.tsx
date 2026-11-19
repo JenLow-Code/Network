@@ -31,22 +31,23 @@ export function DreamCoverBackdrop({ uri }: { uri?: string }) {
   return (
     <View pointerEvents="none" style={StyleSheet.absoluteFill}>
       <Image source={{ uri }} resizeMode="cover"
-        style={[StyleSheet.absoluteFill, {opacity: .96}]}/>
+        style={[StyleSheet.absoluteFill,{opacity:1},
+          ...(Platform.OS==='web'?([{filter:'saturate(1.22) contrast(1.05)'} as any]):[])]}/>
       <Svg width="100%" height="100%" pointerEvents="none"
         style={StyleSheet.absoluteFill}>
         <Defs>
           <LinearGradient id="dream-cover-background-fade"
             x1="0%" y1="0%" x2="0%" y2="100%">
             <Stop offset="0%" stopColor={theme.background}
-              stopOpacity={theme.dark ? .56 : .67}/>
-            <Stop offset="22%" stopColor={theme.background}
-              stopOpacity={theme.dark ? .39 : .47}/>
-            <Stop offset="45%" stopColor={theme.background}
-              stopOpacity={theme.dark ? .24 : .28}/>
-            <Stop offset="72%" stopColor={theme.background}
-              stopOpacity={theme.dark ? .72 : .77}/>
+              stopOpacity={theme.dark ? .72 : .79}/>
+            <Stop offset="23%" stopColor={theme.background}
+              stopOpacity={theme.dark ? .64 : .72}/>
+            <Stop offset="48%" stopColor={theme.background}
+              stopOpacity={theme.dark ? .55 : .64}/>
+            <Stop offset="75%" stopColor={theme.background}
+              stopOpacity={theme.dark ? .78 : .83}/>
             <Stop offset="100%" stopColor={theme.background}
-              stopOpacity={theme.dark ? .93 : .94}/>
+              stopOpacity={theme.dark ? .95 : .96}/>
           </LinearGradient>
         </Defs>
         <Rect width="100%" height="100%" fill="url(#dream-cover-background-fade)"/>
