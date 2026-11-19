@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ActivityIndicator, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -11,6 +11,7 @@ import { chooseMusicFile, uploadMusicAudioFile } from '@/domain/musicMedia';
 import { Nav } from '@/components/navigation/Nav';
 import { PageHeader } from '@/components/navigation/PageHeader';
 import { useAppTheme } from '@/theme/AppTheme';
+import {workspaceCanvas} from '@/theme/workspaceLayout';
 
 const pink = '#CB245C';
 
@@ -22,6 +23,7 @@ export default function MusicProposal() {
   const music = local ?? (remote.item?.type === 'music' ? remote.item : undefined);
   const app = useApp();
   const theme = useAppTheme();
+  const {width}=useWindowDimensions();
   const [note, setNote] = useState('');
   const [role, setRole] = useState('');
   const [section, setSection] = useState('');
@@ -78,7 +80,7 @@ export default function MusicProposal() {
   return (
     <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{
-        width:'100%',maxWidth:740,alignSelf:'center',padding:20,paddingBottom:100,gap:16,
+        ...workspaceCanvas(width),paddingTop:12,paddingBottom:100,gap:16,
       }}>
         <PageHeader onBack={() => router.back()}/>
         <Text style={{color:theme.foreground,fontWeight:'700',fontSize:27}}>Proposer une collaboration</Text>
