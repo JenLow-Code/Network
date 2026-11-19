@@ -247,7 +247,8 @@ export function MusicMaterialViewer({visible,file,project,onClose,onUpdate,onCha
             </Pressable>
           </View>:null}
           {isAudio(file)&&file.localFileId?
-            <MusicAudioTake key={file.id} file={file} editable
+            <MusicAudioTake
+               sourceFiles={project.files} sections={project.sections} key={file.id} file={file} editable
               onUpdate={changes=>onUpdate(file.id,changes)}/>:null}
           {!editing&&file.kind==='lyrics'&&project.sections.length>0?
             <Pressable onPress={()=>setSelecting(!selecting)}
