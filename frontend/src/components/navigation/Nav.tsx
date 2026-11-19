@@ -68,8 +68,18 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' }) 
     const mainLinks=links.filter(x=>x.path!=='/profile');
     const profile=links.find(x=>x.path==='/profile')!;
     const activeColor='#CB245C';
-    const navSurface=theme.dark?'#202025':theme.background;
-    const selectedBg=theme.dark?'rgba(203,36,92,.17)':'rgba(203,36,92,.065)';
+    // Material-like glass keeps the navigation integrated in the desktop grid.
+    // The content remains legible over a soft, context-aware colour wash.
+    const navSurface=theme.dark?'rgba(25,30,38,.77)':'rgba(247,248,247,.73)';
+    const glassBorder=theme.dark?'rgba(255,255,255,.22)':'rgba(255,255,255,.84)';
+    const selectedBg=theme.dark?'rgba(215,65,127,.22)':'rgba(203,36,92,.095)';
+    const glassEffects=Platform.OS==='web'?({
+      backdropFilter:'blur(32px) saturate(175%)',
+      WebkitBackdropFilter:'blur(32px) saturate(175%)',
+      boxShadow:theme.dark
+        ?'inset 1px 0 0 rgba(255,255,255,.12), -8px 0 28px rgba(4,8,14,.11)'
+        :'inset 1px 0 0 rgba(255,255,255,.66), -9px 0 32px rgba(59,64,74,.055)',
+    } as any):{};
     const renderEntry=(item:typeof links[number])=><Pressable
       key={item.path}
       onPress={()=>router.replace(item.path)}
@@ -97,9 +107,34 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' }) 
     return <View accessibilityRole="navigation" style={{
       width:collapsed?72:212,minWidth:collapsed?72:212,
       height:'100%',backgroundColor:navSurface,
-      borderLeftWidth:1,borderLeftColor:theme.border,
+      borderLeftWidth:1,borderLeftColor:glassBorder,
       justifyContent:'space-between',paddingTop:28,paddingBottom:24,
+      overflow:'hidden',...glassEffects,
     }}>
+      {currentDream?.image?<Image pointerEvents="none"
+        source={{uri:currentDream.image}} resizeMode="cover" blurRadius={36}
+        style={{position:'absolute',top:-20,left:-20,right:-20,bottom:-20,
+          width:'115%',height:'110%',opacity:theme.dark?.30:.23}}/>:null}
+      <Svg pointerEvents="none" width="100%" height="100%"
+        style={{position:'absolute',top:0,right:0,bottom:0,left:0}}>
+        <Defs>
+          <LinearGradient id="jenlow-desktop-glass" x1="0%" y1="0%"
+            x2="100%" y2="100%">
+            <Stop offset="0%" stopColor={theme.dark?'#ADB7CA':'#FFFFFF'}
+              stopOpacity={theme.dark?.13:.48}/>
+            <Stop offset="38%" stopColor={theme.dark?'#657487':'#DCEBF2'}
+              stopOpacity={theme.dark?.09:.22}/>
+            <Stop offset="72%" stopColor={theme.dark?'#A26782':'#F4E0EA'}
+              stopOpacity={theme.dark?.08:.13}/>
+            <Stop offset="100%" stopColor={theme.dark?'#A1A9BB':'#FFFFFF'}
+              stopOpacity={theme.dark?.12:.37}/>
+          </LinearGradient>
+        </Defs>
+        <Rect width="100%" height="100%" fill="url(#jenlow-desktop-glass)"/>
+      </Svg>
+      <View pointerEvents="none" style={{position:'absolute',left:2,top:1,
+        bottom:1,width:1,
+        backgroundColor:theme.dark?'rgba(255,255,255,.20)':'rgba(255,255,255,.85)'}}/>
       <View style={{gap:21}}>
         <View style={{paddingHorizontal:collapsed?13:24,
           flexDirection:'row',alignItems:'center',
@@ -132,8 +167,8 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' }) 
                   flexDirection:'row',alignItems:'center',gap:9,
                   borderWidth:1,borderColor:theme.dark?
                     'rgba(255,255,255,.14)':'rgba(80,73,66,.12)',
-                  backgroundColor:theme.dark?'rgba(255,255,255,.035)':
-                    'rgba(237,231,222,.43)'}}>
+                  backgroundColor:theme.dark?'rgba(255,255,255,.095)':
+                    'rgba(255,255,255,.32)'}}>
                 {currentDream.image?
                   <Image source={{uri:currentDream.image}} resizeMode="cover"
                     style={{width:collapsed?40:45,height:collapsed?40:51,
