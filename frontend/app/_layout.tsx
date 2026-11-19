@@ -10,12 +10,14 @@ import { MusicWorkspaceProvider } from '@/domain/musicWorkspace';
 import { LocaleProvider } from '@/i18n/locale';
 import { AuthProvider } from '@/context/AuthProvider';
 import { AppThemeProvider, useAppTheme } from '@/theme/AppTheme';
-import { Nav } from '@/components/navigation/Nav';
+import { Nav,MOBILE_NAV_HEIGHT } from '@/components/navigation/Nav';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { workspaceLayout } from '@/theme/workspaceLayout';
 
 function ThemedStack() {
   const theme = useAppTheme();
   const {width}=useWindowDimensions();
+  const insets=useSafeAreaInsets();
   const desktop=Platform.OS==='web'&&workspaceLayout(width).desktop;
   const path=usePathname();
   const {items:dreams}=useDreams();
@@ -42,11 +44,15 @@ function ThemedStack() {
             backgroundColor:theme.dark?'rgba(26,31,36,.22)':
               'rgba(253,251,248,.35)'}}/>
         </View>:null}
-        <View style={{flex:1,minWidth:0}}>
-          <Stack
-            screenOptions={{headerShown:false,
-              contentStyle:{backgroundColor:theme.background}}}
-          />
+        <View style={{flex:1,minWidth:0,position:'relative'}}>
+          <View style={{flex:1,minHeight:0,
+            paddingBottom:desktop?0:MOBILE_NAV_HEIGHT+insets.bottom}}>
+            <Stack
+              screenOptions={{headerShown:false,
+                contentStyle:{backgroundColor:theme.background}}}
+            />
+          </View>
+          {!desktop?<Nav placement="root"/>:null}
         </View>
         {desktop?<Nav placement="desktop"/>:null}
       </View>
