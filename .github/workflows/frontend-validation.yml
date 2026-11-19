@@ -21,6 +21,8 @@ jobs:
         with:
           node-version: '22'
       - run: npm install --no-audit --no-fund
+      - name: Check unified desktop page canvases
+        run: npm run verify:layout
       - run: npm run typecheck
       - name: Validate Expo web export
         run: npx expo export --platform web
