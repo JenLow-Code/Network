@@ -26,6 +26,7 @@ export function MusicAudioMarkers({markers,duration,cursor,onChange,onSeek,
  const [note,setNote]=useState(''),[error,setError]=useState('');
  const [linkedFileId,setLinkedFileId]=useState('');
  const [linkedSectionId,setLinkedSectionId]=useState('');
+ const [linkedReferenceId,setLinkedReferenceId]=useState('');
  const [linksOpen,setLinksOpen]=useState(false);
  const [picking,setPicking]=useState<{field:'from'|'to';cursor:number}|null>(null);
  useEffect(()=>{
@@ -43,7 +44,8 @@ export function MusicAudioMarkers({markers,duration,cursor,onChange,onSeek,
    setTo(m?.endSeconds===undefined?
      (range?musicStampMs(range.end):''):musicStampMs(m.endSeconds));
    setNote(m?.note||'');setLinkedFileId(m?.linkedFileId||'');
-   setLinkedSectionId(m?.linkedSectionId||'');setLinksOpen(false);
+   setLinkedSectionId(m?.linkedSectionId||'');
+   setLinkedReferenceId(m?.linkedLyricReferenceId||'');setLinksOpen(false);
    setError('');setOpen(true);
  };
  useEffect(()=>{
@@ -57,7 +59,8 @@ export function MusicAudioMarkers({markers,duration,cursor,onChange,onSeek,
    setIntervalMode(true);
    setFrom(musicStampMs(Math.min(rangeRequest.start,rangeRequest.end)));
    setTo(musicStampMs(Math.max(rangeRequest.start,rangeRequest.end)));
-   setNote('');setLinkedFileId('');setLinkedSectionId('');setLinksOpen(false);
+   setNote('');setLinkedFileId('');setLinkedSectionId('');
+   setLinkedReferenceId('');setLinksOpen(false);
    setError('');setPicking(null);setOpen(true);
  },[rangeRequest?.nonce]);
  const save=()=>{
@@ -69,7 +72,8 @@ export function MusicAudioMarkers({markers,duration,cursor,onChange,onSeek,
    const marker:MusicAudioMarker={id:editing||newMusicId(),startSeconds:Math.round(a*1000)/1000,
      ...(interval?{endSeconds:Math.round((b as number)*1000)/1000}:{}),
      note:note.trim(),linkedFileId:linkedFileId||undefined,
-     linkedSectionId:linkedSectionId||undefined};
+     linkedSectionId:linkedSectionId||undefined,
+     linkedLyricReferenceId:linkedReferenceId||undefined};
    onChange([...markers.filter(m=>m.id!==marker.id),marker].sort((x,y)=>x.startSeconds-y.startSeconds));
    setOpen(false);setError('');setPicking(null);
  };
@@ -145,19 +149,23 @@ export function MusicAudioMarkers({markers,duration,cursor,onChange,onSeek,
          <Ionicons name="link-outline" size={17} color={pink}/>
          <Text style={{flex:1,fontSize:12,color:linkedFileId||linkedSectionId?
            theme.foreground:pink,fontWeight:'600'}}>
-           {linkedFileId?sourceFiles.find(f=>f.id===linkedFileId)?.title||'Capture liée':
+           {linkedReferenceId?sourceFiles.flatMap(file=>(file.lyricReferences||[]))
+              .find(ref=>ref.id===linkedReferenceId)?.text.slice(0,65)||'Extrait lié':
+            linkedFileId?sourceFiles.find(f=>f.id===linkedFileId)?.title||'Capture liée':
             linkedSectionId?sections.find(section=>section.id===linkedSectionId)?.title||'Partie liée':
             'Lier à une capture ou à une partie'}
          </Text>
          <Ionicons name={linksOpen?'chevron-up':'chevron-down'} size={16} color={pink}/>
        </Pressable>
        {linksOpen?<View style={{gap:5,maxHeight:230,overflow:'hidden'}}>
-         <Pressable onPress={()=>{setLinkedFileId('');setLinkedSectionId('');}}
+         <Pressable onPress={()=>{setLinkedFileId('');setLinkedSectionId('');
+           setLinkedReferenceId('');}}
            style={{paddingVertical:8}}>
            <Text style={{fontSize:12,color:theme.muted}}>Aucun lien</Text>
          </Pressable>
          {sourceFiles.map(file=><Pressable key={file.id}
-           onPress={()=>{setLinkedFileId(file.id);setLinkedSectionId('');}}
+           onPress={()=>{setLinkedFileId(file.id);setLinkedSectionId('');
+             setLinkedReferenceId('');}}
            accessibilityRole="button" style={{paddingVertical:7,
              flexDirection:'row',alignItems:'center',gap:8}}>
            <Ionicons name={linkedFileId===file.id?'radio-button-on':'radio-button-off'}
@@ -166,8 +174,25 @@ export function MusicAudioMarkers({markers,duration,cursor,onChange,onSeek,
              {file.title}
            </Text>
          </Pressable>)}
+         {sourceFiles.flatMap(file=>(file.lyricReferences||[])
+           .map(ref=>({file,ref}))).map(({file,ref})=><Pressable
+           key={ref.id} onPress={()=>{
+             setLinkedFileId(file.id);setLinkedSectionId(ref.sectionId);
+             setLinkedReferenceId(ref.id);
+           }} accessibilityRole="button"
+           style={{paddingVertical:7,flexDirection:'row',alignItems:'center',gap:8}}>
+           <Ionicons name={linkedReferenceId===ref.id?
+             'radio-button-on':'radio-button-off'} color={pink} size={17}/>
+           <View style={{flex:1,gap:3}}>
+             <Text style={{fontSize:11,color:theme.muted}}>{file.title} · extrait</Text>
+             <Text numberOfLines={2} style={{fontSize:12,color:theme.foreground}}>
+               {ref.text}
+             </Text>
+           </View>
+         </Pressable>)}
          {sections.map(section=><Pressable key={section.id}
-           onPress={()=>{setLinkedSectionId(section.id);setLinkedFileId('');}}
+           onPress={()=>{setLinkedSectionId(section.id);setLinkedFileId('');
+             setLinkedReferenceId('');}}
            accessibilityRole="button" style={{paddingVertical:7,
              flexDirection:'row',alignItems:'center',gap:8}}>
            <Ionicons name={linkedSectionId===section.id?'radio-button-on':'radio-button-off'}
