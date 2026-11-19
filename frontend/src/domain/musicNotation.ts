@@ -93,3 +93,131 @@ export function downloadMusicMidi(events:MusicNotationEvent[],bpm:number,title:s
   document.body.appendChild(anchor);anchor.click();anchor.remove();
   setTimeout(()=>URL.revokeObjectURL(url),30000);
 }
+
+
+/**
+ * A4 printable notation PDF, generated locally without sending any musical data.
+ * One staff is printed per instrument and eight-beat span; draft notes print grey.
+ */
+export function exportMusicScorePdf(events:MusicNotationEvent[],bpm:number,
+  title:string,clef:'treble'|'bass'='treble'):Uint8Array {
+  const ordered=events.filter(e=>Number.isFinite(e.midi)&&Number.isFinite(e.startBeats))
+    .slice().sort((a,b)=>a.startBeats-b.startBeats);
+  if(!ordered.length)throw Error('Ajoute au moins une note avant d’exporter la partition.');
+  const ascii=(value:string)=>value.normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g,'').replace(/[^\x20-\x7e]/g,' ').slice(0,115);
+  const esc=(value:string)=>ascii(value).replace(/([\\()])/g,'\\$1');
+  const titleText=esc(title.trim()||'Partition JenLow');
+  const maxBeat=ordered.reduce((m,e)=>Math.max(m,e.startBeats+e.lengthBeats),4);
+  const instruments=(['piano','drum'] as const)
+    .filter(part=>ordered.some(e=>e.instrument===part));
+  const systems=Math.max(1,Math.ceil(maxBeat/8));
+  const rows:{part:'piano'|'drum';from:number;items:MusicNotationEvent[]}[]=[];
+  for(let index=0;index<systems;index++)for(const part of instruments){
+    rows.push({part,from:index*8,items:ordered.filter(e=>e.instrument===part&&
+      e.startBeats>=index*8&&e.startBeats<(index+1)*8)});
+  }
+  const pages:typeof rows[]=[];
+  for(let i=0;i<rows.length;i+=6)pages.push(rows.slice(i,i+6));
+  const number=(value:number)=>Number(value.toFixed(2));
+  const diatonic=(midi:number)=>{
+    const map=[0,0,1,1,2,3,3,4,4,5,5,6];
+    return (Math.floor(midi/12)-1)*7+map[((midi%12)+12)%12];
+  };
+  const pdfPages=pages.map((page,pageIndex)=>{
+    const commands:string[]=['0.7 w','0 G'];
+    const text=(x:number,y:number,size:number,value:string)=>
+      commands.push('BT /F1 '+size+' Tf '+x+' '+y+' Td ('+esc(value)+') Tj ET');
+    text(49,787,17,titleText);
+    text(49,768,10,'JenLow Music | '+Math.max(40,Math.min(240,Math.round(bpm)))+
+      ' BPM | '+(clef==='treble'?'Treble clef':'Bass clef'));
+    text(487,787,8,'Page '+(pageIndex+1)+' / '+pages.length);
+    page.forEach((row,rowIndex)=>{
+      const top=705-rowIndex*104;
+      const bottom=top-40;
+      text(48,top+14,9,(row.part==='piano'?(clef==='treble'?'G clef':'F clef'):
+        'Percussion')+' | Beats '+row.from+'-'+(row.from+8));
+      for(let i=0;i<5;i++)commands.push('0.5 G 78 '+(bottom+i*10)+' m 532 '+(bottom+i*10)+' l S');
+      for(let bar=0;bar<=2;bar++){
+        const x=88+bar*220;
+        commands.push('0.7 G '+x+' '+bottom+' m '+x+' '+top+' l S');
+      }
+      const sorted=row.items.slice().sort((a,b)=>a.startBeats-b.startBeats);
+      let previous=row.from;
+      sorted.forEach(e=>{
+        const x=91+(e.startBeats-row.from)*55;
+        if(e.startBeats-previous>=.25){
+          const restX=91+(previous-row.from)*55+
+            Math.min(17,(e.startBeats-previous)*55/2);
+          text(number(restX),number(bottom+18),10,'r');
+        }
+        const base=row.part==='drum'?null:
+          diatonic(clef==='treble'?64:43);
+        const y=row.part==='drum'?bottom+20:
+          bottom+(diatonic(e.midi)-(base||0))*5;
+        const yy=number(Math.max(bottom-22,Math.min(top+22,y)));
+        const xx=number(x);
+        const r=4,k=.55228475;
+        commands.push(e.draft?'0.5 g':'0.79 0.14 0.36 rg');
+        commands.push([
+          number(xx-r)+' '+yy+' m',
+          number(xx-r)+' '+number(yy+r*k)+' '+number(xx-r*k)+' '+
+            number(yy+r)+' '+xx+' '+number(yy+r)+' c',
+          number(xx+r*k)+' '+number(yy+r)+' '+number(xx+r)+' '+
+            number(yy+r*k)+' '+number(xx+r)+' '+yy+' c',
+          number(xx+r)+' '+number(yy-r*k)+' '+number(xx+r*k)+' '+
+            number(yy-r)+' '+xx+' '+number(yy-r)+' c',
+          number(xx-r*k)+' '+number(yy-r)+' '+number(xx-r)+' '+
+            number(yy-r*k)+' '+number(xx-r)+' '+yy+' c f',
+        ].join(' '));
+        commands.push('0.5 G '+number(xx+4)+' '+yy+' m '+
+          number(xx+4)+' '+number(yy+27)+' l S');
+        if(row.part==='piano'&&[1,3,6,8,10].includes(e.midi%12))
+          text(number(xx-12),number(yy+2),11,'#');
+        text(number(xx-5),number(bottom-22),7,
+          e.lengthBeats>=1?String(number(e.lengthBeats)):'');
+        previous=Math.max(previous,e.startBeats+e.lengthBeats);
+      });
+    });
+    return commands.join('\n')+'\n';
+  });
+  const count=pdfPages.length;
+  const objects:string[]=[];
+  objects[1]='<< /Type /Catalog /Pages 2 0 R >>';
+  objects[2]='<< /Type /Pages /Count '+count+' /Kids ['+
+    pages.map((_,i)=>(4+i*2)+' 0 R').join(' ')+'] >>';
+  objects[3]='<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>';
+  pdfPages.forEach((stream,i)=>{
+    const pageId=4+i*2,contentId=pageId+1;
+    objects[pageId]='<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] '+
+      '/Resources << /Font << /F1 3 0 R >> >> /Contents '+contentId+' 0 R >>';
+    objects[contentId]='<< /Length '+stream.length+' >>\nstream\n'+stream+'endstream';
+  });
+  let raw='%PDF-1.4\n%JenLow\n';
+  const offsets:number[]=[0];
+  for(let id=1;id<objects.length;id++){
+    offsets[id]=raw.length;
+    raw+=id+' 0 obj\n'+objects[id]+'\nendobj\n';
+  }
+  const xref=raw.length;
+  raw+='xref\n0 '+objects.length+'\n0000000000 65535 f \n';
+  for(let id=1;id<objects.length;id++)
+    raw+=String(offsets[id]).padStart(10,'0')+' 00000 n \n';
+  raw+='trailer\n<< /Size '+objects.length+' /Root 1 0 R >>\n'+
+    'startxref\n'+xref+'\n%%EOF\n';
+  return new TextEncoder().encode(raw);
+}
+export function downloadMusicScorePdf(events:MusicNotationEvent[],bpm:number,
+  title:string,clef:'treble'|'bass'='treble'){
+  if(typeof document==='undefined'||typeof URL==='undefined')
+    throw Error('Export PDF disponible sur le navigateur web.');
+  const bytes=exportMusicScorePdf(events,bpm,title,clef);
+  const blob=new Blob([bytes as BlobPart],{type:'application/pdf'});
+  const url=URL.createObjectURL(blob);
+  const anchor=document.createElement('a');
+  anchor.href=url;
+  anchor.download=(title.trim()||'partition').normalize('NFKD')
+    .replace(/[^a-zA-Z0-9_-]+/g,'-').slice(0,65)+'.pdf';
+  document.body.appendChild(anchor);anchor.click();anchor.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),30000);
+}
