@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { lostFoundNeeds, isNeedFound } from '@/domain/dreamResourceRecovery';
 import { api } from '@/lib/api/client';
 import { Alert, Image, Linking, Modal, Platform, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useGlobalSearchParams } from 'expo-router';
 import { useDreams } from '@/domain/dreamRepository';
 import { isPublishedFlower, type DreamEntry, type DreamBlock, type DreamResource, type DreamHabit, type DreamMilestone } from '@/domain/dreamWorkspace';
 import { PHASE_LABELS, type DreamPhase } from '@/domain/publication';
@@ -67,6 +67,7 @@ export default function DreamExperience({
 }) {
  const { patch, appendBlock, setResources, setHabits, detachHabit, setGoalAndGrow, advance, remove, addGrowthLog, setGrowthLogPublication } = useDreams();
  const theme = useAppTheme();
+ const {focus}=useGlobalSearchParams<{focus?:string}>();
  const {width:viewportWidth}=useWindowDimensions();
  const narrowScreen=viewportWidth<640;
   const ws=workspaceLayout(viewportWidth);
@@ -94,6 +95,8 @@ export default function DreamExperience({
  const [goalDateDialog,setGoalDateDialog]=useState(false);
  const [growthDialog,setGrowthDialog]=useState<'habit'|'habits'|'log'|null>(null);
  const [preparationOpen,setPreparationOpen]=useState(false);
+ useEffect(()=>{if(focus==='resources')setPreparationOpen(true);},
+   [focus,viewPhase]);
  const [recoveryDialog,setRecoveryDialog]=useState(false);
  const [habitTitle, setHabitTitle] = useState('');
  const [habitEmoji,setHabitEmoji]=useState('🌱');
@@ -321,7 +324,7 @@ export default function DreamExperience({
  };
  return <View style={{flex:1,backgroundColor:theme.background}}>
   <DreamCoverBackdrop uri={dream.image}/>
-  <ScrollView style={{flex:1,backgroundColor:'transparent'}}
+  <ScrollView showsVerticalScrollIndicator={false} style={{flex:1,backgroundColor:'transparent'}}
     keyboardShouldPersistTaps="handled"
     contentContainerStyle={{paddingHorizontal:ws.gutter,paddingTop:10,paddingBottom:85,
       maxWidth:ws.maxWidth,width:'100%',alignSelf:'center'}}>
@@ -675,11 +678,11 @@ export default function DreamExperience({
           </Pressable>
         </View>
       ):null}
-      <View style={{flexDirection:ws.tablet?'row':'column',gap:ws.tablet?9:11}}>
+      <View style={{flexDirection:(ws.tablet||ws.desktop)?'row':'column',gap:(ws.tablet||ws.desktop)?9:11}}>
       <Pressable accessibilityRole="button"
         disabled={frozen}
         onPress={()=>router.push({pathname:'/my-dream/flower/[id]',params:{id:dream.id}})}
-        style={{minHeight:ws.tablet?43:48,flex:ws.tablet?1.2:undefined,
+        style={{minHeight:(ws.tablet||ws.desktop)?43:48,flex:(ws.tablet||ws.desktop)?1.2:undefined,
           backgroundColor:frozen?'#A8ABA6':'#D71D77',
           borderRadius:11,alignItems:'center',justifyContent:'center',paddingHorizontal:16}}>
         <Text style={{color:'#FFFFFF',fontSize:13,fontWeight:'700'}}>Faire fleurir</Text>
@@ -691,7 +694,7 @@ export default function DreamExperience({
           }
           setFreezeDialog(true);
         }}
-        style={{minHeight:ws.tablet?43:48,flex:ws.tablet?1:undefined,
+        style={{minHeight:(ws.tablet||ws.desktop)?43:48,flex:(ws.tablet||ws.desktop)?1:undefined,
           borderRadius:11,borderWidth:1,
           borderColor:'#397F9E',alignItems:'center',justifyContent:'center',
           paddingHorizontal:16,opacity:frozen?.5:1}}>
@@ -702,13 +705,13 @@ export default function DreamExperience({
         onPress={()=>confirm('Arracher cette plante ?',
           'Cette action supprimera définitivement ce rêve et ses données sur cet appareil.',
           ()=>{remove(dream.id);router.replace('/my-space');})}
-        style={{minHeight:ws.tablet?43:48,flex:ws.tablet?1:undefined,
-          backgroundColor:ws.tablet?'transparent':'#242322',
-          borderWidth:ws.tablet?1:0,borderColor:theme.border,
+        style={{minHeight:(ws.tablet||ws.desktop)?43:48,flex:(ws.tablet||ws.desktop)?1:undefined,
+          backgroundColor:(ws.tablet||ws.desktop)?'transparent':'#242322',
+          borderWidth:(ws.tablet||ws.desktop)?1:0,borderColor:theme.border,
           borderRadius:11,alignItems:'center',justifyContent:'center',
           paddingHorizontal:16}}>
-        <Text style={{color:ws.tablet?theme.muted:'#FFFFFF',
-          fontSize:ws.tablet?12:13,fontWeight:'700'}}>
+        <Text style={{color:(ws.tablet||ws.desktop)?theme.muted:'#FFFFFF',
+          fontSize:(ws.tablet||ws.desktop)?12:13,fontWeight:'700'}}>
           Arracher cette plante
         </Text>
       </Pressable>
