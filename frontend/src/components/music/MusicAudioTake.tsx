@@ -172,6 +172,7 @@ export function MusicAudioTake({file,compact=false,editable=false,onUpdate,onOpe
           </Text>
         </Pressable>:null}
         <MusicWaveformEditor file={blob} duration={duration} cursor={cursor}
+          sourceFiles={sourceFiles} sections={sections}
           onSeek={seek} zoom={zoom} onZoom={setZoom}
           onTogglePlayback={toggle} playing={playing} markers={file.markers||[]}
           onChangeMarkers={onUpdate?markers=>onUpdate({markers}):undefined}
