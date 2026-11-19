@@ -195,7 +195,8 @@ export default function Discover() {
         <View style={{ marginHorizontal: -15 }}>
         <PublicationGallery
           layout="masonry"
-          contentWidth={desktop?Math.min(1160,Math.max(0,width-212)):undefined}
+          contentWidth={Math.max(0,
+            Math.min(ws.maxWidth??width,desktop?width-212:width)-30)}
           items={(filter === 'Talents'
             ? personPublications
             : filter === 'Tout'
