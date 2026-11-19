@@ -13,6 +13,7 @@ import { TalentArt } from '@/components/talent/TalentArt';
 import { ProfileTalentTile } from '@/components/talent/ProfileTalentTile';
 import { TalentLevelDots } from '@/components/talent/TalentLevelDots';
 import { useAppTheme } from '@/theme/AppTheme';
+import {workspaceCanvas,workspaceLayout} from '@/theme/workspaceLayout';
 import { useApp } from '@/context/AppContext';
 import type { PersonPublication } from '@/domain/publication';
 import { useMemberProfile } from '@/lib/api/hooks';
@@ -83,13 +84,15 @@ export default function PublicMemberProfile() {
     : female
       ? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=320&q=80'
       : 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=320&q=80';
-  const width = Math.min(screenWidth - 36, 860);
-  const columns = width < 350 ? 2 : 3;
+  const ws=workspaceLayout(screenWidth);
+  const pageViewport=Math.max(0,screenWidth-(ws.desktop?212:0));
+  const width=Math.max(0,Math.min(pageViewport,ws.maxWidth??pageViewport)-2*ws.gutter);
+  const columns=width<350?2:width<850?3:4;
   const gap = 10;
   const tileWidth = Math.floor((width - gap * (columns - 1)) / columns);
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
-      <ScrollView contentContainerStyle={{ padding: 18, paddingBottom: 55, maxWidth: 896, width: '100%', alignSelf: 'center', gap: 19 }}>
+      <ScrollView contentContainerStyle={{ ...workspaceCanvas(screenWidth), paddingTop:12,paddingBottom:55,gap:19 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           <Pressable onPress={() => router.back()} accessibilityLabel="Retour"><Ionicons name="chevron-back" size={25} color={theme.foreground} /></Pressable>
           <Text style={{ fontSize: 22, fontWeight: '800', color: theme.foreground }}>Profil public</Text>
