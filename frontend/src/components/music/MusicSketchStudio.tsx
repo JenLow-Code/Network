@@ -290,7 +290,7 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
   const [selectedId,setSelectedId]=useState('');
   const [recording,setRecording]=useState(false);
   const startRef=useRef(0),beatOriginRef=useRef(0);
-  const liveHeldRef=useRef<Map<string,{id:string;pressedAt:number}>>(new Map());
+  const liveHeldRef=useRef<Map<string,{id:string;pressedAt:number;startBeats:number}>>(new Map());
   const liveSourcesRef=useRef<Map<string,AudioScheduledSourceNode>>(new Map());
   const releaseRef=useRef<(instrument:Instrument,midi:number)=>void>(()=>{});
   const clock=()=>typeof performance!=='undefined'?performance.now():Date.now();
@@ -344,6 +344,8 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
   const patchEvent=(id:string,changes:Partial<MusicNotationEvent>)=>
     setEvents(old=>old.map(e=>e.id===id?{...e,...changes}:e));
   const trigger=(instrument:Instrument,midi:number)=>{
+    if(recording&&instrument==='piano'&&
+      liveHeldRef.current.has(instrument+':'+midi))return;
     setMessage('');setLast(instrument==='piano'?musicNoteName(midi):
       DRUM_PADS.find(p=>p.midi===midi)?.label||'Percussion');
     if(Platform.OS==='web'){
@@ -380,14 +382,32 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
       draft:!recording};
     setEvents(old=>[...old,event]);setSelectedId(event.id);
     if(recording&&instrument==='piano'){
-      liveHeldRef.current.set(instrument+':'+midi,{id:event.id,pressedAt:playedAt});
+      liveHeldRef.current.set(instrument+':'+midi,
+        {id:event.id,pressedAt:playedAt,startBeats});
     }
     if(!recording){
       chordRef.current={at:playedAt,beat:startBeats};
       if(!chord)setCursor(startBeats+event.lengthBeats);
     }
   };
+  const releaseNote=(instrument:Instrument,midi:number)=>{
+    const key=instrument+':'+midi;
+    const held=liveHeldRef.current.get(key);
+    if(!held)return;
+    liveHeldRef.current.delete(key);
+    const lengthBeats=liveNoteLength(held.pressedAt,clock(),bpm);
+    setEvents(old=>old.map(event=>event.id===held.id?
+      {...event,lengthBeats}:event));
+    setCursor(old=>Math.max(old,held.startBeats+lengthBeats));
+    const source=liveSourcesRef.current.get(key);
+    if(source){try{source.stop();}catch{}liveSourcesRef.current.delete(key);}
+    if(Platform.OS==='web'&&midiRef.current){
+      try{midiRef.current.send([instrument==='piano'?0x80:0x89,midi,0]);}
+      catch{setMessage('Sortie MIDI déconnectée.');}
+    }
+  };
   triggerRef.current=trigger;
+  releaseRef.current=releaseNote;
   useEffect(()=>{
     if(!active||part!=='piano'||Platform.OS!=='web'||typeof window==='undefined')return;
     const keyToPitch:Record<string,number>={
@@ -403,12 +423,21 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
       event.preventDefault();heldKeysRef.current.add(key);
       triggerRef.current('piano',baseMidi+offset);
     };
-    const up=(event:KeyboardEvent)=>heldKeysRef.current.delete(event.key.toLowerCase());
+    const up=(event:KeyboardEvent)=>{
+      const key=event.key.toLowerCase();
+      if(!heldKeysRef.current.delete(key))return;
+      const offset=keyToPitch[key];
+      if(offset!==undefined)releaseRef.current('piano',baseMidi+offset);
+    };
     window.addEventListener('keydown',down);
     window.addEventListener('keyup',up);
     return()=>{
       window.removeEventListener('keydown',down);
       window.removeEventListener('keyup',up);
+      heldKeysRef.current.forEach(key=>{
+        const offset=keyToPitch[key];
+        if(offset!==undefined)releaseRef.current('piano',baseMidi+offset);
+      });
       heldKeysRef.current.clear();
     };
   },[active,part,baseMidi]);
@@ -440,8 +469,19 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
     }catch{setMessage('Lecture de la composition impossible dans ce navigateur.');}
   };
   const toggleRecording=()=>{
-    if(recording){setRecording(false);return;}
-    beatOriginRef.current=nextBeat();startRef.current=Date.now();
+    if(recording){
+      for(const key of Array.from(liveHeldRef.current.keys())){
+        const [instrument,midi]=key.split(':');
+        releaseNote(instrument as Instrument,Number(midi));
+      }
+      setRecording(false);
+      setMessage('Prise enregistrée : les durées et silences reflètent le jeu.');
+      return;
+    }
+    if(previewPlaying)stopPreview();
+    beatOriginRef.current=nextBeat();
+    startRef.current=clock();
+    chordRef.current=null;
     setRecording(true);setMessage('');
   };
   const exportMidi=()=>{
@@ -897,7 +937,9 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
             {whiteOffsets.map(offset=>{
               const midi=baseMidi+offset;
               const shortcut=['S','E','D','R','F','G','T','H','Y','J','U','K','L'][offset];
-              return <Pressable key={midi} onPress={()=>trigger('piano',midi)}
+              return <Pressable key={midi}
+                onPressIn={()=>trigger('piano',midi)}
+                onPressOut={()=>releaseNote('piano',midi)}
                 accessibilityRole="button" accessibilityLabel={musicNoteName(midi)}
                 style={{width:whiteWidth,height:keyboardHeight,
                   backgroundColor:'#FEFEFD',borderWidth:1,
@@ -917,7 +959,9 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
               const midi=baseMidi+offset;
               const before=whiteOffsets.filter(n=>n<offset).length;
               const shortcut=['S','E','D','R','F','G','T','H','Y','J','U','K','L'][offset];
-              return <Pressable key={midi} onPress={()=>trigger('piano',midi)}
+              return <Pressable key={midi}
+                onPressIn={()=>trigger('piano',midi)}
+                onPressOut={()=>releaseNote('piano',midi)}
                 accessibilityRole="button" accessibilityLabel={musicNoteName(midi)}
                 style={{position:'absolute',top:0,zIndex:2,
                   left:before*whiteWidth-blackWidth/2,width:blackWidth,
