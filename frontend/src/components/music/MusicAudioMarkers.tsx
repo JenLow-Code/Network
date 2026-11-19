@@ -4,7 +4,7 @@ import {Ionicons} from '@expo/vector-icons';
 import {useAppTheme} from '@/theme/AppTheme';
 import {musicStampMs} from '@/domain/musicEditing';
 import {newMusicId} from '@/domain/musicWorkspace';
-import type {MusicAudioMarker} from '@/domain/musicWorkspace';
+import type {MusicAudioMarker,MusicProjectFile,MusicSection} from '@/domain/musicWorkspace';
 const pink='#CB245C';
 function parse(value:string):number|null{
  const s=value.trim().replace(',','.');if(!/^\d+(?::[0-5]?\d)?(?:\.\d{1,3})?$/.test(s))return null;
@@ -15,14 +15,18 @@ type Props={markers:MusicAudioMarker[];duration:number;cursor:number;
  onChange:(markers:MusicAudioMarker[])=>void;onSeek?:(seconds:number)=>void;disabled?:boolean;
  editRequest?:{id:string;nonce:number}|null;
  rangeRequest?:{start:number;end:number;nonce:number}|null;
- selectedRange?:{start:number;end:number}|null};
+ selectedRange?:{start:number;end:number}|null;
+  sourceFiles?:MusicProjectFile[];sections?:MusicSection[]};
 /** Point and interval notes, stored locally on their original recording. */
 export function MusicAudioMarkers({markers,duration,cursor,onChange,onSeek,
- disabled=false,editRequest,rangeRequest,selectedRange}:Props){
+ disabled=false,editRequest,rangeRequest,selectedRange,sourceFiles=[],sections=[]}:Props){
  const theme=useAppTheme();
  const [open,setOpen]=useState(false),[editing,setEditing]=useState('');
  const [interval,setIntervalMode]=useState(false),[from,setFrom]=useState(''),[to,setTo]=useState('');
  const [note,setNote]=useState(''),[error,setError]=useState('');
+ const [linkedFileId,setLinkedFileId]=useState('');
+ const [linkedSectionId,setLinkedSectionId]=useState('');
+ const [linksOpen,setLinksOpen]=useState(false);
  const [picking,setPicking]=useState<{field:'from'|'to';cursor:number}|null>(null);
  useEffect(()=>{
    if(!open||!picking||Math.abs(cursor-picking.cursor)<.0005)return;
@@ -38,7 +42,9 @@ export function MusicAudioMarkers({markers,duration,cursor,onChange,onSeek,
    setFrom(musicStampMs(m?.startSeconds??range?.start??cursor));
    setTo(m?.endSeconds===undefined?
      (range?musicStampMs(range.end):''):musicStampMs(m.endSeconds));
-   setNote(m?.note||'');setError('');setOpen(true);
+   setNote(m?.note||'');setLinkedFileId(m?.linkedFileId||'');
+   setLinkedSectionId(m?.linkedSectionId||'');setLinksOpen(false);
+   setError('');setOpen(true);
  };
  useEffect(()=>{
    if(!editRequest)return;
@@ -51,7 +57,8 @@ export function MusicAudioMarkers({markers,duration,cursor,onChange,onSeek,
    setIntervalMode(true);
    setFrom(musicStampMs(Math.min(rangeRequest.start,rangeRequest.end)));
    setTo(musicStampMs(Math.max(rangeRequest.start,rangeRequest.end)));
-   setNote('');setError('');setPicking(null);setOpen(true);
+   setNote('');setLinkedFileId('');setLinkedSectionId('');setLinksOpen(false);
+   setError('');setPicking(null);setOpen(true);
  },[rangeRequest?.nonce]);
  const save=()=>{
    const a=parse(from),b=interval?parse(to):null;
@@ -60,7 +67,9 @@ export function MusicAudioMarkers({markers,duration,cursor,onChange,onSeek,
    }
    if(!note.trim()){setError('Écris une note.');return;}
    const marker:MusicAudioMarker={id:editing||newMusicId(),startSeconds:Math.round(a*1000)/1000,
-     ...(interval?{endSeconds:Math.round((b as number)*1000)/1000}:{}),note:note.trim()};
+     ...(interval?{endSeconds:Math.round((b as number)*1000)/1000}:{}),
+     note:note.trim(),linkedFileId:linkedFileId||undefined,
+     linkedSectionId:linkedSectionId||undefined};
    onChange([...markers.filter(m=>m.id!==marker.id),marker].sort((x,y)=>x.startSeconds-y.startSeconds));
    setOpen(false);setError('');setPicking(null);
  };
@@ -129,6 +138,46 @@ export function MusicAudioMarkers({markers,duration,cursor,onChange,onSeek,
      </Text>:null}
      <TextInput multiline value={note} onChangeText={setNote} style={{...input,minHeight:43,textAlignVertical:'top'}}
        placeholder="Note…" placeholderTextColor={theme.muted}/>
+     {(sourceFiles.length||sections.length)?<View style={{gap:6}}>
+       <Pressable onPress={()=>setLinksOpen(!linksOpen)} accessibilityRole="button"
+         accessibilityState={{expanded:linksOpen}}
+         style={{minHeight:37,flexDirection:'row',alignItems:'center',gap:7}}>
+         <Ionicons name="link-outline" size={17} color={pink}/>
+         <Text style={{flex:1,fontSize:12,color:linkedFileId||linkedSectionId?
+           theme.foreground:pink,fontWeight:'600'}}>
+           {linkedFileId?sourceFiles.find(f=>f.id===linkedFileId)?.title||'Capture liée':
+            linkedSectionId?sections.find(section=>section.id===linkedSectionId)?.title||'Partie liée':
+            'Lier à une capture ou à une partie'}
+         </Text>
+         <Ionicons name={linksOpen?'chevron-up':'chevron-down'} size={16} color={pink}/>
+       </Pressable>
+       {linksOpen?<View style={{gap:5,maxHeight:230,overflow:'hidden'}}>
+         <Pressable onPress={()=>{setLinkedFileId('');setLinkedSectionId('');}}
+           style={{paddingVertical:8}}>
+           <Text style={{fontSize:12,color:theme.muted}}>Aucun lien</Text>
+         </Pressable>
+         {sourceFiles.map(file=><Pressable key={file.id}
+           onPress={()=>{setLinkedFileId(file.id);setLinkedSectionId('');}}
+           accessibilityRole="button" style={{paddingVertical:7,
+             flexDirection:'row',alignItems:'center',gap:8}}>
+           <Ionicons name={linkedFileId===file.id?'radio-button-on':'radio-button-off'}
+             size={17} color={pink}/>
+           <Text numberOfLines={1} style={{fontSize:12,color:theme.foreground,flex:1}}>
+             {file.title}
+           </Text>
+         </Pressable>)}
+         {sections.map(section=><Pressable key={section.id}
+           onPress={()=>{setLinkedSectionId(section.id);setLinkedFileId('');}}
+           accessibilityRole="button" style={{paddingVertical:7,
+             flexDirection:'row',alignItems:'center',gap:8}}>
+           <Ionicons name={linkedSectionId===section.id?'radio-button-on':'radio-button-off'}
+             size={17} color={pink}/>
+           <Text numberOfLines={1} style={{fontSize:12,color:theme.foreground,flex:1}}>
+             Partie · {section.title}
+           </Text>
+         </Pressable>)}
+       </View>:null}
+     </View>:null}
      {error?<Text style={{color:'#B34D61',fontSize:12}}>{error}</Text>:null}
      <View style={{flexDirection:'row',gap:13,justifyContent:'flex-end'}}>
        <Pressable onPress={()=>setOpen(false)} style={{padding:8}}>
