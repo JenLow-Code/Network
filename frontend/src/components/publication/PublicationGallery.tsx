@@ -525,7 +525,7 @@ function adaptiveTileHeight(item: Publication, width: number): number {
 function MasonryGallery({ items, viewportWidth }: { items: Publication[]; viewportWidth: number }) {
   const columns = viewportWidth >= 1100 ? 4 : viewportWidth >= 700 ? 3 : 2;
   const gap = viewportWidth < 700 ? 12 : viewportWidth < 1100 ? 17 : 19;
-  const contentWidth = Math.max(0, Math.min(920, viewportWidth) - 30);
+  const contentWidth = Math.max(0, viewportWidth - 30);
   const columnWidth = Math.max(0, (contentWidth - (columns - 1) * gap) / columns);
   const stacks: Publication[][] = Array.from({ length: columns }, () => []);
   const heights = Array.from({ length: columns }, () => 0);

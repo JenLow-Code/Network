@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -23,6 +23,7 @@ export default function MusicHub() {
   const theme = useAppTheme();
   const { width } = useWindowDimensions();
   const compact = width < 630;
+  const desktop=Platform.OS==='web'&&width>=1100;
   const app = useApp();
   const { items, ready, error } = useMusicWorkspaces();
   const discovery = useDiscovery();
@@ -58,7 +59,7 @@ export default function MusicHub() {
   return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
     <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{
       paddingHorizontal:compact?20:32,paddingTop:8,paddingBottom:115,
-      maxWidth:840,width:'100%',alignSelf:'center',gap:25}}>
+      maxWidth:desktop?1140:840,width:'100%',alignSelf:'center',gap:25}}>
       <PageHeader />
       <View style={{gap:9}}>
         <Text style={{fontSize:compact?34:40,fontWeight:'700',color:theme.foreground,

@@ -1,6 +1,6 @@
 import { Text, TextInput } from '@/i18n/LocalizedText';
 import React, { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, View } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, ScrollView, View, useWindowDimensions } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NetworkMark } from '@/components/brand/NetworkMark';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -39,6 +39,8 @@ function discoveryRank(id: string): number {
 export default function Discover() {
   const { tr } = useLocale();
   const theme = useAppTheme();
+  const {width}=useWindowDimensions();
+  const desktop=Platform.OS==='web'&&width>=1100;
   const params = useLocalSearchParams<{ filter?: string }>();
 
   const [filter, setFilter] = useState<(typeof filters)[number]>(
@@ -103,7 +105,7 @@ export default function Discover() {
         contentContainerStyle={{
           paddingHorizontal: 15,
           paddingBottom: 55,
-          maxWidth: 920,
+          maxWidth: desktop?1280:920,
           width: '100%',
           alignSelf: 'center',
         }}
@@ -191,6 +193,7 @@ export default function Discover() {
         <View style={{ marginHorizontal: -15 }}>
         <PublicationGallery
           layout="masonry"
+          contentWidth={desktop?Math.min(1280,Math.max(0,width-212)):undefined}
           items={(filter === 'Talents'
             ? personPublications
             : filter === 'Tout'
