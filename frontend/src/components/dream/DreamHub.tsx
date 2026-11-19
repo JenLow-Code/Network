@@ -10,6 +10,7 @@ import { useDreams } from '@/domain/dreamRepository';
 import { api } from '@/lib/api/client';
 import { TopActions } from '@/components/navigation/TopActions';
 import { useAppTheme } from '@/theme/AppTheme';
+import { workspaceLayout } from '@/theme/workspaceLayout';
 import DreamExperience from './DreamExperience';
 import SemenceStudio from './SemenceStudio';
 
@@ -112,6 +113,7 @@ export default function DreamHub({ dream, startInSemence = false, startPhase }: 
   const { patch, setResources } = useDreams();
   const { width, height } = useWindowDimensions();
   const compact = width < 720;
+  const ws=workspaceLayout(width);
   const [resultOpen,setResultOpen]=useState(false);
   const [recoveryCategory,setRecoveryCategory]=useState<DreamResource['category']|'all'|null>(null);
   const [open, setOpen] = useState<DreamPhase | null>(() =>
@@ -314,13 +316,13 @@ export default function DreamHub({ dream, startInSemence = false, startPhase }: 
             onNavigate={switchPhase} />
       ) : (
         <View style={{
-          flex: 1, paddingHorizontal: compact ? 0 : 24,
-          paddingVertical: compact ? 0 : 17, alignItems: 'center',
+          flex: 1, paddingHorizontal: compact || ws.tablet ? 0 : 24,
+          paddingVertical: compact || ws.tablet ? 0 : 17, alignItems: 'center',
         }}>
           <View style={{
-            flex: 1, width: '100%', maxWidth: 1120,
+            flex: 1, width: '100%', maxWidth: ws.maxWidth,
             backgroundColor: theme.dark ? '#252725' : '#EEECE5',
-            borderRadius: compact ? 0 : 15, overflow: 'hidden',
+            borderRadius: compact || ws.tablet ? 0 : 15, overflow: 'hidden',
           }}>
             {hasImage ? <Image source={{ uri: image }} resizeMode="cover" style={StyleSheet.absoluteFill} /> : null}
             <View pointerEvents="none" style={[StyleSheet.absoluteFill, {
