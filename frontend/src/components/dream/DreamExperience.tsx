@@ -455,6 +455,32 @@ export default function DreamExperience({
        <Text style={{color:'#387D9F',fontSize:12,marginTop:6}}>Trouver des ressources sur JenLow Tools ↗</Text>
      </Pressable> : null}
     </View>)}
+    {ws.desktop && selectedResourceId && phase==='Initiation'?
+      <DreamResourceDetailsModal inline
+   resource={resources.find(r=>r.id===selectedResourceId)||null}
+   dreamServerId={dream.serverDreamId}
+   onServerVerified={(resourceId,confirmed,acceptedPersonName)=>{
+     const existing=resources.find(r=>r.id===resourceId);
+     const name=confirmed ? acceptedPersonName?.trim() || undefined : undefined;
+     if(existing && existing.serverNeedId &&
+       (existing.confirmed!==confirmed || existing.acceptedPersonName!==name)){
+       setResources(dream.id,resources.map(r=>r.id===resourceId?
+         {...r,confirmed,acceptedPersonName:name}:r));
+     }
+   }}
+   editable={!!resources.find(r=>r.id===selectedResourceId&&canEditCategory(r.category))}
+   onClose={()=>setSelectedResourceId(null)}
+   onSave={updated=>{
+     if(canEditCategory(updated.category))setResources(dream.id,resources.map(r=>r.id===updated.id?updated:r));
+   }}
+   onToggle={target=>{
+     if(canEditCategory(target.category))checkResource(target);
+   }}
+   onRemove={target=>{
+     if(canEditCategory(target.category))setResources(dream.id,resources.filter(r=>r.id!==target.id));
+   }}
+ />
+      :null}
     {resources.length===0 && resourceEditable && !recoverPastNeeds ? (
       <View style={{gap:9,paddingBottom:16}}>
         <Text style={{fontSize:12,color:theme.muted,lineHeight:20}}>
@@ -1129,7 +1155,7 @@ export default function DreamExperience({
      </View>
    </View>
  </Modal>
- <DreamResourceDetailsModal
+ {!ws.desktop?<DreamResourceDetailsModal
    resource={resources.find(r=>r.id===selectedResourceId)||null}
    dreamServerId={dream.serverDreamId}
    onServerVerified={(resourceId,confirmed,acceptedPersonName)=>{
@@ -1152,7 +1178,7 @@ export default function DreamExperience({
    onRemove={target=>{
      if(canEditCategory(target.category))setResources(dream.id,resources.filter(r=>r.id!==target.id));
    }}
- />
+ />:null}
  <DreamGoalDatePicker visible={goalDateDialog} initialDate={dream.goalDate}
    onCancel={()=>setGoalDateDialog(false)}
    onConfirm={date=>{setGoalDateDialog(false);setGoalAndGrow(dream.id,date);}}/>
