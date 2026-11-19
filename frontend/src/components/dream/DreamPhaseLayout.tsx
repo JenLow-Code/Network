@@ -93,16 +93,29 @@ export function DreamPhaseHeader({
   };
   return (
     <View style={{ marginBottom: 13 }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 44, marginBottom: 23 }}>
-        <Pressable onPress={onBack} accessibilityRole="button" accessibilityLabel="Retour au rêve" style={{ padding: 9, marginLeft: -9 }}>
-          <Ionicons name="arrow-back-outline" size={22} color={theme.foreground} />
+      <View style={desktop?{
+        height:0,position:'relative',zIndex:4,overflow:'visible',
+      }:{
+        flexDirection:'row',alignItems:'center',justifyContent:'space-between',
+        minHeight:44,marginBottom:23,
+      }}>
+        <Pressable onPress={onBack} accessibilityRole="button"
+          accessibilityLabel="Retour au rêve"
+          style={desktop?{
+            position:'absolute',left:-51,top:10,width:44,height:44,
+            alignItems:'flex-start',justifyContent:'center',
+          }:{padding:9,marginLeft:-9}}>
+          <Ionicons name="arrow-back-outline" size={22} color={theme.foreground}/>
         </Pressable>
-        <View style={{ flex: 1 }}/>
-        <TopActions />
+        {!desktop?<View style={{flex:1}}/>:null}
+        {desktop?<View style={{position:'absolute',right:0,top:1}}>
+          <TopActions/>
+        </View>:<TopActions/>}
       </View>
 
       <View style={{flexDirection:'row',alignItems:'flex-start',gap:4,
-        marginBottom:description?10:18}}>
+        paddingRight:desktop?104:0,
+        marginTop:desktop?16:0,marginBottom:description?10:18}}>
         <Text style={{flex:1,color:theme.foreground,fontFamily:'serif',
           fontSize:33,lineHeight:41,letterSpacing:-0.5}}>{dream.title}</Text>
         {canChangeCover?<Pressable onPress={chooseCover}
