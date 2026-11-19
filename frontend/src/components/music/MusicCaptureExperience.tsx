@@ -115,13 +115,17 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,h
     });
     setComposer('none');setTranslationSourceId('');setEditingFileId('');
   };
-  const saveScore=(result:{title:string;events:MusicNotationEvent[];bpm:number})=>{
+  const saveScore=(result:{title:string;events:MusicNotationEvent[];bpm:number;
+    tone:string;sampleLocalId?:string;sampleName?:string})=>{
     if(!result.events.length)return;
     const current=files.find(file=>file.id===editingFileId);
     const item:MusicProjectFile={
       id:current?.id||newMusicId(),kind:'score',
       sectionIds:current?.sectionIds||[],title:result.title,
       musicEvents:result.events,tempoBpm:result.bpm,
+      instrumentTone:result.tone,
+      instrumentSampleLocalId:result.sampleLocalId,
+      instrumentSampleName:result.sampleName,
       createdAt:current?.createdAt||new Date().toISOString(),
     };
     patch({files:current
