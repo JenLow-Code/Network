@@ -25,7 +25,8 @@ type Props={
   initialFile?:MusicProjectFile|null;
   onSave:(result:MusicWritingResult)=>void;
   onSaveScore:(result:{title:string;events:MusicNotationEvent[];bpm:number;
-    tone:string;sampleLocalId?:string;sampleName?:string})=>void;
+    tone:string;sampleLocalId?:string;sampleName?:string;
+    sampleRootMidi?:number;clef?:'treble'|'bass'})=>void;
   onRequestTranslator:(sourceId:string,language:string)=>void;
   requestedLanguages:string[];
   onClose:()=>void;
