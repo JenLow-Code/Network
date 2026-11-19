@@ -157,9 +157,9 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
     if(!version)return;
     const now=new Date().toISOString();
     const next:WorkingMusicVersion={...version,id:newMusicId(),
-      title:'Version '+(state.versions.length+1),createdAt:now,updatedAt:now,
+      title:'Version '+(versions.length+1),createdAt:now,updatedAt:now,
       tracks:version.tracks.map(track=>({...track,id:newMusicId()}))};
-    patch({musicNext:{...state,versions:[...state.versions,next],activeVersionId:next.id}});
+    patch({musicNext:{...state,versions:[...versions,next],activeVersionId:next.id}});
     setVersionMenu(false);setShowSettings(false);
   };
   const saveTake=(id:string,filename:string,durationSeconds?:number,
@@ -199,7 +199,7 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
     setTempo(version.bpm===undefined?'':String(version.bpm));
     setTone(version.key||'');
     setMeter(version.meter||'');
-    setShowSettings(!showSettings);
+    setShowSettings(true);
   };
   const saveSettings=()=>{
     if(!version)return;
@@ -324,7 +324,15 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
         button('Choisir une prise · 1re version',()=>setPickMode('start'),true,'add-outline'):
         button('Capturer ma première prise',onCapture,true,'mic-outline')}
     </View>:null}
-    {version?<View style={{gap:15}}>
+    {version?<View style={{gap:12}}>
+      <View style={{flexDirection:'row',alignItems:'baseline',gap:10}}>
+        <Text style={{fontSize:compact?18:22,fontWeight:'700',color:theme.foreground}}>
+          Pistes · {version.tracks.length}
+        </Text>
+        <Text style={{fontSize:11,color:theme.muted}}>
+          Studio de travail
+        </Text>
+      </View>
       {availableSources.length?<MusicSourceBank files={availableSources} onAdd={add}/>:null}
       <MusicStudioTransport key={version.id} version={version} files={project.files}
         onPositionChange={setTimelineCursor}
