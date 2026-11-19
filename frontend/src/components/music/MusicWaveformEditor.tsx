@@ -430,20 +430,28 @@ export function MusicWaveformEditor({file,duration,cursor,onSeek,zoom,onZoom,
         </View>
       </ScrollView>
     </View>
-    {selectedMarker?<View style={{backgroundColor:theme.surface,
-      borderWidth:1,borderColor:theme.border,borderRadius:11,padding:11,gap:9}}>
+    {selectedMarker?<View style={{paddingVertical:4,gap:5}}>
       <View style={{flexDirection:'row',gap:10,alignItems:'flex-start'}}>
         <Ionicons name="bookmark-outline" size={17} color={pink}/>
-        <View style={{flex:1,gap:5}}>
-          <Text style={{fontSize:12,fontWeight:'600',color:theme.foreground}}>
-            {selectedMarker.note}
-          </Text>
+        <View style={{flex:1,gap:3}}>
+          <Text numberOfLines={2} style={{fontSize:12,fontWeight:'600',
+            color:theme.foreground}}>{selectedMarker.note}</Text>
           <Text style={{fontSize:11,color:theme.muted,fontVariant:['tabular-nums']}}>
             {musicStampMs(selectedMarker.startSeconds)}
             {selectedMarker.endSeconds!==undefined?
               ' – '+musicStampMs(selectedMarker.endSeconds):''}
           </Text>
         </View>
+        {onEditMarker?<Pressable onPress={()=>onEditMarker(selectedMarker.id)}
+          accessibilityRole="button" accessibilityLabel="Modifier ce repère"
+          style={{width:40,height:40,alignItems:'center',justifyContent:'center'}}>
+          <Ionicons name="create-outline" size={19} color={pink}/>
+        </Pressable>:null}
+        {onChangeMarkers?<Pressable onPress={()=>setConfirmDelete(true)}
+          accessibilityRole="button" accessibilityLabel="Supprimer ce repère"
+          style={{width:40,height:40,alignItems:'center',justifyContent:'center'}}>
+          <Ionicons name="trash-outline" size={19} color={theme.muted}/>
+        </Pressable>:null}
         <Pressable accessibilityRole="button" accessibilityLabel="Fermer le repère"
           onPress={()=>{setSelectedMarkerId(null);setConfirmDelete(false);}}
           style={{padding:4}}>
@@ -451,15 +459,7 @@ export function MusicWaveformEditor({file,duration,cursor,onSeek,zoom,onZoom,
         </Pressable>
       </View>
       {onChangeMarkers?<View style={{flexDirection:'row',
-        alignItems:'center',gap:12,flexWrap:'wrap'}}>
-        {onEditMarker?<Pressable onPress={()=>onEditMarker(selectedMarker.id)}
-          accessibilityRole="button" style={{paddingVertical:6}}>
-          <Text style={{fontSize:12,fontWeight:'600',color:pink}}>Modifier la note</Text>
-        </Pressable>:null}
-        <Pressable onPress={()=>setConfirmDelete(true)}
-          accessibilityRole="button" style={{paddingVertical:6}}>
-          <Text style={{fontSize:12,color:theme.muted}}>Supprimer</Text>
-        </Pressable>
+        alignItems:'center',gap:12,flexWrap:'wrap'}}> 
         {confirmDelete?<View style={{flexDirection:'row',gap:12,
           alignItems:'center',flexWrap:'wrap'}}>
           <Text style={{fontSize:11,color:theme.foreground}}>Supprimer ce repère ?</Text>
