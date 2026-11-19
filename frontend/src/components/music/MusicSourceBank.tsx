@@ -46,8 +46,9 @@ export function MusicSourceBank({files,onAdd}:Props){
   const positionAt=(area:HTMLElement,clientX:number)=>{
     const rect=area.getBoundingClientRect();
     const secondsPerPx=Number(area.getAttribute('data-jenlow-seconds-per-pixel'));
+    const origin=Number(area.getAttribute('data-jenlow-origin-px'))||0;
     if(!Number.isFinite(secondsPerPx)||secondsPerPx<=0)return 0;
-    return Math.round(Math.max(0,(clientX-rect.left+area.scrollLeft)
+    return Math.round(Math.max(0,(clientX-rect.left+area.scrollLeft-origin)
       *secondsPerPx)*100)/100;
   };
   const complete=(file:MusicProjectFile,clientX:number,clientY:number)=>{
