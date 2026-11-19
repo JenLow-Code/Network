@@ -43,6 +43,9 @@ export default function Discover() {
   const {width}=useWindowDimensions();
   const desktop=Platform.OS==='web'&&workspaceLayout(width).desktop;
   const ws=workspaceLayout(width);
+  // Android browser chrome can change the visual viewport independently of
+  // useWindowDimensions. Measure the actual gallery container instead.
+  const [galleryWidth,setGalleryWidth]=useState(0);
   const params = useLocalSearchParams<{ filter?: string }>();
   // A new page visit gets its own order; filtering and pagination keep it stable.
   const [shuffleSeed] = useState(() => Math.floor(Math.random() * 0x100000000));
@@ -203,12 +206,16 @@ export default function Discover() {
             />
           ))}
         </ScrollView>
-        <View style={{ marginHorizontal: -15 }}>
-        <PublicationGallery
+        <View style={{width:'100%',minWidth:0,overflow:'hidden'}}
+          onLayout={e=>{
+            const measured=Math.floor(e.nativeEvent.layout.width);
+            if(measured>0&&Math.abs(measured-galleryWidth)>1)setGalleryWidth(measured);
+          }}>
+        {galleryWidth>0?<PublicationGallery
           layout="masonry"
+          flushEdges
           personalizedTalents={talentsLoaded ? savedTalents : []}
-          contentWidth={Math.max(0,
-            Math.min(ws.maxWidth??width,desktop?width-212:width)-2*ws.gutter)}
+          contentWidth={galleryWidth}
           items={(filter === 'Talents'
             ? personPublications
             : filter === 'Tout'
@@ -227,7 +234,7 @@ export default function Discover() {
               .toLowerCase()
               .includes(query.trim().toLowerCase()),
           )}
-        />
+        />:null}
         </View>
         {filter === 'Pour moi' && talentsLoaded && savedTalents.length === 0 ? (
           <View style={{padding:23,alignItems:'center',gap:10}}>
