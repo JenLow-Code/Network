@@ -33,11 +33,10 @@ export function MusicAudioTake({file,compact=false,editable=false,onUpdate,onOpe
   const [zoom,setZoom]=useState(1);
   const [playing,setPlaying]=useState(false);
   const [editing,setEditing]=useState(false);
-  const [showNotes,setShowNotes]=useState(false);
   const [draftActive,setDraftActive]=useState(false);
   const [confirmExit,setConfirmExit]=useState(false);
   const [editMarkerRequest,setEditMarkerRequest]=useState<{id:string;nonce:number}|null>(null);
-  const [rangeRequest,setRangeRequest]=useState<{start:number;end:number;nonce:number}|null>(null);
+  const [selectedRange,setSelectedRange]=useState<{start:number;end:number}|null>(null);
   const audio=useRef<HTMLAudioElement|null>(null);
   useEffect(()=>{
     let live=true;
@@ -164,29 +163,17 @@ export function MusicAudioTake({file,compact=false,editable=false,onUpdate,onOpe
           onSeek={seek} zoom={zoom} onZoom={setZoom}
           onTogglePlayback={toggle} playing={playing} markers={file.markers||[]}
           onChangeMarkers={onUpdate?markers=>onUpdate({markers}):undefined}
-          onCreateRange={onUpdate?(start,end)=>{
-            setShowNotes(true);
-            setRangeRequest(previous=>({start,end,nonce:(previous?.nonce||0)+1}));
-          }:undefined}
-          onEditMarker={onUpdate?id=>{
-            setShowNotes(true);
-            setEditMarkerRequest(previous=>({id,nonce:(previous?.nonce||0)+1}));
-          }:undefined}
+          onCreateRange={onUpdate?(start,end)=>setSelectedRange({start,end}):undefined}
+          selectedRange={selectedRange}
+          onClearSelectedRange={()=>setSelectedRange(null)}
+          onEditMarker={onUpdate?id=>setEditMarkerRequest(previous=>({
+            id,nonce:(previous?.nonce||0)+1
+          })):undefined}
           compact={compact}/>
-        {editable&&onUpdate?<Pressable onPress={()=>setShowNotes(!showNotes)}
-          accessibilityRole="button"
-          accessibilityState={{expanded:showNotes}}
-          style={{flexDirection:'row',alignItems:'center',gap:7,paddingVertical:7}}>
-          <Ionicons name="bookmark-outline" size={17} color={PINK}/>
-          <Text style={{fontSize:12,color:theme.foreground,fontWeight:'600'}}>
-            Notes sur la prise{file.markers?.length?' · '+file.markers.length:''}
-          </Text>
-          <Ionicons name={showNotes?'chevron-up':'chevron-down'} color={theme.muted} size={16}/>
-        </Pressable>:null}
-        {onUpdate&&showNotes?
-          <MusicAudioMarkers markers={file.markers||[]} duration={duration} cursor={cursor}
-            onChange={markers=>onUpdate({markers})} onSeek={seek}
-            editRequest={editMarkerRequest} rangeRequest={rangeRequest}/>:null}
+        {onUpdate?<MusicAudioMarkers
+          markers={file.markers||[]} duration={duration} cursor={cursor}
+          onChange={markers=>onUpdate({markers})} onSeek={seek}
+          editRequest={editMarkerRequest} selectedRange={selectedRange}/>:null}
         {editable&&onUpdate?<>
           <Pressable onPress={()=>{audio.current?.pause();setPlaying(false);setEditing(true);}}
             accessibilityRole="button" style={{alignSelf:'flex-start',minHeight:38,
