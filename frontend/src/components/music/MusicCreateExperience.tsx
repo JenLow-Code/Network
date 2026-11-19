@@ -190,9 +190,10 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
   };
   const toggleClick=()=>{
     if(!version)return;
-    if(metronome.running)metronome.stop();
-    else if(!metronome.start(Number(bpmInput)||effectiveBpm,
-      !!version.metronomeMuted,meterBeats))
+    if(metronome.running){metronome.stop();return;}
+    // A hidden historic mute setting must never create a silently running click.
+    if(version.metronomeMuted)edit({...version,metronomeMuted:false});
+    if(!metronome.start(Number(bpmInput)||effectiveBpm,false,meterBeats))
       setError('Le métronome nécessite Web Audio.');
   };
   const openSettings=()=>{
@@ -271,7 +272,13 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
   return <View style={{gap:compact?16:22}}>
     {version?<View style={{gap:11}}>
       <View style={{flexDirection:'row',gap:10,alignItems:'center'}}>
-        <Pressable onPress={()=>{setVersionExpanded(open=>!open);setVersionMenu(false);}}
+        <Pressable onPress={()=>{
+          if(recording&&unsavedRecording){
+            setError('Termine ou sauvegarde la prise avant de replier la version.');
+            return;
+          }
+          setVersionExpanded(open=>!open);setVersionMenu(false);
+        }}
           accessibilityRole="button" accessibilityState={{expanded:versionExpanded}}
           style={{flex:1,flexDirection:'row',gap:10,alignItems:'center',paddingVertical:7}}>
           <Ionicons name="layers-outline" size={20} color={PINK}/>
@@ -428,33 +435,18 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
               color:theme.foreground,fontSize:14,fontWeight:'700',paddingVertical:6}}/>
           <Text style={{fontSize:12,color:theme.muted}}>BPM</Text>
           <Pressable onPress={toggleClick} accessibilityRole="button"
-            accessibilityLabel={metronome.running?'Arrêter le métronome':'Tester le métronome'}
-            style={{flexDirection:'row',gap:5,alignItems:'center',padding:8}}>
-            <Ionicons name={metronome.running?'stop-circle-outline':'play-circle-outline'}
-              color={PINK} size={19}/>
-            <Text style={{fontSize:11,color:PINK}}>{metronome.running?'Arrêter':'Écouter'}</Text>
-          </Pressable>
-          <Pressable onPress={()=>edit({...version,
-            metronomeMuted:!version.metronomeMuted})}
-            accessibilityRole="button"
-            accessibilityLabel={version.metronomeMuted?
-              'Activer le clic du métronome':'Couper le clic du métronome'}
-            style={{flexDirection:'row',gap:5,alignItems:'center',padding:8}}>
-            <Ionicons name={version.metronomeMuted?'volume-mute-outline':'volume-high-outline'}
-              color={version.metronomeMuted?theme.muted:PINK} size={19}/>
-            <Text style={{fontSize:11,color:theme.muted}}>
-              {version.metronomeMuted?'Muet':'Clic activé'}
-            </Text>
-          </Pressable>
-          <Pressable onPress={()=>edit({...version,snapToBeat:!version.snapToBeat})}
-            accessibilityRole="button"
-            accessibilityLabel={version.snapToBeat?'Désactiver la grille magnétique':'Aligner les pistes sur le BPM'}
-            style={{flexDirection:'row',gap:5,alignItems:'center',padding:8}}>
-            <Ionicons name="grid-outline" size={18}
-              color={version.snapToBeat?PINK:theme.muted}/>
-            <Text style={{fontSize:11,
-              color:version.snapToBeat?PINK:theme.muted}}>
-              {version.snapToBeat?'Grille active':'Grille libre'}
+            accessibilityLabel={metronome.running?
+              'Arrêter le clic du métronome':'Démarrer le clic du métronome'}
+            accessibilityState={{selected:metronome.running}}
+            style={{flexDirection:'row',gap:6,alignItems:'center',
+              minHeight:44,paddingHorizontal:10,borderRadius:10,
+              backgroundColor:metronome.running?
+                (theme.dark?'#452935':'#FAE9EF'):'transparent'}}>
+            <Ionicons name={metronome.running?'stop-circle-outline':'pulse-outline'}
+              color={metronome.running?PINK:theme.muted} size={19}/>
+            <Text style={{fontSize:12,fontWeight:'600',color:metronome.running?
+              PINK:theme.foreground}}>
+              {metronome.running?'Arrêter le clic':'Métronome'}
             </Text>
           </Pressable>
         </View>
