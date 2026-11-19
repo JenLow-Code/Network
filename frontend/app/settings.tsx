@@ -1,6 +1,6 @@
 import { Text } from '@/i18n/LocalizedText';
 import React, { useEffect, useState } from 'react';
-import { Alert, Pressable, ScrollView, View } from 'react-native';
+import { Alert, Pressable, ScrollView, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -9,6 +9,7 @@ import { Nav } from '@/components/navigation/Nav';
 import { TopActions } from '@/components/navigation/TopActions';
 import { useApp } from '@/context/AppContext';
 import { useAppTheme } from '@/theme/AppTheme';
+import {workspaceCanvas} from '@/theme/workspaceLayout';
 import { useLocale, Language, LANGUAGE_KEY } from '@/i18n/locale';
 const choices: { id: Language; label: string }[] = [
   { id: 'fr', label: 'Français' },
@@ -17,6 +18,7 @@ const choices: { id: Language; label: string }[] = [
   { id: 'pt', label: 'Português' },
 ];
 export default function Settings() {
+  const {width}=useWindowDimensions();
   const { language, setLanguage, t, tr } = useLocale();
   const { logout, email } = useApp();
   const [busy, setBusy] = useState(false);
@@ -64,7 +66,7 @@ export default function Settings() {
   }
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: background }}>
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20, paddingBottom: 42 }}>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ ...workspaceCanvas(width),paddingTop:12,paddingBottom:55 }}>
         <View
           style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
         >
