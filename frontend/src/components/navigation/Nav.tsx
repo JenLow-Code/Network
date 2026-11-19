@@ -3,11 +3,11 @@ import { Image, Platform, Pressable, Text, View, useWindowDimensions } from 'rea
 import { BlurView } from 'expo-blur';
 import Svg, { Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
-import { router, usePathname } from 'expo-router';
+import { router, useGlobalSearchParams, usePathname } from 'expo-router';
 import { useLocale } from '@/i18n/locale';
 import { useAppTheme } from '@/theme/AppTheme';
 import { useDreams } from '@/domain/dreamRepository';
-import { PHASE_LABELS } from '@/domain/publication';
+import { DREAM_PHASES, PHASE_LABELS, type DreamPhase } from '@/domain/publication';
 
 /** Five durable destinations. Fire and Messages live in the global header. */
 export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' }) {
@@ -17,6 +17,8 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' }) 
   const {width}=useWindowDimensions();
   const desktop=Platform.OS==='web'&&width>=1100;
   const [collapsed,setCollapsed]=useState(false);
+  const [dreamTreeOpen,setDreamTreeOpen]=useState(true);
+  const params=useGlobalSearchParams<{view?:string}>();
   const {items:dreams}=useDreams();
   const segments=path.split('/').filter(Boolean);
   const contextId=segments[0]==='my-dream'
@@ -24,6 +26,25 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' }) 
     :segments[0]==='my-dream-participants'?segments[1]:undefined;
   const currentDream=contextId?
     dreams.find(d=>d.id===decodeURIComponent(contextId)):undefined;
+  const requestedPhase=params.view;
+  const currentPhase:DreamPhase=currentDream&&
+    DREAM_PHASES.some(value=>value===requestedPhase)?
+      requestedPhase as DreamPhase:currentDream?.phase||'Rêve';
+  const currentPhaseIndex=DREAM_PHASES.indexOf(currentDream?.phase||'Rêve');
+  const openPhase=(phase:DreamPhase)=>{
+    if(!currentDream||DREAM_PHASES.indexOf(phase)>currentPhaseIndex)return;
+    if(phase==='Témoignage'){
+      router.push({pathname:'/my-dream/flower/[id]',params:{id:currentDream.id}});
+      return;
+    }
+    router.push({pathname:'/my-dream/[id]',params:{id:currentDream.id,view:phase}});
+  };
+  const openResource=(kind:'notes'|'library')=>{
+    if(!currentDream)return;
+    router.push({pathname:kind==='notes'?
+      '/my-dream/notes/[id]':'/my-dream/library/[id]',
+      params:{id:currentDream.id}});
+  };
   const links = [
     {
       icon: 'calendar-outline' as const, title: t('agenda'),
@@ -70,12 +91,12 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' }) 
     const activeColor='#CB245C';
     // Material-like glass keeps the navigation integrated in the desktop grid.
     // The content remains legible over a soft, context-aware colour wash.
-    const navSurface=theme.dark?'rgba(25,30,38,.77)':'rgba(247,248,247,.73)';
-    const glassBorder=theme.dark?'rgba(255,255,255,.22)':'rgba(255,255,255,.84)';
+    const navSurface=theme.dark?'rgba(17,24,33,.23)':'rgba(244,248,251,.13)';
+    const glassBorder=theme.dark?'rgba(255,255,255,.19)':'rgba(255,255,255,.77)';
     const selectedBg=theme.dark?'rgba(215,65,127,.22)':'rgba(203,36,92,.095)';
     const glassEffects=Platform.OS==='web'?({
-      backdropFilter:'blur(32px) saturate(175%)',
-      WebkitBackdropFilter:'blur(32px) saturate(175%)',
+      backdropFilter:'blur(30px) saturate(180%)',
+      WebkitBackdropFilter:'blur(30px) saturate(180%)',
       boxShadow:theme.dark
         ?'inset 1px 0 0 rgba(255,255,255,.12), -8px 0 28px rgba(4,8,14,.11)'
         :'inset 1px 0 0 rgba(255,255,255,.66), -9px 0 32px rgba(59,64,74,.055)',
@@ -111,23 +132,23 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' }) 
       justifyContent:'space-between',paddingTop:28,paddingBottom:24,
       overflow:'hidden',...glassEffects,
     }}>
-      {currentDream?.image?<Image pointerEvents="none"
-        source={{uri:currentDream.image}} resizeMode="cover" blurRadius={36}
-        style={{position:'absolute',top:-20,left:-20,right:-20,bottom:-20,
-          width:'115%',height:'110%',opacity:theme.dark?.30:.23}}/>:null}
+      <BlurView pointerEvents="none" intensity={60}
+        tint={theme.dark?'systemUltraThinMaterialDark':'systemUltraThinMaterialLight'}
+        style={{position:'absolute',top:0,left:0,right:0,bottom:0,
+          opacity:theme.dark?.30:.24}}/>
       <Svg pointerEvents="none" width="100%" height="100%"
         style={{position:'absolute',top:0,right:0,bottom:0,left:0}}>
         <Defs>
           <LinearGradient id="jenlow-desktop-glass" x1="0%" y1="0%"
             x2="100%" y2="100%">
             <Stop offset="0%" stopColor={theme.dark?'#ADB7CA':'#FFFFFF'}
-              stopOpacity={theme.dark?.13:.48}/>
+              stopOpacity={theme.dark?.11:.16}/>
             <Stop offset="38%" stopColor={theme.dark?'#657487':'#DCEBF2'}
-              stopOpacity={theme.dark?.09:.22}/>
+              stopOpacity={theme.dark?.08:.10}/>
             <Stop offset="72%" stopColor={theme.dark?'#A26782':'#F4E0EA'}
-              stopOpacity={theme.dark?.08:.13}/>
+              stopOpacity={theme.dark?.08:.07}/>
             <Stop offset="100%" stopColor={theme.dark?'#A1A9BB':'#FFFFFF'}
-              stopOpacity={theme.dark?.12:.37}/>
+              stopOpacity={theme.dark?.11:.14}/>
           </LinearGradient>
         </Defs>
         <Rect width="100%" height="100%" fill="url(#jenlow-desktop-glass)"/>
@@ -156,38 +177,101 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' }) 
           {mainLinks.map(item=><React.Fragment key={item.path}>
             {renderEntry(item)}
             {item.path==='/my-space'&&currentDream?
-              <Pressable onPress={()=>router.push({
-                  pathname:'/my-dream/[id]',params:{id:currentDream.id}
-                })}
-                accessibilityRole="button"
-                accessibilityLabel={'Ouvrir le rêve '+currentDream.title}
-                style={{marginTop:3,marginBottom:7,
-                  marginLeft:collapsed?10:24,marginRight:collapsed?10:13,
-                  padding:collapsed?5:8,borderRadius:10,
-                  flexDirection:'row',alignItems:'center',gap:9,
-                  borderWidth:1,borderColor:theme.dark?
-                    'rgba(255,255,255,.14)':'rgba(80,73,66,.12)',
-                  backgroundColor:theme.dark?'rgba(255,255,255,.095)':
-                    'rgba(255,255,255,.32)'}}>
-                {currentDream.image?
-                  <Image source={{uri:currentDream.image}} resizeMode="cover"
-                    style={{width:collapsed?40:45,height:collapsed?40:51,
-                      borderRadius:7,backgroundColor:theme.border}}/>:
-                  <View style={{width:collapsed?40:45,height:collapsed?40:51,
-                    borderRadius:7,backgroundColor:theme.border,
-                    alignItems:'center',justifyContent:'center'}}>
-                    <Ionicons name="layers-outline" size={20} color={theme.muted}/>
-                  </View>}
-                {!collapsed?<View style={{flex:1,gap:4,minWidth:0}}>
-                  <Text numberOfLines={2} style={{fontSize:12,fontWeight:'700',
-                    lineHeight:16,color:theme.foreground}}>
-                    {currentDream.title}
-                  </Text>
-                  <Text numberOfLines={1} style={{fontSize:10,color:theme.muted}}>
-                    {PHASE_LABELS[currentDream.phase]}
-                  </Text>
+              <View style={{marginLeft:collapsed?10:35,marginRight:collapsed?8:13,
+                marginTop:2,marginBottom:9,borderLeftWidth:collapsed?0:1,
+                borderLeftColor:theme.dark?'rgba(240,240,244,.28)':
+                  'rgba(92,91,100,.27)',paddingLeft:collapsed?0:8}}>
+                <Pressable accessibilityRole="button"
+                  accessibilityLabel={'Rêve actuel : '+currentDream.title}
+                  accessibilityHint={collapsed?'Ouvrir le rêve':'Afficher ou masquer les étapes'}
+                  accessibilityState={{expanded:!collapsed&&dreamTreeOpen}}
+                  onPress={()=>{
+                    if(collapsed)router.push({pathname:'/my-dream/[id]',
+                      params:{id:currentDream.id}});
+                    else setDreamTreeOpen(value=>!value);
+                  }}
+                  style={{flexDirection:'row',alignItems:'center',
+                    gap:9,paddingVertical:8,paddingHorizontal:collapsed?2:5,
+                    borderRadius:8}}>
+                  {currentDream.image?<Image source={{uri:currentDream.image}}
+                    resizeMode="cover" style={{
+                      width:collapsed?40:31,height:collapsed?40:36,
+                      borderRadius:5,backgroundColor:theme.border}}/>:
+                    <View style={{width:collapsed?40:31,height:collapsed?40:36,
+                      borderRadius:5,backgroundColor:theme.border,
+                      alignItems:'center',justifyContent:'center'}}>
+                      <Ionicons name="leaf-outline" size={17} color={theme.muted}/>
+                    </View>}
+                  {!collapsed?<View style={{flex:1,minWidth:0,gap:3}}>
+                    <Text numberOfLines={2} style={{
+                      color:theme.foreground,fontSize:12,fontWeight:'700',
+                      lineHeight:16}}>{currentDream.title}</Text>
+                    <Text style={{fontSize:10,color:theme.muted}}>
+                      {PHASE_LABELS[currentPhase]}
+                    </Text>
+                  </View>:null}
+                  {!collapsed?<Ionicons name={dreamTreeOpen?'chevron-up':'chevron-down'}
+                    size={14} color={theme.muted}/>:null}
+                </Pressable>
+                {!collapsed&&dreamTreeOpen?<View style={{gap:1,marginTop:4}}>
+                  {DREAM_PHASES.map((phase,index)=>{
+                    const reached=index<=currentPhaseIndex;
+                    const selected=currentPhase===phase;
+                    const accent=phase==='Rêve'?'#B88962':
+                      phase==='Initiation'?'#819D32':
+                      phase==='Croissance'?'#27845B':'#CB245C';
+                    const phaseNav=<Pressable key={phase} onPress={()=>openPhase(phase)}
+                      disabled={!reached} accessibilityRole="button"
+                      accessibilityLabel={'Ouvrir '+PHASE_LABELS[phase]}
+                      accessibilityState={{selected,disabled:!reached}}
+                      style={{minHeight:34,flexDirection:'row',
+                        alignItems:'center',gap:8,paddingHorizontal:9,
+                        borderRadius:7,opacity:reached?1:.52,
+                        backgroundColor:selected?
+                          (theme.dark?'rgba(255,255,255,.09)':'rgba(255,255,255,.29)'):
+                          'transparent'}}>
+                      <View style={{width:selected?7:5,height:selected?7:5,
+                        borderRadius:5,backgroundColor:reached?accent:theme.muted}}/>
+                      <Text numberOfLines={1} style={{flex:1,fontSize:12,
+                        color:selected?theme.foreground:theme.muted,
+                        fontWeight:selected?'700':'500'}}>
+                        {PHASE_LABELS[phase]}
+                      </Text>
+                      {!reached?<Ionicons name="lock-closed-outline" size={11}
+                        color={theme.muted}/>:null}
+                    </Pressable>;
+                    if(!selected||!reached)return phaseNav;
+                    return <React.Fragment key={phase}>
+                      {phaseNav}
+                      <View style={{marginLeft:14,paddingLeft:10,
+                        borderLeftWidth:1,borderLeftColor:theme.dark?
+                          'rgba(255,255,255,.15)':'rgba(71,77,78,.15)',
+                        gap:1,marginVertical:2}}>
+                        {([
+                          {kind:'library' as const,
+                            title:phase==='Rêve'?'Inspirations':'Documents',
+                            active:path.startsWith('/my-dream/library/')},
+                          {kind:'notes' as const,title:'Notes personnelles',
+                            active:path.startsWith('/my-dream/notes/')},
+                        ]).map(resource=><Pressable key={resource.kind}
+                          onPress={()=>openResource(resource.kind)}
+                          accessibilityRole="button"
+                          accessibilityState={{selected:resource.active}}
+                          style={{minHeight:31,justifyContent:'center',
+                            paddingHorizontal:6,borderRadius:6,
+                            backgroundColor:resource.active?
+                              'rgba(203,36,92,.10)':'transparent'}}>
+                          <Text style={{fontSize:11,
+                            fontWeight:resource.active?'700':'400',
+                            color:resource.active?'#CB245C':theme.muted}}>
+                            {resource.title}
+                          </Text>
+                        </Pressable>)}
+                      </View>
+                    </React.Fragment>;
+                  })}
                 </View>:null}
-              </Pressable>:null}
+              </View>:null}
           </React.Fragment>)}
         </View>
       </View>
