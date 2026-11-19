@@ -120,12 +120,15 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' }) 
     const activeColor='#CB245C';
     // Material-like glass keeps the navigation integrated in the desktop grid.
     // The content remains legible over a soft, context-aware colour wash.
-    const navSurface=theme.dark?'rgba(17,24,33,.23)':'rgba(244,248,251,.13)';
-    const glassBorder=theme.dark?'rgba(255,255,255,.19)':'rgba(255,255,255,.77)';
+    const navSurface=theme.dark?'rgba(21,26,31,.35)':'rgba(255,255,255,.19)';
+    const glassBorder=theme.dark?'rgba(255,255,255,.22)':'rgba(255,255,255,.82)';
     const selectedBg=theme.dark?'rgba(215,65,127,.22)':'rgba(203,36,92,.095)';
     const glassEffects=Platform.OS==='web'?({
-      backdropFilter:'blur(30px) saturate(180%)',
-      WebkitBackdropFilter:'blur(30px) saturate(180%)',
+      backdropFilter:'blur(23px) saturate(125%) contrast(110%)',
+      WebkitBackdropFilter:'blur(23px) saturate(125%) contrast(110%)',
+      backgroundImage:theme.dark
+        ?'linear-gradient(105deg,rgba(255,255,255,.17) 0%,rgba(255,255,255,.025) 15%,rgba(255,255,255,.015) 68%,rgba(255,255,255,.13) 100%)'
+        :'linear-gradient(105deg,rgba(255,255,255,.59) 0%,rgba(255,255,255,.09) 14%,rgba(255,255,255,.045) 69%,rgba(255,255,255,.33) 100%)',
       boxShadow:theme.dark
         ?'inset 1px 0 0 rgba(255,255,255,.12), -8px 0 28px rgba(4,8,14,.11)'
         :'inset 1px 0 0 rgba(255,255,255,.66), -9px 0 32px rgba(59,64,74,.055)',
@@ -161,30 +164,43 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' }) 
       justifyContent:'space-between',paddingTop:28,paddingBottom:24,
       overflow:'hidden',...glassEffects,
     }}>
-      <BlurView pointerEvents="none" intensity={60}
+      <BlurView pointerEvents="none" intensity={35}
         tint={theme.dark?'systemUltraThinMaterialDark':'systemUltraThinMaterialLight'}
         style={{position:'absolute',top:0,left:0,right:0,bottom:0,
-          opacity:theme.dark?.30:.24}}/>
+          opacity:theme.dark?.13:.11}}/>
       <Svg pointerEvents="none" width="100%" height="100%"
         style={{position:'absolute',top:0,right:0,bottom:0,left:0}}>
         <Defs>
           <LinearGradient id="jenlow-desktop-glass" x1="0%" y1="0%"
             x2="100%" y2="100%">
-            <Stop offset="0%" stopColor={theme.dark?'#ADB7CA':'#FFFFFF'}
-              stopOpacity={theme.dark?.11:.16}/>
-            <Stop offset="38%" stopColor={theme.dark?'#657487':'#DCEBF2'}
-              stopOpacity={theme.dark?.08:.10}/>
-            <Stop offset="72%" stopColor={theme.dark?'#A26782':'#F4E0EA'}
-              stopOpacity={theme.dark?.08:.07}/>
-            <Stop offset="100%" stopColor={theme.dark?'#A1A9BB':'#FFFFFF'}
-              stopOpacity={theme.dark?.11:.14}/>
+            <Stop offset="0%" stopColor="#FFFFFF"
+              stopOpacity={theme.dark?.15:.26}/>
+            <Stop offset="38%" stopColor="#E7E7E5"
+              stopOpacity={theme.dark?.04:.06}/>
+            <Stop offset="72%" stopColor="#E8E8E6"
+              stopOpacity={theme.dark?.035:.04}/>
+            <Stop offset="100%" stopColor="#FFFFFF"
+              stopOpacity={theme.dark?.19:.24}/>
           </LinearGradient>
         </Defs>
         <Rect width="100%" height="100%" fill="url(#jenlow-desktop-glass)"/>
       </Svg>
-      <View pointerEvents="none" style={{position:'absolute',left:2,top:1,
-        bottom:1,width:1,
-        backgroundColor:theme.dark?'rgba(255,255,255,.20)':'rgba(255,255,255,.85)'}}/>
+      {/* Refractive-looking specular edge: different blur and luminance
+          at the rim, instead of making the entire panel white. */}
+      <View pointerEvents="none" style={{position:'absolute',left:0,top:0,
+        bottom:0,width:9,backgroundColor:theme.dark?
+          'rgba(255,255,255,.055)':'rgba(255,255,255,.20)',
+        ...(Platform.OS==='web'?({
+          backdropFilter:'blur(6px) brightness(1.14)',
+          WebkitBackdropFilter:'blur(6px) brightness(1.14)',
+          boxShadow:'inset 2px 0 2px rgba(255,255,255,.65), 2px 0 12px rgba(40,49,54,.05)',
+        } as any):{})}}/>
+      <View pointerEvents="none" style={{position:'absolute',left:1,top:0,
+        bottom:0,width:1,
+        backgroundColor:theme.dark?'rgba(255,255,255,.33)':'rgba(255,255,255,.91)'}}/>
+      <View pointerEvents="none" style={{position:'absolute',right:0,top:0,
+        bottom:0,width:2,backgroundColor:theme.dark?
+          'rgba(255,255,255,.13)':'rgba(255,255,255,.45)'}}/>
       <View style={{gap:21}}>
         <View style={{paddingHorizontal:collapsed?13:20,
           flexDirection:'row',alignItems:'center',
