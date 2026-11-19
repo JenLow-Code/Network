@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, Text, View, Pressable } from 'react-native';
+import { ActivityIndicator, ScrollView, Text, View, Pressable, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/theme/AppTheme';
+import {workspaceCanvas} from '@/theme/workspaceLayout';
 import { useDreams } from '@/domain/dreamRepository';
 import { api } from '@/lib/api/client';
 import { PageHeader } from '@/components/navigation/PageHeader';
@@ -14,6 +15,7 @@ type ParticipantsResponse={sameDreamCount?:number;sameDream?:Participant[]};
 export default function DreamParticipants(){
  const {id,tab}=useLocalSearchParams<{id:string;tab?:string}>();
  const theme=useAppTheme();
+ const {width}=useWindowDimensions();
  const {items}=useDreams();
  const dream=items.find(d=>d.id===id);
  const [active,setActive]=useState<'coowners'|'participants'>(
@@ -43,8 +45,8 @@ export default function DreamParticipants(){
    [...collaborators.map(r=>({key:r.id,name:r.title,subtitle:'Talent confirmé'})),
     ...fromServer.map((r,i)=>({key:'server-'+i,name:r.displayName||r.display_name||r.name||r.handle||'Participant',subtitle:'A rejoint ce rêve'}))];
  return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
-   <ScrollView contentContainerStyle={{paddingHorizontal:19,paddingTop:10,
-     paddingBottom:115,maxWidth:780,width:'100%',alignSelf:'center',gap:17}}>
+   <ScrollView contentContainerStyle={{...workspaceCanvas(width),paddingTop:12,
+     paddingBottom:115,gap:17}}>
      <PageHeader/>
      <Text style={{fontSize:28,fontFamily:'serif',color:theme.foreground,marginTop:14}}>
        Personnes du rêve
