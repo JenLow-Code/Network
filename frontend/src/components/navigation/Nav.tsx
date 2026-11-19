@@ -209,6 +209,62 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' }) 
         <View style={{gap:4}}>
           {mainLinks.map(item=><React.Fragment key={item.path}>
             {renderEntry(item)}
+            {item.path==='/music-hub'&&currentSong?
+              <View style={{marginLeft:collapsed?10:35,
+                marginRight:collapsed?8:13,marginBottom:8,
+                borderLeftWidth:collapsed?0:1,
+                borderLeftColor:theme.dark?'rgba(240,240,244,.27)':
+                  'rgba(73,77,82,.24)',
+                paddingLeft:collapsed?0:8}}>
+                <Pressable accessibilityRole="button"
+                  accessibilityLabel={'Morceau actuel : '+currentSong.title}
+                  accessibilityState={{expanded:!collapsed&&songTreeOpen}}
+                  onPress={()=>{
+                    if(collapsed)router.replace({pathname:'/music-workspace/[id]',
+                      params:{id:currentSong.id}});
+                    else setSongTreeOpen(value=>!value);
+                  }}
+                  style={{flexDirection:'row',alignItems:'center',gap:9,
+                    paddingVertical:7,paddingHorizontal:collapsed?2:5}}>
+                  <MusicFolderCover project={currentSong} size={collapsed?39:34}/>
+                  {!collapsed?<View style={{flex:1,gap:3,minWidth:0}}>
+                    <Text style={{fontWeight:'700',fontSize:12,
+                      color:theme.foreground}} numberOfLines={2}>
+                      {currentSong.title}
+                    </Text>
+                    <Text style={{fontSize:10,color:theme.muted}}
+                      numberOfLines={1}>
+                      {activeVersion?.title||'Aucune version'}
+                    </Text>
+                  </View>:null}
+                  {!collapsed?<Ionicons
+                    name={songTreeOpen?'chevron-up':'chevron-down'}
+                    color={theme.muted} size={14}/>:null}
+                </Pressable>
+                {!collapsed&&songTreeOpen?<View style={{marginLeft:12,
+                  paddingLeft:10,borderLeftWidth:1,borderLeftColor:theme.border,
+                  gap:2,marginBottom:4}}>
+                  {songState?.versions.length? songState.versions.map(version=>
+                    <Pressable key={version.id} accessibilityRole="button"
+                      accessibilityLabel={'Ouvrir '+version.title}
+                      accessibilityState={{selected:version.id===activeVersion?.id}}
+                      onPress={()=>openMusicVersion(version.id)}
+                      style={{minHeight:32,justifyContent:'center',
+                        paddingHorizontal:8,borderRadius:7,
+                        backgroundColor:version.id===activeVersion?.id?
+                          'rgba(203,36,92,.12)':'transparent'}}>
+                      <Text numberOfLines={1} style={{fontSize:11,
+                        fontWeight:version.id===activeVersion?.id?'700':'400',
+                        color:version.id===activeVersion?.id?
+                          '#CB245C':theme.muted}}>
+                        {version.title}
+                      </Text>
+                    </Pressable>):<Text style={{fontSize:11,
+                      paddingHorizontal:7,paddingVertical:7,color:theme.muted}}>
+                    Noch keine Version
+                  </Text>}
+                </View>:null}
+              </View>:null}
             {item.path==='/my-space'&&currentDream?
               <View style={{marginLeft:collapsed?10:35,marginRight:collapsed?8:13,
                 marginTop:2,marginBottom:9,borderLeftWidth:collapsed?0:1,
