@@ -3,6 +3,7 @@ import {Platform,Pressable,ScrollView,Text,TextInput,View,useWindowDimensions} f
 import {Ionicons} from '@expo/vector-icons';
 import {useAppTheme} from '@/theme/AppTheme';
 import {MusicAudioPeaks} from './MusicAudioPeaksNext';
+import {musicSourceDuration} from '@/domain/musicNext';
 import {musicStamp,musicStampMs} from '@/domain/musicEditing';
 import type {WorkingMusicTrack,WorkingMusicVersion} from '@/domain/musicNext';
 import type {MusicProjectFile} from '@/domain/musicWorkspace';
@@ -30,7 +31,7 @@ type Props={
 const clamp=(x:number,a:number,b:number)=>Math.max(a,Math.min(b,x));
 const precise=(x:number)=>Math.round(x*100)/100;
 const clipInfo=(track:WorkingMusicTrack,file?:MusicProjectFile)=>{
-  const total=Math.max(0,file?.durationSeconds||0);
+  const total=musicSourceDuration(file);
   const start=clamp(track.trimStartSeconds||0,0,total);
   const end=clamp(track.trimEndSeconds??total,start,total);
   return {total,start,end,offset:Math.max(0,track.offsetSeconds||0)};
@@ -524,7 +525,7 @@ export function MusicArrangementTimeline({version,files,duration,position,onSeek
                 onPress={()=>setConfirmRemove(t.id)} style={{padding:5}}>
                 <Ionicons name="trash-outline" color={theme.muted} size={16}/>
               </Pressable>
-              {!file?.durationSeconds?<Ionicons name="alert-circle-outline"
+              {!musicSourceDuration(file)?<Ionicons name="alert-circle-outline"
                 color={theme.muted} size={15}/>:null}
             </View>
           </View>;
@@ -611,9 +612,13 @@ export function MusicArrangementTimeline({version,files,duration,position,onSeek
                 })}
                 <View pointerEvents="none" style={{position:'absolute',
                   top:3,left:3,right:3,bottom:3,justifyContent:'center'}}>
-                  <MusicAudioPeaks file={source} muted={t.muted} height={34}
-                    trimStartSeconds={from} trimEndSeconds={end}
-                    barCount={Math.max(16,Math.min(400,Math.round(visibleWidth/3)))}/>
+                  {source?.musicEvents?.length?
+                    <Text style={{fontSize:12,fontWeight:'700',color:PINK}}>
+                      ♫ MIDI · {source.musicEvents.length} notes
+                    </Text>:
+                    <MusicAudioPeaks file={source} muted={t.muted} height={34}
+                      trimStartSeconds={from} trimEndSeconds={end}
+                      barCount={Math.max(16,Math.min(400,Math.round(visibleWidth/3)))}/>} 
                 </View>
                 {gesture('move',t,source,left,visibleWidth)}
                 {gesture('start',t,source,left,visibleWidth)}
