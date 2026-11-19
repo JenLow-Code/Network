@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -7,6 +7,7 @@ import { api, ApiRequestError } from '@/lib/api/client';
 import { PageHeader } from '@/components/navigation/PageHeader';
 import { Nav } from '@/components/navigation/Nav';
 import { useAppTheme } from '@/theme/AppTheme';
+import {workspaceCanvas} from '@/theme/workspaceLayout';
 
 type Invitation={
   id:string;need:string;needId:string;dreamId:string;dreamTitle:string;
@@ -15,6 +16,7 @@ type Invitation={
 };
 export default function TalentInvitations(){
   const theme=useAppTheme();
+  const {width}=useWindowDimensions();
   const [items,setItems]=useState<Invitation[]>([]);
   const [loading,setLoading]=useState(true);
   const [pending,setPending]=useState<string|null>(null);
@@ -41,8 +43,7 @@ export default function TalentInvitations(){
     }finally{setPending(null);}
   };
   return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
-    <ScrollView style={{flex:1}} contentContainerStyle={{paddingHorizontal:18,paddingTop:12,paddingBottom:95,
-      maxWidth:710,width:'100%',alignSelf:'center',gap:13}}>
+    <ScrollView style={{flex:1}} contentContainerStyle={{...workspaceCanvas(width),paddingTop:12,paddingBottom:95,gap:13}}>
       <PageHeader onBack={()=>router.back()}/>
       <Text style={{color:theme.foreground,fontFamily:'serif',fontSize:28,marginTop:15}}>Mes invitations</Text>
       <Text style={{color:theme.muted,fontSize:12,lineHeight:19}}>
