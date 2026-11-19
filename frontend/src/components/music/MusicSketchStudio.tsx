@@ -97,11 +97,11 @@ export function MusicScoreView({events,compact=false,instrument}:{
 
 /** WebAudio previews do not alter the saved MIDI event or the original audio. */
 function playSound(ctx:AudioContext,pitch:number,drum:boolean,level:number,
-  tone:string,sample:AudioBuffer|null){
+  tone:string,sample:AudioBuffer|null,seconds?:number){
   const now=ctx.currentTime;
   const gain=ctx.createGain();
   gain.gain.setValueAtTime(Math.max(.0001,level*.25),now);
-  const duration=drum?.24:tone==='Orgue'?.72:.62;
+  const duration=Math.max(.09,Math.min(4,seconds??(drum?.24:tone==='Orgue'?.72:.62)));
   gain.gain.exponentialRampToValueAtTime(.0001,now+duration);
   gain.connect(ctx.destination);
   if(!drum&&tone==='Échantillon'&&sample){
@@ -207,6 +207,16 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange}:Props){
     try{downloadMusicMidi(confirmed,bpm,title||'idee-musicale');
       setMessage('Fichier .mid exporté (piano canal 1, batterie canal 10).');}
     catch(e){setMessage(e instanceof Error?e.message:'Export MIDI impossible.');}
+  };
+  const audition=(event:MusicNotationEvent)=>{
+    if(Platform.OS!=='web')return;
+    try{
+      if(!audioRef.current)audioRef.current=new AudioContext();
+      const ctx=audioRef.current;
+      if(ctx.state==='suspended')void ctx.resume();
+      playSound(ctx,event.midi,event.instrument==='drum',volume[event.instrument],
+        tone,sampleRef.current,event.lengthBeats*60/bpm);
+    }catch{setMessage('Aperçu sonore indisponible sur cet appareil.');}
   };
   const importTone=()=>{
     if(Platform.OS!=='web'||typeof document==='undefined'){
@@ -455,6 +465,15 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange}:Props){
           <Text style={{fontSize:11,color:selected.draft?theme.muted:PINK}}>
             {selected.draft?'Brouillon':'Enregistrée'}
           </Text>
+        </View>
+        <View style={{flexDirection:'row',gap:6,alignItems:'center',flexWrap:'wrap'}}>
+          {control('▶ Écouter',()=>audition(selected),Platform.OS!=='web')}
+          {part==='piano'?<>
+            {control('− demi-ton',()=>patchEvent(selected.id,{midi:
+              Math.max(0,selected.midi-1)}),recording)}
+            {control('+ demi-ton',()=>patchEvent(selected.id,{midi:
+              Math.min(127,selected.midi+1)}),recording)}
+          </>:null}
         </View>
         <View style={{flexDirection:'row',gap:6,alignItems:'center',flexWrap:'wrap'}}>
           <Text style={{fontSize:11,color:theme.muted}}>Durée</Text>
