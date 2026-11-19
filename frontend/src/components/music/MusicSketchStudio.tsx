@@ -234,7 +234,7 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
   const [bpm,setBpm]=useState(initialFile?.tempoBpm||100);
   const [part,setPart]=useState<Instrument>('piano');
   const [clef,setClef]=useState<'treble'|'bass'>(initialFile?.scoreClef||'treble');
-  const [editor,setEditor]=useState<'note'|'tempo'|'clef'|null>(null);
+  const [editor,setEditor]=useState<'note'|'chord'|'tempo'|'clef'|null>(null);
   const [tempoDraft,setTempoDraft]=useState(String(initialFile?.tempoBpm||100));
   const [toneOpen,setToneOpen]=useState(false);
   const [previewPlaying,setPreviewPlaying]=useState(false);
@@ -287,6 +287,9 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
     return()=>{live=false;};
   },[initialFile?.instrumentSampleLocalId]);
   const selected=events.find(e=>e.id===selectedId&&e.instrument===part);
+  const chordNotes=selected?events.filter(e=>e.instrument===part&&
+    Math.abs(e.startBeats-selected.startBeats)<.001)
+    .slice().sort((a,b)=>a.midi-b.midi):[];
   const drafts=events.filter(e=>e.draft);
   const confirmed=events.filter(e=>!e.draft);
   const nextBeat=()=>events.reduce((max,e)=>Math.max(max,e.startBeats+e.lengthBeats),cursor);
@@ -452,7 +455,13 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
         {...e,startBeats:Math.round((e.startBeats+beats)*4)/4}:e));
     setCursor(v=>v+beats);
   };
-  const openNote=(id:string)=>{setSelectedId(id);setEditor('note');};
+  const openNote=(id:string)=>{
+    setSelectedId(id);
+    const event=events.find(note=>note.id===id);
+    const simultaneous=events.filter(note=>event&&note.instrument===event.instrument&&
+      Math.abs(note.startBeats-event.startBeats)<.001);
+    setEditor(simultaneous.length>1?'chord':'note');
+  };
   const openTempo=()=>{setTempoDraft(String(bpm));setEditor('tempo');};
   const confirmTempo=()=>{
     const value=Number(tempoDraft.replace(',','.'));
@@ -617,6 +626,30 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
           false,clef==='treble')}
         {control('𝄢 Clé de fa',()=>{setClef('bass');setEditor(null);},
           false,clef==='bass')}
+      </View>
+    </View>:null}
+    {editor==='chord'&&selected?<View style={{gap:9,padding:13,borderRadius:14,
+      borderWidth:1,borderColor:theme.border,backgroundColor:theme.surface}}>
+      <View style={{flexDirection:'row',alignItems:'center',
+        justifyContent:'space-between'}}>
+        <Text style={{fontFamily:'BiroScript',fontSize:22,color:theme.foreground}}>
+          Accord · temps {beatLabel(selected.startBeats)}
+        </Text>
+        <Pressable onPress={()=>setEditor(null)}
+          accessibilityRole="button" accessibilityLabel="Fermer le choix de note"
+          style={{width:40,height:40,alignItems:'center',justifyContent:'center'}}>
+          <Ionicons name="close" color={theme.muted} size={20}/>
+        </Pressable>
+      </View>
+      <Text style={{fontSize:12,color:theme.muted}}>
+        Quelle note veux-tu modifier ?
+      </Text>
+      <View style={{flexDirection:'row',gap:7,flexWrap:'wrap'}}>
+        {chordNotes.map(note=>control(
+          note.instrument==='piano'?musicNoteName(note.midi):
+            DRUM_PADS.find(p=>p.midi===note.midi)?.label||'Frappe',
+          ()=>{setSelectedId(note.id);setEditor('note');},
+          false,selectedId===note.id))}
       </View>
     </View>:null}
     {editor==='note'&&selected?<View style={{gap:10,padding:13,borderRadius:14,
