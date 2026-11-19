@@ -23,7 +23,8 @@ type Props={
   source?:MusicProjectFile|null;
   initialFile?:MusicProjectFile|null;
   onSave:(result:MusicWritingResult)=>void;
-  onSaveScore:(result:{title:string;events:MusicNotationEvent[];bpm:number})=>void;
+  onSaveScore:(result:{title:string;events:MusicNotationEvent[];bpm:number;
+    tone:string;sampleLocalId?:string;sampleName?:string})=>void;
   onRequestTranslator:(sourceId:string,language:string)=>void;
   requestedLanguages:string[];
   onClose:()=>void;
