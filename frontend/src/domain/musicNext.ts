@@ -36,6 +36,9 @@ export type WorkingMusicVersion = {
   metronomeMuted?: boolean;
   snapToBeat?: boolean;
   lyricCues?: TimedLyricCue[];
+  /** The song's musical structure, positioned on this version's timeline.
+   * Key: project section ID, value: start in seconds (not an audio trim). */
+  sectionMarkers?: Record<string,number>;
   key?: string;
   meter?: string;
   tracks: WorkingMusicTrack[];
