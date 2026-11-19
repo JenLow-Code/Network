@@ -1,18 +1,20 @@
 import { Text } from '@/i18n/LocalizedText';
 import React from 'react';
-import { Pressable, Share, View } from 'react-native';
+import { Pressable, Share, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { biblePosts, psalm150 } from '@/mocks/publications';
 import { Nav } from '@/components/navigation/Nav';
 import { PageHeader } from '@/components/navigation/PageHeader';
+import {workspaceCanvas} from '@/theme/workspaceLayout';
 export default function VerseExport() {
+  const {width}=useWindowDimensions();
   const { id } = useLocalSearchParams<{ id: string }>();
   const item = biblePosts.find(p => p.id === id);
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
-      <View style={{ flex: 1, padding: 23 }}>
+      <View style={{flex:1,...workspaceCanvas(width),paddingTop:12,paddingBottom:55}}>
         <PageHeader />
         <Text style={{ fontFamily: 'Caveat_700Bold', fontSize: 32, marginTop: 18 }}>
           Exporter un verset
