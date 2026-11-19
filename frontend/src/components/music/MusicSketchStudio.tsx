@@ -246,6 +246,9 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
   const [selectedId,setSelectedId]=useState('');
   const [recording,setRecording]=useState(false);
   const startRef=useRef(0),beatOriginRef=useRef(0);
+  const chordRef=useRef<{at:number;beat:number}|null>(null);
+  const heldKeysRef=useRef<Set<string>>(new Set());
+  const triggerRef=useRef<(instrument:Instrument,midi:number)=>void>(()=>{});
   const [octaves,setOctaves]=useState<12|18|24|30>(12);
   const [baseMidi,setBaseMidi]=useState(60);
   const [tone,setTone]=useState<string>(initialFile?.instrumentTone||'Piano doux');
@@ -309,14 +312,73 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
         }
       }catch{setMessage('Sortie MIDI déconnectée.');}
     }
+    const playedAt=Date.now();
+    const chord=!recording&&!!chordRef.current&&
+      playedAt-chordRef.current.at<130;
     const beat=recording?beatOriginRef.current+
-      (Date.now()-startRef.current)/60000*bpm:cursor;
+      (playedAt-startRef.current)/60000*bpm:
+      chord?chordRef.current!.beat:cursor;
     const startBeats=Math.max(0,Math.round(beat*4)/4);
     const event:MusicNotationEvent={id:newId(),instrument,midi,
       startBeats,lengthBeats:instrument==='drum'?.25:duration,velocity:95,
       draft:!recording};
     setEvents(old=>[...old,event]);setSelectedId(event.id);
-    if(!recording)setCursor(startBeats+event.lengthBeats);
+    if(!recording){
+      chordRef.current={at:playedAt,beat:startBeats};
+      if(!chord)setCursor(startBeats+event.lengthBeats);
+    }
+  };
+  triggerRef.current=trigger;
+  useEffect(()=>{
+    if(!active||part!=='piano'||Platform.OS!=='web'||typeof window==='undefined')return;
+    const keyToPitch:Record<string,number>={
+      s:0,e:1,d:2,r:3,f:4,g:5,t:6,h:7,y:8,j:9,u:10,k:11,l:12,
+    };
+    const down=(event:KeyboardEvent)=>{
+      const target=event.target as HTMLElement|null;
+      if(target&&(['INPUT','TEXTAREA','SELECT'].includes(target.tagName)||
+        target.isContentEditable))return;
+      if(event.repeat||event.ctrlKey||event.altKey||event.metaKey)return;
+      const key=event.key.toLowerCase(),offset=keyToPitch[key];
+      if(offset===undefined||heldKeysRef.current.has(key))return;
+      event.preventDefault();heldKeysRef.current.add(key);
+      triggerRef.current('piano',baseMidi+offset);
+    };
+    const up=(event:KeyboardEvent)=>heldKeysRef.current.delete(event.key.toLowerCase());
+    window.addEventListener('keydown',down);
+    window.addEventListener('keyup',up);
+    return()=>{
+      window.removeEventListener('keydown',down);
+      window.removeEventListener('keyup',up);
+      heldKeysRef.current.clear();
+    };
+  },[active,part,baseMidi]);
+  const stopPreview=()=>{
+    previewSources.current.forEach(source=>{try{source.stop();}catch{}});
+    previewSources.current=[];
+    if(previewTimeout.current){clearTimeout(previewTimeout.current);previewTimeout.current=null;}
+    setPreviewPlaying(false);
+  };
+  const playComposition=()=>{
+    if(previewPlaying){stopPreview();return;}
+    if(!events.length){setMessage('Joue quelques notes pour écouter ta composition.');return;}
+    if(Platform.OS!=='web'){setMessage('Préécoute disponible sur navigateur web.');return;}
+    try{
+      if(!audioRef.current)audioRef.current=new AudioContext();
+      const ctx=audioRef.current;
+      if(ctx.state==='suspended')void ctx.resume();
+      const first=Math.min(...events.map(event=>event.startBeats));
+      const last=Math.max(...events.map(event=>event.startBeats+event.lengthBeats));
+      previewSources.current=events.map(event=>playSound(
+        ctx,event.midi,event.instrument==='drum',volume[event.instrument],
+        tone,sampleRef.current,event.lengthBeats*60/bpm,
+        (event.startBeats-first)*60/bpm,sampleRootMidi));
+      setPreviewPlaying(true);
+      previewTimeout.current=setTimeout(()=>{
+        previewSources.current=[];setPreviewPlaying(false);previewTimeout.current=null;
+      },Math.ceil((last-first)*60000/bpm)+200);
+      setMessage('');
+    }catch{setMessage('Lecture de la composition impossible dans ce navigateur.');}
   };
   const toggleRecording=()=>{
     if(recording){setRecording(false);return;}
