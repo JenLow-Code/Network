@@ -95,9 +95,20 @@ export function MusicWritingOverlay({project,mode,onModeChange,source,initialFil
     }
     setSourceId(id);setSourceOpen(false);setSourceWarning('');
   };
-  return <Modal visible animationType="slide" presentationStyle="fullScreen"
+  return <Modal visible animationType={Platform.OS==='web'?'fade':'slide'}
+    transparent={Platform.OS==='web'}
+    presentationStyle={Platform.OS==='web'?'overFullScreen':'fullScreen'}
     onRequestClose={exit}>
-    <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
+    <View style={{flex:1,backgroundColor:Platform.OS==='web'?
+      'rgba(24,18,24,.52)':theme.background,
+      alignItems:'center',justifyContent:'center',
+      padding:Platform.OS==='web'?(compact?8:24):0}}>
+    <SafeAreaView style={{width:'100%',maxWidth:980,
+      height:Platform.OS==='web'?(compact?'96%':'92%'):'100%',
+      backgroundColor:theme.background,
+      borderRadius:Platform.OS==='web'?(compact?15:22):0,
+      borderWidth:Platform.OS==='web'?1:0,borderColor:theme.border,
+      overflow:'hidden'}}>
       <KeyboardAvoidingView behavior={Platform.OS==='ios'?'padding':undefined}
         style={{flex:1}}>
         <View style={{height:54,flexDirection:'row',alignItems:'center',
@@ -119,12 +130,14 @@ export function MusicWritingOverlay({project,mode,onModeChange,source,initialFil
             const disabled=!!initialFile&&!active;
             return <Pressable key={item.id} onPress={()=>changeTab(item.id)}
               disabled={disabled} accessibilityRole="tab" accessibilityState={{selected:active,disabled}}
-              style={{minHeight:48,flexDirection:'row',alignItems:'center',
-                justifyContent:'center',gap:6,paddingHorizontal:compact?11:16,
+              accessibilityLabel={item.title}
+              style={{minHeight:45,flexDirection:'row',alignItems:'center',
+                justifyContent:'center',gap:active?5:0,paddingHorizontal:compact?13:16,
                 borderBottomWidth:active?2:0,borderBottomColor:PINK,opacity:disabled?.35:1}}>
-              <Ionicons name={item.icon} size={16} color={active?PINK:theme.muted}/>
-              <Text style={{fontSize:compact?12:13,fontWeight:active?'700':'500',
-                color:active?theme.foreground:theme.muted}}>{item.title}</Text>
+              <Ionicons name={item.icon} size={compact?19:16} color={active?PINK:theme.muted}/>
+              {(!compact||active)?<Text numberOfLines={1}
+                style={{fontSize:compact?12:13,fontWeight:active?'700':'500',
+                  color:active?theme.foreground:theme.muted}}>{item.title}</Text>:null}
             </Pressable>;
           })}
         </ScrollView>
@@ -266,5 +279,6 @@ export function MusicWritingOverlay({project,mode,onModeChange,source,initialFil
         </View>:null}
       </KeyboardAvoidingView>
     </SafeAreaView>
+    </View>
   </Modal>;
 }
