@@ -44,7 +44,7 @@ export function MusicWritingOverlay({project,mode,startTab,onModeChange,source,i
   const initialTab:Tab=initialFile?.musicEvents?'score':
     (source||initialFile?.translationOfFileId)?'translation':(startTab||mode);
   const [tab,setTab]=useState<Tab>(initialTab);
-  const bodyScrollRef=useRef<ScrollView|null>(null);
+  const bodyScrollRef=useRef<React.ElementRef<typeof ScrollView>>(null);
   const [writerDirty,setWriterDirty]=useState(false);
   const [translationDirty,setTranslationDirty]=useState(false);
   const [scoreDirty,setScoreDirty]=useState(false);
