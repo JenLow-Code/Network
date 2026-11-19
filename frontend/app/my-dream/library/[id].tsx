@@ -119,12 +119,12 @@ export default function DreamLibrary(){
         params:{id,view:view||dream?.phase||'Rêve'}})}/>
       <Text style={{fontFamily:'serif',fontSize:30,lineHeight:39,
         color:theme.foreground,marginBottom:7}}>
-        {section==='documents'?'Documents':section==='inspirations'?'Inspirations':'Inspirations & documents'}
+        Documents & Inspirations
       </Text>
       <Text style={{color:theme.muted,fontSize:12,lineHeight:19,marginBottom:19}}>
         {dream?.title||'Rêve'} · Tes références et fichiers au même endroit.
       </Text>
-      {section!=='documents'&&section!=='inspirations'?<Text
+      {<Text
         style={{fontSize:11,color:theme.muted,marginBottom:16,lineHeight:18}}>
         Documents et inspirations conservent leur histoire au fil des phases.
       </Text>:null}
@@ -255,8 +255,8 @@ export default function DreamLibrary(){
             sont conservés localement sur cet appareil (1 Mo maximum par fichier).
             Ils ne sont pas encore synchronisés entre tes appareils.
           </Text>
-        </View>:null}
-        {section!=='documents'?<View style={{gap:11,marginTop:section==='inspirations'?8:22}}>
+        </View>}
+        {<View style={{gap:11,marginTop:22}}>
           <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}>
             <Text style={{color:theme.foreground,fontSize:17,fontWeight:'700'}}>Inspirations</Text>
             {editable?<Pressable accessibilityRole="button"
@@ -272,7 +272,7 @@ export default function DreamLibrary(){
           {!!dream?<SemenceInspirations dream={dream} editable={editable}
             addRequestToken={addRequestToken}/>:null}
           {!dream?<Text style={{fontSize:12,color:theme.muted}}>Rêve introuvable.</Text>:null}
-        </View>:null}
+        </View>}
     </ScrollView>
     <Nav/>
   </SafeAreaView>;
