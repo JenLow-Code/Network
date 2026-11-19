@@ -145,8 +145,8 @@ export default function DreamLibrary(){
       {<Text
         style={{fontSize:11,color:theme.muted,marginBottom:16,lineHeight:18}}>
         Documents et inspirations conservent leur histoire au fil des phases.
-      </Text>:null}
-        {section!=='inspirations'?<View style={{gap:11}}>
+      </Text>}
+        {<View style={{gap:11}}>
           <Text style={{color:theme.foreground,fontSize:17,fontWeight:'700',marginBottom:5}}>Documents</Text>
           {editable?<View style={{flexDirection:'row',flexWrap:'wrap',gap:9,marginBottom:4}}>
             <Pressable accessibilityRole="button" onPress={importFiles}
