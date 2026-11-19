@@ -96,20 +96,9 @@ export function MusicWritingOverlay({project,mode,onModeChange,source,initialFil
     }
     setSourceId(id);setSourceOpen(false);setSourceWarning('');
   };
-  return <Modal visible animationType={Platform.OS==='web'?'fade':'slide'}
-    transparent={Platform.OS==='web'}
-    presentationStyle={Platform.OS==='web'?'overFullScreen':'fullScreen'}
-    onRequestClose={exit}>
-    <View style={{flex:1,backgroundColor:Platform.OS==='web'?
-      'rgba(24,18,24,.52)':theme.background,
-      alignItems:'center',justifyContent:'center',
-      padding:Platform.OS==='web'?(compact?8:24):0}}>
-    <SafeAreaView style={{width:'100%',maxWidth:980,
-      height:Platform.OS==='web'?(compact?'88%':'90%'):'100%',
-      backgroundColor:theme.background,
-      borderRadius:Platform.OS==='web'?(compact?15:22):0,
-      borderWidth:Platform.OS==='web'?1:0,borderColor:theme.border,
-      overflow:'hidden'}}>
+  return <Modal visible animationType="slide"
+    presentationStyle="fullScreen" onRequestClose={exit}>
+    <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
       <KeyboardAvoidingView behavior={Platform.OS==='ios'?'padding':undefined}
         style={{flex:1}}>
         <View style={{height:54,flexDirection:'row',alignItems:'center',
@@ -280,6 +269,5 @@ export function MusicWritingOverlay({project,mode,onModeChange,source,initialFil
         </View>:null}
       </KeyboardAvoidingView>
     </SafeAreaView>
-    </View>
   </Modal>;
 }
