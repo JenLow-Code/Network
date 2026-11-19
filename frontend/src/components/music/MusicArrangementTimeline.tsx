@@ -17,6 +17,7 @@ type Snapshot={pointerId:number;id:string;mode:Mode;x:number;
   offset:number;start:number;end:number;total:number;next:Timing};
 type Props={
   version:WorkingMusicVersion;files:MusicProjectFile[];
+  sections?:{id:string;title:string}[];
   duration:number;position:number;onSeek:(position:number)=>void;
   onChangeTrack?:(id:string,patch:Timing)=>void;
   onSelectTrack?:(id:string)=>void;
@@ -43,7 +44,7 @@ const clipInfo=(track:WorkingMusicTrack,file?:MusicProjectFile)=>{
  * handles. The original audio is never cut or rewritten by these gestures.
  * Mouse and touch on web use pointer capture; native uses responder callbacks.
  */
-export function MusicArrangementTimeline({version,files,duration,position,onSeek,
+export function MusicArrangementTimeline({version,files,duration,position,onSeek,sections=[],
   onChangeTrack,onSelectTrack,onToggleMute,onToggleSolo,onMarkTrackRange,
   onRenameTrack,onEmojiTrack,onRemoveTrack,onReorderTrack,onDropSource}:Props){
   const theme=useAppTheme();
@@ -559,6 +560,20 @@ export function MusicArrangementTimeline({version,files,duration,position,onSeek
               </View>;
             })}
           </Pressable>
+          {sections.filter(section=>Number.isFinite(version.sectionMarkers?.[section.id]))
+            .map((section,index)=>{
+              const seconds=version.sectionMarkers![section.id];
+              const x=TIMELINE_ORIGIN+seconds*pixelsPerSecond;
+              if(x>contentWidth-8)return null;
+              return <View key={'section-'+section.id} pointerEvents="none"
+                style={{position:'absolute',left:x,top:0,zIndex:4,alignItems:'center'}}>
+                <Text style={{fontSize:9,color:PINK,fontWeight:'800',marginTop:0}}>
+                  {index+1}
+                </Text>
+                <View style={{width:2,height:rulerHeight+rowHeight*rows-12,
+                  backgroundColor:PINK,opacity:.35}}/>
+              </View>;
+            })}
           {Array.from({length:Math.min(1000,Math.ceil(maxEnd/beatSeconds)+1)},(_,i)=>i)
             .map(i=><View key={'beat-'+i} pointerEvents="none"
               style={{position:'absolute',left:TIMELINE_ORIGIN+i*beatSeconds*pixelsPerSecond,
