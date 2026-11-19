@@ -9,6 +9,7 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
+    "verify:layout": "node scripts/verify-workspace-layout.cjs",
     "format": "npx prettier --write \"app/**/*.{ts,tsx}\" \"src/**/*.{ts,tsx}\" \"assets/**/*.ts\""
   },
   "dependencies": {
