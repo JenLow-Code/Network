@@ -212,7 +212,7 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
       setError('Le tempo doit être un nombre entre 1 et 400.');return;
     }
     edit({...version,bpm,key:tone.trim()||undefined,meter:meter.trim()||undefined});
-    setError('');setShowSettings(false);
+    setBpmInput(String(bpm||100));setError('');setShowSettings(false);
   };
   const button=(label:string,fn:()=>void,primary=false,icon?:keyof typeof Ionicons.glyphMap)=>
     <Pressable onPress={fn} accessibilityRole="button"
@@ -670,45 +670,108 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
         </View>
         <ScrollView keyboardShouldPersistTaps="handled"
           contentContainerStyle={{padding:compact?16:27,
-            paddingBottom:90,maxWidth:930,width:'100%',alignSelf:'center',gap:21}}>
-          <MusicSongMetadata project={project} patch={patch} showTalent={false}/>
-          {version?<View style={{gap:12}}>
-            <Text style={{color:theme.foreground,fontSize:15,fontWeight:'700'}}>
-              {version.title} · réglages
+            paddingBottom:100,maxWidth:930,width:'100%',alignSelf:'center',gap:16}}>
+          {version?<View style={{gap:5,paddingBottom:5}}>
+            <Text style={{color:theme.foreground,fontSize:16,fontWeight:'700'}}>
+              {version.title}
             </Text>
-      <View style={{flexDirection:'row',alignItems:'center',gap:10,flexWrap:'wrap'}}>
-        <Text style={{fontSize:12,color:theme.muted}}>
-          {version.key||'Tonalité non définie'}
-          {version.meter?' · '+version.meter:''}
-        </Text>
-        <Pressable onPress={openSettings} accessibilityRole="button"
-          style={{flexDirection:'row',alignItems:'center',gap:4,paddingVertical:6}}>
-          <Ionicons name="options-outline" size={16} color={PINK}/>
-          <Text style={{fontSize:12,color:PINK}}>Réglages du morceau</Text>
-        </Pressable>
-      </View>
-      {showSettings?<View style={{gap:10,padding:14,borderRadius:14,
-        borderWidth:1,borderColor:theme.border,backgroundColor:theme.surface}}>
-        <Text style={{fontSize:12,color:theme.muted,lineHeight:19}}>
-          Ces indications sont facultatives. Aucune tonalité ni aucun tempo ne sont déduits sans analyse.
-        </Text>
-
-        <TextInput style={input} value={tone} onChangeText={setTone}
-          placeholder="Tonalité (si connue)" placeholderTextColor={theme.muted}/>
-        <TextInput style={input} value={meter} onChangeText={setMeter}
-          placeholder="Mesure, p. ex. 4/4" placeholderTextColor={theme.muted}/>
-        <View style={{alignSelf:'flex-start'}}>{button('Enregistrer les réglages',saveSettings,true)}</View>
-      </View>:null}
-
+            <Text style={{color:theme.muted,fontSize:12}}>
+              {version.tracks.length} pistes · {formatMusicDuration(versionLength(version,project.files))}
+              {' · '+effectiveBpm+' BPM'}
+              {version.meter?' · '+version.meter:''}
+            </Text>
           </View>:null}
-          {version?<View style={{gap:14}}>
-      <MusicLyricTimeline files={project.files} cues={version.lyricCues||[]}
-        cursor={timelineCursor}
-        onChange={lyricCues=>edit({...version,lyricCues})}
-        onSeek={seconds=>setPlaybackRequest(previous=>({
-          at:seconds,serial:(previous?.serial||0)+1
-        }))}/>
-      {sectionPanel()}
+          {sectionPanel()}
+          {version?<MusicLyricTimeline files={project.files}
+            cues={version.lyricCues||[]} cursor={timelineCursor}
+            onChange={lyricCues=>edit({...version,lyricCues})}
+            onSeek={seconds=>{
+              setSeekRequest(previous=>({at:seconds,serial:(previous?.serial||0)+1}));
+              setVersionExpanded(true);setInfoOpen(false);
+            }}/>:null}
+          <View style={{borderTopWidth:1,borderColor:theme.border,paddingTop:7}}>
+            <Pressable onPress={()=>setShowSongInfo(open=>!open)}
+              accessibilityRole="button"
+              accessibilityState={{expanded:showSongInfo}}
+              style={{minHeight:46,flexDirection:'row',alignItems:'center',gap:9}}>
+              <Ionicons name="information-circle-outline" color={PINK} size={19}/>
+              <Text style={{flex:1,fontSize:13,fontWeight:'600',color:theme.foreground}}>
+                Informations générales du morceau
+              </Text>
+              <Ionicons name={showSongInfo?'chevron-up':'chevron-down'}
+                color={theme.muted} size={17}/>
+            </Pressable>
+            {showSongInfo?<View style={{gap:10,paddingTop:8}}>
+              <Text style={{fontSize:11,color:theme.muted,lineHeight:18}}>
+                Langue, styles et instruments du projet, communs à ses versions.
+                Le tempo et la tonalité propres à la version se règlent ci-dessous.
+              </Text>
+              <MusicSongMetadata project={project} patch={patch} showTalent={false}/>
+            </View>:null}
+          </View>
+          {version?<View style={{borderTopWidth:1,borderColor:theme.border,paddingTop:7}}>
+            <Pressable onPress={()=>showSettings?setShowSettings(false):openSettings()}
+              accessibilityRole="button" accessibilityState={{expanded:showSettings}}
+              style={{minHeight:46,flexDirection:'row',alignItems:'center',gap:9}}>
+              <Ionicons name="options-outline" color={PINK} size={19}/>
+              <View style={{flex:1,gap:3}}>
+                <Text style={{fontSize:13,fontWeight:'600',color:theme.foreground}}>
+                  Réglages de cette version
+                </Text>
+                <Text style={{fontSize:11,color:theme.muted}}>
+                  {effectiveBpm} BPM · {version.key||'Tonalité libre'}
+                  {' · '+(version.meter||'4/4')}
+                  {version.snapToBeat?' · Aimantation active':''}
+                </Text>
+              </View>
+              <Ionicons name={showSettings?'chevron-up':'chevron-down'}
+                color={theme.muted} size={17}/>
+            </Pressable>
+            {showSettings?<View style={{gap:12,paddingTop:12}}>
+              <Text style={{fontSize:11,color:theme.muted}}>
+                Ces paramètres concernent uniquement {version.title}.
+              </Text>
+              <View style={{flexDirection:'row',gap:9,flexWrap:'wrap'}}>
+                <View style={{flex:1,minWidth:110,gap:5}}>
+                  <Text style={{fontSize:11,color:theme.muted}}>Tempo (BPM)</Text>
+                  <TextInput style={input} value={tempo}
+                    onChangeText={setTempo} keyboardType="numeric"
+                    placeholder="100" placeholderTextColor={theme.muted}/>
+                </View>
+                <View style={{flex:1,minWidth:110,gap:5}}>
+                  <Text style={{fontSize:11,color:theme.muted}}>Mesure</Text>
+                  <TextInput style={input} value={meter}
+                    onChangeText={setMeter} placeholder="4/4"
+                    placeholderTextColor={theme.muted}/>
+                </View>
+                <View style={{flex:1,minWidth:150,gap:5}}>
+                  <Text style={{fontSize:11,color:theme.muted}}>Tonalité</Text>
+                  <TextInput style={input} value={tone}
+                    onChangeText={setTone} placeholder="Do majeur…"
+                    placeholderTextColor={theme.muted}/>
+                </View>
+              </View>
+              <Pressable onPress={()=>edit({...version,
+                snapToBeat:!version.snapToBeat})}
+                accessibilityRole="checkbox"
+                accessibilityState={{checked:!!version.snapToBeat}}
+                style={{flexDirection:'row',alignItems:'center',gap:8,minHeight:43}}>
+                <Ionicons name={version.snapToBeat?'checkbox':'square-outline'}
+                  size={19} color={PINK}/>
+                <View style={{gap:3,flex:1}}>
+                  <Text style={{fontSize:12,color:theme.foreground}}>
+                    Aimantation des pistes aux temps
+                  </Text>
+                  <Text style={{fontSize:11,lineHeight:18,color:theme.muted}}>
+                    Aligne les déplacements de clips sur le BPM.
+                    Ne modifie ni l’audio ni le métronome.
+                  </Text>
+                </View>
+              </Pressable>
+              <View style={{alignSelf:'flex-start'}}>
+                {button('Enregistrer les réglages',saveSettings,true)}
+              </View>
+            </View>:null}
           </View>:null}
         </ScrollView>
       </View>
