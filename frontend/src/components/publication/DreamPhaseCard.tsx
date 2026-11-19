@@ -211,7 +211,7 @@ export function DreamPhaseCard({ item, width, variant, onOpen, forYou = false }:
       </View>
     </Modal>
   );
-  const phaseDay = item.phaseDate && /^\\d{4}-\\d{2}-\\d{2}$/.test(item.phaseDate)
+  const phaseDay = item.phaseDate && /^\d{4}-\d{2}-\d{2}$/.test(item.phaseDate)
     ? item.phaseDate.slice(8, 10) + '.' + item.phaseDate.slice(5, 7) + '.' + item.phaseDate.slice(0, 4)
     : null;
   const forYouLabel = compact && forYou ? (
