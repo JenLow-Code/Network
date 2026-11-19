@@ -7,7 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useApp } from '@/context/AppContext';
 import { useAuth } from '@/context/AuthProvider';
 import { useAppTheme } from '@/theme/AppTheme';
-import {workspaceCanvas} from '@/theme/workspaceLayout';
+import {workspaceCanvas,workspaceLayout} from '@/theme/workspaceLayout';
 import { PageHeader } from '@/components/navigation/PageHeader';
 import { Nav } from '@/components/navigation/Nav';
 import { Avatar } from '@/components/ui/Avatar';
@@ -38,8 +38,10 @@ function art(name:string):TalentIllustration|undefined {
 export default function ProfilePreview() {
  const app=useApp(),auth=useAuth(),theme=useAppTheme();
  const {width}=useWindowDimensions();
- const contentWidth=Math.min(width-36,860);
- const columns=contentWidth<350?2:3;
+ const ws=workspaceLayout(width);
+ const viewport=Math.max(0,width-(ws.desktop?212:0));
+ const contentWidth=Math.max(0,Math.min(viewport,ws.maxWidth??viewport)-2*ws.gutter);
+ const columns=contentWidth<350?2:contentWidth<850?3:4;
  const tileWidth=Math.floor((contentWidth-10*(columns-1))/columns);
  const [talents,setTalents]=useState<Talent[]>([]);
  const [featuredId,setFeaturedId]=useState<string|null>(null);
@@ -76,8 +78,8 @@ export default function ProfilePreview() {
    return()=>{live=false;};
  },[app.email,app.name]);
  return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
-   <ScrollView contentContainerStyle={{paddingHorizontal:18,paddingTop:12,
-     paddingBottom:85,maxWidth:900,width:'100%',alignSelf:'center'}}>
+   <ScrollView contentContainerStyle={{...workspaceCanvas(width),paddingTop:12,
+     paddingBottom:85}}>
      <PageHeader onBack={()=>router.back()}/>
      <View style={{flexDirection:'row',alignItems:'center',gap:10,marginTop:14}}>
        <View style={{width:34,height:34,borderRadius:17,
