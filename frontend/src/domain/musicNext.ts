@@ -92,3 +92,14 @@ export function isMusicTrackCandidate(file:MusicProjectFile) {
     (file.kind==='score'&&!!file.musicEvents?.length) ||
     (/\.(mid|midi)$/i.test(file.originalFilename||'')&&!!file.localFileId);
 }
+
+/** Effective length for audio as well as editable MIDI notation sources. */
+export function musicSourceDuration(file?:MusicProjectFile):number{
+  if(!file)return 0;
+  if(file.durationSeconds&&file.durationSeconds>0)return file.durationSeconds;
+  if(file.musicEvents?.length){
+    const beats=Math.max(...file.musicEvents.map(e=>e.startBeats+e.lengthBeats));
+    return Math.max(.1,beats*60/(file.tempoBpm||100));
+  }
+  return 0;
+}
