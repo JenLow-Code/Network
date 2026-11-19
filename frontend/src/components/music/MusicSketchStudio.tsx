@@ -1,6 +1,6 @@
 import React,{useEffect,useRef,useState} from 'react';
 import {Platform,Pressable,ScrollView,Text,TextInput,View,useWindowDimensions} from 'react-native';
-import Svg,{Ellipse,Line,Text as SvgText} from 'react-native-svg';
+import Svg,{Circle,Ellipse,Line,Path,Text as SvgText} from 'react-native-svg';
 import {Ionicons} from '@expo/vector-icons';
 import {useAppTheme} from '@/theme/AppTheme';
 import {DRUM_PADS,downloadMusicMidi,downloadMusicScorePdf,musicNoteName} from '@/domain/musicNotation';
@@ -21,7 +21,16 @@ type Props={
 };
 type MidiPort={id:string;name?:string;send:(data:number[])=>void};
 type MidiAccess={outputs:Map<string,MidiPort>};
-const DURATIONS=[.25,.5,1,2,4] as const;
+const NOTE_VALUES=[
+  {beats:.25,label:'Double croche'},
+  {beats:.5,label:'Croche'},
+  {beats:.75,label:'Croche pointée'},
+  {beats:1,label:'Noire'},
+  {beats:1.5,label:'Noire pointée'},
+  {beats:2,label:'Blanche'},
+  {beats:3,label:'Blanche pointée'},
+  {beats:4,label:'Ronde'},
+] as const;
 const TONES=['Piano doux','Orgue','Synthé','Cordes'] as const;
 const BLACKS=new Set([1,3,6,8,10]);
 const newId=()=> 'note-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,7);
@@ -33,6 +42,32 @@ const notePosition=(midi:number)=>{
   return 134-(Math.floor(midi/12)-5)*42-steps*6;
 };
 
+/** Render the shape of the rhythmic note value, including beams/flags and dots.
+ * A held live performance can have an unquantized length: show the closest
+ * familiar notation value without altering its exact stored timing. */
+function NoteValueGlyph({beats,color,size=38}:{
+  beats:number;color:string;size?:number;
+}){
+  const options=[.25,.5,.75,1,1.5,2,3,4];
+  const closest=options.reduce((best,candidate)=>
+    Math.abs(candidate-beats)<Math.abs(best-beats)?candidate:best,options[0]);
+  const fill=closest<2;
+  const stem=closest<4;
+  const flags=closest<.5?2:closest<1?1:0;
+  const dot=[.75,1.5,3].includes(closest);
+  return <Svg width={size} height={size+7} viewBox="0 0 38 46"
+    accessibilityLabel={NOTE_VALUES.find(v=>v.beats===closest)?.label||'Note'}>
+    <Ellipse cx={13} cy={34} rx={8} ry={5} origin="13,34"
+      rotation={-20} fill={fill?color:'none'} stroke={color} strokeWidth={1.9}/>
+    {stem?<Line x1={20} y1={33} x2={20} y2={8}
+      stroke={color} strokeWidth={2}/>:null}
+    {flags>=1?<Path d="M20 9 C35 12 32 24 25 27 C30 17 20 18 20 16"
+      stroke={color} fill="none" strokeWidth={1.8}/>:null}
+    {flags===2?<Path d="M20 15 C35 18 32 30 25 33"
+      stroke={color} fill="none" strokeWidth={1.8}/>:null}
+    {dot?<Circle cx={30} cy={33} r={2.2} fill={color}/>:null}
+  </Svg>;
+}
 /** A score remains a preview, while the event editor owns timing and duration. */
 export function MusicScoreView({events,compact=false,instrument,
   bpm=100,clef='treble',selectedId,onSelectNote,onTempoPress,onClefPress}:{
