@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -23,6 +23,7 @@ export default function MusicWorkspace() {
   const theme=useAppTheme();
   const {width}=useWindowDimensions();
   const compact=width<600;
+  const desktop=Platform.OS==='web'&&width>=1100;
   const [space,setSpace]=useState<Space>('capture');
   const project=items.find(item=>item.id===id);
   if (!ready) return <SafeAreaView style={{flex:1,backgroundColor:theme.background,
@@ -62,14 +63,20 @@ export default function MusicWorkspace() {
   ];
   return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
     <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{
-      width:'100%',maxWidth:860,alignSelf:'center',paddingHorizontal:compact?18:34,
-      paddingTop:8,paddingBottom:120,gap:compact?18:25}}>
+      width:'100%',maxWidth:desktop?1500:940,alignSelf:'center',
+      paddingLeft:compact?18:desktop?44:34,
+      paddingRight:compact?18:desktop?132:34,
+      paddingTop:desktop?16:8,paddingBottom:desktop?45:120,
+      gap:compact?18:desktop?28:25}}>
       <PageHeader onBack={()=>router.replace('/music-hub')}/>
-      <View style={{flexDirection:'row',gap:15,alignItems:'center'}}>
-        <MusicFolderCover project={project} size={compact?65:82}/>
+      <View style={{flexDirection:'row',gap:desktop?19:15,alignItems:'center',
+        paddingVertical:desktop?8:0}}>
+        <MusicFolderCover project={project} size={compact?65:desktop?90:82}/>
         <View style={{gap:5,flex:1}}>
-          <Text style={{fontSize:compact?24:30,lineHeight:compact?29:37,
-            fontWeight:'700',letterSpacing:-0.65,color:theme.foreground}} numberOfLines={2}>
+          <Text style={{fontSize:compact?24:desktop?34:30,
+            lineHeight:compact?29:desktop?42:37,
+            fontWeight:'700',letterSpacing:-0.65,color:theme.foreground}}
+            numberOfLines={2}>
             {project.title}
           </Text>
           <Text style={{fontSize:12,lineHeight:18,color:theme.muted}} numberOfLines={2}>
@@ -79,30 +86,63 @@ export default function MusicWorkspace() {
           </Text>
         </View>
       </View>
-      <View style={{flexDirection:'row',borderBottomWidth:1,borderColor:theme.border,gap:3}}>
-        {spaces.map(item=>{
-          const selected=space===item.id;
-          return <Pressable key={item.id} onPress={()=>setSpace(item.id)}
-            accessibilityRole="tab" accessibilityLabel={item.title}
-            accessibilityState={{selected}}
-            style={{flex:1,flexDirection:'row',alignItems:'center',
-              justifyContent:'center',gap:compact?5:9,
-              minHeight:52,borderBottomWidth:selected?3:0,
-              borderBottomColor:selected?PINK:'transparent',paddingHorizontal:3}}>
-            <Ionicons name={item.icon} size={compact?24:19}
-              color={selected?PINK:theme.muted}/>
-            {(!compact||selected)?<Text numberOfLines={1}
-              style={{fontSize:compact?12:14,fontWeight:selected?'700':'500',
-                color:selected?theme.foreground:theme.muted}}>{item.title}</Text>:null}
-          </Pressable>;
-        })}
+      <View style={{flexDirection:desktop?'row':'column',
+        alignItems:'flex-start',gap:desktop?28:0}}>
+        <View style={{flex:1,minWidth:0,width:desktop?undefined:'100%',
+          gap:compact?16:23}}>
+          {!desktop?<View style={{flexDirection:'row',
+            borderBottomWidth:1,borderColor:theme.border,gap:3}}>
+            {spaces.map(item=>{
+              const selected=space===item.id;
+              return <Pressable key={item.id} onPress={()=>setSpace(item.id)}
+                accessibilityRole="tab" accessibilityLabel={item.title}
+                accessibilityState={{selected}}
+                style={{flex:1,flexDirection:'row',alignItems:'center',
+                  justifyContent:'center',gap:compact?5:9,
+                  minHeight:52,borderBottomWidth:selected?3:0,
+                  borderBottomColor:selected?PINK:'transparent',paddingHorizontal:3}}>
+                <Ionicons name={item.icon} size={compact?24:19}
+                  color={selected?PINK:theme.muted}/>
+                {(!compact||selected)?<Text numberOfLines={1}
+                  style={{fontSize:compact?12:14,fontWeight:selected?'700':'500',
+                    color:selected?theme.foreground:theme.muted}}>{item.title}</Text>:null}
+              </Pressable>;
+            })}
+          </View>:null}
+          {error ? <Text style={{color:'#B94D63',fontSize:12}}>{error}</Text> : null}
+          {space==='capture' ? <MusicCaptureExperience project={project} patch={update}
+            onStartVersion={start} onUseFile={useFile} hasVersion={!!version}/> : null}
+          {space==='create' ? <MusicCreateExperience project={project} patch={update}
+            onCapture={()=>setSpace('capture')}/> : null}
+          {space==='collaborate' ?
+            <MusicCollaborateExperience project={project} patch={update}/> : null}
+        </View>
+        {desktop?<View style={{width:178,minWidth:178,paddingLeft:14,
+          paddingTop:3,borderLeftWidth:1,borderColor:theme.border,gap:5,
+          ...({position:'sticky',top:24} as any)}}>
+          {spaces.map(item=>{
+            const selected=space===item.id;
+            return <Pressable key={item.id} onPress={()=>setSpace(item.id)}
+              accessibilityRole="tab" accessibilityLabel={item.title}
+              accessibilityState={{selected}}
+              style={{minHeight:54,paddingHorizontal:12,borderRadius:14,
+                flexDirection:'row',alignItems:'center',gap:12,
+                backgroundColor:selected?
+                  (theme.dark?'rgba(203,36,92,.16)':'rgba(203,36,92,.07)'):
+                  'transparent'}}>
+              <Ionicons name={item.icon} size={20}
+                color={selected?PINK:theme.muted}/>
+              <Text style={{fontSize:13,fontWeight:selected?'700':'500',
+                color:selected?theme.foreground:theme.muted}}>
+                {item.title}
+              </Text>
+              {selected?<View pointerEvents="none" style={{
+                position:'absolute',right:0,top:15,bottom:15,
+                width:3,borderRadius:3,backgroundColor:PINK}}/>:null}
+            </Pressable>;
+          })}
+        </View>:null}
       </View>
-      {error ? <Text style={{color:'#B94D63',fontSize:12}}>{error}</Text> : null}
-      {space==='capture' ? <MusicCaptureExperience project={project} patch={update}
-        onStartVersion={start} onUseFile={useFile} hasVersion={!!version}/> : null}
-      {space==='create' ? <MusicCreateExperience project={project} patch={update}
-        onCapture={()=>setSpace('capture')}/> : null}
-      {space==='collaborate' ? <MusicCollaborateExperience project={project} patch={update}/> : null}
     </ScrollView>
     <Nav/>
   </SafeAreaView>;
