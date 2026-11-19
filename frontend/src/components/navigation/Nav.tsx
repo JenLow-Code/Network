@@ -58,20 +58,19 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
     }
     router.replace({pathname:'/my-dream/[id]',params:{id:currentDream.id,view:phase}});
   };
-  const openResource=(kind:'notes'|'documents'|'inspirations'|'resources',
+  const openResource=(kind:'notes'|'library'|'resources',
     phase:DreamPhase)=>{
     if(!currentDream)return;
     const id=currentDream.id;
     if(kind==='resources'){
       router.replace({pathname:'/my-dream/[id]',
         params:{id,view:phase,focus:'resources'}});
-    }else if(kind==='inspirations'&&phase==='Rêve'){
+    }else if(kind==='library'&&phase==='Rêve'){
       router.replace({pathname:'/my-dream/[id]',params:{id,view:'Rêve'}});
     }else {
       router.replace({pathname:kind==='notes'?'/my-dream/notes/[id]':
         '/my-dream/library/[id]',
-        params:{id,view:phase,section:kind==='inspirations'?
-          'inspirations':kind==='documents'?'documents':'notes'}});
+        params:{id,view:phase,section:kind==='library'?'all':'notes'}});
     }
   };
   const openMusicVersion=(versionId:string)=>{
@@ -128,8 +127,8 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
     const activeColor='#CB245C';
     // Material-like glass keeps the navigation integrated in the desktop grid.
     // The content remains legible over a soft, context-aware colour wash.
-    const navSurface=theme.dark?'rgba(21,26,31,.35)':'rgba(255,255,255,.19)';
-    const glassBorder=theme.dark?'rgba(255,255,255,.22)':'rgba(255,255,255,.82)';
+    const navSurface=theme.dark?'rgba(21,26,31,.28)':'rgba(255,255,255,.12)';
+    
     const selectedBg=theme.dark?'rgba(215,65,127,.22)':'rgba(203,36,92,.095)';
     const chrome=Platform.OS==='web'&&
       typeof navigator!=='undefined'&&/Chrome|Chromium|Edg\//.test(navigator.userAgent);
@@ -170,7 +169,7 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
     return <View accessibilityRole="navigation" style={{
       width:collapsed?72:212,minWidth:collapsed?72:212,
       height:'100%',backgroundColor:navSurface,
-      borderLeftWidth:1,borderLeftColor:glassBorder,
+      borderLeftWidth:0,
       justifyContent:'space-between',paddingTop:28,paddingBottom:24,
       overflow:'hidden',...glassEffects,
     }}>
@@ -213,20 +212,9 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
         ...({backdropFilter:'url(#jenlow-liquid-displace)',
           WebkitBackdropFilter:'url(#jenlow-liquid-displace)'} as any),
       }}/>:null}
-      <View pointerEvents="none" style={{position:'absolute',left:0,top:0,
-        bottom:0,width:9,backgroundColor:theme.dark?
-          'rgba(255,255,255,.055)':'rgba(255,255,255,.20)',
-        ...(Platform.OS==='web'?({
-          backdropFilter:'blur(6px) brightness(1.14)',
-          WebkitBackdropFilter:'blur(6px) brightness(1.14)',
-          boxShadow:'inset 2px 0 2px rgba(255,255,255,.65), 2px 0 12px rgba(40,49,54,.05)',
-        } as any):{})}}/>
-      <View pointerEvents="none" style={{position:'absolute',left:1,top:0,
-        bottom:0,width:1,
-        backgroundColor:theme.dark?'rgba(255,255,255,.33)':'rgba(255,255,255,.91)'}}/>
-      <View pointerEvents="none" style={{position:'absolute',right:0,top:0,
-        bottom:0,width:2,backgroundColor:theme.dark?
-          'rgba(255,255,255,.13)':'rgba(255,255,255,.45)'}}/>
+      
+      
+      
       <View style={{gap:21}}>
         <View style={{paddingHorizontal:collapsed?13:20,
           flexDirection:'row',alignItems:'center',
@@ -314,6 +302,7 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
                   'rgba(92,91,100,.27)',paddingLeft:collapsed?0:8}}>
                 <Pressable accessibilityRole="button"
                   accessibilityLabel={'Rêve actuel : '+currentDream.title}
+                  {...(Platform.OS==='web'?({title:currentDream.title} as any):{})}
                   accessibilityHint={collapsed?'Ouvrir le rêve':'Afficher ou masquer les étapes'}
                   accessibilityState={{expanded:!collapsed&&dreamTreeOpen}}
                   onPress={()=>{
@@ -379,24 +368,19 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
                           'rgba(255,255,255,.15)':'rgba(71,77,78,.15)',
                         gap:1,marginVertical:2}}>
                         {(phase==='Rêve'?[
-                            {kind:'inspirations' as const,title:'Inspirations'},
+                            {kind:'library' as const,title:'Documents & Inspirations'},
                             {kind:'notes' as const,title:'Notes personnelles'},
                           ]:phase==='Initiation'?[
-                            {kind:'documents' as const,title:'Documents'},
-                            {kind:'inspirations' as const,title:'Inspirations'},
+                            {kind:'library' as const,title:'Documents & Inspirations'},
                             {kind:'notes' as const,title:'Notes personnelles'},
-                            {kind:'resources' as const,title:'Ressources'},
                           ]:[
-                            {kind:'documents' as const,title:'Documents'},
-                            {kind:'inspirations' as const,title:'Inspirations'},
+                            {kind:'library' as const,title:'Documents & Inspirations'},
                             {kind:'resources' as const,title:'Ressources'},
                             {kind:'notes' as const,title:'Notes personnelles'},
                           ]).map(resource=>{
                             const active=phase===currentPhase&&(
                               resource.kind==='notes'&&path.startsWith('/my-dream/notes/')||
-                              (resource.kind==='documents'||resource.kind==='inspirations')&&
-                                path.startsWith('/my-dream/library/')&&
-                                (params.section||'documents')===resource.kind||
+                              resource.kind==='library'&&path.startsWith('/my-dream/library/')||
                               resource.kind==='resources'&&params.section==='resources'||
                               resource.kind==='resources'&&params.focus==='resources'
                             );
@@ -442,8 +426,7 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
       overflow: 'hidden',
       borderTopLeftRadius: 18, borderTopRightRadius: 18,
       backgroundColor: theme.dark ? 'rgba(18,29,38,0.10)' : 'rgba(239,248,251,0.10)',
-      borderTopWidth: 1,
-      borderColor: theme.dark ? 'rgba(221,241,250,0.26)' : 'rgba(255,255,255,0.84)',
+      borderTopWidth: 0,
       shadowColor: theme.dark ? '#A4D5ED' : '#7FB5C9',
       shadowOpacity: 0.21, shadowRadius: 18,
       shadowOffset: { width: 0, height: -5 }, elevation: 8,
@@ -469,10 +452,7 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
         </Defs>
         <Rect width="100%" height="100%" fill="url(#nav-water)"/>
       </Svg>
-      <View pointerEvents="none" style={{
-        position: 'absolute', top: 2, left: 24, right: 24, height: 1,
-        backgroundColor: theme.dark ? 'rgba(255,255,255,0.27)' : 'rgba(255,255,255,0.85)',
-      }} />
+
       {links.map(x => (
         <Pressable
           key={x.path}
