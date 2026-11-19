@@ -19,6 +19,7 @@ export function MusicCollaborateExperience({project,patch}:Props){
   const theme=useAppTheme();
   const [proposals,setProposals]=useState<Proposal[]>([]);
   const [selected,setSelected]=useState('');
+  const [editingNeedId,setEditingNeedId]=useState('');
   const [audioUrl,setAudioUrl]=useState('');
   const [loading,setLoading]=useState(false);
   const [error,setError]=useState('');
@@ -49,7 +50,9 @@ export function MusicCollaborateExperience({project,patch}:Props){
   };
   const needs=project.needs||[];
   return <View style={{gap:18}}>
-    <MusicMissingTalentAction project={project} patch={patch} primary/>
+    <MusicMissingTalentAction project={project} patch={patch} primary
+      editNeed={needs.find(need=>need.id===editingNeedId)||null}
+      onFinished={()=>setEditingNeedId('')}/>
     {proposals.length?<View style={{gap:12}}>
       <View style={{flexDirection:'row',alignItems:'center',gap:8}}>
         <Text style={{fontSize:17,fontWeight:'700',color:theme.foreground}}>
@@ -108,22 +111,53 @@ export function MusicCollaborateExperience({project,patch}:Props){
         </Text>
         <Text style={{fontSize:12,color:theme.muted}}>{needs.length}</Text>
       </View>
-      {needs.map(need=><View key={need.id} style={{flexDirection:'row',alignItems:'center',
-        minHeight:43,gap:11,borderBottomWidth:1,borderColor:theme.border,paddingBottom:7}}>
-        <Ionicons name="person-outline" color={PINK} size={18}/>
-        <View style={{flex:1,gap:3}}>
-          <Text style={{fontSize:13,fontWeight:'600',color:theme.foreground}}>{need.label}</Text>
-          <Text style={{fontSize:11,color:theme.muted}}>
-            {need.sourceLanguage&&need.targetLanguage?
-              need.sourceLanguage+' → '+need.targetLanguage+' · traduction humaine':
-              need.level||'Talent recherché'}
-          </Text>
+      {needs.map(need=><View key={need.id}
+        style={{borderBottomWidth:1,borderColor:theme.border,paddingVertical:11,
+          gap:7}}>
+        <View style={{flexDirection:'row',alignItems:'center',gap:10}}>
+          <Ionicons name="person-outline" color={PINK} size={18}/>
+          <View style={{flex:1,gap:4}}>
+            <Text style={{fontSize:13,fontWeight:'700',color:theme.foreground}}>
+              {need.label}
+            </Text>
+            <Text style={{fontSize:11,color:theme.muted}}>
+              {need.level||'Talent recherché'} · {
+                need.audience==='public'?'Public · à diffuser':
+                need.audience==='contacts'?'Contacts · à diffuser':
+                need.audience==='direct'?'Destinataire · en attente':
+                'Privé'}
+            </Text>
+          </View>
+          <Pressable accessibilityRole="button"
+            accessibilityLabel={'Modifier '+need.label}
+            onPress={()=>setEditingNeedId(need.id)}
+            style={{width:42,height:42,alignItems:'center',justifyContent:'center'}}>
+            <Ionicons name="create-outline" color={PINK} size={19}/>
+          </Pressable>
+          <Pressable accessibilityRole="button"
+            accessibilityLabel={'Retirer '+need.label}
+            onPress={()=>patch({needs:needs.filter(item=>item.id!==need.id)})}
+            style={{width:40,height:40,alignItems:'center',justifyContent:'center'}}>
+            <Ionicons name="trash-outline" color={theme.muted} size={18}/>
+          </Pressable>
         </View>
-        <Pressable accessibilityRole="button" accessibilityLabel={'Retirer le besoin '+need.label}
-          onPress={()=>patch({needs:needs.filter(item=>item.id!==need.id)})}
-          style={{padding:9}}>
-          <Ionicons name="close-outline" color={theme.muted} size={19}/>
-        </Pressable>
+        {need.description?<Text style={{fontSize:12,lineHeight:19,
+          color:theme.foreground,paddingLeft:28}}>
+          {need.description}
+        </Text>:null}
+        {need.referenceFileIds?.length?<View style={{flexDirection:'row',
+          gap:7,flexWrap:'wrap',paddingLeft:28}}>
+          {need.referenceFileIds.map(id=>{
+            const file=project.files.find(source=>source.id===id);
+            return file?<View key={id} style={{flexDirection:'row',alignItems:'center',
+              gap:4,paddingHorizontal:8,paddingVertical:6,
+              borderRadius:9,backgroundColor:theme.surface}}>
+              <Ionicons name="attach-outline" color={PINK} size={15}/>
+              <Text numberOfLines={1} style={{fontSize:11,color:theme.muted,
+                maxWidth:170}}>{file.title}</Text>
+            </View>:null;
+          })}
+        </View>:null}
       </View>)}
 
     </View>:null}
