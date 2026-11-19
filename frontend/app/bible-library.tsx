@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, Share, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, Share, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { PageHeader } from '@/components/navigation/PageHeader';
 import { Nav } from '@/components/navigation/Nav';
 import { useAppTheme } from '@/theme/AppTheme';
+import {workspaceCanvas,WORKSPACE_TITLE_GAP} from '@/theme/workspaceLayout';
 import BiblePassagePicker from '@/components/bible/BiblePassagePicker';
 import BibleSaveDestinationModal from '@/components/bible/BibleSaveDestinationModal';
 import {
@@ -15,6 +16,7 @@ import {
 
 export default function BibleLibraryScreen(){
  const theme=useAppTheme();
+  const {width}=useWindowDimensions();
  const [complete,setComplete]=useState(false);
  const [progress,setProgress]=useState<number|null>(null);
  const [busy,setBusy]=useState(false);
@@ -56,8 +58,8 @@ export default function BibleLibraryScreen(){
  };
  return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
   <ScrollView keyboardShouldPersistTaps="handled"
-    contentContainerStyle={{width:'100%',maxWidth:760,alignSelf:'center',
-      paddingHorizontal:19,paddingTop:10,paddingBottom:125,gap:16}}>
+    contentContainerStyle={{...workspaceCanvas(width),
+      paddingTop:12,paddingBottom:125,gap:16}}>
    <PageHeader/>
    <View style={{gap:8,marginTop:10}}>
      <View style={{flexDirection:'row',alignItems:'center',flexWrap:'wrap',gap:5}}>
