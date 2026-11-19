@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Image, Platform, Pressable, Text, View, useWindowDimensions } from 'react-native';
 import { BlurView } from 'expo-blur';
-import Svg, { Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
+import Svg, { Defs, LinearGradient, Stop, Rect, Filter, FeTurbulence, FeDisplacementMap } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useGlobalSearchParams, usePathname } from 'expo-router';
 import { useLocale } from '@/i18n/locale';
@@ -123,6 +123,8 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' }) 
     const navSurface=theme.dark?'rgba(21,26,31,.35)':'rgba(255,255,255,.19)';
     const glassBorder=theme.dark?'rgba(255,255,255,.22)':'rgba(255,255,255,.82)';
     const selectedBg=theme.dark?'rgba(215,65,127,.22)':'rgba(203,36,92,.095)';
+    const chrome=Platform.OS==='web'&&
+      typeof navigator!=='undefined'&&/Chrome|Chromium|Edg\//.test(navigator.userAgent);
     const glassEffects=Platform.OS==='web'?({
       backdropFilter:'blur(23px) saturate(125%) contrast(110%)',
       WebkitBackdropFilter:'blur(23px) saturate(125%) contrast(110%)',
@@ -171,6 +173,16 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' }) 
       <Svg pointerEvents="none" width="100%" height="100%"
         style={{position:'absolute',top:0,right:0,bottom:0,left:0}}>
         <Defs>
+          {/* Gentle real background refraction. Chrome/Edge can resolve SVG
+              displacement filters in backdrop-filter; other browsers simply
+              use the neutral frosted CSS layer. Text remains crisp. */}
+          <Filter id="jenlow-liquid-displace" x="-7%" y="-5%"
+            width="114%" height="110%">
+            <FeTurbulence type="fractalNoise" baseFrequency="0.008 0.02"
+              numOctaves={1} seed={7} result="waterSurface"/>
+            <FeDisplacementMap in="SourceGraphic" in2="waterSurface"
+              scale={7} xChannelSelector="R" yChannelSelector="G"/>
+          </Filter>
           <LinearGradient id="jenlow-desktop-glass" x1="0%" y1="0%"
             x2="100%" y2="100%">
             <Stop offset="0%" stopColor="#FFFFFF"
@@ -187,6 +199,12 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' }) 
       </Svg>
       {/* Refractive-looking specular edge: different blur and luminance
           at the rim, instead of making the entire panel white. */}
+      {chrome?<View pointerEvents="none" style={{
+        position:'absolute',top:0,left:0,right:0,bottom:0,
+        backgroundColor:'rgba(255,255,255,.008)',
+        ...({backdropFilter:'url(#jenlow-liquid-displace)',
+          WebkitBackdropFilter:'url(#jenlow-liquid-displace)'} as any),
+      }}/>:null}
       <View pointerEvents="none" style={{position:'absolute',left:0,top:0,
         bottom:0,width:9,backgroundColor:theme.dark?
           'rgba(255,255,255,.055)':'rgba(255,255,255,.20)',
