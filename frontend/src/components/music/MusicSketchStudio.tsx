@@ -6,10 +6,12 @@ import {useAppTheme} from '@/theme/AppTheme';
 import {DRUM_PADS,downloadMusicMidi,musicNoteName} from '@/domain/musicNotation';
 import type {MusicNotationEvent} from '@/domain/musicNotation';
 import type {MusicProjectFile} from '@/domain/musicWorkspace';
+import {saveDraftAudio,getDraftAudio} from '@/domain/musicLocalStorage';
 
 const PINK='#CB245C';
 type Instrument='piano'|'drum';
-type ScoreResult={title:string;events:MusicNotationEvent[];bpm:number};
+type ScoreResult={title:string;events:MusicNotationEvent[];bpm:number;
+  tone:string;sampleLocalId?:string;sampleName?:string};
 type Props={
   initialFile?:MusicProjectFile|null;
   onSave:(value:ScoreResult)=>void;
@@ -147,8 +149,9 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange}:Props){
   const startRef=useRef(0),beatOriginRef=useRef(0);
   const [octaves,setOctaves]=useState<12|18|24|30>(12);
   const [baseMidi,setBaseMidi]=useState(60);
-  const [tone,setTone]=useState<string>('Piano doux');
-  const [sampleName,setSampleName]=useState('');
+  const [tone,setTone]=useState<string>(initialFile?.instrumentTone||'Piano doux');
+  const [sampleName,setSampleName]=useState(initialFile?.instrumentSampleName||'');
+  const [sampleId,setSampleId]=useState(initialFile?.instrumentSampleLocalId||'');
   const sampleRef=useRef<AudioBuffer|null>(null);
   const [volume,setVolume]=useState({piano:.8,drum:.7});
   const [last,setLast]=useState('');
@@ -160,9 +163,23 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange}:Props){
   const [midiOpen,setMidiOpen]=useState(false);
   const pristine=JSON.stringify(initialFile?.musicEvents||[]);
   const dirty=title!==(initialFile?.title||'')||
-    JSON.stringify(events)!==pristine||bpm!==(initialFile?.tempoBpm||100);
+    JSON.stringify(events)!==pristine||bpm!==(initialFile?.tempoBpm||100)||
+    tone!==(initialFile?.instrumentTone||'Piano doux')||
+    sampleId!==(initialFile?.instrumentSampleLocalId||'');
   useEffect(()=>onDirtyChange(dirty),[dirty,onDirtyChange]);
   useEffect(()=>()=>{void audioRef.current?.close();},[]);
+  useEffect(()=>{
+    const id=initialFile?.instrumentSampleLocalId;
+    if(!id||Platform.OS!=='web')return;
+    let live=true;
+    void getDraftAudio(id).then(async blob=>{
+      if(!blob)return;
+      if(!audioRef.current)audioRef.current=new AudioContext();
+      const decoded=await audioRef.current.decodeAudioData(await blob.arrayBuffer());
+      if(live)sampleRef.current=decoded;
+    }).catch(()=>{if(live)setMessage('Échantillon enregistré indisponible sur cet appareil.');});
+    return()=>{live=false;};
+  },[initialFile?.instrumentSampleLocalId]);
   const selected=events.find(e=>e.id===selectedId&&e.instrument===part);
   const drafts=events.filter(e=>e.draft);
   const confirmed=events.filter(e=>!e.draft);
@@ -227,11 +244,16 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange}:Props){
     picker.onchange=()=>{
       const file=picker.files?.[0];if(!file)return;
       void(async()=>{
+        if(file.size>12*1024*1024)throw Error('too_large');
         if(!audioRef.current)audioRef.current=new AudioContext();
         const buffer=await audioRef.current.decodeAudioData(await file.arrayBuffer());
-        sampleRef.current=buffer;setSampleName(file.name);setTone('Échantillon');
-        setMessage('Son importé pour cette session. La note d’origine est supposée Do4.');
-      })().catch(()=>setMessage('Ce fichier audio ne peut pas être décodé.'));
+        const id=await saveDraftAudio(file);
+        sampleRef.current=buffer;setSampleName(file.name);setSampleId(id);
+        setTone('Échantillon');
+        setMessage('Échantillon conservé sur cet appareil (référence Do4).');
+      })().catch(e=>setMessage(e instanceof Error&&e.message==='too_large'?
+        'Choisis un son de 12 Mo maximum.':
+        'Ce fichier audio ne peut pas être décodé ou stocké.'));
     };
     picker.click();
   };
@@ -356,7 +378,7 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange}:Props){
             tone==='Échantillon'):null}
         </View>
         {sampleName?<Text style={{fontSize:11,color:theme.muted}} numberOfLines={1}>
-          {sampleName} · référence Do4 · session actuelle
+          {sampleName} · référence Do4 · conservé localement
         </Text>:null}
       </View>
       <View style={{gap:7}}>
@@ -534,7 +556,8 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange}:Props){
     <View style={{borderTopWidth:1,borderColor:theme.border,paddingTop:13,
       flexDirection:'row',gap:9,alignItems:'center',justifyContent:'flex-end'}}>
       <Pressable onPress={()=>onSave({title:title.trim()||'Idée musicale',
-        events:events.map(e=>({...e,draft:false})),bpm})}
+        events:events.map(e=>({...e,draft:false})),bpm,tone,
+        sampleLocalId:sampleId||undefined,sampleName:sampleName||undefined})}
         disabled={!confirmed.length||!!drafts.length||recording}
         accessibilityRole="button"
         style={{minHeight:47,paddingHorizontal:18,borderRadius:12,
