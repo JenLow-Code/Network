@@ -439,6 +439,30 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
       if(!available.length)setMessage('Aucune sortie MIDI détectée.');
     }catch{setMessage('Accès MIDI refusé ou indisponible.');}
   };
+  const exportPdf=()=>{
+    try{
+      downloadMusicScorePdf(events,bpm,title||'idee-musicale',clef);
+      setMessage('Partition PDF exportée.');
+    }catch(e){setMessage(e instanceof Error?e.message:'Export PDF impossible.');}
+  };
+  const insertRestBefore=(event:MusicNotationEvent,beats:number)=>{
+    setEvents(old=>old.map(e=>
+      e.instrument===event.instrument&&e.startBeats>=event.startBeats?
+        {...e,startBeats:Math.round((e.startBeats+beats)*4)/4}:e));
+    setCursor(v=>v+beats);
+  };
+  const openNote=(id:string)=>{setSelectedId(id);setEditor('note');};
+  const openTempo=()=>{setTempoDraft(String(bpm));setEditor('tempo');};
+  const confirmTempo=()=>{
+    const value=Number(tempoDraft.replace(',','.'));
+    if(!Number.isFinite(value)||value<40||value>240){
+      setMessage('Choisis un tempo entre 40 et 240 BPM.');return;
+    }
+    setBpm(Math.round(value));setEditor(null);setMessage('');
+  };
+  useEffect(()=>()=>{previewSources.current.forEach(source=>{
+    try{source.stop();}catch{}
+  });if(previewTimeout.current)clearTimeout(previewTimeout.current);},[]);
   const control=(label:string,fn:()=>void,disabled=false,active=false)=>
     <Pressable onPress={fn} disabled={disabled} accessibilityRole="button"
       accessibilityLabel={label}
