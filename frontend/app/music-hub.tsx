@@ -61,9 +61,9 @@ export default function MusicHub() {
   return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
     <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{
       paddingHorizontal:ws.gutter,paddingTop:8,paddingBottom:115,
-      maxWidth:ws.maxWidth,width:'100%',alignSelf:'center',gap:18}}>
+      maxWidth:ws.maxWidth,width:'100%',alignSelf:'center',gap:WORKSPACE_TITLE_GAP}}>
       <PageHeader />
-      <View style={{gap:9,marginTop:WORKSPACE_TITLE_GAP-18}}>
+      <View style={{gap:9}}>
         <Text style={{fontSize:compact?34:40,fontWeight:'700',color:theme.foreground,
           letterSpacing:-1.2}}>Musique</Text>
         <Text style={{fontSize:14,lineHeight:23,color:theme.muted,maxWidth:520}}>
