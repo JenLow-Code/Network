@@ -121,6 +121,12 @@ export default function DreamHub({ dream, startInSemence = false, startPhase }: 
         dream.phase !== 'Témoignage' ? dream.phase : null
   );
   const firstRender = useRef(true);
+  useEffect(()=>{
+    if(!startPhase||order.indexOf(startPhase)>order.indexOf(dream.phase))return;
+    if(startPhase==='Témoignage'&&dream.phase==='Témoignage'&&!isPublishedFlower(dream))return;
+    setOpen(startPhase);
+    setRecoveryCategory(null);
+  },[startPhase,dream.id,dream.phase]);
   const switchPhase = (next: DreamPhase) => {
     const accessible = order.indexOf(next) <= order.indexOf(dream.phase);
     if (!accessible) return;
@@ -133,6 +139,7 @@ export default function DreamHub({ dream, startInSemence = false, startPhase }: 
       return;
     }
     setOpen(next);
+    router.setParams({view:next});
   };
   const [preview, setPreview] = useState<DreamPhase | null>(null);
   const sheet = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
@@ -296,6 +303,7 @@ export default function DreamHub({ dream, startInSemence = false, startPhase }: 
             onRecoverResource={category=>{
               setRecoveryCategory(category);
               setOpen('Initiation');
+              router.setParams({view:'Initiation'});
             }}
             onBack={()=>{
               if(open==='Initiation' && recoveryCategory){
