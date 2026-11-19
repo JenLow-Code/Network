@@ -11,6 +11,7 @@ import { Nav } from '@/components/navigation/Nav';
 import { DetailAuthorHeader } from './DetailAuthorHeader';
 import { PublicationGallery } from '@/components/publication/PublicationGallery';
 import { useAppTheme } from '@/theme/AppTheme';
+import {workspaceCanvas,workspaceLayout} from '@/theme/workspaceLayout';
 import { useDiscovery } from '@/lib/api/hooks';
 
 /**
@@ -44,7 +45,9 @@ export function DetailLayout({
   const isFloraison = isDream && item.phase === 'Témoignage';
   const isSeed = isDream && item.phase === 'Rêve';
   const { width: screenWidth } = useWindowDimensions();
-  const width = Math.min(screenWidth, 760);
+  const ws=workspaceLayout(screenWidth);
+  const visibleWidth=Math.max(0,screenWidth-(ws.desktop?212:0));
+  const width=Math.min(760,Math.max(0,visibleWidth-2*ws.gutter));
   const heroWidth = Math.max(0, width - 32);
   // Let Floraison photography meet the detail-page edges; other content keeps its insets.
   const coverWidth = isFloraison ? width : heroWidth;
@@ -60,15 +63,13 @@ export function DetailLayout({
       <View style={{ flex: 1, position: 'relative' }}>
       <ScrollView
         contentContainerStyle={{
-          maxWidth: 760,
-          width: '100%',
-          alignSelf: 'center',
-          paddingBottom: 40,
+          ...workspaceCanvas(screenWidth),
+          paddingBottom:40,
         }}
       >
         <DetailAuthorHeader item={item} flushToImage={isFloraison} />
 
-        <View style={{ paddingHorizontal: 16 }}>
+        <View style={{maxWidth:760,width:'100%',paddingHorizontal:16}}>
           <View style={{ position: 'relative', marginHorizontal: isFloraison ? -16 : 0 }}>
           <DetailHero item={item} width={coverWidth} height={heroHeight} onMusicPress={onCoverPress} musicPlaying={musicPlaying} />
 
