@@ -207,11 +207,11 @@ export default function FlowerPreparation() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
-      <ScrollView style={{ flex: 1 }}
+      <DreamCoverBackdrop uri={dream.image}/>
+      <ScrollView style={{ flex: 1, backgroundColor:'transparent' }}
         contentContainerStyle={{ paddingHorizontal: narrow ? 19 : 26,
           paddingTop: 10, paddingBottom: 70, maxWidth: 760, width: '100%',
           alignSelf: 'center' }}>
-        <DreamCoverBackdrop uri={dream.image}/>
         <DreamPhaseHeader dream={dream} phase="Témoignage"
           onBack={() => router.replace('/my-space')}
           onNavigate={phase => {
