@@ -3,7 +3,7 @@ import {Platform,Pressable,ScrollView,Text,TextInput,View,useWindowDimensions} f
 import Svg,{Circle,Ellipse,Line,Path,Text as SvgText} from 'react-native-svg';
 import {Ionicons} from '@expo/vector-icons';
 import {useAppTheme} from '@/theme/AppTheme';
-import {DRUM_PADS,downloadMusicMidi,downloadMusicScorePdf,musicNoteName} from '@/domain/musicNotation';
+import {DRUM_PADS,downloadMusicMidi,downloadMusicScorePdf,musicNoteName,liveNoteLength,liveNotePosition} from '@/domain/musicNotation';
 import type {MusicNotationEvent} from '@/domain/musicNotation';
 import type {MusicProjectFile} from '@/domain/musicWorkspace';
 import {saveDraftAudio,getDraftAudio} from '@/domain/musicLocalStorage';
@@ -290,6 +290,10 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
   const [selectedId,setSelectedId]=useState('');
   const [recording,setRecording]=useState(false);
   const startRef=useRef(0),beatOriginRef=useRef(0);
+  const liveHeldRef=useRef<Map<string,{id:string;pressedAt:number}>>(new Map());
+  const liveSourcesRef=useRef<Map<string,AudioScheduledSourceNode>>(new Map());
+  const releaseRef=useRef<(instrument:Instrument,midi:number)=>void>(()=>{});
+  const clock=()=>typeof performance!=='undefined'?performance.now():Date.now();
   const chordRef=useRef<{at:number;beat:number}|null>(null);
   const heldKeysRef=useRef<Set<string>>(new Set());
   const triggerRef=useRef<(instrument:Instrument,midi:number)=>void>(()=>{});
@@ -347,29 +351,37 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
         if(!audioRef.current)audioRef.current=new AudioContext();
         const ctx=audioRef.current;
         if(ctx.state==='suspended')void ctx.resume();
-        playSound(ctx,midi,instrument==='drum',volume[instrument],tone,
-          sampleRef.current,undefined,0,sampleRootMidi);
+        const source=playSound(ctx,midi,instrument==='drum',volume[instrument],tone,
+          sampleRef.current,recording&&instrument==='piano'?10:undefined,
+          0,sampleRootMidi);
+        if(recording&&instrument==='piano')
+          liveSourcesRef.current.set(instrument+':'+midi,source);
       }catch{setMessage('Aperçu sonore indisponible sur cet appareil.');}
       try{
         if(midiRef.current){
           const channel=instrument==='piano'?0:9;
           midiRef.current.send([0x90|channel,midi,95]);
-          setTimeout(()=>{try{midiRef.current?.send([0x80|channel,midi,0]);}catch{}},
-            Math.round(duration*60000/bpm));
+          if(!recording||instrument==='drum')
+            setTimeout(()=>{try{midiRef.current?.send([0x80|channel,midi,0]);}catch{}},
+              Math.round(duration*60000/bpm));
         }
       }catch{setMessage('Sortie MIDI déconnectée.');}
     }
-    const playedAt=Date.now();
+    const playedAt=clock();
     const chord=!recording&&!!chordRef.current&&
       playedAt-chordRef.current.at<130;
-    const beat=recording?beatOriginRef.current+
-      (playedAt-startRef.current)/60000*bpm:
+    const beat=recording?
+      liveNotePosition(startRef.current,playedAt,bpm,beatOriginRef.current):
       chord?chordRef.current!.beat:cursor;
-    const startBeats=Math.max(0,Math.round(beat*4)/4);
+    const startBeats=recording?beat:Math.max(0,Math.round(beat*4)/4);
     const event:MusicNotationEvent={id:newId(),instrument,midi,
-      startBeats,lengthBeats:instrument==='drum'?.25:duration,velocity:95,
+      startBeats,lengthBeats:recording&&instrument==='piano'?.125:
+        instrument==='drum'?.25:duration,velocity:95,
       draft:!recording};
     setEvents(old=>[...old,event]);setSelectedId(event.id);
+    if(recording&&instrument==='piano'){
+      liveHeldRef.current.set(instrument+':'+midi,{id:event.id,pressedAt:playedAt});
+    }
     if(!recording){
       chordRef.current={at:playedAt,beat:startBeats};
       if(!chord)setCursor(startBeats+event.lengthBeats);
