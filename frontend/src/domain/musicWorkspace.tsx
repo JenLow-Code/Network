@@ -93,6 +93,8 @@ export type MusicAudioMarker = {
   /** Optional pointer to an existing source in Capture; never copies its contents. */
   linkedFileId?: string;
   linkedSectionId?: string;
+  /** Exact already-marked lyric excerpt when chosen, not just the parent file. */
+  linkedLyricReferenceId?: string;
 };
 export type MusicLyricReference = {
   id: string;
