@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ActivityIndicator, Image, Pressable, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Image, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { useAppTheme } from '@/theme/AppTheme';
@@ -25,25 +25,27 @@ export const phaseAccent: Record<DreamPhase, string> = {
 export function DreamCoverBackdrop({ uri }: { uri?: string }) {
   const theme = useAppTheme();
   if (!uri) return null;
+  // Anchor the cover to the ENTIRE phase viewport, not the 760px reading
+  // column or a fixed 510px band. It stays continuous when content scrolls.
   return (
-    <View pointerEvents="none" style={{
-      position: 'absolute', top: 0, left: 0, right: 0,
-      height: 510, overflow: 'hidden',
-    }}>
+    <View pointerEvents="none" style={StyleSheet.absoluteFill}>
       <Image source={{ uri }} resizeMode="cover"
-        style={{ position: 'absolute', top: 0, left: 0, right: 0,
-          height: 510, opacity: theme.dark ? .95 : .96 }}/>
-      <Svg width="100%" height="100%"
-        style={{ position: 'absolute', top: 0, left: 0 }}>
-        <Defs><LinearGradient id="dream-cover-background-fade"
-          x1="0%" y1="0%" x2="0%" y2="100%">
-          <Stop offset="0%" stopColor={theme.background}
-            stopOpacity={theme.dark ? .17 : .14}/>
-          <Stop offset="35%" stopColor={theme.background}
-            stopOpacity={theme.dark ? .25 : .21}/>
-          <Stop offset="69%" stopColor={theme.background} stopOpacity=".80"/>
-          <Stop offset="100%" stopColor={theme.background} stopOpacity="1"/>
-        </LinearGradient></Defs>
+        style={[StyleSheet.absoluteFill, {opacity: .96}]}/>
+      <Svg width="100%" height="100%" pointerEvents="none"
+        style={StyleSheet.absoluteFill}>
+        <Defs>
+          <LinearGradient id="dream-cover-background-fade"
+            x1="0%" y1="0%" x2="0%" y2="100%">
+            <Stop offset="0%" stopColor={theme.background}
+              stopOpacity={theme.dark ? .68 : .66}/>
+            <Stop offset="31%" stopColor={theme.background}
+              stopOpacity={theme.dark ? .77 : .77}/>
+            <Stop offset="70%" stopColor={theme.background}
+              stopOpacity={theme.dark ? .91 : .91}/>
+            <Stop offset="100%" stopColor={theme.background}
+              stopOpacity={theme.dark ? .95 : .96}/>
+          </LinearGradient>
+        </Defs>
         <Rect width="100%" height="100%" fill="url(#dream-cover-background-fade)"/>
       </Svg>
     </View>
@@ -119,7 +121,13 @@ export function DreamPhaseHeader({
         {coverError}
       </Text>:null}
       {/* The phase progression is the single botanical header, preceding the dream identity. */}
-      <View style={{ flexDirection: 'row', gap: 6, marginBottom: 19 }}>
+      <View style={{
+        flexDirection: 'row', gap: 5, marginBottom: 19,
+        paddingHorizontal: 8,paddingTop: 5,paddingBottom: 8,
+        borderRadius: 13,borderWidth: 1,
+        borderColor: theme.dark?'rgba(255,255,255,.15)':'rgba(80,76,67,.12)',
+        backgroundColor: theme.dark?'rgba(27,30,31,.88)':'rgba(255,252,247,.90)',
+      }}>
         {DREAM_PHASES.map((item, i) => {
           // A phase is reached only by an explicit phase transition.
           // Legacy editor timestamps are not phase transitions.
@@ -149,8 +157,12 @@ export function DreamPhaseHeader({
               ) : <View style={{ height: phase === 'Témoignage' ? 9 : 36 }} />}
               <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}
                 style={{
-                  color: selected ? accent : reached ? theme.muted : theme.border,
-                  fontSize: 10, fontWeight: selected ? '800' : '500',
+                  color: selected
+                    ? item==='Rêve'?'#875934'
+                      :item==='Initiation'?'#556719'
+                      :item==='Croissance'?'#1C6A4C':'#A81856'
+                    : theme.dark?'#ECEDEA':reached?'#3C413D':'#595C58',
+                  fontSize: 11, fontWeight: selected ? '800' : '600',
                   textAlign: 'center',
                 }}>{PHASE_LABELS[item]}</Text>
               <View style={{
