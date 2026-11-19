@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ActivityIndicator, Image, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Image, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { useAppTheme } from '@/theme/AppTheme';
@@ -37,13 +37,15 @@ export function DreamCoverBackdrop({ uri }: { uri?: string }) {
           <LinearGradient id="dream-cover-background-fade"
             x1="0%" y1="0%" x2="0%" y2="100%">
             <Stop offset="0%" stopColor={theme.background}
-              stopOpacity={theme.dark ? .68 : .66}/>
-            <Stop offset="31%" stopColor={theme.background}
-              stopOpacity={theme.dark ? .77 : .77}/>
-            <Stop offset="70%" stopColor={theme.background}
-              stopOpacity={theme.dark ? .91 : .91}/>
+              stopOpacity={theme.dark ? .56 : .67}/>
+            <Stop offset="22%" stopColor={theme.background}
+              stopOpacity={theme.dark ? .39 : .47}/>
+            <Stop offset="45%" stopColor={theme.background}
+              stopOpacity={theme.dark ? .24 : .28}/>
+            <Stop offset="72%" stopColor={theme.background}
+              stopOpacity={theme.dark ? .72 : .77}/>
             <Stop offset="100%" stopColor={theme.background}
-              stopOpacity={theme.dark ? .95 : .96}/>
+              stopOpacity={theme.dark ? .93 : .94}/>
           </LinearGradient>
         </Defs>
         <Rect width="100%" height="100%" fill="url(#dream-cover-background-fade)"/>
@@ -120,61 +122,63 @@ export function DreamPhaseHeader({
         style={{fontSize:11,color:'#B24753',lineHeight:17,marginBottom:10}}>
         {coverError}
       </Text>:null}
-      {/* The phase progression is the single botanical header, preceding the dream identity. */}
+      {/* The progress indicator is a slim editorial timeline, not a raised
+          card. A quiet frosted strip guarantees readable phase names over
+          photographically varied dream covers. */}
       <View style={{
-        flexDirection: 'row', gap: 5, marginBottom: 19,
-        paddingHorizontal: 8,paddingTop: 5,paddingBottom: 8,
-        borderRadius: 13,borderWidth: 1,
-        borderColor: theme.dark?'rgba(255,255,255,.15)':'rgba(80,76,67,.12)',
-        backgroundColor: theme.dark?'rgba(27,30,31,.88)':'rgba(255,252,247,.90)',
+        flexDirection:'row',gap:5,marginBottom:18,
+        paddingHorizontal:2,paddingTop:5,paddingBottom:8,
+        backgroundColor:theme.dark?'rgba(21,23,26,.43)':'rgba(252,250,245,.52)',
+        borderBottomWidth:1,
+        borderBottomColor:theme.dark?'rgba(255,255,255,.18)':'rgba(86,81,74,.14)',
+        ...(Platform.OS==='web'?({
+          backdropFilter:'blur(16px) saturate(130%)',
+          WebkitBackdropFilter:'blur(16px) saturate(130%)',
+        } as any):{}),
       }}>
-        {DREAM_PHASES.map((item, i) => {
-          // A phase is reached only by an explicit phase transition.
-          // Legacy editor timestamps are not phase transitions.
-          const reached = i <= DREAM_PHASES.indexOf(dream.phase);
-          const selected = item === phase;
-          return (
-            <Pressable key={item}
-              accessibilityRole="button"
-              accessibilityLabel={'Ouvrir ' + PHASE_LABELS[item]}
-              accessibilityState={{ disabled: !reached || !onNavigate, selected }}
-              disabled={!reached || !onNavigate}
-              onPress={() => onNavigate?.(item)}
-              style={{
-                flex: 1, minWidth: 0,
-                minHeight: phase === 'Témoignage' ? 49 : 75,
-                justifyContent: 'flex-end', alignItems: 'center',
-                paddingBottom: 2,
-              }}>
-              {selected && item !== 'Témoignage' ? (
-                <Image source={{ uri: dreamPhaseImageUris[item] }} resizeMode="contain"
-                  style={{
-                    width: item==='Rêve'?16:31,
-                    height: item==='Rêve'?16:31,
-                    marginBottom: item==='Rêve'?13:5,
-                    ...(item==='Croissance'?{tintColor:phaseAccent.Croissance}:{}),
-                  }}/>
-              ) : <View style={{ height: phase === 'Témoignage' ? 9 : 36 }} />}
-              <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}
-                style={{
-                  color: selected
-                    ? item==='Rêve'?'#875934'
-                      :item==='Initiation'?'#556719'
-                      :item==='Croissance'?'#1C6A4C':'#A81856'
-                    : theme.dark?'#ECEDEA':reached?'#3C413D':'#595C58',
-                  fontSize: 11, fontWeight: selected ? '800' : '600',
-                  textAlign: 'center',
-                }}>{PHASE_LABELS[item]}</Text>
-              <View style={{
-                width: '100%', height: selected ? 4 : 3,
-                marginTop: 11, borderRadius: 3,
-                backgroundColor: selected ? accent :
-                  reached ? phaseAccent[item] :
-                  theme.dark ? '#35373A' : '#E9E7E1',
-                opacity: selected ? 1 : reached ? .60 : .7,
-              }} />
-            </Pressable>
-          );
+        {DREAM_PHASES.map((item,i)=>{
+          const reached=i<=DREAM_PHASES.indexOf(dream.phase);
+          const selected=item===phase;
+          const readableAccent=theme.dark?
+            item==='Rêve'?'#E8BD95':
+            item==='Initiation'?'#CAE27B':
+            item==='Croissance'?'#81D6A7':'#F18DBC'
+            :item==='Rêve'?'#95623A':
+            item==='Initiation'?'#5A7022':
+            item==='Croissance'?'#1B7352':'#AB1E60';
+          return <Pressable key={item}
+            accessibilityRole="button"
+            accessibilityLabel={'Ouvrir '+PHASE_LABELS[item]}
+            accessibilityState={{disabled:!reached||!onNavigate,selected}}
+            disabled={!reached||!onNavigate}
+            onPress={()=>onNavigate?.(item)}
+            style={{flex:1,minWidth:0,minHeight:52,
+              alignItems:'center',justifyContent:'flex-end',
+              paddingHorizontal:1}}>
+            {selected&&item!=='Témoignage'?
+              <Image source={{uri:dreamPhaseImageUris[item]}}
+                resizeMode="contain" style={{
+                  width:19,height:19,marginBottom:6,
+                  ...(item==='Croissance'?{tintColor:readableAccent}:{})
+                }}/>:
+              <View style={{height:25}}/>}
+            <Text numberOfLines={1} adjustsFontSizeToFit
+              minimumFontScale={.78} style={{
+                color:selected?readableAccent:
+                  theme.dark?(reached?'#F3F2EE':'#D0D3D1'):
+                    reached?'#333B36':'#525953',
+                fontSize:11,fontWeight:selected?'700':'500',
+                textAlign:'center',letterSpacing:.15,
+              }}>{PHASE_LABELS[item]}</Text>
+            <View style={{
+              width:'100%',height:selected?3:2,marginTop:8,
+              borderRadius:2,
+              backgroundColor:selected?phaseAccent[item]:
+                reached?phaseAccent[item]:
+                  theme.dark?'rgba(255,255,255,.35)':'rgba(75,73,69,.24)',
+              opacity:selected?1:reached?.68:.68,
+            }}/>
+          </Pressable>;
         })}
       </View>
       {readOnly ? (
