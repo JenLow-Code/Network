@@ -16,6 +16,8 @@ type Props = {
   width: number;
   variant: 'tile' | 'detail';
   onOpen?: () => void;
+  /** Discovery-only talent-match indication. Never inferred for other contexts. */
+  forYou?: boolean;
 };
 
 const serif = Platform.select({
@@ -130,7 +132,7 @@ function PersonResourceTiles({ resources, width, compact, dark, onInspect }: {
  * Identical Dream phases in Discovery and the detail hero. The detail accordion
  * and reaction rail remain owned by DreamReferenceLayout and DetailLayout.
  */
-export function DreamPhaseCard({ item, width, variant, onOpen }: Props) {
+export function DreamPhaseCard({ item, width, variant, onOpen, forYou = false }: Props) {
   const theme = useAppTheme();
   const [inspectedTalent, setInspectedTalent] = React.useState<PersonNeed | null>(null);
   const [inspectedImage, setInspectedImage] = React.useState<string | null>(null);
@@ -209,9 +211,25 @@ export function DreamPhaseCard({ item, width, variant, onOpen }: Props) {
       </View>
     </Modal>
   );
+  const phaseDay = item.phaseDate && /^\\d{4}-\\d{2}-\\d{2}$/.test(item.phaseDate)
+    ? item.phaseDate.slice(8, 10) + '.' + item.phaseDate.slice(5, 7) + '.' + item.phaseDate.slice(0, 4)
+    : null;
+  const forYouLabel = compact && forYou ? (
+    <View style={{ alignSelf: 'flex-end', backgroundColor: '#CB245C',
+      borderRadius: 7, paddingHorizontal: 7, paddingVertical: 4 }}>
+      <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 9, letterSpacing: 0.2 }}>
+        C’est pour toi
+      </Text>
+    </View>
+  ) : null;
   const topRight = (color?: string) => (
-    <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center' }}>
+    <View style={{ alignItems: 'flex-end', gap: compact ? 3 : 0 }}>
+      {compact && phaseDay ? <Text style={{ color: color || discoveryLabelColor,
+        opacity: 0.8, fontSize: 9, letterSpacing: 0.2, textAlign: 'right' }}>
+        {phaseDay}
+      </Text> : null}
       {phaseText(color)}
+      {forYouLabel}
     </View>
   );
 
@@ -442,11 +460,19 @@ export function DreamPhaseCard({ item, width, variant, onOpen }: Props) {
           </Svg>
           )}
           {compact && (
-            <View pointerEvents="none" style={{ position: 'absolute', top: inset, right: inset, zIndex: 2 }}>
+            <View pointerEvents="none" style={{ position: 'absolute', top: inset,
+              right: inset, zIndex: 2, alignItems: 'flex-end', gap: 3 }}>
+              {phaseDay ? <Text style={{ color: '#FFFFFF', opacity: 0.85,
+                fontSize: 9, letterSpacing: 0.2,
+                textShadowColor: 'rgba(0,0,0,0.5)',
+                textShadowOffset: {width:0,height:1}, textShadowRadius: 2 }}>
+                {phaseDay}
+              </Text> : null}
               <Text style={{
                 color: '#FFFFFF', fontWeight: '700', fontSize: 9, letterSpacing: 1.3,
                 textShadowColor: 'rgba(0,0,0,0.5)', textShadowOffset: {width:0,height:1}, textShadowRadius: 2,
               }}>FLORAISON</Text>
+              {forYouLabel}
             </View>
           )}
           {compact ? (
