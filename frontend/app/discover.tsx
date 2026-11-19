@@ -116,7 +116,7 @@ export default function Discover() {
           if (feed.hasMore && layoutMeasurement.height + contentOffset.y > contentSize.height - 900) void feed.loadMore();
         }}
         contentContainerStyle={{
-          paddingHorizontal: 15,
+          paddingHorizontal: ws.gutter,
           paddingBottom: 55,
           maxWidth: ws.maxWidth,
           width: '100%',
