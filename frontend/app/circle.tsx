@@ -1,6 +1,6 @@
 import { Text } from '@/i18n/LocalizedText';
 import React from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Pressable, ScrollView, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -8,10 +8,12 @@ import { Nav } from '@/components/navigation/Nav';
 import { PageHeader } from '@/components/navigation/PageHeader';
 import { Avatar } from '@/components/ui/Avatar';
 import { myCircle } from '@/mocks/demoCircle';
+import {workspaceCanvas} from '@/theme/workspaceLayout';
 export default function Circle() {
+  const {width}=useWindowDimensions();
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 18 }}>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{...workspaceCanvas(width),paddingTop:12,paddingBottom:65}}>
         <PageHeader />
         <Text style={{ fontFamily: 'Caveat_700Bold', fontSize: 35, marginBottom: 6 }}>
           Mon cercle
