@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Image, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/theme/AppTheme';
+import {workspaceCanvas} from '@/theme/workspaceLayout';
 import { api } from '@/lib/api/client';
 import { Nav } from '@/components/navigation/Nav';
 import { PageHeader } from '@/components/navigation/PageHeader';
@@ -16,6 +17,7 @@ import type { PublishedSemence } from '@/components/dream/SemencePublishActions'
 export default function PublishedSemenceScreen(){
  const {id}=useLocalSearchParams<{id:string}>();
  const theme=useAppTheme();
+ const {width}=useWindowDimensions();
  const [item,setItem]=useState<PublishedSemence|null>(null);
  const [loading,setLoading]=useState(true);
  const [selected,setSelected]=useState<DreamBlock|null>(null);
@@ -37,8 +39,8 @@ export default function PublishedSemenceScreen(){
    onPress={()=>setSelected({...b})} onLongPress={()=>setSelected({...b})}/>;
  return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
    <ScrollView keyboardShouldPersistTaps="handled"
-     contentContainerStyle={{paddingHorizontal:18,paddingTop:10,
-       paddingBottom:115,maxWidth:780,width:'100%',alignSelf:'center',gap:16}}>
+     contentContainerStyle={{...workspaceCanvas(width),paddingTop:12,
+       paddingBottom:115,gap:16}}>
      <PageHeader onBack={()=>router.back()}/>
      {loading?<ActivityIndicator style={{padding:50}} color={theme.muted}/>:
        !item?<View style={{padding:24,gap:11}}>
