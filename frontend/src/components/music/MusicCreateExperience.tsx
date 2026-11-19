@@ -88,10 +88,12 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
   const [timelineCursor,setTimelineCursor]=useState(0);
   const [recordOrigin,setRecordOrigin]=useState(0);
   const [playbackRequest,setPlaybackRequest]=useState<{at:number;serial:number}|null>(null);
+  const [seekRequest,setSeekRequest]=useState<{at:number;serial:number}|null>(null);
   const [pauseRequest,setPauseRequest]=useState(0);
   const [showSettings,setShowSettings]=useState(false);
   const [showSections,setShowSections]=useState(false);
   const [infoOpen,setInfoOpen]=useState(false);
+  const [showSongInfo,setShowSongInfo]=useState(false);
   const [sectionId,setSectionId]=useState('');
   const [tempo,setTempo]=useState('');
   const [meter,setMeter]=useState('');
@@ -242,6 +244,45 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
     {showSections?<View style={{gap:14}}>
       <MusicSongTabs project={project} patch={patch}
         activeSectionId={sectionId} onSelect={setSectionId}/>
+      {version&&project.sections.length?<View style={{gap:3}}>
+        <Text style={{fontSize:11,color:theme.muted,lineHeight:19}}>
+          Place les parties sur la chronologie de cette version.
+          Chaque repère reste modifiable sans toucher aux prises.
+        </Text>
+        {project.sections.map(part=>{
+          const at=version.sectionMarkers?.[part.id];
+          const positioned=at!==undefined&&Number.isFinite(at);
+          return <View key={part.id} style={{minHeight:46,flexDirection:'row',
+            alignItems:'center',gap:8,borderBottomWidth:1,borderColor:theme.border}}>
+            <Text numberOfLines={1} style={{fontSize:12,fontWeight:'600',
+              color:theme.foreground,flex:1,minWidth:0}}>{part.title}</Text>
+            <Text style={{fontSize:11,color:theme.muted}}>
+              {positioned?musicStamp(at):'Non placée'}
+            </Text>
+            {positioned?<Pressable accessibilityRole="button"
+              accessibilityLabel={'Aller à '+part.title}
+              onPress={()=>{
+                setSeekRequest(prev=>({at,serial:(prev?.serial||0)+1}));
+                setVersionExpanded(true);setInfoOpen(false);
+              }} style={{width:42,height:42,alignItems:'center',
+                justifyContent:'center'}}>
+              <Ionicons name="locate-outline" size={18} color={PINK}/>
+            </Pressable>:null}
+            <Pressable accessibilityRole="button"
+              accessibilityLabel={'Placer '+part.title+' au curseur'}
+              onPress={()=>edit({...version,sectionMarkers:{
+                ...(version.sectionMarkers||{}),
+                [part.id]:Math.round(timelineCursor*1000)/1000,
+              }})}
+              style={{minHeight:42,paddingHorizontal:8,
+                alignItems:'center',justifyContent:'center'}}>
+              <Text style={{fontSize:11,color:PINK}}>
+                {positioned?'Déplacer':'Placer ici'}
+              </Text>
+            </Pressable>
+          </View>;
+        })}
+      </View>:null}
       {project.sections.some(part=>part.id===sectionId)?<View style={{gap:10}}>
         <Text style={{fontSize:12,fontWeight:'700',color:theme.foreground}}>
           Extraits de paroles de cette partie
@@ -364,6 +405,7 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
       </View>
       {availableSources.length?<MusicSourceBank files={availableSources} onAdd={add}/>:null}
       <MusicStudioTransport key={version.id} version={version} files={project.files}
+        sections={project.sections} seekRequest={seekRequest}
         onPositionChange={setTimelineCursor}
         onTrackChange={editOneTrack}
         onRenameTrack={(id,title)=>editOneTrack(id,{title})}
