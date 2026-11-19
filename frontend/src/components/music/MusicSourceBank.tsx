@@ -136,7 +136,7 @@ export function MusicSourceBank({files,onAdd}:Props){
       style={{flexDirection:'row',alignItems:'center',gap:8,minHeight:39}}>
       <Ionicons name="albums-outline" size={18} color={ACCENT}/>
       <Text style={{flex:1,fontSize:13,fontWeight:'700',color:theme.foreground}}>
-        Prises à ajouter · {files.length}
+        À placer · {files.length}
       </Text>
       <Ionicons name={expanded?'chevron-up':'chevron-down'} size={17} color={theme.muted}/>
     </Pressable>
@@ -151,10 +151,10 @@ export function MusicSourceBank({files,onAdd}:Props){
         {files.length?'Aucune prise correspondante.':'Aucun enregistrement disponible.'}
       </Text>:null}
       <ScrollView horizontal showsHorizontalScrollIndicator
-        keyboardShouldPersistTaps="handled" style={{maxHeight:110}}>
+        keyboardShouldPersistTaps="handled" style={{maxHeight:83}}>
         <View style={{flexDirection:'row',gap:8,paddingBottom:6}}>
           {shown.map(file=>{
-            const content=<View style={{width:185,minHeight:79,borderRadius:11,
+            const content=<View style={{width:154,minHeight:68,borderRadius:11,
               borderWidth:1,borderColor:moving?.id===file.id?ACCENT:theme.border,
               paddingHorizontal:9,paddingVertical:7,backgroundColor:theme.surface,
               gap:5}}>
@@ -175,8 +175,8 @@ export function MusicSourceBank({files,onAdd}:Props){
                 style={{alignSelf:'flex-end',minHeight:27,flexDirection:'row',
                   alignItems:'center',gap:4,paddingHorizontal:6}}>
                 <Ionicons name="add-outline" color={ACCENT} size={17}/>
-                <Text style={{fontSize:11,fontWeight:'700',color:ACCENT}}>
-                  Ajouter au curseur
+                <Text style={{fontSize:10,fontWeight:'600',color:ACCENT}}>
+                  Ajouter
                 </Text>
               </Pressable>
             </View>;
