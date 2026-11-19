@@ -102,11 +102,12 @@ export function MusicWritingOverlay({project,mode,startTab,onModeChange,source,i
   };
   return <Modal visible animationType="slide"
     presentationStyle="fullScreen" onRequestClose={exit}>
-    <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
+    <SafeAreaView style={{flex:1,minHeight:0,overflow:'hidden',backgroundColor:theme.background}}>
       <KeyboardAvoidingView behavior={Platform.OS==='ios'?'padding':undefined}
-        style={{flex:1}}>
-        <View style={{height:54,flexDirection:'row',alignItems:'center',
-          paddingHorizontal:compact?11:24,borderBottomWidth:1,borderColor:theme.border}}>
+        style={{flex:1,minHeight:0}}>
+        <View style={{height:54,flexShrink:0,flexDirection:'row',alignItems:'center',
+          paddingHorizontal:compact?11:24,borderBottomWidth:1,borderColor:theme.border,
+          backgroundColor:theme.background,zIndex:2}}>
           <Pressable onPress={exit} accessibilityRole="button"
             accessibilityLabel="Fermer l’éditeur"
             style={{width:43,height:43,justifyContent:'center',alignItems:'center'}}>
@@ -117,15 +118,17 @@ export function MusicWritingOverlay({project,mode,startTab,onModeChange,source,i
           <View style={{width:43}}/>
         </View>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{gap:2,alignItems:'stretch',paddingHorizontal:compact?8:24}}
-          style={{flexGrow:0,borderBottomWidth:1,borderColor:theme.border}}>
+          contentContainerStyle={{gap:2,alignItems:'center',paddingHorizontal:compact?8:24}}
+          style={{height:51,maxHeight:51,flexGrow:0,flexShrink:0,
+            overflow:'hidden',backgroundColor:theme.background,zIndex:2,
+            borderBottomWidth:1,borderColor:theme.border}}>
           {tabs.map(item=>{
             const active=tab===item.id;
             const disabled=!!initialFile&&!active;
             return <Pressable key={item.id} onPress={()=>changeTab(item.id)}
               disabled={disabled} accessibilityRole="tab" accessibilityState={{selected:active,disabled}}
               accessibilityLabel={item.title}
-              style={{minHeight:45,flexDirection:'row',alignItems:'center',
+              style={{height:49,flexDirection:'row',alignItems:'center',
                 justifyContent:'center',gap:active?5:0,paddingHorizontal:compact?13:16,
                 borderBottomWidth:active?2:0,borderBottomColor:PINK,opacity:disabled?.35:1}}>
               <Ionicons name={item.icon} size={compact?19:16} color={active?PINK:theme.muted}/>
@@ -210,6 +213,7 @@ export function MusicWritingOverlay({project,mode,startTab,onModeChange,source,i
           {sourceWarning?<Text style={{fontSize:12,color:'#AD3857'}}>{sourceWarning}</Text>:null}
         </View>:null}
         <ScrollView ref={bodyScrollRef} keyboardShouldPersistTaps="handled"
+          style={{flex:1,minHeight:0}}
           contentContainerStyle={{width:'100%',maxWidth:tab==='translation'?1100:860,
             alignSelf:'center',paddingHorizontal:compact?19:45,
             paddingTop:compact?14:25,paddingBottom:70,flexGrow:1}}>
