@@ -402,13 +402,16 @@ function StoryCover({
           >
             {category(item).toUpperCase()}
           </Text>
-          {forYou ? <View style={{backgroundColor:'#CB245C',borderRadius:7,
-            paddingHorizontal:7,paddingVertical:4,marginTop:5,alignSelf:'flex-end'}}>
-            <Text style={{color:'#FFFFFF',fontSize:9,fontWeight:'700',letterSpacing:.2}}>
-              C’est pour toi
-            </Text>
-          </View> : null}
         </View>
+        {forYou ? <View pointerEvents="none" style={{
+          position:'absolute',top:inset,left:inset,zIndex:5,
+          backgroundColor:'#CB245C',borderRadius:7,
+          paddingHorizontal:7,paddingVertical:4,
+        }}>
+          <Text style={{color:'#FFFFFF',fontSize:9,fontWeight:'700',letterSpacing:.2}}>
+            C’est pour toi
+          </Text>
+        </View> : null}
         {isTalent && (
           <View pointerEvents="none" style={{ position: 'absolute', left: inset, right: inset, bottom: inset, gap: 3 }}>
             {talentIntent(item).map((line, i) => (
