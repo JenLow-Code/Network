@@ -61,7 +61,7 @@ export default function BibleLibraryScreen(){
     contentContainerStyle={{...workspaceCanvas(width),
       paddingTop:12,paddingBottom:125,gap:16}}>
    <PageHeader/>
-   <View style={{gap:8,marginTop:10}}>
+   <View style={{gap:8,marginTop:WORKSPACE_TITLE_GAP}}>
      <View style={{flexDirection:'row',alignItems:'center',flexWrap:'wrap',gap:5}}>
        <Text style={{fontFamily:'serif',fontSize:29,color:theme.foreground}}>Ma Bible en</Text>
        <Pressable onPress={()=>setLanguageOpen(open=>!open)}
