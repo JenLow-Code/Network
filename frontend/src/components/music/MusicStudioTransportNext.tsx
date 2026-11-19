@@ -4,7 +4,7 @@ import {Ionicons} from '@expo/vector-icons';
 import {useAppTheme} from '@/theme/AppTheme';
 import {getDraftAttachment} from '@/domain/musicLocalStorage';
 import {musicStampMs} from '@/domain/musicEditing';
-import {isPlayableMusicFile} from '@/domain/musicNext';
+import {isPlayableMusicFile,musicSourceDuration} from '@/domain/musicNext';
 import {MusicArrangementTimeline} from './MusicArrangementTimeline';
 import type {WorkingMusicTrack,WorkingMusicVersion} from '@/domain/musicNext';
 import type {MusicProjectFile} from '@/domain/musicWorkspace';
@@ -29,7 +29,7 @@ type Props={
 function versionLength(version:WorkingMusicVersion,files:MusicProjectFile[]){
   return Math.max(0,...version.tracks.map(t=>{
     const file=files.find(x=>x.id===t.sourceFileId);
-    const length=file?.durationSeconds||0;
+    const length=musicSourceDuration(file);
     const trim=Math.max(0,Math.min(t.trimEndSeconds??length,length)-(t.trimStartSeconds||0));
     return Math.max(0,t.offsetSeconds)+trim;
   }));
