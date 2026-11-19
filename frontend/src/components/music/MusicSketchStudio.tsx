@@ -3,7 +3,7 @@ import {Platform,Pressable,ScrollView,Text,TextInput,View,useWindowDimensions} f
 import Svg,{Ellipse,Line,Text as SvgText} from 'react-native-svg';
 import {Ionicons} from '@expo/vector-icons';
 import {useAppTheme} from '@/theme/AppTheme';
-import {DRUM_PADS,downloadMusicMidi,musicNoteName} from '@/domain/musicNotation';
+import {DRUM_PADS,downloadMusicMidi,downloadMusicScorePdf,musicNoteName} from '@/domain/musicNotation';
 import type {MusicNotationEvent} from '@/domain/musicNotation';
 import type {MusicProjectFile} from '@/domain/musicWorkspace';
 import {saveDraftAudio,getDraftAudio} from '@/domain/musicLocalStorage';
@@ -20,7 +20,7 @@ type Props={
 type MidiPort={id:string;name?:string;send:(data:number[])=>void};
 type MidiAccess={outputs:Map<string,MidiPort>};
 const DURATIONS=[.25,.5,1,2,4] as const;
-const TONES=['Piano doux','Orgue','Synthé'] as const;
+const TONES=['Piano doux','Orgue','Synthé','Cordes'] as const;
 const BLACKS=new Set([1,3,6,8,10]);
 const newId=()=> 'note-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,7);
 const beatLabel=(v:number)=>Number.isInteger(v)?String(v):v.toFixed(2).replace(/0+$/,'').replace(/\.$/,'');
@@ -103,7 +103,7 @@ function playSound(ctx:AudioContext,pitch:number,drum:boolean,level:number,
   const now=ctx.currentTime;
   const gain=ctx.createGain();
   gain.gain.setValueAtTime(Math.max(.0001,level*.25),now);
-  const duration=Math.max(.09,Math.min(4,seconds??(drum?.24:tone==='Orgue'?.72:.62)));
+  const duration=Math.max(.09,Math.min(4,seconds??(drum?.24:tone==='Orgue'||tone==='Cordes'?.78:.62)));
   gain.gain.exponentialRampToValueAtTime(.0001,now+duration);
   gain.connect(ctx.destination);
   if(!drum&&tone==='Échantillon'&&sample){
@@ -125,7 +125,8 @@ function playSound(ctx:AudioContext,pitch:number,drum:boolean,level:number,
     noise.connect(filter);filter.connect(gain);noise.start(now);noise.stop(now+.23);
   }else{
     const osc=ctx.createOscillator();
-    osc.type=drum?'sine':tone==='Orgue'?'sine':tone==='Synthé'?'sawtooth':'triangle';
+    osc.type=drum?'sine':tone==='Orgue'?'sine':
+      tone==='Synthé'||tone==='Cordes'?'sawtooth':'triangle';
     const hz=drum?125:440*Math.pow(2,(pitch-69)/12);
     osc.frequency.setValueAtTime(hz,now);
     if(drum)osc.frequency.exponentialRampToValueAtTime(46,now+.13);
