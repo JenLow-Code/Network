@@ -1,11 +1,12 @@
 import React from 'react';
-import { ActivityIndicator, Image, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useIncomingShare } from 'expo-sharing';
 import { Nav } from '@/components/navigation/Nav';
 import { PageHeader } from '@/components/navigation/PageHeader';
+import {workspaceCanvas} from '@/theme/workspaceLayout';
 const parseRef = (raw: string) => {
   const match = raw.match(
     /(?:psaumes?|psalms?|psalm|salmos?|salmo)\s*(\d{1,3})\s*(?:[:.,]\s*(\d{1,3}))?/i,
@@ -13,6 +14,7 @@ const parseRef = (raw: string) => {
   return match ? { chapter: Number(match[1]), verse: Number(match[2] || 1) } : null;
 };
 export default function ImportVerse() {
+  const {width}=useWindowDimensions();
   const { sharedPayloads, resolvedSharedPayloads, isResolving, clearSharedPayloads } =
     useIncomingShare();
   const raw =
@@ -26,7 +28,7 @@ export default function ImportVerse() {
   }
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20 }}>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ ...workspaceCanvas(width),paddingTop:12,paddingBottom:65 }}>
         <PageHeader onBack={close} />
         <Text style={{ fontFamily: 'Caveat_700Bold', fontSize: 33, marginTop: 17 }}>
           Recevoir un verset
