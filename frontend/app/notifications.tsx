@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -7,6 +7,7 @@ import { PageHeader } from '@/components/navigation/PageHeader';
 import { Nav } from '@/components/navigation/Nav';
 import { api, ApiRequestError } from '@/lib/api/client';
 import { useAppTheme } from '@/theme/AppTheme';
+import {workspaceCanvas} from '@/theme/workspaceLayout';
 
 type Notification={
   id:string;type:string;category?:string;
@@ -15,6 +16,7 @@ type Notification={
 };
 export default function Notifications(){
   const theme=useAppTheme();
+  const {width}=useWindowDimensions();
   const [items,setItems]=useState<Notification[]>([]);
   const [loading,setLoading]=useState(true);
   const [error,setError]=useState('');
@@ -41,8 +43,7 @@ export default function Notifications(){
     }
   };
   return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
-    <ScrollView style={{flex:1}} contentContainerStyle={{maxWidth:720,width:'100%',
-      alignSelf:'center',paddingHorizontal:18,paddingTop:12,paddingBottom:92}}>
+    <ScrollView style={{flex:1}} contentContainerStyle={{...workspaceCanvas(width),paddingTop:12,paddingBottom:92}}>
       <PageHeader onBack={()=>router.back()}/>
       <Text style={{fontFamily:'serif',fontSize:29,color:theme.foreground,marginTop:16,marginBottom:6}}>
         Notifications
