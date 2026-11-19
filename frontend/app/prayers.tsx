@@ -25,7 +25,8 @@ export default function Prayers() {
             flexDirection: 'row',
             justifyContent: 'space-between',
             alignItems: 'center',
-            marginBottom: 5,
+            marginTop:WORKSPACE_TITLE_GAP,
+            marginBottom:5,
           }}
         >
           <Text style={{ fontSize: 26, fontWeight: '700', color: theme.foreground }}>
