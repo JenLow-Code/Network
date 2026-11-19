@@ -129,6 +129,8 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,h
       instrumentTone:result.tone,
       instrumentSampleLocalId:result.sampleLocalId,
       instrumentSampleName:result.sampleName,
+      instrumentSampleRootMidi:result.sampleRootMidi,
+      scoreClef:result.clef,
       createdAt:current?.createdAt||new Date().toISOString(),
     };
     patch({files:current
