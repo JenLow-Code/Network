@@ -9,6 +9,7 @@ import {
   ScrollView,
   StyleSheet,
   View,
+  useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -21,11 +22,13 @@ import { colors as c } from '@/theme/colors';
 import { useDreams } from '@/domain/dreamRepository';
 import { api } from '@/lib/api/client';
 import { useAppTheme } from '@/theme/AppTheme';
+import {workspaceCanvas} from '@/theme/workspaceLayout';
 import { useMusicWorkspaces } from '@/domain/musicWorkspace';
 
 function ChatHeader({ name, subtitle }: { name: string; subtitle: string }) {
+  const {width}=useWindowDimensions();
   return (
-    <View style={s.header}>
+    <View style={[s.header,workspaceCanvas(width)]}>
       <Pressable onPress={() => router.back()} accessibilityLabel="Back">
         <Ionicons name="chevron-back" size={24} />
       </Pressable>
@@ -62,6 +65,7 @@ function Action({
   );
 }
 function SystemChat() {
+  const {width}=useWindowDimensions();
   const [calendarOptions, setCalendarOptions] = useState(false);
   const open = (url: string) => {
     void Linking.openURL(url).catch(() => setCalendarOptions(true));
@@ -71,7 +75,7 @@ function SystemChat() {
       <ChatHeader name="JenLow Network" subtitle="System • lesson reminder" />
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ padding: 18, paddingTop: 40, paddingBottom: 35 }}
+        contentContainerStyle={{...workspaceCanvas(width),paddingTop:40,paddingBottom:35}}
       >
         <Text style={s.day}>Lesson reminder</Text>
         <View style={s.systemBubble}>
@@ -144,6 +148,7 @@ function PersonChat({
   draft?: string;
 }) {
   const { messages, send } = useApp();
+  const {width}=useWindowDimensions();
   const [input, setInput] = useState(draft || '');
   const submit = () => {
     const m = input.trim();
@@ -165,7 +170,7 @@ function PersonChat({
         <ScrollView
           style={{ flex: 1 }}
           contentContainerStyle={{
-            padding: 16,
+            ...workspaceCanvas(width),
             paddingTop: 30,
             gap: 8,
             flexGrow: 1,
@@ -197,7 +202,7 @@ function PersonChat({
             </View>
           ))}
         </ScrollView>
-        <View style={s.composer}>
+        <View style={[s.composer,workspaceCanvas(width)]}>
           <TextInput
             placeholder="Message..."
             value={input}
@@ -224,6 +229,7 @@ type MusicChatMessage = {
 /** Shared, server-backed chat. Unlike draft notes, these messages reach other members. */
 function MusicSharedConversation({ conversationId }: { conversationId: string }) {
   const theme = useAppTheme();
+  const {width}=useWindowDimensions();
   const {sectionId,sectionTitle,projectId} = useLocalSearchParams<{
     sectionId?:string;sectionTitle?:string;projectId?:string;
   }>();
@@ -277,8 +283,8 @@ function MusicSharedConversation({ conversationId }: { conversationId: string })
     finally{setBusy(false);}
   };
   return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
-    <View style={{flexDirection:'row',alignItems:'center',gap:12,padding:16,
-      borderBottomWidth:1,borderColor:theme.border}}>
+    <View style={{...workspaceCanvas(width),flexDirection:'row',alignItems:'center',gap:12,
+      paddingVertical:16,borderBottomWidth:1,borderColor:theme.border}}>
       <Pressable onPress={()=>router.back()} accessibilityLabel="Retour">
         <Ionicons name="arrow-back-outline" size={22} color={theme.foreground}/>
       </Pressable>
@@ -291,7 +297,7 @@ function MusicSharedConversation({ conversationId }: { conversationId: string })
         <Ionicons name="refresh-outline" size={20} color={theme.foreground}/>
       </Pressable>
     </View>
-    <ScrollView style={{flex:1}} contentContainerStyle={{padding:16,paddingBottom:30,gap:10}}>
+    <ScrollView style={{flex:1}} contentContainerStyle={{...workspaceCanvas(width),paddingTop:16,paddingBottom:30,gap:10}}>
       {loading?<ActivityIndicator color="#CB245C"/>:null}
       {!loading && !items.length?<Text style={{fontSize:12,color:theme.muted,textAlign:'center'}}>
         Aucun message. La discussion commence ici.
@@ -325,8 +331,8 @@ function MusicSharedConversation({ conversationId }: { conversationId: string })
       </View>)}
       {error?<Text style={{color:'#B44F63',fontSize:12}}>{error}</Text>:null}
     </ScrollView>
-    {contextId&&contextTitle?<View style={{flexDirection:'row',alignItems:'center',gap:9,
-      borderTopWidth:1,borderColor:theme.border,paddingHorizontal:14,paddingVertical:7}}>
+    {contextId&&contextTitle?<View style={{...workspaceCanvas(width),flexDirection:'row',alignItems:'center',gap:9,
+      borderTopWidth:1,borderColor:theme.border,paddingVertical:7}}>
       <Ionicons name="return-down-forward-outline" color="#CB245C" size={17}/>
       <Text style={{color:theme.foreground,fontSize:12,flex:1}}>
         Référence : {contextTitle}
@@ -336,7 +342,7 @@ function MusicSharedConversation({ conversationId }: { conversationId: string })
         <Ionicons name="close" color={theme.muted} size={19}/>
       </Pressable>
     </View>:null}
-    <View style={{padding:12,gap:8,flexDirection:'row',alignItems:'center',
+    <View style={{...workspaceCanvas(width),paddingVertical:12,gap:8,flexDirection:'row',alignItems:'center',
       borderTopWidth:1,borderColor:theme.border}}>
       <TextInput value={input} onChangeText={setInput}
         placeholder="Un message pour ce morceau…" style={{flex:1,borderRadius:10,
@@ -350,6 +356,7 @@ function MusicSharedConversation({ conversationId }: { conversationId: string })
 }
 
 function DreamConversation({ dreamId }: { dreamId: string }) {
+ const {width}=useWindowDimensions();
  const { items, patch } = useDreams();
  const dream = items.find(d => d.id === dreamId);
  const [input, setInput] = useState('');
@@ -359,15 +366,15 @@ function DreamConversation({ dreamId }: { dreamId: string }) {
   setInput('');
  };
  return <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFCF5' }}>
-  <View style={{ padding: 18, flexDirection: 'row', alignItems: 'center', gap: 12, borderBottomWidth: 1, borderColor: '#e8e8e8' }}>
+  <View style={{...workspaceCanvas(width),paddingVertical:18,flexDirection:'row',alignItems:'center',gap:12,borderBottomWidth:1,borderColor:'#e8e8e8'}}>
    <Pressable onPress={() => router.back()}><Ionicons name="chevron-back" size={24}/></Pressable>
    <View style={{ flex: 1 }}><Text style={{ fontWeight: '800', fontSize: 16 }}>{dream?.title || 'Conversation du rêve'}</Text><Text style={{ color: '#777', fontSize: 11 }}>Espace de conversation du rêve · Sur cet appareil</Text></View>
   </View>
-  <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 10 }}>
+  <ScrollView style={{ flex: 1 }} contentContainerStyle={{...workspaceCanvas(width),paddingTop:16,paddingBottom:20,gap:10}}>
    <Text style={{ fontSize: 12, color: '#888', textAlign: 'center', marginBottom: 18 }}>Cette conversation est enregistrée localement. Les invitations et la messagerie entre membres ne sont pas encore connectées.</Text>
    {(dream?.chat?.messages || []).map(m => <View key={m.id} style={{ backgroundColor: '#D71D77', padding: 12, borderRadius: 12, alignSelf: 'flex-end', maxWidth: '85%' }}><Text style={{ color: '#fff' }}>{m.text}</Text></View>)}
   </ScrollView>
-  <View style={{ padding: 12, flexDirection: 'row', gap: 10, alignItems: 'center' }}>
+  <View style={{...workspaceCanvas(width),paddingVertical:12,flexDirection:'row',gap:10,alignItems:'center'}}>
    <TextInput value={input} onChangeText={setInput} onSubmitEditing={submit} placeholder="Un message pour ce rêve…" style={{ flex: 1, borderRadius: 12, padding: 12, backgroundColor: '#F1ECE5' }}/>
    <Pressable accessibilityLabel="Envoyer" onPress={submit}><Ionicons name="send" size={23} color="#D71D77"/></Pressable>
   </View>
