@@ -118,7 +118,8 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,h
     setComposer('none');setTranslationSourceId('');setEditingFileId('');
   };
   const saveScore=(result:{title:string;events:MusicNotationEvent[];bpm:number;
-    tone:string;sampleLocalId?:string;sampleName?:string})=>{
+    tone:string;sampleLocalId?:string;sampleName?:string;
+    sampleRootMidi?:number;clef?:'treble'|'bass'})=>{
     if(!result.events.length)return;
     const current=files.find(file=>file.id===editingFileId);
     const item:MusicProjectFile={
