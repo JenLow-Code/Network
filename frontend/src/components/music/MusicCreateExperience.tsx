@@ -7,7 +7,7 @@ import {Ionicons} from '@expo/vector-icons';
 import {useAppTheme} from '@/theme/AppTheme';
 import {MusicAudioCapture} from './MusicAudioCapture';
 import {MusicAudioPreview} from './MusicAudioPreview';
-import {MusicStudioTransport} from './MusicStudioTransportNext';
+import {MusicStudioTransport,versionLength} from './MusicStudioTransportNext';
 import {MusicAudioMarkers} from './MusicAudioMarkers';
 import {MusicSourceBank} from './MusicSourceBank';
 import {MusicLyricTimeline} from './MusicLyricTimeline';
@@ -71,6 +71,7 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
     return()=>{alive=false;};
   },[unknownKey,project.id]);
   const [versionMenu,setVersionMenu]=useState(false);
+  const [versionExpanded,setVersionExpanded]=useState(true);
   const [pickMode,setPickMode]=useState<PickMode>('none');
   const [recording,setRecording]=useState(false);
   const [unsavedRecording,setUnsavedRecording]=useState(false);
@@ -141,7 +142,7 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
     patch({musicNext:{...state,versions:[...versions,created],
       activeVersionId:created.id,history:(state.history||[])
         .filter(entry=>versions.some(v=>v.id===entry.versionId))}});
-    setPickMode('none');setVersionMenu(false);setError('');
+    setPickMode('none');setVersionMenu(false);setVersionExpanded(true);setError('');
   };
   const add=(file:MusicProjectFile,at=timelineCursor)=>{
     if(!version){first(file);return;}
@@ -160,7 +161,7 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
       title:'Version '+(versions.length+1),createdAt:now,updatedAt:now,
       tracks:version.tracks.map(track=>({...track,id:newMusicId()}))};
     patch({musicNext:{...state,versions:[...versions,next],activeVersionId:next.id}});
-    setVersionMenu(false);setShowSettings(false);
+    setVersionMenu(false);setVersionExpanded(true);setShowSettings(false);
   };
   const saveTake=(id:string,filename:string,durationSeconds?:number,
     startAt?:number,markers?:MusicAudioMarker[],name?:string)=>{
@@ -270,24 +271,26 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
   return <View style={{gap:compact?16:22}}>
     {version?<View style={{gap:11}}>
       <View style={{flexDirection:'row',gap:10,alignItems:'center'}}>
-        <Pressable onPress={()=>setVersionMenu(!versionMenu)} accessibilityRole="button"
-          accessibilityState={{expanded:versionMenu}}
+        <Pressable onPress={()=>{setVersionExpanded(open=>!open);setVersionMenu(false);}}
+          accessibilityRole="button" accessibilityState={{expanded:versionExpanded}}
           style={{flex:1,flexDirection:'row',gap:10,alignItems:'center',paddingVertical:7}}>
           <Ionicons name="layers-outline" size={20} color={PINK}/>
           <Text style={{fontSize:compact?15:18,fontWeight:'700',
             color:theme.foreground}}>{version.title}</Text>
-          <Ionicons name={versionMenu?'chevron-up':'chevron-down'} color={PINK} size={19}/>
+          <Ionicons name={versionExpanded?'chevron-up':'chevron-down'} color={PINK} size={19}/>
         </Pressable>
-        {tiny('document-text-outline','Structure et informations musicales',()=>{
-          setInfoOpen(true);setShowSections(true);openSettings();
+        {tiny('document-text-outline','Plan du morceau et informations',()=>{
+          setInfoOpen(true);setShowSections(true);
         })}
+        {tiny('ellipsis-horizontal-outline','Gérer les versions',()=>setVersionMenu(open=>!open),versionMenu)}
         {version?tiny('arrow-undo-outline','Annuler la dernière modification',()=>{
           patch({musicNext:undoWorkingVersion(state,version.id)});
         }):null}
       </View>
       {versionMenu?<View style={{paddingVertical:7,gap:5}}>
         {versions.map(v=><Pressable key={v.id} accessibilityRole="button"
-          onPress={()=>{patch({musicNext:{...state,activeVersionId:v.id}});setVersionMenu(false);}}
+          onPress={()=>{patch({musicNext:{...state,activeVersionId:v.id}});
+            setVersionMenu(false);setVersionExpanded(true);}}
           style={{flexDirection:'row',alignItems:'center',gap:10,minHeight:39}}>
           <Ionicons name={v.id===version?.id?'checkmark-circle':'ellipse-outline'}
             color={v.id===version?.id?PINK:theme.muted} size={20}/>
@@ -327,13 +330,23 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
           </View>)}
         </View>:null}
       </View>:null}
+      {!versionExpanded?<View style={{paddingVertical:4,gap:5}}>
+        <Text style={{fontSize:12,color:theme.muted}}>
+          {version.tracks.length} piste{version.tracks.length>1?'s':''}
+          {' · '+formatMusicDuration(versionLength(version,project.files))}
+          {' · '+effectiveBpm+' BPM'}
+        </Text>
+        <Text numberOfLines={2} style={{fontSize:11,color:theme.muted}}>
+          {version.tracks.map(track=>track.title).join(' · ')}
+        </Text>
+      </View>:null}
     </View>:null}
     {!version?<View style={{alignSelf:'flex-start',paddingTop:compact?4:10}}>
       {sources.length?
         button('Choisir une prise · 1re version',()=>setPickMode('start'),true,'add-outline'):
         button('Capturer ma première prise',onCapture,true,'mic-outline')}
     </View>:null}
-    {version?<View style={{gap:12}}>
+    {version&&versionExpanded?<View style={{gap:12}}>
       <View style={{flexDirection:'row',alignItems:'baseline',gap:10}}>
         <Text style={{fontSize:compact?18:22,fontWeight:'700',color:theme.foreground}}>
           Pistes · {version.tracks.length}
