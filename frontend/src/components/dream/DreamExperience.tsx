@@ -317,8 +317,12 @@ export default function DreamExperience({
    patch(dream.id,{paused:true,pauseUntil:date,pauseCount:(dream.pauseCount||0)+1});
    setFreezeDialog(false);
  };
- return <ScrollView style={{flex:1,backgroundColor:theme.background}} contentContainerStyle={{paddingHorizontal:19,paddingTop:10,paddingBottom:65,maxWidth:760,width:'100%',alignSelf:'center'}}>
+ return <View style={{flex:1,backgroundColor:theme.background}}>
   <DreamCoverBackdrop uri={dream.image}/>
+  <ScrollView style={{flex:1,backgroundColor:'transparent'}}
+    keyboardShouldPersistTaps="handled"
+    contentContainerStyle={{paddingHorizontal:19,paddingTop:10,paddingBottom:85,
+      maxWidth:860,width:'100%',alignSelf:'center'}}>
   <DreamPhaseHeader dream={dream} phase={phase} onBack={onBack || (()=>router.replace('/my-space'))} onNavigate={onNavigate} readOnly={readOnly&&!recoverPastNeeds}
     summary={phase==='Témoignage'?'Le rêve est devenu réalité. Voici ce qui a pris vie.':undefined}
     action={phase==='Rêve'&&!historical?<Pressable onPress={()=>setEditing(!editing)} style={{padding:8}}><Text style={{color:theme.foreground,fontWeight:'700',fontSize:12}}>{editing?'Terminer':'Composer'}</Text></Pressable>:undefined}
@@ -1228,5 +1232,6 @@ export default function DreamExperience({
    })()}
    onConfirm={freezeAt}
  />
- </ScrollView>;
+ </ScrollView>
+ </View>;
 }
