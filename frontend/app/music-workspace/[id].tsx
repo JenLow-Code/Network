@@ -63,18 +63,17 @@ export default function MusicWorkspace() {
   ];
   return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
     <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{
-      width:'100%',maxWidth:desktop?1500:940,alignSelf:'center',
-      paddingLeft:compact?18:desktop?44:34,
-      paddingRight:compact?18:desktop?132:34,
-      paddingTop:desktop?16:8,paddingBottom:desktop?45:120,
-      gap:compact?18:desktop?28:25}}>
+      width:'100%',maxWidth:desktop?1300:940,alignSelf:'center',
+      paddingHorizontal:compact?18:desktop?42:34,
+      paddingTop:desktop?16:8,paddingBottom:desktop?56:120,
+      gap:compact?18:desktop?20:25}}>
       <PageHeader onBack={()=>router.replace('/music-hub')}/>
-      <View style={{flexDirection:'row',gap:desktop?19:15,alignItems:'center',
-        paddingVertical:desktop?8:0}}>
-        <MusicFolderCover project={project} size={compact?65:desktop?90:82}/>
+      <View style={{flexDirection:'row',gap:desktop?16:15,alignItems:'center',
+        paddingVertical:desktop?3:0}}>
+        <MusicFolderCover project={project} size={compact?65:desktop?74:82}/>
         <View style={{gap:5,flex:1}}>
-          <Text style={{fontSize:compact?24:desktop?34:30,
-            lineHeight:compact?29:desktop?42:37,
+          <Text style={{fontSize:compact?24:desktop?30:30,
+            lineHeight:compact?29:desktop?36:37,
             fontWeight:'700',letterSpacing:-0.65,color:theme.foreground}}
             numberOfLines={2}>
             {project.title}
@@ -86,63 +85,40 @@ export default function MusicWorkspace() {
           </Text>
         </View>
       </View>
-      <View style={{flexDirection:desktop?'row':'column',
-        alignItems:'flex-start',gap:desktop?28:0}}>
-        <View style={{flex:1,minWidth:0,width:desktop?undefined:'100%',
-          gap:compact?16:23}}>
-          {!desktop?<View style={{flexDirection:'row',
-            borderBottomWidth:1,borderColor:theme.border,gap:3}}>
-            {spaces.map(item=>{
-              const selected=space===item.id;
-              return <Pressable key={item.id} onPress={()=>setSpace(item.id)}
-                accessibilityRole="tab" accessibilityLabel={item.title}
-                accessibilityState={{selected}}
-                style={{flex:1,flexDirection:'row',alignItems:'center',
-                  justifyContent:'center',gap:compact?5:9,
-                  minHeight:52,borderBottomWidth:selected?3:0,
-                  borderBottomColor:selected?PINK:'transparent',paddingHorizontal:3}}>
-                <Ionicons name={item.icon} size={compact?24:19}
-                  color={selected?PINK:theme.muted}/>
-                {(!compact||selected)?<Text numberOfLines={1}
-                  style={{fontSize:compact?12:14,fontWeight:selected?'700':'500',
-                    color:selected?theme.foreground:theme.muted}}>{item.title}</Text>:null}
-              </Pressable>;
-            })}
-          </View>:null}
-          {error ? <Text style={{color:'#B94D63',fontSize:12}}>{error}</Text> : null}
-          {space==='capture' ? <MusicCaptureExperience project={project} patch={update}
-            onStartVersion={start} onUseFile={useFile} hasVersion={!!version}/> : null}
-          {space==='create' ? <MusicCreateExperience project={project} patch={update}
-            onCapture={()=>setSpace('capture')}/> : null}
-          {space==='collaborate' ?
-            <MusicCollaborateExperience project={project} patch={update}/> : null}
-        </View>
-        {desktop?<View style={{width:178,minWidth:178,paddingLeft:14,
-          paddingTop:3,borderLeftWidth:1,borderColor:theme.border,gap:5,
-          ...({position:'sticky',top:24} as any)}}>
-          {spaces.map(item=>{
-            const selected=space===item.id;
-            return <Pressable key={item.id} onPress={()=>setSpace(item.id)}
-              accessibilityRole="tab" accessibilityLabel={item.title}
-              accessibilityState={{selected}}
-              style={{minHeight:54,paddingHorizontal:12,borderRadius:14,
-                flexDirection:'row',alignItems:'center',gap:12,
-                backgroundColor:selected?
-                  (theme.dark?'rgba(203,36,92,.16)':'rgba(203,36,92,.07)'):
-                  'transparent'}}>
-              <Ionicons name={item.icon} size={20}
-                color={selected?PINK:theme.muted}/>
-              <Text style={{fontSize:13,fontWeight:selected?'700':'500',
+      {/* Contextual workflow navigation belongs with the workspace, not in a
+          second competing right sidebar. Desktop tabs are text-first. */}
+      <View style={{flexDirection:'row',alignItems:'center',
+        borderBottomWidth:1,borderColor:theme.border,
+        gap:desktop?20:3}}>
+        {spaces.map(item=>{
+          const selected=space===item.id;
+          return <Pressable key={item.id} onPress={()=>setSpace(item.id)}
+            accessibilityRole="tab" accessibilityLabel={item.title}
+            accessibilityState={{selected}}
+            style={{flex:desktop?undefined:1,
+              flexDirection:'row',alignItems:'center',
+              justifyContent:'center',gap:compact?5:desktop?0:9,
+              minHeight:desktop?46:52,borderBottomWidth:selected?2:0,
+              borderBottomColor:selected?PINK:'transparent',
+              paddingHorizontal:desktop?12:3}}>
+            {!desktop?<Ionicons name={item.icon} size={compact?24:19}
+              color={selected?PINK:theme.muted}/>:null}
+            {(desktop||!compact||selected)?<Text numberOfLines={1}
+              style={{fontSize:compact?12:desktop?14:14,
+                fontWeight:selected?'700':'500',
                 color:selected?theme.foreground:theme.muted}}>
-                {item.title}
-              </Text>
-              {selected?<View pointerEvents="none" style={{
-                position:'absolute',right:0,top:15,bottom:15,
-                width:3,borderRadius:3,backgroundColor:PINK}}/>:null}
-            </Pressable>;
-          })}
-        </View>:null}
+              {item.title}
+            </Text>:null}
+          </Pressable>;
+        })}
       </View>
+      {error ? <Text style={{color:'#B94D63',fontSize:12}}>{error}</Text> : null}
+      {space==='capture' ? <MusicCaptureExperience project={project} patch={update}
+        onStartVersion={start} onUseFile={useFile} hasVersion={!!version}/> : null}
+      {space==='create' ? <MusicCreateExperience project={project} patch={update}
+        onCapture={()=>setSpace('capture')}/> : null}
+      {space==='collaborate' ?
+        <MusicCollaborateExperience project={project} patch={update}/> : null}
     </ScrollView>
     <Nav/>
   </SafeAreaView>;
