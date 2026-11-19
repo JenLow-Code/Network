@@ -5,12 +5,13 @@ import {Ionicons} from '@expo/vector-icons';
 import {useAppTheme} from '@/theme/AppTheme';
 import {musicStamp,musicStampMs} from '@/domain/musicEditing';
 import {MusicWaveformMarkerHandles} from './MusicWaveformMarkerHandles';
-import type {MusicAudioMarker} from '@/domain/musicWorkspace';
+import type {MusicAudioMarker,MusicProjectFile,MusicSection} from '@/domain/musicWorkspace';
 
 const pink='#CB245C';
 type Props={file:File;duration:number;cursor:number;onSeek:(seconds:number)=>void;
   zoom:number;onZoom:(zoom:number)=>void;playing:boolean;onTogglePlayback:()=>void;
   markers?:MusicAudioMarker[];compact?:boolean;
+  sourceFiles?:MusicProjectFile[];sections?:MusicSection[];
   onChangeMarkers?:(markers:MusicAudioMarker[])=>void;
   onEditMarker?:(id:string)=>void;
   onCreateRange?:(startSeconds:number,endSeconds:number)=>void;
@@ -20,7 +21,7 @@ type Props={file:File;duration:number;cursor:number;onSeek:(seconds:number)=>voi
 const clamp=(v:number,lo:number,hi:number)=>Math.max(lo,Math.min(hi,v));
 export function MusicWaveformEditor({file,duration,cursor,onSeek,zoom,onZoom,
   playing,onTogglePlayback,markers=[],compact=false,onChangeMarkers,onEditMarker,
-  onCreateRange,selectedRange,onClearSelectedRange}:Props){
+  onCreateRange,selectedRange,onClearSelectedRange,sourceFiles=[],sections=[]}:Props){
   const theme=useAppTheme();
   const {width}=useWindowDimensions();
   // The ruler and waveform must fill the actual panel, not a hard-coded
@@ -441,6 +442,22 @@ export function MusicWaveformEditor({file,duration,cursor,onSeek,zoom,onZoom,
             {selectedMarker.endSeconds!==undefined?
               ' – '+musicStampMs(selectedMarker.endSeconds):''}
           </Text>
+          {selectedMarker.linkedFileId||selectedMarker.linkedSectionId?
+            <View style={{flexDirection:'row',alignItems:'center',gap:5}}>
+              <Ionicons name="link-outline" color={pink} size={13}/>
+              <Text numberOfLines={2}
+                style={{fontSize:11,color:pink}}>
+                {selectedMarker.linkedLyricReferenceId?
+                  sourceFiles.flatMap(f=>f.lyricReferences||[])
+                    .find(r=>r.id===selectedMarker.linkedLyricReferenceId)?.text||
+                    'Extrait de paroles':
+                  selectedMarker.linkedFileId?
+                    sourceFiles.find(f=>f.id===selectedMarker.linkedFileId)?.title||
+                    'Document de Capture':
+                    sections.find(p=>p.id===selectedMarker.linkedSectionId)?.title||
+                    'Partie du morceau'}
+              </Text>
+            </View>:null}
         </View>
         {onEditMarker?<Pressable onPress={()=>onEditMarker(selectedMarker.id)}
           accessibilityRole="button" accessibilityLabel="Modifier ce repère"
