@@ -1,6 +1,6 @@
 import { Text } from '@/i18n/LocalizedText';
 import React, { useState } from 'react';
-import { Alert, Image, Pressable, ScrollView, View } from 'react-native';
+import { Alert, Image, Pressable, ScrollView, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useDreams } from '@/domain/dreamRepository';
@@ -10,9 +10,11 @@ import { Nav } from '@/components/navigation/Nav';
 import { PageHeader } from '@/components/navigation/PageHeader';
 import { pickDreamImage } from '@/lib/pickDreamImage';
 import { useAppTheme } from '@/theme/AppTheme';
+import {workspaceCanvas,WORKSPACE_TITLE_GAP} from '@/theme/workspaceLayout';
 import { DreamPhaseButton, DreamPhaseField } from '@/components/dream/DreamPhaseLayout';
 
 export default function NewDream() {
+  const {width}=useWindowDimensions();
   const { inspiration } = useLocalSearchParams<{ inspiration?: string }>();
   const { createPersisted, ready, storageError } = useDreams();
   const { user, initialized } = useAuth();
@@ -52,10 +54,10 @@ export default function NewDream() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 21, paddingTop: 18, paddingBottom: 70 }}>
-        <View style={{ width: '100%', maxWidth: 660, alignSelf: 'center' }}>
-          <PageHeader />
-          <View style={{height:28}} />
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ ...workspaceCanvas(width),paddingTop:12,paddingBottom:70 }}>
+        <PageHeader />
+        <View style={{width:'100%',maxWidth:660,alignSelf:'flex-start',
+          marginTop:WORKSPACE_TITLE_GAP}}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 11, marginBottom: 17 }}>
             <View style={{ height: 2, width: 27, backgroundColor: '#B88962', borderRadius: 2 }}/>
             <Text style={{ color: '#B88962', fontSize: 11, fontWeight: '700', letterSpacing: 1.4 }}>SEMENCE · 01 / 04</Text>
