@@ -218,6 +218,15 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
       {icon?<Ionicons name={icon} size={17} color={primary?'#fff':PINK}/>:null}
       <Text style={{fontSize:12,fontWeight:'700',color:primary?'#fff':theme.foreground}}>{label}</Text>
     </Pressable>;
+  const menuChoice=(label:string,icon:keyof typeof Ionicons.glyphMap,run:()=>void)=>
+    <Pressable onPress={run} accessibilityRole="button" accessibilityLabel={label}
+      style={{alignSelf:'flex-start',minHeight:40,flexDirection:'row',
+        alignItems:'center',gap:9,paddingHorizontal:6}}>
+      <Ionicons name={icon} size={18} color={PINK}/>
+      <Text style={{fontSize:12,color:theme.foreground,fontWeight:'600'}}>
+        {label}
+      </Text>
+    </Pressable>;
   const sectionPanel=()=> <View style={{borderTopWidth:1,borderColor:theme.border,paddingTop:13,gap:10}}>
     <Pressable accessibilityRole="button" accessibilityState={{expanded:showSections}}
       onPress={()=>setShowSections(!showSections)}
@@ -285,10 +294,10 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
           <Text style={{color:theme.foreground,fontSize:13,flex:1}}>{v.title}</Text>
           <Text style={{color:theme.muted,fontSize:11}}>{v.tracks.length} pistes</Text>
         </Pressable>)}
-        {version?button('Créer une variante de cette version',copyVersion,false,'git-branch-outline'):null}
-        {button('Créer une version à partir d’une autre prise',()=>{
+        {version?menuChoice('Dupliquer cette version','git-branch-outline',copyVersion):null}
+        {menuChoice('Nouvelle version depuis Capturer','add-outline',()=>{
           setPickMode('start');setVersionMenu(false);
-        },false,'add-outline')}
+        })}
         {version?<Pressable onPress={()=>setConfirmDelete(!confirmDelete)} style={{paddingVertical:7}}>
           <Text style={{fontSize:12,color:theme.muted}}>Supprimer cette version…</Text>
         </Pressable>:null}
