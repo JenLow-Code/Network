@@ -6,6 +6,8 @@ export type MusicNotationEvent = {
   startBeats: number;
   lengthBeats: number;
   velocity: number;
+  /** A grey, uncommitted manual sketch note; not yet part of MIDI export. */
+  draft?: boolean;
 };
 export const DRUM_PADS = [
   {label:'Kick',midi:36},
@@ -52,7 +54,7 @@ export function exportMusicMidi(events:MusicNotationEvent[],tempoBpm:number):Uin
   const track=(instrument:MusicNotationEvent['instrument'])=>{
     const channel=instrument==='piano'?0:9;
     const operations:{tick:number;order:number;data:number[]}[]=[];
-    for(const event of events.filter(e=>e.instrument===instrument)){
+    for(const event of events.filter(e=>e.instrument===instrument&&!e.draft)){
       if(!Number.isFinite(event.midi)||!Number.isFinite(event.startBeats))continue;
       const pitch=Math.max(0,Math.min(127,Math.round(event.midi)));
       const start=Math.max(0,Math.round(event.startBeats*ticksPerBeat));
