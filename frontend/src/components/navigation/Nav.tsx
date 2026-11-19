@@ -7,6 +7,7 @@ import { router, useGlobalSearchParams, usePathname } from 'expo-router';
 import { useLocale } from '@/i18n/locale';
 import { useAppTheme } from '@/theme/AppTheme';
 import { useDreams } from '@/domain/dreamRepository';
+import { isPublishedFlower } from '@/domain/dreamWorkspace';
 import { DREAM_PHASES, PHASE_LABELS, type DreamPhase } from '@/domain/publication';
 import { workspaceLayout } from '@/theme/workspaceLayout';
 
@@ -34,7 +35,7 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' }) 
   const currentPhaseIndex=DREAM_PHASES.indexOf(currentDream?.phase||'Rêve');
   const openPhase=(phase:DreamPhase)=>{
     if(!currentDream||DREAM_PHASES.indexOf(phase)>currentPhaseIndex)return;
-    if(phase==='Témoignage'){
+    if(phase==='Témoignage'&&!isPublishedFlower(currentDream)){
       router.push({pathname:'/my-dream/flower/[id]',params:{id:currentDream.id}});
       return;
     }
