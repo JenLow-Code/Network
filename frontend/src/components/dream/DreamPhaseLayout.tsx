@@ -125,56 +125,50 @@ export function DreamPhaseHeader({
         style={{fontSize:11,color:'#B24753',lineHeight:17,marginBottom:10}}>
         {coverError}
       </Text>:null}
-      {/* Desktop navigation already contains the phase tree. Keep the
-          reading canvas free of a second, redundant progression component. */}
-      {desktop?<View style={{marginBottom:16,marginTop:5,
-        flexDirection:'row',alignItems:'center',gap:7}}>
-        <View style={{width:6,height:6,borderRadius:3,backgroundColor:accent}}/>
-        <Text style={{fontSize:10,letterSpacing:1.15,fontWeight:'700',
-          color:theme.muted,textTransform:'uppercase'}}>
-          {PHASE_LABELS[phase]} · {DREAM_PHASES.indexOf(phase)+1}/{DREAM_PHASES.length}
-        </Text>
-      </View>:
-      <View style={{flexDirection:'row',alignItems:'flex-end',
-        gap:width<520?5:10,marginTop:3,marginBottom:20}}>
+      {/* A restrained, permanent four-phase timeline on every screen,
+          including desktop. The sidebar is a second way to navigate,
+          never a replacement for the journey itself. */}
+      <View style={{marginBottom:19,marginTop:5,
+        flexDirection:'row',alignItems:'flex-end',gap:width<520?4:10,
+        paddingVertical:9,paddingHorizontal:width<520?4:9,
+        borderRadius:8,
+        backgroundColor:theme.dark?'rgba(11,18,18,.66)':'rgba(255,253,247,.76)',
+        ...(Platform.OS==='web'?({
+          backdropFilter:'blur(15px) saturate(115%)',
+          WebkitBackdropFilter:'blur(15px) saturate(115%)',
+        } as any):{})}}>
         {DREAM_PHASES.map((item,i)=>{
           const reached=i<=DREAM_PHASES.indexOf(dream.phase);
           const selected=item===phase;
           const phaseColor=phaseAccent[item];
-          return <Pressable key={item}
+          return <Pressable key={item} onPress={()=>onNavigate?.(item)}
             accessibilityRole="button"
             accessibilityLabel={'Ouvrir '+PHASE_LABELS[item]}
-            accessibilityState={{disabled:!reached||!onNavigate,selected}}
+            accessibilityState={{selected,disabled:!reached||!onNavigate}}
             disabled={!reached||!onNavigate}
-            onPress={()=>onNavigate?.(item)}
-            style={{flex:1,minWidth:0,gap:8,
-              justifyContent:'flex-end',alignItems:'center',
-              paddingHorizontal:0,paddingTop:5,paddingBottom:1}}>
-            <View style={{flexDirection:'row',
-              alignItems:'center',justifyContent:'center',gap:5,
-              minHeight:23}}>
-              <View style={{
-                width:selected?7:5,height:selected?7:5,borderRadius:4,
-                backgroundColor:reached?phaseColor:theme.muted,
-                opacity:reached?1:.5,
-              }}/>
-              <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={.75}
+            style={{flex:1,minWidth:0,justifyContent:'flex-end',
+              gap:10,alignItems:'center',paddingHorizontal:2,
+              paddingTop:4,paddingBottom:0}}>
+            <View style={{flexDirection:'row',alignItems:'center',
+              justifyContent:'center',gap:6,minHeight:24}}>
+              <View style={{width:selected?7:5,height:selected?7:5,
+                borderRadius:4,backgroundColor:reached?phaseColor:theme.muted,
+                opacity:reached?1:.42}}/>
+              <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={.74}
                 style={{fontSize:width<520?10:12,
                   fontWeight:selected?'700':'500',
-                  color:theme.dark?'#F4F3EF':
-                    selected?'#292B28':'#414744',
-                  textShadowColor:theme.dark?'rgba(0,0,0,.55)':
-                    'rgba(255,255,255,.92)',
-                  textShadowRadius:4,textShadowOffset:{width:0,height:1},
-                }}>{PHASE_LABELS[item]}</Text>
+                  color:theme.dark?'#F6F4F0':'#262C2B',
+                  opacity:reached?1:.65,textAlign:'center'}}>
+                {PHASE_LABELS[item]}
+              </Text>
             </View>
-            <View style={{width:'100%',height:selected?2:1,
-              backgroundColor:reached?phaseColor:
-                theme.dark?'rgba(245,245,245,.35)':'rgba(48,53,51,.25)',
-              opacity:selected?1:reached?.55:.75}}/>
+            <View style={{width:'100%',height:selected?2.5:1.5,
+              borderRadius:1,backgroundColor:reached?phaseColor:
+                theme.dark?'rgba(240,240,240,.35)':'rgba(41,50,47,.25)',
+              opacity:selected?1:reached?.65:.72}}/>
           </Pressable>;
         })}
-      </View>}
+      </View>
       {readOnly ? (
         <View style={{
           flexDirection:'row',alignItems:'center',gap:7,
