@@ -707,29 +707,75 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
     </View>
     {part==='piano'?<View style={{gap:12}}>
       <View style={{gap:7}}>
-        <Text style={{color:theme.foreground,fontWeight:'600',fontSize:12}}>
-          Son du piano
-        </Text>
-        <View style={{flexDirection:'row',gap:6,flexWrap:'wrap'}}>
-          {TONES.map(value=>control(value,()=>setTone(value),false,tone===value))}
-          {control(sampleName?'Son importé':'Importer un son',importTone)}
-          {sampleName?control('Échantillon',()=>setTone('Échantillon'),false,
-            tone==='Échantillon'):null}
-        </View>
-        {sampleName?<Text style={{fontSize:11,color:theme.muted}} numberOfLines={1}>
-          {sampleName} · référence Do4 · conservé localement
-        </Text>:null}
+        <Pressable onPress={()=>setToneOpen(v=>!v)} accessibilityRole="button"
+          accessibilityLabel="Choisir le son de l’instrument"
+          accessibilityState={{expanded:toneOpen}}
+          style={{minHeight:47,borderWidth:1,borderColor:theme.border,
+            backgroundColor:theme.surface,borderRadius:12,
+            flexDirection:'row',alignItems:'center',gap:9,paddingHorizontal:12}}>
+          <Ionicons name="musical-note-outline" color={PINK} size={20}/>
+          <View style={{flex:1,gap:2}}>
+            <Text style={{fontSize:11,color:theme.muted}}>Son du clavier</Text>
+            <Text style={{fontSize:13,fontWeight:'600',color:theme.foreground}}>
+              {tone==='Échantillon'?sampleName||'Son importé':tone}
+            </Text>
+          </View>
+          <Ionicons name={toneOpen?'chevron-up':'chevron-down'}
+            color={theme.muted} size={18}/>
+        </Pressable>
+        {toneOpen?<View style={{borderWidth:1,borderColor:theme.border,
+          borderRadius:13,backgroundColor:theme.surface,padding:9,gap:3}}>
+          {TONES.map(value=><Pressable key={value} onPress={()=>{
+            setTone(value);setToneOpen(false);
+          }} accessibilityRole="button"
+            style={{minHeight:42,flexDirection:'row',alignItems:'center',
+              gap:10,paddingHorizontal:8,borderRadius:9,
+              backgroundColor:tone===value?(theme.dark?'#492835':'#FBEAF0'):
+                'transparent'}}>
+            <Ionicons name={tone===value?'radio-button-on':'radio-button-off'}
+              size={17} color={tone===value?PINK:theme.muted}/>
+            <Text style={{fontSize:13,color:theme.foreground}}>{value}</Text>
+          </Pressable>)}
+          {sampleId?<Pressable onPress={()=>{
+            setTone('Échantillon');setToneOpen(false);
+          }} accessibilityRole="button"
+            style={{minHeight:42,flexDirection:'row',alignItems:'center',gap:10,
+              paddingHorizontal:8}}>
+            <Ionicons name={tone==='Échantillon'?'radio-button-on':'radio-button-off'}
+              size={17} color={PINK}/>
+            <Text style={{fontSize:13,color:theme.foreground,flex:1}}
+              numberOfLines={1}>{sampleName}</Text>
+          </Pressable>:null}
+          <Pressable onPress={importTone} accessibilityRole="button"
+            style={{minHeight:45,flexDirection:'row',alignItems:'center',gap:10,
+              borderTopWidth:1,borderColor:theme.border,paddingHorizontal:8}}>
+            <Ionicons name="cloud-upload-outline" color={PINK} size={18}/>
+            <Text style={{fontSize:13,color:PINK,fontWeight:'600'}}>
+              Importer un son ou une note chantée
+            </Text>
+          </Pressable>
+          {sampleId?<View style={{gap:7,paddingVertical:7,paddingHorizontal:8}}>
+            <Text style={{fontSize:11,color:theme.muted}}>
+              Note de référence de l’échantillon : {musicNoteName(sampleRootMidi)}
+            </Text>
+            <View style={{flexDirection:'row',gap:7}}>
+              {control('− ½ ton',()=>setSampleRootMidi(v=>Math.max(24,v-1)))}
+              {control('+ ½ ton',()=>setSampleRootMidi(v=>Math.min(96,v+1)))}
+            </View>
+          </View>:null}
+        </View>:null}
       </View>
-      <View style={{gap:7}}>
+      <View style={{gap:8}}>
         <View style={{flexDirection:'row',alignItems:'center',flexWrap:'wrap',gap:6}}>
           <Text style={{color:theme.foreground,fontSize:12,fontWeight:'600',
-            marginRight:4}}>Clavier</Text>
+            marginRight:3}}>Clavier</Text>
           {control('− octave',()=>setBaseMidi(v=>Math.max(24,v-12)),recording)}
-          <Text style={{fontSize:12,color:theme.muted}}>{musicNoteName(baseMidi)}</Text>
+          <Text style={{fontFamily:'BiroScript',fontSize:19,
+            color:theme.foreground}}>{musicNoteName(baseMidi)}</Text>
           {control('+ octave',()=>setBaseMidi(v=>Math.min(84,v+12)),recording)}
+          <View style={{flex:1}}/>
         </View>
         <View style={{flexDirection:'row',gap:6,alignItems:'center',flexWrap:'wrap'}}>
-          <Text style={{fontSize:11,color:theme.muted,marginRight:3}}>Plage</Text>
           {([12,18,24,30] as const).map(count=>control(
             count===12?'1 oct.':count===18?'1½':count===24?'2':'2½',
             ()=>setOctaves(count),false,octaves===count))}
@@ -740,13 +786,17 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
             position:'relative',flexDirection:'row'}}>
             {whiteOffsets.map(offset=>{
               const midi=baseMidi+offset;
+              const shortcut=['S','E','D','R','F','G','T','H','Y','J','U','K','L'][offset];
               return <Pressable key={midi} onPress={()=>trigger('piano',midi)}
                 accessibilityRole="button" accessibilityLabel={musicNoteName(midi)}
                 style={{width:whiteWidth,height:keyboardHeight,
                   backgroundColor:'#FEFEFD',borderWidth:1,
                   borderColor:'#C7C7C7',borderBottomLeftRadius:5,
                   borderBottomRightRadius:5,alignItems:'center',
-                  justifyContent:'flex-end',paddingBottom:7}}>
+                  justifyContent:'flex-end',paddingBottom:6}}>
+                {Platform.OS==='web'&&!compact&&shortcut?
+                  <Text style={{fontSize:12,fontWeight:'700',color:'#9A7D8B',
+                    marginBottom:5}}>{shortcut}</Text>:null}
                 <Text style={{fontSize:whiteWidth>24?9:8,color:'#505050'}}>
                   {midi%12===0?musicNoteName(midi):whiteWidth>30?
                     musicNoteName(midi).replace(/[0-9]+$/,''):''}
@@ -756,17 +806,26 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
             {blackOffsets.map(offset=>{
               const midi=baseMidi+offset;
               const before=whiteOffsets.filter(n=>n<offset).length;
+              const shortcut=['S','E','D','R','F','G','T','H','Y','J','U','K','L'][offset];
               return <Pressable key={midi} onPress={()=>trigger('piano',midi)}
                 accessibilityRole="button" accessibilityLabel={musicNoteName(midi)}
                 style={{position:'absolute',top:0,zIndex:2,
                   left:before*whiteWidth-blackWidth/2,width:blackWidth,
                   height:Math.round(keyboardHeight*.63),
                   backgroundColor:'#26262A',borderColor:'#16161A',
-                  borderWidth:1,borderBottomLeftRadius:4,
-                  borderBottomRightRadius:4}}/>;
+                  borderWidth:1,borderBottomLeftRadius:4,borderBottomRightRadius:4,
+                  alignItems:'center',justifyContent:'flex-end',paddingBottom:5}}>
+                {Platform.OS==='web'&&!compact&&shortcut?
+                  <Text style={{fontSize:10,fontWeight:'700',color:'#F2D6E0'}}>
+                    {shortcut}
+                  </Text>:null}
+              </Pressable>;
             })}
           </View>
         </ScrollView>
+        {Platform.OS==='web'&&!compact?<Text style={{fontSize:11,
+          color:theme.muted}}>Clavier PC : S = Do, E = Do♯, D = Ré, R = Ré♯,
+          F = Mi… Plusieurs touches simultanément pour les accords.</Text>:null}
       </View>
     </View>:<View style={{gap:10}}>
       <Text style={{fontSize:12,color:theme.foreground,fontWeight:'600'}}>
@@ -786,108 +845,17 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
         </Pressable>)}
       </View>
     </View>}
-    <View style={{gap:9}}>
-      <View style={{flexDirection:'row',alignItems:'center',gap:7,flexWrap:'wrap'}}>
-        <Text style={{fontSize:12,fontWeight:'600',color:theme.foreground}}>
-          Prochaine note · temps {beatLabel(cursor)}
-        </Text>
-        {control('Pause ½',()=>setCursor(v=>v+.5),recording)}
-        {control('Pause 1',()=>setCursor(v=>v+1),recording)}
-      </View>
+    <View style={{flexDirection:'row',gap:7,flexWrap:'wrap',alignItems:'center'}}>
       <Text style={{fontSize:11,color:theme.muted}}>
-        Choisis une note pour déplacer, changer sa durée ou la supprimer.
+        Position {beatLabel(cursor)} · silence :
       </Text>
-      {instrumentEvents.length?<ScrollView horizontal showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{gap:7,paddingVertical:3}}>
-        {instrumentEvents.map(event=><Pressable key={event.id}
-          onPress={()=>setSelectedId(event.id)} accessibilityRole="button"
-          accessibilityLabel={'Modifier '+musicNoteName(event.midi)}
-          style={{borderWidth:1,borderColor:selected?.id===event.id?PINK:theme.border,
-            backgroundColor:selected?.id===event.id?
-              (theme.dark?'#412633':'#FAE9EF'):theme.surface,
-            paddingHorizontal:11,minHeight:41,borderRadius:11,
-            alignItems:'center',justifyContent:'center',gap:3}}>
-          <Text style={{color:event.draft?theme.muted:PINK,
-            fontSize:12,fontWeight:'600'}}>
-            {event.instrument==='piano'?musicNoteName(event.midi):
-              DRUM_PADS.find(p=>p.midi===event.midi)?.label||'Pad'}
-          </Text>
-          <Text style={{color:theme.muted,fontSize:10}}>
-            {beatLabel(event.startBeats)} · {durationLabel(event.lengthBeats)}
-          </Text>
-        </Pressable>)}
-      </ScrollView>:null}
-      {selected?<View style={{borderRadius:13,borderWidth:1,borderColor:theme.border,
-        backgroundColor:theme.surface,padding:12,gap:10}}>
-        <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
-          <Text style={{fontSize:13,fontWeight:'700',color:theme.foreground}}>
-            {part==='piano'?musicNoteName(selected.midi):'Frappe'} · temps {beatLabel(selected.startBeats)}
-          </Text>
-          <Text style={{fontSize:11,color:selected.draft?theme.muted:PINK}}>
-            {selected.draft?'Brouillon':'Enregistrée'}
-          </Text>
-        </View>
-        <View style={{flexDirection:'row',gap:6,alignItems:'center',flexWrap:'wrap'}}>
-          {control('▶ Écouter',()=>audition(selected),Platform.OS!=='web')}
-          {part==='piano'?<>
-            {control('− demi-ton',()=>patchEvent(selected.id,{midi:
-              Math.max(0,selected.midi-1)}),recording)}
-            {control('+ demi-ton',()=>patchEvent(selected.id,{midi:
-              Math.min(127,selected.midi+1)}),recording)}
-          </>:null}
-        </View>
-        <View style={{flexDirection:'row',gap:6,alignItems:'center',flexWrap:'wrap'}}>
-          <Text style={{fontSize:11,color:theme.muted}}>Durée</Text>
-          {DURATIONS.map(v=>control(durationLabel(v),
-            ()=>patchEvent(selected.id,{lengthBeats:v}),recording,
-            selected.lengthBeats===v))}
-        </View>
-        <View style={{flexDirection:'row',alignItems:'center',flexWrap:'wrap',gap:6}}>
-          <Text style={{fontSize:11,color:theme.muted}}>Déplacer</Text>
-          {control('← ¼',()=>patchEvent(selected.id,{startBeats:
-            Math.max(0,Math.round((selected.startBeats-.25)*4)/4)}),recording)}
-          {control('¼ →',()=>patchEvent(selected.id,{startBeats:
-            Math.round((selected.startBeats+.25)*4)/4}),recording)}
-          {control('Supprimer',()=>{
-            setEvents(old=>old.filter(e=>e.id!==selected.id));setSelectedId('');
-          },recording)}
-        </View>
-      </View>:null}
-    </View>
-    <View style={{flexDirection:'row',flexWrap:'wrap',gap:8,alignItems:'center'}}>
-      {control('Annuler la dernière note',()=>setEvents(old=>old.slice(0,-1)),
+      {control('½ temps',()=>{setCursor(v=>v+.5);chordRef.current=null;},
+        recording)}
+      {control('1 temps',()=>{setCursor(v=>v+1);chordRef.current=null;},
+        recording)}
+      <View style={{flex:1}}/>
+      {control('Annuler',()=>{setEvents(old=>old.slice(0,-1));setEditor(null);},
         !events.length||recording)}
-      {control('Tout effacer',()=>{setEvents([]);setCursor(0);setSelectedId('');},
-        !events.length||recording)}
-    </View>
-    <View style={{gap:7}}>
-      <Pressable onPress={()=>setMidiOpen(v=>!v)} accessibilityRole="button"
-        accessibilityState={{expanded:midiOpen}}
-        style={{flexDirection:'row',alignItems:'center',gap:8,minHeight:41}}>
-        <Ionicons name="hardware-chip-outline" size={17} color={PINK}/>
-        <Text style={{color:theme.foreground,fontSize:12,fontWeight:'600'}}>
-          Sortie MIDI vers un instrument
-        </Text>
-        <Ionicons name={midiOpen?'chevron-up':'chevron-down'} size={16}
-          color={theme.muted}/>
-      </Pressable>
-      {midiOpen?<View style={{gap:9,padding:12,borderRadius:12,
-        borderWidth:1,borderColor:theme.border}}>
-        <Text style={{fontSize:11,lineHeight:18,color:theme.muted}}>
-          Les notes peuvent aussi être envoyées à un appareil MIDI connecté,
-          dans un navigateur compatible.
-        </Text>
-        {control('Rechercher les sorties MIDI',()=>{void connectMidi();})}
-        {midiPorts.map(port=><Pressable key={port.id}
-          onPress={()=>{setMidiPortId(port.id);midiRef.current=port;}}
-          accessibilityRole="button"
-          style={{minHeight:40,justifyContent:'center'}}>
-          <Text style={{fontSize:12,color:midiPortId===port.id?PINK:theme.foreground}}>
-            {midiPortId===port.id?'✓  ':''}{port.name||'Sortie MIDI'}
-          </Text>
-        </Pressable>)}
-        {midiPortId?control('Déconnecter',()=>{midiRef.current=null;setMidiPortId('');}):null}
-      </View>:null}
     </View>
     {message?<Text style={{fontSize:11,color:theme.muted,lineHeight:18}}>
       {message}
