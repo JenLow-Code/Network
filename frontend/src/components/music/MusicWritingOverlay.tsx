@@ -104,7 +104,7 @@ export function MusicWritingOverlay({project,mode,onModeChange,source,initialFil
       alignItems:'center',justifyContent:'center',
       padding:Platform.OS==='web'?(compact?8:24):0}}>
     <SafeAreaView style={{width:'100%',maxWidth:980,
-      height:Platform.OS==='web'?(compact?'96%':'92%'):'100%',
+      height:Platform.OS==='web'?(compact?'88%':'90%'):'100%',
       backgroundColor:theme.background,
       borderRadius:Platform.OS==='web'?(compact?15:22):0,
       borderWidth:Platform.OS==='web'?1:0,borderColor:theme.border,
