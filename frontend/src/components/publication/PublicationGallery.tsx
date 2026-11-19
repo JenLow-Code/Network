@@ -537,10 +537,11 @@ function adaptiveTileHeight(item: Publication, width: number): number {
   return Math.max(190, Math.round(width * 1.17));
 }
 
-function MasonryGallery({ items, viewportWidth }: { items: Publication[]; viewportWidth: number }) {
+function MasonryGallery({ items, viewportWidth, flushEdges = false }: { items: Publication[]; viewportWidth: number; flushEdges?: boolean }) {
   const columns = viewportWidth >= 1100 ? 4 : viewportWidth >= 700 ? 3 : 2;
   const gap = viewportWidth < 700 ? 12 : viewportWidth < 1100 ? 17 : 19;
-  const contentWidth = Math.max(0, viewportWidth - 30);
+  const inset = flushEdges ? 0 : 15;
+  const contentWidth = Math.max(0, viewportWidth - inset * 2);
   const columnWidth = Math.max(0, (contentWidth - (columns - 1) * gap) / columns);
   const stacks: Publication[][] = Array.from({ length: columns }, () => []);
   const heights = Array.from({ length: columns }, () => 0);
@@ -567,7 +568,7 @@ function MasonryGallery({ items, viewportWidth }: { items: Publication[]; viewpo
     heights[target] += cardHeight + gap;
   }
   return (
-    <View style={{ width: '100%', paddingHorizontal: 15, paddingBottom: 18, flexDirection: 'row', alignItems: 'flex-start', gap }}>
+    <View style={{ width: '100%', paddingHorizontal: inset, paddingBottom: 18, flexDirection: 'row', alignItems: 'flex-start', gap }}>
       {stacks.map((stack, index) => (
         <View key={'column-' + index} style={{ width: columnWidth, gap }}>
           {stack.map(item => (
@@ -594,7 +595,7 @@ function MasonryGallery({ items, viewportWidth }: { items: Publication[]; viewpo
  *
  * Filtering works at every length without empty cells or anonymous image blocks.
  */
-export function PublicationGallery({ items: receivedItems, layout = 'editorial', contentWidth: requestedWidth, origin = 'normal', personalizedTalents }: { items: Publication[]; layout?: 'editorial' | 'masonry'; contentWidth?: number; origin?: GalleryOrigin; personalizedTalents?: SavedTalent[] }) {
+export function PublicationGallery({ items: receivedItems, layout = 'editorial', contentWidth: requestedWidth, origin = 'normal', personalizedTalents, flushEdges = false }: { items: Publication[]; layout?: 'editorial' | 'masonry'; contentWidth?: number; origin?: GalleryOrigin; personalizedTalents?: SavedTalent[]; flushEdges?: boolean }) {
   // Semence remains link-accessible but never appears in public Discovery/recommendation galleries.
   const items = receivedItems.filter(item => item.type !== 'dream' || item.phase !== 'Rêve');
   const { width: windowWidth } = useWindowDimensions();
@@ -609,7 +610,7 @@ export function PublicationGallery({ items: receivedItems, layout = 'editorial',
   if (layout === 'masonry') return (
     <GalleryOriginContext.Provider value={origin}>
       <DiscoveryTalentsContext.Provider value={personalizedTalents ?? null}>
-        <MasonryGallery items={items} viewportWidth={requestedWidth === undefined ? contentWidth + 30 : contentWidth} />
+        <MasonryGallery items={items} viewportWidth={requestedWidth === undefined ? contentWidth + 30 : contentWidth} flushEdges={flushEdges} />
       </DiscoveryTalentsContext.Provider>
     </GalleryOriginContext.Provider>
   );
