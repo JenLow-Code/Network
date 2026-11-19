@@ -386,8 +386,9 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
     setRecording(true);setMessage('');
   };
   const exportMidi=()=>{
-    if(!confirmed.length){setMessage('Valide d’abord les notes grises.');return;}
-    try{downloadMusicMidi(confirmed,bpm,title||'idee-musicale');
+    if(!events.length){setMessage('Ajoute des notes avant l’export MIDI.');return;}
+    try{downloadMusicMidi(events.map(e=>({...e,draft:false})),
+      bpm,title||'idee-musicale');
       setMessage('Fichier .mid exporté (piano canal 1, batterie canal 10).');}
     catch(e){setMessage(e instanceof Error?e.message:'Export MIDI impossible.');}
   };
@@ -863,20 +864,20 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
     <View style={{borderTopWidth:1,borderColor:theme.border,paddingTop:13,
       flexDirection:'row',gap:9,alignItems:'center',justifyContent:'flex-end'}}>
       <Pressable onPress={()=>onSave({title:title.trim()||'Idée musicale',
-        events:events.map(e=>({...e,draft:false})),bpm,tone,
+        events,bpm,tone,sampleRootMidi,clef,
         sampleLocalId:sampleId||undefined,sampleName:sampleName||undefined})}
-        disabled={!confirmed.length||!!drafts.length||recording}
+        disabled={!events.length||recording}
         accessibilityRole="button"
         style={{minHeight:47,paddingHorizontal:18,borderRadius:12,
           alignItems:'center',justifyContent:'center',
-          backgroundColor:confirmed.length&&!drafts.length&&!recording?PINK:theme.border}}>
+          backgroundColor:events.length&&!recording?PINK:theme.border}}>
         <Text style={{color:'#fff',fontWeight:'700',fontSize:13}}>
           Conserver la partition
         </Text>
       </Pressable>
     </View>
     {drafts.length?<Text style={{color:theme.muted,fontSize:11,lineHeight:18}}>
-      Valide les notes grises pour conserver ou exporter la partition.
+      Les notes grises peuvent être modifiées ou validées en touchant la partition.
     </Text>:null}
     {Platform.OS!=='web'?<Text style={{fontSize:11,color:theme.muted,lineHeight:18}}>
       Sur mobile natif, la saisie reste disponible. L’import de sons,
