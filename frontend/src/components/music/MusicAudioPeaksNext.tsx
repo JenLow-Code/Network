@@ -34,12 +34,27 @@ function getPeaks(id:string){
   }
   return cache.get(id)!;
 }
+/** Same visual language for live recorder and recorded timeline clips. */
+export function MusicPeakBars({levels,height=34,muted=false}:{
+  levels:number[];height?:number;muted?:boolean;
+}){
+  const theme=useAppTheme();
+  return <View accessibilityLabel="Forme d’onde audio"
+    style={{height,flexDirection:'row',alignItems:'center',gap:1,
+      flex:1,justifyContent:'space-between',overflow:'hidden'}}>
+    {levels.length?levels.map((value,i)=><View key={i}
+      style={{flex:1,maxWidth:8,
+        height:Math.max(2,Math.min(height-2,2+value*(height-4))),
+        borderRadius:1,backgroundColor:muted?theme.muted:PINK,
+        opacity:muted?.35:.77}}/>):
+      <View style={{height:2,backgroundColor:theme.border,flex:1,borderRadius:1}}/>}
+  </View>;
+}
 type Props={file?:MusicProjectFile;muted?:boolean;height?:number;
   trimStartSeconds?:number;trimEndSeconds?:number;barCount?:number};
 /** Actual decoded audio peaks, optionally limited to the selected (non-destructive) clip. */
 export function MusicAudioPeaks({file,muted=false,height=25,
   trimStartSeconds=0,trimEndSeconds,barCount=48}:Props){
-  const theme=useAppTheme();
   const [data,setData]=useState<PeakData|null>(null);
   useEffect(()=>{
     let live=true;setData(null);
@@ -61,13 +76,5 @@ export function MusicAudioPeaks({file,muted=false,height=25,
       return peak;
     });
   },[data,trimStartSeconds,trimEndSeconds,barCount]);
-  return <View accessibilityLabel="Forme d’onde calculée depuis le fichier audio"
-    style={{height,flexDirection:'row',alignItems:'center',gap:1,
-      flex:1,justifyContent:'space-between'}}>
-    {levels.length?levels.map((value,i)=><View key={i}
-      style={{flex:1,maxWidth:8,height:Math.max(2,Math.min(height-2,2+value*(height-4))),
-        borderRadius:1,backgroundColor:muted?theme.muted:PINK,
-        opacity:muted?.35:.77}}/>):
-      <View style={{height:2,backgroundColor:theme.border,flex:1,borderRadius:1}}/>}
-  </View>;
+  return <MusicPeakBars levels={levels} muted={muted} height={height}/>;
 }
