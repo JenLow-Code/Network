@@ -12,8 +12,9 @@ const keys=['Do','Do♯ / Ré♭','Ré','Ré♯ / Mi♭','Mi','Fa','Fa♯ / Sol�
 const signatures=['2/4','3/4','4/4','5/4','6/8','7/8','9/8','12/8'];
 
 /** Always visible at the top of a creative folder, even when switching song sections. */
-export function MusicSongMetadata({project,patch}:{
+export function MusicSongMetadata({project,patch,showTalent=true}:{
   project:MusicProject;patch:(change:Partial<MusicProject>)=>void;
+  showTalent?:boolean;
 }) {
   const theme=useAppTheme();
   const [editing,setEditing]=useState(false);
@@ -99,7 +100,7 @@ export function MusicSongMetadata({project,patch}:{
         <Text style={{color:accent,fontSize:11}}>Retirer l'ajout manuel : {item}</Text>
       </Pressable>)}
     </View>:null}
-    <MusicMissingTalentAction project={project} patch={patch}/>
+    {showTalent?<MusicMissingTalentAction project={project} patch={patch}/>:null}
     {editing?<View style={{gap:11,padding:12,borderRadius:12,borderWidth:1,borderColor:theme.border}}>
       <Text style={{color:theme.muted,fontSize:11}}>Langue originale</Text>
       <TextInput value={project.originalLanguage}
