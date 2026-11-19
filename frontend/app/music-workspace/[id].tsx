@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -19,14 +19,18 @@ type Space = 'capture'|'create'|'collaborate';
 const PINK='#CB245C';
 
 export default function MusicWorkspace() {
-  const {id}=useLocalSearchParams<{id:string}>();
+  const {id,tab}=useLocalSearchParams<{id:string;tab?:Space}>();
   const {items,patch,ready,error}=useMusicWorkspaces();
   const theme=useAppTheme();
   const {width}=useWindowDimensions();
   const compact=width<600;
   const desktop=Platform.OS==='web'&&workspaceLayout(width).desktop;
   const ws=workspaceLayout(width);
-  const [space,setSpace]=useState<Space>('capture');
+  const [space,setSpace]=useState<Space>(
+    tab==='create'||tab==='collaborate'?tab:'capture');
+  useEffect(()=>{
+    if(tab==='capture'||tab==='create'||tab==='collaborate')setSpace(tab);
+  },[tab]);
   const project=items.find(item=>item.id===id);
   if (!ready) return <SafeAreaView style={{flex:1,backgroundColor:theme.background,
     justifyContent:'center',alignItems:'center'}}>
@@ -48,15 +52,17 @@ export default function MusicWorkspace() {
   const start=(file:MusicProjectFile)=>{
     const created=makeWorkingVersion(file,music.versions.length+1);
     update({musicNext:{...music,versions:[...music.versions,created],activeVersionId:created.id}});
-    setSpace('create');
+    setSpace('create');router.setParams({tab:'create'});
   };
   const useFile=(file:MusicProjectFile)=>{
     if(!version){start(file);return;}
-    if(version.tracks.some(track=>track.sourceFileId===file.id)){setSpace('create');return;}
+    if(version.tracks.some(track=>track.sourceFileId===file.id)){
+      setSpace('create');router.setParams({tab:'create'});return;
+    }
     update({musicNext:changeWorkingVersion(music,{
       ...version,tracks:[...version.tracks,makeWorkingTrack(file)]
     })});
-    setSpace('create');
+    setSpace('create');router.setParams({tab:'create'});
   };
   const spaces: {id:Space; title:string; icon:keyof typeof Ionicons.glyphMap}[]=[
     {id:'capture',title:'Capturer',icon:'archive-outline'},
@@ -94,7 +100,7 @@ export default function MusicWorkspace() {
         gap:desktop?20:3}}>
         {spaces.map(item=>{
           const selected=space===item.id;
-          return <Pressable key={item.id} onPress={()=>setSpace(item.id)}
+          return <Pressable key={item.id} onPress={()=>{setSpace(item.id);router.setParams({tab:item.id});}}
             accessibilityRole="tab" accessibilityLabel={item.title}
             accessibilityState={{selected}}
             style={{flex:desktop?undefined:1,
@@ -118,7 +124,7 @@ export default function MusicWorkspace() {
       {space==='capture' ? <MusicCaptureExperience project={project} patch={update}
         onStartVersion={start} onUseFile={useFile} hasVersion={!!version}/> : null}
       {space==='create' ? <MusicCreateExperience project={project} patch={update}
-        onCapture={()=>setSpace('capture')}/> : null}
+        onCapture={()=>{setSpace('capture');router.setParams({tab:'capture'});}}/> : null}
       {space==='collaborate' ?
         <MusicCollaborateExperience project={project} patch={update}/> : null}
     </ScrollView>
