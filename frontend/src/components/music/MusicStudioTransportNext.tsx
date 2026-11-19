@@ -26,7 +26,7 @@ type Props={
   playbackRequest?:{at:number;serial:number}|null;
   pauseRequest?:number;
 };
-function versionLength(version:WorkingMusicVersion,files:MusicProjectFile[]){
+export function versionLength(version:WorkingMusicVersion,files:MusicProjectFile[]){
   return Math.max(0,...version.tracks.map(t=>{
     const file=files.find(x=>x.id===t.sourceFileId);
     const length=musicSourceDuration(file);
