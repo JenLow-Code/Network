@@ -655,7 +655,8 @@ export default function DreamExperience({
         setHabits(dream.id,next);
       }}
     />
-    {growthWritable?<View style={{gap:11,marginTop:11,marginBottom:22}}>
+    {growthWritable?<View style={{gap:11,marginTop:11,marginBottom:22,
+      maxWidth:ws.desktop?700:undefined,width:'100%',alignSelf:'center'}}>
       {frozen ? (
         <View style={{gap:9,padding:14,borderWidth:1,
           borderColor:'#397F9E',borderRadius:11}}>
@@ -674,10 +675,12 @@ export default function DreamExperience({
           </Pressable>
         </View>
       ):null}
+      <View style={{flexDirection:ws.tablet?'row':'column',gap:ws.tablet?9:11}}>
       <Pressable accessibilityRole="button"
         disabled={frozen}
         onPress={()=>router.push({pathname:'/my-dream/flower/[id]',params:{id:dream.id}})}
-        style={{minHeight:48,backgroundColor:frozen?'#A8ABA6':'#D71D77',
+        style={{minHeight:ws.tablet?43:48,flex:ws.tablet?1.2:undefined,
+          backgroundColor:frozen?'#A8ABA6':'#D71D77',
           borderRadius:11,alignItems:'center',justifyContent:'center',paddingHorizontal:16}}>
         <Text style={{color:'#FFFFFF',fontSize:13,fontWeight:'700'}}>Faire fleurir</Text>
       </Pressable>
@@ -688,7 +691,8 @@ export default function DreamExperience({
           }
           setFreezeDialog(true);
         }}
-        style={{minHeight:48,borderRadius:11,borderWidth:1.5,
+        style={{minHeight:ws.tablet?43:48,flex:ws.tablet?1:undefined,
+          borderRadius:11,borderWidth:1,
           borderColor:'#397F9E',alignItems:'center',justifyContent:'center',
           paddingHorizontal:16,opacity:frozen?.5:1}}>
         <Text style={{color:'#397F9E',fontSize:13,fontWeight:'700'}}>Geler</Text>
@@ -698,13 +702,17 @@ export default function DreamExperience({
         onPress={()=>confirm('Arracher cette plante ?',
           'Cette action supprimera définitivement ce rêve et ses données sur cet appareil.',
           ()=>{remove(dream.id);router.replace('/my-space');})}
-        style={{minHeight:48,backgroundColor:'#242322',
+        style={{minHeight:ws.tablet?43:48,flex:ws.tablet?1:undefined,
+          backgroundColor:ws.tablet?'transparent':'#242322',
+          borderWidth:ws.tablet?1:0,borderColor:theme.border,
           borderRadius:11,alignItems:'center',justifyContent:'center',
           paddingHorizontal:16}}>
-        <Text style={{color:'#FFFFFF',fontSize:13,fontWeight:'700'}}>
+        <Text style={{color:ws.tablet?theme.muted:'#FFFFFF',
+          fontSize:ws.tablet?12:13,fontWeight:'700'}}>
           Arracher cette plante
         </Text>
       </Pressable>
+      </View>
     </View>:null}
   </>:null}
   {phase==='Témoignage' && !isPublishedFlower(dream) ? (
