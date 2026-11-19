@@ -1,6 +1,6 @@
 import { Text } from '@/i18n/LocalizedText';
 import React from 'react';
-import { Image, Pressable, ScrollView, View } from 'react-native';
+import { Image, Pressable, ScrollView, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -10,13 +10,15 @@ import { publications } from '@/mocks/publications';
 import { useApp } from '@/context/AppContext';
 import { publicationPath } from '@/components/publication/PublicationGallery';
 import { useAppTheme } from '@/theme/AppTheme';
+import {workspaceCanvas,WORKSPACE_TITLE_GAP} from '@/theme/workspaceLayout';
 export default function Prayers() {
   const theme = useAppTheme();
+  const {width}=useWindowDimensions();
   const { prayerIds, togglePrayer, prayerRepetitions, setPrayerRepetition } = useApp();
   const items = publications.filter(p => prayerIds.includes(p.id));
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 17, paddingBottom: 55 }}>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ ...workspaceCanvas(width), paddingTop:12, paddingBottom:55 }}>
         <PageHeader />
         <View
           style={{
