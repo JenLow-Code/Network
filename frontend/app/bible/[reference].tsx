@@ -12,6 +12,7 @@ import { PublicationPrimaryAction } from '@/components/detail/PublicationPrimary
 import { Nav } from '@/components/navigation/Nav';
 import { PublicationGallery } from '@/components/publication/PublicationGallery';
 import { useAppTheme } from '@/theme/AppTheme';
+import {workspaceCanvas,workspaceLayout} from '@/theme/workspaceLayout';
 import { usePublication } from '@/lib/api/hooks';
 import type { BiblePublication } from '@/domain/publication';
 
@@ -31,6 +32,8 @@ export default function Bible() {
   const shared = Math.max(1, Math.min(chapterTexts.length || 1, post.highlightedVerse || selected));
   const theme = useAppTheme();
   const { width: viewportWidth } = useWindowDimensions();
+  const ws=workspaceLayout(viewportWidth);
+  const readerWidth=Math.min(760,Math.max(0,viewportWidth-(ws.desktop?212:0)-2*ws.gutter));
   const compact = viewportWidth < 530;
   const [open, setOpen] = useState(false);
   const panelX = useRef(new Animated.Value(440)).current;
@@ -52,8 +55,9 @@ export default function Bible() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
-      <ScrollView contentContainerStyle={{ width: '100%', maxWidth: 760, alignSelf: 'center', paddingBottom: 42 }}>
+      <ScrollView contentContainerStyle={{...workspaceCanvas(viewportWidth),paddingBottom:42}}>
         <DetailAuthorHeader item={post} />
+        <View style={{maxWidth:760,width:'100%'}}>
         <View style={{ paddingHorizontal: compact ? 23 : 32, paddingTop: 28 }}>
           <View {...gesture.panHandlers} style={{ paddingTop: 15, paddingBottom: 30, minHeight: compact ? 230 : 290, justifyContent: 'center', gap: 20 }}>
             <Text style={{ color: muted, letterSpacing: 1.3, fontSize: 10 }}>LOUIS SEGOND 1910</Text>
@@ -92,9 +96,10 @@ export default function Bible() {
           <Text style={{ color: ink, fontFamily: 'serif', fontSize: 25, marginBottom: 20 }}>Continuer l’inspiration</Text>
           <PublicationGallery
             layout="masonry"
-            contentWidth={Math.max(0, Math.min(760, viewportWidth) - (compact ? 46 : 64))}
+            contentWidth={Math.max(0,readerWidth-(compact?46:64))}
             items={[...publications, ...personPublications].filter(p => p.id !== post.id)}
           />
+        </View>
         </View>
       </ScrollView>
       <Nav />
