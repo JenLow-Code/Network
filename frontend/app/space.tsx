@@ -1,6 +1,6 @@
 import { Text } from '@/i18n/LocalizedText';
 import React, { useState } from 'react';
-import { Alert, Pressable, ScrollView, View } from 'react-native';
+import { Alert, Pressable, ScrollView, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -13,6 +13,7 @@ import { colors as c } from '@/theme/colors';
 import { useApp } from '@/context/AppContext';
 import { FireHeader } from '@/components/fire/FireHeader';
 import { useLocale } from '@/i18n/locale';
+import {workspaceCanvas,WORKSPACE_TITLE_GAP} from '@/theme/workspaceLayout';
 
 type Kind = 'All' | 'Chats' | 'Collabs' | 'Lessons';
 type Activity = {
@@ -75,6 +76,7 @@ const initial: Activity[] = [
 ];
 const presence = { online: '#24c967', busy: '#ef5c79', offline: '#c8c8c8' };
 export default function Space() {
+  const {width}=useWindowDimensions();
   const { rejectContact } = useApp();
   const { t } = useLocale();
   const [tab, setTab] = useState<Kind>('All');
@@ -94,15 +96,15 @@ export default function Space() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
       <View style={{ flex: 1 }}>
-        <ScrollView contentContainerStyle={{ paddingTop: 15, paddingBottom: 148 }}>
+        <ScrollView contentContainerStyle={{...workspaceCanvas(width),paddingTop:12,paddingBottom:148}}>
           <PageHeader />
           <View
             style={{
               flexDirection: 'row',
               justifyContent: 'space-between',
               alignItems: 'center',
-              paddingHorizontal: 20,
-              marginBottom: 15,
+              marginTop:WORKSPACE_TITLE_GAP,
+              marginBottom:15,
             }}
           >
             <Text style={{ fontSize: 30, fontWeight: '700', color: '#101010' }}>{t('space')}</Text>
