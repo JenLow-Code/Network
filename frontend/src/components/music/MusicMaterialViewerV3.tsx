@@ -139,12 +139,16 @@ export function MusicMaterialViewer({visible,file,project,onClose,onUpdate,onCha
         backgroundColor:theme.background,borderTopLeftRadius:compact?26:18,
         borderTopRightRadius:compact?26:18,
         borderBottomLeftRadius:compact?0:18,borderBottomRightRadius:compact?0:18,
-        overflow:'hidden',paddingTop:compact?14:22}}>
+        overflow:'hidden',paddingTop:isAudio(file)?8:(compact?14:22)}}>
         <View style={{flexDirection:'row',alignItems:'center',
-          paddingHorizontal:compact?19:26,paddingBottom:14,gap:10}}>
+          paddingHorizontal:compact?15:26,paddingBottom:isAudio(file)?6:14,gap:10}}>
           <View style={{flex:1}}>
-            <Text style={{fontSize:11,color:theme.muted}}>
-              {original?'Traduction · '+(file.language||''):palette[file.kind]}
+            <Text numberOfLines={1} style={{
+              fontSize:isAudio(file)?17:11,
+              fontWeight:isAudio(file)?'700':'400',
+              color:isAudio(file)?theme.foreground:theme.muted}}>
+              {isAudio(file)?file.title:
+                original?'Traduction · '+(file.language||''):palette[file.kind]}
             </Text>
           </View>
           {editing?<Pressable accessibilityLabel="Enregistrer les modifications"
@@ -165,11 +169,12 @@ export function MusicMaterialViewer({visible,file,project,onClose,onUpdate,onCha
         </View>
         <ScrollView keyboardShouldPersistTaps="handled"
           contentContainerStyle={{paddingHorizontal:compact?20:30,
-            paddingBottom:compact?55:35,gap:19}}>
+            paddingBottom:isAudio(file)?(compact?25:22):(compact?55:35),
+            gap:isAudio(file)?9:19}}>
           {menu==='rename'?<TextInput autoFocus value={file.title}
             onChangeText={title=>onUpdate(file.id,{title})}
             onSubmitEditing={()=>setMenu('none')} style={field}/>:
-            !(editing&&(file.kind==='lyrics'||file.kind==='note'))?
+            !(editing&&(file.kind==='lyrics'||file.kind==='note'))&&!isAudio(file)?
               <Text style={{fontSize:compact?24:29,lineHeight:compact?31:37,
                 fontWeight:'700',color:theme.foreground}}>{file.title}</Text>:null}
           {selectedNames.length?<Text style={{fontSize:12,color:theme.muted}}>
