@@ -37,11 +37,11 @@ export default function SemenceStudio({dream,onBack,onNavigate}:{
  };
  const add=()=>setAddRequestToken(token=>token+1);
  return <View style={{flex:1,backgroundColor:theme.background}}>
+  <DreamCoverBackdrop uri={dream.image}/>
   <ScrollView style={{flex:1,backgroundColor:'transparent'}}
    keyboardShouldPersistTaps="handled"
    contentContainerStyle={{paddingHorizontal:width<520?16:19,paddingTop:10,
      paddingBottom:100,maxWidth:760,width:'100%',alignSelf:'center'}}>
-   <DreamCoverBackdrop uri={dream.image}/>
    <DreamPhaseHeader dream={dream} phase="Rêve"
      onBack={onBack} onNavigate={onNavigate} readOnly={!editable}/>
    <View style={{alignItems:'flex-end',marginTop:-10,marginBottom:6}}>
