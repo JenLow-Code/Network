@@ -13,6 +13,7 @@ import { verseExcerpt } from '@/mocks/publications';
 import { approvedCassetteImage } from '@/assets/approvedCassette';
 import { HANDWRITING_FAMILY } from '@/theme/handwriting';
 import { DreamPhaseCard } from '@/components/publication/DreamPhaseCard';
+import { matchesForMe, type SavedTalent } from '@/domain/personalDiscovery';
 
 const audio = [
   require('../../../assets/audio/pierre-01-douceur.wav'),
@@ -34,6 +35,8 @@ export const publicationPath = (p: Publication) =>
 
 type GalleryOrigin = 'normal' | 'fire';
 const GalleryOriginContext = React.createContext<GalleryOrigin>('normal');
+/** null outside Discovery: other galleries keep exactly their approved appearance. */
+const DiscoveryTalentsContext = React.createContext<SavedTalent[] | null>(null);
 function openPublication(item: Publication, origin: GalleryOrigin) {
   const destination = publicationPath(item);
   router.push({
@@ -289,8 +292,11 @@ function StoryCover({
   const shadeId = useId().replace(/[^a-zA-Z0-9_-]/g, '');
   const theme = useAppTheme();
   const origin = React.useContext(GalleryOriginContext);
+  const personalizedTalents = React.useContext(DiscoveryTalentsContext);
+  const forYou = personalizedTalents !== null && matchesForMe(item, personalizedTalents);
   if (item.type === 'dream') {
-    return <DreamPhaseCard item={item} width={width} variant="tile" onOpen={() => openPublication(item, origin)} />;
+    return <DreamPhaseCard item={item} width={width} variant="tile"
+      forYou={forYou} onOpen={() => openPublication(item, origin)} />;
   }
   const isTalent = item.type === 'talent';
   const isBible = item.type === 'bible';
@@ -396,6 +402,12 @@ function StoryCover({
           >
             {category(item).toUpperCase()}
           </Text>
+          {forYou ? <View style={{backgroundColor:'#CB245C',borderRadius:7,
+            paddingHorizontal:7,paddingVertical:4,marginTop:5,alignSelf:'flex-end'}}>
+            <Text style={{color:'#FFFFFF',fontSize:9,fontWeight:'700',letterSpacing:.2}}>
+              C’est pour toi
+            </Text>
+          </View> : null}
         </View>
         {isTalent && (
           <View pointerEvents="none" style={{ position: 'absolute', left: inset, right: inset, bottom: inset, gap: 3 }}>
@@ -579,7 +591,7 @@ function MasonryGallery({ items, viewportWidth }: { items: Publication[]; viewpo
  *
  * Filtering works at every length without empty cells or anonymous image blocks.
  */
-export function PublicationGallery({ items: receivedItems, layout = 'editorial', contentWidth: requestedWidth, origin = 'normal' }: { items: Publication[]; layout?: 'editorial' | 'masonry'; contentWidth?: number; origin?: GalleryOrigin }) {
+export function PublicationGallery({ items: receivedItems, layout = 'editorial', contentWidth: requestedWidth, origin = 'normal', personalizedTalents }: { items: Publication[]; layout?: 'editorial' | 'masonry'; contentWidth?: number; origin?: GalleryOrigin; personalizedTalents?: SavedTalent[] }) {
   // Semence remains link-accessible but never appears in public Discovery/recommendation galleries.
   const items = receivedItems.filter(item => item.type !== 'dream' || item.phase !== 'Rêve');
   const { width: windowWidth } = useWindowDimensions();
@@ -592,7 +604,11 @@ export function PublicationGallery({ items: receivedItems, layout = 'editorial',
   // When width is supplied by DetailLayout, it already includes the masonry
   // outer padding. Adding 30px again caused the final grid to overflow right.
   if (layout === 'masonry') return (
-    <GalleryOriginContext.Provider value={origin}><MasonryGallery items={items} viewportWidth={requestedWidth === undefined ? contentWidth + 30 : contentWidth} /></GalleryOriginContext.Provider>
+    <GalleryOriginContext.Provider value={origin}>
+      <DiscoveryTalentsContext.Provider value={personalizedTalents ?? null}>
+        <MasonryGallery items={items} viewportWidth={requestedWidth === undefined ? contentWidth + 30 : contentWidth} />
+      </DiscoveryTalentsContext.Provider>
+    </GalleryOriginContext.Provider>
   );
 
   const sections: React.ReactNode[] = [];
@@ -668,7 +684,9 @@ export function PublicationGallery({ items: receivedItems, layout = 'editorial',
 
   return (
     <GalleryOriginContext.Provider value={origin}>
-      <View style={{ width: '100%', gap, paddingBottom: 18 }}>{sections}</View>
+      <DiscoveryTalentsContext.Provider value={personalizedTalents ?? null}>
+        <View style={{ width: '100%', gap, paddingBottom: 18 }}>{sections}</View>
+      </DiscoveryTalentsContext.Provider>
     </GalleryOriginContext.Provider>
   );
 }
