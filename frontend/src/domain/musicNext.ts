@@ -89,5 +89,6 @@ export function studioVersionSourceIds(project:MusicProject):Set<string> {
 /** MIDI can be part of a working version even before the playback renderer is available. */
 export function isMusicTrackCandidate(file:MusicProjectFile) {
   return isPlayableMusicFile(file) ||
-    (/\\.(mid|midi)$/i.test(file.originalFilename||'')&&!!file.localFileId);
+    (file.kind==='score'&&!!file.musicEvents?.length) ||
+    (/\.(mid|midi)$/i.test(file.originalFilename||'')&&!!file.localFileId);
 }
