@@ -55,6 +55,7 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,h
   const [unsavedRecording,setUnsavedRecording]=useState(false);
   const [confirmClose,setConfirmClose]=useState(false);
   const [writing,setWriting]=useState<Writing>('lyrics');
+  const [writingTab,setWritingTab]=useState<'lyrics'|'score'>('lyrics');
   const [translationSourceId,setTranslationSourceId]=useState('');
   const [editingFileId,setEditingFileId]=useState('');
   const [selected,setSelected]=useState('');
@@ -73,10 +74,11 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,h
     setComposer('none');setTranslationSourceId('');setEditingFileId('');
     setConfirmClose(false);
   };
-  const openWrite=(sourceId='',fileId='')=>{
+  const openWrite=(sourceId='',fileId='',nextTab:'lyrics'|'score'='lyrics')=>{
     if(composer==='record'&&unsavedRecording){setConfirmClose(true);return;}
     const file=files.find(candidate=>candidate.id===fileId);
     setEditingFileId(fileId);
+    setWritingTab(file?.musicEvents?'score':nextTab);
     setWriting(file?.kind==='note'?'note':'lyrics');
     setTranslationSourceId(sourceId);setComposer('write');setConfirmClose(false);
   };
@@ -244,15 +246,28 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,h
           <Ionicons name={actionsOpen?'close':'add'} size={25} color="#fff"/>
         </Pressable>
       </View>
-      {actionsOpen?<View style={{alignItems:'flex-end',gap:7,
-        paddingBottom:5}}>
-        {railAction('Enregistrer','mic-outline',()=>{
-          if(composer==='record'){closeComposer();return;}
-          if(composer==='write')return;
-          setComposer('record');setTranslationSourceId('');
-        },composer==='record')}
-        {railAction('Écrire','pencil-outline',()=>openWrite(),composer==='write')}
-        {railAction('Importer','cloud-upload-outline',pickFiles,false,busy)}
+      {actionsOpen?<View style={{flexDirection:'row',gap:7,
+        alignItems:'stretch',paddingBottom:5}}>
+        {([
+          {label:'Écrire',icon:'pencil-outline' as const,run:()=>openWrite()},
+          {label:'Jouer',icon:'musical-notes-outline' as const,run:()=>openWrite('','','score')},
+          {label:'Enregistrer',icon:'mic-outline' as const,run:()=>{
+            if(composer==='record'){closeComposer();return;}
+            if(composer==='write')return;
+            setComposer('record');setTranslationSourceId('');
+          }},
+          {label:'Importer',icon:'cloud-upload-outline' as const,run:pickFiles},
+        ]).map(item=><Pressable key={item.label}
+          onPress={()=>{setActionsOpen(false);item.run();}}
+          accessibilityRole="button" accessibilityLabel={item.label}
+          disabled={busy&&item.label==='Importer'}
+          style={{flex:1,minWidth:0,minHeight:69,borderRadius:13,borderWidth:1,
+            borderColor:theme.border,backgroundColor:theme.surface,
+            alignItems:'center',justifyContent:'center',gap:7}}>
+          <Ionicons name={item.icon} size={21} color={PINK}/>
+          <Text numberOfLines={1} style={{fontSize:10.5,fontWeight:'600',
+            color:theme.foreground}}>{item.label}</Text>
+        </Pressable>)}
       </View>:null}
     </View>:
       <View style={{flexDirection:'row',gap:9,alignItems:'center'}}>
@@ -405,6 +420,7 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,h
       onOpenFile={setSelected} hasVersion={hasVersion}/>
     {composer==='write'?<MusicWritingOverlay key={editingFileId||translationSourceId||'new'}
       project={project} mode={writing} onModeChange={setWriting}
+      startTab={writingTab}
       source={translationSource} initialFile={editingFile}
       onSave={addWritten} onSaveScore={saveScore} onRequestTranslator={requestTranslator}
       requestedLanguages={(project.needs||[]).filter(need=>
