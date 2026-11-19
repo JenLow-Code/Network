@@ -172,6 +172,11 @@ export type MusicProject = {
   suggestions: MusicSuggestion[];
   messages: MusicMessage[];
   archivedRemoteProposals?: string[];
+  /** Private invitation drafts; no invitation is delivered until server integration. */
+  shareInvitations?: {
+    id:string;targetHandle:string;role:'participant'|'co-owner';
+    createdAt:string;status:'local-draft';
+  }[];
 };
 
 export const newMusicId = () => 'music-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 9);
