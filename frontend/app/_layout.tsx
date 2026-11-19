@@ -29,8 +29,15 @@ function ThemedStack() {
   return (
     <>
       <StatusBar style={theme.dark ? 'light' : 'dark'} />
-      <View style={{flex:1,backgroundColor:theme.background,
-        flexDirection:desktop?'row':'column'}}>
+      <View style={{
+        // 100dvh follows Android browser toolbars as they appear/disappear.
+        // This keeps the root navigation anchored to the *visible* viewport.
+        ...(Platform.OS==='web'&&!desktop?
+          ({height:'100dvh',maxHeight:'100dvh',overflow:'hidden'} as any):
+          {flex:1}),
+        backgroundColor:theme.background,
+        flexDirection:desktop?'row':'column',
+      }}>
         {desktop?<View pointerEvents="none" style={{
           position:'absolute',right:0,top:0,bottom:0,width:212,
           backgroundColor:theme.dark?'#343940':'#E7EAE7'}}>
