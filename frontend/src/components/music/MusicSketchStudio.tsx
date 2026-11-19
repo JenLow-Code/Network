@@ -32,71 +32,128 @@ const notePosition=(midi:number)=>{
 };
 
 /** A score remains a preview, while the event editor owns timing and duration. */
-export function MusicScoreView({events,compact=false,instrument}:{
+export function MusicScoreView({events,compact=false,instrument,
+  bpm=100,clef='treble',selectedId,onSelectNote,onTempoPress,onClefPress}:{
   events:MusicNotationEvent[];compact?:boolean;instrument?:Instrument;
+  bpm?:number;clef?:'treble'|'bass';selectedId?:string;
+  onSelectNote?:(id:string)=>void;onTempoPress?:()=>void;onClefPress?:()=>void;
 }){
   const theme=useAppTheme();
   const visible=instrument?events.filter(e=>e.instrument===instrument):events;
   const maxBeat=visible.reduce((max,e)=>Math.max(max,e.startBeats+e.lengthBeats),4);
   const unit=compact?37:49;
-  const width=Math.max(compact?305:590,Math.ceil(maxBeat/4)*4*unit+105);
+  const scoreWidth=Math.max(compact?305:590,Math.ceil(maxBeat/4)*4*unit+105);
   const piano=visible.filter(e=>e.instrument==='piano');
   const percussion=visible.filter(e=>e.instrument==='drum');
   const showPiano=instrument!=='drum',showDrum=instrument!=='piano';
   const height=showPiano&&showDrum?245:showPiano?151:145;
   const drumsY=(midi:number)=>midi===36?showPiano?226:123:
     midi===38||midi===39?showPiano?208:105:showPiano?184:81;
+  const pitchY=(midi:number)=>notePosition(midi+(clef==='bass'?12:0));
+  const gaps=visible.slice().sort((a,b)=>a.startBeats-b.startBeats)
+    .reduce<{from:number;to:number}[]>((out,event,index,list)=>{
+      if(index===0){
+        if(event.startBeats>=.25)out.push({from:0,to:event.startBeats});
+      }else{
+        const previous=Math.max(...list.slice(0,index).map(note=>note.startBeats+
+          note.lengthBeats));
+        if(event.startBeats-previous>=.25)
+          out.push({from:previous,to:event.startBeats});
+      }
+      return out;
+    },[]);
   return <ScrollView horizontal showsHorizontalScrollIndicator={false}
-    accessibilityLabel="Partition musicale, défilement horizontal"
-    style={{borderWidth:1,borderColor:theme.border,borderRadius:12,
+    accessibilityLabel="Partition interactive, défilement horizontal"
+    style={{borderWidth:1,borderColor:theme.border,borderRadius:14,
       backgroundColor:theme.surface}}>
-    <Svg width={width} height={height} viewBox={'0 0 '+width+' '+height}>
-      {showPiano?[74,86,98,110,122].map(y=><Line key={'p'+y} x1={52} x2={width-15}
-        y1={y} y2={y} stroke={theme.muted} strokeWidth={.65}/>):null}
-      {showDrum?(showPiano?[184,196,208,220,232]:[81,93,105,117,129]).map(y=>
-        <Line key={'d'+y} x1={52} x2={width-15}
+    <View style={{position:'relative',width:scoreWidth,height}}>
+      <Svg width={scoreWidth} height={height} viewBox={'0 0 '+scoreWidth+' '+height}>
+        {showPiano?[74,86,98,110,122].map(y=><Line key={'p'+y}
+          x1={52} x2={scoreWidth-15}
           y1={y} y2={y} stroke={theme.muted} strokeWidth={.65}/>):null}
-      {showPiano?<SvgText x={10} y={112} fontSize={40} fill={theme.foreground}>𝄞</SvgText>:null}
-      {showDrum?<SvgText x={7} y={showPiano?205:105} fontSize={11}
-        fill={theme.muted}>DR</SvgText>:null}
-      {!visible.length?<SvgText x={65} y={showPiano?54:60}
-        fontSize={12} fill={theme.muted}>
-        {showPiano?'Joue une touche pour commencer':'Joue un pad pour commencer'}
-      </SvgText>:null}
-      {Array.from({length:Math.ceil(maxBeat/4)+1},(_,i)=>i*4).map(beat=>
-        <Line key={'bar'+beat} x1={72+beat*unit} x2={72+beat*unit}
-          y1={showPiano?74:81} y2={showPiano?122:129}
-          stroke={theme.muted} strokeWidth={.85}/>)}
-      {piano.map(event=>{
-        const x=75+event.startBeats*unit,y=notePosition(event.midi);
-        const color=event.draft?theme.muted:PINK;
-        return <React.Fragment key={event.id}>
-          {y>126?<Line x1={x-12} x2={x+12} y1={134} y2={134}
-            stroke={theme.foreground} strokeWidth={1}/>:null}
-          {BLACKS.has(event.midi%12)?<SvgText x={x-18} y={y+5}
-            fontSize={15} fill={color}>♯</SvgText>:null}
-          <Ellipse cx={x} cy={y} rx={7.5} ry={5.2} rotation={-19}
-            origin={x+','+y} fill={color}/>
-          <Line x1={x+7} x2={x+7} y1={y} y2={y-30}
-            stroke={color} strokeWidth={1.6}/>
-        </React.Fragment>;
+        {showDrum?(showPiano?[184,196,208,220,232]:[81,93,105,117,129])
+          .map(y=><Line key={'d'+y} x1={52} x2={scoreWidth-15}
+            y1={y} y2={y} stroke={theme.muted} strokeWidth={.65}/>):null}
+        {showPiano?<SvgText x={10} y={112} fontSize={40}
+          fill={theme.foreground}>{clef==='bass'?'𝄢':'𝄞'}</SvgText>:null}
+        {showDrum?<SvgText x={7} y={showPiano?205:105} fontSize={11}
+          fill={theme.muted}>DR</SvgText>:null}
+        {!visible.length?<SvgText x={65} y={showPiano?62:66}
+          fontSize={11} fill={theme.muted}>
+          {showPiano?'Joue une touche pour ajouter des notes':'Joue un pad pour commencer'}
+        </SvgText>:null}
+        {Array.from({length:Math.ceil(maxBeat/4)+1},(_,i)=>i*4).map(beat=>
+          <Line key={'bar'+beat} x1={72+beat*unit} x2={72+beat*unit}
+            y1={showPiano?74:81} y2={showPiano?122:129}
+            stroke={theme.muted} strokeWidth={.8}/>)}
+        {gaps.map((gap,i)=>{
+          const x=75+(gap.from+Math.min((gap.to-gap.from)/2,.5))*unit;
+          const y=showPiano?98:108;
+          return <React.Fragment key={'rest'+i}>
+            <Line x1={x-4} y1={y-13} x2={x+5} y2={y-7}
+              stroke={theme.muted} strokeWidth={2}/>
+            <Line x1={x+5} y1={y-7} x2={x-2} y2={y+2}
+              stroke={theme.muted} strokeWidth={2}/>
+            <Line x1={x-2} y1={y+2} x2={x+4} y2={y+9}
+              stroke={theme.muted} strokeWidth={2}/>
+          </React.Fragment>;
+        })}
+        {piano.map(event=>{
+          const x=75+event.startBeats*unit,y=pitchY(event.midi);
+          const selected=selectedId===event.id;
+          const color=event.draft?theme.muted:PINK;
+          return <React.Fragment key={event.id}>
+            {y>126?<Line x1={x-12} x2={x+12} y1={134} y2={134}
+              stroke={theme.foreground} strokeWidth={1}/>:null}
+            {selected?<Ellipse cx={x} cy={y} rx={13} ry={10}
+              fill="none" stroke={PINK} strokeWidth={1.3}/>:null}
+            {BLACKS.has(event.midi%12)?<SvgText x={x-18} y={y+5}
+              fontSize={15} fill={color}>♯</SvgText>:null}
+            <Ellipse cx={x} cy={y} rx={7.5} ry={5.2} rotation={-19}
+              origin={x+','+y} fill={color}/>
+            <Line x1={x+7} x2={x+7} y1={y} y2={y-30}
+              stroke={color} strokeWidth={1.6}/>
+          </React.Fragment>;
+        })}
+        {percussion.map(event=>{
+          const x=75+event.startBeats*unit,y=drumsY(event.midi);
+          const color=event.draft?theme.muted:PINK;
+          return <React.Fragment key={event.id}>
+            <Line x1={x-6} y1={y-6} x2={x+6} y2={y+6}
+              stroke={color} strokeWidth={2}/>
+            <Line x1={x-6} y1={y+6} x2={x+6} y2={y-6}
+              stroke={color} strokeWidth={2}/>
+            <Line x1={x+6} y1={y} x2={x+6} y2={y-27}
+              stroke={color} strokeWidth={1.5}/>
+          </React.Fragment>;
+        })}
+      </Svg>
+      <Pressable onPress={onTempoPress} disabled={!onTempoPress}
+        accessibilityRole="button" accessibilityLabel={'Modifier le tempo '+bpm+' BPM'}
+        style={{position:'absolute',top:2,left:57,minHeight:37,minWidth:110,
+          justifyContent:'center'}}>
+        <Text style={{fontFamily:'BiroScript',fontSize:22,
+          color:theme.foreground}}>♩ = {bpm}</Text>
+      </Pressable>
+      {showPiano?<Pressable onPress={onClefPress} disabled={!onClefPress}
+        accessibilityRole="button" accessibilityLabel={'Changer la clef '+
+          (clef==='treble'?'de sol':'de fa')}
+        style={{position:'absolute',top:72,left:5,width:44,height:57}}/>:null}
+      {visible.map(event=>{
+        const x=75+event.startBeats*unit;
+        const y=event.instrument==='piano'?pitchY(event.midi):drumsY(event.midi);
+        return <Pressable key={'tap'+event.id}
+          onPress={()=>onSelectNote?.(event.id)}
+          disabled={!onSelectNote}
+          accessibilityRole="button"
+          accessibilityLabel={'Modifier '+musicNoteName(event.midi)+
+            ', temps '+beatLabel(event.startBeats)}
+          style={{position:'absolute',top:y-19,left:x-16,
+            width:34,height:39,borderRadius:18}}/>;
       })}
-      {percussion.map(event=>{
-        const x=75+event.startBeats*unit,y=drumsY(event.midi);
-        const color=event.draft?theme.muted:PINK;
-        return <React.Fragment key={event.id}>
-          <Line x1={x-6} y1={y-6} x2={x+6} y2={y+6}
-            stroke={color} strokeWidth={2}/>
-          <Line x1={x-6} y1={y+6} x2={x+6} y2={y-6}
-            stroke={color} strokeWidth={2}/>
-          <Line x1={x+6} y1={y} x2={x+6} y2={y-27}
-            stroke={color} strokeWidth={1.5}/>
-        </React.Fragment>;
-      })}
-    </Svg>
+    </View>
   </ScrollView>;
 }
-
 /** WebAudio previews do not alter the saved MIDI event or the original audio. */
 function playSound(ctx:AudioContext,pitch:number,drum:boolean,level:number,
   tone:string,sample:AudioBuffer|null,seconds?:number){
