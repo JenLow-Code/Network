@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Image, Platform, Pressable, Text, View, useWindowDimensions } from 'react-native';
 import { BlurView } from 'expo-blur';
 import Svg, { Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
@@ -8,12 +8,13 @@ import { useLocale } from '@/i18n/locale';
 import { useAppTheme } from '@/theme/AppTheme';
 
 /** Five durable destinations. Fire and Messages live in the global header. */
-export function Nav() {
+export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' }) {
   const theme = useAppTheme();
   const path = usePathname();
   const { t } = useLocale();
   const {width}=useWindowDimensions();
   const desktop=Platform.OS==='web'&&width>=1100;
+  const [collapsed,setCollapsed]=useState(false);
   const links = [
     {
       icon: 'calendar-outline' as const, title: t('agenda'),
@@ -49,60 +50,75 @@ export function Nav() {
   const webFrost = Platform.OS === 'web'
     ? ({ backdropFilter: 'blur(30px) saturate(190%)', WebkitBackdropFilter: 'blur(30px) saturate(190%)' } as any)
     : {};
-  // Desktop navigation is a right-hand dock, never a stretched mobile tab bar.
-  // On phones and narrow screens the original bottom navigation remains intact.
-  if(desktop)return (
-    <View accessibilityRole="navigation" style={{
-      position:'absolute',right:18,top:'50%',zIndex:30,
-      transform:[{translateY:-227}],
-      width:94,borderRadius:27,overflow:'hidden',
-      borderWidth:1,
-      borderColor:theme.dark?'rgba(221,241,250,.22)':'rgba(255,255,255,.85)',
-      backgroundColor:theme.dark?'rgba(28,36,44,.72)':'rgba(245,249,250,.73)',
-      paddingVertical:13,paddingHorizontal:9,gap:5,
-      shadowColor:theme.dark?'#000000':'#647F86',
-      shadowOpacity:.14,shadowRadius:22,
-      shadowOffset:{width:-3,height:6},elevation:9,
-      ...webFrost,
+  // Desktop: a real layout column, not a floating overlay. Navigation names
+  // are primary; icons are compact secondary cues. The user may collapse it to
+  // give the creative workspace additional horizontal room.
+  if(placement==='desktop'&&!desktop)return null;
+  if(placement==='page'&&desktop)return null;
+  if(placement==='desktop') {
+    const mainLinks=links.filter(x=>x.path!=='/profile');
+    const profile=links.find(x=>x.path==='/profile')!;
+    const activeColor='#CB245C';
+    const navSurface=theme.dark?'#202025':theme.background;
+    const selectedBg=theme.dark?'rgba(203,36,92,.17)':'rgba(203,36,92,.065)';
+    const renderEntry=(item:typeof links[number])=><Pressable
+      key={item.path}
+      onPress={()=>router.replace(item.path)}
+      accessibilityRole="button"
+      accessibilityLabel={item.title}
+      accessibilityState={{selected:item.active}}
+      style={{height:46,marginHorizontal:collapsed?8:13,
+        paddingHorizontal:collapsed?0:12,
+        borderRadius:9,flexDirection:'row',alignItems:'center',
+        justifyContent:collapsed?'center':'flex-start',gap:12,
+        position:'relative',
+        backgroundColor:item.active?selectedBg:'transparent'}}>
+        {item.active?<View pointerEvents="none" style={{
+          position:'absolute',left:0,top:10,bottom:10,width:3,
+          backgroundColor:activeColor,borderRadius:3}}/>:null}
+        <Ionicons name={item.path==='/discover'?'compass-outline':
+          item.path==='/profile'?'person-outline':item.icon}
+          size={19} color={item.active?activeColor:theme.muted}/>
+        {!collapsed?<Text numberOfLines={1} style={{
+          color:item.active?activeColor:theme.foreground,
+          fontSize:14,fontWeight:item.active?'700':'500',flex:1}}>
+          {item.title}
+        </Text>:null}
+      </Pressable>;
+    return <View accessibilityRole="navigation" style={{
+      width:collapsed?72:212,minWidth:collapsed?72:212,
+      height:'100%',backgroundColor:navSurface,
+      borderLeftWidth:1,borderLeftColor:theme.border,
+      justifyContent:'space-between',paddingTop:28,paddingBottom:24,
     }}>
-      <BlurView pointerEvents="none" intensity={65}
-        tint={theme.dark?'systemUltraThinMaterialDark':'systemUltraThinMaterialLight'}
-        style={{position:'absolute',top:0,right:0,left:0,bottom:0}}/>
-      {links.map(x=><Pressable key={x.path}
-        onPress={()=>router.replace(x.path)}
-        accessibilityRole="button" accessibilityLabel={x.title}
-        accessibilityState={{selected:x.active}}
-        style={{height:75,borderRadius:18,alignItems:'center',
-          justifyContent:'center',gap:5,position:'relative',
-          backgroundColor:x.active?
-            (theme.dark?'rgba(203,36,92,.19)':'rgba(203,36,92,.085)'):
-            'transparent'}}>
-        {x.active?<View pointerEvents="none" style={{
-          position:'absolute',left:0,top:18,bottom:18,width:3,
-          backgroundColor:'#CB245C',borderRadius:3}}/>:null}
-        {x.path==='/discover'?
-          <View style={{width:16,height:16,borderRadius:8,
-            borderWidth:x.active?0:2,
-            borderColor:theme.foreground,
-            backgroundColor:x.active?'#CB245C':'transparent'}}/>:
-        x.path==='/profile'?
-          <Image source={{uri:'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&q=75'}}
-            style={{width:27,height:27,borderRadius:14,
-              borderWidth:x.active?2:1,
-              borderColor:x.active?'#CB245C':'#B2B8B9'}}/>:
-          <Ionicons name={
-            x.path==='/agenda'&&x.active?'calendar':
-            x.path==='/music-hub'&&x.active?'musical-note':
-            x.path==='/my-space'&&x.active?'layers':x.icon
-          } size={25} color={x.active?'#CB245C':foreground}/>}
-        <Text numberOfLines={1} style={{fontSize:10,
-          fontWeight:x.active?'700':'500',
-          color:x.active?'#CB245C':theme.muted}}>
-          {x.title}
-        </Text>
-      </Pressable>)}
-    </View>
-  );
+      <View style={{gap:21}}>
+        <View style={{paddingHorizontal:collapsed?13:24,
+          flexDirection:'row',alignItems:'center',
+          justifyContent:collapsed?'center':'space-between',height:39}}>
+          {!collapsed?<Text style={{fontSize:10,
+            fontWeight:'700',letterSpacing:1.65,color:theme.muted}}>
+            NAVIGATION
+          </Text>:null}
+          <Pressable onPress={()=>setCollapsed(value=>!value)}
+            accessibilityRole="button"
+            accessibilityLabel={collapsed?'Développer la navigation':'Réduire la navigation'}
+            style={{width:32,height:32,justifyContent:'center',
+              alignItems:'center',borderRadius:8}}>
+            <Ionicons name={collapsed?'chevron-back-outline':'chevron-forward-outline'}
+              size={17} color={theme.muted}/>
+          </Pressable>
+        </View>
+        <View style={{gap:4}}>
+          {mainLinks.map(renderEntry)}
+        </View>
+      </View>
+      <View style={{gap:12}}>
+        <View style={{height:1,backgroundColor:theme.border,
+          marginHorizontal:collapsed?14:24}}/>
+        {renderEntry(profile)}
+      </View>
+    </View>;
+  }
   // A real translucent overlay: the page can remain visible and scroll behind it.
   return (
     <View style={{
