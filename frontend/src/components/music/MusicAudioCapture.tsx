@@ -291,7 +291,7 @@ export function MusicAudioCapture({onSaved,onStarted,onPaused,timelineStartSecon
         id,nonce:(previous?.nonce||0)+1
       }))}/>:
       <View style={{height:70,borderRadius:13,
-        backgroundColor:theme.dark?'#252029':'#F2F4F5'}}/>
+        backgroundColor:theme.dark?'#252029':'#F2F4F5'}}/>}
     {status==='recording'?<View style={{flexDirection:'row',gap:9}}>
       <Pressable onPress={pause} accessibilityRole="button"
         accessibilityLabel="Pause de l’enregistrement"
