@@ -6,6 +6,7 @@ import { useAppTheme } from '@/theme/AppTheme';
 import type { DreamEntry } from '@/domain/dreamWorkspace';
 import { DREAM_PHASES, PHASE_LABELS, type DreamPhase } from '@/domain/publication';
 import { dreamPhaseImageUris } from '../../../assets/dreamPhaseImages';
+import { DreamPhaseIcon } from '@/icons/DreamPhaseIcon';
 import { TopActions } from '@/components/navigation/TopActions';
 import { pickDreamImage } from '@/lib/pickDreamImage';
 import { useDreams } from '@/domain/dreamRepository';
@@ -39,15 +40,15 @@ export function DreamCoverBackdrop({ uri }: { uri?: string }) {
           <LinearGradient id="dream-cover-background-fade"
             x1="0%" y1="0%" x2="0%" y2="100%">
             <Stop offset="0%" stopColor={theme.background}
-              stopOpacity={theme.dark ? .72 : .79}/>
+              stopOpacity={theme.dark ? .67 : .64}/>
             <Stop offset="23%" stopColor={theme.background}
-              stopOpacity={theme.dark ? .64 : .72}/>
+              stopOpacity={theme.dark ? .58 : .51}/>
             <Stop offset="48%" stopColor={theme.background}
-              stopOpacity={theme.dark ? .55 : .64}/>
+              stopOpacity={theme.dark ? .54 : .54}/>
             <Stop offset="75%" stopColor={theme.background}
-              stopOpacity={theme.dark ? .78 : .83}/>
+              stopOpacity={theme.dark ? .76 : .78}/>
             <Stop offset="100%" stopColor={theme.background}
-              stopOpacity={theme.dark ? .95 : .96}/>
+              stopOpacity={theme.dark ? .94 : .94}/>
           </LinearGradient>
         </Defs>
         <Rect width="100%" height="100%" fill="url(#dream-cover-background-fade)"/>
@@ -118,7 +119,7 @@ export function DreamPhaseHeader({
         </Pressable>:null}
       </View>
       {description ? (
-        <Text style={{ color: theme.muted, fontSize: 14, lineHeight: 22, marginBottom: 20 }}>
+        <Text style={{ color: theme.foreground, opacity: .88, fontSize: 14, lineHeight: 22, marginBottom: 20, fontWeight: '500', ...(Platform.OS==='web'?({textShadow:theme.dark?'0 1px 4px rgba(0,0,0,.45)':'0 1px 6px rgba(255,255,255,.85)'} as any):{}) }}>
           {description}
         </Text>
       ) : null}
@@ -131,12 +132,14 @@ export function DreamPhaseHeader({
           never a replacement for the journey itself. */}
       <View style={{marginBottom:19,marginTop:5,
         flexDirection:'row',alignItems:'flex-end',gap:width<520?4:10,
-        paddingVertical:9,paddingHorizontal:width<520?4:9,
-        borderRadius:8,
-        backgroundColor:theme.dark?'rgba(11,18,18,.66)':'rgba(255,253,247,.76)',
+        paddingVertical:7,paddingHorizontal:width<520?4:9,
+        borderRadius:13,
+        borderWidth:Platform.OS==='web'?1:0,
+        borderColor:theme.dark?'rgba(255,255,255,.13)':'rgba(255,255,255,.32)',
+        backgroundColor:theme.dark?'rgba(19,24,25,.36)':'rgba(250,249,246,.32)',
         ...(Platform.OS==='web'?({
-          backdropFilter:'blur(15px) saturate(115%)',
-          WebkitBackdropFilter:'blur(15px) saturate(115%)',
+          backdropFilter:'blur(22px) saturate(140%)',
+          WebkitBackdropFilter:'blur(22px) saturate(140%)',
         } as any):{})}}>
         {DREAM_PHASES.map((item,i)=>{
           const reached=i<=DREAM_PHASES.indexOf(dream.phase);
@@ -148,13 +151,11 @@ export function DreamPhaseHeader({
             accessibilityState={{selected,disabled:!reached||!onNavigate}}
             disabled={!reached||!onNavigate}
             style={{flex:1,minWidth:0,justifyContent:'flex-end',
-              gap:10,alignItems:'center',paddingHorizontal:2,
+              gap:5,alignItems:'center',paddingHorizontal:2,
               paddingTop:4,paddingBottom:0}}>
             <View style={{flexDirection:'row',alignItems:'center',
               justifyContent:'center',gap:6,minHeight:24}}>
-              <View style={{width:selected?7:5,height:selected?7:5,
-                borderRadius:4,backgroundColor:reached?phaseColor:theme.muted,
-                opacity:reached?1:.42}}/>
+              <View style={{opacity:reached?1:.42}}><DreamPhaseIcon phase={item} size={width<520?23:27}/></View>
               <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={.74}
                 style={{fontSize:width<520?10:12,
                   fontWeight:selected?'700':'500',
