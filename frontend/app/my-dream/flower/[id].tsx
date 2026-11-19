@@ -452,10 +452,10 @@ export default function FlowerPreparation() {
 
         {/* Publication comes first; secondary edit is a magenta outline. */}
         <View style={{paddingTop:18,marginTop:30,
-           gap:ws.tablet?8:10,flexDirection:ws.tablet?'row':'column',
+           gap:(ws.tablet||ws.desktop)?8:10,flexDirection:(ws.tablet||ws.desktop)?'row':'column',
            maxWidth:ws.desktop?700:undefined,width:'100%',alignSelf:'center'}}>
           <Pressable accessibilityRole="button" onPress={publish}
-            style={{minHeight:ws.tablet?43:48,flex:ws.tablet?1.2:undefined,
+            style={{minHeight:(ws.tablet||ws.desktop)?43:48,flex:(ws.tablet||ws.desktop)?1.2:undefined,
                borderRadius:11,backgroundColor:MAGENTA,
               alignItems: 'center', justifyContent: 'center', paddingHorizontal: 14 }}>
             <Text style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '700' }}>
@@ -463,7 +463,7 @@ export default function FlowerPreparation() {
             </Text>
           </Pressable>
           <Pressable accessibilityRole="button" onPress={() => router.replace('/my-space')}
-            style={{minHeight:ws.tablet?43:48,flex:ws.tablet?1:undefined,
+            style={{minHeight:(ws.tablet||ws.desktop)?43:48,flex:(ws.tablet||ws.desktop)?1:undefined,
                borderWidth:1,borderColor:MAGENTA,
               borderRadius: 11, backgroundColor: 'transparent',
               alignItems: 'center', justifyContent: 'center', paddingHorizontal: 14 }}>
@@ -471,13 +471,13 @@ export default function FlowerPreparation() {
               fontWeight: '700' }}>Continuer à éditer</Text>
           </Pressable>
           <Pressable accessibilityRole="button" onPress={uproot}
-            style={{minHeight:ws.tablet?43:48,flex:ws.tablet?1:undefined,
+            style={{minHeight:(ws.tablet||ws.desktop)?43:48,flex:(ws.tablet||ws.desktop)?1:undefined,
                borderRadius:11,
-               backgroundColor:ws.tablet?'transparent':'#242322',
-               borderWidth:ws.tablet?1:0,borderColor:theme.border,
+               backgroundColor:(ws.tablet||ws.desktop)?'transparent':'#242322',
+               borderWidth:(ws.tablet||ws.desktop)?1:0,borderColor:theme.border,
               alignItems: 'center', justifyContent: 'center', paddingHorizontal: 14 }}>
-            <Text style={{color:ws.tablet?theme.muted:'#FFFFFF',
-                fontSize:ws.tablet?12:13,fontWeight:'700'}}>
+            <Text style={{color:(ws.tablet||ws.desktop)?theme.muted:'#FFFFFF',
+                fontSize:(ws.tablet||ws.desktop)?12:13,fontWeight:'700'}}>
               Arracher cette plante
             </Text>
           </Pressable>
