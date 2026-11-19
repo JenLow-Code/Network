@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -7,14 +7,16 @@ import { dreams } from '@/mocks/publications';
 import { myCircle } from '@/mocks/demoCircle';
 import { Nav } from '@/components/navigation/Nav';
 import { PageHeader } from '@/components/navigation/PageHeader';
+import {workspaceCanvas} from '@/theme/workspaceLayout';
 export default function Introduction() {
+  const {width}=useWindowDimensions();
   const { id, person } = useLocalSearchParams<{ id: string; person?: string }>();
   const d = dreams.find(x => x.id === id),
     friend = myCircle.find(p => p.id === person);
   const [requested, setRequested] = useState(false);
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
-      <View style={{ flex: 1, padding: 22 }}>
+      <View style={{flex:1,...workspaceCanvas(width),paddingTop:12,paddingBottom:55}}>
         <PageHeader />
         <Text style={{ fontFamily: 'Caveat_700Bold', fontSize: 33, marginTop: 18 }}>
           Introduction de confiance
