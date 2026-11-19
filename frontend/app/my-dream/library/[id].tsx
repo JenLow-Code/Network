@@ -106,6 +106,24 @@ export default function DreamLibrary(){
   };
   const matching=docs.filter(doc=>doc.name.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()))
     .slice().reverse();
+  const mayPromote=editable&&!!dream&&dream.phase!=='Rêve'&&
+    (!view||view===dream.phase);
+  const promote=(block:DreamBlock,move:boolean)=>{
+    if(!dream||!mayPromote)return;
+    const uri=block.content?.trim()||block.media?.[0]||'';
+    // Only genuine safe URLs and locally saved file/image data can become document versions.
+    if(!isSafeDocumentUrl(uri)&&!uri.startsWith('data:')){
+      inform('Référence non transférable','Cette inspiration ne contient pas de fichier ou de lien transférable.');
+      return;
+    }
+    const name=(block.title||block.caption||'Inspiration').trim();
+    const next=appendDocumentVersion(docs,name,{
+      uri,source:uri.startsWith('data:')?'file':'link',
+    });
+    patch(dream.id,move?{
+      documents:next,blocks:(dream.blocks||[]).filter(item=>item.id!==block.id),
+    }:{documents:next});
+  };
   const archive=(dream?.blocks||[]).filter(block=>block.content||block.media?.length);
   const legacyDocs=archive.filter(block=>['document','pdf'].includes(block.kind));
   // Checklists belong to the private Notes tab, not the inspiration archive.
@@ -269,6 +287,30 @@ export default function DreamLibrary(){
               <Text style={{color:theme.foreground,fontSize:12}}>Ajouter</Text>
             </Pressable>:null}
           </View>
+          {mayPromote&&archive.length>0?<View style={{gap:7,marginBottom:12}}>
+            <Text style={{fontSize:11,color:theme.muted,lineHeight:18}}>
+              Classer une inspiration comme document, sans perdre son origine.
+            </Text>
+            {archive.filter(block=>{
+              const uri=block.content?.trim()||block.media?.[0]||'';
+              return isSafeDocumentUrl(uri)||uri.startsWith('data:');
+            }).map(block=><View key={block.id} style={{
+              flexDirection:'row',alignItems:'center',gap:8,paddingVertical:5}}>
+              <Text numberOfLines={1} style={{flex:1,fontSize:12,color:theme.foreground}}>
+                {block.title||block.caption||'Inspiration'}
+              </Text>
+              <Pressable accessibilityRole="button"
+                accessibilityLabel={'Copier dans Documents : '+(block.title||'Inspiration')}
+                onPress={()=>promote(block,false)} style={{padding:8}}>
+                <Text style={{color:'#27845B',fontSize:11,fontWeight:'600'}}>Copier</Text>
+              </Pressable>
+              <Pressable accessibilityRole="button"
+                accessibilityLabel={'Déplacer dans Documents : '+(block.title||'Inspiration')}
+                onPress={()=>promote(block,true)} style={{padding:8}}>
+                <Text style={{color:theme.foreground,fontSize:11,fontWeight:'600'}}>Déplacer</Text>
+              </Pressable>
+            </View>)}
+          </View>:null}
           {!!dream?<SemenceInspirations dream={dream} editable={editable}
             addRequestToken={addRequestToken}/>:null}
           {!dream?<Text style={{fontSize:12,color:theme.muted}}>Rêve introuvable.</Text>:null}
