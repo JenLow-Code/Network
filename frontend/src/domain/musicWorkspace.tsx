@@ -84,6 +84,9 @@ export type MusicAudioMarker = {
   /** When present and greater than startSeconds, annotates a time range. */
   endSeconds?: number;
   note: string;
+  /** Optional pointer to an existing source in Capture; never copies its contents. */
+  linkedFileId?: string;
+  linkedSectionId?: string;
 };
 export type MusicLyricReference = {
   id: string;
