@@ -6,6 +6,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { router, usePathname } from 'expo-router';
 import { useLocale } from '@/i18n/locale';
 import { useAppTheme } from '@/theme/AppTheme';
+import { useDreams } from '@/domain/dreamRepository';
+import { PHASE_LABELS } from '@/domain/publication';
 
 /** Five durable destinations. Fire and Messages live in the global header. */
 export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' }) {
@@ -15,6 +17,13 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' }) 
   const {width}=useWindowDimensions();
   const desktop=Platform.OS==='web'&&width>=1100;
   const [collapsed,setCollapsed]=useState(false);
+  const {items:dreams}=useDreams();
+  const segments=path.split('/').filter(Boolean);
+  const contextId=segments[0]==='my-dream'
+    ?(['flower','notes','library'].includes(segments[1])?segments[2]:segments[1])
+    :segments[0]==='my-dream-participants'?segments[1]:undefined;
+  const currentDream=contextId?
+    dreams.find(d=>d.id===decodeURIComponent(contextId)):undefined;
   const links = [
     {
       icon: 'calendar-outline' as const, title: t('agenda'),
@@ -109,7 +118,42 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' }) 
           </Pressable>
         </View>
         <View style={{gap:4}}>
-          {mainLinks.map(renderEntry)}
+          {mainLinks.map(item=><React.Fragment key={item.path}>
+            {renderEntry(item)}
+            {item.path==='/my-space'&&currentDream?
+              <Pressable onPress={()=>router.push({
+                  pathname:'/my-dream/[id]',params:{id:currentDream.id}
+                })}
+                accessibilityRole="button"
+                accessibilityLabel={'Ouvrir le rêve '+currentDream.title}
+                style={{marginTop:3,marginBottom:7,
+                  marginLeft:collapsed?10:24,marginRight:collapsed?10:13,
+                  padding:collapsed?5:8,borderRadius:10,
+                  flexDirection:'row',alignItems:'center',gap:9,
+                  borderWidth:1,borderColor:theme.dark?
+                    'rgba(255,255,255,.14)':'rgba(80,73,66,.12)',
+                  backgroundColor:theme.dark?'rgba(255,255,255,.035)':
+                    'rgba(237,231,222,.43)'}}>
+                {currentDream.image?
+                  <Image source={{uri:currentDream.image}} resizeMode="cover"
+                    style={{width:collapsed?40:45,height:collapsed?40:51,
+                      borderRadius:7,backgroundColor:theme.border}}/>:
+                  <View style={{width:collapsed?40:45,height:collapsed?40:51,
+                    borderRadius:7,backgroundColor:theme.border,
+                    alignItems:'center',justifyContent:'center'}}>
+                    <Ionicons name="layers-outline" size={20} color={theme.muted}/>
+                  </View>}
+                {!collapsed?<View style={{flex:1,gap:4,minWidth:0}}>
+                  <Text numberOfLines={2} style={{fontSize:12,fontWeight:'700',
+                    lineHeight:16,color:theme.foreground}}>
+                    {currentDream.title}
+                  </Text>
+                  <Text numberOfLines={1} style={{fontSize:10,color:theme.muted}}>
+                    {PHASE_LABELS[currentDream.phase]}
+                  </Text>
+                </View>:null}
+              </Pressable>:null}
+          </React.Fragment>)}
         </View>
       </View>
       <View style={{gap:12}}>
