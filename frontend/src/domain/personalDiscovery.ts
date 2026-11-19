@@ -19,6 +19,11 @@ const families: Record<string, string[]> = {
   violon: ['violon', 'violoniste', 'violin'],
   saxophone: ['saxophone', 'saxo', 'saxophoniste'],
   trompette: ['trompette', 'trompettiste', 'trumpet'],
+  violoncelle: ['violoncelle', 'violoncelliste', 'cello', 'celliste', 'cellist'],
+  contrebasse: ['contrebasse', 'contrebassiste', 'double bass', 'double-bass', 'double bassist', 'upright bass'],
+  ukulele: ['ukulele', 'ukuleliste', 'ukulelist', 'ukulélé', 'ukuléliste'],
+  cavaquinho: ['cavaquinho', 'cavaquinhiste', 'cavaquinista'],
+  traduction: ['traduction', 'traducteur', 'traductrice', 'translator', 'translation'],
   danse: ['danse', 'danseur', 'danseuse', 'dance'],
   production: ['production', 'producteur', 'producer', 'beatmaker'],
 };
@@ -26,7 +31,10 @@ const normalized = (s: string) => s.toLowerCase().normalize('NFD').replace(/[\u0
 function skillFamily(name: string): string {
   const x = normalized(name);
   for (const [family, words] of Object.entries(families)) {
-    if (words.some(word => x.split(' ').includes(normalized(word)))) return family;
+    if (words.some(word => {
+      const alias = normalized(word);
+      return alias && (alias.includes(' ') ? x.includes(alias) : x.split(' ').includes(alias));
+    })) return family;
   }
   return x;
 }
