@@ -1,5 +1,5 @@
 import React,{useEffect,useState} from 'react';
-import {Pressable,Text,TextInput,View} from 'react-native';
+import {Pressable,ScrollView,Text,TextInput,View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {useAppTheme} from '@/theme/AppTheme';
 import {musicStampMs} from '@/domain/musicEditing';
@@ -157,7 +157,8 @@ export function MusicAudioMarkers({markers,duration,cursor,onChange,onSeek,
          </Text>
          <Ionicons name={linksOpen?'chevron-up':'chevron-down'} size={16} color={pink}/>
        </Pressable>
-       {linksOpen?<View style={{gap:5,maxHeight:230,overflow:'hidden'}}>
+       {linksOpen?<ScrollView nestedScrollEnabled style={{maxHeight:230}}
+         contentContainerStyle={{gap:5}}>
          <Pressable onPress={()=>{setLinkedFileId('');setLinkedSectionId('');
            setLinkedReferenceId('');}}
            style={{paddingVertical:8}}>
@@ -201,7 +202,7 @@ export function MusicAudioMarkers({markers,duration,cursor,onChange,onSeek,
              Partie · {section.title}
            </Text>
          </Pressable>)}
-       </View>:null}
+       </ScrollView>:null}
      </View>:null}
      {error?<Text style={{color:'#B34D61',fontSize:12}}>{error}</Text>:null}
      <View style={{flexDirection:'row',gap:13,justifyContent:'flex-end'}}>
