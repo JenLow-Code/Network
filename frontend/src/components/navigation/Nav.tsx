@@ -7,6 +7,10 @@ import { router, useGlobalSearchParams, usePathname } from 'expo-router';
 import { useLocale } from '@/i18n/locale';
 import { useAppTheme } from '@/theme/AppTheme';
 import { useDreams } from '@/domain/dreamRepository';
+import { useMusicWorkspaces } from '@/domain/musicWorkspace';
+import { musicNextState } from '@/domain/musicNext';
+import { MusicFolderCover } from '@/components/music/MusicFolderCover';
+import { NetworkMark } from '@/components/brand/NetworkMark';
 import { isPublishedFlower } from '@/domain/dreamWorkspace';
 import { DREAM_PHASES, PHASE_LABELS, type DreamPhase } from '@/domain/publication';
 import { workspaceLayout } from '@/theme/workspaceLayout';
@@ -20,8 +24,10 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' }) 
   const desktop=Platform.OS==='web'&&workspaceLayout(width).desktop;
   const [collapsed,setCollapsed]=useState(false);
   const [dreamTreeOpen,setDreamTreeOpen]=useState(true);
-  const params=useGlobalSearchParams<{view?:string}>();
+  const params=useGlobalSearchParams<{view?:string;section?:string}>();
   const {items:dreams}=useDreams();
+  const {items:musicProjects,patch:patchMusic}=useMusicWorkspaces();
+  const [songTreeOpen,setSongTreeOpen]=useState(true);
   const segments=path.split('/').filter(Boolean);
   const contextId=segments[0]==='my-dream'
     ?(['flower','notes','library'].includes(segments[1])?segments[2]:segments[1])
@@ -33,19 +39,40 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' }) 
     DREAM_PHASES.some(value=>value===requestedPhase)?
       requestedPhase as DreamPhase:currentDream?.phase||'Rêve';
   const currentPhaseIndex=DREAM_PHASES.indexOf(currentDream?.phase||'Rêve');
+  const songId=segments[0]==='music-workspace'?segments[1]:
+    segments[0]==='music'&&segments[1]&&segments[1]!=='new'?segments[1]:undefined;
+  const currentSong=songId?musicProjects.find(song=>song.id===decodeURIComponent(songId)):undefined;
+  const songState=currentSong?musicNextState(currentSong):null;
+  const activeVersion=songState?.versions.find(v=>v.id===songState.activeVersionId)
+    ||songState?.versions[0];
   const openPhase=(phase:DreamPhase)=>{
     if(!currentDream||DREAM_PHASES.indexOf(phase)>currentPhaseIndex)return;
     if(phase==='Témoignage'&&!isPublishedFlower(currentDream)){
-      router.push({pathname:'/my-dream/flower/[id]',params:{id:currentDream.id}});
+      router.replace({pathname:'/my-dream/flower/[id]',params:{id:currentDream.id}});
       return;
     }
-    router.push({pathname:'/my-dream/[id]',params:{id:currentDream.id,view:phase}});
+    router.replace({pathname:'/my-dream/[id]',params:{id:currentDream.id,view:phase}});
   };
-  const openResource=(kind:'notes'|'library')=>{
+  const openResource=(kind:'notes'|'documents'|'inspirations'|'resources',
+    phase:DreamPhase)=>{
     if(!currentDream)return;
-    router.push({pathname:kind==='notes'?
-      '/my-dream/notes/[id]':'/my-dream/library/[id]',
-      params:{id:currentDream.id}});
+    const id=currentDream.id;
+    if(kind==='resources'){
+      router.replace({pathname:'/my-dream/[id]',
+        params:{id,view:phase,focus:'resources'}});
+    }else if(kind==='inspirations'&&phase==='Rêve'){
+      router.replace({pathname:'/my-dream/[id]',params:{id,view:'Rêve'}});
+    }else {
+      router.replace({pathname:kind==='notes'?'/my-dream/notes/[id]':
+        '/my-dream/library/[id]',
+        params:{id,view:phase,section:kind==='inspirations'?
+          'inspirations':kind==='documents'?'documents':'notes'}});
+    }
+  };
+  const openMusicVersion=(versionId:string)=>{
+    if(!currentSong||!songState)return;
+    patchMusic(currentSong.id,{musicNext:{...songState,activeVersionId:versionId}});
+    router.replace({pathname:'/music-workspace/[id]',params:{id:currentSong.id,tab:'create'}});
   };
   const links = [
     {
@@ -118,7 +145,7 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' }) 
         {item.active?<View pointerEvents="none" style={{
           position:'absolute',left:0,top:10,bottom:10,width:3,
           backgroundColor:activeColor,borderRadius:3}}/>:null}
-        <Ionicons name={item.path==='/discover'?'compass-outline':
+        <Ionicons name={item.path==='/discover'?'ellipse-outline':
           item.path==='/profile'?'person-outline':item.icon}
           size={19} color={item.active?activeColor:theme.muted}/>
         {!collapsed?<Text numberOfLines={1} style={{
@@ -159,13 +186,17 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' }) 
         bottom:1,width:1,
         backgroundColor:theme.dark?'rgba(255,255,255,.20)':'rgba(255,255,255,.85)'}}/>
       <View style={{gap:21}}>
-        <View style={{paddingHorizontal:collapsed?13:24,
+        <View style={{paddingHorizontal:collapsed?13:20,
           flexDirection:'row',alignItems:'center',
-          justifyContent:collapsed?'center':'space-between',height:39}}>
-          {!collapsed?<Text style={{fontSize:10,
-            fontWeight:'700',letterSpacing:1.65,color:theme.muted}}>
-            NAVIGATION
-          </Text>:null}
+          justifyContent:collapsed?'center':'space-between',height:43}}>
+          {!collapsed?<Pressable onPress={()=>router.replace('/discover')}
+            accessibilityRole="button" accessibilityLabel="JenLow · Accueil Découvrir"
+            style={{flexDirection:'row',alignItems:'center',gap:9,
+              paddingVertical:8,paddingHorizontal:2}}>
+            <NetworkMark size={19} color="#CB245C"/>
+            <Text style={{fontWeight:'800',fontSize:15,letterSpacing:1.7,
+              color:theme.foreground}}>JENLOW</Text>
+          </Pressable>:null}
           <Pressable onPress={()=>setCollapsed(value=>!value)}
             accessibilityRole="button"
             accessibilityLabel={collapsed?'Développer la navigation':'Réduire la navigation'}
