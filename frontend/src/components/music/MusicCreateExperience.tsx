@@ -29,8 +29,12 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
   const {width}=useWindowDimensions();
   const compact=width<600;
   const state=musicNextState(project);
-  const version=state.versions.find(v=>v.id===state.activeVersionId)||state.versions[0];
+  // A version exists only when it contains at least one arranged source.
+  const versions=state.versions.filter(v=>v.tracks.length>0);
+  const version=versions.find(v=>v.id===state.activeVersionId)||versions[0];
   const sources=project.files.filter(isMusicTrackCandidate);
+  const availableSources=version?sources.filter(file=>
+    !version.tracks.some(track=>track.sourceFileId===file.id)):sources;
   // Older takes may have been saved before their duration was known.
   // Decode the real file instead of drawing a zero-width phantom track.
   const unknownDurationIds=version?.tracks
@@ -72,7 +76,7 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
   const [confirmClose,setConfirmClose]=useState(false);
   const [confirmDelete,setConfirmDelete]=useState(false);
   const [editTrack,setEditTrack]=useState('');
-  const [showTracks,setShowTracks]=useState(false);
+  const [showTracks,setShowTracks]=useState(!compact);
   const [rangeRequest,setRangeRequest]=useState<{
     trackId:string;start:number;end:number;nonce:number
   }|null>(null);
@@ -131,12 +135,18 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
     setError('');setEditTrack('');
   };
   const first=(file:MusicProjectFile)=>{
-    const created=makeWorkingVersion(file,state.versions.length+1);
-    patch({musicNext:{...state,versions:[...state.versions,created],activeVersionId:created.id}});
+    const created=makeWorkingVersion(file,versions.length+1);
+    patch({musicNext:{...state,versions:[...versions,created],
+      activeVersionId:created.id,history:(state.history||[])
+        .filter(entry=>versions.some(v=>v.id===entry.versionId))}});
     setPickMode('none');setVersionMenu(false);setError('');
   };
   const add=(file:MusicProjectFile,at=timelineCursor)=>{
     if(!version){first(file);return;}
+    if(version.tracks.some(track=>track.sourceFileId===file.id)){
+      setError('Cette prise est déjà dans la version. Duplique la piste sur la chronologie si besoin.');
+      return;
+    }
     editTracks([...version.tracks,{...makeWorkingTrack(file),
       offsetSeconds:Math.max(0,Math.round(at*100)/100)}]);
     setPickMode('none');setError('');
@@ -268,7 +278,7 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
       </View>
       {versionMenu?<View style={{padding:15,backgroundColor:theme.surface,borderRadius:15,
         borderWidth:1,borderColor:theme.border,gap:8}}>
-        {state.versions.map(v=><Pressable key={v.id} accessibilityRole="button"
+        {versions.map(v=><Pressable key={v.id} accessibilityRole="button"
           onPress={()=>{patch({musicNext:{...state,activeVersionId:v.id}});setVersionMenu(false);}}
           style={{flexDirection:'row',alignItems:'center',gap:10,minHeight:39}}>
           <Ionicons name={v.id===version?.id?'checkmark-circle':'ellipse-outline'}
@@ -316,19 +326,27 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
         button('Capturer ma première prise',onCapture,true,'mic-outline')}
     </View>:null}
     {version?<View style={{gap:15}}>
-      <MusicSourceBank files={sources} onAdd={add}/>
+      {availableSources.length?<MusicSourceBank files={availableSources} onAdd={add}/>:null}
       <MusicStudioTransport key={version.id} version={version} files={project.files}
         onPositionChange={setTimelineCursor}
         onTrackChange={editOneTrack}
         onRenameTrack={(id,title)=>editOneTrack(id,{title})}
         onEmojiTrack={(id,emoji)=>editOneTrack(id,{emoji})}
         onRemoveTrack={id=>{
-          editTracks(version.tracks.filter(t=>t.id!==id));
+          const remainingTracks=version.tracks.filter(t=>t.id!==id);
+          if(remainingTracks.length)editTracks(remainingTracks);
+          else {
+            const remainingVersions=versions.filter(v=>v.id!==version.id);
+            patch({musicNext:{...state,versions:remainingVersions,
+              activeVersionId:remainingVersions[0]?.id,
+              history:(state.history||[]).filter(entry=>entry.versionId!==version.id)}});
+            setVersionMenu(false);
+          }
           setEditTrack('');metronome.stop();
         }}
         onDropSource={(id,time)=>{
           const file=project.files.find(f=>f.id===id);
-          if(file&&isMusicTrackCandidate(file))add(file,time);
+          if(file&&availableSources.some(source=>source.id===file.id))add(file,time);
         }}
         onMarkTrackRange={(trackId,start,end)=>setRangeRequest(previous=>({
           trackId,start,end,nonce:(previous?.nonce||0)+1
