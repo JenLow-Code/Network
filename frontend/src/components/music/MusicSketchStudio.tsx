@@ -90,11 +90,11 @@ export function MusicScoreView({events,compact=false,instrument,
   const gaps=visible.slice().sort((a,b)=>a.startBeats-b.startBeats)
     .reduce<{from:number;to:number}[]>((out,event,index,list)=>{
       if(index===0){
-        if(event.startBeats>=.25)out.push({from:0,to:event.startBeats});
+        if(event.startBeats>=.125)out.push({from:0,to:event.startBeats});
       }else{
         const previous=Math.max(...list.slice(0,index).map(note=>note.startBeats+
           note.lengthBeats));
-        if(event.startBeats-previous>=.25)
+        if(event.startBeats-previous>=.125)
           out.push({from:previous,to:event.startBeats});
       }
       return out;
