@@ -196,7 +196,9 @@ export function MusicStudioTransport({version,files,onPositionChange,onTrackChan
       </View>
       {error?<Text style={{fontSize:11,color:'#B44B61',lineHeight:18}}>{error}</Text>:null}
       {!active.length?<Text style={{fontSize:11,color:theme.muted}}>
-        Aucune piste audio écoutable sur cet appareil.
+        {version.tracks.some(t=>files.find(f=>f.id===t.sourceFileId)?.musicEvents?.length)?
+          'Les pistes MIDI sont positionnées, mais leur lecture synchronisée reste à développer.':
+          'Aucune piste audio écoutable sur cet appareil.'}
       </Text>:null}
     </View>
     <MusicArrangementTimeline version={version} files={files}
