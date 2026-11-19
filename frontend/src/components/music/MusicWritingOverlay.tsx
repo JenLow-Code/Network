@@ -222,6 +222,7 @@ export function MusicWritingOverlay({project,mode,startTab,onModeChange,source,i
           </View>
           <View style={{display:tab==='score'?'flex':'none'}}>
             <MusicSketchStudio initialFile={initialFile?.musicEvents?initialFile:null}
+              active={tab==='score'}
               onSave={onSaveScore} onDirtyChange={setScoreDirty}/>
           </View>
           {selectedSource?<View style={{display:tab==='translation'?'flex':'none'}}>
