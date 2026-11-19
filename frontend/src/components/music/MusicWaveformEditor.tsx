@@ -14,10 +14,13 @@ type Props={file:File;duration:number;cursor:number;onSeek:(seconds:number)=>voi
   onChangeMarkers?:(markers:MusicAudioMarker[])=>void;
   onEditMarker?:(id:string)=>void;
   onCreateRange?:(startSeconds:number,endSeconds:number)=>void;
+  selectedRange?:{start:number;end:number}|null;
+  onClearSelectedRange?:()=>void;
 };
 const clamp=(v:number,lo:number,hi:number)=>Math.max(lo,Math.min(hi,v));
 export function MusicWaveformEditor({file,duration,cursor,onSeek,zoom,onZoom,
-  playing,onTogglePlayback,markers=[],compact=false,onChangeMarkers,onEditMarker,onCreateRange}:Props){
+  playing,onTogglePlayback,markers=[],compact=false,onChangeMarkers,onEditMarker,
+  onCreateRange,selectedRange,onClearSelectedRange}:Props){
   const theme=useAppTheme();
   const {width}=useWindowDimensions();
   // The ruler and waveform must fill the actual panel, not a hard-coded
@@ -30,6 +33,7 @@ export function MusicWaveformEditor({file,duration,cursor,onSeek,zoom,onZoom,
   const [selectedMarkerId,setSelectedMarkerId]=useState<string|null>(null);
   const [confirmDelete,setConfirmDelete]=useState(false);
   const [drawingRange,setDrawingRange]=useState<{start:number;end:number}|null>(null);
+  const visibleRange=drawingRange||selectedRange;
   const onSeekRef=useRef(onSeek);onSeekRef.current=onSeek;
   const onRangeRef=useRef(onCreateRange);onRangeRef.current=onCreateRange;
   const nativeRangeRef=useRef<{start:number;end:number;pageX:number}|null>(null);
@@ -313,7 +317,7 @@ export function MusicWaveformEditor({file,duration,cursor,onSeek,zoom,onZoom,
           <Text style={{fontSize:12,fontWeight:'700',color:theme.foreground}}>
             {musicStampMs(cursor)} / {musicStampMs(duration)}
           </Text>
-          {!compact?<Text style={{fontSize:11,color:theme.muted}}>Touche la forme d’onde pour te placer.</Text>:null}
+
         </View>
       </View>
       <Text style={{fontSize:11,color:theme.muted}}>×{Math.round(zoom*10)/10}</Text>
@@ -366,6 +370,7 @@ export function MusicWaveformEditor({file,duration,cursor,onSeek,zoom,onZoom,
               x=e.nativeEvent.pageX-(typeof window!=='undefined'?window.scrollX:0)-
                 left+scrollX.current;
             }
+            if(!suppressClick.current)onClearSelectedRange?.();
             seek(x);
           }}
           style={{width:px,height:112,justifyContent:'center'}}>
@@ -387,13 +392,13 @@ export function MusicWaveformEditor({file,duration,cursor,onSeek,zoom,onZoom,
                 <Circle cx={x} cy={13} r={3} fill={pink}/>
               </React.Fragment>;
             })}
-            {drawingRange?<React.Fragment>
-              <Rect x={Math.min(drawingRange.start,drawingRange.end)/
+            {visibleRange?<React.Fragment>
+              <Rect x={Math.min(visibleRange.start,visibleRange.end)/
                 Math.max(duration,.001)*px} y={29}
-                width={Math.max(1,Math.abs(drawingRange.end-drawingRange.start)/
+                width={Math.max(1,Math.abs(visibleRange.end-visibleRange.start)/
                   Math.max(duration,.001)*px)} height={77}
                 fill={pink} opacity={.13}/>
-              {[drawingRange.start,drawingRange.end].map((value,i)=>
+              {[visibleRange.start,visibleRange.end].map((value,i)=>
                 <Line key={i} x1={value/Math.max(duration,.001)*px}
                   x2={value/Math.max(duration,.001)*px}
                   y1={25} y2={108} stroke={pink} strokeWidth={2}/>)}
@@ -470,12 +475,8 @@ export function MusicWaveformEditor({file,duration,cursor,onSeek,zoom,onZoom,
           </Pressable>
         </View>:null}
       </View>:null}
-      <Text style={{fontSize:11,color:theme.muted,lineHeight:17}}>
-        Glisse les extrémités pour modifier l’intervalle ; glisse la ligne pour le déplacer.
-      </Text>
+
     </View>:null}
-    {!compact?<Text style={{fontSize:11,color:theme.muted,lineHeight:18}}>
-      Toucher : placer le curseur · Maintenir et glisser : sélectionner un intervalle · Pincer : zoomer.
-    </Text>:null}
+
   </View>;
 }
