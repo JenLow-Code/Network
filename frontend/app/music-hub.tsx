@@ -13,6 +13,7 @@ import { useApp } from '@/context/AppContext';
 import { useDiscovery } from '@/lib/api/hooks';
 import { api } from '@/lib/api/client';
 import { useAppTheme } from '@/theme/AppTheme';
+import { workspaceLayout } from '@/theme/workspaceLayout';
 import type { MusicPublication } from '@/domain/publication';
 
 const PINK = '#CB245C';
@@ -24,6 +25,7 @@ export default function MusicHub() {
   const { width } = useWindowDimensions();
   const compact = width < 630;
   const desktop=Platform.OS==='web'&&width>=1100;
+  const ws=workspaceLayout(width);
   const app = useApp();
   const { items, ready, error } = useMusicWorkspaces();
   const discovery = useDiscovery();
@@ -58,8 +60,8 @@ export default function MusicHub() {
   </View>;
   return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
     <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{
-      paddingHorizontal:compact?20:32,paddingTop:8,paddingBottom:115,
-      maxWidth:desktop?1140:840,width:'100%',alignSelf:'center',gap:25}}>
+      paddingHorizontal:ws.gutter,paddingTop:8,paddingBottom:115,
+      maxWidth:ws.maxWidth,width:'100%',alignSelf:'center',gap:25}}>
       <PageHeader />
       <View style={{gap:9}}>
         <Text style={{fontSize:compact?34:40,fontWeight:'700',color:theme.foreground,

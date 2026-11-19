@@ -12,6 +12,7 @@ import { MusicCollaborateExperience } from '@/components/music/MusicCollaborateE
 import { useMusicWorkspaces } from '@/domain/musicWorkspace';
 import { musicNextState, makeWorkingVersion, makeWorkingTrack, changeWorkingVersion } from '@/domain/musicNext';
 import { useAppTheme } from '@/theme/AppTheme';
+import { workspaceLayout } from '@/theme/workspaceLayout';
 import type { MusicProjectFile } from '@/domain/musicWorkspace';
 
 type Space = 'capture'|'create'|'collaborate';
@@ -24,6 +25,7 @@ export default function MusicWorkspace() {
   const {width}=useWindowDimensions();
   const compact=width<600;
   const desktop=Platform.OS==='web'&&width>=1100;
+  const ws=workspaceLayout(width);
   const [space,setSpace]=useState<Space>('capture');
   const project=items.find(item=>item.id===id);
   if (!ready) return <SafeAreaView style={{flex:1,backgroundColor:theme.background,
@@ -63,8 +65,8 @@ export default function MusicWorkspace() {
   ];
   return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
     <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{
-      width:'100%',maxWidth:desktop?1300:940,alignSelf:'center',
-      paddingHorizontal:compact?18:desktop?42:34,
+      width:'100%',maxWidth:ws.maxWidth,alignSelf:'center',
+      paddingHorizontal:ws.gutter,
       paddingTop:desktop?16:8,paddingBottom:desktop?56:120,
       gap:compact?18:desktop?20:25}}>
       <PageHeader onBack={()=>router.replace('/music-hub')}/>

@@ -1,8 +1,9 @@
 import React from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
 import { useAppTheme } from '@/theme/AppTheme';
+import { workspaceLayout } from '@/theme/workspaceLayout';
 import { useDreams } from '@/domain/dreamRepository';
 import { PageHeader } from '@/components/navigation/PageHeader';
 import { Nav } from '@/components/navigation/Nav';
@@ -12,6 +13,8 @@ import SemenceNotes from '@/components/dream/SemenceNotes';
 export default function PrivateDreamNotebook(){
   const {id}=useLocalSearchParams<{id:string}>();
   const theme=useAppTheme();
+  const {width}=useWindowDimensions();
+  const ws=workspaceLayout(width);
   const {items}=useDreams();
   const dream=items.find(item=>item.id===id);
   const today=new Date().toISOString().slice(0,10);
@@ -19,8 +22,8 @@ export default function PrivateDreamNotebook(){
   const editable=!!dream&&dream.phase!=='Témoignage'&&!frozen&&dream.viewerRole!=='participant';
   return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
     <ScrollView keyboardShouldPersistTaps="handled"
-      contentContainerStyle={{paddingHorizontal:19,paddingTop:10,
-        paddingBottom:115,maxWidth:780,width:'100%',alignSelf:'center',flexGrow:1}}>
+      contentContainerStyle={{paddingHorizontal:ws.gutter,paddingTop:10,
+        paddingBottom:115,maxWidth:ws.maxWidth,width:'100%',alignSelf:'center',flexGrow:1}}>
       <PageHeader/>
       <View style={{marginTop:18}}>
         {dream?<SemenceNotes dream={dream} editable={editable}/>:

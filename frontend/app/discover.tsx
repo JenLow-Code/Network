@@ -17,6 +17,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { FireHeader } from '@/components/fire/FireHeader';
 import { useLocale } from '@/i18n/locale';
 import { useAppTheme } from '@/theme/AppTheme';
+import { workspaceLayout } from '@/theme/workspaceLayout';
 import { HANDWRITING_FAMILY } from '@/theme/handwriting';
 import { matchesForMe, profileTalentStorageKey, type SavedTalent } from '@/domain/personalDiscovery';
 const filters = ['Tout', 'Pour moi', 'Rêves', 'Musique', 'Bible', 'Talents'] as const;
@@ -41,6 +42,7 @@ export default function Discover() {
   const theme = useAppTheme();
   const {width}=useWindowDimensions();
   const desktop=Platform.OS==='web'&&width>=1100;
+  const ws=workspaceLayout(width);
   const params = useLocalSearchParams<{ filter?: string }>();
 
   const [filter, setFilter] = useState<(typeof filters)[number]>(
@@ -105,7 +107,7 @@ export default function Discover() {
         contentContainerStyle={{
           paddingHorizontal: 15,
           paddingBottom: 55,
-          maxWidth: desktop?1280:920,
+          maxWidth: ws.maxWidth,
           width: '100%',
           alignSelf: 'center',
         }}
@@ -193,7 +195,7 @@ export default function Discover() {
         <View style={{ marginHorizontal: -15 }}>
         <PublicationGallery
           layout="masonry"
-          contentWidth={desktop?Math.min(1280,Math.max(0,width-212)):undefined}
+          contentWidth={desktop?Math.min(1160,Math.max(0,width-212)):undefined}
           items={(filter === 'Talents'
             ? personPublications
             : filter === 'Tout'

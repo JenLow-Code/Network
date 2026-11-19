@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Alert, Linking, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Alert, Linking, Platform, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/theme/AppTheme';
+import { workspaceLayout } from '@/theme/workspaceLayout';
 import { useDreams } from '@/domain/dreamRepository';
 import { appendDocumentVersion, isSafeDocumentUrl } from '@/domain/dreamDocumentLibrary';
 import type { DreamBlock, DreamDocument, DreamDocumentVersion } from '@/domain/dreamWorkspace';
@@ -42,6 +43,8 @@ function openStoredDocument(version:DreamDocumentVersion) {
 export default function DreamLibrary(){
   const {id}=useLocalSearchParams<{id:string}>();
   const theme=useAppTheme();
+  const {width}=useWindowDimensions();
+  const ws=workspaceLayout(width);
   const {items,patch}=useDreams();
   const dream=items.find(d=>d.id===id);
   const [expanded,setExpanded]=useState<string|null>(null);
@@ -109,8 +112,8 @@ export default function DreamLibrary(){
   // The shared Inspirations editor is available in Germination and Croissance.
   return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
     <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{
-      paddingHorizontal:18,paddingTop:10,paddingBottom:110,
-      maxWidth:780,width:'100%',alignSelf:'center',minHeight:'100%',
+      paddingHorizontal:ws.gutter,paddingTop:10,paddingBottom:110,
+      maxWidth:ws.maxWidth,width:'100%',alignSelf:'center',minHeight:'100%',
     }}>
       <PageHeader/>
       <Text style={{fontFamily:'serif',fontSize:30,lineHeight:39,

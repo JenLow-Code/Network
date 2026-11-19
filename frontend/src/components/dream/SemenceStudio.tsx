@@ -3,6 +3,7 @@ import { Alert, Platform, Pressable, ScrollView, Text, View, useWindowDimensions
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useAppTheme } from '@/theme/AppTheme';
+import { workspaceLayout } from '@/theme/workspaceLayout';
 import { useDreams } from '@/domain/dreamRepository';
 import type { DreamEntry } from '@/domain/dreamWorkspace';
 import type { DreamPhase } from '@/domain/publication';
@@ -23,6 +24,7 @@ export default function SemenceStudio({dream,onBack,onNavigate}:{
  const [shareOpen,setShareOpen]=useState(false);
  const [addRequestToken,setAddRequestToken]=useState(0);
  const editable=dream.phase==='Rêve';
+ const ws=workspaceLayout(width);
  const accent='#B88962';
  const uproot=()=>{
    const run=()=>{remove(dream.id);router.replace('/my-space');};
@@ -40,8 +42,8 @@ export default function SemenceStudio({dream,onBack,onNavigate}:{
   <DreamCoverBackdrop uri={dream.image}/>
   <ScrollView style={{flex:1,backgroundColor:'transparent'}}
    keyboardShouldPersistTaps="handled"
-   contentContainerStyle={{paddingHorizontal:width<520?16:19,paddingTop:10,
-     paddingBottom:100,maxWidth:760,width:'100%',alignSelf:'center'}}>
+   contentContainerStyle={{paddingHorizontal:ws.gutter,paddingTop:10,
+     paddingBottom:100,maxWidth:ws.maxWidth,width:'100%',alignSelf:'center'}}>
    <DreamPhaseHeader dream={dream} phase="Rêve"
      onBack={onBack} onNavigate={onNavigate} readOnly={!editable}/>
    <View style={{alignItems:'flex-end',marginTop:-10,marginBottom:6}}>

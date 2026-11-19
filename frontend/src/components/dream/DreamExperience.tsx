@@ -8,6 +8,7 @@ import { useDreams } from '@/domain/dreamRepository';
 import { isPublishedFlower, type DreamEntry, type DreamBlock, type DreamResource, type DreamHabit, type DreamMilestone } from '@/domain/dreamWorkspace';
 import { PHASE_LABELS, type DreamPhase } from '@/domain/publication';
 import { useAppTheme } from '@/theme/AppTheme';
+import { workspaceLayout } from '@/theme/workspaceLayout';
 import { HANDWRITING_FAMILY } from '@/theme/handwriting';
 import { pickDreamImage } from '@/lib/pickDreamImage';
 import { DreamCoverBackdrop, DreamPhaseHeader, DreamPhaseSection, DreamPhaseButton, DreamPhaseField } from './DreamPhaseLayout';
@@ -68,6 +69,7 @@ export default function DreamExperience({
  const theme = useAppTheme();
  const {width:viewportWidth}=useWindowDimensions();
  const narrowScreen=viewportWidth<640;
+  const ws=workspaceLayout(viewportWidth);
  const [editing, setEditing] = useState(false);
  const [picker, setPicker] = useState(false);
  const [editingBlock, setEditingBlock] = useState<string | null>(null);
@@ -321,8 +323,8 @@ export default function DreamExperience({
   <DreamCoverBackdrop uri={dream.image}/>
   <ScrollView style={{flex:1,backgroundColor:'transparent'}}
     keyboardShouldPersistTaps="handled"
-    contentContainerStyle={{paddingHorizontal:19,paddingTop:10,paddingBottom:85,
-      maxWidth:860,width:'100%',alignSelf:'center'}}>
+    contentContainerStyle={{paddingHorizontal:ws.gutter,paddingTop:10,paddingBottom:85,
+      maxWidth:ws.maxWidth,width:'100%',alignSelf:'center'}}>
   <DreamPhaseHeader dream={dream} phase={phase} onBack={onBack || (()=>router.replace('/my-space'))} onNavigate={onNavigate} readOnly={readOnly&&!recoverPastNeeds}
     summary={phase==='Témoignage'?'Le rêve est devenu réalité. Voici ce qui a pris vie.':undefined}
     action={phase==='Rêve'&&!historical?<Pressable onPress={()=>setEditing(!editing)} style={{padding:8}}><Text style={{color:theme.foreground,fontWeight:'700',fontSize:12}}>{editing?'Terminer':'Composer'}</Text></Pressable>:undefined}

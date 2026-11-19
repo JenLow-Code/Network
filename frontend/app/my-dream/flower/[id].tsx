@@ -13,6 +13,7 @@ import { buildGrowthDays } from '@/domain/growthTimeline';
 import { pickFlowerMedia } from '@/lib/pickFlowerMedia';
 import { api } from '@/lib/api/client';
 import { useAppTheme } from '@/theme/AppTheme';
+import { workspaceLayout } from '@/theme/workspaceLayout';
 import { DreamCoverBackdrop, DreamPhaseHeader } from '@/components/dream/DreamPhaseLayout';
 import DreamWorkspaceShortcuts, { DreamWorkspaceShortcutRow } from '@/components/dream/DreamWorkspaceShortcuts';
 import FlowerJourneyRecap from '@/components/dream/FlowerJourneyRecap';
@@ -77,6 +78,7 @@ export default function FlowerPreparation() {
   const theme = useAppTheme();
   const { width } = useWindowDimensions();
   const narrow = width < 600;
+  const ws=workspaceLayout(width);
   const dream = items.find(item => item.id === id);
   const draft: FlowerDraft = dream?.flowerDraft || { story: '', attachments: [] };
   const [achievementDate, setAchievementDate] = useState(localDay());
@@ -209,8 +211,8 @@ export default function FlowerPreparation() {
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
       <DreamCoverBackdrop uri={dream.image}/>
       <ScrollView style={{ flex: 1, backgroundColor:'transparent' }}
-        contentContainerStyle={{ paddingHorizontal: narrow ? 19 : 26,
-          paddingTop: 10, paddingBottom: 70, maxWidth: 760, width: '100%',
+        contentContainerStyle={{ paddingHorizontal: ws.gutter,
+          paddingTop: 10, paddingBottom: 70, maxWidth: ws.maxWidth, width: '100%',
           alignSelf: 'center' }}>
         <DreamPhaseHeader dream={dream} phase="Témoignage"
           onBack={() => router.replace('/my-space')}
