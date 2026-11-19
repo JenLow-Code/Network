@@ -5,6 +5,7 @@ import {useAppTheme} from '@/theme/AppTheme';
 import {saveDraftAudio} from '@/domain/musicLocalStorage';
 import {musicStampMs,punchInAudio} from '@/domain/musicEditing';
 import {MusicWaveformEditor} from './MusicWaveformEditor';
+import {MusicPeakBars} from './MusicAudioPeaksNext';
 import {MusicAudioMarkers} from './MusicAudioMarkers';
 import type {MusicAudioMarker} from '@/domain/musicWorkspace';
 
@@ -168,11 +169,10 @@ export function MusicAudioCapture({onSaved,onStarted,onPaused,timelineStartSecon
         const secs=Math.max(0,(performance.now()-startedAt.current)/1000);
         elapsedRef.current=secs;setElapsed(secs);
         analyser.getByteTimeDomainData(samples);
-        let sum=0;for(let i=0;i<samples.length;i++){
-          const x=(samples[i]-128)/128;sum+=x*x;
-        }
-        const level=Math.max(.03,Math.min(1,Math.sqrt(sum/samples.length)*3.2));
-        setLevels(prev=>[...prev.slice(-103),level]);
+        let peak=0;
+        for(let i=0;i<samples.length;i++)
+          peak=Math.max(peak,Math.abs((samples[i]-128)/128));
+        setLevels(prev=>[...prev.slice(-179),Math.max(0,Math.min(1,peak))]);
       },70);
       onStarted?.(at);
     }catch(e){
@@ -275,11 +275,10 @@ export function MusicAudioCapture({onSaved,onStarted,onPaused,timelineStartSecon
         onEnded:()=>setPlaying(false),
         style:{display:'none'}
       }):null}
-    {status==='recording'?<View style={{height:87,borderRadius:13,backgroundColor:theme.dark?'#252029':'#F2F4F5',
-      overflow:'hidden',paddingHorizontal:7,flexDirection:'row',alignItems:'center',gap:2}}>
-      {levels.map((v,i)=><View key={i} style={{flex:1,
-        height:Math.max(2,Math.round(v*69)),maxWidth:5,borderRadius:2,backgroundColor:PINK,
-        opacity:.7}}/>)}
+    {status==='recording'?<View style={{height:87,borderRadius:13,
+      backgroundColor:theme.dark?'#252029':'#F2F4F5',overflow:'hidden',
+      paddingHorizontal:9,justifyContent:'center'}}>
+      <MusicPeakBars levels={levels} height={70}/>
     </View>:file?<MusicWaveformEditor file={file} duration={duration} cursor={cursor}
       onSeek={seek} zoom={zoom} onZoom={setZoom} playing={playing}
       onTogglePlayback={togglePlayback} markers={markers}
