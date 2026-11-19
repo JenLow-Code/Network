@@ -12,11 +12,12 @@ import { LocaleProvider } from '@/i18n/locale';
 import { AuthProvider } from '@/context/AuthProvider';
 import { AppThemeProvider, useAppTheme } from '@/theme/AppTheme';
 import { Nav } from '@/components/navigation/Nav';
+import { workspaceLayout } from '@/theme/workspaceLayout';
 
 function ThemedStack() {
   const theme = useAppTheme();
   const {width}=useWindowDimensions();
-  const desktop=Platform.OS==='web'&&width>=1100;
+  const desktop=Platform.OS==='web'&&workspaceLayout(width).desktop;
   const path=usePathname();
   const {items:dreams}=useDreams();
   const parts=path.split('/').filter(Boolean);

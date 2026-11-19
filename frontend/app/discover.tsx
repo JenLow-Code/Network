@@ -41,7 +41,7 @@ export default function Discover() {
   const { tr } = useLocale();
   const theme = useAppTheme();
   const {width}=useWindowDimensions();
-  const desktop=Platform.OS==='web'&&width>=1100;
+  const desktop=Platform.OS==='web'&&workspaceLayout(width).desktop;
   const ws=workspaceLayout(width);
   const params = useLocalSearchParams<{ filter?: string }>();
 

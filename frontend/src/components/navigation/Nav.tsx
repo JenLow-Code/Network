@@ -8,6 +8,7 @@ import { useLocale } from '@/i18n/locale';
 import { useAppTheme } from '@/theme/AppTheme';
 import { useDreams } from '@/domain/dreamRepository';
 import { DREAM_PHASES, PHASE_LABELS, type DreamPhase } from '@/domain/publication';
+import { workspaceLayout } from '@/theme/workspaceLayout';
 
 /** Five durable destinations. Fire and Messages live in the global header. */
 export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' }) {
@@ -15,7 +16,7 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' }) 
   const path = usePathname();
   const { t } = useLocale();
   const {width}=useWindowDimensions();
-  const desktop=Platform.OS==='web'&&width>=1100;
+  const desktop=Platform.OS==='web'&&workspaceLayout(width).desktop;
   const [collapsed,setCollapsed]=useState(false);
   const [dreamTreeOpen,setDreamTreeOpen]=useState(true);
   const params=useGlobalSearchParams<{view?:string}>();

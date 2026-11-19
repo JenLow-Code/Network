@@ -9,6 +9,7 @@ import { dreamPhaseImageUris } from '../../../assets/dreamPhaseImages';
 import { TopActions } from '@/components/navigation/TopActions';
 import { pickDreamImage } from '@/lib/pickDreamImage';
 import { useDreams } from '@/domain/dreamRepository';
+import { workspaceLayout } from '@/theme/workspaceLayout';
 
 /** One editorial design language for all four dream phases. */
 export const phaseAccent: Record<DreamPhase, string> = {
@@ -67,7 +68,7 @@ export function DreamPhaseHeader({
 }) {
   const theme = useAppTheme();
   const {width}=useWindowDimensions();
-  const desktop=Platform.OS==='web'&&width>=1100;
+  const desktop=Platform.OS==='web'&&workspaceLayout(width).desktop;
   const accent = phaseAccent[phase];
   const description = summary === undefined ? dream.summary : summary;
   const {setCoverImage,ready}=useDreams();

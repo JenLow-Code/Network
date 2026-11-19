@@ -24,7 +24,7 @@ export default function MusicWorkspace() {
   const theme=useAppTheme();
   const {width}=useWindowDimensions();
   const compact=width<600;
-  const desktop=Platform.OS==='web'&&width>=1100;
+  const desktop=Platform.OS==='web'&&workspaceLayout(width).desktop;
   const ws=workspaceLayout(width);
   const [space,setSpace]=useState<Space>('capture');
   const project=items.find(item=>item.id===id);

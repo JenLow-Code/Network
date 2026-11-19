@@ -24,7 +24,7 @@ export default function MusicHub() {
   const theme = useAppTheme();
   const { width } = useWindowDimensions();
   const compact = width < 630;
-  const desktop=Platform.OS==='web'&&width>=1100;
+  const desktop=Platform.OS==='web'&&workspaceLayout(width).desktop;
   const ws=workspaceLayout(width);
   const app = useApp();
   const { items, ready, error } = useMusicWorkspaces();
