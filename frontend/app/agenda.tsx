@@ -1,6 +1,6 @@
 import { Text } from '@/i18n/LocalizedText';
 import React, { useMemo, useState } from 'react';
-import { Modal, Pressable, ScrollView, Share, TextInput, View } from 'react-native';
+import { Modal, Pressable, ScrollView, Share, TextInput, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -11,6 +11,7 @@ import { useApp } from '@/context/AppContext';
 import { useLocale } from '@/i18n/locale';
 import { publications } from '@/mocks/publications';
 import { useAppTheme } from '@/theme/AppTheme';
+import {workspaceCanvas,WORKSPACE_TITLE_GAP} from '@/theme/workspaceLayout';
 import { AgendaEntry, DEMO_AGENDA } from '@/domain/agendaTypes';
 import { publicationPath } from '@/components/publication/PublicationGallery';
 import { useDreams } from '@/domain/dreamRepository';
@@ -23,6 +24,7 @@ const isoDay = (d: Date) =>
   ].join('-');
 export default function Agenda() {
   const theme = useAppTheme();
+  const {width}=useWindowDimensions();
   const { items: trackedDreams, personalHabits, setPersonalHabits, setHabits } = useDreams();
   const { language, tr } = useLocale();
   const { prayersForDate, togglePrayer } = useApp();
@@ -75,11 +77,12 @@ export default function Agenda() {
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ paddingHorizontal: 18, paddingTop: 17, paddingBottom: 42 }}
+        contentContainerStyle={{ ...workspaceCanvas(width), paddingTop:12, paddingBottom:55 }}
       >
         <PageHeader />
         <View
-          style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
+          style={{ flexDirection:'row',justifyContent:'space-between',alignItems:'center',
+            marginTop:WORKSPACE_TITLE_GAP }}
         >
           <Text style={{ fontSize: 30, fontWeight: '700', color: theme.foreground }}>
             {tr('agendaTitle')}
