@@ -211,25 +211,40 @@ export function DreamPhaseCard({ item, width, variant, onOpen, forYou = false }:
       </View>
     </Modal>
   );
-  const phaseDay = item.phaseDate && /^\d{4}-\d{2}-\d{2}$/.test(item.phaseDate)
-    ? item.phaseDate.slice(8, 10) + '.' + item.phaseDate.slice(5, 7) + '.' + item.phaseDate.slice(0, 4)
+  // Some legacy dreams have no stored phase-transition date.
+  // In that case show the publication date, explicitly labelled as such.
+  const phaseDateIsKnown = !!item.phaseDate && /^\d{4}-\d{2}-\d{2}/.test(item.phaseDate);
+  const dateSource = phaseDateIsKnown ? item.phaseDate : item.createdAt;
+  const dateMatch = dateSource?.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  const phaseDay = dateMatch
+    ? dateMatch[3] + '.' + dateMatch[2] + '.' + dateMatch[1]
+    : null;
+  const dateLabel = phaseDay
+    ? phaseDateIsKnown ? phaseDay : 'Publié · ' + phaseDay
     : null;
   const forYouLabel = compact && forYou ? (
-    <View style={{ alignSelf: 'flex-end', backgroundColor: '#CB245C',
-      borderRadius: 7, paddingHorizontal: 7, paddingVertical: 4 }}>
-      <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 9, letterSpacing: 0.2 }}>
+    <View pointerEvents="none" style={{
+      position: 'absolute', top: inset, left: inset, zIndex: 5,
+      backgroundColor: '#CB245C', borderRadius: 7,
+      paddingHorizontal: 7, paddingVertical: 4,
+    }}>
+      <Text style={{ color: '#FFFFFF', fontWeight: '700',
+        fontSize: 9, letterSpacing: 0.2 }}>
         C’est pour toi
       </Text>
     </View>
   ) : null;
   const topRight = (color?: string) => (
-    <View style={{ alignItems: 'flex-end', gap: compact ? 3 : 0 }}>
-      {compact && phaseDay ? <Text style={{ color: color || discoveryLabelColor,
-        opacity: 0.8, fontSize: 9, letterSpacing: 0.2, textAlign: 'right' }}>
-        {phaseDay}
-      </Text> : null}
+    <View style={{
+      alignItems: 'flex-end', gap: compact ? 3 : 0,
+      // On narrow tiles keep the phase label clear of the left-side match badge.
+      marginTop: compact && forYou && width < 235 ? 23 : 0,
+    }}>
       {phaseText(color)}
-      {forYouLabel}
+      {compact && dateLabel ? <Text style={{ color: color || discoveryLabelColor,
+        opacity: 0.88, fontSize: 9, letterSpacing: 0.15, textAlign: 'right' }}>
+        {dateLabel}
+      </Text> : null}
     </View>
   );
 
@@ -240,7 +255,8 @@ export function DreamPhaseCard({ item, width, variant, onOpen, forYou = false }:
     const wideHeight = compact ? Math.max(76, width * 0.40) : Math.min(190, width * 0.26);
     const textColor = dark ? '#F5F1EC' : '#292622';
     return (
-      <View style={[base, { backgroundColor: neutral }]}>
+      <View style={[base, { backgroundColor: neutral, position: 'relative' }]}>
+        {forYouLabel}
         {withOpen(
           <View style={{ padding: inset, gap: compact ? 11 : 18 }}>
             {topRight()}
@@ -307,7 +323,8 @@ export function DreamPhaseCard({ item, width, variant, onOpen, forYou = false }:
       : item.needs.map(title => ({ title, confirmed: (item.resolvedNeeds || []).includes(title) }));
     const people = resources.filter(r => r.category === 'person');
     return (
-      <View style={[base, { backgroundColor: compact ? neutral : 'transparent' }]}>
+      <View style={[base, { backgroundColor: compact ? neutral : 'transparent', position: 'relative' }]}>
+        {forYouLabel}
         {withOpen(
           <View style={{ padding: inset, gap: compact ? 15 : 14 }}>
             {compact && topRight()}
@@ -351,7 +368,8 @@ export function DreamPhaseCard({ item, width, variant, onOpen, forYou = false }:
     const quiet = dark ? '#C0BCB8' : '#766F69';
     const growingGreen = dark ? '#9FC5A0' : '#518663';
     return (
-      <View style={[base, { backgroundColor: 'transparent' }]}>
+      <View style={[base, { backgroundColor: 'transparent', position: 'relative' }]}>
+        {forYouLabel}
         {withOpen(
           <View style={{ padding: inset, gap: compact ? 12 : 19 }}>
             {topRight()}
@@ -393,7 +411,8 @@ export function DreamPhaseCard({ item, width, variant, onOpen, forYou = false }:
   const photoWidth = width;
   const gradientId = 'floraison-' + gradientInstanceId;
   return (
-    <View style={[base, { backgroundColor: theme.background }]}>
+    <View style={[base, { backgroundColor: theme.background, position: 'relative' }]}>
+      {forYouLabel}
       {withOpen(
         <View style={{
           width: photoWidth,
@@ -462,17 +481,16 @@ export function DreamPhaseCard({ item, width, variant, onOpen, forYou = false }:
           {compact && (
             <View pointerEvents="none" style={{ position: 'absolute', top: inset,
               right: inset, zIndex: 2, alignItems: 'flex-end', gap: 3 }}>
-              {phaseDay ? <Text style={{ color: '#FFFFFF', opacity: 0.85,
-                fontSize: 9, letterSpacing: 0.2,
-                textShadowColor: 'rgba(0,0,0,0.5)',
-                textShadowOffset: {width:0,height:1}, textShadowRadius: 2 }}>
-                {phaseDay}
-              </Text> : null}
               <Text style={{
                 color: '#FFFFFF', fontWeight: '700', fontSize: 9, letterSpacing: 1.3,
                 textShadowColor: 'rgba(0,0,0,0.5)', textShadowOffset: {width:0,height:1}, textShadowRadius: 2,
               }}>FLORAISON</Text>
-              {forYouLabel}
+              {dateLabel ? <Text style={{ color: '#FFFFFF', opacity: 0.9,
+                fontSize: 9, letterSpacing: 0.15,
+                textShadowColor: 'rgba(0,0,0,0.5)',
+                textShadowOffset: {width:0,height:1}, textShadowRadius: 2 }}>
+                {dateLabel}
+              </Text> : null}
             </View>
           )}
           {compact ? (
