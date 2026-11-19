@@ -51,6 +51,12 @@ export type MusicNeed = {
   sourceFileId?: string;
   /** Empty for the whole song; otherwise the exact requested section. */
   sectionId?: string;
+  /** Request brief editable before and after the local selection of audience. */
+  description?: string;
+  audience?: 'private'|'public'|'contacts'|'direct';
+  targetHandle?: string;
+  /** References to existing private Capture items, not copies. */
+  referenceFileIds?: string[];
 };
 export type MusicSuggestion = {
   id: string;
