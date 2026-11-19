@@ -11,11 +11,13 @@ import {saveDraftAudio,getDraftAudio} from '@/domain/musicLocalStorage';
 const PINK='#CB245C';
 type Instrument='piano'|'drum';
 type ScoreResult={title:string;events:MusicNotationEvent[];bpm:number;
-  tone:string;sampleLocalId?:string;sampleName?:string};
+  tone:string;sampleLocalId?:string;sampleName?:string;
+  sampleRootMidi?:number;clef?:'treble'|'bass'};
 type Props={
   initialFile?:MusicProjectFile|null;
   onSave:(value:ScoreResult)=>void;
   onDirtyChange:(dirty:boolean)=>void;
+  active?:boolean;
 };
 type MidiPort={id:string;name?:string;send:(data:number[])=>void};
 type MidiAccess={outputs:Map<string,MidiPort>};
@@ -191,7 +193,7 @@ function playSound(ctx:AudioContext,pitch:number,drum:boolean,level:number,
   }
 }
 
-export function MusicSketchStudio({initialFile,onSave,onDirtyChange}:Props){
+export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}:Props){
   const theme=useAppTheme();
   const {width}=useWindowDimensions();
   const compact=width<650;
@@ -199,6 +201,13 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange}:Props){
   const [events,setEvents]=useState<MusicNotationEvent[]>(initialFile?.musicEvents||[]);
   const [bpm,setBpm]=useState(initialFile?.tempoBpm||100);
   const [part,setPart]=useState<Instrument>('piano');
+  const [clef,setClef]=useState<'treble'|'bass'>(initialFile?.scoreClef||'treble');
+  const [editor,setEditor]=useState<'note'|'tempo'|'clef'|null>(null);
+  const [tempoDraft,setTempoDraft]=useState(String(initialFile?.tempoBpm||100));
+  const [toneOpen,setToneOpen]=useState(false);
+  const [previewPlaying,setPreviewPlaying]=useState(false);
+  const previewTimeout=useRef<ReturnType<typeof setTimeout>|null>(null);
+  const previewSources=useRef<AudioScheduledSourceNode[]>([]);
   const [duration,setDuration]=useState<number>(.5);
   const [cursor,setCursor]=useState(()=>(initialFile?.musicEvents||[])
     .reduce((v,e)=>Math.max(v,e.startBeats+e.lengthBeats),0));
@@ -210,6 +219,8 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange}:Props){
   const [tone,setTone]=useState<string>(initialFile?.instrumentTone||'Piano doux');
   const [sampleName,setSampleName]=useState(initialFile?.instrumentSampleName||'');
   const [sampleId,setSampleId]=useState(initialFile?.instrumentSampleLocalId||'');
+  const [sampleRootMidi,setSampleRootMidi]=useState(
+    initialFile?.instrumentSampleRootMidi??60);
   const sampleRef=useRef<AudioBuffer|null>(null);
   const [volume,setVolume]=useState({piano:.8,drum:.7});
   const [last,setLast]=useState('');
@@ -223,7 +234,9 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange}:Props){
   const dirty=title!==(initialFile?.title||'')||
     JSON.stringify(events)!==pristine||bpm!==(initialFile?.tempoBpm||100)||
     tone!==(initialFile?.instrumentTone||'Piano doux')||
-    sampleId!==(initialFile?.instrumentSampleLocalId||'');
+    sampleId!==(initialFile?.instrumentSampleLocalId||'')||
+    sampleRootMidi!==(initialFile?.instrumentSampleRootMidi??60)||
+    clef!==(initialFile?.scoreClef||'treble');
   useEffect(()=>onDirtyChange(dirty),[dirty,onDirtyChange]);
   useEffect(()=>()=>{void audioRef.current?.close();},[]);
   useEffect(()=>{
@@ -349,7 +362,9 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange}:Props){
   const whiteWidth=Math.max(compact?17:27,Math.floor(areaWidth/whiteOffsets.length));
   const blackWidth=Math.max(11,Math.round(whiteWidth*.6));
   const keyboardHeight=compact?119:155;
-  const choosePart=(next:Instrument)=>{setPart(next);setSelectedId('');};
+  const choosePart=(next:Instrument)=>{
+    setPart(next);setSelectedId('');setEditor(null);
+  };
   const instrumentEvents=events.filter(e=>e.instrument===part)
     .slice().sort((a,b)=>a.startBeats-b.startBeats);
   return <View style={{gap:compact?13:20}}>
