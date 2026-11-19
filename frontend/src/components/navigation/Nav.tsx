@@ -14,10 +14,15 @@ import { NetworkMark } from '@/components/brand/NetworkMark';
 import { isPublishedFlower } from '@/domain/dreamWorkspace';
 import { DREAM_PHASES, PHASE_LABELS, type DreamPhase } from '@/domain/publication';
 import { workspaceLayout } from '@/theme/workspaceLayout';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+/** Height reserved by the root layout for mobile navigation. */
+export const MOBILE_NAV_HEIGHT=72;
 
 /** Five durable destinations. Fire and Messages live in the global header. */
-export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' }) {
+export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | 'root' }) {
   const theme = useAppTheme();
+  const insets=useSafeAreaInsets();
   const path = usePathname();
   const { t } = useLocale();
   const {width}=useWindowDimensions();
@@ -113,7 +118,10 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' }) 
   // are primary; icons are compact secondary cues. The user may collapse it to
   // give the creative workspace additional horizontal room.
   if(placement==='desktop'&&!desktop)return null;
-  if(placement==='page'&&desktop)return null;
+  // Mobile navigation is rendered ONCE by app/_layout, outside page ScrollViews.
+  // Existing page-level <Nav/> calls become inert; otherwise the bar scrolls
+  // with its page and overlays items at unpredictable positions.
+  if(placement==='page'||(placement==='root'&&desktop))return null;
   if(placement==='desktop') {
     const mainLinks=links.filter(x=>x.path!=='/profile');
     const profile=links.find(x=>x.path==='/profile')!;
@@ -429,8 +437,8 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' }) 
       position: 'absolute', bottom: 0, left: 0, right: 0,
       flexDirection: 'row', alignItems: 'center',
       justifyContent: 'space-around',
-      paddingTop: 11, paddingBottom: 10,
-      minHeight: 60, zIndex: 30,
+      paddingTop: 10, paddingBottom: 8 + insets.bottom,
+      height: MOBILE_NAV_HEIGHT + insets.bottom, zIndex: 30,
       overflow: 'hidden',
       borderTopLeftRadius: 18, borderTopRightRadius: 18,
       backgroundColor: theme.dark ? 'rgba(18,29,38,0.10)' : 'rgba(239,248,251,0.10)',
@@ -472,7 +480,7 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' }) 
           accessibilityLabel={x.title}
           accessibilityState={{ selected: x.active }}
           onPress={() => router.replace(x.path)}
-          style={{ minWidth: 48, minHeight: 36, alignItems: 'center', justifyContent: 'center' }}
+          style={{ minWidth: 48, minHeight: 44, alignItems: 'center', justifyContent: 'center' }}
         >
           {x.path === '/discover' ? (
             <View style={{
