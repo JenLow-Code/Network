@@ -490,33 +490,78 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
   };
   const instrumentEvents=events.filter(e=>e.instrument===part)
     .slice().sort((a,b)=>a.startBeats-b.startBeats);
-  return <View style={{gap:compact?13:20}}>
-    <View style={{gap:5}}>
+  return <View style={{gap:compact?13:19}}>
+    <View style={{gap:6}}>
       <TextInput value={title} onChangeText={setTitle}
-        placeholder="Nom de l’idée musicale" placeholderTextColor={theme.muted}
+        placeholder="Nom de la composition" placeholderTextColor={theme.muted}
         accessibilityLabel="Titre de la partition"
         style={{fontSize:compact?17:22,fontWeight:'600',color:theme.foreground,
-          paddingVertical:compact?6:9}}/>
-      <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',
-        flexWrap:'wrap',gap:7}}>
-        <Text style={{fontSize:11,color:theme.muted}}>
-          {events.length} notes · {drafts.length} brouillons
-        </Text>
-        <Pressable onPress={exportMidi} disabled={!confirmed.length||recording}
-          accessibilityRole="button" accessibilityLabel="Exporter le fichier MIDI"
-          style={{minHeight:39,alignItems:'center',flexDirection:'row',gap:6,
-            opacity:confirmed.length&&!recording?1:.45}}>
-          <Ionicons name="download-outline" color={PINK} size={18}/>
-          <Text style={{color:PINK,fontSize:12,fontWeight:'700'}}>Exporter .mid</Text>
+          paddingVertical:compact?5:9}}/>
+      <View style={{flexDirection:'row',gap:8,alignItems:'center',
+        justifyContent:'space-between',flexWrap:'wrap'}}>
+        <Pressable onPress={()=>setMidiOpen(v=>!v)} accessibilityRole="button"
+          accessibilityState={{expanded:midiOpen}}
+          style={{flexDirection:'row',alignItems:'center',gap:8,minHeight:43,
+            borderWidth:1,borderRadius:12,borderColor:midiPortId?PINK:theme.border,
+            paddingHorizontal:12,backgroundColor:theme.surface}}>
+          <Ionicons name="hardware-chip-outline" color={PINK} size={19}/>
+          <View>
+            <Text style={{fontSize:12,fontWeight:'700',color:theme.foreground}}>
+              MIDI OUT
+            </Text>
+            <Text numberOfLines={1} style={{fontSize:10,color:theme.muted,
+              maxWidth:170}}>
+              {midiPortId?midiPorts.find(port=>port.id===midiPortId)?.name||'Connecté':
+                'Connecter un instrument'}
+            </Text>
+          </View>
+          <Ionicons name={midiOpen?'chevron-up':'chevron-down'}
+            size={15} color={theme.muted}/>
         </Pressable>
+        <View style={{flexDirection:'row',gap:12,alignItems:'center'}}>
+          <Pressable onPress={exportMidi} disabled={!events.length||recording}
+            accessibilityRole="button" accessibilityLabel="Exporter en MIDI"
+            style={{minHeight:43,flexDirection:'row',alignItems:'center',gap:4,
+              opacity:events.length&&!recording?1:.4}}>
+            <Ionicons name="download-outline" color={PINK} size={17}/>
+            <Text style={{color:PINK,fontSize:12,fontWeight:'700'}}>MIDI</Text>
+          </Pressable>
+          <Pressable onPress={exportPdf} disabled={!events.length||recording}
+            accessibilityRole="button" accessibilityLabel="Exporter en PDF"
+            style={{minHeight:43,flexDirection:'row',alignItems:'center',gap:5,
+              opacity:events.length&&!recording?1:.4}}>
+            <Ionicons name="document-outline" color={PINK} size={17}/>
+            <Text style={{color:PINK,fontSize:12,fontWeight:'700'}}>PDF</Text>
+          </Pressable>
+        </View>
       </View>
+      {midiOpen?<View style={{gap:7,padding:12,borderRadius:13,
+        backgroundColor:theme.surface,borderWidth:1,borderColor:theme.border}}>
+        <Text style={{fontSize:12,color:theme.muted,lineHeight:19}}>
+          Envoie les notes jouées vers un clavier ou instrument MIDI connecté.
+        </Text>
+        {control('Rechercher les sorties MIDI',()=>{void connectMidi();})}
+        {midiPorts.map(port=><Pressable key={port.id}
+          onPress={()=>{setMidiPortId(port.id);midiRef.current=port;}}
+          accessibilityRole="button" style={{minHeight:42,
+            flexDirection:'row',alignItems:'center',gap:8}}>
+          <Ionicons name={midiPortId===port.id?'radio-button-on':'radio-button-off'}
+            color={PINK} size={18}/>
+          <Text style={{color:theme.foreground,fontSize:13}}>
+            {port.name||'Sortie MIDI'}
+          </Text>
+        </Pressable>)}
+        {midiPortId?control('Déconnecter',()=>{
+          midiRef.current=null;setMidiPortId('');
+        }):null}
+      </View>:null}
     </View>
     <View style={{flexDirection:'row',gap:8}}>
       {([{id:'piano',label:'Piano',icon:'musical-notes-outline'},
         {id:'drum',label:'Batterie',icon:'grid-outline'}] as const).map(item=>
         <Pressable key={item.id} onPress={()=>choosePart(item.id)}
           accessibilityRole="tab" accessibilityState={{selected:part===item.id}}
-          style={{flex:1,minHeight:44,flexDirection:'row',gap:7,
+          style={{flex:1,minHeight:43,flexDirection:'row',gap:7,
             alignItems:'center',justifyContent:'center',borderRadius:12,
             backgroundColor:part===item.id?PINK:theme.surface,
             borderWidth:part===item.id?0:1,borderColor:theme.border}}>
@@ -526,42 +571,140 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
             color:part===item.id?'#fff':theme.foreground}}>{item.label}</Text>
         </Pressable>)}
     </View>
-    <View style={{flexDirection:'row',alignItems:'center',flexWrap:'wrap',gap:7}}>
-      <Text style={{fontSize:12,fontWeight:'600',color:theme.foreground}}>Tempo</Text>
-      {control('−',()=>setBpm(v=>Math.max(40,v-5)),recording)}
-      <Text style={{fontSize:13,color:theme.foreground,
-        fontVariant:['tabular-nums']}}>{bpm} BPM</Text>
-      {control('+',()=>setBpm(v=>Math.min(240,v+5)),recording)}
-      <Text style={{fontSize:11,color:theme.muted,marginLeft:6}}>Durée</Text>
-      {DURATIONS.slice(0,3).map(v=>control(durationLabel(v),
-        ()=>applyDuration(v),recording,duration===v))}
-    </View>
-    <MusicScoreView events={events} compact={compact} instrument={part}/>
-    <View style={{flexDirection:'row',gap:9,alignItems:'center',flexWrap:'wrap'}}>
+    <MusicScoreView events={events} compact={compact} instrument={part}
+      bpm={bpm} clef={clef} selectedId={selectedId}
+      onSelectNote={recording?undefined:openNote}
+      onTempoPress={recording?undefined:openTempo}
+      onClefPress={recording?undefined:()=>setEditor('clef')}/>
+    {editor==='tempo'?<View style={{gap:10,padding:13,borderRadius:14,
+      borderWidth:1,borderColor:theme.border,backgroundColor:theme.surface}}>
+      <View style={{flexDirection:'row',alignItems:'center',
+        justifyContent:'space-between'}}>
+        <Text style={{fontFamily:'BiroScript',fontSize:22,color:theme.foreground}}>
+          Tempo
+        </Text>
+        <Pressable onPress={()=>setEditor(null)} accessibilityRole="button"
+          accessibilityLabel="Fermer le réglage du tempo"
+          style={{width:40,height:40,alignItems:'center',justifyContent:'center'}}>
+          <Ionicons name="close" size={20} color={theme.muted}/>
+        </Pressable>
+      </View>
+      <View style={{flexDirection:'row',alignItems:'center',gap:9}}>
+        <TextInput value={tempoDraft} onChangeText={setTempoDraft}
+          keyboardType="number-pad" accessibilityLabel="Tempo en BPM"
+          style={{minWidth:85,borderWidth:1,borderColor:theme.border,
+            borderRadius:10,paddingHorizontal:13,paddingVertical:10,
+            color:theme.foreground,fontSize:17}}/>
+        <Text style={{fontSize:13,color:theme.muted}}>BPM</Text>
+        {control('Appliquer',confirmTempo)}
+      </View>
+    </View>:null}
+    {editor==='clef'?<View style={{gap:10,padding:13,borderRadius:14,
+      borderWidth:1,borderColor:theme.border,backgroundColor:theme.surface}}>
+      <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
+        <Text style={{fontFamily:'BiroScript',fontSize:22,color:theme.foreground}}>
+          Choisir la clef
+        </Text>
+        <Pressable onPress={()=>setEditor(null)} accessibilityRole="button"
+          accessibilityLabel="Fermer le choix de clef"
+          style={{width:40,height:40,alignItems:'center',justifyContent:'center'}}>
+          <Ionicons name="close" size={20} color={theme.muted}/>
+        </Pressable>
+      </View>
+      <View style={{flexDirection:'row',gap:9}}>
+        {control('𝄞 Clé de sol',()=>{setClef('treble');setEditor(null);},
+          false,clef==='treble')}
+        {control('𝄢 Clé de fa',()=>{setClef('bass');setEditor(null);},
+          false,clef==='bass')}
+      </View>
+    </View>:null}
+    {editor==='note'&&selected?<View style={{gap:10,padding:13,borderRadius:14,
+      borderWidth:1,borderColor:PINK,backgroundColor:theme.surface}}>
+      <View style={{flexDirection:'row',justifyContent:'space-between',
+        alignItems:'center'}}>
+        <Text style={{fontFamily:'BiroScript',fontSize:23,color:theme.foreground}}>
+          {part==='piano'?musicNoteName(selected.midi):
+            DRUM_PADS.find(p=>p.midi===selected.midi)?.label||'Percussion'}
+        </Text>
+        <Pressable onPress={()=>setEditor(null)}
+          accessibilityRole="button" accessibilityLabel="Fermer les options de note"
+          style={{width:40,height:40,alignItems:'center',justifyContent:'center'}}>
+          <Ionicons name="close" size={20} color={theme.muted}/>
+        </Pressable>
+      </View>
+      <View style={{flexDirection:'row',alignItems:'center',gap:7,flexWrap:'wrap'}}>
+        {control('▶ Écouter',()=>audition(selected),Platform.OS!=='web')}
+        {part==='piano'?<>
+          {control('− ½ ton',()=>patchEvent(selected.id,{midi:
+            Math.max(0,selected.midi-1)}))}
+          {control('+ ½ ton',()=>patchEvent(selected.id,{midi:
+            Math.min(127,selected.midi+1)}))}
+        </>:null}
+      </View>
+      <Text style={{fontSize:12,color:theme.muted}}>Durée de la note</Text>
+      <View style={{flexDirection:'row',gap:6,flexWrap:'wrap'}}>
+        {DURATIONS.map(value=>control(durationLabel(value)+' temps',
+          ()=>patchEvent(selected.id,{lengthBeats:value}),
+          false,selected.lengthBeats===value))}
+      </View>
+      <Text style={{fontSize:12,color:theme.muted}}>
+        Position : temps {beatLabel(selected.startBeats)}
+      </Text>
+      <View style={{flexDirection:'row',gap:6,flexWrap:'wrap'}}>
+        {control('← ¼ temps',()=>patchEvent(selected.id,{startBeats:
+          Math.max(0,Math.round((selected.startBeats-.25)*4)/4)}))}
+        {control('¼ temps →',()=>patchEvent(selected.id,{startBeats:
+          Math.round((selected.startBeats+.25)*4)/4}))}
+      </View>
+      <Text style={{fontSize:12,color:theme.muted}}>
+        Insérer un silence avant cette note
+      </Text>
+      <View style={{flexDirection:'row',gap:7,flexWrap:'wrap'}}>
+        {control('Pause ½',()=>insertRestBefore(selected,.5))}
+        {control('Pause 1',()=>insertRestBefore(selected,1))}
+      </View>
+      <View style={{flexDirection:'row',gap:7,flexWrap:'wrap'}}>
+        {selected.draft?control('Valider cette note',()=>{
+          patchEvent(selected.id,{draft:false});setEditor(null);
+        }):null}
+        {control('Supprimer',()=>{
+          setEvents(old=>old.filter(event=>event.id!==selected.id));
+          setSelectedId('');setEditor(null);
+        })}
+      </View>
+    </View>:null}
+    <View style={{flexDirection:'row',gap:8,alignItems:'center',flexWrap:'wrap'}}>
+      <Pressable onPress={playComposition} disabled={!events.length||recording}
+        accessibilityRole="button" accessibilityLabel={previewPlaying?
+          'Arrêter l’écoute de la composition':'Écouter ma composition'}
+        style={{minHeight:46,flexDirection:'row',gap:7,alignItems:'center',
+          borderWidth:1,borderColor:theme.border,borderRadius:12,
+          paddingHorizontal:13,opacity:events.length&&!recording?1:.45}}>
+        <Ionicons name={previewPlaying?'stop':'play-outline'} color={PINK} size={20}/>
+        <Text style={{color:theme.foreground,fontSize:12,fontWeight:'700'}}>
+          {previewPlaying?'Arrêter l’écoute':'Écouter mes notes'}
+        </Text>
+      </Pressable>
       <Pressable onPress={toggleRecording} accessibilityRole="button"
         accessibilityLabel={recording?'Arrêter l’enregistrement en direct':
-          'Enregistrer des notes en temps réel'}
-        style={{minHeight:44,flexDirection:'row',gap:8,alignItems:'center',
+          'Enregistrer les notes en direct'}
+        style={{minHeight:46,flexDirection:'row',gap:7,alignItems:'center',
           backgroundColor:recording?'#A83246':PINK,
-          paddingHorizontal:14,borderRadius:12}}>
+          paddingHorizontal:13,borderRadius:12}}>
         <Ionicons name={recording?'stop':'radio-button-on'} color="#fff" size={18}/>
         <Text style={{color:'#fff',fontSize:12,fontWeight:'700'}}>
-          {recording?'Terminer la prise':'Enregistrer en direct'}
+          {recording?'Arrêter':'Enregistrer'}
         </Text>
       </Pressable>
       {drafts.length&&!recording?<Pressable
-        onPress={()=>setEvents(old=>old.map(e=>({...e,draft:false})))}
-        accessibilityRole="button"
-        style={{minHeight:43,paddingHorizontal:9,justifyContent:'center'}}>
-        <Text style={{fontSize:12,color:PINK,fontWeight:'700'}}>
-          Valider {drafts.length} note{drafts.length>1?'s':''}
+        onPress={()=>setEvents(old=>old.map(event=>({...event,draft:false})))}
+        accessibilityRole="button" style={{minHeight:43,justifyContent:'center',
+          paddingHorizontal:4}}>
+        <Text style={{color:PINK,fontSize:12,fontWeight:'700'}}>
+          Valider {drafts.length}
         </Text>
       </Pressable>:null}
     </View>
-    <Text style={{color:theme.muted,fontSize:11,lineHeight:17}}>
-      {recording?'Les notes jouées sont enregistrées en rose, à leur position réelle.':
-        'Les notes saisies sont grises jusqu’à validation. Les pauses décalent la prochaine note.'}
-    </Text>
     {part==='piano'?<View style={{gap:12}}>
       <View style={{gap:7}}>
         <Text style={{color:theme.foreground,fontWeight:'600',fontSize:12}}>
