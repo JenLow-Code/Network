@@ -27,6 +27,8 @@ type PublicationBase = {
 export type DreamPublication = PublicationBase & {
   type: 'dream';
   phase: DreamPhase;
+  /** Date the dream entered its current phase; never inferred from publication date. */
+  phaseDate?: string;
   /** Dream aggregate id (the publication id is `id`). */
   dreamId?: string;
   summary: string;
