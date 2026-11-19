@@ -9,6 +9,7 @@ import { isPublishedFlower, type DreamEntry } from '@/domain/dreamWorkspace';
 import type { DreamPhase } from '@/domain/publication';
 import { useDreams } from '@/domain/dreamRepository';
 import { useAppTheme } from '@/theme/AppTheme';
+import {workspaceCanvas,workspaceLayout,WORKSPACE_TITLE_GAP} from '@/theme/workspaceLayout';
 import DreamQuickActions from '@/components/dream/DreamQuickActions';
 
 type ViewFilter = 'Tout' | 'Liste' | 'Congelés';
@@ -115,15 +116,17 @@ export default function MySpace() {
   const theme = useAppTheme();
   const { width: windowWidth } = useWindowDimensions();
   const compact = windowWidth < 600;
+  const ws=workspaceLayout(windowWidth);
   const { items } = useDreams();
   const [view, setView] = useState<ViewFilter>('Tout');
   const [roleFilter,setRoleFilter]=useState<RoleFilter>('all');
   const [roleMenuOpen,setRoleMenuOpen]=useState(false);
   const [activeTestimony, setActiveTestimony] = useState(0);
   const [longDream,setLongDream]=useState<DreamEntry|null>(null);
-  const side = compact ? 18 : 28;
-  const contentWidth = Math.min(windowWidth, 900);
-  const innerWidth = contentWidth - side * 2;
+  const side=ws.gutter;
+  const workspaceViewport=Math.max(0,windowWidth-(ws.desktop?212:0));
+  const contentWidth=Math.min(workspaceViewport,ws.maxWidth??workspaceViewport);
+  const innerWidth=Math.max(0,contentWidth-2*side);
   const tileWidth = compact ? Math.max(137, Math.min(205, Math.floor(innerWidth * .48))) : 210;
   const list = view === 'Liste';
   const matchingRole = roleFilter === 'all' ? items :
@@ -137,12 +140,12 @@ export default function MySpace() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{
-        width: '100%', maxWidth: 900, alignSelf: 'center', paddingBottom: 64,
-        paddingTop: compact ? 13 : 27,
+        ...workspaceCanvas(windowWidth), paddingHorizontal:0, paddingBottom:64,
+        paddingTop:12,
       }}>
         <View style={{ paddingHorizontal: side }}>
           <PageHeader />
-          <View style={{ marginTop: compact ? 15 : 25, marginBottom: 21 }}>
+          <View style={{ marginTop:WORKSPACE_TITLE_GAP, marginBottom:21 }}>
             <Text style={{ fontWeight: '700', fontSize: compact ? 30 : 33,
               lineHeight: 40, color: theme.foreground }}>Mes rêves</Text>
             <Text style={{ color: theme.muted, fontSize: 12, marginTop: 3 }}>
