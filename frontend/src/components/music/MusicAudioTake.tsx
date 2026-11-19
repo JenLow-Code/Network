@@ -8,7 +8,7 @@ import {MusicAudioCapture} from './MusicAudioCapture';
 import {MusicAudioMarkers} from './MusicAudioMarkers';
 import {MusicAudioPeaks} from './MusicAudioPeaksNext';
 import {useAppTheme} from '@/theme/AppTheme';
-import type {MusicProjectFile,MusicAudioMarker} from '@/domain/musicWorkspace';
+import type {MusicProjectFile,MusicAudioMarker,MusicSection} from '@/domain/musicWorkspace';
 
 const PINK='#CB245C';
 type Props={
@@ -17,13 +17,15 @@ type Props={
   editable?:boolean;
   onOpen?:()=>void;
   onUpdate?:(change:Partial<MusicProjectFile>)=>void;
+  sourceFiles?:MusicProjectFile[];sections?:MusicSection[];
 };
 /**
  * One source recording, one waveform. The same seek and zoom interaction is used
  * in the Capture list, the saved-audio detail, and its non-destructive editor.
  * Never renders a second playback/progress bar.
  */
-export function MusicAudioTake({file,compact=false,editable=false,onUpdate,onOpen}:Props){
+export function MusicAudioTake({file,compact=false,editable=false,onUpdate,onOpen,
+  sourceFiles=[],sections=[]}:Props){
   const theme=useAppTheme();
   const [blob,setBlob]=useState<File|null>(null);
   const [url,setUrl]=useState('');
@@ -182,6 +184,7 @@ export function MusicAudioTake({file,compact=false,editable=false,onUpdate,onOpe
           compact={compact}/>
         {onUpdate?<MusicAudioMarkers
           markers={file.markers||[]} duration={duration} cursor={cursor}
+          sourceFiles={sourceFiles.filter(source=>source.id!==file.id)} sections={sections}
           onChange={markers=>onUpdate({markers})} onSeek={seek}
           editRequest={editMarkerRequest} selectedRange={selectedRange}/>:null}
 
