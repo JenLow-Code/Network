@@ -356,7 +356,8 @@ export function MusicMaterialViewer({visible,file,project,onClose,onUpdate,onCha
           </Text>:null}
           {error?<Text style={{color:'#B34D67',fontSize:12}}>{error}</Text>:null}
           {!editing?<View style={{flexDirection:'row',gap:12,flexWrap:'wrap',
-            borderTopWidth:1,borderColor:theme.border,paddingTop:15}}>
+            borderTopWidth:isAudio(file)?0:1,borderColor:theme.border,
+            paddingTop:isAudio(file)?0:15}}>
             {!isAudio(file)?<Pressable onPress={()=>{
               if(onEdit){onClose();onEdit(file);}
               else{setDraft(textOf(file));setEditing(true);setMenu('none');}
