@@ -118,6 +118,11 @@ export type MusicProjectFile = {
   /** Original musical idea, stored as structured notation, not rendered audio. */
   musicEvents?: MusicNotationEvent[];
   tempoBpm?: number;
+  /** Local monitoring preset, independent from the exported MIDI notes. */
+  instrumentTone?: string;
+  /** Private audio sample attached to a musical sketch on this device. */
+  instrumentSampleLocalId?: string;
+  instrumentSampleName?: string;
   instrument?: string;
   localFileId?: string;
   externalUrl?: string;
