@@ -147,9 +147,18 @@ export function MusicScoreView({events,compact=false,instrument,
             {BLACKS.has(event.midi%12)?<SvgText x={x-18} y={y+5}
               fontSize={15} fill={color}>♯</SvgText>:null}
             <Ellipse cx={x} cy={y} rx={7.5} ry={5.2} rotation={-19}
-              origin={x+','+y} fill={color}/>
-            <Line x1={x+7} x2={x+7} y1={y} y2={y-30}
+              origin={x+','+y} fill={event.lengthBeats<2?color:'none'}
               stroke={color} strokeWidth={1.6}/>
+            {event.lengthBeats<3.5?<Line x1={x+7} x2={x+7} y1={y} y2={y-30}
+              stroke={color} strokeWidth={1.6}/>:null}
+            {event.lengthBeats<1?<Path
+              d={`M ${x+7} ${y-30} Q ${x+21} ${y-25} ${x+14} ${y-15}`}
+              stroke={color} fill="none" strokeWidth={1.8}/>:null}
+            {event.lengthBeats<.45?<Path
+              d={`M ${x+7} ${y-24} Q ${x+21} ${y-19} ${x+14} ${y-9}`}
+              stroke={color} fill="none" strokeWidth={1.8}/>:null}
+            {[.75,1.5,3].some(beats=>Math.abs(event.lengthBeats-beats)<.01)?
+              <Circle cx={x+16} cy={y} r={2} fill={color}/>:null}
           </React.Fragment>;
         })}
         {percussion.map(event=>{
