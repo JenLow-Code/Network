@@ -40,7 +40,7 @@ export default function SemenceStudio({dream,onBack,onNavigate}:{
  const add=()=>setAddRequestToken(token=>token+1);
  return <View style={{flex:1,backgroundColor:theme.background}}>
   <DreamCoverBackdrop uri={dream.image}/>
-  <ScrollView style={{flex:1,backgroundColor:'transparent'}}
+  <ScrollView showsVerticalScrollIndicator={false} style={{flex:1,backgroundColor:'transparent'}}
    keyboardShouldPersistTaps="handled"
    contentContainerStyle={{paddingHorizontal:ws.gutter,paddingTop:10,
      paddingBottom:100,maxWidth:ws.maxWidth,width:'100%',alignSelf:'center'}}>
@@ -49,18 +49,29 @@ export default function SemenceStudio({dream,onBack,onNavigate}:{
    <View style={{alignItems:'flex-end',marginTop:-10,marginBottom:6}}>
      <DreamWorkspaceShortcuts dream={dream}/>
    </View>
-   <Text style={{fontSize:16,fontWeight:'700',color:theme.foreground,
-     marginTop:3,marginBottom:13}}>Inspirations</Text>
+   <View style={{flexDirection:'row',alignItems:'center',
+     justifyContent:'space-between',gap:12,marginTop:3,marginBottom:13}}>
+     <Text style={{fontSize:16,fontWeight:'700',color:theme.foreground}}>Inspirations</Text>
+     {editable&&width>=700?<Pressable accessibilityRole="button"
+       accessibilityLabel="Ajouter une inspiration" onPress={add}
+       style={{flexDirection:'row',alignItems:'center',gap:6,
+         borderRadius:9,paddingHorizontal:12,paddingVertical:8,
+         borderWidth:1,borderColor:theme.border,
+         backgroundColor:theme.dark?'rgba(25,26,27,.58)':'rgba(255,255,255,.78)'}}>
+       <Ionicons name="add" size={16} color={theme.foreground}/>
+       <Text style={{color:theme.foreground,fontSize:12,fontWeight:'600'}}>Ajouter</Text>
+     </Pressable>:null}
+   </View>
    <SemenceInspirations dream={dream} editable={editable}
      addRequestToken={addRequestToken}
      onShareInspiration={id=>{setShareIds([id]);setShareOpen(true);}}/>
    {editable?<View style={{marginTop:6,
      maxWidth:ws.desktop?700:undefined,width:'100%',alignSelf:'center'}}>
-     <View style={{flexDirection:ws.tablet?'row':'column',gap:ws.tablet?8:0}}>
+     <View style={{flexDirection:(ws.tablet||ws.desktop)?'row':'column',gap:(ws.tablet||ws.desktop)?8:0}}>
      <Pressable accessibilityRole="button" accessibilityLabel="Faire germer cette semence"
        onPress={()=>setConfirm(true)}
-       style={{minHeight:ws.tablet?43:48,flex:ws.tablet?1.2:undefined,
-         paddingHorizontal:ws.tablet?8:17,paddingVertical:ws.tablet?9:12,
+       style={{minHeight:(ws.tablet||ws.desktop)?43:48,flex:(ws.tablet||ws.desktop)?1.2:undefined,
+         paddingHorizontal:(ws.tablet||ws.desktop)?8:17,paddingVertical:(ws.tablet||ws.desktop)?9:12,
          borderRadius:12,alignItems:'center',justifyContent:'center',
          backgroundColor:'#A1BA44'}}>
        <Text style={{color:'#242322',fontSize:13,fontWeight:'700',textAlign:'center'}}>
@@ -69,9 +80,9 @@ export default function SemenceStudio({dream,onBack,onNavigate}:{
      </Pressable>
      <Pressable onPress={()=>{setShareIds(null);setShareOpen(true);}}
        accessibilityRole="button" accessibilityLabel="Publier cette semence"
-       style={{minHeight:ws.tablet?43:48,flex:ws.tablet?1:undefined,
-         marginTop:ws.tablet?0:13,paddingVertical:ws.tablet?9:12,
-         paddingHorizontal:ws.tablet?7:17,alignItems:'center',justifyContent:'center',borderRadius:12,
+       style={{minHeight:(ws.tablet||ws.desktop)?43:48,flex:(ws.tablet||ws.desktop)?1:undefined,
+         marginTop:(ws.tablet||ws.desktop)?0:13,paddingVertical:(ws.tablet||ws.desktop)?9:12,
+         paddingHorizontal:(ws.tablet||ws.desktop)?7:17,alignItems:'center',justifyContent:'center',borderRadius:12,
          borderWidth:1.5,borderColor:accent,backgroundColor:'transparent'}}>
        <Text style={{fontSize:13,fontWeight:'700',color:accent,textAlign:'center'}}>
          Publier cette semence
@@ -80,13 +91,13 @@ export default function SemenceStudio({dream,onBack,onNavigate}:{
      <Pressable onPress={uproot} accessibilityRole="button"
        accessibilityLabel="Arracher cette semence"
        style={{alignItems:'center',justifyContent:'center',
-         minHeight:ws.tablet?43:44,flex:ws.tablet?1:undefined,
-         borderRadius:12,marginTop:ws.tablet?0:13,
-         paddingHorizontal:ws.tablet?7:17,paddingVertical:ws.tablet?9:11,
-         backgroundColor:ws.tablet?'transparent':
+         minHeight:(ws.tablet||ws.desktop)?43:44,flex:(ws.tablet||ws.desktop)?1:undefined,
+         borderRadius:12,marginTop:(ws.tablet||ws.desktop)?0:13,
+         paddingHorizontal:(ws.tablet||ws.desktop)?7:17,paddingVertical:(ws.tablet||ws.desktop)?9:11,
+         backgroundColor:(ws.tablet||ws.desktop)?'transparent':
            theme.dark?'#18191B':'#242322',
-         borderWidth:ws.tablet?1:0,borderColor:theme.border}}>
-       <Text style={{color:ws.tablet?theme.muted:'#FFFFFF',fontSize:ws.tablet?11:12,fontWeight:'700'}}>
+         borderWidth:(ws.tablet||ws.desktop)?1:0,borderColor:theme.border}}>
+       <Text style={{color:(ws.tablet||ws.desktop)?theme.muted:'#FFFFFF',fontSize:(ws.tablet||ws.desktop)?11:12,fontWeight:'700'}}>
          Arracher cette semence
        </Text>
      </Pressable>
@@ -119,7 +130,7 @@ export default function SemenceStudio({dream,onBack,onNavigate}:{
      dream={dream} initialIds={shareIds}
      onClose={()=>{setShareOpen(false);setShareIds(null);}}/>:null}
   </ScrollView>
-  {editable?<Pressable accessibilityRole="button"
+  {editable&&width<700?<Pressable accessibilityRole="button"
     accessibilityLabel="Ajouter une inspiration" onPress={add}
     style={{position:'absolute',right:width<520?21:27,bottom:94,zIndex:55,
       width:48,height:48,borderRadius:14,
