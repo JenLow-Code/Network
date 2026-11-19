@@ -9,6 +9,7 @@ import type {WorkingMusicTrack,WorkingMusicVersion} from '@/domain/musicNext';
 import type {MusicProjectFile} from '@/domain/musicWorkspace';
 
 const PINK='#CB245C';
+export const TIMELINE_ORIGIN=16; // Shared zero alignment for cursor, ruler and clips.
 const TRACK_EMOJIS=['🎤','🎙️','🎹','🎸','🥁','🪘','🎺','🎷','🎻','🪕','🪈','🎶','🎧','🎼','🎛️','🔊','💻','🎵'];
 type Timing=Partial<Pick<WorkingMusicTrack,'offsetSeconds'|'trimStartSeconds'|'trimEndSeconds'>>;
 type Mode='move'|'start'|'end';
@@ -81,13 +82,13 @@ export function MusicArrangementTimeline({version,files,duration,position,onSeek
     const info=clipInfo(t,files.find(f=>f.id===t.sourceFileId));
     return info.offset+info.end-info.start;
   }));
-  const contentWidth=Math.round(viewport*zoom);
-  const pixelsPerSecond=contentWidth/maxEnd;
+  const contentWidth=Math.round(viewport*zoom)+TIMELINE_ORIGIN;
+  const pixelsPerSecond=(contentWidth-TIMELINE_ORIGIN)/maxEnd;
   const beatSeconds=60/(version.bpm||100);
   const snap=(seconds:number)=>version.snapToBeat?
     precise(Math.round(seconds/beatSeconds)*beatSeconds):precise(seconds);
   const seekAtClient=(clientX:number,element:HTMLElement)=>{
-    const x=clientX-element.getBoundingClientRect().left+scrollX.current;
+    const x=clientX-element.getBoundingClientRect().left+scrollX.current-TIMELINE_ORIGIN;
     onSeek(precise(clamp(x/pixelsPerSecond,0,maxEnd)));
   };
   const commitName=(id:string)=>{
@@ -106,6 +107,7 @@ export function MusicArrangementTimeline({version,files,duration,position,onSeek
     if(!el.addEventListener)return;
     el.setAttribute('data-jenlow-music-dropzone','true');
     el.setAttribute('data-jenlow-seconds-per-pixel',String(1/pxReady.current));
+    el.setAttribute('data-jenlow-origin-px',String(TIMELINE_ORIGIN));
     const over=(e:DragEvent)=>{
       if(!e.dataTransfer?.types?.includes('application/x-jenlow-music-file'))return;
       e.preventDefault();
@@ -117,7 +119,7 @@ export function MusicArrangementTimeline({version,files,duration,position,onSeek
       if(!e.dataTransfer?.types?.includes('application/x-jenlow-music-file'))return;
       e.preventDefault();
       const id=e.dataTransfer.getData('application/x-jenlow-music-file');
-      const x=e.clientX-el.getBoundingClientRect().left+el.scrollLeft;
+      const x=e.clientX-el.getBoundingClientRect().left+el.scrollLeft-TIMELINE_ORIGIN;
       if(id)dropReady.current?.(id,precise(Math.max(0,x/pxReady.current)));
     };
     el.addEventListener('dragover',over);el.addEventListener('drop',drop);
@@ -125,7 +127,8 @@ export function MusicArrangementTimeline({version,files,duration,position,onSeek
     return()=>{el.removeEventListener('dragover',over);el.removeEventListener('drop',drop);
       el.removeEventListener('dragleave',leave);
       el.removeAttribute('data-jenlow-music-dropzone');
-      el.removeAttribute('data-jenlow-seconds-per-pixel');};
+      el.removeAttribute('data-jenlow-seconds-per-pixel');
+      el.removeAttribute('data-jenlow-origin-px');};
   },[version.tracks.length,zoom,panelWidth]);
   const tick=zoom>=8?2:zoom>=4?5:zoom>=2?10:30;
   const rows=version.tracks.length;
@@ -540,7 +543,7 @@ export function MusicArrangementTimeline({version,files,duration,position,onSeek
         <View style={{width:contentWidth,height:rulerHeight+rowHeight*rows}}>
           <Pressable accessibilityRole="adjustable" accessibilityLabel="Position dans la chanson"
             onPress={e=>{clearRange();onSeek(precise(
-              clamp(e.nativeEvent.locationX/pixelsPerSecond,0,maxEnd)));}}
+              clamp((e.nativeEvent.locationX-TIMELINE_ORIGIN)/pixelsPerSecond,0,maxEnd)));}}
             style={{height:rulerHeight,width:contentWidth}}>
             <View style={{position:'absolute',top:15,left:0,width:contentWidth,
               backgroundColor:theme.border,height:1}}/>
@@ -548,7 +551,7 @@ export function MusicArrangementTimeline({version,files,duration,position,onSeek
               const seconds=i*tick;
               if(seconds>maxEnd)return null;
               return <View key={i} pointerEvents="none" style={{position:'absolute',
-                left:seconds*pixelsPerSecond+2,top:5,gap:3}}>
+                left:TIMELINE_ORIGIN+seconds*pixelsPerSecond+2,top:5,gap:3}}>
                 <View style={{width:1,height:8,backgroundColor:theme.muted}}/>
                 <Text style={{fontSize:10,color:theme.muted}}>
                   {musicStamp(seconds).slice(0,5)}
@@ -558,7 +561,7 @@ export function MusicArrangementTimeline({version,files,duration,position,onSeek
           </Pressable>
           {Array.from({length:Math.min(1000,Math.ceil(maxEnd/beatSeconds)+1)},(_,i)=>i)
             .map(i=><View key={'beat-'+i} pointerEvents="none"
-              style={{position:'absolute',left:i*beatSeconds*pixelsPerSecond,
+              style={{position:'absolute',left:TIMELINE_ORIGIN+i*beatSeconds*pixelsPerSecond,
                 top:rulerHeight,height:rowHeight*rows,width:i%4===0?1.5:1,
                 backgroundColor:theme.muted,opacity:i%4===0?0.24:0.10}}/>)}
           {version.tracks.map(t=>{
@@ -568,7 +571,7 @@ export function MusicArrangementTimeline({version,files,duration,position,onSeek
             const offset=live?.offsetSeconds??info.offset;
             const from=live?.trimStartSeconds??info.start;
             const end=live?.trimEndSeconds??info.end;
-            const left=offset*pixelsPerSecond;
+            const left=TIMELINE_ORIGIN+offset*pixelsPerSecond;
             const width=Math.max(0,(end-from)*pixelsPerSecond);
             const visibleWidth=Math.max(36,width);
             const dragging=preview?.id===t.id;
@@ -579,7 +582,7 @@ export function MusicArrangementTimeline({version,files,duration,position,onSeek
               justifyContent:'center'}}>
               <Pressable onPress={e=>{
                 clearRange();onSeek(precise(clamp(
-                  e.nativeEvent.locationX/pixelsPerSecond,0,maxEnd)));
+                  (e.nativeEvent.locationX-TIMELINE_ORIGIN)/pixelsPerSecond,0,maxEnd)));
               }}
                 style={{position:'absolute',left:0,right:0,top:0,bottom:0}}/>
               {info.total>0&&end>from?<View style={{position:'absolute',
@@ -635,7 +638,7 @@ export function MusicArrangementTimeline({version,files,duration,position,onSeek
             </View>;
           })}
           <View pointerEvents="none" style={{position:'absolute',top:rulerHeight-2,
-            left:clamp(position*pixelsPerSecond,0,contentWidth),
+            left:TIMELINE_ORIGIN+clamp(position*pixelsPerSecond,0,contentWidth-TIMELINE_ORIGIN),
             height:rowHeight*rows+2,width:2,backgroundColor:PINK}}/>
           {Platform.OS==='web'?React.createElement('div',{
             role:'slider',tabIndex:0,
@@ -673,7 +676,7 @@ export function MusicArrangementTimeline({version,files,duration,position,onSeek
             },
             style:{
               position:'absolute',top:0,zIndex:12,
-              left:clamp(position*pixelsPerSecond-16,0,Math.max(0,contentWidth-32)),
+              left:clamp(position*pixelsPerSecond,0,Math.max(0,contentWidth-32)),
               width:32,height:rulerHeight,cursor:'ew-resize',
               display:'flex',justifyContent:'center',alignItems:'flex-start',
               paddingTop:2,touchAction:'none',userSelect:'none',
@@ -700,7 +703,7 @@ export function MusicArrangementTimeline({version,files,duration,position,onSeek
             onResponderRelease:()=>{nativeScrub.current=null;setScrubbing(false);},
             onResponderTerminate:()=>{nativeScrub.current=null;setScrubbing(false);},
           }} style={{position:'absolute',top:0,zIndex:12,
-            left:clamp(position*pixelsPerSecond-16,0,Math.max(0,contentWidth-32)),
+            left:clamp(position*pixelsPerSecond,0,Math.max(0,contentWidth-32)),
             width:32,height:rulerHeight,alignItems:'center',paddingTop:4}}>
             <View style={{width:16,height:21,borderRadius:5,backgroundColor:PINK}}/>
           </View>}
