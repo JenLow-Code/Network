@@ -22,10 +22,10 @@ import { HANDWRITING_FAMILY } from '@/theme/handwriting';
 import { matchesForMe, profileTalentStorageKey, type SavedTalent } from '@/domain/personalDiscovery';
 const filters = ['Tout', 'Pour moi', 'Rêves', 'Musique', 'Bible', 'Talents'] as const;
 
-/** Stable, well-distributed editorial shuffle: no jumping cards on each render. */
-function discoveryRank(id: string): number {
+/** Deterministic within a visit; a new seed gently varies tile placement on refresh. */
+function discoveryRank(id: string, seed = 0): number {
   let hash = 2166136261;
-  const key = 'jenlow:discovery:' + id;
+  const key = 'jenlow:discovery:' + seed + ':' + id;
   for (let i = 0; i < key.length; i += 1) {
     hash = Math.imul(hash ^ key.charCodeAt(i), 16777619);
   }
@@ -44,6 +44,8 @@ export default function Discover() {
   const desktop=Platform.OS==='web'&&workspaceLayout(width).desktop;
   const ws=workspaceLayout(width);
   const params = useLocalSearchParams<{ filter?: string }>();
+  // A new page visit gets its own order; filtering and pagination keep it stable.
+  const [shuffleSeed] = useState(() => Math.floor(Math.random() * 0x100000000));
 
   const [filter, setFilter] = useState<(typeof filters)[number]>(
     params.filter === 'Talents' ? 'Talents' : params.filter === 'Pour moi' ? 'Pour moi' : 'Tout',
@@ -71,13 +73,22 @@ export default function Discover() {
   const feed = useDiscovery();
   // Preserve the original mixed feed, including Talent posts. Previously the
   // "Tout" view appended all talents *after* all dreams, undoing API interleaving.
-  const shuffledFeed = useMemo(() =>
-    feed.items
+  const shuffledFeed = useMemo(() => {
+    // Keep the existing editorial distribution. Only vary the order locally
+    // in small groups instead of fully randomizing the whole discovery feed.
+    const ordered = feed.items
       .filter(p => p.type !== 'dream' || p.phase !== 'Rêve')
       .slice()
-      .sort((a, b) => discoveryRank(a.id) - discoveryRank(b.id) || a.id.localeCompare(b.id)),
-    [feed.items],
-  );
+      .sort((a, b) => discoveryRank(a.id) - discoveryRank(b.id) || a.id.localeCompare(b.id));
+    const groupSize = 6;
+    for (let start = 0; start < ordered.length; start += groupSize) {
+      const group = ordered.slice(start, start + groupSize);
+      group.sort((a, b) => discoveryRank(a.id, shuffleSeed) -
+        discoveryRank(b.id, shuffleSeed) || a.id.localeCompare(b.id));
+      ordered.splice(start, group.length, ...group);
+    }
+    return ordered;
+  }, [feed.items, shuffleSeed]);
   const publications = useMemo(() => shuffledFeed.filter(p => p.type !== 'talent'), [shuffledFeed]);
   const personPublications = useMemo(() => shuffledFeed.filter(p => p.type === 'talent'), [shuffledFeed]);
   const items = useMemo(
@@ -195,6 +206,7 @@ export default function Discover() {
         <View style={{ marginHorizontal: -15 }}>
         <PublicationGallery
           layout="masonry"
+          personalizedTalents={talentsLoaded ? savedTalents : []}
           contentWidth={Math.max(0,
             Math.min(ws.maxWidth??width,desktop?width-212:width)-30)}
           items={(filter === 'Talents'
