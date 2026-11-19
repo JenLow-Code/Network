@@ -696,59 +696,79 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
           false,selectedId===note.id))}
       </View>
     </View>:null}
-    {editor==='note'&&selected?<View style={{gap:10,padding:13,borderRadius:14,
-      borderWidth:1,borderColor:PINK,backgroundColor:theme.surface}}>
-      <View style={{flexDirection:'row',justifyContent:'space-between',
-        alignItems:'center'}}>
-        <Text style={{fontFamily:'BiroScript',fontSize:23,color:theme.foreground}}>
-          {part==='piano'?musicNoteName(selected.midi):
-            DRUM_PADS.find(p=>p.midi===selected.midi)?.label||'Percussion'}
-        </Text>
-        <Pressable onPress={()=>setEditor(null)}
-          accessibilityRole="button" accessibilityLabel="Fermer les options de note"
-          style={{width:40,height:40,alignItems:'center',justifyContent:'center'}}>
-          <Ionicons name="close" size={20} color={theme.muted}/>
+    {editor==='note'&&selected?<View style={{gap:9,padding:compact?11:14,
+      borderRadius:13,borderWidth:1,borderColor:theme.border,
+      backgroundColor:theme.surface}}>
+      <View style={{flexDirection:'row',alignItems:'center',gap:8}}>
+        <Text style={{fontFamily:'BiroScript',fontSize:21,color:theme.foreground,
+          flex:1}}>{musicNoteName(selected.midi)} · {beatLabel(selected.lengthBeats)} temps</Text>
+        <Pressable onPress={()=>audition(selected)} accessibilityRole="button"
+          accessibilityLabel="Écouter cette note"
+          style={{width:42,height:42,alignItems:'center',justifyContent:'center'}}>
+          <Ionicons name="play-outline" size={21} color={PINK}/>
+        </Pressable>
+        {selected.draft?<Pressable onPress={()=>{
+          patchEvent(selected.id,{draft:false});setEditor(null);
+        }} accessibilityRole="button" accessibilityLabel="Valider cette note"
+          style={{width:42,height:42,alignItems:'center',justifyContent:'center'}}>
+          <Ionicons name="checkmark-outline" size={22} color={PINK}/>
+        </Pressable>:null}
+        <Pressable onPress={()=>setEditor(null)} accessibilityRole="button"
+          accessibilityLabel="Fermer les options"
+          style={{width:42,height:42,alignItems:'center',justifyContent:'center'}}>
+          <Ionicons name="close" size={22} color={theme.muted}/>
         </Pressable>
       </View>
+      <Text style={{fontSize:11,color:theme.muted}}>Choisir une figure de note</Text>
+      <View style={{flexDirection:'row',gap:6,flexWrap:'wrap'}}>
+        {NOTE_VALUES.map(option=>{
+          const isCurrent=Math.abs(selected.lengthBeats-option.beats)<.001;
+          return <Pressable key={option.beats}
+            onPress={()=>patchEvent(selected.id,{lengthBeats:option.beats})}
+            accessibilityRole="button"
+            accessibilityLabel={option.label+', '+beatLabel(option.beats)+' temps'}
+            accessibilityState={{selected:isCurrent}}
+            style={{minWidth:compact?'22%':68,flexGrow:compact?1:0,
+              minHeight:68,borderWidth:1,borderColor:isCurrent?PINK:theme.border,
+              borderRadius:10,alignItems:'center',justifyContent:'center',
+              backgroundColor:isCurrent?(theme.dark?'#452935':'#FAE9EF'):
+                theme.background,gap:1}}>
+            <NoteValueGlyph beats={option.beats}
+              color={isCurrent?PINK:theme.foreground} size={30}/>
+            <Text style={{fontSize:10,color:isCurrent?PINK:theme.muted}}>
+              {beatLabel(option.beats)}
+            </Text>
+          </Pressable>;
+        })}
+      </View>
       <View style={{flexDirection:'row',alignItems:'center',gap:7,flexWrap:'wrap'}}>
-        {control('▶ Écouter',()=>audition(selected),Platform.OS!=='web')}
-        {part==='piano'?<>
-          {control('− ½ ton',()=>patchEvent(selected.id,{midi:
-            Math.max(0,selected.midi-1)}))}
-          {control('+ ½ ton',()=>patchEvent(selected.id,{midi:
-            Math.min(127,selected.midi+1)}))}
-        </>:null}
-      </View>
-      <Text style={{fontSize:12,color:theme.muted}}>Durée de la note</Text>
-      <View style={{flexDirection:'row',gap:6,flexWrap:'wrap'}}>
-        {DURATIONS.map(value=>control(durationLabel(value)+' temps',
-          ()=>patchEvent(selected.id,{lengthBeats:value}),
-          false,selected.lengthBeats===value))}
-      </View>
-      <Text style={{fontSize:12,color:theme.muted}}>
-        Position : temps {beatLabel(selected.startBeats)}
-      </Text>
-      <View style={{flexDirection:'row',gap:6,flexWrap:'wrap'}}>
-        {control('← ¼ temps',()=>patchEvent(selected.id,{startBeats:
+        <Text style={{fontSize:11,color:theme.muted}}>Ton</Text>
+        {control('−',()=>patchEvent(selected.id,{midi:Math.max(0,selected.midi-1)}))}
+        <Text style={{fontSize:12,color:theme.foreground}}>
+          {musicNoteName(selected.midi)}
+        </Text>
+        {control('+',()=>patchEvent(selected.id,{midi:Math.min(127,selected.midi+1)}))}
+        <View style={{flex:1}}/>
+        <Text style={{fontSize:11,color:theme.muted}}>
+          Temps {beatLabel(selected.startBeats)}
+        </Text>
+        {control('←',()=>patchEvent(selected.id,{startBeats:
           Math.max(0,Math.round((selected.startBeats-.25)*4)/4)}))}
-        {control('¼ temps →',()=>patchEvent(selected.id,{startBeats:
+        {control('→',()=>patchEvent(selected.id,{startBeats:
           Math.round((selected.startBeats+.25)*4)/4}))}
       </View>
-      <Text style={{fontSize:12,color:theme.muted}}>
-        Insérer un silence avant cette note
-      </Text>
-      <View style={{flexDirection:'row',gap:7,flexWrap:'wrap'}}>
-        {control('Pause ½',()=>insertRestBefore(selected,.5))}
-        {control('Pause 1',()=>insertRestBefore(selected,1))}
-      </View>
-      <View style={{flexDirection:'row',gap:7,flexWrap:'wrap'}}>
-        {selected.draft?control('Valider cette note',()=>{
-          patchEvent(selected.id,{draft:false});setEditor(null);
-        }):null}
-        {control('Supprimer',()=>{
+      <View style={{flexDirection:'row',alignItems:'center',gap:7,flexWrap:'wrap'}}>
+        <Text style={{fontSize:11,color:theme.muted}}>Silence avant</Text>
+        {control('½',()=>insertRestBefore(selected,.5))}
+        {control('1',()=>insertRestBefore(selected,1))}
+        <View style={{flex:1}}/>
+        <Pressable onPress={()=>{
           setEvents(old=>old.filter(event=>event.id!==selected.id));
           setSelectedId('');setEditor(null);
-        })}
+        }} accessibilityRole="button" accessibilityLabel="Supprimer la note"
+          style={{width:44,height:42,alignItems:'center',justifyContent:'center'}}>
+          <Ionicons name="trash-outline" size={19} color={theme.muted}/>
+        </Pressable>
       </View>
     </View>:null}
     <View style={{flexDirection:'row',gap:8,alignItems:'center',flexWrap:'wrap'}}>
