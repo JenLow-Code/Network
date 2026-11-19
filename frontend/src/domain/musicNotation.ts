@@ -9,6 +9,18 @@ export type MusicNotationEvent = {
   /** A grey, uncommitted manual sketch note; not yet part of MIDI export. */
   draft?: boolean;
 };
+/** Monotonic note-on/off timing in musical beats. Rests are naturally the
+ * gaps between event starts and the previous note-offs.
+ * We keep millibeat precision; score symbols can be quantized separately. */
+export function liveNotePosition(startedAtMs:number,eventAtMs:number,bpm:number,
+  originBeats=0):number {
+  const elapsed=Math.max(0,eventAtMs-startedAtMs);
+  return Math.round((originBeats+elapsed*bpm/60000)*1000)/1000;
+}
+export function liveNoteLength(pressedAtMs:number,releasedAtMs:number,bpm:number):number {
+  const beats=Math.max(.125,(releasedAtMs-pressedAtMs)*bpm/60000);
+  return Math.round(beats*1000)/1000;
+}
 export const DRUM_PADS = [
   {label:'Kick',midi:36},
   {label:'Snare',midi:38},
