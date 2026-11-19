@@ -196,6 +196,35 @@ function playSound(ctx:AudioContext,pitch:number,drum:boolean,level:number,
   }
 }
 
+/** Estimate a sustained uploaded note by a normalized difference function.
+ * For breathy/percussive samples the user may correct the guessed reference note.
+ */
+function detectSampleRoot(buffer:AudioBuffer):number|null{
+  const samples=buffer.getChannelData(0),rate=buffer.sampleRate;
+  const start=Math.min(Math.floor(rate*.1),Math.floor(samples.length*.2));
+  const span=Math.min(6500,Math.floor((samples.length-start)/2));
+  const minLag=Math.max(2,Math.floor(rate/1100));
+  const maxLag=Math.min(Math.floor(rate/75),Math.floor(span/2));
+  if(span<1024||maxLag<=minLag)return null;
+  const diffs=new Float64Array(maxLag+1);
+  let cumulative=0,selected=-1;
+  for(let lag=1;lag<=maxLag;lag++){
+    let difference=0;
+    for(let i=0;i<span-lag;i+=2){
+      const delta=samples[start+i]-samples[start+i+lag];
+      difference+=delta*delta;
+    }
+    diffs[lag]=difference;cumulative+=difference;
+    const score=cumulative?difference*lag/cumulative:1;
+    if(lag>=minLag&&score<.19){
+      selected=lag;break;
+    }
+  }
+  if(selected<0)return null;
+  const hz=rate/selected;
+  const pitch=Math.round(69+12*Math.log2(hz/440));
+  return Number.isFinite(pitch)&&pitch>=24&&pitch<=96?pitch:null;
+}
 export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}:Props){
   const theme=useAppTheme();
   const {width}=useWindowDimensions();
@@ -323,9 +352,13 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
         if(!audioRef.current)audioRef.current=new AudioContext();
         const buffer=await audioRef.current.decodeAudioData(await file.arrayBuffer());
         const id=await saveDraftAudio(file);
+        const detected=detectSampleRoot(buffer);
         sampleRef.current=buffer;setSampleName(file.name);setSampleId(id);
+        setSampleRootMidi(detected??60);
         setTone('Échantillon');
-        setMessage('Échantillon conservé sur cet appareil (référence Do4).');
+        setMessage(detected===null?
+          'Impossible de détecter la hauteur. Do4 utilisé par défaut ; tu peux le modifier.':
+          'Hauteur détectée : '+musicNoteName(detected)+'. Modifiable dans Son du piano.');
       })().catch(e=>setMessage(e instanceof Error&&e.message==='too_large'?
         'Choisis un son de 12 Mo maximum.':
         'Ce fichier audio ne peut pas être décodé ou stocké.'));
