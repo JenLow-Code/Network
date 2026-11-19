@@ -14,10 +14,11 @@ function parse(value:string):number|null{
 type Props={markers:MusicAudioMarker[];duration:number;cursor:number;
  onChange:(markers:MusicAudioMarker[])=>void;onSeek?:(seconds:number)=>void;disabled?:boolean;
  editRequest?:{id:string;nonce:number}|null;
- rangeRequest?:{start:number;end:number;nonce:number}|null};
+ rangeRequest?:{start:number;end:number;nonce:number}|null;
+ selectedRange?:{start:number;end:number}|null};
 /** Point and interval notes, stored locally on their original recording. */
 export function MusicAudioMarkers({markers,duration,cursor,onChange,onSeek,
- disabled=false,editRequest,rangeRequest}:Props){
+ disabled=false,editRequest,rangeRequest,selectedRange}:Props){
  const theme=useAppTheme();
  const [open,setOpen]=useState(false),[editing,setEditing]=useState('');
  const [interval,setIntervalMode]=useState(false),[from,setFrom]=useState(''),[to,setTo]=useState('');
@@ -30,10 +31,13 @@ export function MusicAudioMarkers({markers,duration,cursor,onChange,onSeek,
    setPicking(null);
  },[cursor,open,picking]);
  const begin=(m?:MusicAudioMarker)=>{
-   setEditing(m?.id||'');setIntervalMode(m?.endSeconds!==undefined);
+   const range=!m?selectedRange:null;
+   setEditing(m?.id||'');
+   setIntervalMode(m?.endSeconds!==undefined||!!range);
    setPicking(null);
-   setFrom(musicStampMs(m?.startSeconds??cursor));
-   setTo(m?.endSeconds===undefined?'':musicStampMs(m.endSeconds));
+   setFrom(musicStampMs(m?.startSeconds??range?.start??cursor));
+   setTo(m?.endSeconds===undefined?
+     (range?musicStampMs(range.end):''):musicStampMs(m.endSeconds));
    setNote(m?.note||'');setError('');setOpen(true);
  };
  useEffect(()=>{
@@ -62,36 +66,32 @@ export function MusicAudioMarkers({markers,duration,cursor,onChange,onSeek,
  };
  const input={borderWidth:1,borderColor:theme.border,borderRadius:9,
    backgroundColor:theme.background,color:theme.foreground,paddingHorizontal:11,
-   paddingVertical:10,fontSize:13} as const;
- return <View style={{gap:10}}>
-   <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
-     <Text style={{fontSize:13,fontWeight:'600',color:theme.foreground}}>Notes temporelles
-       {markers.length?' ('+markers.length+')':''}
-     </Text>
-     <Pressable disabled={disabled} onPress={()=>begin()} accessibilityRole="button"
-       style={{flexDirection:'row',gap:6,alignItems:'center',padding:9,opacity:disabled?0.4:1}}>
-       <Ionicons name="add" size={17} color={pink}/>
-       <Text style={{fontSize:12,fontWeight:'600',color:pink}}>Ajouter une note</Text>
-     </Pressable>
-   </View>
-   {markers.map(m=><View key={m.id} style={{flexDirection:'row',alignItems:'center',gap:9,
-     paddingVertical:9,borderTopWidth:1,borderColor:theme.border}}>
-     <Pressable onPress={()=>{onSeek?.(m.startSeconds);begin(m);}}
-       accessibilityRole="button" disabled={disabled} style={{flex:1,gap:3}}>
-       <Text style={{fontSize:11,fontWeight:'700',color:pink}}>
-         {musicStampMs(m.startSeconds)}{m.endSeconds!==undefined?' – '+musicStampMs(m.endSeconds):''}
+   paddingVertical:7,fontSize:12} as const;
+ return <View style={{gap:open?7:0}}>
+   {!open?<Pressable disabled={disabled} onPress={()=>begin()}
+     accessibilityRole="button" accessibilityLabel="Ajouter un repère"
+     style={{alignSelf:'flex-start',flexDirection:'row',alignItems:'center',
+       paddingVertical:7,paddingHorizontal:3,gap:7,opacity:disabled?.45:1}}>
+     <Ionicons name="flag-outline" size={18} color={pink}/>
+     <Text style={{color:pink,fontSize:12,fontWeight:'700'}}>Ajouter un repère</Text>
+     {selectedRange?<Text style={{color:theme.muted,fontSize:10}}>
+       {musicStampMs(selectedRange.start)} – {musicStampMs(selectedRange.end)}
+     </Text>:null}
+   </Pressable>:null}
+   {open?<View style={{padding:11,borderWidth:1,borderColor:theme.border,
+     borderRadius:11,backgroundColor:theme.surface,gap:8}}>
+     <View style={{flexDirection:'row',justifyContent:'space-between',
+       alignItems:'center'}}>
+       <Text style={{fontSize:12,fontWeight:'700',color:theme.foreground}}>
+         {editing?'Modifier le repère':'Ajouter un repère'}
        </Text>
-       <Text numberOfLines={2} style={{fontSize:12,color:theme.foreground}}>{m.note}</Text>
-     </Pressable>
-     <Pressable disabled={disabled} accessibilityRole="button" accessibilityLabel="Supprimer la note"
-       onPress={()=>onChange(markers.filter(x=>x.id!==m.id))} style={{padding:8}}>
-       <Ionicons name="close-outline" size={17} color={theme.muted}/>
-     </Pressable>
-   </View>)}
-   {open?<View style={{padding:13,borderWidth:1,borderColor:theme.border,
-     borderRadius:13,backgroundColor:theme.surface,gap:11}}>
-
-     <View style={{flexDirection:'row',gap:12}}>
+       <Pressable onPress={()=>{setOpen(false);setError('');setPicking(null);}}
+         accessibilityRole="button" accessibilityLabel="Fermer l’éditeur de repère"
+         style={{padding:4}}>
+         <Ionicons name="close-outline" size={19} color={theme.muted}/>
+       </Pressable>
+     </View>
+     <View style={{flexDirection:'row',gap:10}}>
        <Pressable onPress={()=>setIntervalMode(false)} style={{padding:8,borderBottomWidth:!interval?2:0,borderColor:pink}}>
          <Text style={{color:!interval?pink:theme.muted,fontSize:12}}>Moment</Text>
        </Pressable>
@@ -100,7 +100,7 @@ export function MusicAudioMarkers({markers,duration,cursor,onChange,onSeek,
          <Text style={{color:interval?pink:theme.muted,fontSize:12}}>Intervalle</Text>
        </Pressable>
      </View>
-     <View style={{flexDirection:'row',gap:9,flexWrap:'wrap'}}>
+     <View style={{flexDirection:'row',gap:8,flexWrap:'wrap'}}>
        <View style={{flex:1,minWidth:110,gap:4}}>
          <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
            <Text style={{color:theme.muted,fontSize:11}}>Début (mm:ss.mmm)</Text>
@@ -127,11 +127,11 @@ export function MusicAudioMarkers({markers,duration,cursor,onChange,onSeek,
      {picking?<Text style={{fontSize:11,color:pink}}>
        Touche la forme d’onde pour définir {picking.field==='from'?'le début':'la fin'}.
      </Text>:null}
-     <TextInput multiline value={note} onChangeText={setNote} style={{...input,minHeight:56,textAlignVertical:'top'}}
+     <TextInput multiline value={note} onChangeText={setNote} style={{...input,minHeight:43,textAlignVertical:'top'}}
        placeholder="Note…" placeholderTextColor={theme.muted}/>
      {error?<Text style={{color:'#B34D61',fontSize:12}}>{error}</Text>:null}
      <View style={{flexDirection:'row',gap:13,justifyContent:'flex-end'}}>
-       <Pressable onPress={()=>setOpen(false)} style={{padding:11}}>
+       <Pressable onPress={()=>setOpen(false)} style={{padding:8}}>
          <Text style={{color:theme.muted,fontSize:12}}>Annuler</Text>
        </Pressable>
        <Pressable onPress={save} style={{backgroundColor:pink,borderRadius:9,padding:11,paddingHorizontal:17}}>
