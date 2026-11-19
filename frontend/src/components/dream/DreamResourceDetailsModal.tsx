@@ -11,7 +11,7 @@ import { DreamTalentInvitationPanel } from './DreamTalentInvitationPanel';
 /** Edits the exact saved wording of a dream need. No remote Tools publication is implied. */
 export function DreamResourceDetailsModal({
   resource, editable, onClose, onSave, onToggle, onRemove,
-  dreamServerId, onServerVerified,
+  dreamServerId, onServerVerified, inline = false,
 }: {
   resource?: DreamResource | null;
   editable: boolean;
@@ -19,6 +19,7 @@ export function DreamResourceDetailsModal({
   onSave: (resource: DreamResource) => void;
   onToggle: (resource: DreamResource) => void;
   onRemove: (resource: DreamResource) => void;
+  inline?: boolean;
   dreamServerId?: string;
   onServerVerified?: (resourceId: string, confirmed: boolean, acceptedPersonName?: string) => void;
 }) {
@@ -78,14 +79,9 @@ export function DreamResourceDetailsModal({
     borderWidth: 1, borderColor: theme.border, borderRadius: 10,
     backgroundColor: theme.background, paddingHorizontal: 13, paddingVertical: 12,
   } as const;
-  return (
-    <Modal visible transparent animationType="fade" onRequestClose={onClose}>
-      <View style={{ flex: 1, padding: 18, backgroundColor: 'rgba(0,0,0,0.53)',
-        alignItems: 'center', justifyContent: 'center' }}>
-        <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Fermer"
-          style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
+  const panel=(
         <ScrollView keyboardShouldPersistTaps="handled"
-          style={{ width: '100%', maxWidth: 430, maxHeight: '85%', backgroundColor: theme.surface, borderRadius: 16 }}
+          style={{ width: '100%', maxWidth: inline ? undefined : 430, maxHeight: inline ? 525 : '85%', backgroundColor: theme.surface, borderRadius: 16 }}
           contentContainerStyle={{ padding: 20, gap: 12 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
             <Text style={{ color: theme.foreground, fontSize: 20, fontWeight: '700' }}>
@@ -210,6 +206,21 @@ export function DreamResourceDetailsModal({
             </Text>}
           </> : null}
         </ScrollView>
+  );
+  if(inline)return <View style={{
+    width:'100%',maxWidth:690,alignSelf:'center',
+    backgroundColor:theme.surface,borderRadius:12,overflow:'hidden',
+    borderWidth:1,borderColor:theme.border,marginTop:12,
+  }}>{panel}</View>;
+  return (
+    <Modal visible transparent animationType="fade" onRequestClose={onClose}>
+      <View style={{flex:1,padding:18,
+        backgroundColor:'rgba(0,0,0,.53)',
+        alignItems:'center',justifyContent:'center'}}>
+        <Pressable onPress={onClose} accessibilityRole="button"
+          accessibilityLabel="Fermer"
+          style={{position:'absolute',top:0,left:0,right:0,bottom:0}}/>
+        {panel}
       </View>
     </Modal>
   );
