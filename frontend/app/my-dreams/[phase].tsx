@@ -1,6 +1,6 @@
 import { Text } from '@/i18n/LocalizedText';
 import React, { useState } from 'react';
-import { Image, Pressable, ScrollView, View } from 'react-native';
+import { Image, Pressable, ScrollView, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -11,7 +11,9 @@ import { DREAM_PHASES, DreamPhase, PHASE_COLORS } from '@/domain/publication';
 import { useDreams } from '@/domain/dreamRepository';
 import DreamQuickActions from '@/components/dream/DreamQuickActions';
 import type { DreamEntry } from '@/domain/dreamWorkspace';
+import {workspaceCanvas} from '@/theme/workspaceLayout';
 export default function Stage() {
+  const {width}=useWindowDimensions();
   const { phase } = useLocalSearchParams<{ phase: string }>();
   const current = DREAM_PHASES.find(x => x === phase) as DreamPhase | undefined;
   const { items } = useDreams();
@@ -19,7 +21,7 @@ export default function Stage() {
   const filtered = items.filter(x => x.phase === current);
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 18 }}>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{...workspaceCanvas(width),paddingTop:12,paddingBottom:65}}>
         <View
           style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
         >
