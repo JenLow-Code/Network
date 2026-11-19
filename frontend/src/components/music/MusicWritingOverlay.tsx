@@ -19,6 +19,7 @@ type Tab='lyrics'|'note'|'score'|'translation';
 type Props={
   project:MusicProject;
   mode:WritingMode;
+  startTab?:'lyrics'|'score';
   onModeChange:(mode:WritingMode)=>void;
   source?:MusicProjectFile|null;
   initialFile?:MusicProjectFile|null;
@@ -34,13 +35,13 @@ function isCaptureAudio(file:MusicProjectFile){
     /\.(wav|mp3|m4a|webm|ogg|aac)$/i.test(file.originalFilename||''));
 }
 /** One immersive workspace, four distinct tools, independent persistent drafts. */
-export function MusicWritingOverlay({project,mode,onModeChange,source,initialFile,
+export function MusicWritingOverlay({project,mode,startTab,onModeChange,source,initialFile,
   onSave,onSaveScore,onRequestTranslator,requestedLanguages,onClose}:Props){
   const theme=useAppTheme();
   const {width}=useWindowDimensions();
   const compact=width<650;
   const initialTab:Tab=initialFile?.musicEvents?'score':
-    (source||initialFile?.translationOfFileId)?'translation':mode;
+    (source||initialFile?.translationOfFileId)?'translation':(startTab||mode);
   const [tab,setTab]=useState<Tab>(initialTab);
   const [writerDirty,setWriterDirty]=useState(false);
   const [translationDirty,setTranslationDirty]=useState(false);
