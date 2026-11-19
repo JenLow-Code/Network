@@ -2,7 +2,7 @@ import React,{useEffect,useState} from 'react';
 import {Platform} from 'react-native';
 import {getDraftAttachment} from '@/domain/musicLocalStorage';
 import {musicStamp} from '@/domain/musicEditing';
-import {Pressable,Text,TextInput,View,useWindowDimensions} from 'react-native';
+import {Modal,Pressable,ScrollView,Text,TextInput,View,useWindowDimensions} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {useAppTheme} from '@/theme/AppTheme';
 import {MusicAudioCapture} from './MusicAudioCapture';
@@ -13,6 +13,7 @@ import {MusicSourceBank} from './MusicSourceBank';
 import {MusicLyricTimeline} from './MusicLyricTimeline';
 import {useMusicMetronome} from './useMusicMetronome';
 import {MusicSongTabs} from './MusicSongTabs';
+import {MusicSongMetadata} from './MusicSongMetadata';
 import {musicNextState,makeWorkingVersion,makeWorkingTrack,
   changeWorkingVersion,undoWorkingVersion,isMusicTrackCandidate} from '@/domain/musicNext';
 import {formatMusicDuration} from '@/domain/musicProjectSelectors';
@@ -89,6 +90,7 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
   const [pauseRequest,setPauseRequest]=useState(0);
   const [showSettings,setShowSettings]=useState(false);
   const [showSections,setShowSections]=useState(false);
+  const [infoOpen,setInfoOpen]=useState(false);
   const [sectionId,setSectionId]=useState('');
   const [tempo,setTempo]=useState('');
   const [meter,setMeter]=useState('');
