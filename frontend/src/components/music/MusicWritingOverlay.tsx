@@ -1,4 +1,4 @@
-import React,{useState} from 'react';
+import React,{useRef,useState} from 'react';
 import {
   KeyboardAvoidingView,Modal,Platform,Pressable,ScrollView,
   Text,View,useWindowDimensions,
@@ -44,6 +44,7 @@ export function MusicWritingOverlay({project,mode,startTab,onModeChange,source,i
   const initialTab:Tab=initialFile?.musicEvents?'score':
     (source||initialFile?.translationOfFileId)?'translation':(startTab||mode);
   const [tab,setTab]=useState<Tab>(initialTab);
+  const bodyScrollRef=useRef<ScrollView|null>(null);
   const [writerDirty,setWriterDirty]=useState(false);
   const [translationDirty,setTranslationDirty]=useState(false);
   const [scoreDirty,setScoreDirty]=useState(false);
@@ -86,6 +87,7 @@ export function MusicWritingOverlay({project,mode,startTab,onModeChange,source,i
   };
   const changeTab=(next:Tab)=>{
     if(initialFile&&next!==tab)return;
+    bodyScrollRef.current?.scrollTo({y:0,animated:false});
     setTab(next);
     if(next==='lyrics'||next==='note')onModeChange(next);
     setSourceWarning('');
@@ -207,7 +209,7 @@ export function MusicWritingOverlay({project,mode,startTab,onModeChange,source,i
           </ScrollView>:null}
           {sourceWarning?<Text style={{fontSize:12,color:'#AD3857'}}>{sourceWarning}</Text>:null}
         </View>:null}
-        <ScrollView keyboardShouldPersistTaps="handled"
+        <ScrollView ref={bodyScrollRef} keyboardShouldPersistTaps="handled"
           contentContainerStyle={{width:'100%',maxWidth:tab==='translation'?1100:860,
             alignSelf:'center',paddingHorizontal:compact?19:45,
             paddingTop:compact?14:25,paddingBottom:70,flexGrow:1}}>
