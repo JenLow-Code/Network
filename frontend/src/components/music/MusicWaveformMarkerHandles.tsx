@@ -37,7 +37,16 @@ export function MusicWaveformMarkerHandles({markers,width,duration,selectedId,on
     const delta=(event.clientX-d.clientX)*secondsPerPx;
     const m=d.original;
     let next:MusicAudioMarker=m;
-    if(d.mode==='move'){
+    if(d.mode==='end'&&m.endSeconds===undefined){
+      // Pull an existing point marker outward: it grows into an interval.
+      // A tap or tiny finger movement leaves it a point.
+      if(Math.abs(delta)<Math.max(.075,secondsPerPx*5))next=m;
+      else next=delta>=0?
+        {...m,endSeconds:precise(clamp(m.startSeconds+delta,
+          m.startSeconds+.001,duration))}:
+        {...m,startSeconds:precise(clamp(m.startSeconds+delta,0,m.startSeconds)),
+          endSeconds:m.startSeconds};
+    }else if(d.mode==='move'){
       const last=m.endSeconds??m.startSeconds;
       const shift=clamp(delta,-m.startSeconds,duration-last);
       next={...m,startSeconds:precise(m.startSeconds+shift),
@@ -136,8 +145,11 @@ export function MusicWaveformMarkerHandles({markers,width,duration,selectedId,on
               borderRadius:5,cursor:'grab',touchAction:'none',userSelect:'none',
               pointerEvents:'auto',zIndex:1}}
           ):null}
-        {handle(beginX,'start','Déplacer le début du repère '+m.note+
-          ' ('+musicStampMs(rendered.startSeconds)+')')}
+        {handle(beginX,m.endSeconds===undefined?'end':'start',
+          m.endSeconds===undefined?
+            'Tirer pour transformer le repère en intervalle : '+m.note:
+            'Déplacer le début du repère '+m.note+
+            ' ('+musicStampMs(rendered.startSeconds)+')')}
         {rendered.endSeconds!==undefined?
           handle(lastX,'end','Déplacer la fin du repère '+m.note+
             ' ('+musicStampMs(rendered.endSeconds)+')'):null}
