@@ -66,6 +66,14 @@ export function MusicArrangementTimeline({version,files,duration,position,onSeek
   const rangeHold=useRef<{pointerId:number;id:string;start:number;end:number;
     pressedX:number;active:boolean;timer:ReturnType<typeof setTimeout>|null}|null>(null);
   const [rangePreview,setRangePreview]=useState<{id:string;start:number;end:number}|null>(null);
+  const [heldRange,setHeldRange]=useState<{id:string;start:number;end:number}|null>(null);
+  const rememberRange=(id:string,a:number,b:number)=>{
+    if(b-a<.03)return;
+    const start=Math.round(a*1000)/1000,end=Math.round(b*1000)/1000;
+    setHeldRange({id,start,end});
+    onMarkTrackRange?.(id,start,end);
+  };
+  const clearRange=()=>setHeldRange(null);
   const labelWidth=compact?116:177;
   const viewport=Math.max(150,(panelWidth||Math.min(860,width-36))-labelWidth);
   const maxEnd=Math.max(duration,10,...version.tracks.map(t=>{
@@ -219,8 +227,7 @@ export function MusicArrangementTimeline({version,files,duration,position,onSeek
         rangeHold.current=null;
         if(hold?.active){
           const a=Math.min(hold.start,hold.end),b=Math.max(hold.start,hold.end);
-          if(b-a>=.03)onMarkTrackRange?.(t.id,Math.round(a*1000)/1000,
-            Math.round(b*1000)/1000);
+          rememberRange(t.id,a,b);
           setRangePreview(null);
         }else{
           const item=drag.current;
@@ -230,7 +237,7 @@ export function MusicArrangementTimeline({version,files,duration,position,onSeek
             const grip=Math.min(23,Math.max(11,w/3));
             const rect=e.currentTarget.getBoundingClientRect();
             const clickAt=info.offset+(e.clientX-rect.left+grip)/pixelsPerSecond;
-            onSeek(precise(clamp(clickAt,0,maxEnd)));
+            clearRange();onSeek(precise(clamp(clickAt,0,maxEnd)));
           }else stop(e.pointerId,true);
           if(item?.mode==='move'&&Object.keys(item.next).length===0)
             drag.current=null;
@@ -292,8 +299,7 @@ export function MusicArrangementTimeline({version,files,duration,position,onSeek
         rangeHold.current=null;
         if(hold?.active){
           const start=Math.min(hold.start,hold.end),end=Math.max(hold.start,hold.end);
-          if(end-start>=.03)onMarkTrackRange?.(t.id,
-            Math.round(start*1000)/1000,Math.round(end*1000)/1000);
+          rememberRange(t.id,start,end);
           setRangePreview(null);
           drag.current=null;
           return;
@@ -307,7 +313,7 @@ export function MusicArrangementTimeline({version,files,duration,position,onSeek
             const rect=e.currentTarget.getBoundingClientRect();
             const at=clipInfo(t,file).offset+
               (finger.clientX-rect.left+grip)/pixelsPerSecond;
-            onSeek(precise(clamp(at,0,maxEnd)));
+            clearRange();onSeek(precise(clamp(at,0,maxEnd)));
           }
           drag.current=null;setPreview(null);
         }else stop(-1,true);
@@ -390,8 +396,7 @@ export function MusicArrangementTimeline({version,files,duration,position,onSeek
           rangeHold.current=null;
           if(hold?.active){
             const a=Math.min(hold.start,hold.end),b=Math.max(hold.start,hold.end);
-            if(b-a>=.03)onMarkTrackRange?.(t.id,
-              Math.round(a*1000)/1000,Math.round(b*1000)/1000);
+            rememberRange(t.id,a,b);
             setRangePreview(null);
           }else stop(0,true);
         },
@@ -533,7 +538,8 @@ export function MusicArrangementTimeline({version,files,duration,position,onSeek
         contentContainerStyle={{width:contentWidth}}>
         <View style={{width:contentWidth,height:rulerHeight+rowHeight*rows}}>
           <Pressable accessibilityRole="adjustable" accessibilityLabel="Position dans la chanson"
-            onPress={e=>onSeek(precise(clamp(e.nativeEvent.locationX/pixelsPerSecond,0,maxEnd)))}
+            onPress={e=>{clearRange();onSeek(precise(
+              clamp(e.nativeEvent.locationX/pixelsPerSecond,0,maxEnd)));}}
             style={{height:rulerHeight,width:contentWidth}}>
             <View style={{position:'absolute',top:15,left:0,width:contentWidth,
               backgroundColor:theme.border,height:1}}/>
@@ -565,11 +571,15 @@ export function MusicArrangementTimeline({version,files,duration,position,onSeek
             const width=Math.max(0,(end-from)*pixelsPerSecond);
             const visibleWidth=Math.max(36,width);
             const dragging=preview?.id===t.id;
+            const activeRange=rangePreview?.id===t.id?rangePreview:
+              heldRange?.id===t.id?heldRange:null;
             return <View key={t.id} style={{height:rowHeight,
               borderTopWidth:1,borderColor:theme.border,
               justifyContent:'center'}}>
-              <Pressable onPress={e=>onSeek(precise(clamp(
-                e.nativeEvent.locationX/pixelsPerSecond,0,maxEnd)))}
+              <Pressable onPress={e=>{
+                clearRange();onSeek(precise(clamp(
+                  e.nativeEvent.locationX/pixelsPerSecond,0,maxEnd)));
+              }}
                 style={{position:'absolute',left:0,right:0,top:0,bottom:0}}/>
               {info.total>0&&end>from?<View style={{position:'absolute',
                 left,top:12,height:53,width:visibleWidth,
@@ -584,11 +594,11 @@ export function MusicArrangementTimeline({version,files,duration,position,onSeek
                     {musicStampMs(offset)}
                   </Text>
                 </View>:null}
-                {rangePreview?.id===t.id?<View pointerEvents="none"
+                {activeRange?<View pointerEvents="none"
                   style={{position:'absolute',
-                    left:Math.max(0,(Math.min(rangePreview.start,rangePreview.end)-from)*pixelsPerSecond),
+                    left:Math.max(0,(Math.min(activeRange.start,activeRange.end)-from)*pixelsPerSecond),
                     top:0,height:51,
-                    width:Math.max(1,(Math.abs(rangePreview.end-rangePreview.start))*pixelsPerSecond),
+                    width:Math.max(1,(Math.abs(activeRange.end-activeRange.start))*pixelsPerSecond),
                     backgroundColor:'rgba(203,36,92,.18)',
                     borderLeftWidth:2,borderRightWidth:2,borderColor:PINK,zIndex:3}}/>:null}
                 {(t.markers||[]).map(m=>{
