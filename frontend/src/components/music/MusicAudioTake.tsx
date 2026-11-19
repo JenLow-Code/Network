@@ -159,6 +159,16 @@ export function MusicAudioTake({file,compact=false,editable=false,onUpdate,onOpe
           onEnded:()=>setPlaying(false),
           style:{display:'none'}
         }):null}
+        {editable&&onUpdate?<Pressable
+          onPress={()=>{audio.current?.pause();setPlaying(false);setEditing(true);}}
+          accessibilityRole="button" accessibilityLabel="Corriger l’enregistrement"
+          style={{alignSelf:'flex-end',minHeight:37,flexDirection:'row',gap:7,
+            alignItems:'center',paddingHorizontal:2}}>
+          <Ionicons name="cut-outline" size={18} color={PINK}/>
+          <Text style={{fontSize:12,color:PINK,fontWeight:'600'}}>
+            Corriger l’enregistrement
+          </Text>
+        </Pressable>:null}
         <MusicWaveformEditor file={blob} duration={duration} cursor={cursor}
           onSeek={seek} zoom={zoom} onZoom={setZoom}
           onTogglePlayback={toggle} playing={playing} markers={file.markers||[]}
@@ -174,14 +184,7 @@ export function MusicAudioTake({file,compact=false,editable=false,onUpdate,onOpe
           markers={file.markers||[]} duration={duration} cursor={cursor}
           onChange={markers=>onUpdate({markers})} onSeek={seek}
           editRequest={editMarkerRequest} selectedRange={selectedRange}/>:null}
-        {editable&&onUpdate?<>
-          <Pressable onPress={()=>{audio.current?.pause();setPlaying(false);setEditing(true);}}
-            accessibilityRole="button" style={{alignSelf:'flex-start',minHeight:38,
-              flexDirection:'row',gap:7,alignItems:'center'}}>
-            <Ionicons name="cut-outline" size={17} color={PINK}/>
-            <Text style={{fontSize:12,color:PINK,fontWeight:'600'}}>Corriger l’enregistrement</Text>
-          </Pressable>
-        </>:null}
+
       </>}
   </View>;
 }
