@@ -208,7 +208,7 @@ export default function Discover() {
           layout="masonry"
           personalizedTalents={talentsLoaded ? savedTalents : []}
           contentWidth={Math.max(0,
-            Math.min(ws.maxWidth??width,desktop?width-212:width)-30)}
+            Math.min(ws.maxWidth??width,desktop?width-212:width)-2*ws.gutter)}
           items={(filter === 'Talents'
             ? personPublications
             : filter === 'Tout'
