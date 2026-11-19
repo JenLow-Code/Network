@@ -356,6 +356,7 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
             </Pressable>
           </View>
           <MusicAudioMarkers markers={track.markers||[]}
+             sourceFiles={project.files} sections={project.sections}
             cursor={rangeRequest.start}
             duration={Math.max(source?.durationSeconds||0,rangeRequest.end)}
             rangeRequest={rangeRequest}
