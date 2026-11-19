@@ -6,6 +6,23 @@
 export const DESKTOP_WORKSPACE_BREAKPOINT=1100;
 export const TABLET_WORKSPACE_BREAKPOINT=700;
 export const DESKTOP_WORKSPACE_MAX_WIDTH=1160;
+/** Shared vertical rhythm for page titles beneath the global PageHeader. */
+export const WORKSPACE_TITLE_GAP=16;
+
+/**
+ * The same page canvas for every top-level screen. Width is measured within
+ * the workspace, not against the floating sidebar or an individual component.
+ * Inner reading columns and dialogs may still have narrower widths.
+ */
+export function workspaceCanvas(viewportWidth:number){
+  const {gutter,maxWidth}=workspaceLayout(viewportWidth);
+  return {
+    width:'100%' as const,
+    maxWidth,
+    alignSelf:'center' as const,
+    paddingHorizontal:gutter,
+  };
+}
 
 export function workspaceLayout(viewportWidth:number){
   // Even a landscape tablet wider than 1100px uses the full-width touch layout.
