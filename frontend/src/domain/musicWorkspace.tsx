@@ -104,6 +104,11 @@ export type MusicLyricReference = {
   end: number;
   text: string;
 };
+/** Editorial comment pinned to an exact selected lyric range, private in Capture. */
+export type MusicLyricComment = {
+  id:string;start:number;end:number;text:string;
+  comment:string;createdAt:string;
+};
 export type MusicLyricSegment = { id: string; text: string; sectionIds: string[] };
 export type MusicFileRegion = { id: string; sectionId: string; startSeconds: number; endSeconds: number };
 export type MusicProjectFile = {
@@ -120,6 +125,7 @@ export type MusicProjectFile = {
   regions?: MusicFileRegion[];
   markers?: MusicAudioMarker[];
   lyricReferences?: MusicLyricReference[];
+  lyricComments?: MusicLyricComment[];
   originalFilename?: string;
   mimeType?: string;
   conversionWarning?: string;
