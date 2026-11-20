@@ -236,7 +236,8 @@ function releaseSound(source:AudioScheduledSourceNode){
 }
 function playSound(ctx:AudioContext,pitch:number,drum:boolean,level:number,
   tone:string,sample:AudioBuffer|null,seconds?:number,
-  startDelay=0,sampleRootMidi=60,sampleRootHz?:number):AudioScheduledSourceNode{
+  startDelay=0,sampleRootMidi=60,sampleRootHz?:number,
+  drumSample?:AudioBuffer|null):AudioScheduledSourceNode{
   const now=ctx.currentTime+Math.max(0,startDelay);
   if(!drum&&tone==='Échantillon'&&!sample)
     throw Error('L’échantillon ne s’est pas chargé. Réimporte-le ou attends la fin du chargement.');
@@ -252,6 +253,26 @@ function playSound(ctx:AudioContext,pitch:number,drum:boolean,level:number,
   gain.gain.setValueAtTime(sourceVolume,Math.max(now+attack,end-release));
   gain.gain.exponentialRampToValueAtTime(.0001,end);
   gain.connect(ctx.destination);
+  if(drum&&drumSample){
+    const region=sampleAudioRegion(drumSample);
+    if(region.peak<.002)throw Error('L’échantillon de percussion est silencieux.');
+    const source=ctx.createBufferSource();
+    source.buffer=drumSample;
+    source.playbackRate.value=1; // Drum hits are one-shots, not pitch-shifted.
+    const length=Math.min(12,Math.max(.015,drumSample.duration-region.offset));
+    const boost=Math.min(2.2,.6/Math.max(.05,region.peak));
+    const amp=sourceVolume*boost;
+    gain.gain.cancelScheduledValues(now);
+    gain.gain.setValueAtTime(.0001,now);
+    gain.gain.linearRampToValueAtTime(amp,now+.004);
+    gain.gain.setValueAtTime(amp,Math.max(now+.004,now+length-.05));
+    gain.gain.exponentialRampToValueAtTime(.0001,now+length);
+    source.connect(gain);
+    source.start(now,Math.min(region.offset,Math.max(0,drumSample.duration-.015)));
+    source.stop(now+length);
+    voiceGains.set(source,{gain,ctx});
+    return source;
+  }
   if(!drum&&tone==='Échantillon'&&sample){
     const source=ctx.createBufferSource();
     source.buffer=sample;
@@ -427,12 +448,26 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
   const nextBeat=()=>events.reduce((max,e)=>Math.max(max,e.startBeats+e.lengthBeats),cursor);
   const patchEvent=(id:string,changes:Partial<MusicNotationEvent>)=>
     setEvents(old=>old.map(e=>e.id===id?{...e,...changes}:e));
+  const drumBuffer=(midi:number)=>{
+    const assigned=drumSamples[String(midi)];
+    if(!assigned)return null;
+    const cached=drumBuffers.current.get(midi);
+    if(cached?.id!==assigned.localFileId)
+      throw Error('Le son '+assigned.name+' n’est pas chargé. Réimporte-le si nécessaire.');
+    return cached.buffer;
+  };
   const trigger=(instrument:Instrument,midi:number)=>{
     if(instrument==='piano'&&liveHeldRef.current.has(instrument+':'+midi))return;
     // An unavailable uploaded sample must not silently record an unheard note.
     if(instrument==='piano'&&tone==='Échantillon'&&!sampleRef.current){
       setSampleError('Le son importé n’est pas chargé. Réimporte-le ou attends son chargement.');
       return;
+    }
+    if(instrument==='drum'&&drumSamples[String(midi)]){
+      try{drumBuffer(midi);}catch(e){
+        setDrumError(e instanceof Error?e.message:'Percussion indisponible.');
+        return;
+      }
     }
     const playedAt=clock();
     setMessage('');setLast(instrument==='piano'?musicNoteName(midi):
@@ -444,7 +479,8 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
         if(ctx.state==='suspended')void ctx.resume();
         const source=playSound(ctx,midi,instrument==='drum',volume[instrument],tone,
           sampleRef.current,instrument==='piano'?12:undefined,
-          0,sampleRootMidi,sampleRootHz??undefined);
+          0,sampleRootMidi,sampleRootHz??undefined,
+          instrument==='drum'?drumBuffer(midi):undefined);
         if(instrument==='piano')
           liveSourcesRef.current.set(instrument+':'+midi,source);
       }catch{setMessage('Aperçu sonore indisponible sur cet appareil.');}
@@ -565,7 +601,8 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
       previewSources.current=notes.map(event=>playSound(
         ctx,event.midi,event.instrument==='drum',volume[event.instrument],
         tone,sampleRef.current,event.lengthBeats*60/bpm,
-        (event.startBeats-first)*60/bpm,sampleRootMidi,sampleRootHz??undefined));
+        (event.startBeats-first)*60/bpm,sampleRootMidi,sampleRootHz??undefined,
+        event.instrument==='drum'?drumBuffer(event.midi):undefined));
       setPreviewPlaying(true);setPreviewBeat(first);
       previewTick.current=setInterval(()=>{
         setPreviewBeat(Math.min(last,first+
@@ -612,8 +649,10 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
       if(ctx.state==='suspended')void ctx.resume();
       playSound(ctx,event.midi,event.instrument==='drum',volume[event.instrument],
         tone,sampleRef.current,event.lengthBeats*60/bpm,0,sampleRootMidi,
-        sampleRootHz??undefined);
-    }catch{setMessage('Aperçu sonore indisponible sur cet appareil.');}
+        sampleRootHz??undefined,
+        event.instrument==='drum'?drumBuffer(event.midi):undefined);
+    }catch(e){setMessage(e instanceof Error?e.message:
+      'Aperçu sonore indisponible sur cet appareil.');}
   };
   const testSample=(midi:number)=>{
     if(Platform.OS!=='web'||!sampleRef.current){
