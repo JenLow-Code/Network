@@ -32,6 +32,8 @@ async function offlineWav(events:MusicNotationEvent[],bpm:number,
     throw new Error('Audio trop volumineux pour un rendu local.');
   const ctx=new OfflineAudioContext(2,frames,RATE);
   let sample:AudioBuffer|null=null;
+  if(tone==='Échantillon'&&!sampleId)
+    throw new Error('Le son personnalisé manque : ouvre la partition et choisis un échantillon.');
   if(tone==='Échantillon'&&sampleId){
     const file=await getDraftAttachment(sampleId);
     if(!file)throw new Error('Échantillon audio manquant sur cet appareil.');
