@@ -25,6 +25,8 @@ jobs:
         run: npm run verify:layout
       - name: Verify MIDI import-export roundtrip
         run: npm run verify:midi
+      - name: Verify lyric annotations and comments
+        run: npm run verify:lyrics
       - run: npm run typecheck
       - name: Validate Expo web export
         run: npx expo export --platform web
