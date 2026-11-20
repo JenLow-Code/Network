@@ -51,7 +51,7 @@ export default function Discover() {
   const [shuffleSeed] = useState(() => Math.floor(Math.random() * 0x100000000));
 
   const [filter, setFilter] = useState<(typeof filters)[number]>(
-    params.filter === 'Talents' ? 'Talents' : params.filter === 'Pour moi' ? 'Pour moi' : 'Tout',
+    params.filter === 'Musique' ? 'Musique' : params.filter === 'Talents' ? 'Talents' : params.filter === 'Pour moi' ? 'Pour moi' : 'Tout',
   );
   const [query, setQuery] = useState('');
   const { email } = useApp();
