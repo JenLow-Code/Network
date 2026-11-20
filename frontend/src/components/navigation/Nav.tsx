@@ -47,7 +47,7 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
     DREAM_PHASES.some(value=>value===requestedPhase)?
       requestedPhase as DreamPhase:currentDream?.phase||'Rêve';
   const currentPhaseIndex=DREAM_PHASES.indexOf(currentDream?.phase||'Rêve');
-  const songId=segments[0]==='music-workspace'?segments[1]:
+  const songId=['music-workspace','music-lyrics','music-composer'].includes(segments[0])?segments[1]:
     segments[0]==='music'&&segments[1]&&segments[1]!=='new'?segments[1]:undefined;
   const currentSong=songId?musicProjects.find(song=>song.id===decodeURIComponent(songId)):undefined;
   const songState=currentSong?musicNextState(currentSong):null;
@@ -287,16 +287,30 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
                 {!collapsed&&songTreeOpen?<View style={{marginLeft:10,
                   paddingLeft:9,borderLeftWidth:1,borderLeftColor:theme.border,
                   gap:2,marginBottom:4}}>
+                  <Pressable accessibilityRole="button"
+                    accessibilityLabel="Ouvrir Capturer"
+                    accessibilityState={{selected:params.tab==='capture'&&path.startsWith('/music-workspace/')}}
+                    onPress={()=>openMusicArea('capture')}
+                    style={{minHeight:36,flexDirection:'row',alignItems:'center',
+                      gap:9,paddingHorizontal:7,borderRadius:7}}>
+                    <Ionicons name="mic-outline" size={16} color={theme.foreground}/>
+                    <Text style={{fontSize:11,fontWeight:'700',color:theme.foreground}}>Capturer</Text>
+                  </Pressable>
                   {([
-                    {key:'write',title:'Écrire',icon:'create-outline'},
-                    {key:'upload',title:'Importer',icon:'cloud-upload-outline'},
-                    {key:'play',title:'Jouer',icon:'musical-notes-outline'},
-                    {key:'record',title:'Enregistrer',icon:'mic-outline'},
+                    {key:'thought',title:'Pensées · notes et paroles',icon:'chatbox-ellipses-outline'},
+                    {key:'record',title:'Son · enregistrer',icon:'mic-circle-outline'},
+                    {key:'doc',title:'Document · importer',icon:'document-text-outline'},
+                    {key:'idea',title:'Idée · clavier et pads',icon:'bulb-outline'},
                   ] as const).map(action=>{
-                    const active=path.startsWith('/music-workspace/')&&
-                      params.intent===action.key;
+                    const active=action.key==='thought'?path.startsWith('/music-lyrics/'):
+                      action.key==='idea'?path.startsWith('/music-composer/'):
+                      path.startsWith('/music-workspace/')&&params.intent===(action.key==='doc'?'upload':'record');
                     return <Pressable key={action.key}
-                      onPress={()=>openMusicArea('capture',action.key)}
+                      onPress={()=>{
+                        if(action.key==='thought')router.push({pathname:'/music-lyrics/[id]',params:{id:currentSong.id}});
+                        else if(action.key==='idea')router.push({pathname:'/music-composer/[id]',params:{id:currentSong.id}});
+                        else openMusicArea('capture',action.key==='doc'?'upload':'record');
+                      }}
                       accessibilityRole="button" accessibilityLabel={action.title}
                       accessibilityState={{selected:active}}
                       style={{minHeight:34,flexDirection:'row',alignItems:'center',gap:9,
