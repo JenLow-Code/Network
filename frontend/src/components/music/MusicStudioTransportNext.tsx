@@ -21,6 +21,7 @@ type Props={
   onPositionChange?:(position:number)=>void;
   onTrackChange?:(id:string,change:Partial<WorkingMusicTrack>)=>void;
   onSelectTrack?:(id:string)=>void;
+  selectedTrackId?:string;
   onMarkTrackRange?:(trackId:string,startSeconds:number,endSeconds:number)=>void;
   onRenameTrack?:(trackId:string,title:string)=>void;
   onEmojiTrack?:(trackId:string,emoji:string)=>void;
@@ -41,7 +42,7 @@ export function versionLength(version:WorkingMusicVersion,files:MusicProjectFile
   }));
 }
 export function MusicStudioTransport({version,files,onPositionChange,onTrackChange,
-  onSelectTrack,onMarkTrackRange,onRenameTrack,onEmojiTrack,onRemoveTrack,onDropSource,
+  onSelectTrack,selectedTrackId,onMarkTrackRange,onRenameTrack,onEmojiTrack,onRemoveTrack,onDropSource,
   playbackRequest,pauseRequest,seekRequest,sections=[]}:Props){
   const theme=useAppTheme();
   const engine=useRef<Engine|null>(null);
@@ -219,6 +220,7 @@ export function MusicStudioTransport({version,files,onPositionChange,onTrackChan
     <MusicArrangementTimeline version={version} files={files} sections={sections}
       duration={duration} position={position} onSeek={seek}
       onChangeTrack={onTrackChange} onSelectTrack={onSelectTrack}
+      selectedTrackId={selectedTrackId}
       onMarkTrackRange={onMarkTrackRange}
       onRenameTrack={onRenameTrack} onEmojiTrack={onEmojiTrack}
       onRemoveTrack={onRemoveTrack}
