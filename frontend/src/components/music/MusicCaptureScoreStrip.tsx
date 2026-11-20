@@ -9,7 +9,7 @@ import {MusicMidiPreview} from './MusicMidiPreview';
 const PINK='#CB245C';
 const STEP=34;
 const LEFT=24;
-const STAFF_HEIGHT=72;
+const BASE_STAFF_HEIGHT=72;
 const drumHeight=(pitch:number)=>pitch===36?52:pitch===38||pitch===39?35:
   pitch===42||pitch===46?18:26;
 const pianoHeight=(pitch:number,clef:'treble'|'bass')=>{
@@ -27,10 +27,21 @@ function MiniStaff({events,kind,clef,playheadBeats}:{
 }){
   const theme=useAppTheme();
   const scroll=useRef<React.ElementRef<typeof ScrollView>>(null);
+  const [availableWidth,setAvailableWidth]=useState(0);
   const notes=events.filter(event=>event.instrument===kind)
     .sort((a,b)=>a.startBeats-b.startBeats);
   const end=Math.max(8,...notes.map(n=>n.startBeats+n.lengthBeats));
-  const width=Math.max(520,LEFT+end*STEP+40);
+  // Use the full waveform-like row width, but scroll horizontally for long scores.
+  const width=Math.max(availableWidth,LEFT+end*STEP+40);
+  const rawYs=notes.map(n=>kind==='piano'?
+    pianoHeight(n.midi,clef):drumHeight(n.midi));
+  const highestStem=Math.min(12,...rawYs.map((y,i)=>
+    notes[i].lengthBeats<3.5?y-25:y-6));
+  // Extend the staff vertically for high and low ledger notes, preserving
+  // all stems/flags rather than clipping the upper end of the score.
+  const topInset=Math.max(8,12-highestStem);
+  const lowest=Math.max(52,...rawYs);
+  const staffHeight=Math.max(BASE_STAFF_HEIGHT,topInset+lowest+16);
   useEffect(()=>{
     if(playheadBeats===null)return;
     scroll.current?.scrollTo({
@@ -38,14 +49,17 @@ function MiniStaff({events,kind,clef,playheadBeats}:{
     });
   },[playheadBeats]);
   if(!notes.length)return null;
-  const y=(n:MusicNotationEvent)=>kind==='piano'?
-    pianoHeight(n.midi,clef):drumHeight(n.midi);
-  return <ScrollView ref={scroll} horizontal showsHorizontalScrollIndicator={false}
-    accessibilityLabel={kind==='piano'?'Extrait de portée musicale':'Extrait de percussion'}
-    style={{height:STAFF_HEIGHT,flexGrow:0}}>
-    <Svg width={width} height={STAFF_HEIGHT} viewBox={`0 0 ${width} ${STAFF_HEIGHT}`}>
+  const y=(n:MusicNotationEvent)=>topInset+(kind==='piano'?
+    pianoHeight(n.midi,clef):drumHeight(n.midi));
+  return <View onLayout={event=>
+      setAvailableWidth(Math.ceil(event.nativeEvent.layout.width))}
+    style={{width:'100%',minWidth:0,height:staffHeight}}>
+    <ScrollView ref={scroll} horizontal showsHorizontalScrollIndicator={false}
+      accessibilityLabel={kind==='piano'?'Extrait de portée musicale':'Extrait de percussion'}
+      style={{height:staffHeight,flexGrow:0,width:'100%'}}>
+    <Svg width={width} height={staffHeight} viewBox={`0 0 ${width} ${staffHeight}`}>
       {[12,22,32,42,52].map(line=><Line key={line}
-        x1={4} x2={width-3} y1={line} y2={line}
+        x1={4} x2={width-3} y1={line+topInset} y2={line+topInset}
         stroke={theme.foreground} opacity={.43} strokeWidth={.75}/>)}
       {notes.map(n=>{
         const x=LEFT+n.startBeats*STEP;
@@ -54,7 +68,11 @@ function MiniStaff({events,kind,clef,playheadBeats}:{
         const ink=played?PINK:theme.foreground;
         const small=kind==='drum';
         return <React.Fragment key={n.id}>
-          {pos>57?<Line x1={x-11} x2={x+11} y1={62} y2={62}
+          {pos>topInset+57?<Line x1={x-11} x2={x+11}
+            y1={topInset+62} y2={topInset+62}
+            stroke={ink} strokeWidth={.8}/>:null}
+          {pos<topInset+7?<Line x1={x-11} x2={x+11}
+            y1={topInset+2} y2={topInset+2}
             stroke={ink} strokeWidth={.8}/>:null}
           {small?<>
             <Line x1={x-5} x2={x+5} y1={pos-5} y2={pos+5}
@@ -72,9 +90,10 @@ function MiniStaff({events,kind,clef,playheadBeats}:{
       })}
       {playheadBeats!==null?<Line
         x1={LEFT+playheadBeats*STEP} x2={LEFT+playheadBeats*STEP}
-        y1={6} y2={59} stroke={PINK} opacity={.4} strokeWidth={1}/>:null}
+        y1={topInset+6} y2={topInset+59} stroke={PINK} opacity={.4} strokeWidth={1}/>:null}
     </Svg>
-  </ScrollView>;
+    </ScrollView>
+  </View>;
 }
 /** Capture overview: no paper panel, no empty instrumental staves and no
  * extra edit button. Only the row's single chevron opens the editor. */
