@@ -7,12 +7,13 @@ import {DRUM_PADS,downloadMusicMidi,downloadMusicScorePdf,musicNoteName,liveNote
 import type {MusicNotationEvent} from '@/domain/musicNotation';
 import type {MusicProjectFile} from '@/domain/musicWorkspace';
 import {saveDraftAudio,getDraftAudio} from '@/domain/musicLocalStorage';
+import {analyzeSamplePitch,midiFrequency,samplePlaybackRate,sampleRegion} from '@/domain/musicSampleInstrument';
 
 const PINK='#CB245C';
 type Instrument='piano'|'drum';
 type ScoreResult={title:string;events:MusicNotationEvent[];bpm:number;
   tone:string;sampleLocalId?:string;sampleName?:string;
-  sampleRootMidi?:number;clef?:'treble'|'bass'};
+  sampleRootMidi?:number;sampleRootHz?:number;clef?:'treble'|'bass'};
 type Props={
   initialFile?:MusicProjectFile|null;
   onSave:(value:ScoreResult)=>void;
@@ -326,6 +327,12 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
   const [sampleId,setSampleId]=useState(initialFile?.instrumentSampleLocalId||'');
   const [sampleRootMidi,setSampleRootMidi]=useState(
     initialFile?.instrumentSampleRootMidi??60);
+  const [sampleRootHz,setSampleRootHz]=useState<number|null>(
+    initialFile?.instrumentSampleRootHz??null);
+  const [sampleConfidence,setSampleConfidence]=useState<number|null>(null);
+  const [sampleLoading,setSampleLoading]=useState(false);
+  const [sampleReady,setSampleReady]=useState(false);
+  const [sampleError,setSampleError]=useState('');
   const sampleRef=useRef<AudioBuffer|null>(null);
   const [volume,setVolume]=useState({piano:.8,drum:.7});
   const [last,setLast]=useState('');
@@ -341,6 +348,7 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
     tone!==(initialFile?.instrumentTone||'Piano doux')||
     sampleId!==(initialFile?.instrumentSampleLocalId||'')||
     sampleRootMidi!==(initialFile?.instrumentSampleRootMidi??60)||
+    (sampleRootHz??null)!==(initialFile?.instrumentSampleRootHz??null)||
     clef!==(initialFile?.scoreClef||'treble');
   useEffect(()=>onDirtyChange(dirty),[dirty,onDirtyChange]);
   useEffect(()=>()=>{void audioRef.current?.close();},[]);
@@ -348,12 +356,15 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
     const id=initialFile?.instrumentSampleLocalId;
     if(!id||Platform.OS!=='web')return;
     let live=true;
+    setSampleReady(false);setSampleLoading(true);
     void getDraftAudio(id).then(async blob=>{
-      if(!blob)return;
+      if(!blob)throw Error('Échantillon introuvable sur cet appareil.');
       if(!audioRef.current)audioRef.current=new AudioContext();
       const decoded=await audioRef.current.decodeAudioData(await blob.arrayBuffer());
-      if(live)sampleRef.current=decoded;
-    }).catch(()=>{if(live)setMessage('Échantillon enregistré indisponible sur cet appareil.');});
+      if(live){sampleRef.current=decoded;setSampleReady(true);setSampleError('');}
+    }).catch(e=>{
+      if(live)setSampleError(e instanceof Error?e.message:'Échantillon indisponible.');
+    }).finally(()=>{if(live)setSampleLoading(false);});
     return()=>{live=false;};
   },[initialFile?.instrumentSampleLocalId]);
   const selected=events.find(e=>e.id===selectedId&&e.instrument===part);
