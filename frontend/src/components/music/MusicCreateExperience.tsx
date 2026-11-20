@@ -85,6 +85,9 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
   const [confirmClose,setConfirmClose]=useState(false);
   const [confirmDelete,setConfirmDelete]=useState(false);
   const [editTrack,setEditTrack]=useState('');
+  const [selectedTrackId,setSelectedTrackId]=useState('');
+  const [copiedTrack,setCopiedTrack]=useState<WorkingMusicTrack|null>(null);
+  const [pasteCount,setPasteCount]=useState(0);
   const [showTracks,setShowTracks]=useState(!compact);
   const [rangeRequest,setRangeRequest]=useState<{
     trackId:string;start:number;end:number;nonce:number
@@ -198,6 +201,33 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
       tracks:version.tracks.map(track=>({...track,id:newMusicId()}))};
     patch({musicNext:{...state,versions:[...versions,next],activeVersionId:next.id}});
     setVersionMenu(false);setVersionExpanded(true);setShowSettings(false);
+  };
+  const copySelectedTrack=()=>{
+    const track=version?.tracks.find(item=>item.id===selectedTrackId);
+    if(!track)return;
+    setCopiedTrack({...track,markers:track.markers?.map(m=>({...m}))});
+    setPasteCount(0);setError('');
+  };
+  const pasteTrack=()=>{
+    if(!version||!copiedTrack)return;
+    const source=project.files.find(f=>f.id===copiedTrack.sourceFileId);
+    if(!source){setError('La source de la piste copiée est introuvable.');return;}
+    const total=Number.isFinite(source.durationSeconds)?source.durationSeconds||0:0;
+    const start=Number.isFinite(copiedTrack.trimStartSeconds)?
+      Math.max(0,copiedTrack.trimStartSeconds||0):0;
+    const end=Number.isFinite(copiedTrack.trimEndSeconds)?
+      Math.max(start,copiedTrack.trimEndSeconds||0):total;
+    const length=Math.max(.1,end-start);
+    const origin=Number.isFinite(copiedTrack.offsetSeconds)?
+      Math.max(0,copiedTrack.offsetSeconds):0;
+    const pasted:WorkingMusicTrack={
+      ...copiedTrack,id:newMusicId(),
+      title:copiedTrack.title+' · copie '+(pasteCount+1),
+      offsetSeconds:Math.round((origin+length*(pasteCount+1))*1000)/1000,
+      markers:copiedTrack.markers?.map(m=>({...m,id:newMusicId()})),
+    };
+    editTracks([...version.tracks,pasted]);
+    setSelectedTrackId(pasted.id);setPasteCount(n=>n+1);setError('');
   };
   const saveTake=(id:string,filename:string,durationSeconds?:number,
     startAt?:number,markers?:MusicAudioMarker[],name?:string)=>{
@@ -361,9 +391,7 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
             color:theme.foreground}}>{version.title}</Text>
           <Ionicons name={versionExpanded?'chevron-up':'chevron-down'} color={PINK} size={19}/>
         </Pressable>
-        {tiny('document-text-outline','Plan du morceau et informations',()=>{
-          setInfoOpen(true);setShowSections(true);
-        })}
+        {tiny('copy-outline','Dupliquer cette version',copyVersion)}
         {tiny('ellipsis-horizontal-outline','Gérer les versions',()=>setVersionMenu(open=>!open),versionMenu)}
         {version?tiny('arrow-undo-outline','Annuler la dernière modification',()=>{
           patch({musicNext:undoWorkingVersion(state,version.id)});
@@ -374,12 +402,14 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
           onPress={()=>{patch({musicNext:{...state,activeVersionId:v.id}});
             setVersionMenu(false);setVersionExpanded(true);}}
           style={{flexDirection:'row',alignItems:'center',gap:10,minHeight:39}}>
-          <Ionicons name={v.id===version?.id?'checkmark-circle':'ellipse-outline'}
-            color={v.id===version?.id?PINK:theme.muted} size={20}/>
+          <View style={{width:3,height:21,borderRadius:3,
+            backgroundColor:v.id===version?.id?PINK:'transparent'}}/>
           <Text style={{color:theme.foreground,fontSize:13,flex:1}}>{v.title}</Text>
           <Text style={{color:theme.muted,fontSize:11}}>{v.tracks.length} pistes</Text>
         </Pressable>)}
-        {version?menuChoice('Dupliquer cette version','git-branch-outline',copyVersion):null}
+        {version?menuChoice('Structure et informations','document-text-outline',()=>{
+          setInfoOpen(true);setShowSections(true);setVersionMenu(false);
+        }):null}
         {menuChoice('Nouvelle version depuis Capturer','add-outline',()=>{
           setPickMode('start');setVersionMenu(false);
         })}
@@ -412,15 +442,31 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
           </View>)}
         </View>:null}
       </View>:null}
-      {!versionExpanded?<View style={{paddingVertical:4,gap:5}}>
-        <Text style={{fontSize:12,color:theme.muted}}>
+      {!versionExpanded?<View style={{
+        paddingVertical:9,paddingHorizontal:11,gap:8,borderRadius:12,
+        backgroundColor:theme.dark?'rgba(255,255,255,.045)':'rgba(36,38,37,.035)'}}>
+        <Text numberOfLines={1} style={{fontSize:11,color:theme.muted}}>
           {version.tracks.length} piste{version.tracks.length>1?'s':''}
-          {' · '+formatMusicDuration(versionLength(version,project.files))}
-          {' · '+effectiveBpm+' BPM'}
+          {'  ·  '+formatMusicDuration(versionLength(version,project.files))}
+          {'  ·  '+effectiveBpm+' BPM'}
+          {version.key?'  ·  '+version.key:''}
         </Text>
-        <Text numberOfLines={2} style={{fontSize:11,color:theme.muted}}>
-          {version.tracks.map(track=>track.title).join(' · ')}
-        </Text>
+        <View style={{flexDirection:'row',alignItems:'center',gap:5,flexWrap:'wrap'}}>
+          {version.tracks.slice(0,4).map(track=><View key={track.id}
+            style={{paddingHorizontal:8,paddingVertical:5,borderRadius:7,
+              borderWidth:1,borderColor:theme.border}}>
+            <Text numberOfLines={1} style={{fontSize:10,color:theme.foreground,maxWidth:135}}>
+              {track.emoji||'♫'} {track.title}
+            </Text>
+          </View>)}
+          {version.tracks.length>4?<Text style={{fontSize:10,color:theme.muted}}>
+            +{version.tracks.length-4}
+          </Text>:null}
+        </View>
+        {project.sections.length?<Text numberOfLines={1}
+          style={{fontSize:10,color:theme.muted}}>
+          {project.sections.map(part=>part.title).join('  ·  ')}
+        </Text>:null}
       </View>:null}
     </View>:null}
     {!version?<View style={{alignSelf:'flex-start',paddingTop:compact?4:10}}>
