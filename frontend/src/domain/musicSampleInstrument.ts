@@ -111,17 +111,26 @@ export function analyzeSamplePitch(
     confidence:Math.round(confidence*100)/100};
 }
 
+/** Cache sample onset and sustain boundaries by decoded audio buffer.
+ * Computing them on every drum hit can introduce noticeable latency.
+ */
+const regionCache=new WeakMap<object,{
+  offset:number;loopStart:number;loopEnd:number;peak:number;
+}>();
 /** Use the loudest channel to locate onset and loop points. A mono mic can
  * be routed to the right channel only; the keyboard must not call it silent. */
 export function sampleAudioRegion(buffer:{
   numberOfChannels:number;sampleRate:number;
   getChannelData:(channel:number)=>Float32Array;
 }):{offset:number;loopStart:number;loopEnd:number;peak:number}{
+  const cached=regionCache.get(buffer);
+  if(cached)return cached;
   let region=sampleRegion(buffer.getChannelData(0),buffer.sampleRate);
   for(let channel=1;channel<buffer.numberOfChannels;channel++){
     const candidate=sampleRegion(buffer.getChannelData(channel),buffer.sampleRate);
     if(candidate.peak>region.peak)region=candidate;
   }
+  regionCache.set(buffer,region);
   return region;
 }
 
