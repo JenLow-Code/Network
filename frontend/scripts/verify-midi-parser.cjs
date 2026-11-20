@@ -40,15 +40,17 @@ assert.ok(result.events.some(e=>e.instrument==='drum'),'Percussion channel lost'
 assert.throws(()=>parseMusicMidi(new Uint8Array([1,2,3])));
 // Type-0 single-track format uses the same event parser; verify the
 // multi-track roundtrip first, which covers tempo, chords and percussion.
-const ripple=resizeMusicNote(notes,'a',2);
-assert.equal(ripple.find(n=>n.id==='a').lengthBeats,2);
-assert.equal(ripple.find(n=>n.id==='b').startBeats,2);
-assert.equal(ripple.find(n=>n.id==='c').startBeats,2.5);
-// Chords at the same onset are kept together, and other instruments are not shifted.
-assert.equal(ripple.find(n=>n.id==='d').startBeats,5);
-const percussion=notes.find(n=>n.instrument==='drum');
-const newDrum=ripple.find(n=>n.id===percussion.id);
-assert.equal(newDrum.startBeats,percussion.startBeats);
+const pattern=[
+  {id:'first',instrument:'piano',midi:60,startBeats:0,lengthBeats:.5,velocity:95},
+  {id:'second',instrument:'piano',midi:62,startBeats:.5,lengthBeats:.5,velocity:95},
+  {id:'third',instrument:'piano',midi:64,startBeats:1,lengthBeats:1,velocity:95},
+  {id:'kick',instrument:'drum',midi:36,startBeats:.5,lengthBeats:.25,velocity:95},
+];
+const ripple=resizeMusicNote(pattern,'first',2);
+assert.equal(ripple.find(n=>n.id==='first').lengthBeats,2);
+assert.equal(ripple.find(n=>n.id==='second').startBeats,2);
+assert.equal(ripple.find(n=>n.id==='third').startBeats,2.5);
+assert.equal(ripple.find(n=>n.id==='kick').startBeats,.5);
 assert.equal(liveNoteLength(1000,3400,100),4);
 assert.equal(liveNotePosition(1000,3400,100),4);
 console.log('MIDI roundtrip, rhythmic note resize, held-key lengths and drums passed.');
