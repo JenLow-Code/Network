@@ -137,7 +137,7 @@ export function MusicWritingOverlay({project,mode,startTab,onModeChange,source,i
             <Ionicons name="arrow-back-outline" size={23} color={theme.foreground}/>
           </Pressable>
           <Text style={{flex:1,textAlign:'center',color:theme.foreground,
-            fontWeight:'600',fontSize:compact?15:17}}>{page==='compose'?'Composer':'Écrire'}</Text>
+            fontWeight:'600',fontSize:compact?15:17}}>{page==='compose'?'Composer':'Paroles'}</Text>
           <TopActions/>
         </View>
         {page==='text'?<View style={{paddingHorizontal:compact?13:30,paddingVertical:8,
