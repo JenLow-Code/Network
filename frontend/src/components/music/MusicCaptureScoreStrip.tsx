@@ -1,6 +1,6 @@
 import React,{useEffect,useRef,useState} from 'react';
 import {ScrollView,View} from 'react-native';
-import Svg,{Ellipse,Line,Text as SvgText} from 'react-native-svg';
+import Svg,{Ellipse,Line} from 'react-native-svg';
 import {useAppTheme} from '@/theme/AppTheme';
 import type {MusicProjectFile} from '@/domain/musicWorkspace';
 import type {MusicNotationEvent} from '@/domain/musicNotation';
@@ -10,7 +10,6 @@ const PINK='#CB245C';
 const STEP=34;
 const LEFT=24;
 const STAFF_HEIGHT=72;
-const staffTop=12;
 const drumHeight=(pitch:number)=>pitch===36?52:pitch===38||pitch===39?35:
   pitch===42||pitch===46?18:26;
 const pianoHeight=(pitch:number,clef:'treble'|'bass')=>{
