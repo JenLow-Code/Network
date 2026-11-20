@@ -55,22 +55,11 @@ export function DreamPhaseHeader({
     },message=>setCoverError(message));
   };
   return <View style={{marginBottom:desktop?16:18}}>
-    <View style={{height:48,flexDirection:'row',alignItems:'center',
-      justifyContent:'space-between',marginBottom:desktop?12:10}}>
-      <Pressable accessibilityRole="button" accessibilityLabel="Retour à mes rêves"
-        onPress={onBack} style={{width:44,height:44,alignItems:'flex-start',
-          justifyContent:'center'}}>
-        <Ionicons name="arrow-back-outline" size={22} color={theme.foreground}/>
-      </Pressable>
-      <View style={{flex:1}}/>
-      <TopActions/>
-    </View>
-    {/* Expand beyond the reading-column padding to give the image the entire
-        workspace canvas. This is a hero, not a rounded content card. */}
+    {/* The hero starts at the top; the reading column remains at its shared
+        fixed workspace width. Only the cover image receives a visual zoom. */}
     <View style={{
-      height:desktop?500:width<520?370:440,
-      marginHorizontal:-ws.gutter,
-      width:'auto',
+      height:desktop?440:width<520?355:420,
+      width:'100%',
       position:'relative',
       overflow:'hidden',
       backgroundColor:theme.dark?'#142521':'#233831',
@@ -78,7 +67,7 @@ export function DreamPhaseHeader({
       {dream.image?
         <Image source={{uri:dream.image}} resizeMode="cover"
           style={{position:'absolute',left:0,right:0,top:0,bottom:0,
-            width:'100%',height:'100%'}}/>:
+            width:'100%',height:'100%',transform:[{scale:desktop?1.06:1.02}]}}/>:
         <View pointerEvents="none" style={{position:'absolute',
           left:0,right:0,top:0,bottom:0,
           backgroundColor:theme.dark?'#18352E':'#36534B'}}/>}
@@ -97,6 +86,20 @@ export function DreamPhaseHeader({
         </Defs>
         <Rect width="100%" height="100%" fill="url(#dream-full-bleed-hero)"/>
       </Svg>
+      <View style={{position:'absolute',top:desktop?18:12,
+        left:desktop?20:12,right:desktop?20:12,zIndex:4,
+        flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Retour à mes rêves"
+          onPress={onBack} style={{width:44,height:44,borderRadius:22,
+            alignItems:'center',justifyContent:'center',
+            backgroundColor:'rgba(8,18,16,.62)'}}>
+          <Ionicons name="arrow-back-outline" size={22} color="#FFFFFF"/>
+        </Pressable>
+        <View style={{paddingHorizontal:8,borderRadius:13,
+          backgroundColor:theme.background,opacity:.96}}>
+          <TopActions/>
+        </View>
+      </View>
       <View pointerEvents="none" style={{
         position:'absolute',
         left:desktop?48:width<520?23:35,
