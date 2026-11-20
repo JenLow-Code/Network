@@ -10,7 +10,7 @@ import { Nav } from '@/components/navigation/Nav';
 import { PageHeader } from '@/components/navigation/PageHeader';
 import { pickDreamImage } from '@/lib/pickDreamImage';
 import { useAppTheme } from '@/theme/AppTheme';
-import {workspaceCanvas,WORKSPACE_TITLE_GAP} from '@/theme/workspaceLayout';
+import {workspaceCanvas,WORKSPACE_TITLE_GAP,PAGE_TITLE_FONT_SIZE,PAGE_TITLE_LINE_HEIGHT} from '@/theme/workspaceLayout';
 import { DreamPhaseButton, DreamPhaseField } from '@/components/dream/DreamPhaseLayout';
 
 export default function NewDream() {
@@ -62,7 +62,7 @@ export default function NewDream() {
             <View style={{ height: 2, width: 27, backgroundColor: '#B88962', borderRadius: 2 }}/>
             <Text style={{ color: '#B88962', fontSize: 11, fontWeight: '700', letterSpacing: 1.4 }}>SEMENCE · 01 / 04</Text>
           </View>
-          <Text style={{ fontFamily: 'serif', fontSize: 37, lineHeight: 46, letterSpacing: -0.6, color: theme.foreground, marginBottom: 13 }}>
+          <Text style={{ fontFamily: 'serif', fontSize:PAGE_TITLE_FONT_SIZE,lineHeight:PAGE_TITLE_LINE_HEIGHT,letterSpacing:-.2, color: theme.foreground, marginBottom: 13 }}>
             Donner naissance à un rêve
           </Text>
           <Text style={{ color: theme.muted, fontSize: 14, lineHeight: 23, marginBottom: 33 }}>
