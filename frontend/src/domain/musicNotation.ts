@@ -21,6 +21,26 @@ export function liveNoteLength(pressedAtMs:number,releasedAtMs:number,bpm:number
   const beats=Math.max(.125,(releasedAtMs-pressedAtMs)*bpm/60000);
   return Math.round(beats*1000)/1000;
 }
+/** Extend or shorten a note without silently covering the following notes.
+ * Later notes on that instrument and the editing cursor are moved by the
+ * exact duration delta; notes starting together keep their chord alignment.
+ */
+export function resizeMusicNote(
+  events:MusicNotationEvent[],id:string,nextLength:number,
+):MusicNotationEvent[]{
+  const selected=events.find(event=>event.id===id);
+  if(!selected||!Number.isFinite(nextLength)||nextLength<=0)return events;
+  const oldEnd=selected.startBeats+selected.lengthBeats;
+  const delta=nextLength-selected.lengthBeats;
+  return events.map(event=>{
+    if(event.id===id)return {...event,lengthBeats:nextLength};
+    if(event.instrument===selected.instrument&&
+      event.startBeats>=oldEnd-0.00001&&Math.abs(delta)>0.00001)
+      return {...event,startBeats:Math.max(0,
+        Math.round((event.startBeats+delta)*1000)/1000)};
+    return event;
+  });
+}
 export const DRUM_PADS = [
   {label:'Kick',midi:36},
   {label:'Snare',midi:38},
