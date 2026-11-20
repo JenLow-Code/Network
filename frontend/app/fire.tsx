@@ -9,7 +9,7 @@ import { TopActions } from '@/components/navigation/TopActions';
 import { publications } from '@/mocks/publications';
 import { PublicationGallery } from '@/components/publication/PublicationGallery';
 import { useAppTheme } from '@/theme/AppTheme';
-import {workspaceCanvas,WORKSPACE_TITLE_GAP} from '@/theme/workspaceLayout';
+import {workspaceCanvas,WORKSPACE_TITLE_GAP,PAGE_TITLE_FONT_SIZE,PAGE_TITLE_LINE_HEIGHT} from '@/theme/workspaceLayout';
 export default function FireList() {
   const theme = useAppTheme();
   const {width}=useWindowDimensions();
@@ -58,8 +58,8 @@ export default function FireList() {
         </View>
         <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
           <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center', flexShrink: 1 }}>
-            <Ionicons name="flame" size={26} color="#D71D77" />
-            <Text style={{ fontSize: 28, fontWeight: '700', color: theme.foreground }}>Ma liste Fire</Text>
+            <Ionicons name="flame" size={24} color="#D71D77" />
+            <Text style={{ fontSize:PAGE_TITLE_FONT_SIZE,lineHeight:PAGE_TITLE_LINE_HEIGHT,fontWeight:'700',color:theme.foreground }}>Ma liste Fire</Text>
           </View>
           <Pressable
             accessibilityRole="button" accessibilityLabel="Créer un dossier Fire"
