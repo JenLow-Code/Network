@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Image, Platform, Pressable, Text, View, useWindowDimensions } from 'react-native';
+import { Image, Platform, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { BlurView } from 'expo-blur';
 import Svg, { Defs, LinearGradient, Stop, Rect, Filter, FeTurbulence, FeDisplacementMap } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
@@ -165,9 +165,9 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
       </Pressable>;
     return <View accessibilityRole="navigation" style={{
       width:collapsed?72:236,minWidth:collapsed?72:236,
-      height:'100%',backgroundColor:navSurface,
+      height:'100%',minHeight:0,flexShrink:0,backgroundColor:navSurface,
       borderLeftWidth:0,
-      justifyContent:'space-between',paddingTop:28,paddingBottom:24,
+      paddingTop:28,paddingBottom:Math.max(20,insets.bottom+15),
       overflow:'hidden',...glassEffects,
     }}>
       {currentDream?.image?<Image pointerEvents="none"
@@ -195,7 +195,7 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
         </Defs>
         <Rect width="100%" height="100%" fill="url(#jenlow-premium-desktop-glass)"/>
       </Svg>
-      <View style={{gap:21}}>
+      <View style={{flex:1,minHeight:0,gap:16}}>
         <View style={{paddingHorizontal:collapsed?13:20,
           flexDirection:'row',alignItems:'center',
           justifyContent:collapsed?'center':'space-between',height:43}}>
@@ -216,7 +216,9 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
               size={17} color={theme.muted}/>
           </Pressable>
         </View>
-        <View style={{gap:4}}>
+        <ScrollView style={{flex:1,minHeight:0}} nestedScrollEnabled
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{gap:4,paddingBottom:12}}>
           {mainLinks.map(item=><React.Fragment key={item.path}>
             {renderEntry(item)}
             {item.path==='/music-hub'&&currentSong?
@@ -334,13 +336,16 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
                         borderRadius:5,backgroundColor:reached?accent:theme.muted}}/>
                       <Text numberOfLines={1} style={{flex:1,fontSize:12,
                         color:selected?theme.foreground:theme.muted,
-                        fontWeight:selected?'700':'500'}}>
+                        fontWeight:selected?'700':'500',
+                        fontStyle:reached&&!selected?'italic':'normal'}}>
                         {PHASE_LABELS[phase]}
                       </Text>
                       {!reached?<Ionicons name="lock-closed-outline" size={11}
                         color={theme.muted}/>:null}
                     </Pressable>;
-                    if(!reached||(!selected&&phase!=='Rêve'))return phaseNav;
+                    // Only the currently viewed phase owns a submenu.
+                    // Historical phases retain read-only navigation but no duplicated children.
+                    if(!reached||!selected)return phaseNav;
                     return <React.Fragment key={phase}>
                       {phaseNav}
                       <View style={{marginLeft:14,paddingLeft:10,
@@ -386,9 +391,9 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
                 </View>:null}
               </View>:null}
           </React.Fragment>)}
-        </View>
+        </ScrollView>
       </View>
-      <View style={{gap:12}}>
+      <View style={{gap:12,flexShrink:0,marginTop:12}}>
         <View style={{height:1,backgroundColor:theme.border,
           marginHorizontal:collapsed?14:24}}/>
         {renderEntry(profile)}
