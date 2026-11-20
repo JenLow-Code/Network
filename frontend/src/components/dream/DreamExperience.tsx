@@ -11,7 +11,7 @@ import { useAppTheme } from '@/theme/AppTheme';
 import { workspaceLayout } from '@/theme/workspaceLayout';
 import { HANDWRITING_FAMILY } from '@/theme/handwriting';
 import { pickDreamImage } from '@/lib/pickDreamImage';
-import { DreamCoverBackdrop, DreamPhaseHeader, DreamPhaseSection, DreamPhaseButton, DreamPhaseField } from './DreamPhaseLayout';
+import { DreamPhaseHeader, DreamPhaseSection, DreamPhaseButton, DreamPhaseField } from './DreamPhaseLayout';
 import { DreamTalentSquare } from './DreamTalentSquare';
 import { DreamGoalDatePicker } from './DreamGoalDatePicker';
 import { DreamResourceDetailsModal } from './DreamResourceDetailsModal';
@@ -323,7 +323,6 @@ export default function DreamExperience({
    setFreezeDialog(false);
  };
  return <View style={{flex:1,backgroundColor:theme.background}}>
-  <DreamCoverBackdrop uri={dream.image}/>
   <ScrollView showsVerticalScrollIndicator={false} style={{flex:1,backgroundColor:'transparent'}}
     keyboardShouldPersistTaps="handled"
     contentContainerStyle={{paddingHorizontal:ws.gutter,paddingTop:10,paddingBottom:85,
