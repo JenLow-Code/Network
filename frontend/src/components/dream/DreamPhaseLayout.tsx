@@ -145,7 +145,7 @@ export function DreamPhaseHeader({
 
       {desktop ? (
         <>
-          <View style={{marginTop:12,minHeight:157,paddingRight:112,gap:9}}>
+          <View style={{marginTop:12,minHeight:174,paddingRight:112,gap:9}}>
             <View style={{flexDirection:'row',alignItems:'center',gap:10}}>
               <DreamPhaseIcon phase={phase} size={42}
                 tintColor={phase==='Croissance'?'#17613F':undefined}/>
