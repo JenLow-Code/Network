@@ -1019,6 +1019,7 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
               numberOfLines={1}>{sampleName}</Text>
           </Pressable>:null}
           <Pressable onPress={importTone} accessibilityRole="button"
+            disabled={sampleLoading}
             style={{minHeight:45,flexDirection:'row',alignItems:'center',gap:10,
               borderTopWidth:1,borderColor:theme.border,paddingHorizontal:8}}>
             <Ionicons name="cloud-upload-outline" color={PINK} size={18}/>
@@ -1026,14 +1027,69 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
               Importer un son ou une note chantée
             </Text>
           </Pressable>
-          {sampleId?<View style={{gap:7,paddingVertical:7,paddingHorizontal:8}}>
-            <Text style={{fontSize:11,color:theme.muted}}>
-              Note de référence de l’échantillon : {musicNoteName(sampleRootMidi)}
-            </Text>
-            <View style={{flexDirection:'row',gap:7}}>
-              {control('− ½ ton',()=>setSampleRootMidi(v=>Math.max(24,v-1)))}
-              {control('+ ½ ton',()=>setSampleRootMidi(v=>Math.min(96,v+1)))}
+          {sampleLoading?<Text style={{fontSize:12,color:theme.muted,
+            paddingHorizontal:8,paddingVertical:5}}>
+            Analyse de la note en cours…
+          </Text>:null}
+          {sampleError?<Text style={{fontSize:12,color:'#AF345D',
+            paddingHorizontal:8,lineHeight:18}}>{sampleError}</Text>:null}
+          {sampleId?<View style={{gap:9,paddingVertical:8,paddingHorizontal:8}}>
+            <View style={{flexDirection:'row',alignItems:'center',
+              justifyContent:'space-between',gap:8}}>
+              <View style={{flex:1,gap:3}}>
+                <Text style={{fontSize:11,color:theme.muted}}>
+                  Note d’origine {sampleConfidence!==null?'· détectée':'· manuelle'}
+                </Text>
+                <Text style={{fontSize:16,fontWeight:'700',color:theme.foreground}}>
+                  {musicNoteName(sampleRootMidi)}
+                  {sampleRootHz?' · '+Math.round(sampleRootHz*10)/10+' Hz':''}
+                </Text>
+              </View>
+              <Ionicons name={sampleReady?'checkmark-circle-outline':
+                'time-outline'} size={19}
+                color={sampleReady?'#438B68':theme.muted}/>
             </View>
+            <View style={{flexDirection:'row',gap:7,alignItems:'center',
+              flexWrap:'wrap'}}>
+              {control('− ½ ton',()=>{
+                setSampleRootMidi(v=>Math.max(24,v-1));
+                setSampleRootHz(null);setSampleConfidence(null);
+              })}
+              {control('+ ½ ton',()=>{
+                setSampleRootMidi(v=>Math.min(96,v+1));
+                setSampleRootHz(null);setSampleConfidence(null);
+              })}
+            </View>
+            <View style={{flexDirection:'row',alignItems:'center',
+              flexWrap:'wrap',gap:7}}>
+              <Pressable onPress={()=>testSample(sampleRootMidi)}
+                accessibilityRole="button" accessibilityLabel="Tester la note enregistrée"
+                disabled={!sampleReady||sampleLoading}
+                style={{minHeight:44,flexDirection:'row',gap:6,
+                  alignItems:'center',paddingHorizontal:11,
+                  borderWidth:1,borderColor:theme.border,borderRadius:10,
+                  opacity:sampleReady&&!sampleLoading?1:.4}}>
+                <Ionicons name="play-circle-outline" size={20} color={PINK}/>
+                <Text style={{fontSize:12,fontWeight:'600',color:PINK}}>
+                  Écouter
+                </Text>
+              </Pressable>
+              <Pressable onPress={()=>testSample(Math.min(127,sampleRootMidi+12))}
+                accessibilityRole="button" accessibilityLabel="Tester une octave plus aiguë"
+                disabled={!sampleReady||sampleLoading}
+                style={{minHeight:44,flexDirection:'row',gap:6,
+                  alignItems:'center',paddingHorizontal:11,
+                  borderWidth:1,borderColor:theme.border,borderRadius:10,
+                  opacity:sampleReady&&!sampleLoading?1:.4}}>
+                <Ionicons name="play-outline" size={18} color={PINK}/>
+                <Text style={{fontSize:12,fontWeight:'600',
+                  color:theme.foreground}}>+ 1 octave</Text>
+              </Pressable>
+            </View>
+            <Text style={{fontSize:11,color:theme.muted,lineHeight:17}}>
+              Le même enregistrement est accordé à toutes les touches du piano.
+              Tu peux corriger la note d’origine avant de jouer.
+            </Text>
           </View>:null}
         </View>:null}
       </View>
