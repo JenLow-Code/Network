@@ -53,4 +53,30 @@ assert.equal(ripple.find(n=>n.id==='third').startBeats,2.5);
 assert.equal(ripple.find(n=>n.id==='kick').startBeats,.5);
 assert.equal(liveNoteLength(1000,3400,100),4);
 assert.equal(liveNotePosition(1000,3400,100),4);
-console.log('MIDI roundtrip, rhythmic note resize, held-key lengths and drums passed.');
+const {analyzeSamplePitch,midiFrequency,samplePlaybackRate,sampleAudioRegion}=
+  load('src/domain/musicSampleInstrument.ts');
+const sine=(midi,length=1.0,leadingSilence=0)=>{
+  const rate=44100,buffer=new Float32Array(Math.round(rate*length));
+  const freq=midiFrequency(midi);
+  for(let i=Math.floor(leadingSilence*rate);i<buffer.length;i++)
+    buffer[i]=Math.sin(2*Math.PI*freq*(i/rate))*.31;
+  return buffer;
+};
+for(const midi of [59,71,60,69]){
+  const pitch=analyzeSamplePitch(sine(midi),44100);
+  assert.ok(pitch,'Failed to detect '+midi);
+  assert.equal(pitch.midi,midi);
+  assert.ok(Math.abs(pitch.frequencyHz-midiFrequency(midi))<2.5);
+}
+assert.equal(analyzeSamplePitch(new Float32Array(44100),44100),null);
+const right=sine(59,1,.08);
+const region=sampleAudioRegion({
+  numberOfChannels:2,sampleRate:44100,
+  getChannelData:(channel)=>channel===1?right:new Float32Array(44100),
+});
+assert.ok(region.peak>.25);
+assert.ok(region.offset>.06);
+assert.ok(region.loopEnd>region.loopStart);
+assert.ok(Math.abs(samplePlaybackRate(71,midiFrequency(59))-2)<1e-8);
+assert.ok(Math.abs(samplePlaybackRate(47,midiFrequency(59))-.5)<1e-8);
+console.log('MIDI roundtrip, held notes, B3/B4 pitch detection, stereo sampling and tuning passed.');
