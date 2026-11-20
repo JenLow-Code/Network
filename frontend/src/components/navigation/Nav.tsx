@@ -74,7 +74,7 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
     return()=>{live=false;};
   },[placement,desktop,currentSong?.id,publishedKey,path,params.tab]);
   const openMusicArea=(tab:'capture'|'create'|'collaborate',
-    intent?:'new-version')=>{
+    intent?:'new-version'|'write'|'upload'|'play'|'record')=>{
     if(!currentSong)return;
     router.replace({pathname:'/music-workspace/[id]',
       params:{id:currentSong.id,tab,...(intent?{intent}:{})}});
@@ -287,23 +287,21 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
                   paddingLeft:9,borderLeftWidth:1,borderLeftColor:theme.border,
                   gap:2,marginBottom:4}}>
                   {([
-                    {key:'capture',title:'Capturer',icon:'mic-outline',
-                      run:()=>openMusicArea('capture')},
-                    {key:'new',title:'Nouvelle version',icon:'add-circle-outline',
-                      run:()=>openMusicArea('capture','new-version')},
+                    {key:'write',title:'Écrire',icon:'create-outline'},
+                    {key:'upload',title:'Importer',icon:'cloud-upload-outline'},
+                    {key:'play',title:'Jouer',icon:'musical-notes-outline'},
+                    {key:'record',title:'Enregistrer',icon:'mic-outline'},
                   ] as const).map(action=>{
-                    const active=path.startsWith('/music-workspace/')&&(
-                      action.key==='capture'?
-                        params.tab!=='create'&&params.tab!=='collaborate'&&
-                        params.intent!=='new-version':
-                        params.tab==='capture'&&params.intent==='new-version');
-                    return <Pressable key={action.key} onPress={action.run}
+                    const active=path.startsWith('/music-workspace/')&&
+                      params.intent===action.key;
+                    return <Pressable key={action.key}
+                      onPress={()=>openMusicArea('capture',action.key)}
                       accessibilityRole="button" accessibilityLabel={action.title}
                       accessibilityState={{selected:active}}
-                      style={{minHeight:34,flexDirection:'row',alignItems:'center',gap:8,
+                      style={{minHeight:34,flexDirection:'row',alignItems:'center',gap:9,
                         paddingHorizontal:7,borderRadius:7,
                         backgroundColor:active?'rgba(203,36,92,.10)':'transparent'}}>
-                      <Ionicons name={action.icon} size={15}
+                      <Ionicons name={action.icon} size={16}
                         color={active?'#CB245C':theme.muted}/>
                       <Text numberOfLines={1} style={{flex:1,minWidth:0,fontSize:11,
                         fontWeight:active?'700':'500',
@@ -326,6 +324,13 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
                       <Text style={{fontSize:10,color:theme.muted}}>
                         {songState?.versions.length||0}
                       </Text>
+                    </Pressable>
+                    <Pressable accessibilityRole="button"
+                      accessibilityLabel="Nouvelle version"
+                      onPress={()=>openMusicArea('capture','new-version')}
+                      style={{minHeight:34,minWidth:24,alignItems:'center',
+                        justifyContent:'center'}}>
+                      <Ionicons name="add" size={17} color={theme.muted}/>
                     </Pressable>
                     <Pressable accessibilityRole="button"
                       accessibilityLabel={versionsTreeOpen?'Masquer les versions':'Afficher les versions'}
