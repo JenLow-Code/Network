@@ -7,7 +7,7 @@ import {DRUM_PADS,downloadMusicMidi,downloadMusicScorePdf,musicNoteName,liveNote
 import type {MusicNotationEvent} from '@/domain/musicNotation';
 import type {MusicProjectFile} from '@/domain/musicWorkspace';
 import {saveDraftAudio,getDraftAudio} from '@/domain/musicLocalStorage';
-import {analyzeSamplePitch,midiFrequency,samplePlaybackRate,sampleAudioRegion} from '@/domain/musicSampleInstrument';
+import {analyzeSamplePitch,midiFrequency,samplePlaybackRate,sampleAudioRegion,drumOneShotSeconds} from '@/domain/musicSampleInstrument';
 
 const PINK='#CB245C';
 type Instrument='piano'|'drum';
@@ -259,7 +259,7 @@ function playSound(ctx:AudioContext,pitch:number,drum:boolean,level:number,
     const source=ctx.createBufferSource();
     source.buffer=drumSample;
     source.playbackRate.value=1; // Drum hits are one-shots, not pitch-shifted.
-    const length=Math.min(12,Math.max(.015,drumSample.duration-region.offset));
+    const length=drumOneShotSeconds(drumSample.duration,region.offset);
     const boost=Math.min(2.2,.6/Math.max(.05,region.peak));
     const amp=sourceVolume*boost;
     gain.gain.cancelScheduledValues(now);
