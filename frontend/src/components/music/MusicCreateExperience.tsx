@@ -433,23 +433,6 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
         {version?<Pressable onPress={()=>setConfirmDelete(!confirmDelete)} style={{paddingVertical:7}}>
           <Text style={{fontSize:12,color:theme.muted}}>Supprimer cette version…</Text>
         </Pressable>:null}
-        {confirmDelete&&version?<View style={{padding:11,gap:10,
-          backgroundColor:theme.dark?'#38282E':'#FBEEF1',borderRadius:12}}>
-          <Text style={{fontSize:12,lineHeight:19,color:theme.foreground}}>
-            Supprimer définitivement {version.title} et son historique ?
-            Les enregistrements originaux seront conservés dans Capturer.
-          </Text>
-          <View style={{flexDirection:'row',flexWrap:'wrap',gap:8}}>
-            {button('Supprimer la version',()=>{
-              const remaining=state.versions.filter(v=>v.id!==version.id);
-              patch({musicNext:{...state,versions:remaining,
-                activeVersionId:remaining[0]?.id,
-                history:(state.history||[]).filter(entry=>entry.versionId!==version.id)}});
-              setConfirmDelete(false);setVersionMenu(false);
-            },true)}
-            {button('Annuler',()=>setConfirmDelete(false))}
-          </View>
-        </View>:null}
         {!!project.versions.length?<View style={{gap:9,borderTopWidth:1,
           borderColor:theme.border,paddingTop:12}}>
           <Text style={{fontSize:12,fontWeight:'700',color:theme.foreground}}>Anciennes versions publiées</Text>
@@ -726,6 +709,36 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
       </View>
     </View>:null}
 
+    <Modal visible={confirmDelete} transparent animationType="fade"
+      onRequestClose={()=>setConfirmDelete(false)}>
+      <View style={{flex:1,alignItems:'center',justifyContent:'center',
+        backgroundColor:'rgba(0,0,0,.55)',padding:20}}>
+        <Pressable onPress={()=>setConfirmDelete(false)}
+          style={{position:'absolute',top:0,bottom:0,left:0,right:0}}/>
+        <View style={{backgroundColor:theme.surface,borderRadius:17,padding:21,
+          width:'100%',maxWidth:400,gap:15}}>
+          <Ionicons name="warning-outline" size={24} color={PINK}/>
+          <Text style={{fontSize:17,fontWeight:'700',color:theme.foreground}}>
+            Supprimer cette version ?
+          </Text>
+          <Text style={{fontSize:13,lineHeight:21,color:theme.muted}}>
+            Supprimer définitivement {version?.title||'la version'} et son historique ?
+            Les enregistrements originaux restent disponibles dans Capturer.
+          </Text>
+          <View style={{flexDirection:'row',gap:9,justifyContent:'flex-end'}}>
+            {button('Annuler',()=>setConfirmDelete(false))}
+            {button('Supprimer',()=>{
+              if(!version)return;
+              const remaining=state.versions.filter(v=>v.id!==version.id);
+              patch({musicNext:{...state,versions:remaining,
+                activeVersionId:remaining[0]?.id,
+                history:(state.history||[]).filter(entry=>entry.versionId!==version.id)}});
+              setConfirmDelete(false);setVersionMenu(false);
+            },true)}
+          </View>
+        </View>
+      </View>
+    </Modal>
     <Modal visible={!!editTrack} transparent animationType="fade"
       onRequestClose={()=>setEditTrack('')}>
       <View style={{flex:1,justifyContent:'center',alignItems:'center',
