@@ -24,7 +24,7 @@ export default function PrivateDreamNotebook(){
     <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled"
       contentContainerStyle={{paddingHorizontal:ws.gutter,paddingTop:10,
         paddingBottom:115,maxWidth:ws.maxWidth,width:'100%',alignSelf:'center',flexGrow:1}}>
-      <PageHeader onBack={()=>router.replace({pathname:'/my-dream/[id]',
+      <PageHeader title="Notes personnelles" onBack={()=>router.replace({pathname:'/my-dream/[id]',
         params:{id,view:view||dream?.phase||'Rêve'}})}/>
       <View style={{marginTop:18}}>
         {dream?<SemenceNotes dream={dream} editable={editable}/>:
