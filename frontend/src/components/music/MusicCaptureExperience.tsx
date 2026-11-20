@@ -21,7 +21,7 @@ import {MusicCaptureScoreStrip} from './MusicCaptureScoreStrip';
 const PINK='#CB245C';
 type Props={project:MusicProject;patch:(changes:Partial<MusicProject>)=>void;
   onStartVersion:(source:MusicProjectFile)=>void;onUseFile:(source:MusicProjectFile)=>void;
-  hasVersion:boolean};
+  hasVersion:boolean;newVersionMode?:boolean};
 type Composer='none'|'write'|'record';
 type Writing='lyrics'|'note';
 const isImage=(file:MusicProjectFile)=>/\.(jpg|jpeg|png|webp)$/i.test(file.originalFilename||'');
@@ -47,7 +47,7 @@ function fileGroup(file:MusicProjectFile):CaptureFilter {
   return 'other';
 }
 
-export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,hasVersion}:Props) {
+export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,hasVersion,newVersionMode=false}:Props) {
   const theme=useAppTheme();
   const {width}=useWindowDimensions();
   const compact=width<630;
@@ -391,6 +391,18 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,h
                 {text.replace(/\s+/g,' ').trim()}
               </Text>:null}
           </Pressable>
+          {newVersionMode&&isMusicTrackCandidate(file)?
+            <Pressable accessibilityRole="button"
+              accessibilityLabel={'Créer une nouvelle version depuis '+file.title}
+              onPress={()=>onStartVersion(file)}
+              style={{alignSelf:'flex-start',flexDirection:'row',alignItems:'center',
+                gap:7,minHeight:39,paddingHorizontal:12,borderRadius:9,
+                backgroundColor:PINK}}>
+              <Ionicons name="add-circle-outline" color="#FFFFFF" size={16}/>
+              <Text style={{fontSize:12,fontWeight:'700',color:'#FFFFFF'}}>
+                Démarrer une version avec cette prise
+              </Text>
+            </Pressable>:null}
           {sound&&file.localFileId?<MusicAudioTake file={file} compact
             onOpen={()=>setSelected(file.id)}/>:null}
           {file.musicEvents?.length?<MusicCaptureScoreStrip file={file}/>:
@@ -417,6 +429,17 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,h
           Aucun élément dans ce filtre.
         </Text>:null}
     </View>:null}
+    {newVersionMode&&!files.some(file=>isMusicTrackCandidate(file))?
+      <View style={{padding:13,borderRadius:10,
+        borderWidth:1,borderColor:theme.border,gap:5}}>
+        <Text style={{fontSize:13,fontWeight:'600',color:theme.foreground}}>
+          Pas encore de prise audio ou MIDI
+        </Text>
+        <Text style={{fontSize:12,lineHeight:19,color:theme.muted}}>
+          Enregistre ou importe une prise dans Capturer. Tu pourras ensuite
+          l'utiliser comme première piste d'une nouvelle version.
+        </Text>
+      </View>:null}
     <MusicMaterialViewer key={selectedFile?.id||'closed'} visible={!!selectedFile}
       file={selectedFile} project={project} onClose={()=>setSelected('')}
       onUpdate={changeFile} onChangeType={(id,kind)=>{
