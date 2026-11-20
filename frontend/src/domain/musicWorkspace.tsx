@@ -126,6 +126,8 @@ export type MusicProjectFile = {
   language?: string;
   /** Links a human translation to its source lyric document without replacing it. */
   translationOfFileId?: string;
+  /** A generated WAV associated with, but never replacing, its MIDI source. */
+  renderedFromMidiId?:string;
   /** Original musical idea, stored as structured notation, not rendered audio. */
   musicEvents?: MusicNotationEvent[];
   tempoBpm?: number;
