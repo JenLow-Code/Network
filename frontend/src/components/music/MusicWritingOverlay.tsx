@@ -25,10 +25,17 @@ type Props={
   source?:MusicProjectFile|null;
   initialFile?:MusicProjectFile|null;
   onSave:(result:MusicWritingResult)=>void;
+  onAutoSave:(result:MusicWritingResult)=>string|void;
   onSaveScore:(result:{title:string;events:MusicNotationEvent[];bpm:number;
     tone:string;sampleLocalId?:string;sampleName?:string;
     sampleRootMidi?:number;sampleRootHz?:number;clef?:'treble'|'bass';
     drumSamples?:MusicProjectFile['drumSamples']})=>void;
+  onAutoSaveScore:(result:{title:string;events:MusicNotationEvent[];bpm:number;
+    tone:string;sampleLocalId?:string;sampleName?:string;
+    sampleRootMidi?:number;sampleRootHz?:number;clef?:'treble'|'bass';
+    drumSamples?:MusicProjectFile['drumSamples'];
+    meterNumerator?:number;meterDenominator?:number;
+    sampleEndMode?:'fade'|'repeat'|'slow'})=>void;
   onRequestTranslator:(sourceId:string,language:string)=>void;
   requestedLanguages:string[];
   onClose:()=>void;
@@ -39,7 +46,7 @@ function isCaptureAudio(file:MusicProjectFile){
 }
 /** Separate writing (lyrics/notes/translation) and composition screens. */
 export function MusicWritingOverlay({project,mode,startTab,onModeChange,source,initialFile,
-  onSave,onSaveScore,onRequestTranslator,requestedLanguages,onClose}:Props){
+  onSave,onAutoSave,onSaveScore,onAutoSaveScore,onRequestTranslator,requestedLanguages,onClose}:Props){
   const theme=useAppTheme();
   const {width}=useWindowDimensions();
   const compact=width<650;
@@ -84,34 +91,11 @@ export function MusicWritingOverlay({project,mode,startTab,onModeChange,source,i
     {id:'note',title:'Notes',icon:'reader-outline'},
     {id:'translation',title:'Traduction',icon:'language-outline'},
   ];
-  const exit=()=>{
-    if(dirty)setConfirmExit(true);
-    else onClose();
-  };
+  // Text and notation drafts are flushed on unmount by their editors.
+  const exit=()=>onClose();
   const changeTab=(next:Tab)=>{
-    if(next!==tab){
-      const hasUnsaved=(tab==='score'&&scoreDirty)||
-        ((tab==='lyrics'||tab==='note')&&writerDirty)||
-        (tab==='translation'&&translationDirty);
-      if(hasUnsaved){
-        setNavigationWarning(
-          'Enregistre les modifications en cours avant de changer de page.');
-        return;
-      }
-    }
-    if(initialFile&&next!==tab){
-      const lyricTranslation=initialFile.kind==='lyrics'&&
-        !initialFile.translationOfFileId&&
-        ((tab==='lyrics'&&next==='translation')||
-          (tab==='translation'&&next==='lyrics'));
-      if(!lyricTranslation)return;
-    }
     if(next==='translation'&&initialFile?.kind==='lyrics'&&
       !initialFile.translationOfFileId)setSourceId(initialFile.id);
-    if(next==='lyrics'&&translationDirty){
-      setSourceWarning('Enregistre la traduction avant de revenir aux paroles.');
-      return;
-    }
     bodyScrollRef.current?.scrollTo({y:0,animated:false});
     setTab(next);
     if(next==='lyrics'||next==='note')onModeChange(next);
@@ -119,10 +103,6 @@ export function MusicWritingOverlay({project,mode,startTab,onModeChange,source,i
     setChoosing(false);
   };
   const chooseSource=(id:string)=>{
-    if(id!==sourceId&&translationDirty){
-      setSourceWarning('Enregistre ou termine cette traduction avant de choisir un autre original.');
-      return;
-    }
     setSourceId(id);setSourceOpen(false);setSourceWarning('');
   };
   return <SafeAreaView style={{flex:1,minHeight:0,overflow:'hidden',backgroundColor:theme.background}}>
@@ -147,10 +127,7 @@ export function MusicWritingOverlay({project,mode,startTab,onModeChange,source,i
             maxWidth:700,width:'100%'}}>
             {tabs.map(item=>{
               const active=tab===item.id;
-              const disabled=!!initialFile&&!active&&
-                !(initialFile.kind==='lyrics'&&!initialFile.translationOfFileId&&
-                  ((tab==='lyrics'&&item.id==='translation')||
-                    (tab==='translation'&&item.id==='lyrics')));
+              const disabled=false;
               return <Pressable key={item.id} onPress={()=>changeTab(item.id)}
                 disabled={disabled} accessibilityRole="tab"
                 accessibilityState={{selected:active,disabled}}
