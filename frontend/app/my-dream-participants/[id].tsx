@@ -47,10 +47,7 @@ export default function DreamParticipants(){
  return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
    <ScrollView contentContainerStyle={{...workspaceCanvas(width),paddingTop:12,
      paddingBottom:115,gap:17}}>
-     <PageHeader/>
-     <Text style={{fontSize:PAGE_TITLE_FONT_SIZE,lineHeight:PAGE_TITLE_LINE_HEIGHT,fontFamily:'serif',color:theme.foreground,marginTop:14}}>
-       Personnes du rêve
-     </Text>
+     <PageHeader title="Personnes du rêve"/>
      <Text style={{fontSize:13,color:theme.muted,lineHeight:20}}>{dream.title}</Text>
      <View style={{flexDirection:'row',borderBottomWidth:1,borderColor:theme.border}}>
        {([{key:'coowners',label:'Co-propriétaires'},
