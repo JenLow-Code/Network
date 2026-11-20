@@ -489,8 +489,9 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
       if(!audioRef.current)audioRef.current=new AudioContext();
       const ctx=audioRef.current;
       if(ctx.state==='suspended')void ctx.resume();
-      const audible=events.filter(event=>!event.draft);
-      const notes=audible.length?audible:events;
+      // Preview all notes, including grey drafts, so a musician can hear
+      // the result before explicitly validating/exporting them.
+      const notes=events;
       const first=Math.min(...notes.map(event=>event.startBeats));
       const last=Math.max(...notes.map(event=>event.startBeats+event.lengthBeats));
       const startedAt=ctx.currentTime;
