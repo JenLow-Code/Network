@@ -29,10 +29,7 @@ export default function ImportVerse() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ ...workspaceCanvas(width),paddingTop:12,paddingBottom:65 }}>
-        <PageHeader onBack={close} />
-        <Text style={{ fontFamily: 'Caveat_700Bold', fontSize: 33, marginTop: 17 }}>
-          Recevoir un verset
-        </Text>
+        <PageHeader title="Recevoir un verset" onBack={close} />
         <Text style={{ fontSize: 12, color: '#888', marginVertical: 13 }}>
           Partagé depuis une autre application biblique
         </Text>
