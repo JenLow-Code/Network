@@ -144,8 +144,10 @@ export function DreamPhaseHeader({
         disabled={savingCover||!ready} onPress={chooseCover}
         style={{
           position:'absolute',
-          top:desktop?20:15,
+          // The cover action sits below the fixed back / flame / message controls.
+          top:desktop?77:72,
           right:desktop?21:15,
+          zIndex:5,
           width:42,height:42,
           alignItems:'center',justifyContent:'center',
           borderRadius:12,
