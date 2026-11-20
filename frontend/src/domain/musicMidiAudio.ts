@@ -15,7 +15,8 @@ const PINK_NOTE_DURATION_TAIL=.15;
  * No external upload, MP3 encoder, or server conversion is involved.
  */
 async function offlineWav(events:MusicNotationEvent[],bpm:number,
-  tone:string,sampleId?:string,sampleRoot=60,sampleRootHz?:number):Promise<File>{
+  tone:string,sampleId?:string,sampleRoot=60,sampleRootHz?:number,
+  drumSamples?:MusicProjectFile['drumSamples']):Promise<File>{
   if(typeof OfflineAudioContext==='undefined')
     throw new Error('Conversion MIDI en audio indisponible dans ce navigateur.');
   const notes=events.filter(e=>!e.draft&&Number.isFinite(e.midi)&&
@@ -23,8 +24,36 @@ async function offlineWav(events:MusicNotationEvent[],bpm:number,
   if(!notes.length)throw new Error('Aucune note validée à convertir en audio.');
   if(notes.length>MAX_NOTES)throw new Error('Trop de notes pour une conversion locale.');
   const speed=60/Math.max(20,Math.min(300,bpm));
-  const duration=Math.max(...notes.map(n=>
-    Math.max(0,n.startBeats+n.lengthBeats)*speed))+PINK_NOTE_DURATION_TAIL;
+  // Load the exact drum kit used by this score. Missing samples are errors:
+  // silently substituting synthetic drums would change the musician's work.
+  const drumBuffers=new Map<number,{buffer:AudioBuffer;
+    region:ReturnType<typeof sampleAudioRegion>}>();
+  const activeDrums=new Set(notes.filter(n=>n.instrument==='drum').map(n=>n.midi));
+  const entries=Object.entries(drumSamples||{}).filter(([key])=>
+    activeDrums.has(Number(key)));
+  if(entries.length){
+    const decoder=new OfflineAudioContext(2,1,RATE);
+    for(const [key,assignment] of entries){
+      const midi=Number(key);
+      if(!Number.isFinite(midi)||!assignment?.localFileId)
+        throw new Error('Un son de percussion est mal configuré.');
+      const blob=await getDraftAttachment(assignment.localFileId);
+      if(!blob)throw new Error('Son introuvable sur cet appareil : '+assignment.name);
+      const buffer=await decoder.decodeAudioData(await blob.arrayBuffer());
+      const region=sampleAudioRegion(buffer);
+      if(region.peak<.002)throw new Error('Échantillon silencieux : '+assignment.name);
+      drumBuffers.set(midi,{buffer,region});
+    }
+  }
+  // A MIDI drum hit may be a sixteenth-note trigger, but its audio tail
+  // (particularly a cymbal) must ring past that trigger and remain in the WAV.
+  const duration=Math.max(...notes.map(n=>{
+    const hit=drumBuffers.get(n.midi);
+    if(n.instrument==='drum'&&hit)
+      return Math.max(0,n.startBeats)*speed+
+        Math.min(12,Math.max(.015,hit.buffer.duration-hit.region.offset));
+    return Math.max(0,n.startBeats+n.lengthBeats)*speed;
+  }))+PINK_NOTE_DURATION_TAIL;
   if(duration>MAX_SECONDS)
     throw new Error('Cette composition dépasse 7 minutes : découpe-la pour le rendu local.');
   const frames=Math.ceil(Math.max(.3,duration)*RATE);
@@ -57,7 +86,10 @@ async function offlineWav(events:MusicNotationEvent[],bpm:number,
     const start=Math.max(0,n.startBeats)*speed+.005;
     const held=Math.max(.055,n.lengthBeats*speed);
     const drum=n.instrument==='drum';
-    const length=drum?Math.min(.6,held):Math.min(held,12);
+    const hit=drum?drumBuffers.get(n.midi):undefined;
+    const length=hit?
+      Math.min(12,Math.max(.015,hit.buffer.duration-hit.region.offset)):
+      drum?Math.min(.6,held):Math.min(held,12);
     const stop=Math.min(duration-.002,start+length);
     if(stop<=start)continue;
     const amp=Math.max(.015,Math.min(1,(n.velocity||90)/127));
@@ -70,6 +102,25 @@ async function offlineWav(events:MusicNotationEvent[],bpm:number,
     gain.gain.setValueAtTime(voiceVolume,Math.max(start+attack,stop-release));
     gain.gain.exponentialRampToValueAtTime(.0001,stop);
     gain.connect(master);
+    if(drum&&hit){
+      const source=ctx.createBufferSource();
+      source.buffer=hit.buffer;
+      source.playbackRate.value=1;
+      const boost=Math.min(2.2,.6/Math.max(.05,hit.region.peak));
+      const attack=Math.min(.004,length*.2);
+      const release=Math.min(.05,length*.15);
+      const level=voiceVolume*boost;
+      gain.gain.cancelScheduledValues(start);
+      gain.gain.setValueAtTime(.00001,start);
+      gain.gain.linearRampToValueAtTime(level,start+attack);
+      gain.gain.setValueAtTime(level,Math.max(start+attack,stop-release));
+      gain.gain.exponentialRampToValueAtTime(.0001,stop);
+      source.connect(gain);
+      source.start(start,Math.min(hit.region.offset,
+        Math.max(0,hit.buffer.duration-.015)));
+      source.stop(stop);
+      continue;
+    }
     if(!drum&&tone==='Échantillon'&&sample){
       const source=ctx.createBufferSource();
       source.buffer=sample;
@@ -160,7 +211,7 @@ export async function renderMidiPreviewWav(source:MusicProjectFile):Promise<File
   }
   return offlineWav(notes,bpm,source.instrumentTone||'Piano doux',
     source.instrumentSampleLocalId,source.instrumentSampleRootMidi??60,
-    source.instrumentSampleRootHz);
+    source.instrumentSampleRootHz,source.drumSamples);
 }
 
 export async function renderMidiSource(source:MusicProjectFile):Promise<MusicProjectFile>{
