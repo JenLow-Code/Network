@@ -167,7 +167,7 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
       width:collapsed?72:236,minWidth:collapsed?72:236,
       height:'100%',minHeight:0,flexShrink:0,backgroundColor:navSurface,
       borderLeftWidth:0,
-      paddingTop:28,paddingBottom:Math.max(20,insets.bottom+15),
+      paddingTop:28,paddingBottom:Math.max(6,insets.bottom+6),
       overflow:'hidden',...glassEffects,
     }}>
       {currentDream?.image?<Image pointerEvents="none"
