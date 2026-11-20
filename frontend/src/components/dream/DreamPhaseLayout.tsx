@@ -160,6 +160,7 @@ export function DreamPhaseHeader({
           <View style={{minHeight:desktop?29:25,flexDirection:'row',
             alignItems:'center',justifyContent:'center',gap:desktop?7:width<520?3:6}}>
             <DreamPhaseIcon phase={item} size={desktop?28:width<520?20:23}
+              artworkScale={item==='Rêve'?.66:undefined}
               tintColor={item==='Croissance'?
                 (theme.dark?'#82C9A0':'#17613F'):undefined}/>
             <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={.75}
