@@ -16,7 +16,7 @@ import {useMusicMetronome} from './useMusicMetronome';
 import {MusicSongTabs} from './MusicSongTabs';
 import {MusicSongMetadata} from './MusicSongMetadata';
 import {musicNextState,makeWorkingVersion,makeWorkingTrack,
-  changeWorkingVersion,undoWorkingVersion,isMusicTrackCandidate} from '@/domain/musicNext';
+  changeWorkingVersion,undoWorkingVersion,isMusicTrackCandidate,musicSourceDuration} from '@/domain/musicNext';
 import {formatMusicDuration} from '@/domain/musicProjectSelectors';
 import {newMusicId} from '@/domain/musicWorkspace';
 import type {MusicProject,MusicProjectFile,MusicAudioMarker} from '@/domain/musicWorkspace';
@@ -212,7 +212,7 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
     if(!version||!copiedTrack)return;
     const source=project.files.find(f=>f.id===copiedTrack.sourceFileId);
     if(!source){setError('La source de la piste copiée est introuvable.');return;}
-    const total=Number.isFinite(source.durationSeconds)?source.durationSeconds||0:0;
+    const total=musicSourceDuration(source);
     const start=Number.isFinite(copiedTrack.trimStartSeconds)?
       Math.max(0,copiedTrack.trimStartSeconds||0):0;
     const end=Number.isFinite(copiedTrack.trimEndSeconds)?
@@ -229,6 +229,23 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
     editTracks([...version.tracks,pasted]);
     setSelectedTrackId(pasted.id);setPasteCount(n=>n+1);setError('');
   };
+  useEffect(()=>{
+    if(Platform.OS!=='web'||typeof window==='undefined'||!versionExpanded)return;
+    const onKey=(event:KeyboardEvent)=>{
+      if(!(event.ctrlKey||event.metaKey)||event.altKey)return;
+      const target=event.target as HTMLElement|null;
+      if(target?.closest('input,textarea,[contenteditable="true"]')||
+        window.getSelection()?.toString())return;
+      const key=event.key.toLowerCase();
+      if(key==='c'&&version?.tracks.some(t=>t.id===selectedTrackId)){
+        event.preventDefault();copySelectedTrack();
+      }else if(key==='v'&&copiedTrack){
+        event.preventDefault();pasteTrack();
+      }
+    };
+    window.addEventListener('keydown',onKey);
+    return()=>window.removeEventListener('keydown',onKey);
+  },[version?.id,version?.tracks,selectedTrackId,copiedTrack,pasteCount,versionExpanded]);
   const saveTake=(id:string,filename:string,durationSeconds?:number,
     startAt?:number,markers?:MusicAudioMarker[],name?:string)=>{
     if(!version)return;
@@ -487,8 +504,11 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
         </Text>
       </View>
       <View style={{flexDirection:'row',alignItems:'center',gap:8,flexWrap:'wrap'}}>
-        {button(selectedTrackId&&version.tracks.some(t=>t.id===selectedTrackId)?
-          'Copier la piste':'Sélectionner une piste',copySelectedTrack,false,'copy-outline')}
+        {selectedTrackId&&version.tracks.some(t=>t.id===selectedTrackId)?
+          button('Copier la piste',copySelectedTrack,false,'copy-outline'):
+          <Text style={{fontSize:11,color:theme.muted}}>
+            Choisis une piste pour la copier.
+          </Text>}
         {copiedTrack?button('Coller'+(pasteCount?' · '+pasteCount:''),pasteTrack,false,'copy-outline'):null}
         {selectedTrackId&&version.tracks.some(t=>t.id===selectedTrackId)?
           button('Réglages',()=>{
