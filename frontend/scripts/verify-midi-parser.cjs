@@ -16,7 +16,7 @@ function load(relative){
   new Function('module','exports','require',js)(module,module.exports,require);
   return module.exports;
 }
-const {exportMusicMidi}=load('src/domain/musicNotation.ts');
+const {exportMusicMidi,resizeMusicNote,liveNoteLength,liveNotePosition}=load('src/domain/musicNotation.ts');
 const {parseMusicMidi}=load('src/domain/musicMidiParser.ts');
 const notes=[
   {id:'a',instrument:'piano',midi:60,startBeats:0,lengthBeats:1,velocity:95},
@@ -40,4 +40,15 @@ assert.ok(result.events.some(e=>e.instrument==='drum'),'Percussion channel lost'
 assert.throws(()=>parseMusicMidi(new Uint8Array([1,2,3])));
 // Type-0 single-track format uses the same event parser; verify the
 // multi-track roundtrip first, which covers tempo, chords and percussion.
-console.log('MIDI import/export roundtrip, chords, rests, tempo and drums passed.');
+const ripple=resizeMusicNote(notes,'a',2);
+assert.equal(ripple.find(n=>n.id==='a').lengthBeats,2);
+assert.equal(ripple.find(n=>n.id==='b').startBeats,2);
+assert.equal(ripple.find(n=>n.id==='c').startBeats,2.5);
+// Chords at the same onset are kept together, and other instruments are not shifted.
+assert.equal(ripple.find(n=>n.id==='d').startBeats,5);
+const percussion=notes.find(n=>n.instrument==='drum');
+const newDrum=ripple.find(n=>n.id===percussion.id);
+assert.equal(newDrum.startBeats,percussion.startBeats);
+assert.equal(liveNoteLength(1000,3400,100),4);
+assert.equal(liveNotePosition(1000,3400,100),4);
+console.log('MIDI roundtrip, rhythmic note resize, held-key lengths and drums passed.');
