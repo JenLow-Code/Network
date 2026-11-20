@@ -706,6 +706,50 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
       </View>
     </View>:null}
 
+    <Modal visible={!!editTrack} transparent animationType="fade"
+      onRequestClose={()=>setEditTrack('')}>
+      <View style={{flex:1,justifyContent:'center',alignItems:'center',
+        padding:16,backgroundColor:'rgba(0,0,0,.55)'}}>
+        <Pressable onPress={()=>setEditTrack('')}
+          style={{position:'absolute',top:0,bottom:0,left:0,right:0}}/>
+        <View style={{width:'100%',maxWidth:465,borderRadius:17,
+          padding:19,gap:14,backgroundColor:theme.surface}}>
+          <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}>
+            <Text style={{fontSize:17,fontWeight:'700',color:theme.foreground}}>
+              Réglages de la piste
+            </Text>
+            <Pressable onPress={()=>setEditTrack('')} accessibilityLabel="Fermer">
+              <Ionicons name="close" size={22} color={theme.muted}/>
+            </Pressable>
+          </View>
+          {version?.tracks.filter(t=>t.id===editTrack).map(track=>{
+            const source=project.files.find(f=>f.id===track.sourceFileId);
+            return <View key={track.id} style={{gap:12}}>
+              <Text numberOfLines={2} style={{fontSize:14,fontWeight:'600',
+                color:theme.foreground}}>{track.title}</Text>
+              <Text style={{fontSize:12,lineHeight:19,color:theme.muted}}>
+                Modifier la position et les coupes sans toucher à l'audio original.
+              </Text>
+              <View style={{gap:6}}>
+                <Text style={{fontSize:12,color:theme.muted}}>Position (secondes)</Text>
+                <TextInput style={input} value={trackOffset} onChangeText={setTrackOffset}
+                  keyboardType="decimal-pad" accessibilityLabel="Position en secondes"/>
+                <Text style={{fontSize:12,color:theme.muted}}>Début de la source (secondes)</Text>
+                <TextInput style={input} value={trimStart} onChangeText={setTrimStart}
+                  keyboardType="decimal-pad" accessibilityLabel="Début de coupe en secondes"/>
+                <Text style={{fontSize:12,color:theme.muted}}>Fin de la source (secondes)</Text>
+                <TextInput style={input} value={trimEnd} onChangeText={setTrimEnd}
+                  keyboardType="decimal-pad" accessibilityLabel="Fin de coupe en secondes"/>
+              </View>
+              <View style={{flexDirection:'row',gap:8,flexWrap:'wrap'}}>
+                {button('Annuler',()=>setEditTrack(''))}
+                {button('Appliquer',()=>saveTrackTiming(track,source),true)}
+              </View>
+            </View>;
+          })}
+        </View>
+      </View>
+    </Modal>
     <Modal visible={infoOpen} animationType="slide" presentationStyle="pageSheet"
       onRequestClose={()=>setInfoOpen(false)}>
       <View style={{flex:1,backgroundColor:theme.background}}>
