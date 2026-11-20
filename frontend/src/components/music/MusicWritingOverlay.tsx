@@ -56,6 +56,7 @@ export function MusicWritingOverlay({project,mode,startTab,onModeChange,source,i
   const [sourceOpen,setSourceOpen]=useState(false);
   const [sourceWarning,setSourceWarning]=useState('');
   const dirty=writerDirty||translationDirty||scoreDirty;
+  const hasVersion=musicNextState(project).versions.length>0;
   const audioFiles=(project.files||[]).filter(isCaptureAudio);
   const audioChoices=[
     ...audioFiles.map(file=>({
@@ -222,7 +223,7 @@ export function MusicWritingOverlay({project,mode,startTab,onModeChange,source,i
               onModeChange={onModeChange} showTabs={false}
               initialFile={initialFile&&!initialFile.translationOfFileId
                 &&!initialFile.musicEvents?initialFile:undefined}
-              sections={project.sections}
+              sections={project.sections} canLinkSections={hasVersion}
               originalLanguage={project.originalLanguage}
               onSave={onSave} onDirtyChange={setWriterDirty} immersive/>
           </View>
