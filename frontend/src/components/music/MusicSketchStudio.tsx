@@ -75,10 +75,11 @@ function NoteValueGlyph({beats,color,size=38}:{
 }
 /** A score remains a preview, while the event editor owns timing and duration. */
 export function MusicScoreView({events,compact=false,instrument,
-  bpm=100,clef='treble',meterBeats=0,meterLabel,selectedId,onSelectNote,
+  bpm=100,clef='treble',meterBeats=0,meterLabel,bpmConfirmed=true,selectedId,onSelectNote,
   onTempoPress,onClefPress,playheadBeats=null,noteEditor}:{
   events:MusicNotationEvent[];compact?:boolean;instrument?:Instrument;
   bpm?:number;clef?:'treble'|'bass';meterBeats?:number;meterLabel?:string;
+  bpmConfirmed?:boolean;
   noteEditor?:React.ReactNode;selectedId?:string;
   onSelectNote?:(id:string)=>void;onTempoPress?:()=>void;onClefPress?:()=>void;
   playheadBeats?:number|null;
@@ -117,7 +118,7 @@ export function MusicScoreView({events,compact=false,instrument,
     },[]);
   return <View style={{position:'relative',borderWidth:1,
     borderColor:theme.border,borderRadius:14,backgroundColor:theme.surface,
-    overflow:'hidden'}}>
+    overflow:'visible'}}>
     <ScrollView ref={staffRef} horizontal showsHorizontalScrollIndicator={false}
       onLayout={e=>setViewportWidth(e.nativeEvent.layout.width)}
       onScroll={e=>setScrollX(e.nativeEvent.contentOffset.x)} scrollEventThrottle={16}
@@ -245,7 +246,7 @@ export function MusicScoreView({events,compact=false,instrument,
         paddingHorizontal:10,justifyContent:'center',alignItems:'flex-end',
         backgroundColor:theme.surface,borderRadius:8,zIndex:4}}>
       <Text style={{fontSize:17,fontWeight:'600',
-        color:theme.foreground}}>♩ = {bpm}</Text>
+        color:theme.foreground}}>♩ = {bpmConfirmed?bpm:'—'}</Text>
     </Pressable>
   </View>;
 }
@@ -628,6 +629,7 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
   };
   const playComposition=()=>{
     if(previewPlaying){stopPreview();return;}
+    if(!meterReady){setMessage('Configure le tempo et la mesure avant la lecture.');return;}
     if(!events.length){setMessage('Joue quelques notes pour écouter ta composition.');return;}
     if(Platform.OS!=='web'){setMessage('Préécoute disponible sur navigateur web.');return;}
     try{
@@ -684,9 +686,10 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
     setRecording(true);setMessage('');
   };
   const exportMidi=()=>{
+    if(!meterReady){setMessage('Configure le tempo et la mesure avant l’export MIDI.');return;}
     if(!events.length){setMessage('Ajoute des notes avant l’export MIDI.');return;}
     try{downloadMusicMidi(events.map(e=>({...e,draft:false})),
-      bpm,title||'idee-musicale');
+      bpm,title||'idee-musicale',meterNumerator,meterDenominator);
       setMessage('Fichier .mid exporté (piano canal 1, batterie canal 10).');}
     catch(e){setMessage(e instanceof Error?e.message:'Export MIDI impossible.');}
   };
@@ -821,7 +824,9 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
   };
   const exportPdf=()=>{
     try{
-      downloadMusicScorePdf(events,bpm,title||'idee-musicale',clef);
+      if(!meterReady){setMessage('Configure la mesure et le tempo avant l’export PDF.');return;}
+      downloadMusicScorePdf(events,bpm,title||'idee-musicale',clef,
+        meterNumerator,meterDenominator);
       setMessage('Partition PDF exportée.');
     }catch(e){setMessage(e instanceof Error?e.message:'Export PDF impossible.');}
   };
@@ -1063,7 +1068,7 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
         {control(tempoChosen?bpm+' BPM':'Choisir le tempo',openTempo)}
         <Text style={{fontSize:12,color:theme.muted}}>Temps</Text>
         <TextInput value={meterNumerator?String(meterNumerator):''}
-          onChangeText={value=>setMeterNumerator(/^\\d{1,2}$/.test(value)?
+          onChangeText={value=>setMeterNumerator(/^\d{1,2}$/.test(value)?
             Number(value):0)}
           placeholder="—" placeholderTextColor={theme.muted}
           keyboardType="number-pad" accessibilityLabel="Nombre de temps par mesure"
@@ -1104,6 +1109,7 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
     <MusicScoreView events={events} compact={compact} instrument={part}
       bpm={bpm} clef={clef} selectedId={selectedId}
       meterBeats={meterBeats} meterLabel={meterLabel}
+      bpmConfirmed={tempoChosen}
       noteEditor={noteEditor}
       playheadBeats={previewBeat}
       onSelectNote={recording?undefined:openNote}
