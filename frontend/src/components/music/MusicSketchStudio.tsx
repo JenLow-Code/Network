@@ -105,11 +105,13 @@ export function MusicScoreView({events,compact=false,instrument,
       }
       return out;
     },[]);
-  return <ScrollView ref={staffRef} horizontal showsHorizontalScrollIndicator={false}
-    accessibilityLabel="Partition interactive, défilement horizontal"
-    style={{borderWidth:1,borderColor:theme.border,borderRadius:14,
-      backgroundColor:theme.surface}}>
-    <View style={{position:'relative',width:scoreWidth,height}}>
+  return <View style={{position:'relative',borderWidth:1,
+    borderColor:theme.border,borderRadius:14,backgroundColor:theme.surface,
+    overflow:'hidden'}}>
+    <ScrollView ref={staffRef} horizontal showsHorizontalScrollIndicator={false}
+      accessibilityLabel="Partition interactive, défilement horizontal"
+      style={{height}}>
+      <View style={{position:'relative',width:scoreWidth,height}}>
       <Svg width={scoreWidth} height={height} viewBox={'0 0 '+scoreWidth+' '+height}>
         {showPiano?[74,86,98,110,122].map(y=><Line key={'p'+y}
           x1={52} x2={scoreWidth-15}
@@ -190,13 +192,6 @@ export function MusicScoreView({events,compact=false,instrument,
           </React.Fragment>;
         })}
       </Svg>
-      <Pressable onPress={onTempoPress} disabled={!onTempoPress}
-        accessibilityRole="button" accessibilityLabel={'Modifier le tempo '+bpm+' BPM'}
-        style={{position:'absolute',top:3,right:20,minHeight:37,minWidth:120,
-          justifyContent:'center',alignItems:'flex-end'}}>
-        <Text style={{fontSize:19,fontWeight:'600',
-          color:theme.foreground}}>♩ = {bpm}</Text>
-      </Pressable>
       {showPiano?<Pressable onPress={onClefPress} disabled={!onClefPress}
         accessibilityRole="button" accessibilityLabel={'Changer la clef '+
           (clef==='treble'?'de sol':'de fa')}
@@ -213,8 +208,17 @@ export function MusicScoreView({events,compact=false,instrument,
           style={{position:'absolute',top:y-19,left:x-16,
             width:34,height:39,borderRadius:18}}/>;
       })}
-    </View>
-  </ScrollView>;
+      </View>
+    </ScrollView>
+    <Pressable onPress={onTempoPress} disabled={!onTempoPress}
+      accessibilityRole="button" accessibilityLabel={'Modifier le tempo '+bpm+' BPM'}
+      style={{position:'absolute',top:3,right:9,minHeight:39,
+        paddingHorizontal:10,justifyContent:'center',alignItems:'flex-end',
+        backgroundColor:theme.surface,borderRadius:8,zIndex:4}}>
+      <Text style={{fontSize:17,fontWeight:'600',
+        color:theme.foreground}}>♩ = {bpm}</Text>
+    </Pressable>
+  </View>;
 }
 /** WebAudio previews do not alter the saved MIDI event or the original audio. */
 function playSound(ctx:AudioContext,pitch:number,drum:boolean,level:number,
