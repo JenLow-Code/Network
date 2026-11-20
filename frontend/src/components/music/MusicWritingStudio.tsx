@@ -30,6 +30,8 @@ type Props = {
   immersive?: boolean;
   sections?: MusicSection[];
   showTabs?: boolean;
+  /** Song sections become meaningful only after a version exists. */
+  canLinkSections?: boolean;
 };
 
 function lyricText(file: MusicProjectFile) {
@@ -63,7 +65,7 @@ export function MusicNotePreview({ text, color }: { text: string; color: string 
 
 export function MusicWritingStudio({ mode, onModeChange, originalLanguage, source,
   initialFile, onSave, onRequestTranslator, requestedLanguages=[], onDirtyChange,
-  immersive=false,sections=[],showTabs=true }: Props) {
+  immersive=false,sections=[],showTabs=true,canLinkSections=false }: Props) {
   const theme = useAppTheme();
   const { width, height } = useWindowDimensions();
   const compact = width < 650;
@@ -214,8 +216,9 @@ export function MusicWritingStudio({ mode, onModeChange, originalLanguage, sourc
     }}
     placeholder={placeholder} placeholderTextColor={theme.muted}
     accessibilityLabel={translating?'Traduction':isNote?'Contenu de la note':'Paroles'}
-    style={{fontFamily:isNote?undefined:'Georgia',fontSize:isNote?16:18,
-      lineHeight:isNote?27:30,minHeight:minimum,
+    style={{fontFamily:isNote?undefined:'Georgia',
+      fontSize:isNote?16:translating&&compact?13:18,
+      lineHeight:isNote?27:translating&&compact?21:30,minHeight:minimum,
       paddingVertical:14,paddingHorizontal:0,color:theme.foreground}}/>;
   const languageControl = <View style={{gap:8}}>
     <Pressable onPress={() => setLanguageOpen(!languageOpen)}
@@ -262,36 +265,29 @@ export function MusicWritingStudio({ mode, onModeChange, originalLanguage, sourc
         <Text style={{color:theme.muted,fontSize:12}}>Vers</Text>
         {languageControl}
       </View>
-      <View style={{flexDirection:compact?'column-reverse':'row-reverse',
-        gap:compact?12:20,alignItems:'stretch'}}>
-        <View style={{flex:1,minWidth:0,gap:10}}>
-          <Text style={{fontSize:12,color:PINK,fontWeight:'700'}}>TRADUCTION</Text>
+      <View style={{flexDirection:'row',gap:compact?9:20,alignItems:'stretch'}}>
+        <View style={{flex:1,minWidth:0,backgroundColor:theme.dark?'#292326':'#F7F4F1',
+          borderRadius:compact?9:13,padding:compact?9:17,gap:9}}>
+          <Text style={{fontSize:compact?10:12,color:theme.muted,fontWeight:'700'}}>
+            ORIGINAL · {source?.language||originalLanguage}
+          </Text>
+          {source?<Text selectable style={{fontFamily:'Georgia',
+            fontSize:compact?12:16,lineHeight:compact?21:27,
+            color:theme.foreground}}>
+            {lyricText(source)}
+          </Text>:null}
+        </View>
+        <View style={{flex:1,minWidth:0,gap:9}}>
+          <Text style={{fontSize:compact?10:12,color:PINK,fontWeight:'700'}}>
+            TRADUCTION
+          </Text>
           <TextInput value={title} onChangeText={setTitle}
-            placeholder="Titre de la traduction (facultatif)"
+            placeholder="Titre (facultatif)"
             placeholderTextColor={theme.muted}
             accessibilityLabel="Titre de la traduction"
-            style={{fontSize:16,fontWeight:'600',color:theme.foreground,
-              paddingVertical:8,borderBottomWidth:1,borderColor:theme.border}}/>
-          {editor('Écris ta traduction ici…',immersive?(compact?330:490):compact?145:230)}
-        </View>
-        <View style={{flex:1,minWidth:0,backgroundColor:theme.dark?'#292326':'#F7F4F1',
-          borderRadius:13,padding:compact?13:17,gap:10}}>
-          <Pressable onPress={()=>setSourceExpanded(!sourceExpanded)}
-            accessibilityRole="button" accessibilityLabel="Afficher ou masquer les paroles originales"
-            style={{flexDirection:'row',alignItems:'center',gap:8,minHeight:31}}>
-            <Text style={{fontSize:12,color:theme.muted,fontWeight:'700',flex:1}}>
-              ORIGINAL · {source?.language || originalLanguage}
-            </Text>
-            {compact?<Ionicons name={sourceExpanded?'chevron-up':'chevron-down'}
-              color={theme.muted} size={18}/>:null}
-          </Pressable>
-          {(!compact||sourceExpanded)&&source ? <>
-            <Text style={{fontSize:14,fontWeight:'700',color:theme.foreground}}>{source.title}</Text>
-            <Text selectable style={{fontFamily:'Georgia',fontSize:compact?15:16,
-              lineHeight:compact?24:27,color:theme.foreground}}>
-              {lyricText(source)}
-            </Text>
-          </> : null}
+            style={{fontSize:compact?12:16,fontWeight:'600',color:theme.foreground,
+              paddingVertical:7,borderBottomWidth:1,borderColor:theme.border}}/>
+          {editor('Traduction…',immersive?compact?290:490:compact?185:230)}
         </View>
       </View>
       {onRequestTranslator?<View style={{borderTopWidth:1,borderTopColor:theme.border,paddingTop:13,gap:7}}>
@@ -334,7 +330,7 @@ export function MusicWritingStudio({ mode, onModeChange, originalLanguage, sourc
             </Text>
           </Pressable>
         </View>:null}
-        {!isNote?<View style={{gap:9,paddingVertical:5}}>
+        {!isNote&&canLinkSections?<View style={{gap:9,paddingVertical:5}}>
           <View style={{flexDirection:'row',alignItems:'center',flexWrap:'wrap',gap:8}}>
             <Pressable onPress={()=>{
               if(!validSelection){setSelectionError('Sélectionne d’abord quelques mots dans les paroles.');return;}
