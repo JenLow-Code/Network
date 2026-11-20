@@ -9,6 +9,12 @@ export type SamplePitch = {
 export function midiFrequency(midi:number):number{
   return 440*Math.pow(2,(midi-69)/12);
 }
+/** A drum sample is a one-shot: MIDI note length is just the trigger.
+ * Keep its real recording tail, bounded for safe local rendering. */
+export function drumOneShotSeconds(duration:number,onset=0):number{
+  if(!Number.isFinite(duration)||duration<=0)return 0;
+  return Math.min(12,Math.max(.015,duration-Math.max(0,onset)));
+}
 export function samplePlaybackRate(targetMidi:number,sourceFrequencyHz:number):number{
   return midiFrequency(targetMidi)/sourceFrequencyHz;
 }
