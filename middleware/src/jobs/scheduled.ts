@@ -29,7 +29,7 @@ export function inQuietHours(start: string | null, end: string | null, timeZone:
  */
 export async function runScheduled(env: Env, now = new Date()): Promise<Record<string, number>> {
   const sql = new Sql(env.DB);
-  const stats: Record<string, number> = { prayerReminders: 0, deferredForQuietHours: 0, scheduledDelivered: 0, uploadsExpired: 0 };
+  const stats: Record<string, number> = { prayerReminders: 0, deferredForQuietHours: 0, scheduledDelivered: 0, uploadsExpired: 0, musicReviewReminders: 0 };
   const nowIso = now.toISOString().replace(/\.\d{3}Z$/, 'Z');
 
   const due = await sql.all<{ user_id: string; publication_id: string; scheduled_for: string; title: string; enabled: number; timezone: string | null; qs: string | null; qe: string | null }>(
@@ -61,6 +61,36 @@ export async function runScheduled(env: Env, now = new Date()): Promise<Record<s
     "UPDATE notifications SET status='sent',delivered_at=CURRENT_TIMESTAMP WHERE status='queued' AND scheduled_at IS NOT NULL AND scheduled_at<=?",
     nowIso,
   );
+
+  // An archived proposal can be deferred only once. After 30 days it
+  // automatically returns to the unanswered inbox and rings again.
+  const expiredReviews=await sql.all<{id:string;publisher_id:string;title:string}>(
+    `SELECT pr.id,t.publisher_id,p.title
+     FROM music_collab_proposals pr
+     JOIN music_tracks t ON t.id=pr.original_track_id
+     JOIN publications p ON p.id=t.publication_id
+     WHERE pr.status='submitted' AND pr.review_state='archived'
+       AND pr.archive_until IS NOT NULL AND pr.archive_until<=?
+     LIMIT 250`, nowIso,
+  );
+  for(const review of expiredReviews){
+    const changed=await sql.run(
+      `UPDATE music_collab_proposals
+       SET review_state='pending',archive_until=NULL
+       WHERE id=? AND status='submitted' AND review_state='archived'
+         AND archive_until IS NOT NULL AND archive_until<=?`,
+      review.id,nowIso,
+    );
+    if(!changed)continue;
+    await notifyStmt(sql,{
+      userId:review.publisher_id,
+      type:'music.proposal.archive_reminder',category:'music',
+      entityType:'music_proposal',entityId:review.id,
+      params:{track:review.title},
+      dedupeKey:'music-review-archive-expired:'+review.id,
+    }).run();
+    stats.musicReviewReminders++;
+  }
 
   const expired = await sql.all<{ id: string; r2_key: string | null }>(
     "SELECT id,r2_key FROM media_assets WHERE storage_status='pending' AND upload_expires_at IS NOT NULL AND upload_expires_at<? LIMIT 200",
