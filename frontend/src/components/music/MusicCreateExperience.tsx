@@ -1,4 +1,4 @@
-import React,{useEffect,useState} from 'react';
+import React,{useEffect,useRef,useState} from 'react';
 import {Platform} from 'react-native';
 import {getDraftAttachment} from '@/domain/musicLocalStorage';
 import {musicStamp} from '@/domain/musicEditing';
@@ -8,6 +8,7 @@ import {useAppTheme} from '@/theme/AppTheme';
 import {MusicAudioCapture} from './MusicAudioCapture';
 import {MusicAudioPreview} from './MusicAudioPreview';
 import {MusicStudioTransport,versionLength} from './MusicStudioTransportNext';
+import {isMidiSource,renderMidiSource} from '@/domain/musicMidiAudio';
 import {MusicAudioMarkers} from './MusicAudioMarkers';
 import {MusicSourceBank} from './MusicSourceBank';
 import {MusicLyricTimeline} from './MusicLyricTimeline';
@@ -33,9 +34,15 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
   // A version exists only when it contains at least one arranged source.
   const versions=state.versions.filter(v=>v.tracks.length>0);
   const version=versions.find(v=>v.id===state.activeVersionId)||versions[0];
-  const sources=project.files.filter(isMusicTrackCandidate);
+  // Rendered WAVs are internal derivatives; Capture and the source bank keep
+  // only the original editable MIDI (the WAV stays linked to that original).
+  const sources=project.files.filter(file=>
+    isMusicTrackCandidate(file)&&!file.renderedFromMidiId);
   const availableSources=version?sources.filter(file=>
-    !version.tracks.some(track=>track.sourceFileId===file.id)):sources;
+    !version.tracks.some(track=>{
+      const used=project.files.find(item=>item.id===track.sourceFileId);
+      return used?.id===file.id||used?.renderedFromMidiId===file.id;
+    })):sources;
   // Older takes may have been saved before their duration was known.
   // Decode the real file instead of drawing a zero-width phantom track.
   const unknownDurationIds=version?.tracks
@@ -139,22 +146,49 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
       trimStartSeconds:Math.round(start*100)/100,trimEndSeconds:Math.round(end*100)/100});
     setError('');setEditTrack('');
   };
-  const first=(file:MusicProjectFile)=>{
-    const created=makeWorkingVersion(file,versions.length+1);
-    patch({musicNext:{...state,versions:[...versions,created],
-      activeVersionId:created.id,history:(state.history||[])
-        .filter(entry=>versions.some(v=>v.id===entry.versionId))}});
-    setPickMode('none');setVersionMenu(false);setVersionExpanded(true);setError('');
-  };
-  const add=(file:MusicProjectFile,at=timelineCursor)=>{
-    if(!version){first(file);return;}
-    if(version.tracks.some(track=>track.sourceFileId===file.id)){
-      setError('Cette prise est déjà dans la version. Duplique la piste sur la chronologie si besoin.');
+  const convertingRef=useRef(false);
+  const [converting,setConverting]=useState('');
+  /** Before a MIDI idea enters the studio, render a separate, audible WAV.
+   * The original score/MIDI stays untouched in Capturer.
+   * A single metadata patch commits both the WAV and the track atomically. */
+  const addToVersion=async(file:MusicProjectFile,at?:number,forceNew=false)=>{
+    if(convertingRef.current)return;
+    const existing=!forceNew?version:undefined;
+    if(existing&&existing.tracks.some(track=>{
+      const used=project.files.find(item=>item.id===track.sourceFileId);
+      return used?.id===file.id||used?.renderedFromMidiId===file.id;
+    })){
+      setError('Cette prise est déjà dans la version. Duplique-la dans les pistes si nécessaire.');
       return;
     }
-    editTracks([...version.tracks,{...makeWorkingTrack(file),
-      offsetSeconds:Math.max(0,Math.round(at*100)/100)}]);
-    setPickMode('none');setError('');
+    convertingRef.current=true;
+    setConverting(isMidiSource(file)?file.id:'');
+    setError('');
+    try{
+      const audible=isMidiSource(file)?await renderMidiSource(file):file;
+      const files=audible===file?project.files:[...project.files,audible];
+      if(!existing){
+        const created=makeWorkingVersion(audible,versions.length+1);
+        patch({files,musicNext:{...state,versions:[...versions,created],
+          activeVersionId:created.id,history:(state.history||[])
+            .filter(entry=>versions.some(v=>v.id===entry.versionId))}});
+      }else{
+        const updated={...existing,tracks:[...existing.tracks,{
+          ...makeWorkingTrack(audible),
+          offsetSeconds:Math.max(0,Math.round((at??timelineCursor)*100)/100),
+        }]};
+        patch({files,musicNext:changeWorkingVersion(state,updated)});
+      }
+      setPickMode('none');setVersionMenu(false);
+      setVersionExpanded(true);setError('');
+    }catch(e){
+      setError(e instanceof Error?e.message:
+        'Impossible de convertir cette partition MIDI en une prise audio.');
+    }finally{convertingRef.current=false;setConverting('');}
+  };
+  const first=(file:MusicProjectFile)=>{void addToVersion(file,0,true);};
+  const add=(file:MusicProjectFile,at=timelineCursor)=>{
+    void addToVersion(file,at);
   };
   const copyVersion=()=>{
     if(!version)return;
@@ -394,6 +428,9 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
         button('Choisir une prise · 1re version',()=>setPickMode('start'),true,'add-outline'):
         button('Capturer ma première prise',onCapture,true,'mic-outline')}
     </View>:null}
+    {converting?<Text style={{fontSize:12,color:PINK}}>
+      Conversion MIDI en audio WAV… Le fichier d’origine est conservé.
+    </Text>:null}
     {version&&versionExpanded?<View style={{gap:12}}>
       <View style={{flexDirection:'row',alignItems:'baseline',gap:10}}>
         <Text style={{fontSize:compact?18:22,fontWeight:'700',color:theme.foreground}}>
