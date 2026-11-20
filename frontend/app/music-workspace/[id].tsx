@@ -20,7 +20,7 @@ type Space = 'capture'|'create'|'collaborate';
 const PINK='#CB245C';
 
 export default function MusicWorkspace() {
-  const {id,tab}=useLocalSearchParams<{id:string;tab?:Space}>();
+  const {id,tab,intent}=useLocalSearchParams<{id:string;tab?:Space;intent?:string}>();
   const {items,patch,ready,error}=useMusicWorkspaces();
   const theme=useAppTheme();
   const {width}=useWindowDimensions();
@@ -138,6 +138,21 @@ export default function MusicWorkspace() {
           </Pressable>;
         })}
       </View>
+      {space==='capture'&&intent==='new-version'?
+        <View style={{flexDirection:'row',alignItems:'flex-start',gap:11,
+          paddingHorizontal:14,paddingVertical:13,borderRadius:12,
+          backgroundColor:theme.dark?'#372B31':'#F9EDF2'}}>
+          <Ionicons name="add-circle-outline" size={20} color={PINK}/>
+          <View style={{flex:1,gap:4}}>
+            <Text style={{fontSize:14,fontWeight:'700',color:theme.foreground}}>
+              Nouvelle version
+            </Text>
+            <Text style={{fontSize:12,lineHeight:19,color:theme.muted}}>
+              Choisis une prise audio ou MIDI ci-dessous pour démarrer une nouvelle version.
+              Tes enregistrements d'origine restent dans Capturer.
+            </Text>
+          </View>
+        </View>:null}
       {error ? <Text style={{color:'#B94D63',fontSize:12}}>{error}</Text> : null}
       {convertingMidi?<Text style={{fontSize:12,color:PINK}}>
         Conversion MIDI en prise WAV… L’original reste dans Capturer.
@@ -146,7 +161,8 @@ export default function MusicWorkspace() {
         {midiConversionError}
       </Text>:null}
       {space==='capture' ? <MusicCaptureExperience project={project} patch={update}
-        onStartVersion={start} onUseFile={useFile} hasVersion={!!version}/> : null}
+        onStartVersion={start} onUseFile={useFile} hasVersion={!!version}
+        newVersionMode={intent==='new-version'}/> : null}
       {space==='create' ? <MusicCreateExperience project={project} patch={update}
         onCapture={()=>{setSpace('capture');router.setParams({tab:'capture'});}}/> : null}
       {space==='collaborate' ?
