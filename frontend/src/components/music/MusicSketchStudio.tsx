@@ -426,36 +426,48 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
   triggerRef.current=trigger;
   releaseRef.current=releaseNote;
   useEffect(()=>{
-    if(!active||part!=='piano'||Platform.OS!=='web'||typeof window==='undefined')return;
-    const keyToPitch:Record<string,number>={
+    if(!active||Platform.OS!=='web'||typeof window==='undefined')return;
+    const pianoKeys:Record<string,number>={
       s:0,e:1,d:2,r:3,f:4,g:5,t:6,h:7,y:8,j:9,u:10,k:11,l:12,
+    };
+    // Six keys in a row, deliberately active ONLY in Batterie mode.
+    // A kick · S snare · D closed HH · F open HH · G clap · H crash.
+    const drumKeys:Record<string,number>={
+      a:36,s:38,d:42,f:46,g:39,h:49,
     };
     const down=(event:KeyboardEvent)=>{
       const target=event.target as HTMLElement|null;
       if(target&&(['INPUT','TEXTAREA','SELECT'].includes(target.tagName)||
         target.isContentEditable))return;
       if(event.repeat||event.ctrlKey||event.altKey||event.metaKey)return;
-      const key=event.key.toLowerCase(),offset=keyToPitch[key];
-      if(offset===undefined||heldKeysRef.current.has(key))return;
-      event.preventDefault();heldKeysRef.current.add(key);
-      triggerRef.current('piano',baseMidi+offset);
+      const key=event.key.toLowerCase();
+      const note=part==='piano'?pianoKeys[key]:drumKeys[key];
+      if(note===undefined||heldKeysRef.current.has(key))return;
+      event.preventDefault();
+      heldKeysRef.current.add(key);
+      triggerRef.current(part,part==='piano'?baseMidi+note:note);
     };
     const up=(event:KeyboardEvent)=>{
       const key=event.key.toLowerCase();
       if(!heldKeysRef.current.delete(key))return;
-      const offset=keyToPitch[key];
-      if(offset!==undefined)releaseRef.current('piano',baseMidi+offset);
+      if(part==='piano'&&pianoKeys[key]!==undefined)
+        releaseRef.current('piano',baseMidi+pianoKeys[key]);
+    };
+    const cancel=()=>{
+      heldKeysRef.current.forEach(key=>{
+        if(part==='piano'&&pianoKeys[key]!==undefined)
+          releaseRef.current('piano',baseMidi+pianoKeys[key]);
+      });
+      heldKeysRef.current.clear();
     };
     window.addEventListener('keydown',down);
     window.addEventListener('keyup',up);
+    window.addEventListener('blur',cancel);
     return()=>{
       window.removeEventListener('keydown',down);
       window.removeEventListener('keyup',up);
-      heldKeysRef.current.forEach(key=>{
-        const offset=keyToPitch[key];
-        if(offset!==undefined)releaseRef.current('piano',baseMidi+offset);
-      });
-      heldKeysRef.current.clear();
+      window.removeEventListener('blur',cancel);
+      cancel();
     };
   },[active,part,baseMidi]);
   const stopPreview=()=>{
@@ -1023,7 +1035,7 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
         Pads · {last||'Batterie'}
       </Text>
       <View style={{flexDirection:'row',gap:7,flexWrap:'wrap'}}>
-        {DRUM_PADS.map(pad=><Pressable key={pad.midi}
+        {DRUM_PADS.map((pad,index)=><Pressable key={pad.midi}
           onPress={()=>trigger('drum',pad.midi)} accessibilityRole="button"
           accessibilityLabel={'Jouer '+pad.label}
           style={{width:compact?'31%':'30%',minHeight:compact?64:76,
@@ -1033,6 +1045,8 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
           <Text style={{color:theme.foreground,fontSize:12,fontWeight:'600'}}>
             {pad.label}
           </Text>
+          {Platform.OS==='web'?<Text style={{fontSize:10,color:theme.muted,
+            fontWeight:'600'}}>{['A','S','D','F','G','H'][index]}</Text>:null}
         </Pressable>)}
       </View>
     </View>}
