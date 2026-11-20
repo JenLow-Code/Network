@@ -106,7 +106,7 @@ function PersonResourceTiles({ resources, width, compact, dark, onInspect }: {
             width: tileWidth, height: compact ? Math.max(70, tileWidth * 0.94) : Math.max(114,Math.min(143,tileWidth * 1.08)),
             backgroundColor: resource.confirmed ? (dark ? '#324536' : '#E1ECE0') : (dark ? '#25252A' : '#FFFCF8'),
             borderRadius: 8, borderWidth: resource.confirmed ? 0 : missingTalentBorderWidth,
-            borderColor: compact ? '#D95768' : '#C13B82', overflow: 'hidden',
+            borderColor: '#D71D77', overflow: 'hidden',
             alignItems: 'center', justifyContent: 'center', gap: compact ? 4 : 2, paddingHorizontal: 3, paddingBottom: 3,
           }}>
             {resource.illustration ? (
