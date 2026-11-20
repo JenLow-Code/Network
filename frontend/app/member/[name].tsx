@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Nav } from '@/components/navigation/Nav';
-import { TopActions } from '@/components/navigation/TopActions';
+import { PageHeader } from '@/components/navigation/PageHeader';
 import { people } from '@/mocks/people';
 import { ProfilePublicationFeed } from '@/components/publication/PublicationGallery';
 import SemenceSharesFeed from '@/components/dream/SemenceSharesFeed';
@@ -93,11 +93,7 @@ export default function PublicMemberProfile() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
       <ScrollView contentContainerStyle={{ ...workspaceCanvas(screenWidth), paddingTop:12,paddingBottom:55,gap:19 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Pressable onPress={() => router.back()} accessibilityLabel="Retour"><Ionicons name="chevron-back" size={25} color={theme.foreground} /></Pressable>
-          <Text style={{ fontSize:PAGE_TITLE_FONT_SIZE,lineHeight:PAGE_TITLE_LINE_HEIGHT,fontWeight:'800',color:theme.foreground }}>Profil public</Text>
-          <TopActions />
-        </View>
+        <PageHeader title="Profil public" onBack={()=>router.back()} />
         <View style={{ alignItems: 'center', gap: 8, paddingVertical: 16 }}>
           {photo ? (
             <Image source={{ uri: photo }} style={{ width: 102, height: 102, borderRadius: 51 }} />
