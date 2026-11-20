@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { lostFoundNeeds, isNeedFound } from '@/domain/dreamResourceRecovery';
 import { api } from '@/lib/api/client';
 import { Alert, Image, Linking, Modal, Platform, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from 'react-native';
@@ -67,7 +67,6 @@ export default function DreamExperience({
 }) {
  const { patch, appendBlock, setResources, setHabits, detachHabit, setGoalAndGrow, advance, remove, addGrowthLog, setGrowthLogPublication } = useDreams();
  const theme = useAppTheme();
- const contentScrollRef=useRef<React.ElementRef<typeof ScrollView>>(null);
  const {focus}=useGlobalSearchParams<{focus?:string}>();
  const {width:viewportWidth}=useWindowDimensions();
  const narrowScreen=viewportWidth<640;
@@ -324,12 +323,11 @@ export default function DreamExperience({
    setFreezeDialog(false);
  };
  return <View style={{flex:1,backgroundColor:theme.background}}>
-  <ScrollView ref={contentScrollRef} showsVerticalScrollIndicator={false} style={{flex:1,backgroundColor:'transparent'}}
+  <ScrollView showsVerticalScrollIndicator={false} style={{flex:1,backgroundColor:'transparent'}}
     keyboardShouldPersistTaps="handled"
     contentContainerStyle={{paddingHorizontal:ws.gutter,paddingTop:10,paddingBottom:85,
       maxWidth:ws.maxWidth,width:'100%',alignSelf:'center'}}>
   <DreamPhaseHeader dream={dream} phase={phase} onBack={onBack || (()=>router.replace('/my-space'))} onNavigate={onNavigate} readOnly={readOnly&&!recoverPastNeeds}
-    onPrimaryAction={()=>contentScrollRef.current?.scrollTo({y:470,animated:true})}
     summary={phase==='Témoignage'?'Le rêve est devenu réalité. Voici ce qui a pris vie.':undefined}
     action={phase==='Rêve'&&!historical?<Pressable onPress={()=>setEditing(!editing)} style={{padding:8}}><Text style={{color:theme.foreground,fontWeight:'700',fontSize:12}}>{editing?'Terminer':'Composer'}</Text></Pressable>:undefined}
   />
