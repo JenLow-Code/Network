@@ -735,7 +735,7 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
       borderWidth:1,borderColor:theme.border,backgroundColor:theme.surface}}>
       <View style={{flexDirection:'row',alignItems:'center',
         justifyContent:'space-between'}}>
-        <Text style={{fontFamily:'BiroScript',fontSize:22,color:theme.foreground}}>
+        <Text style={{fontSize:22,color:theme.foreground}}>
           Tempo
         </Text>
         <Pressable onPress={()=>setEditor(null)} accessibilityRole="button"
@@ -757,7 +757,7 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
     {editor==='clef'?<View style={{gap:10,padding:13,borderRadius:14,
       borderWidth:1,borderColor:theme.border,backgroundColor:theme.surface}}>
       <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
-        <Text style={{fontFamily:'BiroScript',fontSize:22,color:theme.foreground}}>
+        <Text style={{fontSize:22,color:theme.foreground}}>
           Choisir la clef
         </Text>
         <Pressable onPress={()=>setEditor(null)} accessibilityRole="button"
@@ -773,105 +773,115 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
           false,clef==='bass')}
       </View>
     </View>:null}
-    {editor==='chord'&&selected?<View style={{gap:9,padding:13,borderRadius:14,
-      borderWidth:1,borderColor:theme.border,backgroundColor:theme.surface}}>
-      <View style={{flexDirection:'row',alignItems:'center',
-        justifyContent:'space-between'}}>
-        <Text style={{fontFamily:'BiroScript',fontSize:22,color:theme.foreground}}>
-          Accord · temps {beatLabel(selected.startBeats)}
-        </Text>
+    {/* A vertical notation palette floats over the score instead of pushing
+         the keyboard and musical staff down the screen. */}
+    <Modal transparent visible={!!selected&&(editor==='note'||editor==='chord')}
+      animationType="fade" onRequestClose={()=>setEditor(null)}>
+      <View style={{flex:1,justifyContent:'center',alignItems:'flex-end'}}>
         <Pressable onPress={()=>setEditor(null)}
-          accessibilityRole="button" accessibilityLabel="Fermer le choix de note"
-          style={{width:40,height:40,alignItems:'center',justifyContent:'center'}}>
-          <Ionicons name="close" color={theme.muted} size={20}/>
-        </Pressable>
+          accessibilityRole="button" accessibilityLabel="Fermer les figures de note"
+          style={{position:'absolute',top:0,left:0,right:0,bottom:0,
+            backgroundColor:'rgba(0,0,0,0.16)'}}/>
+        <View style={{width:142,maxHeight:Math.max(250,height-70),
+          borderRadius:16,borderWidth:1,borderColor:theme.border,
+          backgroundColor:theme.surface,marginRight:12,
+          shadowOpacity:.15,shadowRadius:15,elevation:9,overflow:'hidden'}}>
+          <ScrollView keyboardShouldPersistTaps="handled"
+            contentContainerStyle={{padding:8,gap:4,alignItems:'center'}}>
+            <View style={{height:39,width:'100%',flexDirection:'row',
+              alignItems:'center',justifyContent:'space-between'}}>
+              <Text style={{fontSize:14,fontWeight:'600',color:theme.foreground}}>
+                {selected?musicNoteName(selected.midi):''}
+              </Text>
+              <Pressable onPress={()=>setEditor(null)}
+                accessibilityRole="button" accessibilityLabel="Fermer"
+                style={{minWidth:40,minHeight:39,alignItems:'center',
+                  justifyContent:'center'}}>
+                <Ionicons name="close" size={19} color={theme.muted}/>
+              </Pressable>
+            </View>
+            {editor==='chord'?chordNotes.map(note=>
+              <Pressable key={note.id} onPress={()=>{
+                setSelectedId(note.id);setEditor('note');
+              }} accessibilityRole="button"
+                accessibilityLabel={'Modifier '+musicNoteName(note.midi)}
+                style={{width:'100%',height:44,borderRadius:10,borderWidth:1,
+                  justifyContent:'center',alignItems:'center',borderColor:theme.border}}>
+                <Text style={{fontWeight:'600',fontSize:13,color:theme.foreground}}>
+                  {musicNoteName(note.midi)}
+                </Text>
+              </Pressable>):
+            NOTE_VALUES.map(option=>{
+              const current=!!selected&&Math.abs(selected.lengthBeats-option.beats)<.001;
+              return <Pressable key={option.beats}
+                onPress={()=>selected&&applyDuration(option.beats)}
+                accessibilityRole="button" accessibilityLabel={option.label}
+                accessibilityState={{selected:current}}
+                style={{width:69,height:45,borderRadius:9,borderWidth:1,
+                  borderColor:current?PINK:theme.border,
+                  alignItems:'center',justifyContent:'center',
+                  backgroundColor:current?(theme.dark?'#452935':'#FAE9EF'):
+                    'transparent'}}>
+                <NoteValueGlyph beats={option.beats}
+                  color={current?PINK:theme.foreground} size={30}/>
+              </Pressable>;
+            })}
+            {editor==='note'&&selected?<View style={{gap:8,alignItems:'center',
+              width:'100%',paddingTop:6,
+              borderTopWidth:1,borderColor:theme.border}}>
+              <View style={{flexDirection:'row',justifyContent:'center',gap:7}}>
+                <Pressable onPress={()=>patchEvent(selected.id,{
+                  midi:Math.max(0,selected.midi-1)})}
+                  accessibilityRole="button" accessibilityLabel="Note plus grave"
+                  style={{width:43,height:42,alignItems:'center',justifyContent:'center'}}>
+                  <Ionicons name="remove" size={20} color={theme.foreground}/>
+                </Pressable>
+                <Pressable onPress={()=>patchEvent(selected.id,{
+                  midi:Math.min(127,selected.midi+1)})}
+                  accessibilityRole="button" accessibilityLabel="Note plus aiguë"
+                  style={{width:43,height:42,alignItems:'center',justifyContent:'center'}}>
+                  <Ionicons name="add" size={20} color={theme.foreground}/>
+                </Pressable>
+              </View>
+              <View style={{flexDirection:'row',gap:5}}>
+                <Pressable onPress={()=>patchEvent(selected.id,{startBeats:
+                  Math.max(0,Math.round((selected.startBeats-.25)*4)/4)})}
+                  accessibilityRole="button" accessibilityLabel="Déplacer la note vers la gauche"
+                  style={{width:43,height:42,alignItems:'center',justifyContent:'center'}}>
+                  <Ionicons name="arrow-back-outline" size={19} color={theme.foreground}/>
+                </Pressable>
+                <Pressable onPress={()=>patchEvent(selected.id,{startBeats:
+                  Math.round((selected.startBeats+.25)*4)/4})}
+                  accessibilityRole="button" accessibilityLabel="Déplacer la note vers la droite"
+                  style={{width:43,height:42,alignItems:'center',justifyContent:'center'}}>
+                  <Ionicons name="arrow-forward-outline" size={19} color={theme.foreground}/>
+                </Pressable>
+              </View>
+              <View style={{flexDirection:'row',gap:4}}>
+                <Pressable onPress={()=>audition(selected)} accessibilityRole="button"
+                  accessibilityLabel="Écouter la note"
+                  style={{width:39,height:42,alignItems:'center',justifyContent:'center'}}>
+                  <Ionicons name="play-outline" size={21} color={PINK}/>
+                </Pressable>
+                {selected.draft?<Pressable onPress={()=>{
+                  patchEvent(selected.id,{draft:false});setEditor(null);
+                }} accessibilityRole="button" accessibilityLabel="Valider la note"
+                  style={{width:39,height:42,alignItems:'center',justifyContent:'center'}}>
+                  <Ionicons name="checkmark-outline" size={21} color={PINK}/>
+                </Pressable>:null}
+                <Pressable onPress={()=>{
+                  setEvents(old=>old.filter(event=>event.id!==selected.id));
+                  setSelectedId('');setEditor(null);
+                }} accessibilityRole="button" accessibilityLabel="Supprimer la note"
+                  style={{width:39,height:42,alignItems:'center',justifyContent:'center'}}>
+                  <Ionicons name="trash-outline" size={20} color={theme.muted}/>
+                </Pressable>
+              </View>
+            </View>:null}
+          </ScrollView>
+        </View>
       </View>
-      <Text style={{fontSize:12,color:theme.muted}}>
-        Quelle note veux-tu modifier ?
-      </Text>
-      <View style={{flexDirection:'row',gap:7,flexWrap:'wrap'}}>
-        {chordNotes.map(note=>control(
-          note.instrument==='piano'?musicNoteName(note.midi):
-            DRUM_PADS.find(p=>p.midi===note.midi)?.label||'Frappe',
-          ()=>{setSelectedId(note.id);setEditor('note');},
-          false,selectedId===note.id))}
-      </View>
-    </View>:null}
-    {editor==='note'&&selected?<View style={{gap:9,padding:compact?11:14,
-      borderRadius:13,borderWidth:1,borderColor:theme.border,
-      backgroundColor:theme.surface}}>
-      <View style={{flexDirection:'row',alignItems:'center',gap:8}}>
-        <Text style={{fontFamily:'BiroScript',fontSize:21,color:theme.foreground,
-          flex:1}}>{musicNoteName(selected.midi)} · {beatLabel(selected.lengthBeats)} temps</Text>
-        <Pressable onPress={()=>audition(selected)} accessibilityRole="button"
-          accessibilityLabel="Écouter cette note"
-          style={{width:42,height:42,alignItems:'center',justifyContent:'center'}}>
-          <Ionicons name="play-outline" size={21} color={PINK}/>
-        </Pressable>
-        {selected.draft?<Pressable onPress={()=>{
-          patchEvent(selected.id,{draft:false});setEditor(null);
-        }} accessibilityRole="button" accessibilityLabel="Valider cette note"
-          style={{width:42,height:42,alignItems:'center',justifyContent:'center'}}>
-          <Ionicons name="checkmark-outline" size={22} color={PINK}/>
-        </Pressable>:null}
-        <Pressable onPress={()=>setEditor(null)} accessibilityRole="button"
-          accessibilityLabel="Fermer les options"
-          style={{width:42,height:42,alignItems:'center',justifyContent:'center'}}>
-          <Ionicons name="close" size={22} color={theme.muted}/>
-        </Pressable>
-      </View>
-      <Text style={{fontSize:11,color:theme.muted}}>Choisir une figure de note</Text>
-      <View style={{flexDirection:'row',gap:6,flexWrap:'wrap'}}>
-        {NOTE_VALUES.map(option=>{
-          const isCurrent=Math.abs(selected.lengthBeats-option.beats)<.001;
-          return <Pressable key={option.beats}
-            onPress={()=>patchEvent(selected.id,{lengthBeats:option.beats})}
-            accessibilityRole="button"
-            accessibilityLabel={option.label+', '+beatLabel(option.beats)+' temps'}
-            accessibilityState={{selected:isCurrent}}
-            style={{minWidth:compact?'22%':68,flexGrow:compact?1:0,
-              minHeight:68,borderWidth:1,borderColor:isCurrent?PINK:theme.border,
-              borderRadius:10,alignItems:'center',justifyContent:'center',
-              backgroundColor:isCurrent?(theme.dark?'#452935':'#FAE9EF'):
-                theme.background,gap:1}}>
-            <NoteValueGlyph beats={option.beats}
-              color={isCurrent?PINK:theme.foreground} size={30}/>
-            <Text style={{fontSize:10,color:isCurrent?PINK:theme.muted}}>
-              {beatLabel(option.beats)}
-            </Text>
-          </Pressable>;
-        })}
-      </View>
-      <View style={{flexDirection:'row',alignItems:'center',gap:7,flexWrap:'wrap'}}>
-        <Text style={{fontSize:11,color:theme.muted}}>Ton</Text>
-        {control('−',()=>patchEvent(selected.id,{midi:Math.max(0,selected.midi-1)}))}
-        <Text style={{fontSize:12,color:theme.foreground}}>
-          {musicNoteName(selected.midi)}
-        </Text>
-        {control('+',()=>patchEvent(selected.id,{midi:Math.min(127,selected.midi+1)}))}
-        <View style={{flex:1}}/>
-        <Text style={{fontSize:11,color:theme.muted}}>
-          Temps {beatLabel(selected.startBeats)}
-        </Text>
-        {control('←',()=>patchEvent(selected.id,{startBeats:
-          Math.max(0,Math.round((selected.startBeats-.25)*4)/4)}))}
-        {control('→',()=>patchEvent(selected.id,{startBeats:
-          Math.round((selected.startBeats+.25)*4)/4}))}
-      </View>
-      <View style={{flexDirection:'row',alignItems:'center',gap:7,flexWrap:'wrap'}}>
-        <Text style={{fontSize:11,color:theme.muted}}>Silence avant</Text>
-        {control('½',()=>insertRestBefore(selected,.5))}
-        {control('1',()=>insertRestBefore(selected,1))}
-        <View style={{flex:1}}/>
-        <Pressable onPress={()=>{
-          setEvents(old=>old.filter(event=>event.id!==selected.id));
-          setSelectedId('');setEditor(null);
-        }} accessibilityRole="button" accessibilityLabel="Supprimer la note"
-          style={{width:44,height:42,alignItems:'center',justifyContent:'center'}}>
-          <Ionicons name="trash-outline" size={19} color={theme.muted}/>
-        </Pressable>
-      </View>
-    </View>:null}
+    </Modal>
     <View style={{flexDirection:'row',gap:8,alignItems:'center',flexWrap:'wrap'}}>
       <Pressable onPress={playComposition} disabled={!events.length||recording}
         accessibilityRole="button" accessibilityLabel={previewPlaying?
@@ -969,7 +979,7 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
           <Text style={{color:theme.foreground,fontSize:12,fontWeight:'600',
             marginRight:3}}>Clavier</Text>
           {control('− octave',()=>setBaseMidi(v=>Math.max(24,v-12)),recording)}
-          <Text style={{fontFamily:'BiroScript',fontSize:19,
+          <Text style={{fontSize:19,
             color:theme.foreground}}>{musicNoteName(baseMidi)}</Text>
           {control('+ octave',()=>setBaseMidi(v=>Math.min(84,v+12)),recording)}
           <View style={{flex:1}}/>
