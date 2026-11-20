@@ -552,7 +552,7 @@ export default function DreamExperience({
           </Text>
         </View>
       </View>:<View style={{flex:1}}/>}
-      <View style={{alignItems:'stretch',gap:0,flexShrink:1,width:244,maxWidth:'62%'}}>
+      <View style={{alignItems:'stretch',gap:0,flexShrink:1,width:ws.desktop?244:'100%',maxWidth:ws.desktop?'62%':'100%'}}>
         <DreamWorkspaceShortcuts dream={dream} showLibrary/>
         <DreamWorkspaceShortcutRow
           label={hasResourceAlert
