@@ -1,13 +1,13 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Pressable, Text, TextInput, View, useWindowDimensions } from 'react-native';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/theme/AppTheme';
 import {newMusicId} from '@/domain/musicWorkspace';
 import {shiftLyricAnchors,isLyricAnchorValid} from '@/domain/musicLyricAnchors';
+import {musicLanguageOptions} from '@/domain/musicLanguages';
 import type { MusicProjectFile, MusicLyricReference, MusicLyricComment, MusicSection } from '@/domain/musicWorkspace';
 
 const PINK = '#CB245C';
-const LANGUAGES = ['Français', 'English', 'Português', 'Deutsch', 'Español', 'Italiano'];
 type Mode = 'lyrics' | 'note';
 export type MusicWritingResult = {
   mode: Mode | 'translation';
@@ -26,8 +26,9 @@ type Props = {
   source?: MusicProjectFile | null;
   initialFile?: MusicProjectFile;
   onSave: (result: MusicWritingResult) => void;
+  onAutoSave?: (result: MusicWritingResult) => string | void;
   onRequestTranslator?: (sourceId: string, language: string) => void;
-  onTranslate?:()=>void;
+  onTranslate?:(sourceId?:string)=>void;
   requestedLanguages?: string[];
   onDirtyChange: (dirty: boolean) => void;
   immersive?: boolean;
@@ -100,7 +101,7 @@ function LinkedLyricsPreview({text,references,comments,compact}:{
   </Text>;
 }
 export function MusicWritingStudio({ mode, onModeChange, originalLanguage, source,
-  initialFile, onSave, onRequestTranslator, onTranslate, requestedLanguages=[], onDirtyChange,
+  initialFile, onSave, onAutoSave, onRequestTranslator, onTranslate, requestedLanguages=[], onDirtyChange,
   immersive=false,sections=[],showTabs=true,canLinkSections=false }: Props) {
   const theme = useAppTheme();
   const { width, height } = useWindowDimensions();
@@ -115,6 +116,8 @@ export function MusicWritingStudio({ mode, onModeChange, originalLanguage, sourc
   const [lyricLanguage, setLyricLanguage] = useState(originalLanguage || 'Français');
   const [targetLanguage, setTargetLanguage] = useState('');
   const [languageOpen, setLanguageOpen] = useState(false);
+  const [languageQuery,setLanguageQuery] = useState('');
+  const languages=useMemo(musicLanguageOptions,[]);
   const [otherLanguage, setOtherLanguage] = useState(false);
   const [preview, setPreview] = useState(false);
   const [sourceExpanded, setSourceExpanded] = useState(true);
@@ -185,6 +188,7 @@ export function MusicWritingStudio({ mode, onModeChange, originalLanguage, sourc
       setLanguage(next);
     }
     setLanguageOpen(false);
+    setLanguageQuery('');
   };
   const insert = (before: string, after = '', example = '') => {
     const start = Math.min(selection.start, body.length);
@@ -318,17 +322,9 @@ export function MusicWritingStudio({ mode, onModeChange, originalLanguage, sourc
       borderBottomWidth:1,borderBottomColor:theme.border,alignSelf:'flex-start'}}>
       {choose('lyrics','Paroles')}
       {choose('note','Notes')}
-    </View> : translating?<View style={{gap:4}}>
-      <Text style={{color:theme.foreground,fontSize:19,fontWeight:'700'}}>Traduire les paroles</Text>
-      <Text style={{color:theme.muted,fontSize:12,lineHeight:19}}>
-        Une traduction liée à l’original, pas une nouvelle chanson.
-      </Text>
-    </View>:null}
+    </View> : null}
     {translating ? <>
-      <View style={{flexDirection:'row',alignItems:'center',flexWrap:'wrap',gap:10}}>
-        <Text style={{color:theme.muted,fontSize:12}}>Vers</Text>
-        {languageControl}
-      </View>
+      {languageControl}
       <View style={{flexDirection:'row',gap:compact?9:20,alignItems:'stretch'}}>
         <View style={{flex:1,minWidth:0,backgroundColor:theme.dark?'#292326':'#F7F4F1',
           borderRadius:compact?9:13,padding:compact?9:17,gap:9}}>
@@ -393,7 +389,6 @@ export function MusicWritingStudio({ mode, onModeChange, originalLanguage, sourc
             <Text style={{fontSize:12,color:PINK,fontWeight:'600'}}>Traduire</Text>
           </Pressable>:null}
         </View>
-        <View style={{height:1,backgroundColor:theme.border,opacity:.7}}/>
         {isNote?<View style={{gap:8}}>
           <View style={{flexDirection:'row',alignItems:'center',
             justifyContent:'space-between',flexWrap:'wrap',
@@ -581,7 +576,7 @@ export function MusicWritingStudio({ mode, onModeChange, originalLanguage, sourc
     </>}
     <View style={{flexDirection:'row',alignItems:'center',
       justifyContent:'space-between',gap:10,flexWrap:'wrap',
-      borderTopWidth:1,borderTopColor:theme.border,paddingTop:12}}>
+      paddingTop:12}}>
       <Text style={{fontSize:11,color:theme.muted,flexShrink:1}}>
         {translating?'L’original reste inchangé.':'Brouillon privé · non publié'}
       </Text>
