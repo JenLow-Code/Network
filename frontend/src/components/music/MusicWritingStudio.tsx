@@ -207,19 +207,46 @@ export function MusicWritingStudio({ mode, onModeChange, originalLanguage, sourc
       <Ionicons name={icon} size={19} color={theme.foreground}/>
     </Pressable>;
 
+  // Automatic writes reuse their draft identity and preserve all lyric anchors.
+  const draftResult:MusicWritingResult={
+    mode:translating?'translation':isNote?'note':'lyrics',
+    title:title.trim(),text:body,
+    language:isNote?undefined:language.trim(),
+    translationOfFileId:source?.id,
+    lyricReferences:translating||isNote?undefined:references,
+    lyricComments:translating||isNote?undefined:comments,
+    newSections:translating||isNote?undefined:createdSections,
+  };
+  const draftSnapshot=JSON.stringify(draftResult);
+  const canAutoSave=!!(body.trim()||title.trim()||initialFile)&&
+    (isNote||translating||!!language.trim());
+  const lastAutoSaved=useRef('');
+  const latestDraft=useRef({result:draftResult,snapshot:draftSnapshot,valid:canAutoSave});
+  latestDraft.current={result:draftResult,snapshot:draftSnapshot,valid:canAutoSave};
+  const autoSaveRef=useRef(onAutoSave);
+  autoSaveRef.current=onAutoSave;
+  useEffect(()=>{
+    if(!canAutoSave||!autoSaveRef.current||
+      draftSnapshot===lastAutoSaved.current)return;
+    const timer=setTimeout(()=>{
+      autoSaveRef.current?.(draftResult);
+      lastAutoSaved.current=draftSnapshot;
+      onDirtyChange(false);
+    },500);
+    return ()=>clearTimeout(timer);
+  },[draftSnapshot,canAutoSave]);
+  // Flush the last keystroke when the user leaves before the debounce completes.
+  useEffect(()=>()=> {
+    const current=latestDraft.current;
+    if(current.valid&&current.snapshot!==lastAutoSaved.current)
+      autoSaveRef.current?.(current.result);
+  },[]);
   const save = () => {
     if (!body.trim() || (!isNote && !language.trim())) return;
-    onSave({ mode: translating ? 'translation' : isNote ? 'note' : 'lyrics',
-      title: title.trim(), text: body,
-      language: isNote ? undefined : language.trim(),
-      translationOfFileId: source?.id,
-      lyricReferences:translating||isNote?undefined:references,
-      lyricComments:translating||isNote?undefined:comments,
-      newSections:translating||isNote?undefined:createdSections });
-    if (translating) { setTranslationBody(''); setTranslationTitle(''); }
-    else if (isNote) { setNoteBody(''); setNoteTitle(''); }
-    else { setLyricBody(''); setLyricTitle(''); }
+    lastAutoSaved.current=draftSnapshot;
+    onSave(draftResult);
   };
+
   const selectedExcerpt=lyricBody.slice(lyricSelection.start,lyricSelection.end);
   const validSelection=!!selectedExcerpt.trim()&&lyricSelection.end>lyricSelection.start;
   const attach=(section:MusicSection)=>{
@@ -376,11 +403,13 @@ export function MusicWritingStudio({ mode, onModeChange, originalLanguage, sourc
               paddingVertical:7}}/>
           {!isNote&&onTranslate?<Pressable
             onPress={()=>{
-              if(!initialFile||dirty){
-                setSelectionError('Enregistre les paroles avant de les traduire.');
+              if(!body.trim()){
+                setSelectionError('Écris quelques paroles avant de les traduire.');
                 return;
               }
-              onTranslate();
+              const savedId=autoSaveRef.current?.(draftResult);
+              lastAutoSaved.current=draftSnapshot;
+              onTranslate(savedId||undefined);
             }}
             accessibilityRole="button" accessibilityLabel="Ouvrir la page Traduction"
             style={{minHeight:42,flexDirection:'row',alignItems:'center',
