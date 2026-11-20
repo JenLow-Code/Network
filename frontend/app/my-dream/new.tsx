@@ -55,16 +55,13 @@ export default function NewDream() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ ...workspaceCanvas(width),paddingTop:12,paddingBottom:70 }}>
-        <PageHeader />
+        <PageHeader title="Donner naissance à un rêve" />
         <View style={{width:'100%',maxWidth:660,alignSelf:'flex-start',
           marginTop:WORKSPACE_TITLE_GAP}}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 11, marginBottom: 17 }}>
             <View style={{ height: 2, width: 27, backgroundColor: '#B88962', borderRadius: 2 }}/>
             <Text style={{ color: '#B88962', fontSize: 11, fontWeight: '700', letterSpacing: 1.4 }}>SEMENCE · 01 / 04</Text>
           </View>
-          <Text style={{ fontFamily: 'serif', fontSize:PAGE_TITLE_FONT_SIZE,lineHeight:PAGE_TITLE_LINE_HEIGHT,letterSpacing:-.2, color: theme.foreground, marginBottom: 13 }}>
-            Donner naissance à un rêve
-          </Text>
           <Text style={{ color: theme.muted, fontSize: 14, lineHeight: 23, marginBottom: 33 }}>
             Une idée suffit pour commencer. Tu pourras ensuite rassembler tes inspirations et faire grandir ce projet.
           </Text>
