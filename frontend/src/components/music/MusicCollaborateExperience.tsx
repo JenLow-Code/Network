@@ -2,7 +2,8 @@ import React,{useEffect,useState} from 'react';
 import {Pressable,Text,TextInput,View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {useAppTheme} from '@/theme/AppTheme';
-import {MusicAudioPreview} from './MusicAudioPreview';
+import {router} from 'expo-router';
+import {MusicCollaborationRequestCard,type CollaborationDecision,type CollaborationRequest} from './MusicCollaborationRequestCard';
 import {MusicMissingTalentAction} from './MusicMissingTalentAction';
 import {api} from '@/lib/api/client';
 import {newMusicId} from '@/domain/musicWorkspace';
@@ -10,18 +11,17 @@ import type {MusicProject} from '@/domain/musicWorkspace';
 
 const PINK='#CB245C';
 type Props={project:MusicProject;patch:(changes:Partial<MusicProject>)=>void};
-type Proposal={
-  id:string;trackPublicationId:string;trackTitle:string;
-  description:string;status:string;createdAt:string;
-  proposer?:{displayName?:string};
-};
+type Proposal=CollaborationRequest&{trackPublicationId:string};
 
 export function MusicCollaborateExperience({project,patch}:Props){
   const theme=useAppTheme();
   const [proposals,setProposals]=useState<Proposal[]>([]);
   const [selected,setSelected]=useState('');
-  const [demoOpen,setDemoOpen]=useState(true);
-  const [demoDecision,setDemoDecision]=useState<'pending'|'accepted'|'rejected'>('pending');
+  const [demoDecision,setDemoDecision]=useState<'submitted'|'accepted'|'rejected'>('submitted');
+  const [demoReview,setDemoReview]=useState<'pending'|'testing'|'archived'>('pending');
+  const [demoArchiveUsed,setDemoArchiveUsed]=useState(false);
+  const [demoArchiveUntil,setDemoArchiveUntil]=useState('');
+  const [busyRequest,setBusyRequest]=useState('');
   const [editingNeedId,setEditingNeedId]=useState('');
   const [shareOpen,setShareOpen]=useState(false);
   const [recipient,setRecipient]=useState('');
@@ -54,87 +54,80 @@ export function MusicCollaborateExperience({project,patch}:Props){
     }catch{setError('Impossible de charger la proposition pour cette session.');}
     finally{setLoading(false);}
   };
+  const decide=async(proposal:Proposal,action:CollaborationDecision)=>{
+    if(busyRequest)return;
+    setBusyRequest(proposal.id);setError('');
+    try{
+      const route=action==='test'||action==='archive'?'review':
+        action==='accept'?'accept':'reject';
+      const result=await api<{proposal:{
+        id:string;status:string;reviewState?:string;archiveUntil?:string|null;
+        canArchive?:boolean;}}>(
+          '/api/music-proposals/'+encodeURIComponent(proposal.id)+'/'+route,{
+            auth:'required',method:'POST',
+            body:route==='review'?{action}: {},
+          });
+      setProposals(items=>items.map(item=>item.id===proposal.id?{
+        ...item,status:result.proposal.status,
+        reviewState:result.proposal.reviewState??item.reviewState,
+        archiveUntil:result.proposal.archiveUntil??item.archiveUntil,
+        canArchive:result.proposal.canArchive??item.canArchive,
+      }:item));
+      if(action==='test'&&selected!==proposal.id)await open(proposal);
+    }catch(e){
+      setError(e instanceof Error?e.message:'Impossible de traiter cette demande.');
+    }finally{setBusyRequest('');}
+  };
+  const handleDemo=(action:CollaborationDecision)=>{
+    if(action==='accept'||action==='reject'){
+      setDemoDecision(action==='accept'?'accepted':'rejected');
+    }else if(action==='test'){
+      setDemoReview('testing');
+    }else if(!demoArchiveUsed){
+      setDemoReview('archived');setDemoArchiveUsed(true);
+      setDemoArchiveUntil(new Date(Date.now()+30*24*60*60*1000).toISOString());
+    }
+  };
+  const demoRequest:CollaborationRequest={
+    id:'demo-sarah',trackTitle:'Guitare · refrain',
+    proposer:{displayName:'Sarah',handle:'Sarah'},
+    description:'J’ai composé une petite mélodie de guitare pour ton refrain. J’aimerais te la proposer et voir si elle trouve sa place dans ton morceau.',
+    status:demoDecision,reviewState:demoReview,
+    canArchive:!demoArchiveUsed,archiveUntil:demoArchiveUntil,
+    createdAt:'',
+  };
   const needs=project.needs||[];
-  const awaiting=proposals.filter(p=>p.status==='submitted').length;
+  const awaiting=proposals.filter(p=>p.status==='submitted'&&p.reviewState!=='archived').length;
   const orderedProposals=[...proposals].sort((a,b)=>
-    Number(b.status==='submitted')-Number(a.status==='submitted')||
+    Number(b.status==='submitted'&&b.reviewState!=='archived')-
+      Number(a.status==='submitted'&&a.reviewState!=='archived')||
+    Number(a.reviewState==='archived')-Number(b.reviewState==='archived')||
     b.createdAt.localeCompare(a.createdAt));
   return <View style={{gap:18}}>
     {!proposals.length?<View style={{gap:10}}>
       <View style={{flexDirection:'row',alignItems:'center',gap:9,flexWrap:'wrap'}}>
         <Text style={{fontSize:16,fontWeight:'700',color:theme.foreground}}>
-          Demande de collaboration — aperçu
+          Demande de collaboration · aperçu interactif
         </Text>
         <View style={{borderRadius:7,paddingHorizontal:8,paddingVertical:5,
           backgroundColor:theme.dark?'#47343A':'#F5E5EA'}}>
-          <Text style={{fontSize:10,fontWeight:'700',color:PINK}}>EXEMPLE · NON ENVOYÉ</Text>
+          <Text style={{fontSize:10,fontWeight:'700',color:PINK}}>
+            EXEMPLE · NON ENVOYÉ
+          </Text>
         </View>
       </View>
-      <Pressable onPress={()=>setDemoOpen(v=>!v)} accessibilityRole="button"
-        accessibilityState={{expanded:demoOpen}}
-        style={{padding:13,borderRadius:13,borderWidth:1,borderColor:theme.border,
-          backgroundColor:theme.surface,gap:11}}>
-        <View style={{flexDirection:'row',alignItems:'center',gap:11}}>
-          <View style={{width:42,height:42,borderRadius:21,alignItems:'center',
-            justifyContent:'center',backgroundColor:theme.dark?'#402C35':'#FBE9EF'}}>
-            <Ionicons name="person-outline" size={21} color={PINK}/>
-          </View>
-          <View style={{flex:1,gap:3}}>
-            <Text style={{fontSize:13,fontWeight:'700',color:theme.foreground}}>
-              Camille · Guitariste
-            </Text>
-            <Text style={{fontSize:11,color:theme.muted}}>
-              Propose de contribuer à {project.title}
-            </Text>
-          </View>
-          <Ionicons name={demoOpen?'chevron-up':'chevron-down'} color={theme.muted} size={18}/>
-        </View>
-        {demoOpen?<View style={{gap:12}}>
-          <Text style={{fontSize:12,lineHeight:20,color:theme.foreground}}>
-            « J’aimerais proposer une partie de guitare pour accompagner le refrain.
-            Je peux enregistrer une nouvelle prise et te l’envoyer pour validation. »
-          </Text>
-          <View style={{flexDirection:'row',gap:8,alignItems:'center',
-            borderRadius:10,padding:11,backgroundColor:theme.background}}>
-            <Ionicons name="musical-notes-outline" size={20} color={PINK}/>
-            <View style={{flex:1,gap:3}}>
-              <Text style={{fontSize:12,fontWeight:'600',color:theme.foreground}}>
-                Proposition de piste · Guitare
-              </Text>
-              <Text style={{fontSize:11,color:theme.muted}}>
-                Aucun audio réel joint à cet exemple
-              </Text>
-            </View>
-          </View>
-          <Text style={{fontSize:11,color:theme.muted,lineHeight:18}}>
-            Une véritable demande afficherait ici la prise proposée, son auteur
-            et les actions de validation. Rien ne rejoint la version automatiquement.
-          </Text>
-          {demoDecision==='pending'?<View style={{flexDirection:'row',gap:8}}>
-            <Pressable onPress={()=>setDemoDecision('rejected')} accessibilityRole="button"
-              style={{minHeight:42,borderRadius:10,paddingHorizontal:14,
-                borderWidth:1,borderColor:theme.border,justifyContent:'center'}}>
-              <Text style={{fontSize:12,color:theme.foreground,fontWeight:'600'}}>Refuser</Text>
-            </Pressable>
-            <Pressable onPress={()=>setDemoDecision('accepted')} accessibilityRole="button"
-              style={{minHeight:42,borderRadius:10,paddingHorizontal:14,
-                backgroundColor:PINK,justifyContent:'center'}}>
-              <Text style={{fontSize:12,color:'#fff',fontWeight:'700'}}>Accepter</Text>
-            </Pressable>
-          </View>:<View style={{flexDirection:'row',gap:10,alignItems:'center'}}>
-            <Ionicons name="checkmark-circle-outline" size={18} color={PINK}/>
-            <Text style={{flex:1,fontSize:11,color:theme.muted}}>
-              Simulation : {demoDecision==='accepted'?'demande acceptée':'demande refusée'}.
-              Aucune donnée enregistrée.
-            </Text>
-            <Pressable onPress={()=>setDemoDecision('pending')}
-              accessibilityRole="button" accessibilityLabel="Recommencer la simulation"
-              style={{padding:8}}>
-              <Ionicons name="refresh-outline" size={19} color={PINK}/>
-            </Pressable>
-          </View>}
-        </View>:null}
-      </Pressable>
+      <MusicCollaborationRequestCard request={demoRequest} demo
+        onProfile={()=>router.push({pathname:'/member/[name]',params:{name:'Sarah'}})}
+        onListen={()=>{}}
+        onAction={handleDemo}/>
+      {demoDecision!=='submitted'?<Pressable
+        accessibilityRole="button" accessibilityLabel="Recommencer la simulation"
+        onPress={()=>{setDemoDecision('submitted');setDemoReview('pending');
+          setDemoArchiveUsed(false);setDemoArchiveUntil('');}}
+        style={{alignSelf:'flex-start',padding:9,flexDirection:'row',gap:6}}>
+        <Ionicons name="refresh-outline" color={PINK} size={17}/>
+        <Text style={{fontSize:11,color:PINK}}>Recommencer l’aperçu</Text>
+      </Pressable>:null}
     </View>:null}
     {proposals.length?<View style={{gap:12}}>
       <View style={{flexDirection:'row',alignItems:'center',gap:8}}>
@@ -150,57 +143,22 @@ export function MusicCollaborateExperience({project,patch}:Props){
           {proposals.length}
         </Text>}
       </View>
-      {orderedProposals.map(proposal=>{
-        const opened=selected===proposal.id;
-        const contributor=proposal.proposer?.displayName||'Un musicien';
-        return <View key={proposal.id} style={{borderTopWidth:1,borderColor:theme.border,
-          paddingTop:18,gap:14}}>
-          <Pressable accessibilityRole="button"
-            accessibilityState={{expanded:opened}}
-            onPress={()=>{void open(proposal);}}
-            style={{flexDirection:'row',gap:13,alignItems:'center'}}>
-            <View style={{width:45,height:45,borderRadius:23,
-              justifyContent:'center',alignItems:'center',
-              backgroundColor:theme.dark?'#3B2B34':'#F5E7EB'}}>
-              <Ionicons name="person-outline" size={21} color={PINK}/>
-            </View>
-            <View style={{gap:5,flex:1}}>
-              <Text style={{fontSize:14,fontWeight:'700',color:theme.foreground}}>{contributor}</Text>
-              <Text numberOfLines={2} style={{fontSize:12,lineHeight:18,color:theme.muted}}>
-                A proposé une variation de « {proposal.trackTitle} »
-              </Text>
-              <Text style={{fontSize:10,fontWeight:proposal.status==='submitted'?'700':'500',
-                color:proposal.status==='submitted'?PINK:theme.muted}}>
-                {proposal.status==='submitted'?'En attente de ta réponse':
-                  proposal.status==='accepted'?'Acceptée':
-                  proposal.status==='rejected'?'Refusée':
-                  proposal.status==='published'?'Publiée':
-                  proposal.status==='withdrawn'?'Retirée':'Statut : '+proposal.status}
-              </Text>
-            </View>
-            <Ionicons name={opened?'chevron-up':'chevron-down'} size={19} color={theme.muted}/>
-          </Pressable>
-          {proposal.description?<Text style={{fontSize:13,lineHeight:22,
-            color:theme.foreground,paddingLeft:4}}>{proposal.description}</Text>:null}
-          {opened?<View style={{padding:14,gap:15,
-            borderWidth:1,borderColor:theme.border,borderRadius:16,
-            backgroundColor:theme.surface}}>
-            <View style={{flexDirection:'row',alignItems:'center',gap:8}}>
-              <Ionicons name="headset-outline" size={17} color={PINK}/>
-              <Text style={{fontSize:13,fontWeight:'600',color:theme.foreground}}>
-                Écouter la proposition
-              </Text>
-            </View>
-            {loading?<Text style={{fontSize:12,color:theme.muted}}>Chargement de la prise…</Text>:null}
-            {audioUrl?<MusicAudioPreview source={{audioUrl}}/>:null}
-            <Text style={{fontSize:11,color:theme.muted,lineHeight:19}}>
-              Cette proposition reste distincte de tes versions. L’intégration sélective
-              de passages nécessitera le moteur de comparaison musicale.
-            </Text>
-          </View>:null}
-        </View>;
-      })}
-
+      {orderedProposals.map(proposal=>
+        <MusicCollaborationRequestCard key={proposal.id}
+          request={proposal}
+          audioOpen={selected===proposal.id}
+          audioUrl={selected===proposal.id?audioUrl:''}
+          loading={selected===proposal.id&&loading}
+          busy={busyRequest===proposal.id}
+          onListen={()=>{void open(proposal);}}
+          onAction={action=>{void decide(proposal,action);}}
+          onProfile={()=>{
+            if(proposal.proposer?.handle)router.push({
+              pathname:'/member/[name]',
+              params:{name:proposal.proposer.handle},
+            });
+          }}/>
+      )}
     </View>:null}
     <MusicMissingTalentAction project={project} patch={patch} primary
       editNeed={needs.find(need=>need.id===editingNeedId)||null}
