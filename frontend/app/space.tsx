@@ -97,19 +97,7 @@ export default function Space() {
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
       <View style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={{...workspaceCanvas(width),paddingTop:12,paddingBottom:148}}>
-          <PageHeader />
-          <View
-            style={{
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginTop:WORKSPACE_TITLE_GAP,
-              marginBottom:15,
-            }}
-          >
-            <Text style={{ fontSize: 30, fontWeight: '700', color: '#101010' }}>{t('space')}</Text>
-            
-          </View>
+          <PageHeader title={t('space')} />
           <Pressable accessibilityRole="button" onPress={()=>router.push('/notifications')}
             style={{marginBottom:10,borderRadius:11,borderWidth:1,borderColor:'#E7DFE2',
               padding:14,flexDirection:'row',alignItems:'center',gap:11,backgroundColor:'#FCF7F8'}}>
