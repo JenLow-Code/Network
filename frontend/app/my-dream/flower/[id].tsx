@@ -14,7 +14,7 @@ import { pickFlowerMedia } from '@/lib/pickFlowerMedia';
 import { api } from '@/lib/api/client';
 import { useAppTheme } from '@/theme/AppTheme';
 import { workspaceLayout } from '@/theme/workspaceLayout';
-import { DreamCoverBackdrop, DreamPhaseHeader } from '@/components/dream/DreamPhaseLayout';
+import { DreamPhaseHeader } from '@/components/dream/DreamPhaseLayout';
 import DreamWorkspaceShortcuts, { DreamWorkspaceShortcutRow } from '@/components/dream/DreamWorkspaceShortcuts';
 import FlowerJourneyRecap from '@/components/dream/FlowerJourneyRecap';
 
@@ -209,7 +209,6 @@ export default function FlowerPreparation() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
-      <DreamCoverBackdrop uri={dream.image}/>
       <ScrollView style={{ flex: 1, backgroundColor:'transparent' }}
         contentContainerStyle={{ paddingHorizontal: ws.gutter,
           paddingTop: 10, paddingBottom: 70, maxWidth: ws.maxWidth, width: '100%',
