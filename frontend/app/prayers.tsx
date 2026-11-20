@@ -19,21 +19,7 @@ export default function Prayers() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ ...workspaceCanvas(width), paddingTop:12, paddingBottom:55 }}>
-        <PageHeader />
-        <View
-          style={{
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginTop:WORKSPACE_TITLE_GAP,
-            marginBottom:5,
-          }}
-        >
-          <Text style={{ fontSize:PAGE_TITLE_FONT_SIZE,lineHeight:PAGE_TITLE_LINE_HEIGHT,fontWeight:'700',color:theme.foreground }}>
-            Mes prières
-          </Text>
-          
-        </View>
+        <PageHeader title="Mes prières" />
         <Text style={{ fontSize: 12, color: '#888', marginBottom: 19 }}>
           Toutes mes prières, avec leur rythme de répétition.
         </Text>
