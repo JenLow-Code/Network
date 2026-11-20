@@ -315,33 +315,55 @@ export function MusicWritingStudio({ mode, onModeChange, originalLanguage, sourc
       minHeight:minimum,
       paddingVertical:12,paddingHorizontal:compact?2:8,color:theme.foreground,
       letterSpacing:.15}}/>;
-  const languageControl = <View style={{gap:8}}>
-    <Pressable onPress={() => setLanguageOpen(!languageOpen)}
+  const filteredLanguages=languages.filter(option=>
+    option.toLocaleLowerCase('fr').includes(languageQuery.trim().toLocaleLowerCase('fr')));
+  const languageControl=<View style={{gap:7,alignItems:'flex-start',width:'100%'}}>
+    <Pressable onPress={()=>{setLanguageOpen(open=>!open);setLanguageQuery('');}}
       accessibilityRole="button" accessibilityLabel="Choisir la langue"
       accessibilityState={{expanded:languageOpen}}
-      style={{alignSelf:'flex-start',flexDirection:'row',gap:7,
-        alignItems:'center',paddingVertical:9,paddingHorizontal:12,
-        borderRadius:10,borderWidth:1,borderColor:theme.border}}>
+      style={{alignSelf:'flex-start',flexDirection:'row',gap:9,
+        alignItems:'center',paddingVertical:10,paddingHorizontal:13,
+        borderRadius:10,borderWidth:1,borderColor:theme.border,
+        backgroundColor:theme.dark?'#30292C':'#FFFCF7',minHeight:43}}>
       <Ionicons name="language-outline" size={17} color={PINK}/>
       <Text style={{fontSize:13,color:language?theme.foreground:theme.muted}}>
         {language || 'Choisir une langue'}
       </Text>
-      <Ionicons name={languageOpen?'chevron-up':'chevron-down'} size={15} color={theme.muted}/>
+      <Ionicons name={languageOpen?'chevron-up':'chevron-down'} size={15}
+        color={theme.muted}/>
     </Pressable>
-    {languageOpen ? <View style={{flexDirection:'row',flexWrap:'wrap',gap:7}}>
-      {[...LANGUAGES,'Autre…'].map(name=><Pressable key={name}
-        onPress={()=>chooseLanguage(name)}
-        style={{minHeight:37,justifyContent:'center',paddingHorizontal:12,
-          borderRadius:9,borderWidth:1,borderColor:theme.border,
-          backgroundColor:language===name?(theme.dark?'#392631':'#FBEAF0'):theme.surface}}>
-        <Text style={{fontSize:12,color:theme.foreground}}>{name}</Text>
-      </Pressable>)}
-    </View> : null}
-    {otherLanguage ? <TextInput value={language} onChangeText={setLanguage}
-      accessibilityLabel="Nom de la langue" placeholder="Nom de la langue"
+    {languageOpen?<View style={{width:compact?'100%':325,maxWidth:'100%',
+      borderWidth:1,borderColor:theme.border,borderRadius:11,
+      backgroundColor:theme.dark?'#30292C':'#FFFCF7',
+      overflow:'hidden'}}>
+      <TextInput value={languageQuery} onChangeText={setLanguageQuery}
+        accessibilityLabel="Rechercher une langue"
+        placeholder="Rechercher une langue…" placeholderTextColor={theme.muted}
+        style={{height:42,paddingHorizontal:12,color:theme.foreground,
+          fontSize:13,borderBottomWidth:1,borderBottomColor:theme.border}}/>
+      <ScrollView nestedScrollEnabled keyboardShouldPersistTaps="handled"
+        style={{maxHeight:184}} showsVerticalScrollIndicator>
+        {filteredLanguages.map(name=><Pressable key={name}
+          accessibilityRole="button" onPress={()=>chooseLanguage(name)}
+          style={{minHeight:38,paddingHorizontal:13,justifyContent:'center',
+            backgroundColor:language===name?
+              (theme.dark?'#492735':'#FCE5EF'):'transparent'}}>
+          <Text style={{fontSize:13,color:theme.foreground}}>{name}</Text>
+        </Pressable>)}
+        <Pressable accessibilityRole="button"
+          onPress={()=>chooseLanguage('Autre…')}
+          style={{minHeight:42,paddingHorizontal:13,justifyContent:'center'}}>
+          <Text style={{fontSize:13,color:PINK,fontWeight:'600'}}>
+            Autre langue ou variante…
+          </Text>
+        </Pressable>
+      </ScrollView>
+    </View>:null}
+    {otherLanguage?<TextInput value={language} onChangeText={setLanguage}
+      accessibilityLabel="Langue ou variante" placeholder="Préciser la langue…"
       placeholderTextColor={theme.muted}
-      style={{fontSize:14,color:theme.foreground,padding:10,
-        borderWidth:1,borderRadius:10,borderColor:theme.border}}/> : null}
+      style={{fontSize:14,color:theme.foreground,padding:10,width:compact?'100%':325,
+        borderWidth:1,borderRadius:10,borderColor:theme.border}}/>:null}
   </View>;
 
   return <View style={{gap:14}}>
