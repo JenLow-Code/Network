@@ -13,7 +13,7 @@ import { useMusicWorkspaces } from '@/domain/musicWorkspace';
 import { musicNextState, makeWorkingVersion, makeWorkingTrack, changeWorkingVersion } from '@/domain/musicNext';
 import {isMidiSource,renderMidiSource} from '@/domain/musicMidiAudio';
 import { useAppTheme } from '@/theme/AppTheme';
-import { workspaceLayout } from '@/theme/workspaceLayout';
+import { workspaceLayout,PAGE_TITLE_FONT_SIZE,PAGE_TITLE_LINE_HEIGHT } from '@/theme/workspaceLayout';
 import type { MusicProjectFile } from '@/domain/musicWorkspace';
 
 type Space = 'capture'|'create'|'collaborate';
@@ -98,8 +98,8 @@ export default function MusicWorkspace() {
         paddingVertical:desktop?3:0}}>
         <MusicFolderCover project={project} size={compact?65:desktop?74:82}/>
         <View style={{gap:5,flex:1}}>
-          <Text style={{fontSize:compact?24:desktop?30:30,
-            lineHeight:compact?29:desktop?36:37,
+          <Text style={{fontSize:PAGE_TITLE_FONT_SIZE,
+            lineHeight:PAGE_TITLE_LINE_HEIGHT,
             fontWeight:'700',letterSpacing:-0.65,color:theme.foreground}}
             numberOfLines={2}>
             {project.title}
