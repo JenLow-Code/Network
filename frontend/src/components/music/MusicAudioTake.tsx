@@ -97,8 +97,7 @@ export function MusicAudioTake({file,compact=false,editable=false,onUpdate,onOpe
   if(!blob)return <ActivityIndicator size="small" color={PINK}/>;
   // Overview is a preview, never an editor. Markers, seeking, zoom and
   // punch-in controls belong exclusively to the audio detail view.
-  if(compact)return <View style={{flexDirection:'row',alignItems:'center',
-    gap:12,minHeight:43}}>
+  if(compact)return <View style={{gap:4}}>
     {url?React.createElement('audio',{
       ref:audio,src:url,preload:'metadata',
       onTimeUpdate:(e:React.SyntheticEvent<HTMLAudioElement>)=>
@@ -106,24 +105,32 @@ export function MusicAudioTake({file,compact=false,editable=false,onUpdate,onOpe
       onEnded:()=>setPlaying(false),
       style:{display:'none'}
     }):null}
-    <Pressable onPress={toggle} accessibilityRole="button"
-      accessibilityLabel={playing?'Mettre en pause '+file.title:'Écouter '+file.title}
-      style={{width:37,height:37,borderRadius:19,backgroundColor:PINK,
-        justifyContent:'center',alignItems:'center'}}>
-      <Ionicons name={playing?'pause':'play'} size={17} color="#fff"/>
-    </Pressable>
-    <Pressable onPress={onOpen} accessibilityRole="button"
-      accessibilityLabel={'Ouvrir '+file.title+' pour éditer l’audio'}
-      style={{flex:1,minHeight:42,gap:7,justifyContent:'center'}}>
-      <MusicAudioPeaks file={file} height={24} barCount={76}/>
-      <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
-        <Text style={{fontSize:10,color:theme.muted,fontVariant:['tabular-nums']}}>
-          {Math.floor(cursor/60)}:{String(Math.floor(cursor%60)).padStart(2,'0')}
-          {' / '}{Math.floor(duration/60)}:{String(Math.floor(duration%60)).padStart(2,'0')}
-        </Text>
-        <Text style={{fontSize:11,color:theme.muted}}>Ouvrir</Text>
-      </View>
-    </Pressable>
+    <View style={{flexDirection:'row',alignItems:'center',gap:11,minHeight:44}}>
+      <Pressable onPress={toggle} accessibilityRole="button"
+        accessibilityLabel={playing?'Mettre en pause '+file.title:'Écouter '+file.title}
+        style={{width:44,height:44,borderRadius:22,backgroundColor:PINK,
+          justifyContent:'center',alignItems:'center',flexShrink:0}}>
+        <Ionicons name={playing?'pause':'play'} size={18} color="#fff"/>
+      </Pressable>
+      <Pressable onPress={onOpen} accessibilityRole="button"
+        accessibilityLabel={'Ouvrir '+file.title+' pour éditer l’audio'}
+        style={{flex:1,minWidth:0,minHeight:44,justifyContent:'center'}}>
+        <MusicAudioPeaks file={file} height={31} barCount={76}/>
+      </Pressable>
+    </View>
+    <View style={{marginLeft:55,flexDirection:'row',alignItems:'center',
+      justifyContent:'space-between',minHeight:18}}>
+      <Text style={{fontSize:10,color:theme.muted,fontVariant:['tabular-nums']}}>
+        {Math.floor(cursor/60)}:{String(Math.floor(cursor%60)).padStart(2,'0')}
+        {' / '}{Math.floor(duration/60)}:{String(Math.floor(duration%60)).padStart(2,'0')}
+      </Text>
+      <Pressable onPress={onOpen} accessibilityRole="button"
+        accessibilityLabel={'Modifier '+file.title}
+        style={{minWidth:44,minHeight:28,alignItems:'flex-end',
+          justifyContent:'center'}}>
+        <Ionicons name="chevron-forward" size={17} color={theme.muted}/>
+      </Pressable>
+    </View>
   </View>;
   return <View style={{gap:compact?8:13}}>
     {editing?<View style={{gap:9}}>
