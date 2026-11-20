@@ -13,6 +13,7 @@ import { useAuth } from '@/context/AuthProvider';
 import { useAppTheme } from '@/theme/AppTheme';
 import {workspaceCanvas,workspaceLayout,WORKSPACE_TITLE_GAP} from '@/theme/workspaceLayout';
 import { ProfileTalentTile } from '@/components/talent/ProfileTalentTile';
+import { DREAM_TALENT_CHOICES } from '@/components/dream/dreamTalentCatalog';
 import { TranslatorLanguageFields } from '@/components/talent/TranslatorLanguageFields';
 import { ProfilePublicationFeed } from '@/components/publication/PublicationGallery';
 import SemenceSharesFeed from '@/components/dream/SemenceSharesFeed';
@@ -36,6 +37,9 @@ const levels = [
   { name: 'Professionnel', color: '#CB245C' },
 ];
 const interests = ['Tandem', 'Enseigner', 'Apprendre'];
+const TALENT_NAMES=[...new Set([
+  'Batterie','Chant','Piano',...DREAM_TALENT_CHOICES.map(item=>item.title),
+])];
 const talentArt = (name: string): TalentIllustration | undefined => {
  const s=name.toLocaleLowerCase('fr');
  if(s.includes('batt'))return 'drums';
@@ -66,6 +70,7 @@ export default function Profile() {
   const [newTargetLanguage,setNewTargetLanguage] = useState('');
   const [addLanguageError,setAddLanguageError] = useState(false);
   const [addTalentOpen,setAddTalentOpen]=useState(false);
+  const [talentPickerOpen,setTalentPickerOpen]=useState(false);
   const scrollRef=useRef<any>(null);
   const talentY=useRef(0);
   const postsY=useRef(0);
@@ -307,15 +312,42 @@ export default function Profile() {
                 <Ionicons name="close-outline" size={23} color={theme.foreground}/>
               </Pressable>
             </View>
+            <Pressable accessibilityRole="button"
+              accessibilityLabel="Choisir un talent dans la liste"
+              accessibilityState={{expanded:talentPickerOpen}}
+              onPress={()=>setTalentPickerOpen(value=>!value)}
+              style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',
+                minHeight:45,paddingHorizontal:13,borderWidth:1,
+                borderColor:theme.border,borderRadius:10}}>
+              <Text style={{fontSize:13,fontWeight:'600',color:theme.foreground}}>
+                {TALENT_NAMES.includes(newTalent)?newTalent:'Choisir un talent'}
+              </Text>
+              <Ionicons name={talentPickerOpen?'chevron-up':'chevron-down'} size={18}
+                color={theme.muted}/>
+            </Pressable>
+            {talentPickerOpen?<ScrollView nestedScrollEnabled
+              keyboardShouldPersistTaps="handled" style={{maxHeight:190}}
+              contentContainerStyle={{gap:2}}>
+              {TALENT_NAMES.map(name=><Pressable key={name}
+                onPress={()=>{setNewTalent(name);setTalentPickerOpen(false);
+                  setAddLanguageError(false);}}
+                accessibilityRole="button" accessibilityLabel={'Sélectionner '+name}
+                accessibilityState={{selected:newTalent===name}}
+                style={{minHeight:40,flexDirection:'row',alignItems:'center',
+                  paddingHorizontal:12,borderRadius:8,
+                  backgroundColor:newTalent===name?
+                    (theme.dark?'#452B36':'#FAEDF2'):'transparent'}}>
+                <Text style={{flex:1,fontSize:13,color:theme.foreground}}>{name}</Text>
+                {newTalent===name?<Ionicons name="checkmark" color="#CB245C" size={17}/>:null}
+              </Pressable>)}
+            </ScrollView>:null}
+            <Text style={{fontSize:11,color:theme.muted}}>
+              Ou écris un talent personnalisé :
+            </Text>
             <TextInput value={newTalent} onChangeText={setNewTalent} maxLength={70}
               placeholder="Ex. Guitare, photographie, chant…"
               style={{borderWidth:1,borderColor:theme.border,borderRadius:10,
                 padding:13,color:theme.foreground,fontSize:14}}/>
-            <Pressable accessibilityRole="button" onPress={()=>setNewTalent('Traducteur')}
-              style={{alignSelf:'flex-start',paddingVertical:7,paddingHorizontal:11,
-                borderWidth:1,borderColor:theme.border,borderRadius:9}}>
-              <Text style={{color:theme.foreground,fontSize:12}}>Traducteur</Text>
-            </Pressable>
             {newTalent.trim().toLocaleLowerCase('fr')==='traducteur'?<TranslatorLanguageFields
               sourceLanguage={newSourceLanguage} targetLanguage={newTargetLanguage}
               onChangeSource={v=>{setNewSourceLanguage(v);setAddLanguageError(false);}}
@@ -333,7 +365,7 @@ export default function Profile() {
                 sourceLanguage:translator?newSourceLanguage.trim():undefined,
                 targetLanguage:translator?newTargetLanguage.trim():undefined}]);
               setNewTalent('');setNewSourceLanguage('');setNewTargetLanguage('');
-              setAddLanguageError(false);setAddTalentOpen(false);
+              setAddLanguageError(false);setAddTalentOpen(false);setTalentPickerOpen(false);
             }} style={{backgroundColor:'#242322',borderRadius:10,padding:14,alignItems:'center'}}>
               <Text style={{color:'#FFFFFF',fontSize:13,fontWeight:'700'}}>Ajouter à mon profil</Text>
             </Pressable>
