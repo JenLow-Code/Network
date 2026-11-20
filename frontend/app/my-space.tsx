@@ -9,7 +9,7 @@ import { isPublishedFlower, type DreamEntry } from '@/domain/dreamWorkspace';
 import type { DreamPhase } from '@/domain/publication';
 import { useDreams } from '@/domain/dreamRepository';
 import { useAppTheme } from '@/theme/AppTheme';
-import {workspaceCanvas,workspaceLayout,WORKSPACE_TITLE_GAP} from '@/theme/workspaceLayout';
+import {workspaceCanvas,workspaceLayout,WORKSPACE_TITLE_GAP,PAGE_TITLE_FONT_SIZE,PAGE_TITLE_LINE_HEIGHT} from '@/theme/workspaceLayout';
 import DreamQuickActions from '@/components/dream/DreamQuickActions';
 
 type ViewFilter = 'Tout' | 'Liste' | 'Congelés';
@@ -146,8 +146,8 @@ export default function MySpace() {
         <View style={{ paddingHorizontal: side }}>
           <PageHeader />
           <View style={{ marginTop:WORKSPACE_TITLE_GAP, marginBottom:21 }}>
-            <Text style={{ fontWeight: '700', fontSize: compact ? 30 : 33,
-              lineHeight: 40, color: theme.foreground }}>Mes rêves</Text>
+            <Text style={{ fontWeight: '700', fontSize: PAGE_TITLE_FONT_SIZE,
+              lineHeight: PAGE_TITLE_LINE_HEIGHT, color: theme.foreground }}>Mes rêves</Text>
             <Text style={{ color: theme.muted, fontSize: 12, marginTop: 3 }}>
               Des premières idées aux histoires accomplies.
             </Text>
