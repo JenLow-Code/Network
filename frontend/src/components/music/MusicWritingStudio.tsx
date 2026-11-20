@@ -68,6 +68,7 @@ export function MusicNotePreview({ text, color }: { text: string; color: string 
 function LinkedLyricsPreview({text,references}:{
   text:string;references:MusicLyricReference[];
 }){
+  const theme=useAppTheme();
   const ranges=references.filter(ref=>
     ref.start>=0&&ref.end<=text.length&&ref.end>ref.start&&
     text.slice(ref.start,ref.end)===ref.text)
@@ -82,10 +83,10 @@ function LinkedLyricsPreview({text,references}:{
   }
   if(at<text.length)parts.push({value:text.slice(at),linked:false});
   return <Text selectable style={{fontFamily:'Georgia',fontSize:16,lineHeight:27,
-    color:'#33302F'}}>
+    color:theme.foreground}}>
     {parts.map((part,index)=><Text key={index}
-      style={part.linked?{backgroundColor:'#F7DAE4',color:'#A91D4C',
-        fontWeight:'600'}:{}}>{part.value}</Text>)}
+      style={part.linked?{backgroundColor:theme.dark?'#492735':'#F7DAE4',
+        color:theme.dark?'#F8B9CF':'#A91D4C',fontWeight:'600'}:{}}>{part.value}</Text>)}
   </Text>;
 }
 export function MusicWritingStudio({ mode, onModeChange, originalLanguage, source,
