@@ -223,7 +223,7 @@ function playSound(ctx:AudioContext,pitch:number,drum:boolean,level:number,
   const now=ctx.currentTime+Math.max(0,startDelay);
   const gain=ctx.createGain();
   gain.gain.setValueAtTime(Math.max(.0001,level*.25),now);
-  const duration=Math.max(.09,Math.min(4,seconds??(drum?.24:tone==='Orgue'||tone==='Cordes'?.78:.62)));
+  const duration=Math.max(.09,Math.min(16,seconds??(drum?.24:tone==='Orgue'||tone==='Cordes'?.78:.62)));
   gain.gain.exponentialRampToValueAtTime(.0001,now+duration);
   gain.connect(ctx.destination);
   if(!drum&&tone==='Échantillon'&&sample){
@@ -287,7 +287,7 @@ function detectSampleRoot(buffer:AudioBuffer):number|null{
 }
 export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}:Props){
   const theme=useAppTheme();
-  const {width}=useWindowDimensions();
+  const {width,height}=useWindowDimensions();
   const compact=width<650;
   const [title,setTitle]=useState(initialFile?.title||'');
   const [events,setEvents]=useState<MusicNotationEvent[]>(initialFile?.musicEvents||[]);
@@ -298,6 +298,8 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
   const [tempoDraft,setTempoDraft]=useState(String(initialFile?.tempoBpm||100));
   const [toneOpen,setToneOpen]=useState(false);
   const [previewPlaying,setPreviewPlaying]=useState(false);
+  const [previewBeat,setPreviewBeat]=useState<number|null>(null);
+  const previewTick=useRef<ReturnType<typeof setInterval>|null>(null);
   const previewTimeout=useRef<ReturnType<typeof setTimeout>|null>(null);
   const previewSources=useRef<AudioScheduledSourceNode[]>([]);
   const [duration,setDuration]=useState<number>(.5);
@@ -360,8 +362,8 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
   const patchEvent=(id:string,changes:Partial<MusicNotationEvent>)=>
     setEvents(old=>old.map(e=>e.id===id?{...e,...changes}:e));
   const trigger=(instrument:Instrument,midi:number)=>{
-    if(recording&&instrument==='piano'&&
-      liveHeldRef.current.has(instrument+':'+midi))return;
+    if(instrument==='piano'&&liveHeldRef.current.has(instrument+':'+midi))return;
+    const playedAt=clock();
     setMessage('');setLast(instrument==='piano'?musicNoteName(midi):
       DRUM_PADS.find(p=>p.midi===midi)?.label||'Percussion');
     if(Platform.OS==='web'){
@@ -370,22 +372,21 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
         const ctx=audioRef.current;
         if(ctx.state==='suspended')void ctx.resume();
         const source=playSound(ctx,midi,instrument==='drum',volume[instrument],tone,
-          sampleRef.current,recording&&instrument==='piano'?10:undefined,
+          sampleRef.current,instrument==='piano'?12:undefined,
           0,sampleRootMidi);
-        if(recording&&instrument==='piano')
+        if(instrument==='piano')
           liveSourcesRef.current.set(instrument+':'+midi,source);
       }catch{setMessage('Aperçu sonore indisponible sur cet appareil.');}
       try{
         if(midiRef.current){
           const channel=instrument==='piano'?0:9;
           midiRef.current.send([0x90|channel,midi,95]);
-          if(!recording||instrument==='drum')
+          if(instrument==='drum')
             setTimeout(()=>{try{midiRef.current?.send([0x80|channel,midi,0]);}catch{}},
               Math.round(duration*60000/bpm));
         }
       }catch{setMessage('Sortie MIDI déconnectée.');}
     }
-    const playedAt=clock();
     const chord=!recording&&!!chordRef.current&&
       playedAt-chordRef.current.at<130;
     const beat=recording?
@@ -393,11 +394,11 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
       chord?chordRef.current!.beat:cursor;
     const startBeats=recording?beat:Math.max(0,Math.round(beat*4)/4);
     const event:MusicNotationEvent={id:newId(),instrument,midi,
-      startBeats,lengthBeats:recording&&instrument==='piano'?.125:
+      startBeats,lengthBeats:instrument==='piano'?.125:
         instrument==='drum'?.25:duration,velocity:95,
       draft:!recording};
     setEvents(old=>[...old,event]);setSelectedId(event.id);
-    if(recording&&instrument==='piano'){
+    if(instrument==='piano'){
       liveHeldRef.current.set(instrument+':'+midi,
         {id:event.id,pressedAt:playedAt,startBeats});
     }
@@ -597,7 +598,12 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
     </Pressable>;
   const applyDuration=(length:number)=>{
     setDuration(length);
-    if(selected)patchEvent(selected.id,{lengthBeats:length});
+    if(selected){
+      const previousEnd=selected.startBeats+selected.lengthBeats;
+      setEvents(old=>resizeMusicNote(old,selected.id,length));
+      setCursor(old=>old>=previousEnd-.00001?
+        Math.max(0,Math.round((old+length-selected.lengthBeats)*1000)/1000):old);
+    }
   };
   const blackOffsets=Array.from({length:octaves},(_,i)=>i)
     .filter(i=>BLACKS.has(i%12));
