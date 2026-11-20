@@ -247,7 +247,7 @@ export function BibleVerseCard({
             fontFamily: 'serif',
             fontSize: compact ? 17 : Math.min(32, width * 0.06),
             lineHeight: compact ? 23 : Math.min(42, width * 0.082),
-            color: theme.dark ? '#FF88B2' : '#CB245C',
+            color: '#D71D77',
           }}
         >
           {verseExcerpt(item)}
@@ -341,7 +341,7 @@ function StoryCover({
                 style={styles.talentLevels}
                 accessibilityLabel={'Niveau : ' + item.level}
               >
-                {['#268B60', '#38C975', '#E8BD11', '#F18A2B', '#CB245C'].map((color, i) => {
+                {['#268B60', '#38C975', '#E8BD11', '#F18A2B', '#D71D77'].map((color, i) => {
                   const level = item.level === 'Débutant' ? 2 : item.level === 'Intermédiaire' ? 3 : 4;
                   return (
                     <View
@@ -405,7 +405,7 @@ function StoryCover({
         </View>
         {forYou ? <View pointerEvents="none" style={{
           position:'absolute',top:inset,left:inset,zIndex:5,
-          backgroundColor:'#CB245C',borderRadius:7,
+          backgroundColor:'#D71D77',borderRadius:7,
           paddingHorizontal:7,paddingVertical:4,
         }}>
           <Text style={{color:'#FFFFFF',fontSize:9,fontWeight:'700',letterSpacing:.2}}>
