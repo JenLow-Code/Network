@@ -139,6 +139,10 @@ export type MusicProjectFile = {
   instrumentSampleRootMidi?: number;
   /** Exact fundamental in Hz, enabling microtuning correction of transposed samples. */
   instrumentSampleRootHz?: number;
+  /** Drum pads use individual one-shot recordings (MIDI percussion key -> local audio).
+   * These are sound assignments, not separate tracks; the original MIDI notes
+   * retain their standard channel-10 values for portability. */
+  drumSamples?: Record<string,{localFileId:string;name:string}>;
   scoreClef?: 'treble'|'bass';
   instrument?: string;
   localFileId?: string;
