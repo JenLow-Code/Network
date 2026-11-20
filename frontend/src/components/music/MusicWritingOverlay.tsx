@@ -36,7 +36,7 @@ function isCaptureAudio(file:MusicProjectFile){
   return !!file.localFileId && (!!file.mimeType?.startsWith('audio/')||
     /\.(wav|mp3|m4a|webm|ogg|aac)$/i.test(file.originalFilename||''));
 }
-/** One immersive workspace, four distinct tools, independent persistent drafts. */
+/** Separate writing (lyrics/notes/translation) and composition screens. */
 export function MusicWritingOverlay({project,mode,startTab,onModeChange,source,initialFile,
   onSave,onSaveScore,onRequestTranslator,requestedLanguages,onClose}:Props){
   const theme=useAppTheme();
@@ -77,10 +77,10 @@ export function MusicWritingOverlay({project,mode,startTab,onModeChange,source,i
     !file.translationOfFileId&&
     !!(file.text?.trim()||file.lyricSegments?.some(segment=>segment.text.trim())));
   const selectedSource=lyricSources.find(file=>file.id===sourceId)||null;
+  const page=tab==='score'?'compose':'text';
   const tabs:{id:Tab;title:string;icon:keyof typeof Ionicons.glyphMap}[]=[
     {id:'lyrics',title:'Paroles',icon:'text-outline'},
     {id:'note',title:'Notes',icon:'reader-outline'},
-    {id:'score',title:'Partition',icon:'musical-notes-outline'},
     {id:'translation',title:'Traduction',icon:'language-outline'},
   ];
   const exit=()=>{
@@ -88,7 +88,19 @@ export function MusicWritingOverlay({project,mode,startTab,onModeChange,source,i
     else onClose();
   };
   const changeTab=(next:Tab)=>{
-    if(initialFile&&next!==tab)return;
+    if(initialFile&&next!==tab){
+      const lyricTranslation=initialFile.kind==='lyrics'&&
+        !initialFile.translationOfFileId&&
+        ((tab==='lyrics'&&next==='translation')||
+          (tab==='translation'&&next==='lyrics'));
+      if(!lyricTranslation)return;
+    }
+    if(next==='translation'&&initialFile?.kind==='lyrics'&&
+      !initialFile.translationOfFileId)setSourceId(initialFile.id);
+    if(next==='lyrics'&&translationDirty){
+      setSourceWarning('Enregistre la traduction avant de revenir aux paroles.');
+      return;
+    }
     bodyScrollRef.current?.scrollTo({y:0,animated:false});
     setTab(next);
     if(next==='lyrics'||next==='note')onModeChange(next);
@@ -116,30 +128,65 @@ export function MusicWritingOverlay({project,mode,startTab,onModeChange,source,i
             <Ionicons name="close" size={23} color={theme.foreground}/>
           </Pressable>
           <Text style={{flex:1,textAlign:'center',color:theme.foreground,
-            fontWeight:'600',fontSize:compact?15:17}}>Écrire & composer</Text>
+            fontWeight:'600',fontSize:compact?15:17}}>{page==='compose'?'Composer':'Écrire'}</Text>
           <View style={{width:43}}/>
         </View>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{gap:2,alignItems:'center',paddingHorizontal:compact?8:24}}
-          style={{height:51,maxHeight:51,flexGrow:0,flexShrink:0,
-            overflow:'hidden',backgroundColor:theme.background,zIndex:2,
-            borderBottomWidth:1,borderColor:theme.border}}>
-          {tabs.map(item=>{
-            const active=tab===item.id;
-            const disabled=!!initialFile&&!active;
-            return <Pressable key={item.id} onPress={()=>changeTab(item.id)}
-              disabled={disabled} accessibilityRole="tab" accessibilityState={{selected:active,disabled}}
-              accessibilityLabel={item.title}
-              style={{height:49,flexDirection:'row',alignItems:'center',
-                justifyContent:'center',gap:active?5:0,paddingHorizontal:compact?13:16,
-                borderBottomWidth:active?2:0,borderBottomColor:PINK,opacity:disabled?.35:1}}>
-              <Ionicons name={item.icon} size={compact?19:16} color={active?PINK:theme.muted}/>
-              {(!compact||active)?<Text numberOfLines={1}
-                style={{fontSize:compact?12:13,fontWeight:active?'700':'500',
-                  color:active?theme.foreground:theme.muted}}>{item.title}</Text>:null}
-            </Pressable>;
-          })}
-        </ScrollView>
+        <View style={{paddingHorizontal:compact?13:30,paddingVertical:8,
+          backgroundColor:theme.background,borderBottomWidth:1,
+          borderColor:theme.border,gap:7,zIndex:2}}>
+          <View style={{flexDirection:'row',gap:8,alignSelf:'center',
+            width:'100%',maxWidth:compact?550:700}}>
+            {([
+              {id:'text' as const,title:'Écriture',icon:'create-outline' as const},
+              {id:'compose' as const,title:'Composition',icon:'musical-notes-outline' as const},
+            ]).map(item=>{
+              const active=page===item.id;
+              const disabled=!!initialFile&&item.id!==page;
+              return <Pressable key={item.id}
+                onPress={()=>changeTab(item.id==='text'?'lyrics':'score')}
+                disabled={disabled} accessibilityRole="tab"
+                accessibilityState={{selected:active,disabled}}
+                style={{flex:1,minHeight:44,flexDirection:'row',
+                  gap:7,alignItems:'center',justifyContent:'center',
+                  borderRadius:11,borderWidth:1,
+                  borderColor:active?PINK:theme.border,
+                  opacity:disabled?.35:1,
+                  backgroundColor:active?(theme.dark?'#462936':'#FAEAF0'):
+                    theme.surface}}>
+                <Ionicons name={item.icon} color={active?PINK:theme.muted} size={17}/>
+                <Text style={{fontSize:compact?12:13,fontWeight:active?'700':'600',
+                  color:active?theme.foreground:theme.muted}}>
+                  {item.title}
+                </Text>
+              </Pressable>;
+            })}
+          </View>
+          {page==='text'?<View style={{flexDirection:'row',
+            alignSelf:'center',gap:5,maxWidth:700,width:'100%'}}>
+            {tabs.map(item=>{
+              const active=tab===item.id;
+              const disabled=!!initialFile&&!active&&
+                !(initialFile.kind==='lyrics'&&!initialFile.translationOfFileId&&
+                  ((tab==='lyrics'&&item.id==='translation')||
+                    (tab==='translation'&&item.id==='lyrics')));
+              return <Pressable key={item.id} onPress={()=>changeTab(item.id)}
+                disabled={disabled} accessibilityRole="tab"
+                accessibilityState={{selected:active,disabled}}
+                style={{flex:1,minHeight:39,flexDirection:'row',gap:5,
+                  alignItems:'center',justifyContent:'center',
+                  borderBottomWidth:active?2:0,borderBottomColor:PINK,
+                  opacity:disabled?.35:1}}>
+                <Ionicons name={item.icon} color={active?PINK:theme.muted} size={15}/>
+                <Text numberOfLines={1}
+                  style={{fontSize:compact?11:12,
+                    color:active?theme.foreground:theme.muted,
+                    fontWeight:active?'700':'500'}}>
+                  {item.title}
+                </Text>
+              </Pressable>;
+            })}
+          </View>:null}
+        </View>
         {tab==='lyrics'?<View style={{gap:7,width:'100%',maxWidth:860,
           alignSelf:'center',paddingHorizontal:compact?19:45,
           paddingVertical:6,borderBottomWidth:1,borderColor:theme.border}}>
@@ -226,7 +273,8 @@ export function MusicWritingOverlay({project,mode,startTab,onModeChange,source,i
                 &&!initialFile.musicEvents?initialFile:undefined}
               sections={project.sections} canLinkSections={hasVersion}
               originalLanguage={project.originalLanguage}
-              onSave={onSave} onDirtyChange={setWriterDirty} immersive/>
+              onSave={onSave} onDirtyChange={setWriterDirty}
+              onTranslate={()=>changeTab('translation')} immersive/>
           </View>
           <View style={{display:tab==='score'?'flex':'none'}}>
             <MusicSketchStudio initialFile={initialFile?.musicEvents?initialFile:null}
