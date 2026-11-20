@@ -53,6 +53,9 @@ export default function Discover() {
   const [filter, setFilter] = useState<(typeof filters)[number]>(
     params.filter === 'Musique' ? 'Musique' : params.filter === 'Talents' ? 'Talents' : params.filter === 'Pour moi' ? 'Pour moi' : 'Tout',
   );
+  useEffect(() => {
+    if (params.filter === 'Musique') setFilter('Musique');
+  }, [params.filter]);
   const [query, setQuery] = useState('');
   const { email } = useApp();
   const [savedTalents, setSavedTalents] = useState<SavedTalent[]>([]);
