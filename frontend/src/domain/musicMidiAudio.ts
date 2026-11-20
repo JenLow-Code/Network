@@ -3,7 +3,7 @@ import {newMusicId} from './musicWorkspace';
 import {parseMusicMidi} from './musicMidiParser';
 import type {MusicNotationEvent} from './musicNotation';
 import type {MusicProjectFile} from './musicWorkspace';
-import {midiFrequency,samplePlaybackRate,sampleRegion} from './musicSampleInstrument';
+import {midiFrequency,samplePlaybackRate,sampleAudioRegion} from './musicSampleInstrument';
 
 const RATE=44100;
 const MAX_SECONDS=420;
@@ -76,7 +76,7 @@ async function offlineWav(events:MusicNotationEvent[],bpm:number,
       const reference=sampleRootHz&&sampleRootHz>0&&Number.isFinite(sampleRootHz)?
         sampleRootHz:midiFrequency(sampleRoot);
       source.playbackRate.value=samplePlaybackRate(n.midi,reference);
-      const region=sampleRegion(sample.getChannelData(0),sample.sampleRate);
+      const region=sampleAudioRegion(sample);
       if(region.peak<.0001)
         throw new Error('Le son personnalisé est silencieux.');
       if(region.loopEnd-region.loopStart>.07){
