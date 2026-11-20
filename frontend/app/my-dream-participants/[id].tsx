@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/theme/AppTheme';
-import {workspaceCanvas} from '@/theme/workspaceLayout';
+import {workspaceCanvas,PAGE_TITLE_FONT_SIZE,PAGE_TITLE_LINE_HEIGHT} from '@/theme/workspaceLayout';
 import { useDreams } from '@/domain/dreamRepository';
 import { api } from '@/lib/api/client';
 import { PageHeader } from '@/components/navigation/PageHeader';
@@ -48,7 +48,7 @@ export default function DreamParticipants(){
    <ScrollView contentContainerStyle={{...workspaceCanvas(width),paddingTop:12,
      paddingBottom:115,gap:17}}>
      <PageHeader/>
-     <Text style={{fontSize:28,fontFamily:'serif',color:theme.foreground,marginTop:14}}>
+     <Text style={{fontSize:PAGE_TITLE_FONT_SIZE,lineHeight:PAGE_TITLE_LINE_HEIGHT,fontFamily:'serif',color:theme.foreground,marginTop:14}}>
        Personnes du rêve
      </Text>
      <Text style={{fontSize:13,color:theme.muted,lineHeight:20}}>{dream.title}</Text>
