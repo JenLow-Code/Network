@@ -53,7 +53,7 @@ assert.equal(ripple.find(n=>n.id==='third').startBeats,2.5);
 assert.equal(ripple.find(n=>n.id==='kick').startBeats,.5);
 assert.equal(liveNoteLength(1000,3400,100),4);
 assert.equal(liveNotePosition(1000,3400,100),4);
-const {analyzeSamplePitch,midiFrequency,samplePlaybackRate,sampleAudioRegion}=
+const {analyzeSamplePitch,midiFrequency,samplePlaybackRate,sampleAudioRegion,drumOneShotSeconds}=
   load('src/domain/musicSampleInstrument.ts');
 const sine=(midi,length=1.0,leadingSilence=0)=>{
   const rate=44100,buffer=new Float32Array(Math.round(rate*length));
@@ -79,4 +79,17 @@ assert.ok(region.offset>.06);
 assert.ok(region.loopEnd>region.loopStart);
 assert.ok(Math.abs(samplePlaybackRate(71,midiFrequency(59))-2)<1e-8);
 assert.ok(Math.abs(samplePlaybackRate(47,midiFrequency(59))-.5)<1e-8);
-console.log('MIDI roundtrip, held notes, B3/B4 pitch detection, stereo sampling and tuning passed.');
+// Custom drum pads keep standard GM MIDI keys and their entire one-shot tail.
+// A 1/16-beat MIDI trigger must never truncate a 2.4-second crash sample.
+const crashLength=drumOneShotSeconds(2.48,.08);
+assert.ok(Math.abs(crashLength-2.4)<1e-8);
+assert.ok(crashLength>60/100/4);
+assert.equal(drumOneShotSeconds(20,0),12);
+assert.equal(drumOneShotSeconds(.18,.05),.13);
+assert.equal(drumOneShotSeconds(0),0);
+const kit={36:{localFileId:'kick-audio',name:'kick.wav'},
+  38:{localFileId:'snare-audio',name:'snare.wav'}};
+const midiDrum=DRUM_PADS=>DRUM_PADS.find(p=>p.midi===38).midi;
+assert.equal(midiDrum(load('src/domain/musicNotation.ts').DRUM_PADS),38);
+assert.notEqual(kit[36].localFileId,kit[38].localFileId);
+console.log('MIDI, pitch recognition and full-length custom drum pad tails passed.');
