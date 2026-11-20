@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -11,6 +11,7 @@ import { MusicCreateExperience } from '@/components/music/MusicCreateExperience'
 import { MusicCollaborateExperience } from '@/components/music/MusicCollaborateExperience';
 import { useMusicWorkspaces } from '@/domain/musicWorkspace';
 import { musicNextState, makeWorkingVersion, makeWorkingTrack, changeWorkingVersion } from '@/domain/musicNext';
+import {isMidiSource,renderMidiSource} from '@/domain/musicMidiAudio';
 import { useAppTheme } from '@/theme/AppTheme';
 import { workspaceLayout } from '@/theme/workspaceLayout';
 import type { MusicProjectFile } from '@/domain/musicWorkspace';
@@ -49,21 +50,38 @@ export default function MusicWorkspace() {
   const music=musicNextState(project);
   const version=music.versions.find(v=>v.id===music.activeVersionId)||music.versions[0];
   const update=(value:Partial<typeof project>)=>patch(project.id,value);
-  const start=(file:MusicProjectFile)=>{
-    const created=makeWorkingVersion(file,music.versions.length+1);
-    update({musicNext:{...music,versions:[...music.versions,created],activeVersionId:created.id}});
-    setSpace('create');router.setParams({tab:'create'});
+  const addingRef=useRef(false);
+  const [midiConversionError,setMidiConversionError]=useState('');
+  const [convertingMidi,setConvertingMidi]=useState(false);
+  const addFromCapture=async(file:MusicProjectFile,forceNew=false)=>{
+    if(addingRef.current)return;
+    addingRef.current=true;setMidiConversionError('');
+    setConvertingMidi(isMidiSource(file));
+    try{
+      const existing=forceNew?undefined:version;
+      if(existing?.tracks.some(track=>{
+        const source=project.files.find(item=>item.id===track.sourceFileId);
+        return source?.id===file.id||source?.renderedFromMidiId===file.id;
+      })){
+        setSpace('create');router.setParams({tab:'create'});return;
+      }
+      const audible=isMidiSource(file)?await renderMidiSource(file):file;
+      const files=audible===file?project.files:[...project.files,audible];
+      const next=!existing?(()=>{
+        const created=makeWorkingVersion(audible,music.versions.length+1);
+        return {...music,versions:[...music.versions,created],activeVersionId:created.id};
+      })():changeWorkingVersion(music,{
+        ...existing,tracks:[...existing.tracks,makeWorkingTrack(audible)],
+      });
+      update({files,musicNext:next});
+      setSpace('create');router.setParams({tab:'create'});
+    }catch(e){
+      setMidiConversionError(e instanceof Error?e.message:
+        'La conversion MIDI vers audio a échoué.');
+    }finally{addingRef.current=false;setConvertingMidi(false);}
   };
-  const useFile=(file:MusicProjectFile)=>{
-    if(!version){start(file);return;}
-    if(version.tracks.some(track=>track.sourceFileId===file.id)){
-      setSpace('create');router.setParams({tab:'create'});return;
-    }
-    update({musicNext:changeWorkingVersion(music,{
-      ...version,tracks:[...version.tracks,makeWorkingTrack(file)]
-    })});
-    setSpace('create');router.setParams({tab:'create'});
-  };
+  const start=(file:MusicProjectFile)=>{void addFromCapture(file,true);};
+  const useFile=(file:MusicProjectFile)=>{void addFromCapture(file);};
   const spaces: {id:Space; title:string; icon:keyof typeof Ionicons.glyphMap}[]=[
     {id:'capture',title:'Capturer',icon:'archive-outline'},
     {id:'create',title:'Créer',icon:'options-outline'},
@@ -121,6 +139,12 @@ export default function MusicWorkspace() {
         })}
       </View>
       {error ? <Text style={{color:'#B94D63',fontSize:12}}>{error}</Text> : null}
+      {convertingMidi?<Text style={{fontSize:12,color:PINK}}>
+        Conversion MIDI en prise WAV… L’original reste dans Capturer.
+      </Text>:null}
+      {midiConversionError?<Text style={{fontSize:12,color:'#B94D63'}}>
+        {midiConversionError}
+      </Text>:null}
       {space==='capture' ? <MusicCaptureExperience project={project} patch={update}
         onStartVersion={start} onUseFile={useFile} hasVersion={!!version}/> : null}
       {space==='create' ? <MusicCreateExperience project={project} patch={update}
