@@ -7,7 +7,7 @@ import type {MusicNotationEvent} from '@/domain/musicNotation';
 import {MusicMidiPreview} from './MusicMidiPreview';
 
 const PINK='#CB245C';
-const STEP=34;
+const STEP=38;
 const LEFT=24;
 const BASE_STAFF_HEIGHT=72;
 const drumHeight=(pitch:number)=>pitch===36?52:pitch===38||pitch===39?35:
@@ -75,17 +75,17 @@ function MiniStaff({events,kind,clef,playheadBeats}:{
             y1={topInset+2} y2={topInset+2}
             stroke={ink} strokeWidth={.8}/>:null}
           {small?<>
-            <Line x1={x-5} x2={x+5} y1={pos-5} y2={pos+5}
+            <Line x1={x-4} x2={x+4} y1={pos-4} y2={pos+4}
+              stroke={ink} strokeWidth={1.35}/>
+            <Line x1={x-4} x2={x+4} y1={pos+4} y2={pos-4}
               stroke={ink} strokeWidth={1.7}/>
-            <Line x1={x-5} x2={x+5} y1={pos+5} y2={pos-5}
-              stroke={ink} strokeWidth={1.7}/>
-          </>:<Ellipse cx={x} cy={pos} rx={6.3} ry={4.3}
+          </>:<Ellipse cx={x} cy={pos} rx={4.9} ry={3.4}
             rotation={-18} origin={`${x},${pos}`}
             fill={n.lengthBeats<2?ink:'none'} stroke={ink} strokeWidth={1.4}/>}
-          {n.lengthBeats<3.5?<Line x1={x+6} x2={x+6}
+          {n.lengthBeats<3.5?<Line x1={x+5} x2={x+5}
             y1={pos} y2={pos-23} stroke={ink} strokeWidth={1.25}/>:null}
-          {n.lengthBeats<1?<Line x1={x+6} x2={x+13}
-            y1={pos-23} y2={pos-13} stroke={ink} strokeWidth={1.6}/>:null}
+          {n.lengthBeats<1?<Line x1={x+5} x2={x+10}
+            y1={pos-23} y2={pos-13} stroke={ink} strokeWidth={1.35}/>:null}
         </React.Fragment>;
       })}
       {playheadBeats!==null?<Line
