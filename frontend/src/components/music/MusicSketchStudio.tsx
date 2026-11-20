@@ -7,7 +7,7 @@ import {DRUM_PADS,downloadMusicMidi,downloadMusicScorePdf,musicNoteName,liveNote
 import type {MusicNotationEvent} from '@/domain/musicNotation';
 import type {MusicProjectFile} from '@/domain/musicWorkspace';
 import {saveDraftAudio,getDraftAudio} from '@/domain/musicLocalStorage';
-import {analyzeSamplePitch,midiFrequency,samplePlaybackRate,sampleRegion} from '@/domain/musicSampleInstrument';
+import {analyzeSamplePitch,midiFrequency,samplePlaybackRate,sampleAudioRegion} from '@/domain/musicSampleInstrument';
 
 const PINK='#CB245C';
 type Instrument='piano'|'drum';
@@ -254,7 +254,7 @@ function playSound(ctx:AudioContext,pitch:number,drum:boolean,level:number,
   if(!drum&&tone==='Échantillon'&&sample){
     const source=ctx.createBufferSource();
     source.buffer=sample;
-    const region=sampleRegion(sample.getChannelData(0),sample.sampleRate);
+    const region=sampleAudioRegion(sample);
     if(region.peak<.0001)throw Error('Ce fichier audio est silencieux.');
     const exactRoot=sampleRootHz&&Number.isFinite(sampleRootHz)&&sampleRootHz>0?
       sampleRootHz:midiFrequency(sampleRootMidi);
@@ -602,7 +602,7 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
         if(!audioRef.current)audioRef.current=new AudioContext();
         const buffer=await audioRef.current.decodeAudioData(await file.arrayBuffer());
         if(buffer.duration<.12)throw Error('La note doit durer au moins 0,12 seconde.');
-        const region=sampleRegion(buffer.getChannelData(0),buffer.sampleRate);
+        const region=sampleAudioRegion(buffer);
         if(region.peak<.002)throw Error('Le fichier ne contient aucun son audible.');
         // Stereo microphones can have very different levels on each side.
         const possible=Array.from({length:buffer.numberOfChannels},(_,index)=>
