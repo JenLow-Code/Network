@@ -13,7 +13,7 @@ import { useApp } from '@/context/AppContext';
 import { useDiscovery } from '@/lib/api/hooks';
 import { api } from '@/lib/api/client';
 import { useAppTheme } from '@/theme/AppTheme';
-import { workspaceLayout,WORKSPACE_TITLE_GAP } from '@/theme/workspaceLayout';
+import { workspaceLayout,WORKSPACE_TITLE_GAP,PAGE_TITLE_FONT_SIZE,PAGE_TITLE_LINE_HEIGHT } from '@/theme/workspaceLayout';
 import type { MusicPublication } from '@/domain/publication';
 
 const PINK = '#CB245C';
@@ -64,8 +64,8 @@ export default function MusicHub() {
       maxWidth:ws.maxWidth,width:'100%',alignSelf:'center',gap:WORKSPACE_TITLE_GAP}}>
       <PageHeader />
       <View style={{gap:9}}>
-        <Text style={{fontSize:compact?34:40,fontWeight:'700',color:theme.foreground,
-          letterSpacing:-1.2}}>Musique</Text>
+        <Text style={{fontSize:PAGE_TITLE_FONT_SIZE,lineHeight:PAGE_TITLE_LINE_HEIGHT,fontWeight:'700',color:theme.foreground,
+          letterSpacing:-.2}}>Musique</Text>
         <Text style={{fontSize:14,lineHeight:23,color:theme.muted,maxWidth:520}}>
           Mes morceaux, mes collaborations et mes favoris.
         </Text>
