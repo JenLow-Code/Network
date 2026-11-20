@@ -147,7 +147,7 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,h
   };
   const saveScore=(result:{title:string;events:MusicNotationEvent[];bpm:number;
     tone:string;sampleLocalId?:string;sampleName?:string;
-    sampleRootMidi?:number;clef?:'treble'|'bass'})=>{
+    sampleRootMidi?:number;sampleRootHz?:number;clef?:'treble'|'bass'})=>{
     if(!result.events.length)return;
     const current=files.find(file=>file.id===editingFileId);
     const item:MusicProjectFile={
@@ -158,6 +158,7 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,h
       instrumentSampleLocalId:result.sampleLocalId,
       instrumentSampleName:result.sampleName,
       instrumentSampleRootMidi:result.sampleRootMidi,
+      instrumentSampleRootHz:result.sampleRootHz,
       scoreClef:result.clef,
       createdAt:current?.createdAt||new Date().toISOString(),
     };
