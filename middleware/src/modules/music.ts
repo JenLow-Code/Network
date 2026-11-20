@@ -289,12 +289,15 @@ export function registerMusic(r: Router): void {
     );
     const credits = rows.length ? await ctx.sql.all<{ proposal_id: string; credit_order: number; display_name: string; contribution: string }>(`SELECT proposal_id,credit_order,display_name,contribution FROM music_proposal_credits WHERE proposal_id IN (${rows.map(() => '?').join(',')}) ORDER BY credit_order`, ...rows.map(x => x.id)) : [];
     const people = await authorMap(ctx, rows.map(x => x.proposed_by));
-    void viewer;
     return rows.map(x => ({
       id: x.id, trackPublicationId: x.publication_id, trackTitle: x.title, proposer: people.get(x.proposed_by), description: x.description, status: x.status,
-      reviewState: x.status !== 'submitted' ? 'completed' : x.review_state,
-      reviewStartedAt: iso(x.review_started_at), archiveUntil: iso(x.archive_until),
-      canArchive: x.status === 'submitted' && !x.archived_once_at,
+      reviewState: x.status !== 'submitted' ? 'completed' :
+        x.publisher_id === viewer.id ? x.review_state :
+        x.review_started_at ? 'in_review' : 'pending',
+      reviewStartedAt: iso(x.review_started_at),
+      archiveUntil: x.publisher_id === viewer.id ? iso(x.archive_until) : null,
+      canArchive: x.publisher_id === viewer.id &&
+        x.status === 'submitted' && !x.archived_once_at,
       credits: credits.filter(c => c.proposal_id === x.id).map(c => ({ order: c.credit_order, displayName: c.display_name, contribution: c.contribution })),
       createdAt: iso(x.created_at), respondedAt: iso(x.responded_at), publishedTrackId: x.published_track_id,
     }));
