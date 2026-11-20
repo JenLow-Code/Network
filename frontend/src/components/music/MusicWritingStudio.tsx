@@ -3,7 +3,7 @@ import { Pressable, Text, TextInput, View, useWindowDimensions } from 'react-nat
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/theme/AppTheme';
 import {newMusicId} from '@/domain/musicWorkspace';
-import type { MusicProjectFile, MusicLyricReference, MusicSection } from '@/domain/musicWorkspace';
+import type { MusicProjectFile, MusicLyricReference, MusicLyricComment, MusicSection } from '@/domain/musicWorkspace';
 
 const PINK = '#CB245C';
 const LANGUAGES = ['Français', 'English', 'Português', 'Deutsch', 'Español', 'Italiano'];
@@ -15,6 +15,7 @@ export type MusicWritingResult = {
   language?: string;
   translationOfFileId?: string;
   lyricReferences?: MusicLyricReference[];
+  lyricComments?: MusicLyricComment[];
   newSections?: MusicSection[];
 };
 type Props = {
@@ -25,6 +26,7 @@ type Props = {
   initialFile?: MusicProjectFile;
   onSave: (result: MusicWritingResult) => void;
   onRequestTranslator?: (sourceId: string, language: string) => void;
+  onTranslate?:()=>void;
   requestedLanguages?: string[];
   onDirtyChange: (dirty: boolean) => void;
   immersive?: boolean;
@@ -90,7 +92,7 @@ function LinkedLyricsPreview({text,references}:{
   </Text>;
 }
 export function MusicWritingStudio({ mode, onModeChange, originalLanguage, source,
-  initialFile, onSave, onRequestTranslator, requestedLanguages=[], onDirtyChange,
+  initialFile, onSave, onRequestTranslator, onTranslate, requestedLanguages=[], onDirtyChange,
   immersive=false,sections=[],showTabs=true,canLinkSections=false }: Props) {
   const theme = useAppTheme();
   const { width, height } = useWindowDimensions();
@@ -111,6 +113,9 @@ export function MusicWritingStudio({ mode, onModeChange, originalLanguage, sourc
   const [selection, setSelection] = useState({ start: 0, end: 0 });
   const [lyricSelection, setLyricSelection] = useState({start:0,end:0});
   const [references,setReferences] = useState<MusicLyricReference[]>(initialFile?.lyricReferences||[]);
+  const [comments,setComments]=useState<MusicLyricComment[]>(initialFile?.lyricComments||[]);
+  const [commentEditor,setCommentEditor]=useState(false);
+  const [commentDraft,setCommentDraft]=useState('');
   const [createdSections,setCreatedSections] = useState<MusicSection[]>([]);
   const [sectionPicker,setSectionPicker] = useState(false);
   const [customSection,setCustomSection] = useState('');
@@ -129,10 +134,11 @@ export function MusicWritingStudio({ mode, onModeChange, originalLanguage, sourc
     ? title !== initialFile.title || body !== lyricText(initialFile) ||
       (!isNote && language !== (initialFile.language || originalLanguage)) ||
       JSON.stringify(references)!==JSON.stringify(initialFile.lyricReferences||[]) ||
+      JSON.stringify(comments)!==JSON.stringify(initialFile.lyricComments||[]) ||
       createdSections.length>0
     : !!(lyricBody.trim() || lyricTitle.trim() || noteBody.trim() || noteTitle.trim() ||
       translationBody.trim() || translationTitle.trim() ||
-      references.length || createdSections.length);
+      references.length || comments.length || createdSections.length);
   const requestPending=requestedLanguages.some(value=>
     value.toLocaleLowerCase()===language.trim().toLocaleLowerCase());
 
@@ -158,6 +164,7 @@ export function MusicWritingStudio({ mode, onModeChange, originalLanguage, sourc
       setLyricBody(lyricText(initialFile));
       setLyricLanguage(initialFile.language || originalLanguage);
       setReferences(initialFile.lyricReferences||[]);
+      setComments(initialFile.lyricComments||[]);
     }
   }, [initialFile?.id]);
 
@@ -195,6 +202,7 @@ export function MusicWritingStudio({ mode, onModeChange, originalLanguage, sourc
       language: isNote ? undefined : language.trim(),
       translationOfFileId: source?.id,
       lyricReferences:translating||isNote?undefined:references,
+      lyricComments:translating||isNote?undefined:comments,
       newSections:translating||isNote?undefined:createdSections });
     if (translating) { setTranslationBody(''); setTranslationTitle(''); }
     else if (isNote) { setNoteBody(''); setNoteTitle(''); }
