@@ -83,8 +83,8 @@ export default function MusicWorkspace() {
   const start=(file:MusicProjectFile)=>{void addFromCapture(file,true);};
   const useFile=(file:MusicProjectFile)=>{void addFromCapture(file);};
   const spaces: {id:Space; title:string; icon:keyof typeof Ionicons.glyphMap}[]=[
-    {id:'capture',title:'Capturer',icon:'archive-outline'},
-    {id:'create',title:'Créer',icon:'options-outline'},
+    {id:'capture',title:'Capturer',icon:'mic-outline'},
+    {id:'create',title:'Créer',icon:'layers-outline'},
     {id:'collaborate',title:'Collaborer',icon:'people-outline'},
   ];
   return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
@@ -123,12 +123,12 @@ export default function MusicWorkspace() {
             accessibilityState={{selected}}
             style={{flex:desktop?undefined:1,
               flexDirection:'row',alignItems:'center',
-              justifyContent:'center',gap:compact?5:desktop?0:9,
+              justifyContent:'center',gap:compact?5:desktop?8:9,
               minHeight:desktop?46:52,borderBottomWidth:selected?2:0,
               borderBottomColor:selected?PINK:'transparent',
               paddingHorizontal:desktop?12:3}}>
-            {!desktop?<Ionicons name={item.icon} size={compact?24:19}
-              color={selected?PINK:theme.muted}/>:null}
+            <Ionicons name={item.icon} size={compact?22:desktop?18:19}
+              color={selected?PINK:theme.muted}/>
             {(desktop||!compact||selected)?<Text numberOfLines={1}
               style={{fontSize:compact?12:desktop?14:14,
                 fontWeight:selected?'700':'500',
@@ -162,7 +162,9 @@ export default function MusicWorkspace() {
       </Text>:null}
       {space==='capture' ? <MusicCaptureExperience project={project} patch={update}
         onStartVersion={start} onUseFile={useFile} hasVersion={!!version}
-        newVersionMode={intent==='new-version'}/> : null}
+        newVersionMode={intent==='new-version'}
+        quickAction={intent==='write'||intent==='upload'||intent==='play'||
+          intent==='record'?intent:undefined}/> : null}
       {space==='create' ? <MusicCreateExperience project={project} patch={update}
         onCapture={()=>{setSpace('capture');router.replace({pathname:'/music-workspace/[id]',params:{id:project.id,tab:'capture'}});}}/> : null}
       {space==='collaborate' ?
