@@ -222,20 +222,61 @@ export function MusicScoreView({events,compact=false,instrument,
   </View>;
 }
 /** WebAudio previews do not alter the saved MIDI event or the original audio. */
+/** Each pressed key has its own polyphonic gain envelope and sample source. */
+const voiceGains=new WeakMap<AudioScheduledSourceNode,{gain:GainNode;ctx:AudioContext}>();
+function releaseSound(source:AudioScheduledSourceNode){
+  const voice=voiceGains.get(source);
+  if(!voice){try{source.stop();}catch{}return;}
+  const now=voice.ctx.currentTime;
+  voice.gain.gain.cancelScheduledValues(now);
+  voice.gain.gain.setTargetAtTime(.0001,now,.025);
+  try{source.stop(now+.12);}catch{}
+  voiceGains.delete(source);
+}
 function playSound(ctx:AudioContext,pitch:number,drum:boolean,level:number,
   tone:string,sample:AudioBuffer|null,seconds?:number,
-  startDelay=0,sampleRootMidi=60):AudioScheduledSourceNode{
+  startDelay=0,sampleRootMidi=60,sampleRootHz?:number):AudioScheduledSourceNode{
   const now=ctx.currentTime+Math.max(0,startDelay);
+  if(!drum&&tone==='Échantillon'&&!sample)
+    throw Error('L’échantillon ne s’est pas chargé. Réimporte-le ou attends la fin du chargement.');
+  const duration=Math.max(.09,Math.min(16,seconds??
+    (drum?.24:tone==='Orgue'||tone==='Cordes'?.78:.62)));
+  const end=now+duration;
   const gain=ctx.createGain();
-  gain.gain.setValueAtTime(Math.max(.0001,level*.25),now);
-  const duration=Math.max(.09,Math.min(16,seconds??(drum?.24:tone==='Orgue'||tone==='Cordes'?.78:.62)));
-  gain.gain.exponentialRampToValueAtTime(.0001,now+duration);
+  const attack=Math.min(.012,duration*.2);
+  const release=Math.min(.085,duration*.25);
+  const sourceVolume=Math.max(.001,level*.25);
+  gain.gain.setValueAtTime(.0001,now);
+  gain.gain.linearRampToValueAtTime(sourceVolume,now+attack);
+  gain.gain.setValueAtTime(sourceVolume,Math.max(now+attack,end-release));
+  gain.gain.exponentialRampToValueAtTime(.0001,end);
   gain.connect(ctx.destination);
   if(!drum&&tone==='Échantillon'&&sample){
     const source=ctx.createBufferSource();
     source.buffer=sample;
-    source.playbackRate.value=Math.pow(2,(pitch-sampleRootMidi)/12);
-    source.connect(gain);source.start(now);source.stop(now+duration);
+    const region=sampleRegion(sample.getChannelData(0),sample.sampleRate);
+    if(region.peak<.0001)throw Error('Ce fichier audio est silencieux.');
+    const exactRoot=sampleRootHz&&Number.isFinite(sampleRootHz)&&sampleRootHz>0?
+      sampleRootHz:midiFrequency(sampleRootMidi);
+    source.playbackRate.setValueAtTime(samplePlaybackRate(pitch,exactRoot),now);
+    // A sample is a reference instrument; loop its stable middle section
+    // while a note is held, rather than exhausting the recorded note once.
+    if(region.loopEnd-region.loopStart>.07){
+      source.loop=true;
+      source.loopStart=region.loopStart;
+      source.loopEnd=region.loopEnd;
+    }
+    // Modest automatic level correction for very quiet microphone takes.
+    const boost=Math.min(2.5,.62/Math.max(.05,region.peak));
+    gain.gain.cancelScheduledValues(now);
+    gain.gain.setValueAtTime(.0001,now);
+    gain.gain.linearRampToValueAtTime(sourceVolume*boost,now+attack);
+    gain.gain.setValueAtTime(sourceVolume*boost,Math.max(now+attack,end-release));
+    gain.gain.exponentialRampToValueAtTime(.0001,end);
+    source.connect(gain);
+    source.start(now,Math.min(region.offset,Math.max(0,sample.duration-.01)));
+    source.stop(end);
+    voiceGains.set(source,{gain,ctx});
     return source;
   }
   if(drum&&pitch!==36){
@@ -247,49 +288,22 @@ function playSound(ctx:AudioContext,pitch:number,drum:boolean,level:number,
     const filter=ctx.createBiquadFilter();
     filter.type=(pitch===42||pitch===46||pitch===49)?'highpass':'bandpass';
     filter.frequency.value=(pitch===42||pitch===46||pitch===49)?5600:1200;
-    noise.connect(filter);filter.connect(gain);noise.start(now);noise.stop(now+.23);
+    noise.connect(filter);filter.connect(gain);
+    noise.start(now);noise.stop(Math.min(end,now+.23));
+    voiceGains.set(noise,{gain,ctx});
     return noise;
-  }else{
-    const osc=ctx.createOscillator();
-    osc.type=drum?'sine':tone==='Orgue'?'sine':
-      tone==='Synthé'||tone==='Cordes'?'sawtooth':'triangle';
-    const hz=drum?125:440*Math.pow(2,(pitch-69)/12);
-    osc.frequency.setValueAtTime(hz,now);
-    if(drum)osc.frequency.exponentialRampToValueAtTime(46,now+.13);
-    osc.connect(gain);osc.start(now);osc.stop(now+duration);
-    return osc;
   }
+  const osc=ctx.createOscillator();
+  osc.type=drum?'sine':tone==='Orgue'?'sine':
+    tone==='Synthé'||tone==='Cordes'?'sawtooth':'triangle';
+  const hz=drum?125:midiFrequency(pitch);
+  osc.frequency.setValueAtTime(hz,now);
+  if(drum)osc.frequency.exponentialRampToValueAtTime(46,now+.13);
+  osc.connect(gain);osc.start(now);osc.stop(end);
+  voiceGains.set(osc,{gain,ctx});
+  return osc;
 }
 
-/** Estimate a sustained uploaded note by a normalized difference function.
- * For breathy/percussive samples the user may correct the guessed reference note.
- */
-function detectSampleRoot(buffer:AudioBuffer):number|null{
-  const samples=buffer.getChannelData(0),rate=buffer.sampleRate;
-  const start=Math.min(Math.floor(rate*.1),Math.floor(samples.length*.2));
-  const span=Math.min(6500,Math.floor((samples.length-start)/2));
-  const minLag=Math.max(2,Math.floor(rate/1100));
-  const maxLag=Math.min(Math.floor(rate/75),Math.floor(span/2));
-  if(span<1024||maxLag<=minLag)return null;
-  const diffs=new Float64Array(maxLag+1);
-  let cumulative=0,selected=-1;
-  for(let lag=1;lag<=maxLag;lag++){
-    let difference=0;
-    for(let i=0;i<span-lag;i+=2){
-      const delta=samples[start+i]-samples[start+i+lag];
-      difference+=delta*delta;
-    }
-    diffs[lag]=difference;cumulative+=difference;
-    const score=cumulative?difference*lag/cumulative:1;
-    if(lag>=minLag&&score<.19){
-      selected=lag;break;
-    }
-  }
-  if(selected<0)return null;
-  const hz=rate/selected;
-  const pitch=Math.round(69+12*Math.log2(hz/440));
-  return Number.isFinite(pitch)&&pitch>=24&&pitch<=96?pitch:null;
-}
 export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}:Props){
   const theme=useAppTheme();
   const {width,height}=useWindowDimensions();
