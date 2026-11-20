@@ -10,7 +10,7 @@ import { publications } from '@/mocks/publications';
 import { useApp } from '@/context/AppContext';
 import { publicationPath } from '@/components/publication/PublicationGallery';
 import { useAppTheme } from '@/theme/AppTheme';
-import {workspaceCanvas,WORKSPACE_TITLE_GAP} from '@/theme/workspaceLayout';
+import {workspaceCanvas,WORKSPACE_TITLE_GAP,PAGE_TITLE_FONT_SIZE,PAGE_TITLE_LINE_HEIGHT} from '@/theme/workspaceLayout';
 export default function Prayers() {
   const theme = useAppTheme();
   const {width}=useWindowDimensions();
@@ -29,7 +29,7 @@ export default function Prayers() {
             marginBottom:5,
           }}
         >
-          <Text style={{ fontSize: 26, fontWeight: '700', color: theme.foreground }}>
+          <Text style={{ fontSize:PAGE_TITLE_FONT_SIZE,lineHeight:PAGE_TITLE_LINE_HEIGHT,fontWeight:'700',color:theme.foreground }}>
             Mes prières
           </Text>
           
