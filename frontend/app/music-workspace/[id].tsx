@@ -63,7 +63,7 @@ export default function MusicWorkspace() {
         const source=project.files.find(item=>item.id===track.sourceFileId);
         return source?.id===file.id||source?.renderedFromMidiId===file.id;
       })){
-        setSpace('create');router.setParams({tab:'create'});return;
+        setSpace('create');router.replace({pathname:'/music-workspace/[id]',params:{id:project.id,tab:'create'}});return;
       }
       const audible=isMidiSource(file)?await renderMidiSource(file):file;
       const files=audible===file?project.files:[...project.files,audible];
@@ -74,7 +74,7 @@ export default function MusicWorkspace() {
         ...existing,tracks:[...existing.tracks,makeWorkingTrack(audible)],
       });
       update({files,musicNext:next});
-      setSpace('create');router.setParams({tab:'create'});
+      setSpace('create');router.replace({pathname:'/music-workspace/[id]',params:{id:project.id,tab:'create'}});
     }catch(e){
       setMidiConversionError(e instanceof Error?e.message:
         'La conversion MIDI vers audio a échoué.');
@@ -118,7 +118,7 @@ export default function MusicWorkspace() {
         gap:desktop?20:3}}>
         {spaces.map(item=>{
           const selected=space===item.id;
-          return <Pressable key={item.id} onPress={()=>{setSpace(item.id);router.setParams({tab:item.id});}}
+          return <Pressable key={item.id} onPress={()=>{setSpace(item.id);router.replace({pathname:'/music-workspace/[id]',params:{id:project.id,tab:item.id}});}}
             accessibilityRole="tab" accessibilityLabel={item.title}
             accessibilityState={{selected}}
             style={{flex:desktop?undefined:1,
@@ -164,7 +164,7 @@ export default function MusicWorkspace() {
         onStartVersion={start} onUseFile={useFile} hasVersion={!!version}
         newVersionMode={intent==='new-version'}/> : null}
       {space==='create' ? <MusicCreateExperience project={project} patch={update}
-        onCapture={()=>{setSpace('capture');router.setParams({tab:'capture'});}}/> : null}
+        onCapture={()=>{setSpace('capture');router.replace({pathname:'/music-workspace/[id]',params:{id:project.id,tab:'capture'}});}}/> : null}
       {space==='collaborate' ?
         <MusicCollaborateExperience project={project} patch={update}/> : null}
     </ScrollView>
