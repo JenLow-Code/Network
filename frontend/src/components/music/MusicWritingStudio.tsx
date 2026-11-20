@@ -3,6 +3,7 @@ import { Pressable, Text, TextInput, View, useWindowDimensions } from 'react-nat
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/theme/AppTheme';
 import {newMusicId} from '@/domain/musicWorkspace';
+import {shiftLyricAnchors,isLyricAnchorValid} from '@/domain/musicLyricAnchors';
 import type { MusicProjectFile, MusicLyricReference, MusicLyricComment, MusicSection } from '@/domain/musicWorkspace';
 
 const PINK = '#CB245C';
@@ -74,8 +75,7 @@ function LinkedLyricsPreview({text,references,comments,compact}:{
 }){
   const theme=useAppTheme();
   const valid=(range:{start:number;end:number;text:string})=>
-    range.start>=0&&range.end<=text.length&&range.end>range.start&&
-    text.slice(range.start,range.end)===range.text;
+    isLyricAnchorValid(text,range);
   const refRanges=references.filter(valid),commentRanges=comments.filter(valid);
   const ends=new Set<number>([0,text.length]);
   [...refRanges,...commentRanges].forEach(range=>{
@@ -263,6 +263,8 @@ export function MusicWritingStudio({ mode, onModeChange, originalLanguage, sourc
     multiline textAlignVertical="top" scrollEnabled={false}
     value={body} onChangeText={next=>{
       if(!isNote&&!translating){
+        setReferences(old=>shiftLyricAnchors(body,next,old));
+        setComments(old=>shiftLyricAnchors(body,next,old));
         setLyricSelection({start:0,end:0});
         setCommentEditor(false);setSectionPicker(false);
       }
@@ -561,7 +563,7 @@ export function MusicWritingStudio({ mode, onModeChange, originalLanguage, sourc
                     numberOfLines={2}>« {comment.text} »</Text>
                   <Text style={{fontSize:13,lineHeight:20,
                     color:theme.foreground}}>{comment.comment}</Text>
-                  {body.slice(comment.start,comment.end)!==comment.text?
+                  {!isLyricAnchorValid(body,comment)?
                     <Text style={{fontSize:11,color:theme.muted}}>
                       Passage modifié · à re-sélectionner
                     </Text>:null}
