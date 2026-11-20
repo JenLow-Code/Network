@@ -56,6 +56,7 @@ export function MusicWritingOverlay({project,mode,startTab,onModeChange,source,i
   const [sourceId,setSourceId]=useState(source?.id||initialFile?.translationOfFileId||'');
   const [sourceOpen,setSourceOpen]=useState(false);
   const [sourceWarning,setSourceWarning]=useState('');
+  const [navigationWarning,setNavigationWarning]=useState('');
   const dirty=writerDirty||translationDirty||scoreDirty;
   const audioFiles=(project.files||[]).filter(isCaptureAudio);
   const audioChoices=[
@@ -87,6 +88,16 @@ export function MusicWritingOverlay({project,mode,startTab,onModeChange,source,i
     else onClose();
   };
   const changeTab=(next:Tab)=>{
+    if(next!==tab){
+      const hasUnsaved=(tab==='score'&&scoreDirty)||
+        ((tab==='lyrics'||tab==='note')&&writerDirty)||
+        (tab==='translation'&&translationDirty);
+      if(hasUnsaved){
+        setNavigationWarning(
+          'Enregistre les modifications en cours avant de changer de page.');
+        return;
+      }
+    }
     if(initialFile&&next!==tab){
       const lyricTranslation=initialFile.kind==='lyrics'&&
         !initialFile.translationOfFileId&&
@@ -103,7 +114,7 @@ export function MusicWritingOverlay({project,mode,startTab,onModeChange,source,i
     bodyScrollRef.current?.scrollTo({y:0,animated:false});
     setTab(next);
     if(next==='lyrics'||next==='note')onModeChange(next);
-    setSourceWarning('');
+    setSourceWarning('');setNavigationWarning('');
     setChoosing(false);
   };
   const chooseSource=(id:string)=>{
@@ -186,6 +197,19 @@ export function MusicWritingOverlay({project,mode,startTab,onModeChange,source,i
             })}
           </View>:null}
         </View>
+        {navigationWarning?<View style={{paddingHorizontal:compact?18:45,
+          paddingVertical:9,backgroundColor:theme.surface,flexDirection:'row',
+          alignItems:'center',gap:8}}>
+          <Ionicons name="alert-circle-outline" color={PINK} size={16}/>
+          <Text style={{fontSize:12,color:theme.foreground,flex:1}}>
+            {navigationWarning}
+          </Text>
+          <Pressable onPress={()=>setNavigationWarning('')}
+            accessibilityRole="button" accessibilityLabel="Fermer l’avertissement"
+            style={{width:38,height:38,justifyContent:'center',alignItems:'center'}}>
+            <Ionicons name="close-outline" size={18} color={theme.muted}/>
+          </Pressable>
+        </View>:null}
         {tab==='lyrics'?<View style={{gap:7,width:'100%',maxWidth:860,
           alignSelf:'center',paddingHorizontal:compact?19:45,
           paddingVertical:6,borderBottomWidth:1,borderColor:theme.border}}>
