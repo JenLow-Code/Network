@@ -402,7 +402,7 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
         if(ctx.state==='suspended')void ctx.resume();
         const source=playSound(ctx,midi,instrument==='drum',volume[instrument],tone,
           sampleRef.current,instrument==='piano'?12:undefined,
-          0,sampleRootMidi);
+          0,sampleRootMidi,sampleRootHz??undefined);
         if(instrument==='piano')
           liveSourcesRef.current.set(instrument+':'+midi,source);
       }catch{setMessage('Aperçu sonore indisponible sur cet appareil.');}
@@ -446,7 +446,7 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
       {...event,lengthBeats}:event));
     setCursor(old=>Math.max(old,held.startBeats+lengthBeats));
     const source=liveSourcesRef.current.get(key);
-    if(source){try{source.stop();}catch{}liveSourcesRef.current.delete(key);}
+    if(source){releaseSound(source);liveSourcesRef.current.delete(key);}
     if(Platform.OS==='web'&&midiRef.current){
       try{midiRef.current.send([instrument==='piano'?0x80:0x89,midi,0]);}
       catch{setMessage('Sortie MIDI déconnectée.');}
@@ -523,7 +523,7 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
       previewSources.current=notes.map(event=>playSound(
         ctx,event.midi,event.instrument==='drum',volume[event.instrument],
         tone,sampleRef.current,event.lengthBeats*60/bpm,
-        (event.startBeats-first)*60/bpm,sampleRootMidi));
+        (event.startBeats-first)*60/bpm,sampleRootMidi,sampleRootHz??undefined));
       setPreviewPlaying(true);setPreviewBeat(first);
       previewTick.current=setInterval(()=>{
         setPreviewBeat(Math.min(last,first+
@@ -568,8 +568,25 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
       const ctx=audioRef.current;
       if(ctx.state==='suspended')void ctx.resume();
       playSound(ctx,event.midi,event.instrument==='drum',volume[event.instrument],
-        tone,sampleRef.current,event.lengthBeats*60/bpm,0,sampleRootMidi);
+        tone,sampleRef.current,event.lengthBeats*60/bpm,0,sampleRootMidi,
+        sampleRootHz??undefined);
     }catch{setMessage('Aperçu sonore indisponible sur cet appareil.');}
+  };
+  const testSample=(midi:number)=>{
+    if(Platform.OS!=='web'||!sampleRef.current){
+      setSampleError('Le son n’est pas encore prêt. Réimporte-le ou attends son chargement.');
+      return;
+    }
+    try{
+      if(!audioRef.current)audioRef.current=new AudioContext();
+      const ctx=audioRef.current;
+      if(ctx.state==='suspended')void ctx.resume();
+      playSound(ctx,midi,false,volume.piano,'Échantillon',
+        sampleRef.current,1.25,0,sampleRootMidi,sampleRootHz??undefined);
+      setSampleError('');
+    }catch(e){
+      setSampleError(e instanceof Error?e.message:'Impossible d’écouter le son.');
+    }
   };
   const importTone=()=>{
     if(Platform.OS!=='web'||typeof document==='undefined'){
@@ -579,21 +596,37 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
     picker.type='file';picker.accept='audio/*,.wav,.mp3,.ogg,.m4a';
     picker.onchange=()=>{
       const file=picker.files?.[0];if(!file)return;
+      setSampleLoading(true);setSampleError('');
       void(async()=>{
-        if(file.size>12*1024*1024)throw Error('too_large');
+        if(file.size>12*1024*1024)throw Error('Fichier trop grand (12 Mo maximum).');
         if(!audioRef.current)audioRef.current=new AudioContext();
         const buffer=await audioRef.current.decodeAudioData(await file.arrayBuffer());
+        if(buffer.duration<.12)throw Error('La note doit durer au moins 0,12 seconde.');
+        const region=sampleRegion(buffer.getChannelData(0),buffer.sampleRate);
+        if(region.peak<.002)throw Error('Le fichier ne contient aucun son audible.');
+        // Stereo microphones can have very different levels on each side.
+        const possible=Array.from({length:buffer.numberOfChannels},(_,index)=>
+          analyzeSamplePitch(buffer.getChannelData(index),buffer.sampleRate))
+          .filter((value):value is NonNullable<typeof value>=>!!value)
+          .sort((left,right)=>right.confidence-left.confidence);
+        const detected=possible[0]||null;
         const id=await saveDraftAudio(file);
-        const detected=detectSampleRoot(buffer);
-        sampleRef.current=buffer;setSampleName(file.name);setSampleId(id);
-        setSampleRootMidi(detected??60);
-        setTone('Échantillon');
-        setMessage(detected===null?
-          'Impossible de détecter la hauteur. Do4 utilisé par défaut ; tu peux le modifier.':
-          'Hauteur détectée : '+musicNoteName(detected)+'. Modifiable dans Son du piano.');
-      })().catch(e=>setMessage(e instanceof Error&&e.message==='too_large'?
-        'Choisis un son de 12 Mo maximum.':
-        'Ce fichier audio ne peut pas être décodé ou stocké.'));
+        sampleRef.current=buffer;
+        setSampleName(file.name);setSampleId(id);
+        setSampleReady(true);
+        setSampleRootMidi(detected?.midi??60);
+        setSampleRootHz(detected?.frequencyHz??null);
+        setSampleConfidence(detected?.confidence??null);
+        setTone('Échantillon');setToneOpen(true);
+        setMessage(detected?
+          'Note reconnue : '+musicNoteName(detected.midi)+
+          '. Teste le son sur le clavier, puis ajuste si nécessaire.':
+          'Note non reconnue avec fiabilité. Choisis la note d’origine avant de jouer.');
+        if(!detected)setSampleError(
+          'La détection fonctionne surtout avec une note isolée et tenue, sans accompagnement.');
+      })().catch(e=>setSampleError(
+        e instanceof Error?e.message:'Ce fichier audio ne peut pas être importé.'
+      )).finally(()=>setSampleLoading(false));
     };
     picker.click();
   };
