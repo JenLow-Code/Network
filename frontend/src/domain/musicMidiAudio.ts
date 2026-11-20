@@ -16,7 +16,8 @@ const PINK_NOTE_DURATION_TAIL=.15;
  */
 async function offlineWav(events:MusicNotationEvent[],bpm:number,
   tone:string,sampleId?:string,sampleRoot=60,sampleRootHz?:number,
-  drumSamples?:MusicProjectFile['drumSamples']):Promise<File>{
+  drumSamples?:MusicProjectFile['drumSamples'],
+  sampleEndMode:MusicProjectFile['instrumentSampleEndMode']='fade'):Promise<File>{
   if(typeof OfflineAudioContext==='undefined')
     throw new Error('Conversion MIDI en audio indisponible dans ce navigateur.');
   const notes=events.filter(e=>!e.draft&&Number.isFinite(e.midi)&&
@@ -126,26 +127,36 @@ async function offlineWav(events:MusicNotationEvent[],bpm:number,
       source.buffer=sample;
       const reference=sampleRootHz&&sampleRootHz>0&&Number.isFinite(sampleRootHz)?
         sampleRootHz:midiFrequency(sampleRoot);
-      source.playbackRate.value=samplePlaybackRate(n.midi,reference);
       const region=sampleAudioRegion(sample);
       if(region.peak<.0001)
         throw new Error('Le son personnalisé est silencieux.');
-      if(region.loopEnd-region.loopStart>.07){
+      const offset=Math.min(region.offset,Math.max(0,sample.duration-.01));
+      const available=Math.max(.015,sample.duration-offset);
+      const baseRate=samplePlaybackRate(n.midi,reference);
+      const rate=sampleEndMode==='slow'&&available/baseRate<length?
+        Math.max(.08,available/length):baseRate;
+      const audible=sampleEndMode==='repeat'?length:Math.min(length,available/rate);
+      const sampleStop=Math.min(duration-.002,start+audible);
+      if(sampleStop<=start)continue;
+      source.playbackRate.value=rate;
+      // Explicit repeat only. All other modes respect the physical end of source.
+      if(sampleEndMode==='repeat'){
         source.loop=true;
-        source.loopStart=region.loopStart;
-        source.loopEnd=region.loopEnd;
+        source.loopStart=region.loopEnd-region.loopStart>.07?region.loopStart:offset;
+        source.loopEnd=region.loopEnd-region.loopStart>.07?region.loopEnd:sample.duration;
       }
-      // Use the same conservative loudness correction as the live keyboard.
       const boost=Math.min(2.5,.62/Math.max(.05,region.peak));
+      const level=voiceVolume*boost;
+      const fade=Math.min(.12,Math.max(.012,(sampleStop-start)*.22));
+      const ramp=Math.min(attack,(sampleStop-start)*.2);
       gain.gain.cancelScheduledValues(start);
       gain.gain.setValueAtTime(.00001,start);
-      gain.gain.linearRampToValueAtTime(voiceVolume*boost,start+attack);
-      gain.gain.setValueAtTime(voiceVolume*boost,
-        Math.max(start+attack,stop-release));
-      gain.gain.exponentialRampToValueAtTime(.0001,stop);
+      gain.gain.linearRampToValueAtTime(level,start+ramp);
+      gain.gain.setValueAtTime(level,Math.max(start+ramp,sampleStop-fade));
+      gain.gain.exponentialRampToValueAtTime(.0001,sampleStop);
       source.connect(gain);
-      source.start(start,Math.min(region.offset,Math.max(0,sample.duration-.01)));
-      source.stop(stop);
+      source.start(start,offset);
+      source.stop(sampleStop);
       continue;
     }
     if(drum&&n.midi!==36){
@@ -211,7 +222,8 @@ export async function renderMidiPreviewWav(source:MusicProjectFile):Promise<File
   }
   return offlineWav(notes,bpm,source.instrumentTone||'Piano doux',
     source.instrumentSampleLocalId,source.instrumentSampleRootMidi??60,
-    source.instrumentSampleRootHz,source.drumSamples);
+    source.instrumentSampleRootHz,source.drumSamples,
+    source.instrumentSampleEndMode||'fade');
 }
 
 export async function renderMidiSource(source:MusicProjectFile):Promise<MusicProjectFile>{
