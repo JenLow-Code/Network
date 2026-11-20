@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useLocalSearchParams } from 'expo-router';
-import { ScrollView, Text, View, useWindowDimensions } from 'react-native';
+import { Platform, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { Publication } from '@/domain/publication';
 import { publications, personPublications } from '@/mocks/publications';
@@ -34,6 +34,7 @@ export function DetailLayout({
   musicPlaying?: boolean;
 }) {
   const theme = useAppTheme();
+  const scrollRef=useRef<ScrollView>(null);
   const { from } = useLocalSearchParams<{ from?: string }>();
   // Music opened from Discovery keeps related inspiration. Only the Music tab and Fire list are focused spaces.
   const showRelated = from !== 'music-tab' && from !== 'fire';
@@ -46,8 +47,13 @@ export function DetailLayout({
   const isSeed = isDream && item.phase === 'Rêve';
   const { width: screenWidth } = useWindowDimensions();
   const ws=workspaceLayout(screenWidth);
-  const visibleWidth=Math.max(0,screenWidth-(ws.desktop?212:0));
+  const visibleWidth=Math.max(0,screenWidth-(ws.desktop?236:0));
   const width=Math.min(760,Math.max(0,visibleWidth-2*ws.gutter));
+  useEffect(()=>{
+    // A publication must open at its beginning, not inherit Discovery scroll.
+    scrollRef.current?.scrollTo({y:0,animated:false});
+    if(Platform.OS==='web'&&typeof window!=='undefined')window.scrollTo(0,0);
+  },[item.id]);
   const heroWidth = Math.max(0, width - 32);
   // Let Floraison photography meet the detail-page edges; other content keeps its insets.
   const coverWidth = isFloraison ? width : heroWidth;
@@ -61,15 +67,19 @@ export function DetailLayout({
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
       <View style={{ flex: 1, position: 'relative' }}>
-      <ScrollView
+      <ScrollView ref={scrollRef} showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           ...workspaceCanvas(screenWidth),
+          paddingTop:ws.desktop?12:0,
           paddingBottom:40,
         }}
       >
-        <DetailAuthorHeader item={item} flushToImage={isFloraison} />
+        <View style={{maxWidth:760,width:'100%',alignSelf:'center'}}>
+          <DetailAuthorHeader item={item} flushToImage={isFloraison} />
+        </View>
 
-        <View style={{maxWidth:760,width:'100%',paddingHorizontal:16}}>
+        <View style={{maxWidth:760,width:'100%',alignSelf:'center',
+          paddingHorizontal:16}}>
           <View style={{ position: 'relative', marginHorizontal: isFloraison ? -16 : 0 }}>
           <DetailHero item={item} width={coverWidth} height={heroHeight} onMusicPress={onCoverPress} musicPlaying={musicPlaying} />
 
