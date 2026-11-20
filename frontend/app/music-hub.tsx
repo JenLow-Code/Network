@@ -230,23 +230,15 @@ export default function MusicHub() {
         </View>
         {!ready ? <ActivityIndicator color={PINK}/> : null}
         {error ? <Text style={{ color: '#B84D63', fontSize: 12 }}>{error}</Text> : null}
-        {ready && !songs.length ? <View style={{
-          backgroundColor: panelColor, borderColor: theme.border, borderWidth: 1,
-          borderRadius: 18, padding: 17, flexDirection: 'row',
-          alignItems: 'center', gap: 15,
-        }}>
-          <View style={{ width: 64, height: 64, borderRadius: 17,
-            backgroundColor: softColor, alignItems: 'center', justifyContent: 'center' }}>
-            <Ionicons name="musical-notes-outline" size={29} color={PINK}/>
-          </View>
-          <View style={{ flex: 1, gap: 6 }}>
-            <Text style={{ color: theme.foreground, fontWeight: '700', fontSize: 15 }}>
-              Une chanson à commencer ?
-            </Text>
-            <Text style={{ color: theme.muted, fontSize: 12, lineHeight: 19 }}>
-              Rassemble tes idées, tes paroles et tes enregistrements.
-            </Text>
-          </View>
+        {ready && !songs.length ? <View style={{paddingVertical:16,gap:8,alignItems:'flex-start'}}>
+          <Text style={{color:theme.muted,fontSize:13,lineHeight:20}}>
+            Oups, rien ici pour l’instant. Ton premier morceau commence avec une idée.
+          </Text>
+          <Pressable onPress={()=>router.push('/music/new')} accessibilityRole="button"
+            accessibilityLabel="Commencer un morceau pour capturer un moment musical"
+            style={{minHeight:36,justifyContent:'center'}}>
+            <Text style={{color:PINK,fontSize:13,fontWeight:'700'}}>+ Capturer un moment musical</Text>
+          </Pressable>
         </View> : null}
         {songs.length ? layout === 'cards'
           ? <ScrollView horizontal showsHorizontalScrollIndicator={false}
@@ -299,26 +291,17 @@ export default function MusicHub() {
               )}
             </View>)}
           </ScrollView>
-        </> : <View style={{ backgroundColor: panelColor, borderColor: theme.border,
-          borderWidth: 1, borderRadius: 16, padding: 16,
-          flexDirection: 'row', gap: 13, alignItems: 'center' }}>
-          <View style={{ height: 44, width: 44, backgroundColor: softColor,
-            borderRadius: 14, justifyContent: 'center', alignItems: 'center' }}>
-            <Ionicons name="headset-outline" color={PINK} size={23}/>
-          </View>
-          <View style={{ flex: 1, gap: 5 }}>
-            <Text style={{ color: theme.foreground, fontSize: 14,
-              fontWeight: '700' }}>Pas de demande accessible pour le moment</Text>
-            <Text style={{ color: theme.muted, fontSize: 12, lineHeight: 19 }}>
-              {talents.length
-                ? 'Les véritables appels à collaboration correspondant à tes talents apparaîtront ici.'
-                : 'Ajoute tes talents à ton profil pour trouver les appels qui te correspondent.'}
+        </> : <View style={{paddingVertical:14,gap:7,alignItems:'flex-start'}}>
+          <Text style={{color:theme.muted,fontSize:13,lineHeight:20}}>
+            Oups, aucun appel qui correspond à tes talents pour le moment.
+          </Text>
+          <Pressable accessibilityRole="button"
+            onPress={()=>router.push(talents.length?{pathname:'/discover',params:{filter:'Musique'}}:'/profile')}
+            style={{minHeight:36,justifyContent:'center'}}>
+            <Text style={{color:PINK,fontSize:13,fontWeight:'700'}}>
+              {talents.length?'Découvrir les collaborations':'Ajouter mes talents'}
             </Text>
-          </View>
-          {!talents.length ? <Pressable accessibilityRole="button"
-            accessibilityLabel="Voir mon profil" onPress={() => router.push('/profile')}>
-            <Ionicons name="chevron-forward-outline" size={20} color={PINK}/>
-          </Pressable> : null}
+          </Pressable>
         </View>}
       </View>
 
@@ -342,17 +325,17 @@ export default function MusicHub() {
             {pending.map(proposalCard)}
           </ScrollView>
         </View> : null}
-        {!active.length && !pending.length ? <View style={{
-          backgroundColor: panelColor, borderWidth: 1, borderColor: theme.border,
-          borderRadius: 16, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12,
-        }}>
-          <View style={{ width: 42, height: 42, borderRadius: 13,
-            backgroundColor: softColor, justifyContent: 'center', alignItems: 'center' }}>
-            <Ionicons name="people-outline" size={21} color={PINK}/>
-          </View>
-          <Text style={{ flex: 1, color: theme.muted, fontSize: 12, lineHeight: 19 }}>
-            Tes collaborations acceptées, invitations et propositions en attente apparaîtront ici.
+        {!active.length && !pending.length ? <View style={{paddingVertical:14,gap:7,alignItems:'flex-start'}}>
+          <Text style={{color:theme.muted,fontSize:13,lineHeight:20}}>
+            Rien à suivre pour l’instant. Une belle collaboration peut commencer ici.
           </Text>
+          <Pressable accessibilityRole="button"
+            onPress={()=>router.push({pathname:'/discover',params:{filter:'Musique'}})}
+            style={{minHeight:36,justifyContent:'center'}}>
+            <Text style={{color:PINK,fontSize:13,fontWeight:'700'}}>
+              Découvrir les appels à collaboration
+            </Text>
+          </Pressable>
         </View> : null}
         {requestsError ? <Text style={{ fontSize: 12, color: theme.muted }}>
           Certaines propositions en ligne ne sont pas accessibles avec cette session.
