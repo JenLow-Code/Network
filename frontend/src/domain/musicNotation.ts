@@ -62,7 +62,8 @@ export function musicNoteName(midi:number) {
 }
 
 /** Standard MIDI File type 1: meta/tempo, piano (ch 1), percussion (ch 10). */
-export function exportMusicMidi(events:MusicNotationEvent[],tempoBpm:number):Uint8Array {
+export function exportMusicMidi(events:MusicNotationEvent[],tempoBpm:number,
+  numerator=4,denominator=4):Uint8Array {
   const bpm=Math.min(240,Math.max(40,Math.round(tempoBpm||100)));
   const ticksPerBeat=480;
   const number=(value:number,length:number)=>{
@@ -80,7 +81,8 @@ export function exportMusicMidi(events:MusicNotationEvent[],tempoBpm:number):Uin
   const tempo=Math.round(60000000/bpm);
   const meta=[
     0,255,81,3,...number(tempo,3),
-    0,255,88,4,4,2,24,8,
+    0,255,88,4,Math.max(1,Math.min(32,Math.round(numerator))),
+      Math.round(Math.log2(denominator)),24,8,
     0,255,47,0,
   ];
   const track=(instrument:MusicNotationEvent['instrument'])=>{
@@ -113,11 +115,12 @@ export function exportMusicMidi(events:MusicNotationEvent[],tempoBpm:number):Uin
   ];
   return new Uint8Array(bytes);
 }
-export function downloadMusicMidi(events:MusicNotationEvent[],bpm:number,title:string) {
+export function downloadMusicMidi(events:MusicNotationEvent[],bpm:number,title:string,
+  numerator=4,denominator=4) {
   if(typeof document==='undefined'||typeof URL==='undefined')
     throw new Error('Export MIDI disponible dans le navigateur web.');
   const safe=(title.trim()||'idee-musicale').replace(/[^a-zA-Z0-9_-]+/g,'-').slice(0,70);
-  const bytes=exportMusicMidi(events,bpm);
+  const bytes=exportMusicMidi(events,bpm,numerator,denominator);
   const blob=new Blob([bytes as BlobPart],{type:'audio/midi'});
   const url=URL.createObjectURL(blob);
   const anchor=document.createElement('a');
@@ -129,10 +132,11 @@ export function downloadMusicMidi(events:MusicNotationEvent[],bpm:number,title:s
 
 /**
  * A4 printable notation PDF, generated locally without sending any musical data.
- * One staff is printed per instrument and eight-beat span; draft notes print grey.
+ * One staff is printed per instrument and meter-aligned span; drafts print grey.
  */
 export function exportMusicScorePdf(events:MusicNotationEvent[],bpm:number,
-  title:string,clef:'treble'|'bass'='treble'):Uint8Array {
+  title:string,clef:'treble'|'bass'='treble',
+  numerator=4,denominator=4):Uint8Array {
   const ordered=events.filter(e=>Number.isFinite(e.midi)&&Number.isFinite(e.startBeats))
     .slice().sort((a,b)=>a.startBeats-b.startBeats);
   if(!ordered.length)throw Error('Ajoute au moins une note avant d’exporter la partition.');
@@ -140,14 +144,16 @@ export function exportMusicScorePdf(events:MusicNotationEvent[],bpm:number,
     .replace(/[\u0300-\u036f]/g,'').replace(/[^\x20-\x7e]/g,' ').slice(0,115);
   const esc=(value:string)=>ascii(value).replace(/([\\()])/g,'\\$1');
   const titleText=esc(title.trim()||'Partition JenLow');
-  const maxBeat=ordered.reduce((m,e)=>Math.max(m,e.startBeats+e.lengthBeats),4);
+  const barBeats=Math.max(.25,numerator*4/denominator);
+  const beatsPerSystem=Math.max(barBeats,Math.floor(8/barBeats)*barBeats);
+  const maxBeat=ordered.reduce((m,e)=>Math.max(m,e.startBeats+e.lengthBeats),barBeats);
   const instruments=(['piano','drum'] as const)
     .filter(part=>ordered.some(e=>e.instrument===part));
-  const systems=Math.max(1,Math.ceil(maxBeat/8));
+  const systems=Math.max(1,Math.ceil(maxBeat/beatsPerSystem));
   const rows:{part:'piano'|'drum';from:number;items:MusicNotationEvent[]}[]=[];
   for(let index=0;index<systems;index++)for(const part of instruments){
-    rows.push({part,from:index*8,items:ordered.filter(e=>e.instrument===part&&
-      e.startBeats>=index*8&&e.startBeats<(index+1)*8)});
+    rows.push({part,from:index*beatsPerSystem,items:ordered.filter(e=>e.instrument===part&&
+      e.startBeats>=index*beatsPerSystem&&e.startBeats<(index+1)*beatsPerSystem)});
   }
   const pages:typeof rows[]=[];
   for(let i=0;i<rows.length;i+=6)pages.push(rows.slice(i,i+6));
@@ -162,25 +168,26 @@ export function exportMusicScorePdf(events:MusicNotationEvent[],bpm:number,
       commands.push('BT /F1 '+size+' Tf '+x+' '+y+' Td ('+esc(value)+') Tj ET');
     text(49,787,17,titleText);
     text(49,768,10,'JenLow Music | '+Math.max(40,Math.min(240,Math.round(bpm)))+
-      ' BPM | '+(clef==='treble'?'Treble clef':'Bass clef'));
+      ' BPM | '+numerator+'/'+denominator+' | '+
+      (clef==='treble'?'Treble clef':'Bass clef'));
     text(487,787,8,'Page '+(pageIndex+1)+' / '+pages.length);
     page.forEach((row,rowIndex)=>{
       const top=705-rowIndex*104;
       const bottom=top-40;
       text(48,top+14,9,(row.part==='piano'?(clef==='treble'?'G clef':'F clef'):
-        'Percussion')+' | Beats '+row.from+'-'+(row.from+8));
+        'Percussion')+' | Beats '+row.from+'-'+(row.from+beatsPerSystem));
       for(let i=0;i<5;i++)commands.push('0.5 G 78 '+(bottom+i*10)+' m 532 '+(bottom+i*10)+' l S');
-      for(let bar=0;bar<=2;bar++){
-        const x=88+bar*220;
+      for(let bar=0;bar<=Math.floor(beatsPerSystem/barBeats);bar++){
+        const x=88+bar*barBeats*440/beatsPerSystem;
         commands.push('0.7 G '+x+' '+bottom+' m '+x+' '+top+' l S');
       }
       const sorted=row.items.slice().sort((a,b)=>a.startBeats-b.startBeats);
       let previous=row.from;
       sorted.forEach(e=>{
-        const x=91+(e.startBeats-row.from)*55;
+        const x=91+(e.startBeats-row.from)*440/beatsPerSystem;
         if(e.startBeats-previous>=.25){
-          const restX=91+(previous-row.from)*55+
-            Math.min(17,(e.startBeats-previous)*55/2);
+          const restX=91+(previous-row.from)*440/beatsPerSystem+
+            Math.min(17,(e.startBeats-previous)*440/beatsPerSystem/2);
           text(number(restX),number(bottom+18),10,'r');
         }
         const base=row.part==='drum'?null:
@@ -240,10 +247,11 @@ export function exportMusicScorePdf(events:MusicNotationEvent[],bpm:number,
   return new TextEncoder().encode(raw);
 }
 export function downloadMusicScorePdf(events:MusicNotationEvent[],bpm:number,
-  title:string,clef:'treble'|'bass'='treble'){
+  title:string,clef:'treble'|'bass'='treble',
+  numerator=4,denominator=4){
   if(typeof document==='undefined'||typeof URL==='undefined')
     throw Error('Export PDF disponible sur le navigateur web.');
-  const bytes=exportMusicScorePdf(events,bpm,title,clef);
+  const bytes=exportMusicScorePdf(events,bpm,title,clef,numerator,denominator);
   const blob=new Blob([bytes as BlobPart],{type:'application/pdf'});
   const url=URL.createObjectURL(blob);
   const anchor=document.createElement('a');
