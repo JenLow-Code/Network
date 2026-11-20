@@ -1325,7 +1325,7 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
               accessibilityLabel={'Importer un son pour '+pad.label}
               style={{position:'absolute',top:0,right:0,width:42,height:42,
                 alignItems:'center',justifyContent:'center',
-                opacity:recording||drumLoadingKey!==null?.45:1}}>
+                opacity:(recording||drumLoadingKey!==null)?0.45:1}}>
               <Ionicons name={loading?'hourglass-outline':
                 assigned?'create-outline':'cloud-upload-outline'}
                 size={18} color={PINK}/>
@@ -1336,7 +1336,7 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
               accessibilityLabel={'Rétablir le son original de '+pad.label}
               style={{position:'absolute',top:0,left:0,width:42,height:42,
                 alignItems:'center',justifyContent:'center',
-                opacity:recording?.45:1}}>
+                opacity:recording?0.45:1}}>
               <Ionicons name="close-circle-outline" size={17}
                 color={theme.muted}/>
             </Pressable>:null}
