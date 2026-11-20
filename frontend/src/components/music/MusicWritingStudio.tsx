@@ -227,8 +227,8 @@ export function MusicWritingStudio({ mode, onModeChange, originalLanguage, sourc
     setReferences(old=>[...old,ref]);setSectionPicker(false);setSelectionError('');
     setPreview(true);
   };
-  const createSection=()=>{
-    const name=customSection.trim();
+  const createSectionNamed=(value:string)=>{
+    const name=value.trim();
     if(!name||!validSelection)return;
     const existing=[...sections,...createdSections].find(section=>
       section.title.trim().toLocaleLowerCase()===name.toLocaleLowerCase());
@@ -236,6 +236,17 @@ export function MusicWritingStudio({ mode, onModeChange, originalLanguage, sourc
     const section:MusicSection={id:newMusicId(),title:name};
     setCreatedSections(old=>[...old,section]);
     attach(section);setCustomSection('');
+  };
+  const createSection=()=>createSectionNamed(customSection);
+  const addComment=()=>{
+    const comment=commentDraft.trim();
+    if(!validSelection||!comment)return;
+    setComments(old=>[...old,{
+      id:newMusicId(),start:lyricSelection.start,end:lyricSelection.end,
+      text:selectedExcerpt,comment,createdAt:new Date().toISOString(),
+    }]);
+    setCommentEditor(false);setCommentDraft('');setSelectionError('');
+    setPreview(true);
   };
   const choose = (value: Mode, caption: string) => {
     const active = mode === value;
@@ -250,7 +261,13 @@ export function MusicWritingStudio({ mode, onModeChange, originalLanguage, sourc
   };
   const editor = (placeholder: string, minimum: number) => <TextInput ref={input}
     multiline textAlignVertical="top" scrollEnabled={false}
-    value={body} onChangeText={setBody}
+    value={body} onChangeText={next=>{
+      if(!isNote&&!translating){
+        setLyricSelection({start:0,end:0});
+        setCommentEditor(false);setSectionPicker(false);
+      }
+      setBody(next);setPreview(false);
+    }}
     onSelectionChange={event => {
       const range=event.nativeEvent.selection;
       setSelection(range);
@@ -260,9 +277,11 @@ export function MusicWritingStudio({ mode, onModeChange, originalLanguage, sourc
     placeholder={placeholder} placeholderTextColor={theme.muted}
     accessibilityLabel={translating?'Traduction':isNote?'Contenu de la note':'Paroles'}
     style={{fontFamily:isNote?undefined:'Georgia',
-      fontSize:isNote?16:translating&&compact?13:18,
-      lineHeight:isNote?27:translating&&compact?21:30,minHeight:minimum,
-      paddingVertical:14,paddingHorizontal:0,color:theme.foreground}}/>;
+      fontSize:isNote?15:translating&&compact?13:compact?14:15,
+      lineHeight:isNote?25:translating&&compact?21:compact?24:26,
+      minHeight:minimum,
+      paddingVertical:12,paddingHorizontal:compact?2:8,color:theme.foreground,
+      letterSpacing:.15}}/>;
   const languageControl = <View style={{gap:8}}>
     <Pressable onPress={() => setLanguageOpen(!languageOpen)}
       accessibilityRole="button" accessibilityLabel="Choisir la langue"
