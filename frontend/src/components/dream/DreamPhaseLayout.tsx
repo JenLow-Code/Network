@@ -59,7 +59,10 @@ export function DreamPhaseHeader({
         fixed workspace width. Only the cover image receives a visual zoom. */}
     <View style={{
       height:desktop?440:width<520?355:420,
-      width:'100%',
+      // The photograph alone may bleed beyond the capped reading canvas.
+      // Never change the shared max-width of the actual workspace.
+      marginHorizontal:desktop?-Math.min(120,Math.max(0,(width-1100)/4)):0,
+      width:'auto',
       position:'relative',
       overflow:'hidden',
       backgroundColor:theme.dark?'#142521':'#233831',
