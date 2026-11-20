@@ -60,10 +60,10 @@ export default function BibleLibraryScreen(){
   <ScrollView keyboardShouldPersistTaps="handled"
     contentContainerStyle={{...workspaceCanvas(width),
       paddingTop:12,paddingBottom:125,gap:16}}>
-   <PageHeader/>
-   <View style={{gap:8,marginTop:WORKSPACE_TITLE_GAP}}>
+   <PageHeader title="Ma Bible"/>
+   <View style={{gap:8}}>
      <View style={{flexDirection:'row',alignItems:'center',flexWrap:'wrap',gap:5}}>
-       <Text style={{fontFamily:'serif',fontSize:PAGE_TITLE_FONT_SIZE,lineHeight:PAGE_TITLE_LINE_HEIGHT,color:theme.foreground}}>Ma Bible en</Text>
+       <Text style={{fontFamily:'serif',fontSize:PAGE_TITLE_FONT_SIZE,lineHeight:PAGE_TITLE_LINE_HEIGHT,color:theme.foreground}}>Langue :</Text>
        <Pressable onPress={()=>setLanguageOpen(open=>!open)}
          accessibilityRole="button" accessibilityLabel="Choisir la langue de la Bible"
          accessibilityState={{expanded:languageOpen}}
