@@ -46,7 +46,7 @@ export default function SemenceStudio({dream,onBack,onNavigate}:{
    <DreamPhaseHeader dream={dream} phase="Rêve"
      onBack={onBack} onNavigate={onNavigate} readOnly={!editable}/>
    <View style={{alignSelf:'flex-end',width:244,maxWidth:'65%',marginTop:-10,marginBottom:6}}>
-     <DreamWorkspaceShortcuts dream={dream} showLibrary/>
+     <DreamWorkspaceShortcuts dream={dream}/>
    </View>
    <View style={{flexDirection:'row',alignItems:'center',
      justifyContent:'space-between',gap:12,marginTop:3,marginBottom:13}}>
