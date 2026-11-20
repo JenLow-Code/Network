@@ -133,12 +133,8 @@ export default function DreamLibrary(){
       paddingHorizontal:ws.gutter,paddingTop:10,paddingBottom:110,
       maxWidth:ws.maxWidth,width:'100%',alignSelf:'center',minHeight:'100%',
     }}>
-      <PageHeader onBack={()=>router.replace({pathname:'/my-dream/[id]',
+      <PageHeader title="Documents & Inspirations" onBack={()=>router.replace({pathname:'/my-dream/[id]',
         params:{id,view:view||dream?.phase||'Rêve'}})}/>
-      <Text style={{fontFamily:'serif',fontSize:PAGE_TITLE_FONT_SIZE,lineHeight:PAGE_TITLE_LINE_HEIGHT,
-        color:theme.foreground,marginBottom:7}}>
-        Documents & Inspirations
-      </Text>
       <Text style={{color:theme.muted,fontSize:12,lineHeight:19,marginBottom:19}}>
         {dream?.title||'Rêve'} · Tes références et fichiers au même endroit.
       </Text>
