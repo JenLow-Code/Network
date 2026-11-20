@@ -105,6 +105,20 @@ export function analyzeSamplePitch(
     confidence:Math.round(confidence*100)/100};
 }
 
+/** Use the loudest channel to locate onset and loop points. A mono mic can
+ * be routed to the right channel only; the keyboard must not call it silent. */
+export function sampleAudioRegion(buffer:{
+  numberOfChannels:number;sampleRate:number;
+  getChannelData:(channel:number)=>Float32Array;
+}):{offset:number;loopStart:number;loopEnd:number;peak:number}{
+  let region=sampleRegion(buffer.getChannelData(0),buffer.sampleRate);
+  for(let channel=1;channel<buffer.numberOfChannels;channel++){
+    const candidate=sampleRegion(buffer.getChannelData(channel),buffer.sampleRate);
+    if(candidate.peak>region.peak)region=candidate;
+  }
+  return region;
+}
+
 /** Determine a useful audio onset and loopable sustain section.
  * Snap loop boundaries towards nearby zero crossings to reduce clicks.
  * If a source is too short, looping falls back to the whole audible part.
