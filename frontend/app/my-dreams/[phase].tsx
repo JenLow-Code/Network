@@ -11,7 +11,7 @@ import { DREAM_PHASES, DreamPhase, PHASE_COLORS } from '@/domain/publication';
 import { useDreams } from '@/domain/dreamRepository';
 import DreamQuickActions from '@/components/dream/DreamQuickActions';
 import type { DreamEntry } from '@/domain/dreamWorkspace';
-import {workspaceCanvas,WORKSPACE_TITLE_GAP} from '@/theme/workspaceLayout';
+import {workspaceCanvas,WORKSPACE_TITLE_GAP,PAGE_TITLE_FONT_SIZE,PAGE_TITLE_LINE_HEIGHT} from '@/theme/workspaceLayout';
 export default function Stage() {
   const {width}=useWindowDimensions();
   const { phase } = useLocalSearchParams<{ phase: string }>();
@@ -33,7 +33,7 @@ export default function Stage() {
         <View
           style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
         >
-          <Text style={{ fontSize: 28, fontWeight: '700', marginTop:WORKSPACE_TITLE_GAP,marginBottom:10 }}>
+          <Text style={{ fontSize:PAGE_TITLE_FONT_SIZE,lineHeight:PAGE_TITLE_LINE_HEIGHT,fontWeight:'700',marginTop:WORKSPACE_TITLE_GAP,marginBottom:10 }}>
             {current || 'Mes rêves'}
           </Text>
           <Pressable
