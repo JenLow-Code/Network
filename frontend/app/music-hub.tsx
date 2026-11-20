@@ -6,7 +6,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
 import { Nav } from '@/components/navigation/Nav';
 import { PageHeader } from '@/components/navigation/PageHeader';
-import { TopActions } from '@/components/navigation/TopActions';
 import { MusicSongCard } from '@/components/music/MusicSongCard';
 import { MusicAudioPreview } from '@/components/music/MusicAudioPreview';
 import { CassetteArtwork } from '@/components/publication/PublicationGallery';
@@ -197,20 +196,7 @@ export default function MusicHub() {
       paddingHorizontal: ws.gutter, paddingTop: desktop ? 8 : 4, paddingBottom: 125,
       maxWidth: ws.maxWidth, width: '100%', alignSelf: 'center', gap: compact ? 27 : 31,
     }}>
-      {desktop ? <>
-        <PageHeader />
-        <Text style={{ color: theme.foreground, fontSize: 24, lineHeight: 32,
-          fontWeight: '700', letterSpacing: -0.5 }}>Musique</Text>
-      </> : <View style={{ height: 48, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-        <Pressable accessibilityRole="button" accessibilityLabel="Retour"
-          onPress={() => router.canGoBack() ? router.back() : router.replace('/discover')}
-          style={{ width: 42, height: 44, justifyContent: 'center' }}>
-          <Ionicons name="arrow-back-outline" size={23} color={theme.foreground}/>
-        </Pressable>
-        <Text style={{ flex: 1, fontSize: 21, fontWeight: '700',
-          letterSpacing: -0.4, color: theme.foreground }}>Musique</Text>
-        <TopActions/>
-      </View>}
+      <PageHeader title="Musique" />
 
       <View style={{ gap: 13 }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between',
