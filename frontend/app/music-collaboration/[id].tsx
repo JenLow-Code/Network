@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { api } from '@/lib/api/client';
 import { useAppTheme } from '@/theme/AppTheme';
-import {workspaceCanvas} from '@/theme/workspaceLayout';
+import {workspaceCanvas,PAGE_TITLE_FONT_SIZE,PAGE_TITLE_LINE_HEIGHT} from '@/theme/workspaceLayout';
 import { PageHeader } from '@/components/navigation/PageHeader';
 import { Nav } from '@/components/navigation/Nav';
 
@@ -68,7 +68,7 @@ export default function SharedMusicFolder() {
             <Ionicons name="musical-notes-outline" size={34} color="#CB245C"/>
           </View>
           <View style={{flex:1,gap:6}}>
-            <Text style={{color:theme.foreground,fontSize:24,fontWeight:'700'}}>{title}</Text>
+            <Text style={{color:theme.foreground,fontSize:PAGE_TITLE_FONT_SIZE,lineHeight:PAGE_TITLE_LINE_HEIGHT,fontWeight:'700'}}>{title}</Text>
             <Text style={{color:theme.muted,fontSize:12}}>Espace de collaboration</Text>
           </View>
         </View>
