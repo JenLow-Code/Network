@@ -16,35 +16,9 @@ import {MusicMidiPreview} from './MusicMidiPreview';
 import { newMusicId } from '@/domain/musicWorkspace';
 import type { MusicProject, MusicProjectFile, MusicSection, MusicAudioMarker } from '@/domain/musicWorkspace';
 import type {MusicNotationEvent} from '@/domain/musicNotation';
-import {MusicScoreView} from './MusicSketchStudio';
+import {MusicCaptureScoreStrip} from './MusicCaptureScoreStrip';
 
 const PINK='#CB245C';
-/** Mobile-first musical score preview. The same clock drives the audio and
- * the highlighted staff; touch the staff or pencil to edit the source notes. */
-function MusicScoreCapturePreview({file,onEdit}:{
-  file:MusicProjectFile;onEdit:()=>void;
-}){
-  const theme=useAppTheme();
-  const [time,setTime]=useState<number|null>(null);
-  return <View style={{flexDirection:'row',alignItems:'center',gap:3,
-    minHeight:140}}>
-    <MusicMidiPreview file={file} iconOnly onPlaybackSeconds={setTime}/>
-    <View style={{flex:1,minWidth:0}}>
-      <MusicScoreView events={file.musicEvents||[]} compact
-        instrument={undefined} bpm={file.tempoBpm||100}
-        clef={file.scoreClef||'treble'}
-        playheadBeats={time===null?null:time*(file.tempoBpm||100)/60}
-        onSelectNote={onEdit}/>
-    </View>
-    <Pressable onPress={onEdit} accessibilityRole="button"
-      accessibilityLabel={'Modifier la partition '+file.title}
-      style={{width:39,minHeight:46,alignItems:'center',
-        justifyContent:'center'}}>
-      <Ionicons name="create-outline" color={theme.muted} size={19}/>
-    </Pressable>
-  </View>;
-}
-
 type Props={project:MusicProject;patch:(changes:Partial<MusicProject>)=>void;
   onStartVersion:(source:MusicProjectFile)=>void;onUseFile:(source:MusicProjectFile)=>void;
   hasVersion:boolean};
@@ -414,8 +388,7 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,h
           </Pressable>
           {sound&&file.localFileId?<MusicAudioTake file={file} compact
             onOpen={()=>setSelected(file.id)}/>:null}
-          {file.musicEvents?.length?<MusicScoreCapturePreview file={file}
-            onEdit={()=>openWrite('',file.id,'score')}/>:
+          {file.musicEvents?.length?<MusicCaptureScoreStrip file={file}/>:
             isMidiSource(file)?<MusicMidiPreview file={file}/>:null}
           {translations.length?<View style={{gap:6}}>
             {translations.map(translation=><Pressable key={translation.id}
