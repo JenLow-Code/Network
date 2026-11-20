@@ -90,7 +90,11 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,h
     if(!result.text.trim())return;
     const translated=result.mode==='translation';
     const lyrics=result.mode!=='note';
-    const current=files.find(file=>file.id===editingFileId);
+    const editing=files.find(file=>file.id===editingFileId);
+    // Translating an existing lyric is ALWAYS a new document, never an
+    // overwrite of its original text. Only an existing translation is edited.
+    const current=translated&&editing&&!editing.translationOfFileId?
+      undefined:editing;
     const title=result.title.trim()||(translated
       ?'Traduction · '+result.language
       :lyrics?'Paroles':result.text.trim().split('\n')[0].slice(0,52)||'Note');
@@ -110,6 +114,7 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,h
       createdAt:current?.createdAt||new Date().toISOString(),
     };
     item.lyricReferences=result.lyricReferences||current?.lyricReferences||[];
+    item.lyricComments=result.lyricComments||current?.lyricComments||[];
     const created=result.newSections||[];
     patch({
       files:current?files.map(file=>file.id===current.id?item:file):[...files,item],
