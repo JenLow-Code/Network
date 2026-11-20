@@ -81,9 +81,14 @@ export function makeWorkingTrack(file:MusicProjectFile):WorkingMusicTrack {
     instrument:file.instrument,muted:false,solo:false,offsetSeconds:0};
 }
 export function isPlayableMusicFile(file:MusicProjectFile) {
+  const name=file.originalFilename||'';
+  // MIDI is an instruction file, never directly decodable by Web Audio.
+  // In particular, browsers may report .mid as audio/midi or audio/x-midi.
+  if(/\.(mid|midi)$/i.test(name)||
+      /^(audio\/(?:x-)?midi|audio\/mid)$/i.test(file.mimeType||''))return false;
   return !!file.localFileId &&
     (!!file.mimeType?.startsWith('audio/') ||
-      /\.(mp3|m4a|wav|webm|ogg|aac)$/i.test(file.originalFilename||''));
+      /\.(mp3|m4a|wav|webm|ogg|aac)$/i.test(name));
 }
 export function studioVersionSourceIds(project:MusicProject):Set<string> {
   return new Set(musicNextState(project).versions.flatMap(v=>v.tracks.map(t=>t.sourceFileId)));
