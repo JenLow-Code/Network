@@ -680,6 +680,9 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
       'Lecture de la composition impossible dans ce navigateur.');}
   };
   const toggleRecording=()=>{
+    if(!recording&&!meterReady){
+      setMessage('Choisis le tempo et la mesure avant d’enregistrer.');return;
+    }
     if(recording){
       for(const key of Array.from(liveHeldRef.current.keys())){
         const [instrument,midi]=key.split(':');
@@ -1028,14 +1031,14 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
             size={15} color={theme.muted}/>
         </Pressable>
         <View style={{flexDirection:'row',gap:12,alignItems:'center'}}>
-          <Pressable onPress={exportMidi} disabled={!events.length||recording}
+          <Pressable onPress={exportMidi} disabled={!meterReady||!events.length||recording}
             accessibilityRole="button" accessibilityLabel="Exporter en MIDI"
             style={{minHeight:43,flexDirection:'row',alignItems:'center',gap:4,
               opacity:events.length&&!recording?1:.4}}>
             <Ionicons name="download-outline" color={PINK} size={17}/>
             <Text style={{color:PINK,fontSize:12,fontWeight:'700'}}>MIDI</Text>
           </Pressable>
-          <Pressable onPress={exportPdf} disabled={!events.length||recording}
+          <Pressable onPress={exportPdf} disabled={!meterReady||!events.length||recording}
             accessibilityRole="button" accessibilityLabel="Exporter en PDF"
             style={{minHeight:43,flexDirection:'row',alignItems:'center',gap:5,
               opacity:events.length&&!recording?1:.4}}>
@@ -1076,7 +1079,21 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
         Les barres de mesure suivront exactement ton choix.
       </Text>
       <View style={{flexDirection:'row',gap:9,flexWrap:'wrap',alignItems:'center'}}>
-        {control(tempoChosen?bpm+' BPM':'Choisir le tempo',openTempo)}
+        <TextInput value={tempoDraft}
+          onChangeText={value=>{
+            setTempoDraft(value);
+            const number=Number(value.replace(',','.'));
+            const valid=value.trim().length>0&&Number.isFinite(number)&&
+              number>=40&&number<=240;
+            setTempoChosen(valid);
+            if(valid)setBpm(Math.round(number));
+          }}
+          placeholder="BPM" placeholderTextColor={theme.muted}
+          keyboardType="numeric" accessibilityLabel="Tempo en battements par minute"
+          style={{width:77,minHeight:40,borderWidth:1,borderColor:theme.border,
+            borderRadius:9,textAlign:'center',color:theme.foreground,
+            backgroundColor:theme.background}}/>
+        <Text style={{fontSize:11,color:theme.muted}}>BPM</Text>
         <Text style={{fontSize:12,color:theme.muted}}>Temps</Text>
         <TextInput value={meterNumerator?String(meterNumerator):''}
           onChangeText={value=>setMeterNumerator(/^\d{1,2}$/.test(value)?
@@ -1170,7 +1187,7 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
     </View>:null}
 
     <View style={{flexDirection:'row',gap:8,alignItems:'center',flexWrap:'wrap'}}>
-      <Pressable onPress={playComposition} disabled={!events.length||recording}
+      <Pressable onPress={playComposition} disabled={!meterReady||!events.length||recording}
         accessibilityRole="button" accessibilityLabel={previewPlaying?
           'Arrêter l’écoute de la composition':'Écouter ma composition'}
         style={{minHeight:46,flexDirection:'row',gap:7,alignItems:'center',
@@ -1181,7 +1198,8 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
           {previewPlaying?'Arrêter l’écoute':'Écouter mes notes'}
         </Text>
       </Pressable>
-      <Pressable onPress={toggleRecording} accessibilityRole="button"
+      <Pressable onPress={toggleRecording} disabled={!recording&&!meterReady}
+        accessibilityRole="button"
         accessibilityLabel={recording?'Arrêter l’enregistrement en direct':
           'Enregistrer les notes en direct'}
         style={{minHeight:46,flexDirection:'row',gap:7,alignItems:'center',
