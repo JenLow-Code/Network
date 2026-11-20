@@ -65,30 +65,38 @@ export function MusicNotePreview({ text, color }: { text: string; color: string 
   </View>;
 }
 
-/** Review the exact lyric ranges bound to musical sections without
- * replacing the editable plain-text input with an unreliable rich-text field. */
-function LinkedLyricsPreview({text,references}:{
+/** A quiet notebook review that highlights saved section links and comments.
+ * Each annotation must still match its exact selected words; edited passages
+ * never silently attach a comment to some other text. */
+function LinkedLyricsPreview({text,references,comments,compact}:{
   text:string;references:MusicLyricReference[];
+  comments:MusicLyricComment[];compact:boolean;
 }){
   const theme=useAppTheme();
-  const ranges=references.filter(ref=>
-    ref.start>=0&&ref.end<=text.length&&ref.end>ref.start&&
-    text.slice(ref.start,ref.end)===ref.text)
-    .sort((a,b)=>a.start-b.start||a.end-b.end);
-  const parts:{value:string;linked:boolean}[]=[];
-  let at=0;
-  for(const range of ranges){
-    if(range.start<at)continue;
-    if(range.start>at)parts.push({value:text.slice(at,range.start),linked:false});
-    parts.push({value:text.slice(range.start,range.end),linked:true});
-    at=range.end;
-  }
-  if(at<text.length)parts.push({value:text.slice(at),linked:false});
-  return <Text selectable style={{fontFamily:'Georgia',fontSize:16,lineHeight:27,
+  const valid=(range:{start:number;end:number;text:string})=>
+    range.start>=0&&range.end<=text.length&&range.end>range.start&&
+    text.slice(range.start,range.end)===range.text;
+  const refRanges=references.filter(valid),commentRanges=comments.filter(valid);
+  const ends=new Set<number>([0,text.length]);
+  [...refRanges,...commentRanges].forEach(range=>{
+    ends.add(range.start);ends.add(range.end);
+  });
+  const boundaries=Array.from(ends).sort((a,b)=>a-b);
+  return <Text selectable style={{fontFamily:'Georgia',
+    fontSize:compact?14:15,lineHeight:compact?24:26,
     color:theme.foreground}}>
-    {parts.map((part,index)=><Text key={index}
-      style={part.linked?{backgroundColor:theme.dark?'#492735':'#F7DAE4',
-        color:theme.dark?'#F8B9CF':'#A91D4C',fontWeight:'600'}:{}}>{part.value}</Text>)}
+    {boundaries.slice(1).map((end,index)=>{
+      const start=boundaries[index];
+      const marked=refRanges.some(r=>r.start<=start&&r.end>=end);
+      const commented=commentRanges.some(r=>r.start<=start&&r.end>=end);
+      return <Text key={index} style={commented?
+        {backgroundColor:theme.dark?'#554A2D':'#F4E9C8',
+          color:theme.foreground}:marked?
+        {backgroundColor:theme.dark?'#492735':'#F7DAE4',
+          color:theme.dark?'#F8B9CF':'#A91D4C'}:{}}>
+        {text.slice(start,end)}
+      </Text>;
+    })}
   </Text>;
 }
 export function MusicWritingStudio({ mode, onModeChange, originalLanguage, source,
