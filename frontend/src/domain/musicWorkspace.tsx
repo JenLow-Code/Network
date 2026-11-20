@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { readMusicWorkspace, writeMusicWorkspace } from './musicLocalStorage';
 import type { MusicNextState } from './musicNext';
 import type { MusicNotationEvent } from './musicNotation';
@@ -273,11 +273,20 @@ export function MusicWorkspaceProvider({ children }: { children: React.ReactNode
     return () => { live = false; };
   }, [key, email]);
 
+  // Serialize local writes: a slower old snapshot must never overwrite the
+  // newest autosaved words, notes or score when several edits occur rapidly.
+  const writeQueue=useRef<Promise<void>>(Promise.resolve());
   useEffect(() => {
     if (readyKey !== key) return;
-    void writeMusicWorkspace(key, JSON.stringify(items))
-      .then(() => setError(null))
-      .catch(() => setError('Les modifications de tes morceaux ne peuvent pas être enregistrées sur cet appareil.'));
+    let live=true;
+    const snapshot=JSON.stringify(items);
+    const queued=writeQueue.current.catch(()=>{}).then(()=>
+      writeMusicWorkspace(key,snapshot));
+    writeQueue.current=queued;
+    void queued.then(()=>{if(live)setError(null);})
+      .catch(()=>{if(live)setError(
+        'Les modifications de tes morceaux ne peuvent pas être enregistrées sur cet appareil.');});
+    return ()=>{live=false;};
   }, [key, readyKey, items]);
 
   const store = useMemo<MusicWorkspaceStore>(() => ({
