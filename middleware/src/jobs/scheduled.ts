@@ -70,7 +70,7 @@ export async function runScheduled(env: Env, now = new Date()): Promise<Record<s
      JOIN music_tracks t ON t.id=pr.original_track_id
      JOIN publications p ON p.id=t.publication_id
      WHERE pr.status='submitted' AND pr.review_state='archived'
-       AND pr.archive_until IS NOT NULL AND pr.datetime(archive_until)<=datetime(?)
+       AND pr.archive_until IS NOT NULL AND datetime(pr.archive_until)<=datetime(?)
      LIMIT 250`, nowIso,
   );
   for(const review of expiredReviews){
