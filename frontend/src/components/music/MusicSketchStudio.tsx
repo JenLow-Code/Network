@@ -1292,20 +1292,65 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
         Pads · {last||'Batterie'}
       </Text>
       <View style={{flexDirection:'row',gap:7,flexWrap:'wrap'}}>
-        {DRUM_PADS.map((pad,index)=><Pressable key={pad.midi}
-          onPress={()=>trigger('drum',pad.midi)} accessibilityRole="button"
-          accessibilityLabel={'Jouer '+pad.label}
-          style={{width:compact?'31%':'30%',minHeight:compact?64:76,
-            backgroundColor:theme.surface,borderWidth:1,borderColor:theme.border,
-            borderRadius:13,alignItems:'center',justifyContent:'center',gap:3}}>
-          <Ionicons name="radio-button-off-outline" size={17} color={PINK}/>
-          <Text style={{color:theme.foreground,fontSize:12,fontWeight:'600'}}>
-            {pad.label}
-          </Text>
-          {Platform.OS==='web'?<Text style={{fontSize:10,color:theme.muted,
-            fontWeight:'600'}}>{['A','S','D','F','G','H'][index]}</Text>:null}
-        </Pressable>)}
+        {DRUM_PADS.map((pad,index)=>{
+          const assigned=drumSamples[String(pad.midi)];
+          const loading=drumLoadingKey===pad.midi;
+          return <View key={pad.midi} style={{
+            width:compact?'31%':'30%',minHeight:compact?103:116,
+            backgroundColor:theme.surface,borderWidth:1,
+            borderColor:assigned?PINK:theme.border,borderRadius:13,
+            position:'relative',overflow:'hidden'}}>
+            <Pressable onPress={()=>trigger('drum',pad.midi)}
+              accessibilityRole="button" accessibilityLabel={'Jouer '+pad.label}
+              style={{flex:1,minHeight:compact?103:116,
+                alignItems:'center',justifyContent:'center',
+                paddingTop:15,paddingHorizontal:8,gap:4}}>
+              <Ionicons name="radio-button-off-outline" size={19}
+                color={assigned?PINK:theme.foreground}/>
+              <Text style={{color:theme.foreground,fontSize:12,fontWeight:'700'}}>
+                {pad.label}
+              </Text>
+              {assigned?<Text numberOfLines={1}
+                style={{fontSize:10,color:PINK,maxWidth:'100%'}}>
+                {assigned.name}
+              </Text>:null}
+              {Platform.OS==='web'?<Text style={{
+                fontSize:10,color:theme.muted,fontWeight:'600'}}>
+                {['A','S','D','F','G','H'][index]}
+              </Text>:null}
+            </Pressable>
+            <Pressable onPress={()=>importDrumSample(pad.midi)}
+              disabled={recording||drumLoadingKey!==null}
+              accessibilityRole="button"
+              accessibilityLabel={'Importer un son pour '+pad.label}
+              style={{position:'absolute',top:0,right:0,width:42,height:42,
+                alignItems:'center',justifyContent:'center',
+                opacity:recording||drumLoadingKey!==null?.45:1}}>
+              <Ionicons name={loading?'hourglass-outline':
+                assigned?'create-outline':'cloud-upload-outline'}
+                size={18} color={PINK}/>
+            </Pressable>
+            {assigned?<Pressable onPress={()=>clearDrumSample(pad.midi)}
+              disabled={recording}
+              accessibilityRole="button"
+              accessibilityLabel={'Rétablir le son original de '+pad.label}
+              style={{position:'absolute',top:0,left:0,width:42,height:42,
+                alignItems:'center',justifyContent:'center',
+                opacity:recording?.45:1}}>
+              <Ionicons name="close-circle-outline" size={17}
+                color={theme.muted}/>
+            </Pressable>:null}
+          </View>;
+        })}
       </View>
+      {drumError?<Text accessibilityRole="alert" style={{
+        fontSize:11,color:theme.dark?'#FF9EAF':'#AF345D',lineHeight:18}}>
+        {drumError}
+      </Text>:null}
+      <Text style={{fontSize:11,color:theme.muted,lineHeight:17}}>
+        <Text style={{color:PINK}}>＋</Text> Importe un son sur un pad ·
+        touche le pad pour l’écouter.
+      </Text>
     </View>}
     <View style={{flexDirection:'row',gap:7,flexWrap:'wrap',alignItems:'center'}}>
       <Text style={{fontSize:11,color:theme.muted}}>
