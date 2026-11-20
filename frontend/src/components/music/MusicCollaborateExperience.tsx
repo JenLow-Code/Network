@@ -55,10 +55,11 @@ export function MusicCollaborateExperience({project,patch}:Props){
     finally{setLoading(false);}
   };
   const needs=project.needs||[];
+  const awaiting=proposals.filter(p=>p.status==='submitted').length;
+  const orderedProposals=[...proposals].sort((a,b)=>
+    Number(b.status==='submitted')-Number(a.status==='submitted')||
+    b.createdAt.localeCompare(a.createdAt));
   return <View style={{gap:18}}>
-    <MusicMissingTalentAction project={project} patch={patch} primary
-      editNeed={needs.find(need=>need.id===editingNeedId)||null}
-      onFinished={()=>setEditingNeedId('')}/>
     {!proposals.length?<View style={{gap:10}}>
       <View style={{flexDirection:'row',alignItems:'center',gap:9,flexWrap:'wrap'}}>
         <Text style={{fontSize:16,fontWeight:'700',color:theme.foreground}}>
@@ -138,11 +139,18 @@ export function MusicCollaborateExperience({project,patch}:Props){
     {proposals.length?<View style={{gap:12}}>
       <View style={{flexDirection:'row',alignItems:'center',gap:8}}>
         <Text style={{fontSize:17,fontWeight:'700',color:theme.foreground}}>
-          Propositions reçues
+          Demandes reçues
         </Text>
-        <Text style={{fontSize:12,color:theme.muted}}>{proposals.length}</Text>
+        {awaiting>0?<View style={{borderRadius:9,paddingHorizontal:8,
+          paddingVertical:5,backgroundColor:theme.dark?'#4A2D39':'#FAE7EF'}}>
+          <Text style={{fontSize:11,fontWeight:'700',color:PINK}}>
+            {awaiting} en attente de réponse
+          </Text>
+        </View>:<Text style={{fontSize:12,color:theme.muted}}>
+          {proposals.length}
+        </Text>}
       </View>
-      {proposals.map(proposal=>{
+      {orderedProposals.map(proposal=>{
         const opened=selected===proposal.id;
         const contributor=proposal.proposer?.displayName||'Un musicien';
         return <View key={proposal.id} style={{borderTopWidth:1,borderColor:theme.border,
@@ -160,6 +168,14 @@ export function MusicCollaborateExperience({project,patch}:Props){
               <Text style={{fontSize:14,fontWeight:'700',color:theme.foreground}}>{contributor}</Text>
               <Text numberOfLines={2} style={{fontSize:12,lineHeight:18,color:theme.muted}}>
                 A proposé une variation de « {proposal.trackTitle} »
+              </Text>
+              <Text style={{fontSize:10,fontWeight:proposal.status==='submitted'?'700':'500',
+                color:proposal.status==='submitted'?PINK:theme.muted}}>
+                {proposal.status==='submitted'?'En attente de ta réponse':
+                  proposal.status==='accepted'?'Acceptée':
+                  proposal.status==='rejected'?'Refusée':
+                  proposal.status==='published'?'Publiée':
+                  proposal.status==='withdrawn'?'Retirée':'Statut : '+proposal.status}
               </Text>
             </View>
             <Ionicons name={opened?'chevron-up':'chevron-down'} size={19} color={theme.muted}/>
@@ -186,6 +202,9 @@ export function MusicCollaborateExperience({project,patch}:Props){
       })}
 
     </View>:null}
+    <MusicMissingTalentAction project={project} patch={patch} primary
+      editNeed={needs.find(need=>need.id===editingNeedId)||null}
+      onFinished={()=>setEditingNeedId('')}/>
     {needs.length?<View style={{gap:12,paddingTop:4}}>
       <View style={{flexDirection:'row',alignItems:'center',gap:8}}>
         <Text style={{fontSize:15,fontWeight:'700',color:theme.foreground}}>
