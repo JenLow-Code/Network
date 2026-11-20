@@ -8,6 +8,9 @@ export const TABLET_WORKSPACE_BREAKPOINT=700;
 export const DESKTOP_WORKSPACE_MAX_WIDTH=1160;
 /** Shared vertical rhythm for page titles beneath the global PageHeader. */
 export const WORKSPACE_TITLE_GAP=16;
+/** Top-level page headings follow the same 28px line box as the Discovery brand masthead. */
+export const PAGE_TITLE_FONT_SIZE=20;
+export const PAGE_TITLE_LINE_HEIGHT=28;
 
 /**
  * The same page canvas for every top-level screen. Width is measured within
