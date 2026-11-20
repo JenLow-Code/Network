@@ -11,7 +11,7 @@ import { PageHeader } from '@/components/navigation/PageHeader';
 import { useApp } from '@/context/AppContext';
 import { useAuth } from '@/context/AuthProvider';
 import { useAppTheme } from '@/theme/AppTheme';
-import {workspaceCanvas,workspaceLayout,WORKSPACE_TITLE_GAP,PAGE_TITLE_FONT_SIZE,PAGE_TITLE_LINE_HEIGHT} from '@/theme/workspaceLayout';
+import {workspaceCanvas,workspaceLayout} from '@/theme/workspaceLayout';
 import { ProfileTalentTile } from '@/components/talent/ProfileTalentTile';
 import { DREAM_TALENT_CHOICES } from '@/components/dream/dreamTalentCatalog';
 import { TranslatorLanguageFields } from '@/components/talent/TranslatorLanguageFields';
@@ -185,9 +185,7 @@ export default function Profile() {
           paddingBottom: 55,
         }}
       >
-        <PageHeader />
-        <Text style={{fontSize:PAGE_TITLE_FONT_SIZE,lineHeight:PAGE_TITLE_LINE_HEIGHT,fontWeight:'800',color:theme.foreground,
-          marginTop:WORKSPACE_TITLE_GAP}}>Mon profil</Text>
+        <PageHeader title="Mon profil" />
         <View style={{ alignItems: 'center', marginTop: 23 }}>
           {avatar ? (
             <Image
