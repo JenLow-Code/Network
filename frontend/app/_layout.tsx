@@ -32,20 +32,20 @@ function ThemedStack() {
       <View style={{
         // 100dvh follows Android browser toolbars as they appear/disappear.
         // This keeps the root navigation anchored to the *visible* viewport.
-        ...(Platform.OS==='web'&&!desktop?
+        ...(Platform.OS==='web'?
           ({height:'100dvh',maxHeight:'100dvh',overflow:'hidden'} as any):
           {flex:1}),
         backgroundColor:theme.background,
         flexDirection:desktop?'row':'column',
       }}>
         {desktop?<View pointerEvents="none" style={{
-          position:'absolute',right:0,top:0,bottom:0,width:212,
+          position:'absolute',right:0,top:0,bottom:0,width:236,
           backgroundColor:theme.dark?'#343940':'#E7EAE7'}}>
           {/* Neutral atmospheric underlay. The glass blur belongs to Nav,
               never to a rainbow painted behind it. */}
           {image?<Image source={{uri:image}} resizeMode="cover" blurRadius={22}
             style={{position:'absolute',top:0,right:0,bottom:0,left:0,
-              width:212,height:'100%',opacity:theme.dark?.37:.31,
+              width:236,height:'100%',opacity:theme.dark?.37:.31,
               ...(Platform.OS==='web'?({filter:'grayscale(40%) saturate(.78)'} as any):{})}}/>:null}
           <View style={{position:'absolute',top:0,right:0,bottom:0,left:0,
             backgroundColor:theme.dark?'rgba(26,31,36,.22)':
