@@ -67,10 +67,82 @@ export function DreamPhaseHeader({
         }:{width:44,height:44,alignItems:'flex-start',justifyContent:'center'}}>
         <Ionicons name="arrow-back-outline" size={22} color={theme.foreground}/>
       </Pressable>
-      <View accessibilityRole="tablist" style={{
+      {!desktop?<View style={{flex:1}}/>:null}
+      {desktop?<View style={{position:'absolute',right:0,top:0}}>
+        <TopActions/>
+      </View>:<TopActions/>}
+    </View>
+    {desktop?<View style={{
+      marginTop:10,marginBottom:15,paddingRight:110,
+      minHeight:PAGE_TITLE_LINE_HEIGHT,justifyContent:'center',
+    }}>
+      <Text numberOfLines={1} style={{
+        color:theme.foreground,fontFamily:'serif',
+        fontSize:PAGE_TITLE_FONT_SIZE,lineHeight:PAGE_TITLE_LINE_HEIGHT,
+        letterSpacing:-.15,
+      }}>{PHASE_LABELS[phase]}</Text>
+    </View>:null}
+    <View style={{
+      height:desktop?242:width<520?174:208,
+      width:'100%',overflow:'hidden',borderRadius:desktop?12:10,
+      backgroundColor:'#182723',position:'relative',
+    }}>
+      {dream.image?
+        <Image source={{uri:dream.image}} resizeMode="cover"
+          style={{width:'100%',height:'100%'}}/>:
+        <View style={{flex:1,alignItems:'center',justifyContent:'center'}}>
+          <Ionicons name="image-outline" size={29} color="rgba(255,255,255,.38)"/>
+        </View>}
+      <Svg pointerEvents="none" width="100%" height="100%"
+        style={{position:'absolute',left:0,right:0,top:0,bottom:0}}>
+        <Defs>
+          <LinearGradient id="dream-title-scrim" x1="0%" y1="0%" x2="0%" y2="100%">
+            <Stop offset="0%" stopColor="#000000" stopOpacity={0}/>
+            <Stop offset="35%" stopColor="#000000" stopOpacity={0}/>
+            <Stop offset="68%" stopColor="#000000" stopOpacity={.43}/>
+            <Stop offset="100%" stopColor="#000000" stopOpacity={.86}/>
+          </LinearGradient>
+        </Defs>
+        <Rect width="100%" height="100%" fill="url(#dream-title-scrim)"/>
+      </Svg>
+      <View pointerEvents="none" style={{
+        position:'absolute',left:desktop?24:16,right:desktop?72:16,
+        bottom:desktop?22:16,
+      }}>
+        <Text accessibilityRole="header" numberOfLines={3}
+          style={{fontFamily:'serif',fontSize:desktop?27:22,
+            lineHeight:desktop?35:29,fontWeight:'700',letterSpacing:-.35,
+            color:'#FFFFFF',
+            ...(Platform.OS==='web'?({
+              textShadow:'0 2px 9px rgba(0,0,0,.5)',
+            } as any):{
+              textShadowColor:'rgba(0,0,0,.62)',
+              textShadowOffset:{width:0,height:2},textShadowRadius:7,
+            }),
+          }}>{dream.title}</Text>
+      </View>
+      {canChangeCover?<Pressable accessibilityRole="button"
+        accessibilityLabel={dream.image?
+          "Changer l'image de couverture du rêve":"Ajouter une couverture au rêve"}
+        disabled={savingCover||!ready} onPress={chooseCover}
+        style={{position:'absolute',top:12,right:12,width:38,height:38,
+          borderRadius:11,alignItems:'center',justifyContent:'center',
+          backgroundColor:'rgba(16,20,18,.66)',
+          borderWidth:1,borderColor:'rgba(255,255,255,.24)'}}>
+        {savingCover?<ActivityIndicator color="#FFFFFF" size="small"/>:
+          <Ionicons name="image-outline" color="#FFFFFF" size={17}/>}
+      </Pressable>:null}
+    </View>
+    {description?<Text style={{
+      paddingTop:desktop?14:12,fontSize:desktop?13:12,
+      lineHeight:desktop?21:20,color:theme.muted,
+    }}>{description}</Text>:null}
+    {coverError?<Text accessibilityRole="alert"
+      style={{fontSize:11,color:theme.dark?'#FF98AD':'#B24753',
+        marginTop:9,lineHeight:18}}>{coverError}</Text>:null}
+    <View accessibilityRole="tablist" style={{
       marginTop:desktop?24:18,marginBottom:desktop?17:10,
-      paddingBottom:3,
-      flexDirection:'row',alignItems:'stretch',
+      paddingBottom:3,flexDirection:'row',alignItems:'stretch',
       gap:desktop?16:width<520?3:9,
     }}>
       {DREAM_PHASES.map((item,i)=>{
