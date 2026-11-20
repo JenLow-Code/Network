@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect } from 'react';
 import { useLocalSearchParams } from 'expo-router';
 import { Platform, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -34,7 +34,6 @@ export function DetailLayout({
   musicPlaying?: boolean;
 }) {
   const theme = useAppTheme();
-  const scrollRef=useRef<ScrollView>(null);
   const { from } = useLocalSearchParams<{ from?: string }>();
   // Music opened from Discovery keeps related inspiration. Only the Music tab and Fire list are focused spaces.
   const showRelated = from !== 'music-tab' && from !== 'fire';
@@ -51,7 +50,6 @@ export function DetailLayout({
   const width=Math.min(760,Math.max(0,visibleWidth-2*ws.gutter));
   useEffect(()=>{
     // A publication must open at its beginning, not inherit Discovery scroll.
-    scrollRef.current?.scrollTo({y:0,animated:false});
     if(Platform.OS==='web'&&typeof window!=='undefined')window.scrollTo(0,0);
   },[item.id]);
   const heroWidth = Math.max(0, width - 32);
@@ -67,7 +65,7 @@ export function DetailLayout({
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
       <View style={{ flex: 1, position: 'relative' }}>
-      <ScrollView ref={scrollRef} showsVerticalScrollIndicator={false}
+      <ScrollView key={item.id} showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           ...workspaceCanvas(screenWidth),
           paddingTop:ws.desktop?12:0,
