@@ -11,7 +11,7 @@ import { chooseMusicFile, uploadMusicAudioFile } from '@/domain/musicMedia';
 import { Nav } from '@/components/navigation/Nav';
 import { PageHeader } from '@/components/navigation/PageHeader';
 import { useAppTheme } from '@/theme/AppTheme';
-import {workspaceCanvas} from '@/theme/workspaceLayout';
+import {workspaceCanvas,PAGE_TITLE_FONT_SIZE,PAGE_TITLE_LINE_HEIGHT} from '@/theme/workspaceLayout';
 
 const pink = '#CB245C';
 
@@ -83,7 +83,7 @@ export default function MusicProposal() {
         ...workspaceCanvas(width),paddingTop:12,paddingBottom:100,gap:16,
       }}>
         <PageHeader onBack={() => router.back()}/>
-        <Text style={{color:theme.foreground,fontWeight:'700',fontSize:27}}>Proposer une collaboration</Text>
+        <Text style={{color:theme.foreground,fontWeight:'700',fontSize:PAGE_TITLE_FONT_SIZE,lineHeight:PAGE_TITLE_LINE_HEIGHT}}>Proposer une collaboration</Text>
         <Text style={{color:theme.muted,fontSize:13,lineHeight:21}}>
           {music ? music.title + ' · ' + music.author : 'Morceau non trouvé'}
         </Text>
