@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/theme/AppTheme';
-import { workspaceLayout } from '@/theme/workspaceLayout';
+import { workspaceLayout,PAGE_TITLE_FONT_SIZE,PAGE_TITLE_LINE_HEIGHT } from '@/theme/workspaceLayout';
 import { useDreams } from '@/domain/dreamRepository';
 import { appendDocumentVersion, isSafeDocumentUrl } from '@/domain/dreamDocumentLibrary';
 import type { DreamBlock, DreamDocument, DreamDocumentVersion } from '@/domain/dreamWorkspace';
@@ -135,7 +135,7 @@ export default function DreamLibrary(){
     }}>
       <PageHeader onBack={()=>router.replace({pathname:'/my-dream/[id]',
         params:{id,view:view||dream?.phase||'Rêve'}})}/>
-      <Text style={{fontFamily:'serif',fontSize:30,lineHeight:39,
+      <Text style={{fontFamily:'serif',fontSize:PAGE_TITLE_FONT_SIZE,lineHeight:PAGE_TITLE_LINE_HEIGHT,
         color:theme.foreground,marginBottom:7}}>
         Documents & Inspirations
       </Text>
