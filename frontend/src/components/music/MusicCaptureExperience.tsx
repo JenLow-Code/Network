@@ -266,11 +266,11 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
         Choisir des fichiers à importer
       </Text>
     </Pressable>:null}
-    {compact?<View style={{gap:8}}>
+    <View style={{gap:8}}>
       <View style={{flexDirection:'row',alignItems:'center',
         justifyContent:'space-between',minHeight:46}}>
         <View style={{flexDirection:'row',alignItems:'baseline',gap:8}}>
-          <Text style={{fontSize:15,fontWeight:'700',color:theme.foreground}}>
+          <Text style={{fontSize:compact?15:17,fontWeight:'700',color:theme.foreground}}>
             Éléments enregistrés
           </Text>
           <Text style={{fontSize:12,color:theme.muted}}>{files.filter(f=>!f.renderedFromMidiId).length}</Text>
@@ -285,7 +285,7 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
         </Pressable>
       </View>
       {actionsOpen?<View style={{flexDirection:'row',gap:7,
-        alignItems:'stretch',paddingBottom:5}}>
+        alignItems:'stretch',paddingBottom:5,maxWidth:compact?undefined:650}}>
         {([
           {label:'Écrire',icon:'pencil-outline' as const,run:()=>openWrite()},
           {label:'Composer',icon:'musical-notes-outline' as const,run:()=>openWrite('','','score')},
@@ -307,18 +307,7 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
             color:theme.foreground}}>{item.label}</Text>
         </Pressable>)}
       </View>:null}
-    </View>:
-      <View style={{flexDirection:'row',gap:9,alignItems:'center'}}>
-        {action('Enregistrer','mic-outline',()=>{
-          if(composer==='record'){closeComposer();return;}
-          if(composer==='write')return;
-          setComposer('record');setTranslationSourceId('');
-        },composer==='record')}
-        {action('Écrire','pencil-outline',()=>openWrite(),composer==='write'&&writingTab!=='score')}
-        {action('Composer','musical-notes-outline',()=>openWrite('','','score'),
-          composer==='write'&&writingTab==='score')}
-        {action(busy?'Import…':'Importer','cloud-upload-outline',pickFiles)}
-      </View>}
+    </View>
     {composer==='record'?<View style={{gap:16,padding:compact?16:22,
       borderWidth:1,borderColor:theme.border,borderRadius:18,
       backgroundColor:theme.surface}}>
@@ -355,7 +344,7 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
           accessibilityRole="button"
           accessibilityLabel={'Afficher '+option.label.toLowerCase()}
           accessibilityState={{selected}}
-          style={{paddingHorizontal:13,minHeight:36,alignItems:'center',
+          style={{paddingHorizontal:compact?8:13,minWidth:compact?88:undefined,minHeight:36,alignItems:'center',
             justifyContent:'center',borderRadius:18,
             backgroundColor:selected?(theme.dark?'#492735':'#F9E8EE'):'transparent',
             borderWidth:1,borderColor:selected?PINK:theme.border}}>
@@ -365,13 +354,7 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
       })}
     </ScrollView>:null}
     {files.length?<View style={{gap:0}}>
-      {!compact?<View style={{flexDirection:'row',alignItems:'baseline',gap:9,
-        paddingBottom:4}}>
-        <Text style={{color:theme.foreground,fontSize:17,fontWeight:'700'}}>
-          Éléments enregistrés
-        </Text>
-        <Text style={{fontSize:12,color:theme.muted}}>{files.length}</Text>
-      </View>:null}
+
       {visibleFiles.map(file=>{
         const image=isImage(file);
         const sound=isAudio(file)||file.kind==='audio';
