@@ -1,16 +1,14 @@
 import React, { useState } from 'react';
-import { ActivityIndicator, Image, Platform, Pressable, StyleSheet, Text, TextInput, View, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, Image, Platform, Pressable, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { useAppTheme } from '@/theme/AppTheme';
 import type { DreamEntry } from '@/domain/dreamWorkspace';
 import { DREAM_PHASES, PHASE_LABELS, type DreamPhase } from '@/domain/publication';
-import { dreamPhaseImageUris } from '../../../assets/dreamPhaseImages';
 import { DreamPhaseIcon } from '@/icons/DreamPhaseIcon';
 import { TopActions } from '@/components/navigation/TopActions';
 import { pickDreamImage } from '@/lib/pickDreamImage';
 import { useDreams } from '@/domain/dreamRepository';
-import { workspaceLayout } from '@/theme/workspaceLayout';
+import { workspaceLayout, PAGE_TITLE_FONT_SIZE, PAGE_TITLE_LINE_HEIGHT } from '@/theme/workspaceLayout';
 
 /** One editorial design language for all four dream phases. */
 export const phaseAccent: Record<DreamPhase, string> = {
@@ -21,72 +19,9 @@ export const phaseAccent: Record<DreamPhase, string> = {
 };
 
 
-/** A dream's original cover belongs to the atmosphere, not to a repeated card.
- * Semence, Germination, Croissance and Floraison all share the same treatment.
- */
-export function DreamCoverBackdrop({ uri }: { uri?: string }) {
-  const theme=useAppTheme();
-  const {width}=useWindowDimensions();
-  const desktop=Platform.OS==='web'&&workspaceLayout(width).desktop;
-  if(!uri)return null;
-  if(desktop){
-    // The photograph belongs only to the editorial masthead.
-    // It must never wash out the timeline, documents or form controls below.
-    return <View pointerEvents="none" style={{
-      position:'absolute',top:0,left:0,right:0,height:202,overflow:'hidden',
-    }}>
-      <Image source={{uri}} resizeMode="cover" style={[
-        StyleSheet.absoluteFill,
-        ...(Platform.OS==='web'?([{filter:'saturate(1.05) contrast(1.02)'} as any]):[]),
-      ]}/>
-      <Svg width="100%" height="100%" pointerEvents="none"
-        style={StyleSheet.absoluteFill}>
-        <Defs>
-          <LinearGradient id="dream-cover-desktop-masthead"
-            x1="0%" y1="0%" x2="0%" y2="100%">
-            <Stop offset="0%" stopColor={theme.background}
-              stopOpacity={theme.dark?.48:.49}/>
-            <Stop offset="32%" stopColor={theme.background}
-              stopOpacity={theme.dark?.53:.54}/>
-            <Stop offset="72%" stopColor={theme.background}
-              stopOpacity={theme.dark?.83:.85}/>
-            <Stop offset="100%" stopColor={theme.background}
-              stopOpacity={1}/>
-          </LinearGradient>
-        </Defs>
-        <Rect width="100%" height="100%" fill="url(#dream-cover-desktop-masthead)"/>
-      </Svg>
-    </View>;
-  }
-  // Preserve the established full-page imagery on tablet and mobile.
-  return (
-    <View pointerEvents="none" style={StyleSheet.absoluteFill}>
-      <Image source={{ uri }} resizeMode="cover"
-        style={[StyleSheet.absoluteFill,{opacity:1},
-          ...(Platform.OS==='web'?([{filter:'saturate(1.22) contrast(1.05)'} as any]):[])]}/>
-      <Svg width="100%" height="100%" pointerEvents="none"
-        style={StyleSheet.absoluteFill}>
-        <Defs>
-          <LinearGradient id="dream-cover-background-fade"
-            x1="0%" y1="0%" x2="0%" y2="100%">
-            <Stop offset="0%" stopColor={theme.background}
-              stopOpacity={theme.dark ? .67 : .64}/>
-            <Stop offset="23%" stopColor={theme.background}
-              stopOpacity={theme.dark ? .58 : .51}/>
-            <Stop offset="48%" stopColor={theme.background}
-              stopOpacity={theme.dark ? .54 : .54}/>
-            <Stop offset="75%" stopColor={theme.background}
-              stopOpacity={theme.dark ? .76 : .78}/>
-            <Stop offset="100%" stopColor={theme.background}
-              stopOpacity={theme.dark ? .94 : .94}/>
-          </LinearGradient>
-        </Defs>
-        <Rect width="100%" height="100%" fill="url(#dream-cover-background-fade)"/>
-      </Svg>
-    </View>
-  );
-}
-
+/** The dream's photo is now a real, contained image rather than a page-wide
+ * translucent backdrop. All four phases share the same responsive masthead.
+ * Text always sits on the solid theme background, never on top of the photo. */
 export function DreamPhaseHeader({
   dream, phase, onBack, onNavigate, action, summary, readOnly = false,
 }: {
@@ -98,188 +33,138 @@ export function DreamPhaseHeader({
   summary?: string | null;
   readOnly?: boolean;
 }) {
-  const theme = useAppTheme();
+  const theme=useAppTheme();
   const {width}=useWindowDimensions();
   const desktop=Platform.OS==='web'&&workspaceLayout(width).desktop;
-  const accent = phaseAccent[phase];
-  const description = summary === undefined ? dream.summary : summary;
+  const description=summary===undefined?dream.summary:summary;
   const {setCoverImage,ready}=useDreams();
   const [savingCover,setSavingCover]=useState(false);
   const [coverError,setCoverError]=useState('');
-  const canChangeCover=phase===dream.phase && phase!=='Témoignage' && !readOnly;
+  const canChangeCover=phase===dream.phase&&phase!=='Témoignage'&&!readOnly;
   const chooseCover=()=>{
     if(!canChangeCover||savingCover||!ready)return;
     setCoverError('');
-    pickDreamImage(
-      uri=>{
-        setSavingCover(true);
-        void setCoverImage(dream.id,uri)
-          .catch(error=>setCoverError(error instanceof Error?error.message:
-            "Impossible d'enregistrer cette image. Réessaie."))
-          .finally(()=>setSavingCover(false));
-      },
-      message=>setCoverError(message),
-    );
+    pickDreamImage(uri=>{
+      setSavingCover(true);
+      void setCoverImage(dream.id,uri)
+        .catch(error=>setCoverError(error instanceof Error?error.message:
+          "Impossible d'enregistrer cette image. Réessaie."))
+        .finally(()=>setSavingCover(false));
+    },message=>setCoverError(message));
   };
-  return (
-    <View style={{ marginBottom: 13 }}>
-      <View style={desktop?{
-        height:0,position:'relative',zIndex:4,overflow:'visible',
-      }:{
-        flexDirection:'row',alignItems:'center',justifyContent:'space-between',
-        minHeight:44,marginBottom:23,
-      }}>
-        <Pressable onPress={onBack} accessibilityRole="button"
-          accessibilityLabel="Retour au rêve"
-          style={desktop?{
-            position:'absolute',left:-51,top:10,width:44,height:44,
-            alignItems:'flex-start',justifyContent:'center',
-          }:{padding:9,marginLeft:-9}}>
-          <Ionicons name="arrow-back-outline" size={22} color={theme.foreground}/>
-        </Pressable>
-        {!desktop?<View style={{flex:1}}/>:null}
-        {desktop?<View style={{position:'absolute',right:0,top:1}}>
-          <TopActions/>
-        </View>:<TopActions/>}
-      </View>
-
-      {desktop ? (
-        <>
-          <View style={{marginTop:12,minHeight:174,paddingRight:112,gap:9}}>
-            <View style={{flexDirection:'row',alignItems:'center',gap:10}}>
-              <DreamPhaseIcon phase={phase} size={42}
-                tintColor={phase==='Croissance'?'#17613F':undefined}/>
-              <Text style={{flex:1,color:theme.foreground,fontFamily:'serif',
-                fontSize:35,lineHeight:43,letterSpacing:-0.55}}>
-                {PHASE_LABELS[phase]}
-              </Text>
-            </View>
-            <View style={{flexDirection:'row',alignItems:'center',gap:10,
-              paddingLeft:3}}>
-              <View style={{flex:1,minWidth:0,gap:3}}>
-                <Text style={{fontSize:10,letterSpacing:1.25,
-                  fontWeight:'700',color:theme.muted}}>
-                  MON RÊVE
-                </Text>
-                <Text numberOfLines={2} style={{color:theme.foreground,
-                  fontSize:17,lineHeight:24,fontWeight:'600'}}>
-                  {dream.title}
-                </Text>
-              </View>
-              {canChangeCover?<Pressable onPress={chooseCover}
-                disabled={savingCover||!ready}
-                accessibilityRole="button"
-                accessibilityLabel={dream.image?
-                  "Changer l'image de couverture du rêve":
-                  "Ajouter une image de couverture au rêve"}
-                accessibilityState={{disabled:savingCover||!ready}}
-                style={{width:36,height:36,alignItems:'center',justifyContent:'center',
-                  borderRadius:10,backgroundColor:theme.dark?
-                    'rgba(15,24,22,.30)':'rgba(255,255,255,.35)'}}>
-                {savingCover?<ActivityIndicator size="small" color={theme.muted}/>:
-                  <Ionicons name="image-outline" size={16} color={theme.foreground}/>}
-              </Pressable>:null}
-            </View>
-          </View>
-          {description?<View style={{paddingVertical:12,marginBottom:13,
-            borderBottomWidth:1,borderBottomColor:theme.dark?
-              'rgba(255,255,255,.12)':'rgba(34,41,37,.09)'}}>
-            <Text style={{color:theme.foreground,fontSize:14,lineHeight:22,
-              opacity:.90}}>{description}</Text>
-          </View>:<View style={{height:15}}/>}
-        </>
-      ) : (
-        <>
-                <View style={{flexDirection:'row',alignItems:'flex-start',gap:4,
-                  paddingRight:desktop?104:0,
-                  marginTop:desktop?16:0,marginBottom:description?10:18}}>
-                  <Text style={{flex:1,color:theme.foreground,fontFamily:'serif',
-                    fontSize:33,lineHeight:41,letterSpacing:-0.5}}>{dream.title}</Text>
-                  {canChangeCover?<Pressable onPress={chooseCover}
-                    disabled={savingCover||!ready}
-                    accessibilityRole="button"
-                    accessibilityLabel={dream.image?"Changer l'image de couverture du rêve":
-                      "Ajouter une image de couverture au rêve"}
-                    accessibilityHint="Ouvre le sélecteur d'image"
-                    accessibilityState={{disabled:savingCover||!ready}}
-                    style={{width:34,height:34,alignItems:'center',justifyContent:'center',
-                      marginTop:5}}>
-                    {savingCover?<ActivityIndicator size="small" color={theme.muted}/>:
-                      <Ionicons name="image-outline" size={15} color={theme.muted}/>}
-                  </Pressable>:null}
-                </View>
-                {description ? (
-                  <Text style={{ color: theme.foreground, opacity: .88, fontSize: 14, lineHeight: 22, marginBottom: 20, fontWeight: '500', ...(Platform.OS==='web'?({textShadow:theme.dark?'0 1px 4px rgba(0,0,0,.45)':'0 1px 6px rgba(255,255,255,.85)'} as any):{}) }}>
-                    {description}
-                  </Text>
-                ) : null}
-          
-        </>
-      )}
-      {coverError?<Text accessibilityRole="alert"
-        style={{fontSize:11,color:'#B24753',lineHeight:17,marginBottom:10}}>
-        {coverError}
-      </Text>:null}
-      {/* Desktop phases are navigated from the fixed sidebar. On mobile/tablet
-          retain the familiar interactive progress indicator. */}
-      {!desktop ? (
-        <View style={{marginBottom:19,marginTop:5,
-          flexDirection:'row',alignItems:'flex-end',gap:width<520?4:10,
-          paddingVertical:7,paddingHorizontal:width<520?4:9,
-          borderRadius:13,
-          borderWidth:Platform.OS==='web'?1:0,
-          borderColor:theme.dark?'rgba(255,255,255,.13)':'rgba(255,255,255,.32)',
-          backgroundColor:theme.dark?'rgba(19,24,25,.36)':'rgba(250,249,246,.32)',
-          ...(Platform.OS==='web'?({
-            backdropFilter:'blur(22px) saturate(140%)',
-            WebkitBackdropFilter:'blur(22px) saturate(140%)',
-          } as any):{})}}>
-          {DREAM_PHASES.map((item,i)=>{
-            const reached=i<=DREAM_PHASES.indexOf(dream.phase);
-            const selected=item===phase;
-            const phaseColor=phaseAccent[item];
-            return <Pressable key={item} onPress={()=>onNavigate?.(item)}
-              accessibilityRole="button"
-              accessibilityLabel={'Ouvrir '+PHASE_LABELS[item]}
-              accessibilityState={{selected,disabled:!reached||!onNavigate}}
-              disabled={!reached||!onNavigate}
-              style={{flex:1,minWidth:0,justifyContent:'flex-end',
-                gap:5,alignItems:'center',paddingHorizontal:2,
-                paddingTop:4,paddingBottom:0}}>
-              <View style={{flexDirection:'row',alignItems:'center',
-                justifyContent:'center',gap:6,minHeight:24}}>
-                <View style={{opacity:reached?1:.42}}><DreamPhaseIcon phase={item} size={width<520?23:27}/></View>
-                <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={.74}
-                  style={{fontSize:width<520?10:12,
-                    fontWeight:selected?'700':'500',
-                    color:theme.dark?'#F6F4F0':'#262C2B',
-                    opacity:reached?1:.65,textAlign:'center'}}>
-                  {PHASE_LABELS[item]}
-                </Text>
-              </View>
-              <View style={{width:'100%',height:selected?2.5:1.5,
-                borderRadius:1,backgroundColor:reached?phaseColor:
-                  theme.dark?'rgba(240,240,240,.35)':'rgba(41,50,47,.25)',
-                opacity:selected?1:reached?.65:.72}}/>
-            </Pressable>;
-          })}
-        </View>
-
-      ) : null}
-      {readOnly && !desktop ? (
-        <View style={{
-          flexDirection:'row',alignItems:'center',gap:7,
-          paddingVertical:9,paddingHorizontal:11,marginBottom:15,
-          backgroundColor:theme.dark?'#303438':'#F1EFEA',
-          borderRadius:8,alignSelf:'flex-start',
-        }}>
-          <Ionicons name="lock-closed-outline" color={theme.muted} size={13}/>
-          <Text style={{color:theme.muted,fontSize:11,fontWeight:'600'}}>Étape passée · consultation uniquement</Text>
-        </View>
-      ) : null}
-      {action ? <View style={{ alignItems: 'flex-end', marginTop: -8, marginBottom: 12 }}>{action}</View> : null}
+  return <View style={{marginBottom:desktop?16:18}}>
+    <View style={desktop?{
+      height:0,position:'relative',zIndex:5,overflow:'visible',
+    }:{
+      height:44,flexDirection:'row',alignItems:'center',
+      justifyContent:'space-between',marginBottom:10,
+    }}>
+      <Pressable accessibilityRole="button" accessibilityLabel="Retour à mes rêves"
+        onPress={onBack} style={desktop?{
+          position:'absolute',left:-51,top:7,width:44,height:44,
+          alignItems:'flex-start',justifyContent:'center',
+        }:{width:44,height:44,alignItems:'flex-start',justifyContent:'center'}}>
+        <Ionicons name="arrow-back-outline" size={22} color={theme.foreground}/>
+      </Pressable>
+      {!desktop?<View style={{flex:1}}/>:null}
+      {desktop?<View style={{position:'absolute',right:0,top:0}}>
+        <TopActions/>
+      </View>:<TopActions/>}
     </View>
-  );
+    {desktop?<View style={{
+      flexDirection:'row',alignItems:'center',gap:9,
+      marginTop:10,marginBottom:16,paddingRight:110,minHeight:32,
+    }}>
+      <DreamPhaseIcon phase={phase} size={29}
+        tintColor={phase==='Croissance'?(theme.dark?'#82C9A0':'#17613F'):undefined}/>
+      <Text numberOfLines={1} style={{
+        color:theme.foreground,fontFamily:'serif',
+        fontSize:PAGE_TITLE_FONT_SIZE,lineHeight:PAGE_TITLE_LINE_HEIGHT,
+        letterSpacing:-.15,
+      }}>{PHASE_LABELS[phase]}</Text>
+    </View>:null}
+    <View style={{
+      height:desktop?168:width<520?148:177,
+      width:'100%',overflow:'hidden',borderRadius:desktop?12:10,
+      backgroundColor:theme.dark?'#303532':'#E9E8E2',
+      position:'relative',
+    }}>
+      {dream.image?
+        <Image source={{uri:dream.image}} resizeMode="cover"
+          style={{width:'100%',height:'100%'}}/>:
+        <View style={{flex:1,justifyContent:'center',alignItems:'center'}}>
+          <Ionicons name="image-outline" size={31} color={theme.muted}/>
+        </View>}
+      {canChangeCover?<Pressable accessibilityRole="button"
+        accessibilityLabel={dream.image?
+          "Changer l'image de couverture du rêve":"Ajouter une couverture au rêve"}
+        disabled={savingCover||!ready} onPress={chooseCover}
+        style={{position:'absolute',top:12,right:12,width:38,height:38,
+          borderRadius:11,alignItems:'center',justifyContent:'center',
+          backgroundColor:'rgba(16,20,18,.66)',
+          borderWidth:1,borderColor:'rgba(255,255,255,.24)'}}>
+        {savingCover?<ActivityIndicator color="#FFFFFF" size="small"/>:
+          <Ionicons name="image-outline" color="#FFFFFF" size={17}/>}
+      </Pressable>:null}
+    </View>
+    <View style={{paddingTop:desktop?15:13,gap:description?6:0}}>
+      <Text style={{fontFamily:'serif',fontSize:desktop?23:24,
+        lineHeight:desktop?31:32,letterSpacing:-.3,
+        color:theme.foreground}}>{dream.title}</Text>
+      {description?<Text style={{
+        fontSize:desktop?13:12,lineHeight:desktop?21:20,
+        color:theme.muted,
+      }}>{description}</Text>:null}
+    </View>
+    {coverError?<Text accessibilityRole="alert"
+      style={{fontSize:11,color:theme.dark?'#FF98AD':'#B24753',
+        marginTop:9,lineHeight:18}}>{coverError}</Text>:null}
+    {!desktop?<View style={{
+      marginTop:20,marginBottom:9,paddingBottom:3,
+      flexDirection:'row',alignItems:'flex-end',gap:width<520?4:10,
+      borderBottomWidth:1,borderBottomColor:theme.border,
+    }}>
+      {DREAM_PHASES.map((item,i)=>{
+        const reached=i<=DREAM_PHASES.indexOf(dream.phase);
+        const selected=item===phase;
+        const phaseColor=phaseAccent[item];
+        return <Pressable key={item} accessibilityRole="button"
+          accessibilityLabel={'Ouvrir '+PHASE_LABELS[item]}
+          accessibilityState={{selected,disabled:!reached||!onNavigate}}
+          disabled={!reached||!onNavigate}
+          onPress={()=>onNavigate?.(item)}
+          style={{flex:1,minWidth:0,gap:5,
+            paddingTop:3,paddingBottom:10,alignItems:'center',
+            justifyContent:'flex-end',opacity:reached?1:.45}}>
+          <View style={{minHeight:25,flexDirection:'row',
+            alignItems:'center',justifyContent:'center',gap:width<520?3:6}}>
+            <DreamPhaseIcon phase={item} size={width<520?20:23}
+              tintColor={item==='Croissance'?
+                (theme.dark?'#82C9A0':'#17613F'):undefined}/>
+            <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={.75}
+              style={{fontSize:width<520?10:12,
+                fontWeight:selected?'700':'500',color:theme.foreground}}>
+              {PHASE_LABELS[item]}
+            </Text>
+          </View>
+          <View style={{position:'absolute',bottom:-4,left:0,right:0,
+            height:selected?3:1.5,borderRadius:2,
+            backgroundColor:reached?phaseColor:theme.muted,
+            opacity:selected?1:.45}}/>
+        </Pressable>;
+      })}
+    </View>:null}
+    {readOnly?<View style={{
+      flexDirection:'row',alignItems:'center',gap:7,
+      paddingTop:12,marginBottom:6,alignSelf:'flex-start',
+    }}>
+      <Ionicons name="lock-closed-outline" color={theme.muted} size={12}/>
+      <Text style={{fontSize:11,color:theme.muted,fontStyle:'italic'}}>
+        Étape passée · consultation uniquement
+      </Text>
+    </View>:null}
+    {action?<View style={{alignItems:'flex-end',marginTop:7}}>{action}</View>:null}
+  </View>;
 }
 
 export function DreamPhaseSection({ title, subtitle, children }: {
