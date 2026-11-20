@@ -3,7 +3,7 @@ import {newMusicId} from './musicWorkspace';
 import {parseMusicMidi} from './musicMidiParser';
 import type {MusicNotationEvent} from './musicNotation';
 import type {MusicProjectFile} from './musicWorkspace';
-import {midiFrequency,samplePlaybackRate,sampleAudioRegion} from './musicSampleInstrument';
+import {midiFrequency,samplePlaybackRate,sampleAudioRegion,drumOneShotSeconds} from './musicSampleInstrument';
 
 const RATE=44100;
 const MAX_SECONDS=420;
@@ -51,7 +51,7 @@ async function offlineWav(events:MusicNotationEvent[],bpm:number,
     const hit=drumBuffers.get(n.midi);
     if(n.instrument==='drum'&&hit)
       return Math.max(0,n.startBeats)*speed+
-        Math.min(12,Math.max(.015,hit.buffer.duration-hit.region.offset));
+        drumOneShotSeconds(hit.buffer.duration,hit.region.offset);
     return Math.max(0,n.startBeats+n.lengthBeats)*speed;
   }))+PINK_NOTE_DURATION_TAIL;
   if(duration>MAX_SECONDS)
@@ -88,7 +88,7 @@ async function offlineWav(events:MusicNotationEvent[],bpm:number,
     const drum=n.instrument==='drum';
     const hit=drum?drumBuffers.get(n.midi):undefined;
     const length=hit?
-      Math.min(12,Math.max(.015,hit.buffer.duration-hit.region.offset)):
+      drumOneShotSeconds(hit.buffer.duration,hit.region.offset):
       drum?Math.min(.6,held):Math.min(held,12);
     const stop=Math.min(duration-.002,start+length);
     if(stop<=start)continue;
