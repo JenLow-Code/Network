@@ -38,10 +38,7 @@ export default function MusicSubmission() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{...workspaceCanvas(width),paddingTop:12,paddingBottom:65}}>
-        <PageHeader />
-        <Text style={{ fontSize: 34, fontFamily: 'Caveat_700Bold', marginVertical: 13 }}>
-          Partager une musique
-        </Text>
+        <PageHeader title="Partager une musique" />
         <Text style={{ fontSize: 13, color: '#666', lineHeight: 20, marginBottom: 24 }}>
           Tu peux partager une musique venant d'une application externe si tu identifies la personne
           qui en détient les droits et disposes de l'autorisation nécessaire. Partager n'autorise
