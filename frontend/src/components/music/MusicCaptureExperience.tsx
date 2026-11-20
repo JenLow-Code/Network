@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Platform, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/theme/AppTheme';
@@ -21,7 +21,8 @@ import {MusicCaptureScoreStrip} from './MusicCaptureScoreStrip';
 const PINK='#CB245C';
 type Props={project:MusicProject;patch:(changes:Partial<MusicProject>)=>void;
   onStartVersion:(source:MusicProjectFile)=>void;onUseFile:(source:MusicProjectFile)=>void;
-  hasVersion:boolean;newVersionMode?:boolean};
+  hasVersion:boolean;newVersionMode?:boolean;
+  quickAction?:'write'|'upload'|'play'|'record'};
 type Composer='none'|'write'|'record';
 type Writing='lyrics'|'note';
 const isImage=(file:MusicProjectFile)=>/\.(jpg|jpeg|png|webp)$/i.test(file.originalFilename||'');
@@ -47,7 +48,8 @@ function fileGroup(file:MusicProjectFile):CaptureFilter {
   return 'other';
 }
 
-export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,hasVersion,newVersionMode=false}:Props) {
+export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
+  hasVersion,newVersionMode=false,quickAction}:Props) {
   const theme=useAppTheme();
   const {width}=useWindowDimensions();
   const compact=width<630;
@@ -64,6 +66,21 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,h
   const [error,setError]=useState('');
   const [filter,setFilter]=useState<CaptureFilter>('all');
   const [actionsOpen,setActionsOpen]=useState(false);
+  useEffect(()=>{
+    // Sidebar actions select a real Capture workflow; importing requires
+    // an additional user click because browsers block delayed file pickers.
+    if(quickAction==='write'){
+      setWriting('lyrics');setWritingTab('lyrics');setComposer('write');
+      setEditingFileId('');setTranslationSourceId('');
+    }else if(quickAction==='play'){
+      setWritingTab('score');setWriting('lyrics');setComposer('write');
+      setEditingFileId('');setTranslationSourceId('');
+    }else if(quickAction==='record'){
+      setComposer('record');setEditingFileId('');setTranslationSourceId('');
+    }else if(quickAction==='upload'){
+      setActionsOpen(true);
+    }
+  },[quickAction]);
   const visibleFiles=files.filter(file=>!file.renderedFromMidiId)
     .filter(file=>!file.translationOfFileId||
       !files.some(original=>original.id===file.translationOfFileId))
@@ -241,6 +258,16 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,h
       </View>
     </Pressable>;
   return <View style={{gap:compact?12:18}}>
+    {quickAction==='upload'?<Pressable onPress={pickFiles}
+      accessibilityRole="button" accessibilityLabel="Choisir des fichiers à importer"
+      style={{alignSelf:'flex-start',minHeight:43,flexDirection:'row',
+        alignItems:'center',gap:9,paddingHorizontal:14,borderRadius:10,
+        backgroundColor:PINK}}>
+      <Ionicons name="cloud-upload-outline" size={18} color="#FFFFFF"/>
+      <Text style={{color:'#FFFFFF',fontWeight:'700',fontSize:12}}>
+        Choisir des fichiers à importer
+      </Text>
+    </Pressable>:null}
     {compact?<View style={{gap:8}}>
       <View style={{flexDirection:'row',alignItems:'center',
         justifyContent:'space-between',minHeight:46}}>
