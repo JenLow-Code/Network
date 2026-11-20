@@ -20,23 +20,24 @@ export const phaseAccent: Record<DreamPhase, string> = {
 };
 
 
-/** Meaningful dream hero: stage, goal, context and an actionable next step.
- * It is a working-space banner, not an image with a title overlay. */
+/** Full-bleed editorial hero for the dream workspace.
+ * Only the dream's title and its own summary belong over the cover image.
+ * Stage navigation, dates and working actions remain outside the hero. */
 export function DreamPhaseHeader({
-  dream, phase, onBack, onNavigate, onPrimaryAction, action, summary, readOnly = false,
+  dream, phase, onBack, onNavigate, action, summary, readOnly = false,
 }: {
   dream: DreamEntry;
   phase: DreamPhase;
   onBack: () => void;
   onNavigate?: (phase: DreamPhase) => void;
-  onPrimaryAction?: () => void;
   action?: React.ReactNode;
   summary?: string | null;
   readOnly?: boolean;
 }) {
   const theme=useAppTheme();
   const {width}=useWindowDimensions();
-  const desktop=Platform.OS==='web'&&workspaceLayout(width).desktop;
+  const ws=workspaceLayout(width);
+  const desktop=Platform.OS==='web'&&ws.desktop;
   const description=summary===undefined?dream.summary:summary;
   const {setCoverImage,ready}=useDreams();
   const [savingCover,setSavingCover]=useState(false);
@@ -64,105 +65,90 @@ export function DreamPhaseHeader({
       <View style={{flex:1}}/>
       <TopActions/>
     </View>
+    {/* Expand beyond the reading-column padding to give the image the entire
+        workspace canvas. This is a hero, not a rounded content card. */}
     <View style={{
-      height:desktop?338:width<520?320:356,
-      width:'100%',overflow:'hidden',borderRadius:desktop?17:13,
-      backgroundColor:theme.dark?'#1A2924':'#243D37',
+      height:desktop?500:width<520?370:440,
+      marginHorizontal:-ws.gutter,
+      width:'auto',
       position:'relative',
+      overflow:'hidden',
+      backgroundColor:theme.dark?'#142521':'#233831',
     }}>
       {dream.image?
         <Image source={{uri:dream.image}} resizeMode="cover"
           style={{position:'absolute',left:0,right:0,top:0,bottom:0,
             width:'100%',height:'100%'}}/>:
-        <View pointerEvents="none" style={{position:'absolute',left:0,right:0,
-          top:0,bottom:0,backgroundColor:'#354F4C'}}/>}
-      {/* Dark-on-photo wash holds both a meaningful title and a usable action. */}
+        <View pointerEvents="none" style={{position:'absolute',
+          left:0,right:0,top:0,bottom:0,
+          backgroundColor:theme.dark?'#18352E':'#36534B'}}/>}
+      {/* Light at the top protects the photograph. The lower gradient
+          makes the real words of this dream readable on any cover. */}
       <Svg pointerEvents="none" width="100%" height="100%"
         style={{position:'absolute',left:0,right:0,top:0,bottom:0}}>
         <Defs>
-          <LinearGradient id="dream-editorial-hero-wash" x1="0%" y1="0%" x2="0%" y2="100%">
-            <Stop offset="0%" stopColor="#0D1917" stopOpacity={.52}/>
-            <Stop offset="25%" stopColor="#0B1915" stopOpacity={.25}/>
-            <Stop offset="62%" stopColor="#0A1513" stopOpacity={.76}/>
-            <Stop offset="100%" stopColor="#07100E" stopOpacity={.96}/>
+          <LinearGradient id="dream-full-bleed-hero" x1="0%" y1="0%" x2="0%" y2="100%">
+            <Stop offset="0%" stopColor="#08110F" stopOpacity={.17}/>
+            <Stop offset="29%" stopColor="#08110F" stopOpacity={.06}/>
+            <Stop offset="54%" stopColor="#08110F" stopOpacity={.21}/>
+            <Stop offset="79%" stopColor="#08110F" stopOpacity={.72}/>
+            <Stop offset="100%" stopColor="#08110F" stopOpacity={.91}/>
           </LinearGradient>
         </Defs>
-        <Rect width="100%" height="100%" fill="url(#dream-editorial-hero-wash)"/>
+        <Rect width="100%" height="100%" fill="url(#dream-full-bleed-hero)"/>
       </Svg>
-      <View style={{position:'absolute',left:desktop?29:17,
-        top:desktop?24:18,right:desktop?68:61,
-        flexDirection:'row',alignItems:'center',gap:9}}>
-        <View style={{width:7,height:7,borderRadius:4,
-          backgroundColor:phaseAccent[phase]}}/>
-        <Text style={{color:'rgba(255,255,255,.87)',fontSize:10,
-          fontWeight:'800',letterSpacing:1.65}}>
-          {PHASE_LABELS[phase].toUpperCase()}
-        </Text>
-        <View style={{width:1,height:12,backgroundColor:'rgba(255,255,255,.30)'}}/>
-        <Text style={{color:'rgba(255,255,255,.72)',fontSize:10,
-          fontWeight:'600',letterSpacing:1}}>
-          {String(DREAM_PHASES.indexOf(phase)+1).padStart(2,'0')} / 04
-        </Text>
-      </View>
-      <View style={{position:'absolute',
-        left:desktop?29:18,right:desktop?36:18,bottom:desktop?25:20,
-        gap:desktop?11:8,alignItems:'flex-start'}}>
-        <Text style={{fontSize:10,fontWeight:'700',letterSpacing:2,
-          color:'rgba(255,255,255,.79)'}}>
-          {readOnly?'LE CHEMIN PARCOURU':'UN RÊVE À FAIRE GRANDIR'}
-        </Text>
-        <Text accessibilityRole="header" numberOfLines={desktop?2:3}
-          style={{fontFamily:'serif',fontSize:desktop?43:width<520?30:35,
-            lineHeight:desktop?49:width<520?36:41,
-            fontWeight:'800',letterSpacing:-.65,color:'#FFFFFF',
-            maxWidth:desktop?850:undefined,
+      <View pointerEvents="none" style={{
+        position:'absolute',
+        left:desktop?48:width<520?23:35,
+        right:desktop?68:width<520?22:40,
+        bottom:desktop?45:width<520?30:36,
+        maxWidth:desktop?880:undefined,
+        gap:desktop?15:10,
+        alignItems:'flex-start',
+      }}>
+        <Text accessibilityRole="header"
+          numberOfLines={desktop?3:4}
+          style={{
+            color:'#FFFFFF',
+            fontFamily:'serif',
+            fontSize:desktop?60:width<520?35:46,
+            lineHeight:desktop?69:width<520?42:53,
+            fontWeight:'700',
+            letterSpacing:desktop?-1.4:-.6,
             ...(Platform.OS==='web'?({
-              textShadow:'0 2px 12px rgba(0,0,0,.36)',
-            } as any):{})}}>
-          {dream.title}
-        </Text>
-        {description?<Text numberOfLines={desktop?2:2}
-          style={{fontSize:desktop?14:12,lineHeight:desktop?21:18,
-            fontWeight:'400',color:'rgba(255,255,255,.89)',
-            maxWidth:desktop?760:undefined}}>
-          {description}
-        </Text>:null}
-        <View style={{marginTop:desktop?8:5,width:'100%',
-          flexDirection:'row',alignItems:'center',
-          justifyContent:'space-between',gap:11,flexWrap:'wrap'}}>
-          {onPrimaryAction?<Pressable onPress={onPrimaryAction}
-            accessibilityRole="button"
-            accessibilityLabel={readOnly?'Consulter cette étape':'Continuer à avancer sur mon rêve'}
-            style={{minHeight:43,flexDirection:'row',alignItems:'center',
-              justifyContent:'center',gap:9,paddingHorizontal:16,
-              borderRadius:11,backgroundColor:'#FFFCF7'}}>
-            <Text style={{fontSize:12,fontWeight:'800',color:'#202826'}}>
-              {readOnly?'Consulter cette étape':'Continuer mon rêve'}
-            </Text>
-            <Ionicons name="arrow-forward-outline" size={17} color="#202826"/>
-          </Pressable>:null}
-          <View style={{flexDirection:'row',alignItems:'center',gap:6,
-            paddingVertical:6}}>
-            <Ionicons name={dream.goalDate?'calendar-outline':'leaf-outline'}
-              size={15} color="rgba(255,255,255,.82)"/>
-            <Text style={{color:'rgba(255,255,255,.88)',fontSize:11,
-              fontWeight:'600'}}>
-              {dream.goalDate?'Objectif · '+new Date(dream.goalDate.slice(0,10)+
-                'T12:00:00').toLocaleDateString('fr-FR',{
-                  day:'numeric',month:'short',year:'numeric'}):
-                'Un pas après l’autre'}
-            </Text>
-          </View>
-        </View>
+              textShadow:'0 2px 16px rgba(0,0,0,.35)',
+            } as any):{
+              textShadowColor:'rgba(0,0,0,.38)',
+              textShadowOffset:{width:0,height:2},
+              textShadowRadius:12,
+            }),
+          }}>{dream.title}</Text>
+        {description?.trim()?
+          <Text numberOfLines={desktop?3:3} style={{
+            color:'rgba(255,255,255,.94)',
+            fontSize:desktop?17:width<520?13:15,
+            lineHeight:desktop?25:width<520?20:23,
+            fontWeight:'400',
+            maxWidth:desktop?660:540,
+            ...(Platform.OS==='web'?({
+              textShadow:'0 1px 9px rgba(0,0,0,.5)',
+            } as any):{}),
+          }}>{description}</Text>:null}
       </View>
       {canChangeCover?<Pressable accessibilityRole="button"
         accessibilityLabel={dream.image?
           "Changer l'image de couverture du rêve":"Ajouter une couverture au rêve"}
         disabled={savingCover||!ready} onPress={chooseCover}
-        style={{position:'absolute',top:12,right:12,width:41,height:41,
-          borderRadius:11,alignItems:'center',justifyContent:'center',
-          backgroundColor:'rgba(13,24,21,.74)',
-          borderWidth:1,borderColor:'rgba(255,255,255,.35)'}}>
+        style={{
+          position:'absolute',
+          top:desktop?20:15,
+          right:desktop?21:15,
+          width:42,height:42,
+          alignItems:'center',justifyContent:'center',
+          borderRadius:12,
+          backgroundColor:'rgba(9,22,18,.52)',
+          borderWidth:1,borderColor:'rgba(255,255,255,.40)',
+        }}>
         {savingCover?<ActivityIndicator color="#FFFFFF" size="small"/>:
           <Ionicons name="image-outline" color="#FFFFFF" size={18}/>}
       </Pressable>:null}
