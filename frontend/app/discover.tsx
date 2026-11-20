@@ -17,7 +17,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { FireHeader } from '@/components/fire/FireHeader';
 import { useLocale } from '@/i18n/locale';
 import { useAppTheme } from '@/theme/AppTheme';
-import { workspaceLayout } from '@/theme/workspaceLayout';
+import { workspaceLayout,PAGE_TITLE_FONT_SIZE,PAGE_TITLE_LINE_HEIGHT } from '@/theme/workspaceLayout';
 import { HANDWRITING_FAMILY } from '@/theme/handwriting';
 import { matchesForMe, profileTalentStorageKey, type SavedTalent } from '@/domain/personalDiscovery';
 const filters = ['Tout', 'Pour moi', 'Rêves', 'Musique', 'Bible', 'Talents'] as const;
@@ -144,7 +144,8 @@ export default function Discover() {
             <Text
               accessibilityLabel="JenLow"
               style={{
-                fontSize: 19,
+                fontSize:PAGE_TITLE_FONT_SIZE,
+                lineHeight:PAGE_TITLE_LINE_HEIGHT,
                 fontWeight: '800',
                 letterSpacing: 2.0,
                 color: theme.foreground,
