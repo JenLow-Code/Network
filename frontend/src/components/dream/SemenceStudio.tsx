@@ -7,7 +7,7 @@ import { workspaceLayout } from '@/theme/workspaceLayout';
 import { useDreams } from '@/domain/dreamRepository';
 import type { DreamEntry } from '@/domain/dreamWorkspace';
 import type { DreamPhase } from '@/domain/publication';
-import { DreamCoverBackdrop, DreamPhaseHeader } from './DreamPhaseLayout';
+import { DreamPhaseHeader } from './DreamPhaseLayout';
 import SemenceInspirations from './SemenceInspirations';
 import SemenceShare from './SemenceShare';
 import DreamWorkspaceShortcuts from './DreamWorkspaceShortcuts';
@@ -39,7 +39,6 @@ export default function SemenceStudio({dream,onBack,onNavigate}:{
  };
  const add=()=>setAddRequestToken(token=>token+1);
  return <View style={{flex:1,backgroundColor:theme.background}}>
-  <DreamCoverBackdrop uri={dream.image}/>
   <ScrollView showsVerticalScrollIndicator={false} style={{flex:1,backgroundColor:'transparent'}}
    keyboardShouldPersistTaps="handled"
    contentContainerStyle={{paddingHorizontal:ws.gutter,paddingTop:10,
