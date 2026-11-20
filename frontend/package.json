@@ -10,6 +10,7 @@
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
     "verify:layout": "node scripts/verify-workspace-layout.cjs",
+    "verify:midi": "node scripts/verify-midi-parser.cjs",
     "format": "npx prettier --write \"app/**/*.{ts,tsx}\" \"src/**/*.{ts,tsx}\" \"assets/**/*.ts\""
   },
   "dependencies": {
