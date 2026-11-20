@@ -13,7 +13,8 @@ const PINK='#CB245C';
 type Instrument='piano'|'drum';
 type ScoreResult={title:string;events:MusicNotationEvent[];bpm:number;
   tone:string;sampleLocalId?:string;sampleName?:string;
-  sampleRootMidi?:number;sampleRootHz?:number;clef?:'treble'|'bass'};
+  sampleRootMidi?:number;sampleRootHz?:number;clef?:'treble'|'bass';
+  drumSamples?:MusicProjectFile['drumSamples']};
 type Props={
   initialFile?:MusicProjectFile|null;
   onSave:(value:ScoreResult)=>void;
@@ -348,6 +349,12 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
   const [sampleReady,setSampleReady]=useState(false);
   const [sampleError,setSampleError]=useState('');
   const sampleRef=useRef<AudioBuffer|null>(null);
+  const [drumSamples,setDrumSamples]=useState<
+    NonNullable<MusicProjectFile['drumSamples']>>(
+      initialFile?.drumSamples||{});
+  const drumBuffers=useRef<Map<number,{id:string;buffer:AudioBuffer}>>(new Map());
+  const [drumLoadingKey,setDrumLoadingKey]=useState<number|null>(null);
+  const [drumError,setDrumError]=useState('');
   const [volume,setVolume]=useState({piano:.8,drum:.7});
   const [last,setLast]=useState('');
   const [message,setMessage]=useState('');
@@ -363,6 +370,7 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
     sampleId!==(initialFile?.instrumentSampleLocalId||'')||
     sampleRootMidi!==(initialFile?.instrumentSampleRootMidi??60)||
     (sampleRootHz??null)!==(initialFile?.instrumentSampleRootHz??null)||
+    JSON.stringify(drumSamples)!==JSON.stringify(initialFile?.drumSamples||{})||
     clef!==(initialFile?.scoreClef||'treble');
   useEffect(()=>onDirtyChange(dirty),[dirty,onDirtyChange]);
   useEffect(()=>()=>{void audioRef.current?.close();},[]);
@@ -381,6 +389,35 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
     }).finally(()=>{if(live)setSampleLoading(false);});
     return()=>{live=false;};
   },[initialFile?.instrumentSampleLocalId]);
+  useEffect(()=>{
+    if(Platform.OS!=='web')return;
+    let active=true;
+    const entries=Object.entries(drumSamples);
+    const allowed=new Set(entries.map(([key])=>Number(key)));
+    for(const key of drumBuffers.current.keys()){
+      if(!allowed.has(key))drumBuffers.current.delete(key);
+    }
+    for(const [key,assignment] of entries){
+      const midi=Number(key);
+      if(!Number.isFinite(midi)||!assignment?.localFileId)continue;
+      if(drumBuffers.current.get(midi)?.id===assignment.localFileId)continue;
+      void getDraftAudio(assignment.localFileId).then(async blob=>{
+        if(!blob)throw Error('Le fichier '+assignment.name+' n’est pas sur cet appareil.');
+        if(!audioRef.current)audioRef.current=new AudioContext();
+        const buffer=await audioRef.current.decodeAudioData(await blob.arrayBuffer());
+        if(sampleAudioRegion(buffer).peak<.002)
+          throw Error('Le son '+assignment.name+' est silencieux.');
+        if(active&&drumSamples[key]?.localFileId===assignment.localFileId){
+          drumBuffers.current.set(midi,{id:assignment.localFileId,buffer});
+          setDrumError('');
+        }
+      }).catch(error=>{
+        if(active)setDrumError(error instanceof Error?error.message:
+          'Une percussion est indisponible sur cet appareil.');
+      });
+    }
+    return()=>{active=false;};
+  },[drumSamples]);
   const selected=events.find(e=>e.id===selectedId&&e.instrument===part);
   const chordNotes=selected?events.filter(e=>e.instrument===part&&
     Math.abs(e.startBeats-selected.startBeats)<.001)
