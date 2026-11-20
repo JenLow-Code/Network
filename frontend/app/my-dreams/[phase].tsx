@@ -9,10 +9,12 @@ import { TopActions } from '@/components/navigation/TopActions';
 import { OfflineDreamImage } from '@/components/publication/OfflineDreamImage';
 import { DREAM_PHASES, DreamPhase, PHASE_COLORS } from '@/domain/publication';
 import { useDreams } from '@/domain/dreamRepository';
+import {useAppTheme} from '@/theme/AppTheme';
 import DreamQuickActions from '@/components/dream/DreamQuickActions';
 import type { DreamEntry } from '@/domain/dreamWorkspace';
 import {workspaceCanvas,WORKSPACE_TITLE_GAP,PAGE_TITLE_FONT_SIZE,PAGE_TITLE_LINE_HEIGHT} from '@/theme/workspaceLayout';
 export default function Stage() {
+  const theme=useAppTheme();
   const {width}=useWindowDimensions();
   const { phase } = useLocalSearchParams<{ phase: string }>();
   const current = DREAM_PHASES.find(x => x === phase) as DreamPhase | undefined;
@@ -20,20 +22,20 @@ export default function Stage() {
   const [longDream,setLongDream]=useState<DreamEntry|null>(null);
   const filtered = items.filter(x => x.phase === current);
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor:theme.background }}>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{...workspaceCanvas(width),paddingTop:12,paddingBottom:65}}>
         <View
           style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
         >
           <Pressable onPress={() => router.back()}>
-            <Ionicons name="chevron-back" size={26} />
+            <Ionicons name="chevron-back" size={26} color={theme.foreground}/>
           </Pressable>
           <TopActions />
         </View>
         <View
           style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
         >
-          <Text style={{ fontSize:PAGE_TITLE_FONT_SIZE,lineHeight:PAGE_TITLE_LINE_HEIGHT,fontWeight:'700',marginTop:WORKSPACE_TITLE_GAP,marginBottom:10 }}>
+          <Text style={{ fontSize:PAGE_TITLE_FONT_SIZE,lineHeight:PAGE_TITLE_LINE_HEIGHT,fontWeight:'700',color:theme.foreground,marginTop:WORKSPACE_TITLE_GAP,marginBottom:10 }}>
             {current || 'Mes rêves'}
           </Text>
           <Pressable
