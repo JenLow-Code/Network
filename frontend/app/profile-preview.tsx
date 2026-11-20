@@ -88,61 +88,6 @@ export default function ProfilePreview() {
          <Ionicons name="eye-outline" size={17} color={theme.muted}/>
        </View>
        <View style={{flex:1,gap:3}}>
-         <Text style={{color:theme.foreground,fontSize:19,fontWeight:'700'}}>
-           Mon profil public
-         </Text>
-         <Text style={{color:theme.muted,fontSize:11}}>
-           Tel que les autres membres le voient
-         </Text>
-       </View>
-     </View>
-     <View style={{alignItems:'center',gap:8,marginTop:29,marginBottom:25}}>
-       {avatar?<Image source={{uri:avatar}} style={{width:102,height:102,borderRadius:51}}/>:<Avatar size={102}/>}
-       <Text style={{color:theme.foreground,fontSize:24,fontWeight:'800'}}>{app.name}</Text>
-       {!!app.bio&&<Text style={{fontSize:14,color:theme.muted,lineHeight:22,textAlign:'center',maxWidth:430}}>{app.bio}</Text>}
-       {!!app.church&&<Text style={{fontSize:12,color:theme.muted}}>{app.church}</Text>}
-     </View>
-     <Text style={{fontWeight:'700',fontSize:18,color:theme.foreground,marginBottom:14}}>Mes talents</Text>
-     <View style={{flexDirection:'row',flexWrap:'wrap',gap:10,marginBottom:25}}>
-       {talents.map((t,i)=><ProfileTalentTile key={i} title={t.name}
-         level={levels[t.level]||'À définir'} art={art(t.name)} width={tileWidth}
-         onPress={()=>setSelectedTalent(t)}/>)}
-     </View>
-     {talents.length===0?<Text style={{fontSize:12,color:theme.muted,marginBottom:25}}>Aucun talent enregistré.</Text>:null}
-     <Text style={{fontWeight:'700',fontSize:18,color:theme.foreground,marginBottom:14}}>Mes publications</Text>
-     <SemenceSharesFeed mine publicOnly roundedCards/>
-     {posts.length>0?<ProfilePublicationFeed grid items={posts} contentWidth={contentWidth} roundedCards featuredId={featuredId}/>:
-       <Text style={{fontSize:12,color:theme.muted,lineHeight:19}}>Aucune publication publique disponible dans cet aperçu pour le moment.</Text>}
-   </ScrollView>
-   <Modal visible={selectedTalent!==null} transparent animationType="fade"
-     onRequestClose={()=>setSelectedTalent(null)}>
-     <View style={{flex:1,backgroundColor:'rgba(0,0,0,.57)',justifyContent:'center',padding:19}}>
-       <Pressable onPress={()=>setSelectedTalent(null)} style={{position:'absolute',top:0,bottom:0,left:0,right:0}}/>
-       <View style={{padding:23,borderRadius:15,backgroundColor:theme.surface,
-         maxWidth:430,width:'100%',alignSelf:'center',gap:11}}>
-         <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}>
-           <Text style={{color:theme.foreground,fontSize:22,fontWeight:'700'}}>
-             {selectedTalent?.name}
-           </Text>
-           <Pressable onPress={()=>setSelectedTalent(null)} accessibilityLabel="Fermer">
-             <Ionicons name="close-outline" size={22} color={theme.foreground}/>
-           </Pressable>
-         </View>
-         <Text style={{color:theme.muted,fontSize:12}}>
-           Niveau : {selectedTalent?levels[selectedTalent.level]||'À définir':''}
-         </Text>
-         {!!selectedTalent?.description&&<Text style={{color:theme.foreground,fontSize:13,lineHeight:21}}>
-           {selectedTalent.description}
-         </Text>}
-         {!!selectedTalent?.interests?.length&&<Text style={{color:theme.muted,fontSize:12}}>
-           Recherche : {selectedTalent.interests.join(' · ')}
-         </Text>}
-       </View>
-     </View>
-   </Modal>
-   <Nav/>
- </SafeAreaView>;
-}
          <Text style={{color:theme.muted,fontSize:11}}>
            Tel que les autres membres le voient
          </Text>
