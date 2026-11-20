@@ -54,3 +54,18 @@ if(missing.length){
 }else{
   console.log('Shared canvas present on '+pages.length+' desktop page shells.');
 }
+
+// Regression guard: Semence is a single inspirations stage, without the
+// 'Documents & Inspirations' or 'Notes personnelles' sidebar children.
+// A private notebook shortcut remains in Semence's own content.
+const dreamNav=readFileSync(join(base,'src/components/navigation/Nav.tsx'),'utf8');
+const semence=readFileSync(join(base,'src/components/dream/SemenceStudio.tsx'),'utf8');
+if(!dreamNav.includes("||phase==='Rêve')return phaseNav;")||
+  dreamNav.includes("(phase==='Rêve'?[")||
+  !semence.includes('<DreamWorkspaceShortcuts dream={dream}/>')||
+  semence.includes('<DreamWorkspaceShortcuts dream={dream} showLibrary/>')){
+  console.error('Semence navigation regression: remove its sidebar children and library shortcut.');
+  process.exitCode=1;
+}else{
+  console.log('Semence: no sidebar child entries or redundant library shortcut.');
+}
