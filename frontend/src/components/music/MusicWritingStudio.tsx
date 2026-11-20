@@ -367,113 +367,214 @@ export function MusicWritingStudio({ mode, onModeChange, originalLanguage, sourc
         </Text>:null}
       </View>:null}
     </> : <>
-      <View style={{gap:0,paddingHorizontal:compact?0:11}}>
-        <TextInput value={title} onChangeText={setTitle}
-          placeholder={isNote?'Titre de la note (facultatif)':'Titre des paroles (facultatif)'}
-          placeholderTextColor={theme.muted}
-          accessibilityLabel="Titre du document"
-          style={{fontSize:compact?19:22,fontWeight:'600',lineHeight:30,
-            color:theme.foreground,paddingVertical:10}}/>
-        {!isNote ? <View style={{height:6}}/> : <View style={{height:5}}/>}
-        {isNote?<View style={{flexDirection:'row',alignItems:'center',
-          justifyContent:'space-between',flexWrap:'wrap',
-          borderBottomWidth:1,borderBottomColor:theme.border,paddingVertical:5}}>
-          <View style={{flexDirection:'row',flexWrap:'wrap',alignItems:'center'}}>
-            {toolbar('Titre','text-outline',()=>insert('# ','','Titre'))}
-            {toolbar('Gras','text-outline',()=>insert('**','**','texte'))}
-            {toolbar('Italique','create-outline',()=>insert('*','*','texte'))}
-            {toolbar('Liste','list-outline',()=>insert('• '))}
-            {toolbar('À faire','checkbox-outline',()=>insert('☐ '))}
-          </View>
-          <Pressable accessibilityRole="button" onPress={()=>setPreview(!preview)}
-            style={{minHeight:40,alignItems:'center',justifyContent:'center',paddingHorizontal:8}}>
-            <Text style={{fontSize:12,color:PINK,fontWeight:'600'}}>
-              {preview?'Écrire':'Aperçu'}
-            </Text>
-          </Pressable>
-        </View>:null}
-        {!isNote&&canLinkSections?<View style={{gap:9,paddingVertical:5}}>
-          <View style={{flexDirection:'row',alignItems:'center',flexWrap:'wrap',gap:8}}>
-            <Pressable onPress={()=>{
-              if(!validSelection){setSelectionError('Sélectionne d’abord quelques mots dans les paroles.');return;}
-              setSelectionError('');setSectionPicker(!sectionPicker);
-            }} accessibilityRole="button" accessibilityLabel="Associer le passage sélectionné à une partie"
-              style={{minHeight:39,flexDirection:'row',gap:7,
-                alignItems:'center',paddingHorizontal:9}}>
-              <Ionicons name="link-outline" color={PINK} size={17}/>
-              <Text style={{color:PINK,fontSize:12,fontWeight:'600'}}>
-                Associer le passage sélectionné
+      <View style={{gap:compact?9:12,paddingHorizontal:compact?0:10}}>
+        <View style={{flexDirection:'row',alignItems:'center',gap:10}}>
+          <TextInput value={title} onChangeText={setTitle}
+            placeholder={isNote?'Titre de la note':'Titre des paroles'}
+            placeholderTextColor={theme.muted}
+            accessibilityLabel="Titre du document"
+            style={{flex:1,minWidth:0,fontSize:compact?17:19,
+              fontWeight:'600',lineHeight:26,color:theme.foreground,
+              paddingVertical:7}}/>
+          {!isNote&&onTranslate?<Pressable
+            onPress={()=>{
+              if(!initialFile||dirty){
+                setSelectionError('Enregistre les paroles avant de les traduire.');
+                return;
+              }
+              onTranslate();
+            }}
+            accessibilityRole="button" accessibilityLabel="Ouvrir la page Traduction"
+            style={{minHeight:42,flexDirection:'row',alignItems:'center',
+              gap:5,paddingHorizontal:6}}>
+            <Ionicons name="language-outline" size={17} color={PINK}/>
+            <Text style={{fontSize:12,color:PINK,fontWeight:'600'}}>Traduire</Text>
+          </Pressable>:null}
+        </View>
+        <View style={{height:1,backgroundColor:theme.border,opacity:.7}}/>
+        {isNote?<View style={{gap:8}}>
+          <View style={{flexDirection:'row',alignItems:'center',
+            justifyContent:'space-between',flexWrap:'wrap',
+            borderBottomWidth:1,borderBottomColor:theme.border,paddingVertical:4}}>
+            <View style={{flexDirection:'row',flexWrap:'wrap',alignItems:'center'}}>
+              {toolbar('Titre','text-outline',()=>insert('# ','','Titre'))}
+              {toolbar('Gras','text-outline',()=>insert('**','**','texte'))}
+              {toolbar('Italique','create-outline',()=>insert('*','*','texte'))}
+              {toolbar('Liste','list-outline',()=>insert('• '))}
+              {toolbar('À faire','checkbox-outline',()=>insert('☐ '))}
+            </View>
+            <Pressable onPress={()=>setPreview(!preview)} accessibilityRole="button"
+              style={{minHeight:40,alignItems:'center',justifyContent:'center',
+                paddingHorizontal:8}}>
+              <Text style={{fontSize:12,color:PINK,fontWeight:'600'}}>
+                {preview?'Écrire':'Aperçu'}
               </Text>
             </Pressable>
-            {references.length?<Pressable
-              onPress={()=>setPreview(open=>!open)}
-              accessibilityRole="button"
-              accessibilityLabel={preview?'Modifier les paroles':'Voir les passages associés'}
-              style={{minHeight:39,flexDirection:'row',alignItems:'center',gap:5,
-                paddingHorizontal:7}}>
-              <Ionicons name={preview?'create-outline':'eye-outline'}
-                size={16} color={PINK}/>
-              <Text style={{fontSize:11,fontWeight:'600',color:PINK}}>
-                {preview?'Modifier':'Voir les liens'}
-              </Text>
-            </Pressable>:null}
           </View>
-          {selectionError?<Text style={{color:'#AD3857',fontSize:11}}>{selectionError}</Text>:null}
-          {sectionPicker&&validSelection?<View style={{
-            backgroundColor:theme.surface,borderWidth:1,borderColor:theme.border,
-            borderRadius:12,padding:12,gap:11}}>
-            <Text style={{color:theme.foreground,fontSize:13}} numberOfLines={3}>
+          {preview?<View style={{minHeight:compact?140:180,paddingVertical:13}}>
+            {body.trim()?<MusicNotePreview text={body} color={theme.foreground}/>:
+              <Text style={{fontSize:13,color:theme.muted}}>Ta note apparaîtra ici.</Text>}
+          </View>:editor('Une idée, un souvenir, quelque chose à garder…',
+            compact?230:290)}
+        </View>:<>
+          {validSelection&&!preview?<View style={{
+            borderRadius:10,borderWidth:1,borderColor:theme.border,
+            backgroundColor:theme.surface,paddingHorizontal:10,
+            paddingVertical:8,gap:6}}>
+            <Text numberOfLines={1} style={{fontSize:11,color:theme.muted}}>
               « {selectedExcerpt.trim()} »
             </Text>
-            <Text style={{color:theme.muted,fontSize:11}}>Associer à une partie :</Text>
-            <View style={{flexDirection:'row',flexWrap:'wrap',gap:8}}>
-              {[...sections,...createdSections].map(section=><Pressable
-                key={section.id} onPress={()=>attach(section)} accessibilityRole="button"
-                style={{borderRadius:9,borderWidth:1,borderColor:PINK,
-                  paddingHorizontal:12,minHeight:38,justifyContent:'center'}}>
-                <Text style={{fontSize:12,color:PINK}}>{section.title}</Text>
+            <View style={{flexDirection:'row',flexWrap:'wrap',gap:7}}>
+              {canLinkSections?<Pressable
+                onPress={()=>{setSectionPicker(v=>!v);setCommentEditor(false);
+                  setSelectionError('');}}
+                accessibilityRole="button" accessibilityState={{expanded:sectionPicker}}
+                style={{minHeight:40,flexDirection:'row',alignItems:'center',
+                  gap:6,paddingHorizontal:10,borderRadius:9,
+                  backgroundColor:sectionPicker?(theme.dark?'#452935':'#FAE9EF'):
+                    theme.background}}>
+                <Ionicons name="link-outline" size={16} color={PINK}/>
+                <Text style={{fontSize:12,color:PINK,fontWeight:'600'}}>Associer</Text>
+              </Pressable>:null}
+              <Pressable onPress={()=>{setCommentEditor(v=>!v);setSectionPicker(false);
+                setSelectionError('');}}
+                accessibilityRole="button" accessibilityState={{expanded:commentEditor}}
+                style={{minHeight:40,flexDirection:'row',alignItems:'center',
+                  gap:6,paddingHorizontal:10,borderRadius:9,
+                  backgroundColor:commentEditor?(theme.dark?'#452935':'#FAE9EF'):
+                    theme.background}}>
+                <Ionicons name="chatbubble-ellipses-outline" size={16} color={PINK}/>
+                <Text style={{fontSize:12,color:PINK,fontWeight:'600'}}>Commenter</Text>
+              </Pressable>
+            </View>
+          </View>:null}
+          {sectionPicker&&validSelection&&!preview?<View style={{gap:9,padding:11,
+            borderWidth:1,borderColor:theme.border,borderRadius:10,
+            backgroundColor:theme.surface}}>
+            <Text style={{fontSize:11,color:theme.muted}}>
+              Associer à une partie du morceau
+            </Text>
+            <View style={{flexDirection:'row',flexWrap:'wrap',gap:6}}>
+              {[...sections,...createdSections].map(part=><Pressable
+                key={part.id} onPress={()=>attach(part)}
+                accessibilityRole="button" accessibilityLabel={'Associer à '+part.title}
+                style={{minHeight:36,paddingHorizontal:10,borderRadius:8,
+                  borderWidth:1,borderColor:theme.border,justifyContent:'center'}}>
+                <Text style={{fontSize:12,color:theme.foreground}}>{part.title}</Text>
               </Pressable>)}
+              {['Intro','Couplet','Refrain','Pont'].filter(label=>
+                ![...sections,...createdSections].some(part=>
+                  part.title.toLocaleLowerCase()===label.toLocaleLowerCase()))
+                .map(label=><Pressable key={label}
+                  onPress={()=>createSectionNamed(label)}
+                  accessibilityRole="button" accessibilityLabel={'Créer '+label}
+                  style={{minHeight:36,paddingHorizontal:10,borderRadius:8,
+                    borderWidth:1,borderColor:PINK,justifyContent:'center'}}>
+                  <Text style={{fontSize:12,color:PINK}}>+ {label}</Text>
+                </Pressable>)}
             </View>
             <View style={{flexDirection:'row',alignItems:'center',gap:8}}>
               <TextInput value={customSection} onChangeText={setCustomSection}
-                placeholder="Nouvelle partie : refrain, pont…" placeholderTextColor={theme.muted}
-                style={{minHeight:42,paddingHorizontal:10,borderWidth:1,
-                  borderRadius:9,borderColor:theme.border,color:theme.foreground,flex:1}}/>
+                placeholder="Autre partie…"
+                placeholderTextColor={theme.muted}
+                accessibilityLabel="Nouvelle partie du morceau"
+                style={{flex:1,minWidth:0,minHeight:42,paddingHorizontal:10,
+                  borderWidth:1,borderColor:theme.border,borderRadius:9,
+                  fontSize:13,color:theme.foreground}}/>
               <Pressable onPress={createSection} disabled={!customSection.trim()}
-                accessibilityLabel="Créer cette partie et y associer le passage"
-                style={{minHeight:42,minWidth:42,alignItems:'center',justifyContent:'center'}}>
+                accessibilityRole="button"
+                accessibilityLabel="Créer et associer cette partie"
+                style={{minWidth:44,minHeight:44,alignItems:'center',
+                  justifyContent:'center',opacity:customSection.trim()?1:.4}}>
                 <Ionicons name="add-circle-outline" size={22} color={PINK}/>
               </Pressable>
             </View>
           </View>:null}
-          {references.length?<View style={{gap:6}}>
-            {references.map(ref=><View key={ref.id} style={{flexDirection:'row',
-              alignItems:'center',gap:9,paddingVertical:6}}>
-              <View style={{flex:1,gap:2}}>
-                <Text style={{fontSize:11,fontWeight:'700',color:PINK}}>
-                  {[...sections,...createdSections].find(s=>s.id===ref.sectionId)?.title||'Partie'}
-                </Text>
-                <Text numberOfLines={2} style={{fontSize:12,color:theme.muted}}>
-                  {ref.text}
-                </Text>
-              </View>
-              <Pressable onPress={()=>setReferences(old=>old.filter(x=>x.id!==ref.id))}
-                accessibilityRole="button" accessibilityLabel="Retirer cette association" style={{padding:8}}>
-                <Ionicons name="close-outline" size={18} color={theme.muted}/>
+          {commentEditor&&validSelection&&!preview?<View style={{gap:9,
+            padding:11,borderRadius:10,borderWidth:1,
+            borderColor:theme.border,backgroundColor:theme.surface}}>
+            <Text style={{fontSize:11,color:theme.muted}}>Commentaire sur ce passage</Text>
+            <TextInput value={commentDraft} onChangeText={setCommentDraft}
+              multiline textAlignVertical="top" placeholder="Ta remarque…"
+              placeholderTextColor={theme.muted}
+              accessibilityLabel="Écrire un commentaire sur le passage"
+              style={{minHeight:83,fontSize:13,lineHeight:21,
+                color:theme.foreground,padding:9,borderWidth:1,
+                borderColor:theme.border,borderRadius:9}}/>
+            <View style={{flexDirection:'row',justifyContent:'flex-end',gap:8}}>
+              <Pressable onPress={()=>{setCommentEditor(false);setCommentDraft('');}}
+                accessibilityRole="button" style={{minHeight:40,
+                  justifyContent:'center',paddingHorizontal:10}}>
+                <Text style={{fontSize:12,color:theme.muted}}>Annuler</Text>
               </Pressable>
-            </View>)}
+              <Pressable onPress={addComment} disabled={!commentDraft.trim()}
+                accessibilityRole="button" style={{minHeight:40,
+                  borderRadius:9,justifyContent:'center',paddingHorizontal:13,
+                  backgroundColor:commentDraft.trim()?PINK:theme.border}}>
+                <Text style={{fontSize:12,color:'#fff',fontWeight:'600'}}>Ajouter</Text>
+              </Pressable>
+            </View>
           </View>:null}
-        </View>:null}
-        {!isNote&&canLinkSections&&preview&&references.length?
-          <View style={{gap:8,paddingVertical:15,minHeight:190}}>
-            <LinkedLyricsPreview text={body} references={references}/>
-          </View>:
-          isNote&&preview?<View style={{minHeight:compact?135:190,paddingVertical:15}}>
-            {body.trim()?<MusicNotePreview text={body} color={theme.foreground}/>:
-              <Text style={{fontSize:14,color:theme.muted}}>Un aperçu de ta note apparaîtra ici.</Text>}
-          </View>:editor(isNote?'Une idée, un souvenir, quelque chose à garder…':
-            'Commence à écrire tes paroles…',immersive?
-              Math.max(compact?330:450,height-(compact?310:355)):compact?145:210)}
+          {selectionError?<Text style={{fontSize:11,color:'#AD3857'}}>
+            {selectionError}
+          </Text>:null}
+          {(references.length>0||comments.length>0)?<Pressable
+            onPress={()=>{setPreview(v=>!v);setCommentEditor(false);
+              setSectionPicker(false);}}
+            accessibilityRole="button"
+            accessibilityLabel={preview?'Revenir à l’édition':'Voir les passages annotés'}
+            style={{alignSelf:'flex-end',minHeight:39,flexDirection:'row',
+              alignItems:'center',gap:6,paddingHorizontal:8}}>
+            <Ionicons name={preview?'create-outline':'eye-outline'} size={16} color={PINK}/>
+            <Text style={{fontSize:11,color:PINK,fontWeight:'600'}}>
+              {preview?'Modifier':'Voir les annotations'}
+            </Text>
+          </Pressable>:null}
+          {preview&&(references.length>0||comments.length>0)?
+            <View style={{paddingVertical:13,minHeight:180,gap:14}}>
+              <LinkedLyricsPreview text={body} references={references}
+                comments={comments} compact={compact}/>
+              {references.map(ref=><View key={ref.id}
+                style={{flexDirection:'row',alignItems:'center',gap:8,
+                  paddingVertical:5,borderTopWidth:1,borderColor:theme.border}}>
+                <Ionicons name="bookmark-outline" color={PINK} size={15}/>
+                <View style={{flex:1,gap:3}}>
+                  <Text style={{fontSize:11,color:PINK,fontWeight:'600'}}>
+                    {[...sections,...createdSections].find(x=>x.id===ref.sectionId)?.title||'Partie'}
+                  </Text>
+                  <Text style={{fontSize:11,color:theme.muted}} numberOfLines={2}>
+                    « {ref.text} »
+                  </Text>
+                </View>
+                <Pressable onPress={()=>setReferences(old=>old.filter(x=>x.id!==ref.id))}
+                  accessibilityRole="button" accessibilityLabel="Retirer l’association"
+                  style={{width:43,height:43,alignItems:'center',justifyContent:'center'}}>
+                  <Ionicons name="close-outline" size={17} color={theme.muted}/>
+                </Pressable>
+              </View>)}
+              {comments.map(comment=><View key={comment.id}
+                style={{flexDirection:'row',alignItems:'flex-start',gap:8,
+                  paddingVertical:7,borderTopWidth:1,borderColor:theme.border}}>
+                <Ionicons name="chatbubble-outline" color={PINK} size={15}/>
+                <View style={{flex:1,gap:4}}>
+                  <Text style={{fontSize:11,color:theme.muted}}
+                    numberOfLines={2}>« {comment.text} »</Text>
+                  <Text style={{fontSize:13,lineHeight:20,
+                    color:theme.foreground}}>{comment.comment}</Text>
+                  {body.slice(comment.start,comment.end)!==comment.text?
+                    <Text style={{fontSize:11,color:theme.muted}}>
+                      Passage modifié · à re-sélectionner
+                    </Text>:null}
+                </View>
+                <Pressable onPress={()=>setComments(old=>old.filter(x=>x.id!==comment.id))}
+                  accessibilityRole="button" accessibilityLabel="Supprimer le commentaire"
+                  style={{width:43,height:43,alignItems:'center',justifyContent:'center'}}>
+                  <Ionicons name="close-outline" size={17} color={theme.muted}/>
+                </Pressable>
+              </View>)}
+            </View>:
+            editor('Commence à écrire tes paroles…',compact?240:295)}
+        </>}
       </View>
     </>}
     <View style={{flexDirection:'row',alignItems:'center',
