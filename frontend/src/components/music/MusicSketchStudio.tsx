@@ -21,6 +21,7 @@ type ScoreResult={title:string;events:MusicNotationEvent[];bpm:number;
 type Props={
   initialFile?:MusicProjectFile|null;
   onSave:(value:ScoreResult)=>void;
+  onAutoSave?:(value:ScoreResult)=>void;
   onDirtyChange:(dirty:boolean)=>void;
   active?:boolean;
 };
@@ -364,7 +365,7 @@ function playSound(ctx:AudioContext,pitch:number,drum:boolean,level:number,
   return osc;
 }
 
-export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}:Props){
+export function MusicSketchStudio({initialFile,onSave,onAutoSave,onDirtyChange,active=true}:Props){
   const theme=useAppTheme();
   const {width,height}=useWindowDimensions();
   const compact=width<650;
@@ -446,6 +447,38 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
     JSON.stringify(drumSamples)!==JSON.stringify(initialFile?.drumSamples||{})||
     clef!==(initialFile?.scoreClef||'treble');
   useEffect(()=>onDirtyChange(dirty),[dirty,onDirtyChange]);
+  // Notation edits, MIDI events, pads and instrument settings share a draft.
+  const scoreDraft:ScoreResult={
+    title:title.trim()||'Idée musicale',events,bpm,tone,
+    sampleRootMidi,meterNumerator,meterDenominator,sampleEndMode,
+    sampleRootHz:sampleRootHz??undefined,clef,
+    sampleLocalId:sampleId||undefined,sampleName:sampleName||undefined,
+    drumSamples,
+  };
+  const scoreSnapshot=JSON.stringify(scoreDraft);
+  const autoSaveRef=useRef(onAutoSave);
+  autoSaveRef.current=onAutoSave;
+  const lastSavedScore=useRef('');
+  const saveableScore=!!meterReady&&!recording&&
+    (!!events.length||!!initialFile?.musicEvents?.length);
+  const latestScore=useRef({draft:scoreDraft,snapshot:scoreSnapshot,valid:saveableScore});
+  latestScore.current={draft:scoreDraft,snapshot:scoreSnapshot,valid:saveableScore};
+  useEffect(()=>{
+    if(!saveableScore||!autoSaveRef.current||
+      scoreSnapshot===lastSavedScore.current)return;
+    const timeout=setTimeout(()=>{
+      autoSaveRef.current?.(scoreDraft);
+      lastSavedScore.current=scoreSnapshot;
+      onDirtyChange(false);
+    },550);
+    return ()=>clearTimeout(timeout);
+  },[scoreSnapshot,saveableScore]);
+  useEffect(()=>()=> {
+    const last=latestScore.current;
+    if(last.valid&&last.snapshot!==lastSavedScore.current)
+      autoSaveRef.current?.(last.draft);
+  },[]);
+
   useEffect(()=>()=>{void audioRef.current?.close();},[]);
   useEffect(()=>{
     const id=initialFile?.instrumentSampleLocalId;
