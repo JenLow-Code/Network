@@ -265,7 +265,7 @@ function releaseSound(source:AudioScheduledSourceNode){
 function playSound(ctx:AudioContext,pitch:number,drum:boolean,level:number,
   tone:string,sample:AudioBuffer|null,seconds?:number,
   startDelay=0,sampleRootMidi=60,sampleRootHz?:number,
-  drumSample?:AudioBuffer|null):AudioScheduledSourceNode{
+  drumSample?:AudioBuffer|null,sampleEndMode:SampleEndMode='fade'):AudioScheduledSourceNode{
   const now=ctx.currentTime+Math.max(0,startDelay);
   if(!drum&&tone==='Échantillon'&&!sample)
     throw Error('L’échantillon ne s’est pas chargé. Réimporte-le ou attends la fin du chargement.');
@@ -308,24 +308,34 @@ function playSound(ctx:AudioContext,pitch:number,drum:boolean,level:number,
     if(region.peak<.0001)throw Error('Ce fichier audio est silencieux.');
     const exactRoot=sampleRootHz&&Number.isFinite(sampleRootHz)&&sampleRootHz>0?
       sampleRootHz:midiFrequency(sampleRootMidi);
-    source.playbackRate.setValueAtTime(samplePlaybackRate(pitch,exactRoot),now);
-    // A sample is a reference instrument; loop its stable middle section
-    // while a note is held, rather than exhausting the recorded note once.
-    if(region.loopEnd-region.loopStart>.07){
+    const offset=Math.min(region.offset,Math.max(0,sample.duration-.01));
+    const available=Math.max(.015,sample.duration-offset);
+    const baseRate=samplePlaybackRate(pitch,exactRoot);
+    // Slowing the imported recording preserves its content, but changes pitch.
+    const rate=sampleEndMode==='slow'&&available/baseRate<duration?
+      Math.max(.08,available/duration):baseRate;
+    const soundingSeconds=sampleEndMode==='repeat'?duration:
+      Math.min(duration,available/rate);
+    const actualEnd=now+soundingSeconds;
+    source.playbackRate.setValueAtTime(rate,now);
+    // Only loop when the musician has explicitly requested it.
+    if(sampleEndMode==='repeat'){
       source.loop=true;
-      source.loopStart=region.loopStart;
-      source.loopEnd=region.loopEnd;
+      source.loopStart=region.loopEnd-region.loopStart>.07?region.loopStart:offset;
+      source.loopEnd=region.loopEnd-region.loopStart>.07?region.loopEnd:sample.duration;
     }
-    // Modest automatic level correction for very quiet microphone takes.
     const boost=Math.min(2.5,.62/Math.max(.05,region.peak));
+    const attackTime=Math.min(attack,soundingSeconds*.2);
+    const fadeTime=Math.min(.12,Math.max(.012,soundingSeconds*.22));
+    const level=sourceVolume*boost;
     gain.gain.cancelScheduledValues(now);
     gain.gain.setValueAtTime(.0001,now);
-    gain.gain.linearRampToValueAtTime(sourceVolume*boost,now+attack);
-    gain.gain.setValueAtTime(sourceVolume*boost,Math.max(now+attack,end-release));
-    gain.gain.exponentialRampToValueAtTime(.0001,end);
+    gain.gain.linearRampToValueAtTime(level,now+attackTime);
+    gain.gain.setValueAtTime(level,Math.max(now+attackTime,actualEnd-fadeTime));
+    gain.gain.exponentialRampToValueAtTime(.0001,actualEnd);
     source.connect(gain);
-    source.start(now,Math.min(region.offset,Math.max(0,sample.duration-.01)));
-    source.stop(end);
+    source.start(now,offset);
+    source.stop(actualEnd);
     voiceGains.set(source,{gain,ctx});
     return source;
   }
@@ -523,7 +533,7 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
         const source=playSound(ctx,midi,instrument==='drum',volume[instrument],tone,
           sampleRef.current,instrument==='piano'?12:undefined,
           0,sampleRootMidi,sampleRootHz??undefined,
-          instrument==='drum'?drumBuffer(midi):undefined);
+          instrument==='drum'?drumBuffer(midi):undefined,sampleEndMode);
         if(instrument==='piano')
           liveSourcesRef.current.set(instrument+':'+midi,source);
       }catch{setMessage('Aperçu sonore indisponible sur cet appareil.');}
@@ -653,7 +663,7 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
         ctx,event.midi,event.instrument==='drum',volume[event.instrument],
         tone,sampleRef.current,event.lengthBeats*60/bpm,
         (event.startBeats-first)*60/bpm,sampleRootMidi,sampleRootHz??undefined,
-        drumSample));
+        drumSample,sampleEndMode));
       setPreviewPlaying(true);setPreviewBeat(first);
       previewTick.current=setInterval(()=>{
         setPreviewBeat(Math.min(last,first+
@@ -702,7 +712,7 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
       playSound(ctx,event.midi,event.instrument==='drum',volume[event.instrument],
         tone,sampleRef.current,event.lengthBeats*60/bpm,0,sampleRootMidi,
         sampleRootHz??undefined,
-        event.instrument==='drum'?drumBuffer(event.midi):undefined);
+        event.instrument==='drum'?drumBuffer(event.midi):undefined,sampleEndMode);
     }catch(e){setMessage(e instanceof Error?e.message:
       'Aperçu sonore indisponible sur cet appareil.');}
   };
@@ -716,7 +726,8 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
       const ctx=audioRef.current;
       if(ctx.state==='suspended')void ctx.resume();
       playSound(ctx,midi,false,volume.piano,'Échantillon',
-        sampleRef.current,1.25,0,sampleRootMidi,sampleRootHz??undefined);
+        sampleRef.current,1.25,0,sampleRootMidi,sampleRootHz??undefined,
+        undefined,sampleEndMode);
       setSampleError('');
     }catch(e){
       setSampleError(e instanceof Error?e.message:'Impossible d’écouter le son.');
@@ -1298,6 +1309,33 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
                 <Text style={{fontSize:12,fontWeight:'600',
                   color:theme.foreground}}>+ 1 octave</Text>
               </Pressable>
+            </View>
+            <View style={{paddingTop:10,gap:9,borderTopWidth:1,
+              borderColor:theme.border}}>
+              <Text style={{fontSize:12,fontWeight:'700',color:theme.foreground}}>
+                Si l’enregistrement est plus court que la note
+              </Text>
+              {([
+                {id:'fade',label:'Laisser finir',hint:'Fondu naturel · aucune répétition'},
+                {id:'repeat',label:'Répéter',hint:'Boucler seulement sur demande'},
+                {id:'slow',label:'Ralentir',hint:'Étendre l’audio · change sa hauteur'},
+              ] as const).map(item=>
+                <Pressable key={item.id} onPress={()=>setSampleEndMode(item.id)}
+                  accessibilityRole="radio" accessibilityState={{checked:sampleEndMode===item.id}}
+                  style={{minHeight:47,flexDirection:'row',alignItems:'center',gap:9,
+                    paddingHorizontal:10,borderWidth:1,borderRadius:10,
+                    borderColor:sampleEndMode===item.id?PINK:theme.border,
+                    backgroundColor:sampleEndMode===item.id?
+                      (theme.dark?'#452935':'#FAEAF0'):theme.background}}>
+                  <Ionicons name={sampleEndMode===item.id?'radio-button-on':'radio-button-off'}
+                    size={19} color={sampleEndMode===item.id?PINK:theme.muted}/>
+                  <View style={{flex:1,gap:2}}>
+                    <Text style={{fontSize:12,fontWeight:'700',color:theme.foreground}}>
+                      {item.label}
+                    </Text>
+                    <Text style={{fontSize:10,color:theme.muted}}>{item.hint}</Text>
+                  </View>
+                </Pressable>)}
             </View>
             <Text style={{fontSize:11,color:theme.muted,lineHeight:17}}>
               Le même enregistrement est accordé à toutes les touches du piano.
