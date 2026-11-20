@@ -13,7 +13,7 @@ import { TalentArt } from '@/components/talent/TalentArt';
 import { ProfileTalentTile } from '@/components/talent/ProfileTalentTile';
 import { TalentLevelDots } from '@/components/talent/TalentLevelDots';
 import { useAppTheme } from '@/theme/AppTheme';
-import {workspaceCanvas,workspaceLayout} from '@/theme/workspaceLayout';
+import {workspaceCanvas,workspaceLayout,PAGE_TITLE_FONT_SIZE,PAGE_TITLE_LINE_HEIGHT} from '@/theme/workspaceLayout';
 import { useApp } from '@/context/AppContext';
 import type { PersonPublication } from '@/domain/publication';
 import { useMemberProfile } from '@/lib/api/hooks';
@@ -95,7 +95,7 @@ export default function PublicMemberProfile() {
       <ScrollView contentContainerStyle={{ ...workspaceCanvas(screenWidth), paddingTop:12,paddingBottom:55,gap:19 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           <Pressable onPress={() => router.back()} accessibilityLabel="Retour"><Ionicons name="chevron-back" size={25} color={theme.foreground} /></Pressable>
-          <Text style={{ fontSize: 22, fontWeight: '800', color: theme.foreground }}>Profil public</Text>
+          <Text style={{ fontSize:PAGE_TITLE_FONT_SIZE,lineHeight:PAGE_TITLE_LINE_HEIGHT,fontWeight:'800',color:theme.foreground }}>Profil public</Text>
           <TopActions />
         </View>
         <View style={{ alignItems: 'center', gap: 8, paddingVertical: 16 }}>
