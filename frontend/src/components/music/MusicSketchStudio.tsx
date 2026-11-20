@@ -11,10 +11,13 @@ import {analyzeSamplePitch,midiFrequency,samplePlaybackRate,sampleAudioRegion,dr
 
 const PINK='#CB245C';
 type Instrument='piano'|'drum';
+type SampleEndMode='fade'|'repeat'|'slow';
 type ScoreResult={title:string;events:MusicNotationEvent[];bpm:number;
   tone:string;sampleLocalId?:string;sampleName?:string;
   sampleRootMidi?:number;sampleRootHz?:number;clef?:'treble'|'bass';
-  drumSamples?:MusicProjectFile['drumSamples']};
+  drumSamples?:MusicProjectFile['drumSamples'];
+  meterNumerator?:number;meterDenominator?:number;
+  sampleEndMode?:SampleEndMode};
 type Props={
   initialFile?:MusicProjectFile|null;
   onSave:(value:ScoreResult)=>void;
@@ -357,10 +360,20 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
   const [title,setTitle]=useState(initialFile?.title||'');
   const [events,setEvents]=useState<MusicNotationEvent[]>(initialFile?.musicEvents||[]);
   const [bpm,setBpm]=useState(initialFile?.tempoBpm||100);
+  const [tempoChosen,setTempoChosen]=useState(!!initialFile?.tempoBpm);
+  const [meterNumerator,setMeterNumerator]=useState(initialFile?.timeSignatureNumerator||0);
+  const [meterDenominator,setMeterDenominator]=useState(
+    initialFile?.timeSignatureDenominator||4);
+  const [sampleEndMode,setSampleEndMode]=useState<SampleEndMode>(
+    initialFile?.instrumentSampleEndMode||'fade');
+  const meterReady=tempoChosen&&meterNumerator>=1&&meterNumerator<=32&&
+    [2,4,8,16].includes(meterDenominator);
+  const meterBeats=meterReady?meterNumerator*4/meterDenominator:0;
+  const meterLabel=meterReady?meterNumerator+'/'+meterDenominator:'Mesure à définir';
   const [part,setPart]=useState<Instrument>('piano');
   const [clef,setClef]=useState<'treble'|'bass'>(initialFile?.scoreClef||'treble');
   const [editor,setEditor]=useState<'note'|'chord'|'tempo'|'clef'|null>(null);
-  const [tempoDraft,setTempoDraft]=useState(String(initialFile?.tempoBpm||100));
+  const [tempoDraft,setTempoDraft]=useState(initialFile?.tempoBpm?String(initialFile.tempoBpm):'');
   const [toneOpen,setToneOpen]=useState(false);
   const [previewPlaying,setPreviewPlaying]=useState(false);
   const [previewBeat,setPreviewBeat]=useState<number|null>(null);
@@ -410,7 +423,11 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
   const [midiOpen,setMidiOpen]=useState(false);
   const pristine=JSON.stringify(initialFile?.musicEvents||[]);
   const dirty=title!==(initialFile?.title||'')||
-    JSON.stringify(events)!==pristine||bpm!==(initialFile?.tempoBpm||100)||
+    JSON.stringify(events)!==pristine||
+    (tempoChosen?bpm:undefined)!==initialFile?.tempoBpm||
+    (meterNumerator||undefined)!==initialFile?.timeSignatureNumerator||
+    meterDenominator!==(initialFile?.timeSignatureDenominator||4)||
+    sampleEndMode!==(initialFile?.instrumentSampleEndMode||'fade')||
     tone!==(initialFile?.instrumentTone||'Piano doux')||
     sampleId!==(initialFile?.instrumentSampleLocalId||'')||
     sampleRootMidi!==(initialFile?.instrumentSampleRootMidi??60)||
@@ -481,6 +498,7 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
     return cached.buffer;
   };
   const trigger=(instrument:Instrument,midi:number)=>{
+    if(!meterReady){setMessage('Choisis d’abord le tempo et la mesure avant de placer des notes.');return;}
     if(instrument==='piano'&&liveHeldRef.current.has(instrument+':'+midi))return;
     // An unavailable uploaded sample must not silently record an unheard note.
     if(instrument==='piano'&&tone==='Échantillon'&&!sampleRef.current){
@@ -820,13 +838,13 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
       Math.abs(note.startBeats-event.startBeats)<.001);
     setEditor(simultaneous.length>1?'chord':'note');
   };
-  const openTempo=()=>{setTempoDraft(String(bpm));setEditor('tempo');};
+  const openTempo=()=>{setTempoDraft(tempoChosen?String(bpm):'');setEditor('tempo');};
   const confirmTempo=()=>{
     const value=Number(tempoDraft.replace(',','.'));
     if(!Number.isFinite(value)||value<40||value>240){
       setMessage('Choisis un tempo entre 40 et 240 BPM.');return;
     }
-    setBpm(Math.round(value));setEditor(null);setMessage('');
+    setBpm(Math.round(value));setTempoChosen(true);setEditor(null);setMessage('');
   };
   useEffect(()=>()=>{previewSources.current.forEach(source=>{
     try{source.stop();}catch{}
@@ -1030,6 +1048,43 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
           midiRef.current=null;setMidiPortId('');
         }):null}
       </View>:null}
+    </View>
+    <View style={{gap:9,padding:13,borderWidth:1,
+      borderColor:meterReady?theme.border:PINK,
+      borderRadius:13,backgroundColor:theme.surface}}>
+      <Text style={{fontSize:13,color:theme.foreground,fontWeight:'700'}}>
+        Tempo et mesure
+      </Text>
+      <Text style={{fontSize:11,color:theme.muted,lineHeight:17}}>
+        Choisis le tempo et la signature rythmique avant de jouer.
+        Les barres de mesure suivront exactement ton choix.
+      </Text>
+      <View style={{flexDirection:'row',gap:9,flexWrap:'wrap',alignItems:'center'}}>
+        {control(tempoChosen?bpm+' BPM':'Choisir le tempo',openTempo)}
+        <Text style={{fontSize:12,color:theme.muted}}>Temps</Text>
+        <TextInput value={meterNumerator?String(meterNumerator):''}
+          onChangeText={value=>setMeterNumerator(/^\\d{1,2}$/.test(value)?
+            Number(value):0)}
+          placeholder="—" placeholderTextColor={theme.muted}
+          keyboardType="number-pad" accessibilityLabel="Nombre de temps par mesure"
+          style={{width:48,minHeight:40,borderWidth:1,borderColor:theme.border,
+            borderRadius:9,textAlign:'center',color:theme.foreground}}/>
+        <Text style={{color:theme.foreground,fontSize:16}}>/</Text>
+        {([2,4,8,16] as const).map(denom=>
+          <Pressable key={denom} onPress={()=>setMeterDenominator(denom)}
+            accessibilityRole="button" accessibilityLabel={'Dénominateur '+denom}
+            accessibilityState={{selected:meterDenominator===denom}}
+            style={{minWidth:37,minHeight:40,alignItems:'center',justifyContent:'center',
+              borderRadius:9,borderWidth:1,
+              backgroundColor:meterDenominator===denom?PINK:theme.background,
+              borderColor:meterDenominator===denom?PINK:theme.border}}>
+            <Text style={{color:meterDenominator===denom?'#FFFFFF':theme.foreground,
+              fontWeight:'700'}}>{denom}</Text>
+          </Pressable>)}
+      </View>
+      {!meterReady?<Text style={{fontSize:11,color:PINK}}>
+        Configure ces deux valeurs pour activer la saisie de notes.
+      </Text>:null}
     </View>
     <View style={{flexDirection:'row',gap:8}}>
       {([{id:'piano',label:'Piano',icon:'musical-notes-outline'},
@@ -1395,14 +1450,15 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
       flexDirection:'row',gap:9,alignItems:'center',justifyContent:'flex-end'}}>
       <Pressable onPress={()=>onSave({title:title.trim()||'Idée musicale',
         events,bpm,tone,sampleRootMidi,
+        meterNumerator,meterDenominator,sampleEndMode,
         sampleRootHz:sampleRootHz??undefined,clef,
         sampleLocalId:sampleId||undefined,sampleName:sampleName||undefined,
         drumSamples})}
-        disabled={!events.length||recording}
+        disabled={!meterReady||!events.length||recording}
         accessibilityRole="button"
         style={{minHeight:47,paddingHorizontal:18,borderRadius:12,
           alignItems:'center',justifyContent:'center',
-          backgroundColor:events.length&&!recording?PINK:theme.border}}>
+          backgroundColor:meterReady&&events.length&&!recording?PINK:theme.border}}>
         <Text style={{color:'#fff',fontWeight:'700',fontSize:13}}>
           Conserver la partition
         </Text>
