@@ -17,10 +17,7 @@ export default function Introduction() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
       <View style={{flex:1,...workspaceCanvas(width),paddingTop:12,paddingBottom:55}}>
-        <PageHeader />
-        <Text style={{ fontFamily: 'Caveat_700Bold', fontSize: 33, marginTop: 18 }}>
-          Introduction de confiance
-        </Text>
+        <PageHeader title="Introduction de confiance" />
         <Text style={{ color: '#555', marginTop: 12, lineHeight: 22 }}>
           Tu connais personnellement {friend?.name || 'cette personne'} et tu penses que ses talents
           pourraient aider à réaliser « {d?.title || 'ce rêve'} ».
