@@ -63,8 +63,9 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,h
   const [error,setError]=useState('');
   const [filter,setFilter]=useState<CaptureFilter>('all');
   const [actionsOpen,setActionsOpen]=useState(false);
-  const visibleFiles=files.filter(file=>!file.translationOfFileId||
-    !files.some(original=>original.id===file.translationOfFileId))
+  const visibleFiles=files.filter(file=>!file.renderedFromMidiId)
+    .filter(file=>!file.translationOfFileId||
+      !files.some(original=>original.id===file.translationOfFileId))
     .filter(file=>filter==='all'||fileGroup(file)===filter);
   const selectedFile=files.find(f=>f.id===selected)||null;
   const translationSource=files.find(f=>f.id===translationSourceId)||null;
