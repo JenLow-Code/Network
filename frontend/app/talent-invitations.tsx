@@ -44,8 +44,7 @@ export default function TalentInvitations(){
   };
   return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
     <ScrollView style={{flex:1}} contentContainerStyle={{...workspaceCanvas(width),paddingTop:12,paddingBottom:95,gap:13}}>
-      <PageHeader onBack={()=>router.back()}/>
-      <Text style={{color:theme.foreground,fontFamily:'serif',fontSize:PAGE_TITLE_FONT_SIZE,lineHeight:PAGE_TITLE_LINE_HEIGHT,marginTop:15}}>Mes invitations</Text>
+      <PageHeader title="Mes invitations" onBack={()=>router.back()}/>
       <Text style={{color:theme.muted,fontSize:12,lineHeight:19}}>
         Un talent n'est confirmé que si tu acceptes explicitement de participer au rêve.
       </Text>
