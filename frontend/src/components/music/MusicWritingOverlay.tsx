@@ -57,7 +57,6 @@ export function MusicWritingOverlay({project,mode,startTab,onModeChange,source,i
   const [sourceOpen,setSourceOpen]=useState(false);
   const [sourceWarning,setSourceWarning]=useState('');
   const dirty=writerDirty||translationDirty||scoreDirty;
-  const hasVersion=musicNextState(project).versions.length>0;
   const audioFiles=(project.files||[]).filter(isCaptureAudio);
   const audioChoices=[
     ...audioFiles.map(file=>({
@@ -263,15 +262,15 @@ export function MusicWritingOverlay({project,mode,startTab,onModeChange,source,i
         </View>:null}
         <ScrollView ref={bodyScrollRef} keyboardShouldPersistTaps="handled"
           style={{flex:1,minHeight:0}}
-          contentContainerStyle={{width:'100%',maxWidth:tab==='translation'?1100:860,
-            alignSelf:'center',paddingHorizontal:compact?19:45,
-            paddingTop:compact?14:25,paddingBottom:70,flexGrow:1}}>
+          contentContainerStyle={{width:'100%',maxWidth:tab==='translation'?1080:tab==='score'?1050:720,
+            alignSelf:'center',paddingHorizontal:compact?17:36,
+            paddingTop:compact?12:23,paddingBottom:70,flexGrow:1}}>
           <View style={{display:tab==='lyrics'||tab==='note'?'flex':'none'}}>
             <MusicWritingStudio mode={tab==='note'?'note':'lyrics'}
               onModeChange={onModeChange} showTabs={false}
               initialFile={initialFile&&!initialFile.translationOfFileId
                 &&!initialFile.musicEvents?initialFile:undefined}
-              sections={project.sections} canLinkSections={hasVersion}
+              sections={project.sections} canLinkSections
               originalLanguage={project.originalLanguage}
               onSave={onSave} onDirtyChange={setWriterDirty}
               onTranslate={()=>changeTab('translation')} immersive/>
