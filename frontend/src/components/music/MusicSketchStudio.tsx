@@ -462,7 +462,8 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
     previewSources.current.forEach(source=>{try{source.stop();}catch{}});
     previewSources.current=[];
     if(previewTimeout.current){clearTimeout(previewTimeout.current);previewTimeout.current=null;}
-    setPreviewPlaying(false);
+    if(previewTick.current){clearInterval(previewTick.current);previewTick.current=null;}
+    setPreviewBeat(null);setPreviewPlaying(false);
   };
   const playComposition=()=>{
     if(previewPlaying){stopPreview();return;}
@@ -472,15 +473,25 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
       if(!audioRef.current)audioRef.current=new AudioContext();
       const ctx=audioRef.current;
       if(ctx.state==='suspended')void ctx.resume();
-      const first=Math.min(...events.map(event=>event.startBeats));
-      const last=Math.max(...events.map(event=>event.startBeats+event.lengthBeats));
-      previewSources.current=events.map(event=>playSound(
+      const audible=events.filter(event=>!event.draft);
+      const notes=audible.length?audible:events;
+      const first=Math.min(...notes.map(event=>event.startBeats));
+      const last=Math.max(...notes.map(event=>event.startBeats+event.lengthBeats));
+      const startedAt=ctx.currentTime;
+      previewSources.current=notes.map(event=>playSound(
         ctx,event.midi,event.instrument==='drum',volume[event.instrument],
         tone,sampleRef.current,event.lengthBeats*60/bpm,
         (event.startBeats-first)*60/bpm,sampleRootMidi));
-      setPreviewPlaying(true);
+      setPreviewPlaying(true);setPreviewBeat(first);
+      previewTick.current=setInterval(()=>{
+        setPreviewBeat(Math.min(last,first+
+          Math.max(0,ctx.currentTime-startedAt)*bpm/60));
+      },65);
       previewTimeout.current=setTimeout(()=>{
-        previewSources.current=[];setPreviewPlaying(false);previewTimeout.current=null;
+        previewSources.current=[];
+        if(previewTick.current)clearInterval(previewTick.current);
+        previewTick.current=null;setPreviewBeat(null);
+        setPreviewPlaying(false);previewTimeout.current=null;
       },Math.ceil((last-first)*60000/bpm)+200);
       setMessage('');
     }catch{setMessage('Lecture de la composition impossible dans ce navigateur.');}
@@ -585,7 +596,10 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
   };
   useEffect(()=>()=>{previewSources.current.forEach(source=>{
     try{source.stop();}catch{}
-  });if(previewTimeout.current)clearTimeout(previewTimeout.current);},[]);
+  });
+    if(previewTimeout.current)clearTimeout(previewTimeout.current);
+    if(previewTick.current)clearInterval(previewTick.current);
+  },[]);
   const control=(label:string,fn:()=>void,disabled=false,active=false)=>
     <Pressable onPress={fn} disabled={disabled} accessibilityRole="button"
       accessibilityLabel={label}
@@ -701,6 +715,7 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
     </View>
     <MusicScoreView events={events} compact={compact} instrument={part}
       bpm={bpm} clef={clef} selectedId={selectedId}
+      playheadBeats={previewBeat}
       onSelectNote={recording?undefined:openNote}
       onTempoPress={recording?undefined:openTempo}
       onClefPress={recording?undefined:()=>setEditor('clef')}/>
