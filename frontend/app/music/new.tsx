@@ -97,11 +97,7 @@ export default function NewMusic(){
   return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
     <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{
       ...workspaceCanvas(width),paddingTop:12,paddingBottom:95,gap:17}}>
-      <PageHeader onBack={()=>router.replace('/music-hub')} title="Musique"/>
-      <Text style={{color:theme.foreground,fontSize:PAGE_TITLE_FONT_SIZE,lineHeight:PAGE_TITLE_LINE_HEIGHT,fontWeight:'700',
-        marginTop:WORKSPACE_TITLE_GAP}}>
-        Un nouveau morceau
-      </Text>
+      <PageHeader onBack={()=>router.replace('/music-hub')} title="Un nouveau morceau"/>
       <Pressable onPress={selectCover} disabled={coverBusy} accessibilityRole="button"
         accessibilityLabel={coverLocalId?'Changer la pochette':'Ajouter une pochette'}
         style={{flexDirection:'row',gap:13,alignItems:'center',paddingVertical:4}}>
