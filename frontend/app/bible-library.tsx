@@ -6,7 +6,7 @@ import { router } from 'expo-router';
 import { PageHeader } from '@/components/navigation/PageHeader';
 import { Nav } from '@/components/navigation/Nav';
 import { useAppTheme } from '@/theme/AppTheme';
-import {workspaceCanvas,WORKSPACE_TITLE_GAP} from '@/theme/workspaceLayout';
+import {workspaceCanvas,WORKSPACE_TITLE_GAP,PAGE_TITLE_FONT_SIZE,PAGE_TITLE_LINE_HEIGHT} from '@/theme/workspaceLayout';
 import BiblePassagePicker from '@/components/bible/BiblePassagePicker';
 import BibleSaveDestinationModal from '@/components/bible/BibleSaveDestinationModal';
 import {
@@ -63,12 +63,12 @@ export default function BibleLibraryScreen(){
    <PageHeader/>
    <View style={{gap:8,marginTop:WORKSPACE_TITLE_GAP}}>
      <View style={{flexDirection:'row',alignItems:'center',flexWrap:'wrap',gap:5}}>
-       <Text style={{fontFamily:'serif',fontSize:29,color:theme.foreground}}>Ma Bible en</Text>
+       <Text style={{fontFamily:'serif',fontSize:PAGE_TITLE_FONT_SIZE,lineHeight:PAGE_TITLE_LINE_HEIGHT,color:theme.foreground}}>Ma Bible en</Text>
        <Pressable onPress={()=>setLanguageOpen(open=>!open)}
          accessibilityRole="button" accessibilityLabel="Choisir la langue de la Bible"
          accessibilityState={{expanded:languageOpen}}
          style={{flexDirection:'row',alignItems:'center',gap:5,paddingHorizontal:3,paddingVertical:3}}>
-         <Text style={{fontFamily:'serif',fontSize:29,color:theme.foreground}}>français</Text>
+         <Text style={{fontFamily:'serif',fontSize:PAGE_TITLE_FONT_SIZE,lineHeight:PAGE_TITLE_LINE_HEIGHT,color:theme.foreground}}>français</Text>
          <Ionicons name={languageOpen?'chevron-up':'chevron-down'} size={17} color={theme.muted}/>
        </Pressable>
      </View>
