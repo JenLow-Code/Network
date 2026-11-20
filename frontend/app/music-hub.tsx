@@ -28,13 +28,17 @@ type Proposal = {
   description: string;
   status: string;
   createdAt?: string;
+  reviewState?:string;
   proposer?: { displayName?: string };
 };
 type ProposalItem = Proposal & { direction: 'received' | 'sent' };
 
-function proposalStatus(status: string, received: boolean) {
+function proposalStatus(status: string, received: boolean, reviewState?:string) {
   switch (status) {
-    case 'submitted': return received ? 'À examiner' : 'En attente';
+    case 'submitted': return received
+      ?reviewState==='archived'?'Archivée · rappel à venir':
+        reviewState==='testing'?'En cours d’examen':'À examiner'
+      :reviewState==='in_review'?'Ta proposition est à l’étude':'En attente';
     case 'accepted': return 'Acceptée';
     case 'rejected': return 'Refusée';
     case 'published': return 'Publiée';
@@ -146,7 +150,7 @@ export default function MusicHub() {
     if (p.direction === 'received') {
       const project = items.find(song => song.publishedId === p.trackPublicationId);
       if (project) {
-        router.push({ pathname: '/music-workspace/[id]', params: { id: project.id } });
+        router.push({ pathname: '/music-workspace/[id]', params: { id: project.id,tab:'collaborate' } });
         return;
       }
     }
@@ -183,7 +187,7 @@ export default function MusicHub() {
           {incoming ? p.proposer?.displayName || 'Musicien' : 'Ma proposition'}
         </Text>
         <Text style={{ fontSize: 11, color: incoming && p.status === 'submitted' ? PINK : theme.muted,
-          fontWeight: '700' }}>{proposalStatus(p.status, incoming)}</Text>
+          fontWeight: '700' }}>{proposalStatus(p.status, incoming,p.reviewState)}</Text>
       </View>
     </Pressable>;
   };
