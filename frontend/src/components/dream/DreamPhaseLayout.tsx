@@ -25,10 +25,40 @@ export const phaseAccent: Record<DreamPhase, string> = {
  * Semence, Germination, Croissance and Floraison all share the same treatment.
  */
 export function DreamCoverBackdrop({ uri }: { uri?: string }) {
-  const theme = useAppTheme();
-  if (!uri) return null;
-  // Anchor the cover to the ENTIRE phase viewport, not the 760px reading
-  // column or a fixed 510px band. It stays continuous when content scrolls.
+  const theme=useAppTheme();
+  const {width}=useWindowDimensions();
+  const desktop=Platform.OS==='web'&&workspaceLayout(width).desktop;
+  if(!uri)return null;
+  if(desktop){
+    // The photograph belongs only to the editorial masthead.
+    // It must never wash out the timeline, documents or form controls below.
+    return <View pointerEvents="none" style={{
+      position:'absolute',top:0,left:0,right:0,height:202,overflow:'hidden',
+    }}>
+      <Image source={{uri}} resizeMode="cover" style={[
+        StyleSheet.absoluteFill,
+        ...(Platform.OS==='web'?([{filter:'saturate(1.05) contrast(1.02)'} as any]):[]),
+      ]}/>
+      <Svg width="100%" height="100%" pointerEvents="none"
+        style={StyleSheet.absoluteFill}>
+        <Defs>
+          <LinearGradient id="dream-cover-desktop-masthead"
+            x1="0%" y1="0%" x2="0%" y2="100%">
+            <Stop offset="0%" stopColor={theme.background}
+              stopOpacity={theme.dark?.48:.49}/>
+            <Stop offset="32%" stopColor={theme.background}
+              stopOpacity={theme.dark?.53:.54}/>
+            <Stop offset="72%" stopColor={theme.background}
+              stopOpacity={theme.dark?.83:.85}/>
+            <Stop offset="100%" stopColor={theme.background}
+              stopOpacity={1}/>
+          </LinearGradient>
+        </Defs>
+        <Rect width="100%" height="100%" fill="url(#dream-cover-desktop-masthead)"/>
+      </Svg>
+    </View>;
+  }
+  // Preserve the established full-page imagery on tablet and mobile.
   return (
     <View pointerEvents="none" style={StyleSheet.absoluteFill}>
       <Image source={{ uri }} resizeMode="cover"
