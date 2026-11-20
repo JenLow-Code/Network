@@ -9,7 +9,7 @@ import { Nav } from '@/components/navigation/Nav';
 import { TopActions } from '@/components/navigation/TopActions';
 import { useApp } from '@/context/AppContext';
 import { useAppTheme } from '@/theme/AppTheme';
-import {workspaceCanvas} from '@/theme/workspaceLayout';
+import {workspaceCanvas,PAGE_TITLE_FONT_SIZE,PAGE_TITLE_LINE_HEIGHT} from '@/theme/workspaceLayout';
 import { useLocale, Language, LANGUAGE_KEY } from '@/i18n/locale';
 const choices: { id: Language; label: string }[] = [
   { id: 'fr', label: 'Français' },
@@ -77,7 +77,8 @@ export default function Settings() {
         </View>
         <Text
           style={{
-            fontSize: 30,
+            fontSize:PAGE_TITLE_FONT_SIZE,
+            lineHeight:PAGE_TITLE_LINE_HEIGHT,
             fontWeight: '700',
             color: foreground,
             marginTop: 14,
