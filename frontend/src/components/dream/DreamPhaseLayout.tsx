@@ -9,7 +9,7 @@ import { DreamPhaseIcon } from '@/icons/DreamPhaseIcon';
 import { TopActions } from '@/components/navigation/TopActions';
 import { pickDreamImage } from '@/lib/pickDreamImage';
 import { useDreams } from '@/domain/dreamRepository';
-import { workspaceLayout, PAGE_TITLE_FONT_SIZE, PAGE_TITLE_LINE_HEIGHT } from '@/theme/workspaceLayout';
+import { workspaceLayout } from '@/theme/workspaceLayout';
 
 /** One editorial design language for all four dream phases. */
 export const phaseAccent: Record<DreamPhase, string> = {
@@ -54,34 +54,16 @@ export function DreamPhaseHeader({
     },message=>setCoverError(message));
   };
   return <View style={{marginBottom:desktop?16:18}}>
-    <View style={desktop?{
-      height:0,position:'relative',zIndex:5,overflow:'visible',
-    }:{
-      height:44,flexDirection:'row',alignItems:'center',
-      justifyContent:'space-between',marginBottom:10,
-    }}>
+    <View style={{height:48,flexDirection:'row',alignItems:'center',
+      justifyContent:'space-between',marginBottom:desktop?12:10}}>
       <Pressable accessibilityRole="button" accessibilityLabel="Retour à mes rêves"
-        onPress={onBack} style={desktop?{
-          position:'absolute',left:-51,top:7,width:44,height:44,
-          alignItems:'flex-start',justifyContent:'center',
-        }:{width:44,height:44,alignItems:'flex-start',justifyContent:'center'}}>
+        onPress={onBack} style={{width:44,height:44,alignItems:'flex-start',
+          justifyContent:'center'}}>
         <Ionicons name="arrow-back-outline" size={22} color={theme.foreground}/>
       </Pressable>
-      {!desktop?<View style={{flex:1}}/>:null}
-      {desktop?<View style={{position:'absolute',right:0,top:0}}>
-        <TopActions/>
-      </View>:<TopActions/>}
+      <View style={{flex:1}}/>
+      <TopActions/>
     </View>
-    {desktop?<View style={{
-      marginTop:10,marginBottom:15,paddingRight:110,
-      minHeight:PAGE_TITLE_LINE_HEIGHT,justifyContent:'center',
-    }}>
-      <Text numberOfLines={1} style={{
-        color:theme.foreground,fontFamily:'serif',
-        fontSize:PAGE_TITLE_FONT_SIZE,lineHeight:PAGE_TITLE_LINE_HEIGHT,
-        letterSpacing:-.15,
-      }}>{PHASE_LABELS[phase]}</Text>
-    </View>:null}
     <View style={{
       height:desktop?338:width<520?320:356,
       width:'100%',overflow:'hidden',borderRadius:desktop?17:13,
