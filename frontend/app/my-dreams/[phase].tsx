@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Nav } from '@/components/navigation/Nav';
-import { TopActions } from '@/components/navigation/TopActions';
+import { PageHeader } from '@/components/navigation/PageHeader';
 import { OfflineDreamImage } from '@/components/publication/OfflineDreamImage';
 import { DREAM_PHASES, DreamPhase, PHASE_COLORS } from '@/domain/publication';
 import { useDreams } from '@/domain/dreamRepository';
@@ -24,20 +24,8 @@ export default function Stage() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor:theme.background }}>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{...workspaceCanvas(width),paddingTop:12,paddingBottom:65}}>
-        <View
-          style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
-        >
-          <Pressable onPress={() => router.back()}>
-            <Ionicons name="chevron-back" size={26} color={theme.foreground}/>
-          </Pressable>
-          <TopActions />
-        </View>
-        <View
-          style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
-        >
-          <Text style={{ fontSize:PAGE_TITLE_FONT_SIZE,lineHeight:PAGE_TITLE_LINE_HEIGHT,fontWeight:'700',color:theme.foreground,marginTop:WORKSPACE_TITLE_GAP,marginBottom:10 }}>
-            {current || 'Mes rêves'}
-          </Text>
+        <PageHeader title={current || 'Mes rêves'} />
+        <View style={{flexDirection:'row',justifyContent:'flex-end',marginBottom:10}}>
           <Pressable
             onPress={() => router.push('/my-dream/new')}
             style={{ padding: 8 }}
