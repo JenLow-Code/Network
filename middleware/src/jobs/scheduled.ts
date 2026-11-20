@@ -70,7 +70,7 @@ export async function runScheduled(env: Env, now = new Date()): Promise<Record<s
      JOIN music_tracks t ON t.id=pr.original_track_id
      JOIN publications p ON p.id=t.publication_id
      WHERE pr.status='submitted' AND pr.review_state='archived'
-       AND pr.archive_until IS NOT NULL AND pr.archive_until<=?
+       AND pr.archive_until IS NOT NULL AND pr.datetime(archive_until)<=datetime(?)
      LIMIT 250`, nowIso,
   );
   for(const review of expiredReviews){
@@ -78,7 +78,7 @@ export async function runScheduled(env: Env, now = new Date()): Promise<Record<s
       `UPDATE music_collab_proposals
        SET review_state='pending',archive_until=NULL
        WHERE id=? AND status='submitted' AND review_state='archived'
-         AND archive_until IS NOT NULL AND archive_until<=?`,
+         AND archive_until IS NOT NULL AND datetime(archive_until)<=datetime(?)`,
       review.id,nowIso,
     );
     if(!changed)continue;
