@@ -62,13 +62,14 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
     let live=true;
     setPendingRequests(null);
     if(placement!=='desktop'||!desktop||!currentSong||!publishedKey)return;
-    void api<{items:{trackPublicationId:string;status:string}[]}>(
+    void api<{items:{trackPublicationId:string;status:string;reviewState?:string}[]}>(
       '/api/me/music-proposals?role=received',{auth:'required'})
       .then(result=>{
         if(!live)return;
         const ids=new Set(publishedKey.split('|'));
         setPendingRequests((result.items||[]).filter(proposal=>
-          ids.has(proposal.trackPublicationId)&&proposal.status==='submitted').length);
+          ids.has(proposal.trackPublicationId)&&proposal.status==='submitted'&&
+          proposal.reviewState!=='archived').length);
       })
       .catch(()=>{if(live)setPendingRequests(null);});
     return()=>{live=false;};
