@@ -1,5 +1,5 @@
 import React,{useEffect,useRef,useState} from 'react';
-import {Platform,Pressable,ScrollView,Text,TextInput,View,useWindowDimensions} from 'react-native';
+import {Modal,Platform,Pressable,ScrollView,Text,TextInput,View,useWindowDimensions} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {useAppTheme} from '@/theme/AppTheme';
 import {MusicAudioPeaks} from './MusicAudioPeaksNext';
@@ -21,6 +21,7 @@ type Props={
   duration:number;position:number;onSeek:(position:number)=>void;
   onChangeTrack?:(id:string,patch:Timing)=>void;
   onSelectTrack?:(id:string)=>void;
+  selectedTrackId?:string;
   onToggleMute?:(id:string)=>void;
   onToggleSolo?:(id:string)=>void;
   onMarkTrackRange?:(trackId:string,startSeconds:number,endSeconds:number)=>void;
@@ -45,7 +46,7 @@ const clipInfo=(track:WorkingMusicTrack,file?:MusicProjectFile)=>{
  * Mouse and touch on web use pointer capture; native uses responder callbacks.
  */
 export function MusicArrangementTimeline({version,files,duration,position,onSeek,sections=[],
-  onChangeTrack,onSelectTrack,onToggleMute,onToggleSolo,onMarkTrackRange,
+  onChangeTrack,onSelectTrack,selectedTrackId,onToggleMute,onToggleSolo,onMarkTrackRange,
   onRenameTrack,onEmojiTrack,onRemoveTrack,onReorderTrack,onDropSource}:Props){
   const theme=useAppTheme();
   const {width}=useWindowDimensions();
@@ -186,6 +187,7 @@ export function MusicArrangementTimeline({version,files,duration,position,onSeek
         const element=e.currentTarget;
         const pointerId=e.pointerId;
         try{element.setPointerCapture(pointerId);}catch{}
+        if(mode==='move')onSelectTrack?.(t.id);
         begin(e.clientX,mode,t,file,pointerId);
         if(mode==='move'&&onMarkTrackRange){
           const info=clipInfo(t,file);
@@ -482,6 +484,7 @@ export function MusicArrangementTimeline({version,files,duration,position,onSeek
           const file=files.find(f=>f.id===t.sourceFileId);
           return <View key={t.id} style={{height:rowHeight,
             borderTopWidth:1,borderColor:theme.border,
+            backgroundColor:selectedTrackId===t.id?(theme.dark?'rgba(203,36,92,.12)':'rgba(203,36,92,.06)'):'transparent',
             paddingHorizontal:compact?7:10,justifyContent:'center',gap:5}}>
             <View style={{flexDirection:'row',alignItems:'center',gap:3}}>
               <Pressable accessibilityRole="button" accessibilityLabel={'Emoji de '+t.title}
@@ -499,16 +502,22 @@ export function MusicArrangementTimeline({version,files,duration,position,onSeek
                 accessibilityLabel={'Nom de la piste '+t.title}
                 style={{flex:1,minWidth:0,fontSize:12,color:theme.foreground,
                   borderBottomWidth:1,borderColor:PINK,paddingVertical:3}}/>:
-                <Pressable onPress={()=>{
-                  renamingRef.current=t.id;
-                  setDraftName(t.title);
-                  setRenaming(t.id);
-                }} accessibilityRole="button"
-                  accessibilityLabel={'Toucher pour renommer '+t.title}
-                  style={{flex:1,minWidth:0,paddingVertical:5}}>
-                  <Text numberOfLines={1} style={{fontSize:compact?11:12,
-                    fontWeight:'700',color:theme.foreground}}>{t.title}</Text>
-                </Pressable>}
+                <View style={{flex:1,minWidth:0,flexDirection:'row',alignItems:'center'}}>
+                  <Pressable onPress={()=>onSelectTrack?.(t.id)}
+                    accessibilityRole="button" accessibilityLabel={'Sélectionner la piste '+t.title}
+                    accessibilityState={{selected:selectedTrackId===t.id}}
+                    style={{flex:1,minWidth:0,paddingVertical:5}}>
+                    <Text numberOfLines={1} style={{fontSize:compact?11:12,
+                      fontWeight:'700',color:selectedTrackId===t.id?PINK:theme.foreground}}>
+                      {t.title}
+                    </Text>
+                  </Pressable>
+                  <Pressable accessibilityRole="button" accessibilityLabel={'Renommer '+t.title}
+                    onPress={()=>{renamingRef.current=t.id;setDraftName(t.title);setRenaming(t.id);}}
+                    style={{padding:5}}>
+                    <Ionicons name="pencil-outline" size={13} color={theme.muted}/>
+                  </Pressable>
+                </View>}
             </View>
             <View style={{flexDirection:'row',gap:compact?3:8,alignItems:'center'}}>
               <Pressable onPress={()=>onToggleMute?.(t.id)} accessibilityRole="button"
@@ -725,24 +734,38 @@ export function MusicArrangementTimeline({version,files,duration,position,onSeek
         </View>
       </ScrollView>
     </View>
-    {confirmRemove?<View style={{borderWidth:1,borderColor:theme.border,
-      borderRadius:10,padding:11,gap:10}}>
-      <Text style={{fontSize:12,color:theme.foreground}}>
-        Retirer « {version.tracks.find(t=>t.id===confirmRemove)?.title} » de cette version ?
-        L’enregistrement reste disponible dans Capturer.
-      </Text>
-      <View style={{flexDirection:'row',gap:14}}>
-        <Pressable accessibilityRole="button" onPress={()=>{
-          onRemoveTrack?.(confirmRemove);setConfirmRemove(null);
-        }} style={{padding:8}}>
-          <Text style={{fontSize:12,color:PINK,fontWeight:'700'}}>Retirer</Text>
-        </Pressable>
-        <Pressable accessibilityRole="button" onPress={()=>setConfirmRemove(null)}
-          style={{padding:8}}>
-          <Text style={{fontSize:12,color:theme.muted}}>Annuler</Text>
-        </Pressable>
+    <Modal visible={!!confirmRemove} transparent animationType="fade"
+      onRequestClose={()=>setConfirmRemove(null)}>
+      <View style={{flex:1,justifyContent:'center',alignItems:'center',
+        padding:20,backgroundColor:'rgba(0,0,0,.53)'}}>
+        <Pressable accessibilityLabel="Annuler la suppression" onPress={()=>setConfirmRemove(null)}
+          style={{position:'absolute',top:0,bottom:0,left:0,right:0}}/>
+        <View style={{width:'100%',maxWidth:390,padding:22,gap:14,
+          borderRadius:17,backgroundColor:theme.surface}}>
+          <Ionicons name="trash-outline" size={24} color={PINK}/>
+          <Text style={{fontSize:17,fontWeight:'700',color:theme.foreground}}>
+            Retirer cette piste ?
+          </Text>
+          <Text style={{fontSize:13,lineHeight:21,color:theme.muted}}>
+            « {version.tracks.find(t=>t.id===confirmRemove)?.title} » sera retirée
+            de cette version. L’enregistrement original reste disponible dans Capturer.
+          </Text>
+          <View style={{flexDirection:'row',gap:10,justifyContent:'flex-end'}}>
+            <Pressable accessibilityRole="button" onPress={()=>setConfirmRemove(null)}
+              style={{padding:12,minHeight:42,justifyContent:'center'}}>
+              <Text style={{color:theme.foreground,fontSize:13}}>Annuler</Text>
+            </Pressable>
+            <Pressable accessibilityRole="button" onPress={()=>{
+              if(confirmRemove)onRemoveTrack?.(confirmRemove);
+              setConfirmRemove(null);
+            }} style={{padding:12,minHeight:42,borderRadius:10,
+              backgroundColor:PINK,justifyContent:'center'}}>
+              <Text style={{color:'#fff',fontSize:13,fontWeight:'700'}}>Retirer la piste</Text>
+            </Pressable>
+          </View>
+        </View>
       </View>
-    </View>:null}
+    </Modal>
     <Text style={{fontSize:11,lineHeight:18,color:theme.muted}}>
       Toucher la règle : choisir le départ · Glisser la tête de lecture : avancer ou reculer
     </Text>
