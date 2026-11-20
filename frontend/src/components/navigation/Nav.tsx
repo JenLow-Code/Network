@@ -319,6 +319,7 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
                   {DREAM_PHASES.map((phase,index)=>{
                     const reached=index<=currentPhaseIndex;
                     const selected=currentPhase===phase;
+                    const activeChapter=currentDream.phase===phase;
                     const accent=phase==='Rêve'?'#B88962':
                       phase==='Initiation'?'#819D32':
                       phase==='Croissance'?'#27845B':'#CB245C';
@@ -337,15 +338,15 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
                       <Text numberOfLines={1} style={{flex:1,fontSize:12,
                         color:selected?theme.foreground:theme.muted,
                         fontWeight:selected?'700':'500',
-                        fontStyle:reached&&!selected?'italic':'normal'}}>
+                        fontStyle:reached&&!activeChapter?'italic':'normal'}}>
                         {PHASE_LABELS[phase]}
                       </Text>
                       {!reached?<Ionicons name="lock-closed-outline" size={11}
                         color={theme.muted}/>:null}
                     </Pressable>;
-                    // Only the currently viewed phase owns a submenu.
-                    // Historical phases retain read-only navigation but no duplicated children.
-                    if(!reached||!selected)return phaseNav;
+                    // Only the dream's actual current chapter owns navigation children.
+                    // Browsing historical read-only phases must not open duplicate submenus.
+                    if(!reached||!activeChapter)return phaseNav;
                     return <React.Fragment key={phase}>
                       {phaseNav}
                       <View style={{marginLeft:14,paddingLeft:10,
