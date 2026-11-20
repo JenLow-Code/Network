@@ -535,8 +535,8 @@ export default function DreamExperience({
    ):null}
   </> : null}
   {phase==='Croissance' ? <>
-    <View style={{flexDirection:'row',alignItems:'flex-start',
-      justifyContent:'space-between',gap:12,marginTop:-10,marginBottom:6,
+    <View style={{flexDirection:ws.desktop?'row':'column',alignItems:'flex-start',
+      justifyContent:'space-between',gap:ws.desktop?12:9,marginTop:-10,marginBottom:6,
       paddingHorizontal:3}}>
       {dream.goalDate?<View style={{flex:1,alignItems:'flex-start',
         gap:6,paddingLeft:2,paddingTop:5,minWidth:0}}>
@@ -545,10 +545,11 @@ export default function DreamExperience({
         </Text>
         <View style={{flexDirection:'row',alignItems:'center',gap:6,flexWrap:'wrap'}}>
           <Ionicons name="calendar-outline" size={15} color="#27845B"/>
-          <Text style={{fontSize:15,lineHeight:20,color:theme.foreground,
+          <Text numberOfLines={1} adjustsFontSizeToFit
+            style={{fontSize:15,lineHeight:20,color:theme.foreground,
             fontWeight:'700'}}>
             {new Date(dream.goalDate+'T12:00:00').toLocaleDateString('fr-FR',
-              {day:'numeric',month:'short',year:'numeric'})}
+              {day:'numeric',month:ws.desktop?'long':'short',year:'numeric'})}
           </Text>
         </View>
       </View>:<View style={{flex:1}}/>}
