@@ -486,8 +486,19 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
           Studio de travail
         </Text>
       </View>
+      <View style={{flexDirection:'row',alignItems:'center',gap:8,flexWrap:'wrap'}}>
+        {button(selectedTrackId&&version.tracks.some(t=>t.id===selectedTrackId)?
+          'Copier la piste':'Sélectionner une piste',copySelectedTrack,false,'copy-outline')}
+        {copiedTrack?button('Coller'+(pasteCount?' · '+pasteCount:''),pasteTrack,false,'copy-outline'):null}
+        {selectedTrackId&&version.tracks.some(t=>t.id===selectedTrackId)?
+          button('Réglages',()=>{
+            const track=version.tracks.find(t=>t.id===selectedTrackId)!;
+            openTrack(track,project.files.find(f=>f.id===track.sourceFileId),true);
+          },false,'options-outline'):null}
+      </View>
       {availableSources.length?<MusicSourceBank files={availableSources} onAdd={add}/>:null}
       <MusicStudioTransport key={version.id} version={version} files={project.files}
+        selectedTrackId={selectedTrackId}
         sections={project.sections} seekRequest={seekRequest}
         onPositionChange={setTimelineCursor}
         onTrackChange={editOneTrack}
@@ -503,7 +514,7 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
               history:(state.history||[]).filter(entry=>entry.versionId!==version.id)}});
             setVersionMenu(false);
           }
-          setEditTrack('');metronome.stop();
+          setEditTrack('');setSelectedTrackId('');metronome.stop();
         }}
         onDropSource={(id,time)=>{
           const file=project.files.find(f=>f.id===id);
@@ -512,13 +523,7 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
         onMarkTrackRange={(trackId,start,end)=>setRangeRequest(previous=>({
           trackId,start,end,nonce:(previous?.nonce||0)+1
         }))}
-        onSelectTrack={id=>{
-          const selected=version.tracks.find(t=>t.id===id);
-          if(selected){
-            setShowTracks(true);
-            openTrack(selected,project.files.find(f=>f.id===selected.sourceFileId),true);
-          }
-        }}
+        onSelectTrack={id=>setSelectedTrackId(id)}
         playbackRequest={playbackRequest} pauseRequest={pauseRequest}/>
       {rangeRequest&&version.tracks.some(t=>t.id===rangeRequest.trackId)?(()=>{
         const track=version.tracks.find(t=>t.id===rangeRequest.trackId)!;
@@ -643,7 +648,9 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
                   <Ionicons name={track.instrument?.toLowerCase().includes('voix')?
                     'mic-outline':'musical-notes-outline'} size={17} color={PINK}/>}
               </View>
-              <Pressable onPress={()=>openTrack(track,source)} style={{flex:1,gap:4}}>
+              <Pressable onPress={()=>{
+                setSelectedTrackId(track.id);openTrack(track,source,true);
+              }} style={{flex:1,gap:4}}>
                 <Text style={{fontSize:14,fontWeight:'600',color:theme.foreground}}
                   numberOfLines={1}>{track.title}</Text>
                 <Text style={{fontSize:11,color:theme.muted}}>
@@ -665,45 +672,7 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
               <Text style={{fontSize:11,color:theme.muted}}>
                 Lecture MIDI à intégrer ultérieurement ; les notes originales restent conservées.
               </Text>:null}
-            {editTrack===track.id?<View style={{gap:9,padding:12,
-              backgroundColor:theme.surface,borderRadius:12}}>
-              <Text style={{fontSize:12,fontWeight:'700',color:theme.foreground}}>
-                Position et coupe de cette piste
-              </Text>
-              <Text style={{fontSize:11,lineHeight:18,color:theme.muted}}>
-                Ajuste directement sur la chronologie ou saisis des secondes exactes.
-                L’audio d’origine n’est jamais modifié.
-              </Text>
-              <View style={{flexDirection:'row',gap:8,flexWrap:'wrap'}}>
-                <View style={{flex:1,minWidth:95,gap:5}}>
-                  <Text style={{fontSize:11,color:theme.muted}}>Position dans le morceau</Text>
-                  <TextInput style={input} keyboardType="decimal-pad"
-                    value={trackOffset} onChangeText={setTrackOffset}
-                    accessibilityLabel="Position en secondes"/>
-                </View>
-                <View style={{flex:1,minWidth:95,gap:5}}>
-                  <Text style={{fontSize:11,color:theme.muted}}>Début source</Text>
-                  <TextInput style={input} keyboardType="decimal-pad"
-                    value={trimStart} onChangeText={setTrimStart}
-                    accessibilityLabel="Début de coupe en secondes"/>
-                </View>
-                <View style={{flex:1,minWidth:95,gap:5}}>
-                  <Text style={{fontSize:11,color:theme.muted}}>Fin source</Text>
-                  <TextInput style={input} keyboardType="decimal-pad"
-                    value={trimEnd} onChangeText={setTrimEnd}
-                    accessibilityLabel="Fin de coupe en secondes"/>
-                </View>
-              </View>
-              <View style={{flexDirection:'row',flexWrap:'wrap',gap:8}}>
-                {button('− 0,05 s',()=>editOneTrack(track.id,{
-                  offsetSeconds:Math.max(0,Math.round((track.offsetSeconds-.05)*100)/100)
-                }))}
-                {button('+ 0,05 s',()=>editOneTrack(track.id,{
-                  offsetSeconds:Math.round((track.offsetSeconds+.05)*100)/100
-                }))}
-                {button('Appliquer la position et les coupes',()=>saveTrackTiming(track,source),true)}
-              </View>
-            </View>:null}
+
           </View>;
         }):null}
       </View>
