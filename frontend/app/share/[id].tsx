@@ -17,10 +17,7 @@ export default function ShareInside() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
       <View style={{flex:1,...workspaceCanvas(width),paddingTop:12,paddingBottom:45}}>
-        <PageHeader />
-        <Text style={{ fontFamily: 'Caveat_700Bold', fontSize: 33, marginTop: 15 }}>
-          Partager dans JenLow
-        </Text>
+        <PageHeader title="Partager dans JenLow" />
         <Text style={{ fontSize: 13, color: '#888', marginBottom: 20 }}>
           Envoyer « {item?.title || 'Publication'} » à un contact
         </Text>
