@@ -23,6 +23,8 @@ jobs:
       - run: npm install --no-audit --no-fund
       - name: Check unified desktop page canvases
         run: npm run verify:layout
+      - name: Verify MIDI import-export roundtrip
+        run: npm run verify:midi
       - run: npm run typecheck
       - name: Validate Expo web export
         run: npx expo export --platform web
