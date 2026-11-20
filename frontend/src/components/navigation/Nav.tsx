@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Image, Platform, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { BlurView } from 'expo-blur';
 import Svg, { Defs, LinearGradient, Stop, Rect, Filter, FeTurbulence, FeDisplacementMap } from 'react-native-svg';
@@ -9,6 +9,7 @@ import { useAppTheme } from '@/theme/AppTheme';
 import { useDreams } from '@/domain/dreamRepository';
 import { useMusicWorkspaces } from '@/domain/musicWorkspace';
 import { musicNextState } from '@/domain/musicNext';
+import { api } from '@/lib/api/client';
 import { MusicFolderCover } from '@/components/music/MusicFolderCover';
 import { NetworkMark } from '@/components/brand/NetworkMark';
 import { isPublishedFlower } from '@/domain/dreamWorkspace';
@@ -29,10 +30,12 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
   const desktop=Platform.OS==='web'&&workspaceLayout(width).desktop;
   const [collapsed,setCollapsed]=useState(false);
   const [dreamTreeOpen,setDreamTreeOpen]=useState(true);
-  const params=useGlobalSearchParams<{view?:string;section?:string;focus?:string}>();
+  const params=useGlobalSearchParams<{view?:string;section?:string;focus?:string;tab?:string;intent?:string}>();
   const {items:dreams}=useDreams();
   const {items:musicProjects,patch:patchMusic}=useMusicWorkspaces();
   const [songTreeOpen,setSongTreeOpen]=useState(true);
+  const [versionsTreeOpen,setVersionsTreeOpen]=useState(true);
+  const [pendingRequests,setPendingRequests]=useState<number|null>(null);
   const segments=path.split('/').filter(Boolean);
   const contextId=segments[0]==='my-dream'
     ?(['flower','notes','library'].includes(segments[1])?segments[2]:segments[1])
@@ -50,6 +53,32 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
   const songState=currentSong?musicNextState(currentSong):null;
   const activeVersion=songState?.versions.find(v=>v.id===songState.activeVersionId)
     ||songState?.versions[0];
+  const publishedIds=currentSong
+    ? [...new Set([currentSong.publishedId,...currentSong.versions.map(v=>v.publishedId)]
+        .filter((v):v is string=>!!v))]
+    : [];
+  const publishedKey=publishedIds.slice().sort().join('|');
+  useEffect(()=>{
+    let live=true;
+    setPendingRequests(null);
+    if(placement!=='desktop'||!desktop||!currentSong||!publishedKey)return;
+    void api<{items:{trackPublicationId:string;status:string}[]}>(
+      '/api/me/music-proposals?role=received',{auth:'required'})
+      .then(result=>{
+        if(!live)return;
+        const ids=new Set(publishedKey.split('|'));
+        setPendingRequests((result.items||[]).filter(proposal=>
+          ids.has(proposal.trackPublicationId)&&proposal.status==='submitted').length);
+      })
+      .catch(()=>{if(live)setPendingRequests(null);});
+    return()=>{live=false;};
+  },[placement,desktop,currentSong?.id,publishedKey,path,params.tab]);
+  const openMusicArea=(tab:'capture'|'create'|'collaborate',
+    intent?:'new-version')=>{
+    if(!currentSong)return;
+    router.replace({pathname:'/music-workspace/[id]',
+      params:{id:currentSong.id,tab,...(intent?{intent}:{})}});
+  };
   const openPhase=(phase:DreamPhase)=>{
     if(!currentDream||DREAM_PHASES.indexOf(phase)>currentPhaseIndex)return;
     if(phase==='Témoignage'&&!isPublishedFlower(currentDream)){
@@ -74,7 +103,7 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
   const openMusicVersion=(versionId:string)=>{
     if(!currentSong||!songState)return;
     patchMusic(currentSong.id,{musicNext:{...songState,activeVersionId:versionId}});
-    router.replace({pathname:'/music-workspace/[id]',params:{id:currentSong.id,tab:'create'}});
+    openMusicArea('create');
   };
   const links = [
     {
@@ -244,35 +273,113 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
                     </Text>
                     <Text style={{fontSize:10,color:theme.muted}}
                       numberOfLines={1}>
-                      {activeVersion?.title||'Aucune version'}
+                      {songState?.versions.length
+                        ? songState.versions.length+' version'+
+                          (songState.versions.length>1?'s':'')
+                        : 'Aucune version'}
                     </Text>
                   </View>:null}
                   {!collapsed?<Ionicons
                     name={songTreeOpen?'chevron-up':'chevron-down'}
                     color={theme.muted} size={14}/>:null}
                 </Pressable>
-                {!collapsed&&songTreeOpen?<View style={{marginLeft:12,
-                  paddingLeft:10,borderLeftWidth:1,borderLeftColor:theme.border,
+                {!collapsed&&songTreeOpen?<View style={{marginLeft:10,
+                  paddingLeft:9,borderLeftWidth:1,borderLeftColor:theme.border,
                   gap:2,marginBottom:4}}>
-                  {songState?.versions.length? songState.versions.map(version=>
-                    <Pressable key={version.id} accessibilityRole="button"
-                      accessibilityLabel={'Ouvrir '+version.title}
-                      accessibilityState={{selected:version.id===activeVersion?.id}}
-                      onPress={()=>openMusicVersion(version.id)}
-                      style={{minHeight:32,justifyContent:'center',
-                        paddingHorizontal:8,borderRadius:7,
-                        backgroundColor:version.id===activeVersion?.id?
-                          'rgba(203,36,92,.12)':'transparent'}}>
+                  {([
+                    {key:'capture',title:'Capturer',icon:'mic-outline',
+                      run:()=>openMusicArea('capture')},
+                    {key:'new',title:'Nouvelle version',icon:'add-circle-outline',
+                      run:()=>openMusicArea('capture','new-version')},
+                  ] as const).map(action=>{
+                    const active=path.startsWith('/music-workspace/')&&(
+                      action.key==='capture'?
+                        params.tab!=='create'&&params.tab!=='collaborate'&&
+                        params.intent!=='new-version':
+                        params.tab==='capture'&&params.intent==='new-version');
+                    return <Pressable key={action.key} onPress={action.run}
+                      accessibilityRole="button" accessibilityLabel={action.title}
+                      accessibilityState={{selected:active}}
+                      style={{minHeight:34,flexDirection:'row',alignItems:'center',gap:8,
+                        paddingHorizontal:7,borderRadius:7,
+                        backgroundColor:active?'rgba(203,36,92,.10)':'transparent'}}>
+                      <Ionicons name={action.icon} size={15}
+                        color={active?'#CB245C':theme.muted}/>
+                      <Text numberOfLines={1} style={{flex:1,minWidth:0,fontSize:11,
+                        fontWeight:active?'700':'500',
+                        color:active?'#CB245C':theme.foreground}}>{action.title}</Text>
+                    </Pressable>;
+                  })}
+                  <View style={{flexDirection:'row',alignItems:'center'}}>
+                    <Pressable accessibilityRole="button"
+                      accessibilityLabel="Ouvrir les versions du morceau"
+                      onPress={()=>{setVersionsTreeOpen(true);openMusicArea('create');}}
+                      style={{flex:1,minWidth:0,minHeight:34,flexDirection:'row',
+                        alignItems:'center',gap:8,paddingHorizontal:7}}>
+                      <Ionicons name="albums-outline" size={15}
+                        color={params.tab==='create'?'#CB245C':theme.muted}/>
                       <Text numberOfLines={1} style={{fontSize:11,
-                        fontWeight:version.id===activeVersion?.id?'700':'400',
-                        color:version.id===activeVersion?.id?
-                          '#CB245C':theme.muted}}>
-                        {version.title}
+                        fontWeight:params.tab==='create'?'700':'500',
+                        color:params.tab==='create'?'#CB245C':theme.foreground}}>
+                        Versions
                       </Text>
-                    </Pressable>):<Text style={{fontSize:11,
-                      paddingHorizontal:7,paddingVertical:7,color:theme.muted}}>
-                    Noch keine Version
-                  </Text>}
+                      <Text style={{fontSize:10,color:theme.muted}}>
+                        {songState?.versions.length||0}
+                      </Text>
+                    </Pressable>
+                    <Pressable accessibilityRole="button"
+                      accessibilityLabel={versionsTreeOpen?'Masquer les versions':'Afficher les versions'}
+                      accessibilityState={{expanded:versionsTreeOpen}}
+                      onPress={()=>setVersionsTreeOpen(open=>!open)}
+                      style={{minHeight:34,minWidth:28,alignItems:'center',
+                        justifyContent:'center'}}>
+                      <Ionicons name={versionsTreeOpen?'chevron-up':'chevron-down'}
+                        size={13} color={theme.muted}/>
+                    </Pressable>
+                  </View>
+                  {versionsTreeOpen?<View style={{marginLeft:13,paddingLeft:8,
+                    borderLeftWidth:1,borderLeftColor:theme.border,gap:1}}>
+                    {songState?.versions.length?songState.versions.map(version=>{
+                      const active=version.id===activeVersion?.id&&params.tab==='create';
+                      return <Pressable key={version.id} accessibilityRole="button"
+                        accessibilityLabel={'Ouvrir '+version.title}
+                        accessibilityState={{selected:active}}
+                        onPress={()=>openMusicVersion(version.id)}
+                        style={{minHeight:30,justifyContent:'center',
+                          paddingHorizontal:7,borderRadius:7,
+                          backgroundColor:active?'rgba(203,36,92,.12)':'transparent'}}>
+                        <Text numberOfLines={1} style={{fontSize:11,
+                          fontWeight:active?'700':'400',
+                          color:active?'#CB245C':theme.muted}}>{version.title}</Text>
+                      </Pressable>;
+                    }):<Text style={{fontSize:11,color:theme.muted,
+                      paddingHorizontal:7,paddingVertical:6}}>Aucune version</Text>}
+                  </View>:null}
+                  <Pressable accessibilityRole="button"
+                    accessibilityLabel={'Demandes de collaboration'+
+                      (pendingRequests?' · '+pendingRequests+' en attente':'')}
+                    accessibilityState={{selected:params.tab==='collaborate'}}
+                    onPress={()=>openMusicArea('collaborate')}
+                    style={{minHeight:36,flexDirection:'row',alignItems:'center',gap:8,
+                      paddingHorizontal:7,borderRadius:7,
+                      backgroundColor:params.tab==='collaborate'?
+                        'rgba(203,36,92,.10)':'transparent'}}>
+                    <Ionicons name="people-outline" size={15}
+                      color={params.tab==='collaborate'?'#CB245C':theme.muted}/>
+                    <Text numberOfLines={1} style={{flex:1,minWidth:0,fontSize:11,
+                      fontWeight:params.tab==='collaborate'?'700':'500',
+                      color:params.tab==='collaborate'?'#CB245C':theme.foreground}}>
+                      Demandes reçues
+                    </Text>
+                    {pendingRequests!==null&&pendingRequests>0?
+                      <View style={{minWidth:18,height:18,borderRadius:9,
+                        paddingHorizontal:4,backgroundColor:'#CB245C',
+                        alignItems:'center',justifyContent:'center'}}>
+                        <Text style={{color:'#FFFFFF',fontSize:10,fontWeight:'700'}}>
+                          {pendingRequests}
+                        </Text>
+                      </View>:null}
+                  </Pressable>
                 </View>:null}
               </View>:null}
             {item.path==='/my-space'&&currentDream?
