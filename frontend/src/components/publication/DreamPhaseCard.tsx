@@ -85,7 +85,9 @@ function PersonResourceTiles({ resources, width, compact, dark, onInspect }: {
   const columns = compact ? (width < 270 ? 2 : 3) : (width < 315 ? 3 : 4);
   const gap = compact ? 8 : 9;
   const contentWidth = Math.max(0, width - (compact ? (width < 205 ? 26 : 34) : (width < 440 ? 46 : 64)));
-  const tileWidth = Math.floor((contentWidth - gap * (columns - 1)) / columns);
+  const tileWidth = compact
+    ? Math.floor((contentWidth - gap * (columns - 1)) / columns)
+    : Math.min(132,Math.floor((contentWidth - gap * (columns - 1)) / columns));
   // Discovery uses a delicate, tile-size-relative outline; detail has a fixed, stronger frame.
   const missingTalentBorderWidth = compact
     ? Math.max(0.6, Math.min(1.2, tileWidth / 120))
@@ -101,7 +103,7 @@ function PersonResourceTiles({ resources, width, compact, dark, onInspect }: {
           accessibilityRole={onInspect ? 'button' : undefined}
           accessibilityLabel={resource.title + (resource.confirmed ? ', confirmé' : ', recherché') + (resource.requiredLevel ? ', niveau ' + resource.requiredLevel : '')}
           style={{
-            width: tileWidth, height: compact ? Math.max(70, tileWidth * 0.94) : Math.max(76, tileWidth * 1.08),
+            width: tileWidth, height: compact ? Math.max(70, tileWidth * 0.94) : Math.max(114,Math.min(143,tileWidth * 1.08)),
             backgroundColor: resource.confirmed ? (dark ? '#324536' : '#E1ECE0') : (dark ? '#25252A' : '#FFFCF8'),
             borderRadius: 8, borderWidth: resource.confirmed ? 0 : missingTalentBorderWidth,
             borderColor: compact ? '#D95768' : '#C13B82', overflow: 'hidden',
@@ -326,33 +328,54 @@ export function DreamPhaseCard({ item, width, variant, onOpen, forYou = false }:
       <View style={[base, { backgroundColor: compact ? neutral : 'transparent', position: 'relative' }]}>
         {forYouLabel}
         {withOpen(
-          <View style={{ padding: inset, gap: compact ? 15 : 14 }}>
+          <View style={{padding:inset,gap:compact?15:14}}>
             {compact && topRight()}
             {compact && heading()}
-            {people.length > 0 && (
-              <Text style={{ color: subdued, fontSize: compact ? 10 : 11, letterSpacing: compact ? 0 : 0.3 }}>
-                {!compact && 'GERMINATION  ·  '}
-                {people.filter(resource => resource.confirmed).length}/{people.length} talents trouvés
-              </Text>
-            )}
-            {!compact && people.length === 0 && (
-              <Text style={{ color: subdued, fontSize: 10, fontWeight: '600', letterSpacing: 1.2 }}>
-                GERMINATION
-              </Text>
-            )}
-            {people.length > 0 ? (
-              <PersonResourceTiles resources={people} width={width} compact={compact} dark={dark} onInspect={compact ? undefined : setInspectedTalent} />
-            ) : compact ? (
-              <Text style={{ color: subdued, fontSize: 12, lineHeight: 18 }}>
-                Aucun talent recherché pour ce rêve.
-              </Text>
-            ) : null}
-            {!compact && (
-              <View style={{ gap: 10, paddingTop: people.length ? 5 : 0 }}>
-                {heading()}
-                {!!item.summary && <Text style={{ color: subdued, fontSize: 14, lineHeight: 22 }}>{item.summary}</Text>}
+            {!compact && !!item.image?<View style={{
+              width:'100%',height:194,overflow:'hidden',borderRadius:12,
+              backgroundColor:dark?'#202627':'#D8D4CE',
+            }}>
+              <Image source={{uri:item.image}} resizeMode="cover"
+                style={StyleSheet.absoluteFill}/>
+              <Svg pointerEvents="none" width="100%" height="100%"
+                style={StyleSheet.absoluteFill}>
+                <Defs>
+                  <LinearGradient id={'detail-seed-'+gradientInstanceId}
+                    x1="0%" y1="0%" x2="0%" y2="100%">
+                    <Stop offset="0%" stopColor="#000000" stopOpacity={0}/>
+                    <Stop offset="58%" stopColor="#000000" stopOpacity={.26}/>
+                    <Stop offset="100%" stopColor="#000000" stopOpacity={.82}/>
+                  </LinearGradient>
+                </Defs>
+                <Rect width="100%" height="100%"
+                  fill={'url(#detail-seed-'+gradientInstanceId+')'}/>
+              </Svg>
+              <View style={{position:'absolute',left:19,right:19,bottom:17}}>
+                {heading('#FFFFFF')}
               </View>
-            )}
+            </View>:null}
+            {!compact && !item.image?heading():null}
+            {!compact && !!item.summary?<Text style={{
+              color:subdued,fontSize:14,lineHeight:22,
+            }}>{item.summary}</Text>:null}
+            <View style={{gap:11,paddingTop:compact?0:10}}>
+              {people.length>0 ? (
+                <Text style={{color:subdued,fontSize:compact?10:11,
+                  fontWeight:compact?'400':'600',letterSpacing:compact?0:.3}}>
+                  {!compact && 'GERMINATION  ·  '}
+                  {people.filter(resource=>resource.confirmed).length}/{people.length}
+                  {' talents trouvés'}
+                </Text>
+              ):!compact?<Text style={{color:subdued,fontSize:10,
+                fontWeight:'600',letterSpacing:1.2}}>GERMINATION</Text>:null}
+              {people.length>0 ? (
+                <PersonResourceTiles resources={people} width={width}
+                  compact={compact} dark={dark}
+                  onInspect={compact?undefined:setInspectedTalent}/>
+              ):compact?<Text style={{color:subdued,fontSize:12,lineHeight:18}}>
+                Aucun talent recherché pour ce rêve.
+              </Text>:null}
+            </View>
           </View>,
         )}
         {talentViewer}
