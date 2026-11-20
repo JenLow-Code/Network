@@ -595,14 +595,21 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
       // Preview all notes, including grey drafts, so a musician can hear
       // the result before explicitly validating/exporting them.
       const notes=events;
+      const planned=notes.map(event=>({
+        event,drumSample:event.instrument==='drum'?drumBuffer(event.midi):null,
+      }));
       const first=Math.min(...notes.map(event=>event.startBeats));
-      const last=Math.max(...notes.map(event=>event.startBeats+event.lengthBeats));
+      const last=Math.max(...planned.map(({event,drumSample})=>{
+        const tail=drumSample?drumOneShotSeconds(drumSample.duration,
+          sampleAudioRegion(drumSample).offset)*bpm/60:0;
+        return event.startBeats+Math.max(event.lengthBeats,tail);
+      }));
       const startedAt=ctx.currentTime;
-      previewSources.current=notes.map(event=>playSound(
+      previewSources.current=planned.map(({event,drumSample})=>playSound(
         ctx,event.midi,event.instrument==='drum',volume[event.instrument],
         tone,sampleRef.current,event.lengthBeats*60/bpm,
         (event.startBeats-first)*60/bpm,sampleRootMidi,sampleRootHz??undefined,
-        event.instrument==='drum'?drumBuffer(event.midi):undefined));
+        drumSample));
       setPreviewPlaying(true);setPreviewBeat(first);
       previewTick.current=setInterval(()=>{
         setPreviewBeat(Math.min(last,first+
