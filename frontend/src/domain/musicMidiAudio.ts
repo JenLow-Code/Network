@@ -3,6 +3,7 @@ import {newMusicId} from './musicWorkspace';
 import {parseMusicMidi} from './musicMidiParser';
 import type {MusicNotationEvent} from './musicNotation';
 import type {MusicProjectFile} from './musicWorkspace';
+import {midiFrequency,samplePlaybackRate,sampleRegion} from './musicSampleInstrument';
 
 const RATE=44100;
 const MAX_SECONDS=420;
@@ -14,7 +15,7 @@ const PINK_NOTE_DURATION_TAIL=.15;
  * No external upload, MP3 encoder, or server conversion is involved.
  */
 async function offlineWav(events:MusicNotationEvent[],bpm:number,
-  tone:string,sampleId?:string,sampleRoot=60):Promise<File>{
+  tone:string,sampleId?:string,sampleRoot=60,sampleRootHz?:number):Promise<File>{
   if(typeof OfflineAudioContext==='undefined')
     throw new Error('Conversion MIDI en audio indisponible dans ce navigateur.');
   const notes=events.filter(e=>!e.draft&&Number.isFinite(e.midi)&&
@@ -62,17 +63,38 @@ async function offlineWav(events:MusicNotationEvent[],bpm:number,
     const amp=Math.max(.015,Math.min(1,(n.velocity||90)/127));
     const gain=ctx.createGain();
     gain.gain.setValueAtTime(.00001,start);
-    gain.gain.linearRampToValueAtTime(amp*(drum?.16:.20),start+.008);
-    gain.gain.exponentialRampToValueAtTime(.0001,Math.max(start+.015,stop));
+    const voiceVolume=amp*(drum?.16:.20);
+    const attack=Math.min(.008,length*.2);
+    const release=Math.min(.07,length*.25);
+    gain.gain.linearRampToValueAtTime(voiceVolume,start+attack);
+    gain.gain.setValueAtTime(voiceVolume,Math.max(start+attack,stop-release));
+    gain.gain.exponentialRampToValueAtTime(.0001,stop);
     gain.connect(master);
     if(!drum&&tone==='Échantillon'&&sample){
       const source=ctx.createBufferSource();
       source.buffer=sample;
-      source.playbackRate.value=Math.pow(2,(n.midi-sampleRoot)/12);
-      // Sustain sung notes beyond the sample length; envelope ensures a fade.
-      source.loop=true;
+      const reference=sampleRootHz&&sampleRootHz>0&&Number.isFinite(sampleRootHz)?
+        sampleRootHz:midiFrequency(sampleRoot);
+      source.playbackRate.value=samplePlaybackRate(n.midi,reference);
+      const region=sampleRegion(sample.getChannelData(0),sample.sampleRate);
+      if(region.peak<.0001)
+        throw new Error('Le son personnalisé est silencieux.');
+      if(region.loopEnd-region.loopStart>.07){
+        source.loop=true;
+        source.loopStart=region.loopStart;
+        source.loopEnd=region.loopEnd;
+      }
+      // Use the same conservative loudness correction as the live keyboard.
+      const boost=Math.min(2.5,.62/Math.max(.05,region.peak));
+      gain.gain.cancelScheduledValues(start);
+      gain.gain.setValueAtTime(.00001,start);
+      gain.gain.linearRampToValueAtTime(voiceVolume*boost,start+attack);
+      gain.gain.setValueAtTime(voiceVolume*boost,
+        Math.max(start+attack,stop-release));
+      gain.gain.exponentialRampToValueAtTime(.0001,stop);
       source.connect(gain);
-      source.start(start);source.stop(stop);
+      source.start(start,Math.min(region.offset,Math.max(0,sample.duration-.01)));
+      source.stop(stop);
       continue;
     }
     if(drum&&n.midi!==36){
@@ -137,7 +159,8 @@ export async function renderMidiPreviewWav(source:MusicProjectFile):Promise<File
     notes=parsed.events;bpm=parsed.bpm;
   }
   return offlineWav(notes,bpm,source.instrumentTone||'Piano doux',
-    source.instrumentSampleLocalId,source.instrumentSampleRootMidi??60);
+    source.instrumentSampleLocalId,source.instrumentSampleRootMidi??60,
+    source.instrumentSampleRootHz);
 }
 
 export async function renderMidiSource(source:MusicProjectFile):Promise<MusicProjectFile>{
