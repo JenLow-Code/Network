@@ -109,20 +109,20 @@ export function MusicWritingOverlay({project,mode,startTab,onModeChange,source,i
       <KeyboardAvoidingView behavior={Platform.OS==='ios'?'padding':undefined}
         style={{flex:1,minHeight:0}}>
         <View style={{height:54,flexShrink:0,flexDirection:'row',alignItems:'center',
-          paddingHorizontal:compact?11:24,borderBottomWidth:1,borderColor:theme.border,
+          paddingHorizontal:compact?11:24,
           backgroundColor:theme.background,zIndex:2}}>
           <Pressable onPress={exit} accessibilityRole="button"
             accessibilityLabel="Retour au morceau"
             style={{width:43,height:43,justifyContent:'center',alignItems:'center'}}>
             <Ionicons name="arrow-back-outline" size={23} color={theme.foreground}/>
           </Pressable>
-          <Text style={{flex:1,textAlign:'center',color:theme.foreground,
+          <Text accessibilityLabel={dirty?'Enregistrement en cours':'Enregistrement automatique activé'}
+            style={{flex:1,textAlign:'center',color:theme.foreground,
             fontWeight:'600',fontSize:compact?15:17}}>{page==='compose'?'Composer':'Paroles'}</Text>
           <TopActions/>
         </View>
         {page==='text'?<View style={{paddingHorizontal:compact?13:30,paddingVertical:8,
-          backgroundColor:theme.background,borderBottomWidth:1,
-          borderColor:theme.border,zIndex:2}}>
+          backgroundColor:theme.background,zIndex:2}}>
           <View style={{flexDirection:'row',alignSelf:'center',gap:5,
             maxWidth:700,width:'100%'}}>
             {tabs.map(item=>{
@@ -158,7 +158,7 @@ export function MusicWritingOverlay({project,mode,startTab,onModeChange,source,i
         </View>:null}
         {tab==='lyrics'?<View style={{gap:7,width:'100%',maxWidth:860,
           alignSelf:'center',paddingHorizontal:compact?19:45,
-          paddingVertical:6,borderBottomWidth:1,borderColor:theme.border}}>
+          paddingVertical:6}}>
           <Pressable onPress={()=>{setListen(v=>!v);setChoosing(false);}}
             accessibilityRole="checkbox" accessibilityState={{checked:listen}}
             accessibilityLabel="Écouter une piste ou un enregistrement de Capture"
@@ -208,8 +208,7 @@ export function MusicWritingOverlay({project,mode,startTab,onModeChange,source,i
           </View>:null}
         </View>:null}
         {tab==='translation'?<View style={{width:'100%',maxWidth:1100,alignSelf:'center',
-          paddingHorizontal:compact?19:45,paddingVertical:9,gap:7,
-          borderBottomWidth:1,borderColor:theme.border}}>
+          paddingHorizontal:compact?19:45,paddingVertical:7,gap:5}}>
           <Pressable onPress={()=>setSourceOpen(v=>!v)}
             disabled={!!initialFile} accessibilityRole="button"
             accessibilityState={{expanded:sourceOpen}}
@@ -231,7 +230,8 @@ export function MusicWritingOverlay({project,mode,startTab,onModeChange,source,i
           {sourceWarning?<Text style={{fontSize:12,color:'#AD3857'}}>{sourceWarning}</Text>:null}
         </View>:null}
         <ScrollView ref={bodyScrollRef} keyboardShouldPersistTaps="handled"
-          style={{flex:1,minHeight:0}}
+          style={{flex:1,minHeight:0,backgroundColor:tab==='score'?theme.background:
+            (theme.dark?'#282326':'#FFFCF6')}}
           contentContainerStyle={{width:'100%',maxWidth:tab==='translation'?1080:tab==='score'?1050:720,
             alignSelf:'center',paddingHorizontal:compact?17:36,
             paddingTop:compact?12:23,paddingBottom:70,flexGrow:1}}>
@@ -242,13 +242,14 @@ export function MusicWritingOverlay({project,mode,startTab,onModeChange,source,i
                 &&!initialFile.musicEvents?initialFile:undefined}
               sections={project.sections} canLinkSections
               originalLanguage={project.originalLanguage}
-              onSave={onSave} onDirtyChange={setWriterDirty}
-              onTranslate={()=>changeTab('translation')} immersive/>
+              onSave={onSave} onAutoSave={onAutoSave}
+              onDirtyChange={setWriterDirty}
+              onTranslate={savedId=>{if(savedId)setSourceId(savedId);changeTab('translation');}} immersive/>
           </View>
           <View style={{display:tab==='score'?'flex':'none'}}>
             <MusicSketchStudio initialFile={initialFile?.musicEvents?initialFile:null}
               active={tab==='score'}
-              onSave={onSaveScore} onDirtyChange={setScoreDirty}/>
+              onSave={onSaveScore} onAutoSave={onAutoSaveScore} onDirtyChange={setScoreDirty}/>
           </View>
           {selectedSource?<View style={{display:tab==='translation'?'flex':'none'}}>
             <MusicWritingStudio key={'translate-'+selectedSource.id}
@@ -257,7 +258,8 @@ export function MusicWritingOverlay({project,mode,startTab,onModeChange,source,i
               initialFile={initialFile?.translationOfFileId===selectedSource.id
                 ?initialFile:undefined}
               originalLanguage={project.originalLanguage}
-              onSave={onSave} onRequestTranslator={onRequestTranslator}
+              onSave={onSave} onAutoSave={onAutoSave}
+              onRequestTranslator={onRequestTranslator}
               requestedLanguages={requestedLanguages}
               onDirtyChange={setTranslationDirty} immersive/>
           </View>:tab==='translation'?<View style={{paddingVertical:36,gap:11}}>
