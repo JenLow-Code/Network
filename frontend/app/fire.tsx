@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useApp } from '@/context/AppContext';
 import { Nav } from '@/components/navigation/Nav';
-import { TopActions } from '@/components/navigation/TopActions';
+import { PageHeader } from '@/components/navigation/PageHeader';
 import { publications } from '@/mocks/publications';
 import { PublicationGallery } from '@/components/publication/PublicationGallery';
 import { useAppTheme } from '@/theme/AppTheme';
@@ -37,32 +37,13 @@ export default function FireList() {
         style={{ flex: 1 }}
         contentContainerStyle={{ ...workspaceCanvas(width), paddingTop:12, paddingBottom:55 }}
       >
-        <View
-          style={{
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginTop: 9,
-            marginBottom: 11,
-          }}
-        >
-          <Pressable
-            onPress={() => router.canGoBack() ? router.back() : router.replace('/discover')}
-            accessibilityRole="button"
-            accessibilityLabel="Retour"
-            style={{ width: 44, height: 44, justifyContent: 'center', alignItems: 'center' }}
-          >
-            <Ionicons name="arrow-back-outline" size={23} color={theme.foreground} />
-          </Pressable>
-          <TopActions showFire={false} />
-        </View>
-        <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-          <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center', flexShrink: 1 }}>
-            <Ionicons name="flame" size={24} color="#D71D77" />
-            <Text style={{ fontSize:PAGE_TITLE_FONT_SIZE,lineHeight:PAGE_TITLE_LINE_HEIGHT,fontWeight:'700',color:theme.foreground }}>Ma liste Fire</Text>
-          </View>
-          <Pressable
-            accessibilityRole="button" accessibilityLabel="Créer un dossier Fire"
+        <PageHeader title="Ma liste Fire" showFire={false} />
+        <View style={{flexDirection:'row',alignItems:'center',
+          justifyContent:'space-between',marginBottom:14}}>
+          <Text style={{color:theme.muted,fontSize:12,flex:1,marginRight:12}}>
+            Les publications qui t'inspirent, indépendamment de tes rêves.
+          </Text>
+          <Pressable accessibilityRole="button" accessibilityLabel="Créer un dossier Fire"
             onPress={() => setCreateFolderOpen(true)}
             style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
             <Ionicons name="folder-outline" size={25} color={theme.foreground}/>
@@ -74,9 +55,6 @@ export default function FireList() {
             </View>
           </Pressable>
         </View>
-        <Text style={{ fontSize: 12, color: '#777', marginBottom: 14 }}>
-          Les publications qui t'inspirent, indépendamment de tes rêves.
-        </Text>
         <View
           style={{
             borderWidth: 1,
