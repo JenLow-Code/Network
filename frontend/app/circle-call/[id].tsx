@@ -15,7 +15,7 @@ export default function CircleCall() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
       <View style={{flex:1,...workspaceCanvas(width),paddingTop:12,paddingBottom:55}}>
-        <PageHeader />
+        <PageHeader title="Appel vidéo" />
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
           <Ionicons name="videocam-outline" size={53} color="#D71D77" />
           <Text style={{ fontSize: 20, fontWeight: '700', marginTop: 14 }}>
