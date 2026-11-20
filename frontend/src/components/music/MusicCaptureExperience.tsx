@@ -344,7 +344,7 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
           accessibilityRole="button"
           accessibilityLabel={'Afficher '+option.label.toLowerCase()}
           accessibilityState={{selected}}
-          style={{paddingHorizontal:compact?8:13,minWidth:compact?88:undefined,minHeight:36,alignItems:'center',
+          style={{paddingHorizontal:compact?5:13,width:compact?92:undefined,minHeight:36,alignItems:'center',
             justifyContent:'center',borderRadius:18,
             backgroundColor:selected?(theme.dark?'#492735':'#F9E8EE'):'transparent',
             borderWidth:1,borderColor:selected?PINK:theme.border}}>
