@@ -6,7 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Nav } from '@/components/navigation/Nav';
-import { TopActions } from '@/components/navigation/TopActions';
+import { PageHeader } from '@/components/navigation/PageHeader';
 import { useApp } from '@/context/AppContext';
 import { useAppTheme } from '@/theme/AppTheme';
 import {workspaceCanvas,PAGE_TITLE_FONT_SIZE,PAGE_TITLE_LINE_HEIGHT} from '@/theme/workspaceLayout';
@@ -79,26 +79,8 @@ export default function Settings() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: background }}>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ ...workspaceCanvas(width),paddingTop:12,paddingBottom:55 }}>
-        <View
-          style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
-        >
-          <Pressable onPress={() => router.back()}>
-            <Ionicons name="chevron-back" size={25} />
-          </Pressable>
-          <TopActions />
-        </View>
-        <Text
-          style={{
-            fontSize:PAGE_TITLE_FONT_SIZE,
-            lineHeight:PAGE_TITLE_LINE_HEIGHT,
-            fontWeight: '700',
-            color: foreground,
-            marginTop: 14,
-            marginBottom: 23,
-          }}
-        >
-          {t('settings')}
-        </Text>
+        <PageHeader title={t('settings')} />
+        <View style={{height:23}} />
         <Text style={{ fontSize: 16, fontWeight: '700', marginBottom: 12 }}>{t('language')}</Text>
         <View
           style={{ borderWidth: 1, borderColor: '#e8e8e8', borderRadius: 12, overflow: 'hidden' }}
