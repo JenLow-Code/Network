@@ -8,8 +8,6 @@ import { musicNextState } from '@/domain/musicNext';
 import { useAppTheme } from '@/theme/AppTheme';
 import type { MusicLibraryLayout } from '@/domain/musicLibraryPreferences';
 
-const PINK = '#CB245C';
-
 export function MusicSongCard({ song, layout, width }: {
   song: MusicProject;
   layout: MusicLibraryLayout;
@@ -22,7 +20,6 @@ export function MusicSongCard({ song, layout, width }: {
     pathname: '/music-workspace/[id]',
     params: { id: song.id },
   });
-  const talents = (song.needs || []).filter(need => need.kind === 'talent');
   const info = `${song.files.length} ${song.files.length === 1 ? 'fichier' : 'fichiers'}` +
     (versions ? ` · ${versions} ${versions === 1 ? 'version' : 'versions'}` : '');
 
@@ -52,13 +49,8 @@ export function MusicSongCard({ song, layout, width }: {
     <Text numberOfLines={1} style={{ color: theme.foreground, fontSize: 14,
       fontWeight: '700' }}>{song.title}</Text>
     <Text numberOfLines={1} style={{ color: theme.muted, fontSize: 11 }}>{info}</Text>
-    {talents.length ? <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-      <Ionicons name="people-outline" color={PINK} size={13}/>
-      <Text numberOfLines={1} style={{ color: PINK, fontSize: 11, flex: 1 }}>
-        {talents.map(need => need.label).join(', ')}
-      </Text>
-    </View> : <Text numberOfLines={1} style={{ color: theme.muted, fontSize: 11 }}>
-      {song.description || 'Mon espace de création'}
-    </Text>}
+    {song.description ? <Text numberOfLines={1} style={{ color: theme.muted, fontSize: 11 }}>
+      {song.description}
+    </Text> : null}
   </Pressable>;
 }
