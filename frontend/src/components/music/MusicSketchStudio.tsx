@@ -712,6 +712,52 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
     };
     picker.click();
   };
+  const importDrumSample=(midi:number)=>{
+    if(Platform.OS!=='web'||typeof document==='undefined'){
+      setDrumError('L’import de percussions nécessite le navigateur web.');
+      return;
+    }
+    if(recording||drumLoadingKey!==null)return;
+    const picker=document.createElement('input');
+    picker.type='file';picker.accept='audio/*,.wav,.mp3,.ogg,.m4a';
+    picker.onchange=()=>{
+      const file=picker.files?.[0];
+      if(!file)return;
+      setDrumLoadingKey(midi);setDrumError('');
+      void (async()=>{
+        if(file.size>12*1024*1024)
+          throw Error('Choisis un fichier audio de 12 Mo maximum.');
+        if(!audioRef.current)audioRef.current=new AudioContext();
+        const decoded=await audioRef.current.decodeAudioData(
+          await file.arrayBuffer());
+        if(decoded.duration<.025)
+          throw Error('La percussion doit durer au moins 25 ms.');
+        if(sampleAudioRegion(decoded).peak<.002)
+          throw Error('Cet enregistrement ne contient pas de percussion audible.');
+        const localFileId=await saveDraftAudio(file);
+        drumBuffers.current.set(midi,{id:localFileId,buffer:decoded});
+        setDrumSamples(previous=>({...previous,
+          [String(midi)]:{localFileId,name:file.name}}));
+        setMessage('Son assigné à '+(DRUM_PADS.find(p=>p.midi===midi)?.label||
+          'ce pad')+'. Appuie sur le pad pour l’écouter.');
+      })().catch(e=>setDrumError(e instanceof Error?e.message:
+        'Impossible de charger ce son de percussion.'))
+        .finally(()=>setDrumLoadingKey(null));
+    };
+    picker.click();
+  };
+  const clearDrumSample=(midi:number)=>{
+    if(recording)return;
+    drumBuffers.current.delete(midi);
+    setDrumSamples(previous=>{
+      const next={...previous};
+      delete next[String(midi)];
+      return next;
+    });
+    setDrumError('');
+    setMessage('Son d’origine rétabli pour '+
+      (DRUM_PADS.find(p=>p.midi===midi)?.label||'le pad')+'.');
+  };
   const connectMidi=async()=>{
     if(Platform.OS!=='web'||typeof navigator==='undefined')return;
     const request=(navigator as Navigator&{requestMIDIAccess?:()=>Promise<MidiAccess>})
