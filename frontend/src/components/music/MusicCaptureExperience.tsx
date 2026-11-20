@@ -19,6 +19,32 @@ import type {MusicNotationEvent} from '@/domain/musicNotation';
 import {MusicScoreView} from './MusicSketchStudio';
 
 const PINK='#CB245C';
+/** Mobile-first musical score preview. The same clock drives the audio and
+ * the highlighted staff; touch the staff or pencil to edit the source notes. */
+function MusicScoreCapturePreview({file,onEdit}:{
+  file:MusicProjectFile;onEdit:()=>void;
+}){
+  const theme=useAppTheme();
+  const [time,setTime]=useState<number|null>(null);
+  return <View style={{flexDirection:'row',alignItems:'center',gap:3,
+    minHeight:140}}>
+    <MusicMidiPreview file={file} iconOnly onPlaybackSeconds={setTime}/>
+    <View style={{flex:1,minWidth:0}}>
+      <MusicScoreView events={file.musicEvents||[]} compact
+        instrument={undefined} bpm={file.tempoBpm||100}
+        clef={file.scoreClef||'treble'}
+        playheadBeats={time===null?null:time*(file.tempoBpm||100)/60}
+        onSelectNote={onEdit}/>
+    </View>
+    <Pressable onPress={onEdit} accessibilityRole="button"
+      accessibilityLabel={'Modifier la partition '+file.title}
+      style={{width:39,minHeight:46,alignItems:'center',
+        justifyContent:'center'}}>
+      <Ionicons name="create-outline" color={theme.muted} size={19}/>
+    </Pressable>
+  </View>;
+}
+
 type Props={project:MusicProject;patch:(changes:Partial<MusicProject>)=>void;
   onStartVersion:(source:MusicProjectFile)=>void;onUseFile:(source:MusicProjectFile)=>void;
   hasVersion:boolean};
@@ -344,7 +370,15 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,h
         const translations=files.filter(candidate=>candidate.translationOfFileId===file.id);
         return <View key={file.id} style={{paddingVertical:compact?12:18,
           borderTopWidth:1,borderColor:theme.border,gap:compact?7:12}}>
-          <Pressable onPress={()=>setSelected(file.id)} accessibilityRole="button"
+          <Pressable onPress={()=>{
+            if(file.musicEvents?.length){
+              openWrite('',file.id,'score');return;
+            }
+            if(file.kind==='lyrics'||file.kind==='note'){
+              openWrite(file.translationOfFileId||'',file.id);return;
+            }
+            setSelected(file.id);
+          }} accessibilityRole="button"
             accessibilityLabel={'Ouvrir '+file.title}
             style={{gap:compact?7:11}}>
             {image?
@@ -368,30 +402,18 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,h
                 <Ionicons name="chevron-forward" color={theme.muted} size={16}/>
               </View>}
             {text&&!image&&!sound&&(file.kind==='note'||file.kind==='lyrics')?
-              (file.kind==='note'&&!compact?
-                <MusicNotePreview text={text.split('\n').slice(0,3).join('\n')}
-                  color={theme.foreground}/>:
-                <Text numberOfLines={compact?2:5}
-                  style={{fontFamily:file.kind==='lyrics'?'Georgia':undefined,
-                    fontSize:file.kind==='lyrics'?(compact?15:17):13,
-                    lineHeight:compact?21:25,color:theme.foreground}}>
-                  {text}
-                </Text>):null}
-            {file.musicEvents?.length&&!compact?
-              <MusicScoreView events={file.musicEvents} compact/>:null}
+              <Text numberOfLines={1} ellipsizeMode="tail"
+                style={{fontFamily:file.kind==='lyrics'?'Georgia':undefined,
+                  fontSize:file.kind==='lyrics'?(compact?14:16):13,
+                  lineHeight:compact?21:23,color:theme.muted}}>
+                {text.replace(/\s+/g,' ').trim()}
+              </Text>:null}
           </Pressable>
           {sound&&file.localFileId?<MusicAudioTake file={file} compact
             onOpen={()=>setSelected(file.id)}/>:null}
-          {isMidiSource(file)?<MusicMidiPreview file={file}/>:null}
-          {file.kind==='lyrics'&&!file.translationOfFileId?
-            <Pressable onPress={()=>openWrite(file.id)} accessibilityRole="button"
-              style={{alignSelf:'flex-start',minHeight:38,flexDirection:'row',
-                alignItems:'center',gap:7}}>
-              <Ionicons name="language-outline" size={16} color={PINK}/>
-              <Text style={{fontSize:12,fontWeight:'600',color:PINK}}>
-                Traduire
-              </Text>
-            </Pressable>:null}
+          {file.musicEvents?.length?<MusicScoreCapturePreview file={file}
+            onEdit={()=>openWrite('',file.id,'score')}/>:
+            isMidiSource(file)?<MusicMidiPreview file={file}/>:null}
           {translations.length?<View style={{gap:6}}>
             {translations.map(translation=><Pressable key={translation.id}
               accessibilityRole="button"
