@@ -11,6 +11,7 @@ import { useApp } from '@/context/AppContext';
 import { useAppTheme } from '@/theme/AppTheme';
 import {workspaceCanvas,PAGE_TITLE_FONT_SIZE,PAGE_TITLE_LINE_HEIGHT} from '@/theme/workspaceLayout';
 import { useLocale, Language, LANGUAGE_KEY } from '@/i18n/locale';
+import { readMusicLibraryLayout, writeMusicLibraryLayout, type MusicLibraryLayout } from '@/domain/musicLibraryPreferences';
 const choices: { id: Language; label: string }[] = [
   { id: 'fr', label: 'Français' },
   { id: 'en', label: 'English' },
@@ -22,6 +23,17 @@ export default function Settings() {
   const { language, setLanguage, t, tr } = useLocale();
   const { logout, email } = useApp();
   const [busy, setBusy] = useState(false);
+  const [musicLayout, setMusicLayout] = useState<MusicLibraryLayout>('cards');
+  useEffect(() => {
+    let live = true;
+    setMusicLayout('cards');
+    void readMusicLibraryLayout(email).then(value => { if (live) setMusicLayout(value); }).catch(() => {});
+    return () => { live = false; };
+  }, [email]);
+  const changeMusicLayout = (value: MusicLibraryLayout) => {
+    setMusicLayout(value);
+    void writeMusicLibraryLayout(email, value).catch(() => {});
+  };
   const {
     preference: appearance,
     setPreference: chooseAppearance,
@@ -148,6 +160,29 @@ export default function Settings() {
           Le choix est enregistré et appliqué à la navigation. Certains écrans de démonstration
           utilisent encore des couleurs fixes.
         </Text>
+        <Text style={{ fontSize: 16, fontWeight: '700', color: foreground, marginTop: 30, marginBottom: 10 }}>
+          Affichage de mes morceaux
+        </Text>
+        <Text style={{ fontSize: 12, color: dark ? '#B2B2B2' : '#777', marginBottom: 12 }}>
+          Choisis comment afficher ta bibliothèque musicale. Les cartes sont sélectionnées par défaut.
+        </Text>
+        <View style={{ flexDirection: 'row', gap: 9 }}>
+          {([{ id: 'cards', label: 'Cartes', icon: 'grid-outline' },
+             { id: 'list', label: 'Liste', icon: 'list-outline' }] as const).map(option => (
+            <Pressable key={option.id} accessibilityRole="button"
+              accessibilityLabel={'Afficher mes morceaux en ' + option.label.toLowerCase()}
+              accessibilityState={{ selected: musicLayout === option.id }}
+              onPress={() => changeMusicLayout(option.id)}
+              style={{ flex: 1, borderWidth: 1, borderColor: musicLayout === option.id ? '#CB245C' : border,
+                borderRadius: 11, paddingVertical: 13, paddingHorizontal: 14, minHeight: 46,
+                backgroundColor: musicLayout === option.id ? (dark ? '#422736' : '#F9EBF0') : (dark ? '#202227' : '#FFFFFF'),
+                flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+              <Ionicons name={option.icon} size={18} color={musicLayout === option.id ? '#CB245C' : foreground}/>
+              <Text style={{ color: musicLayout === option.id ? '#CB245C' : foreground, fontSize: 13,
+                fontWeight: musicLayout === option.id ? '700' : '500' }}>{option.label}</Text>
+            </Pressable>
+          ))}
+        </View>
         <Text style={{ fontSize: 16, fontWeight: '700', marginTop: 34, marginBottom: 12 }}>
           {t('account')}
         </Text>
