@@ -282,8 +282,8 @@ export function registerMusic(r: Router): void {
   };
 
   const listProposals = async (ctx: Ctx, viewer: Viewer, where: string, ...args: string[]) => {
-    const rows = await ctx.sql.all<{ id: string; original_track_id: string; proposed_by: string; description: string; status: string; created_at: string; responded_at: string | null; publication_id: string; title: string; publisher_id: string; published_track_id: string | null }>(
-      `SELECT pr.id,pr.original_track_id,pr.proposed_by,pr.description,pr.status,pr.created_at,pr.responded_at,t.publication_id,p.title,t.publisher_id,pr.published_track_id
+    const rows = await ctx.sql.all<{ id: string; original_track_id: string; proposed_by: string; description: string; status: string; created_at: string; responded_at: string | null; publication_id: string; title: string; publisher_id: string; published_track_id: string | null; review_state: string; review_started_at: string | null; archive_until: string | null; archived_once_at: string | null }>(
+      `SELECT pr.id,pr.original_track_id,pr.proposed_by,pr.description,pr.status,pr.created_at,pr.responded_at,t.publication_id,p.title,t.publisher_id,pr.published_track_id,pr.review_state,pr.review_started_at,pr.archive_until,pr.archived_once_at
        FROM music_collab_proposals pr JOIN music_tracks t ON t.id=pr.original_track_id JOIN publications p ON p.id=t.publication_id WHERE ${where} ORDER BY pr.created_at DESC LIMIT 100`,
       ...args,
     );
@@ -292,6 +292,9 @@ export function registerMusic(r: Router): void {
     void viewer;
     return rows.map(x => ({
       id: x.id, trackPublicationId: x.publication_id, trackTitle: x.title, proposer: people.get(x.proposed_by), description: x.description, status: x.status,
+      reviewState: x.status !== 'submitted' ? 'completed' : x.review_state,
+      reviewStartedAt: iso(x.review_started_at), archiveUntil: iso(x.archive_until),
+      canArchive: x.status === 'submitted' && !x.archived_once_at,
       credits: credits.filter(c => c.proposal_id === x.id).map(c => ({ order: c.credit_order, displayName: c.display_name, contribution: c.contribution })),
       createdAt: iso(x.created_at), respondedAt: iso(x.responded_at), publishedTrackId: x.published_track_id,
     }));
@@ -317,6 +320,44 @@ export function registerMusic(r: Router): void {
     if (viewer.id !== p.publisher_id && viewer.id !== p.proposed_by) throw notFound();
     const media = p.audio_asset_id ? await toMediaDTO(ctx, await ctx.sql.first('SELECT * FROM media_assets WHERE id=?', p.audio_asset_id)) : null;
     return { url: media?.url ?? p.external_audio_url, downloadable: false };
+  });
+
+  // Testing and archiving are private review actions. The proposal remains
+  // 'submitted', and the contributor only learns that review has started.
+  r.add('POST', '/api/music-proposals/:id/review', {
+    tag: 'Music', summary: 'Mark a submitted proposal as testing or archive it once for 30 days',
+    auth: 'required',
+  }, async ctx => {
+    const viewer = await ctx.user();
+    const p = await proposalRow(ctx, ctx.param('id'));
+    if (p.publisher_id !== viewer.id) throw notFound();
+    if (p.status !== 'submitted') throw conflict('proposal_already_decided');
+    const v = new V(await ctx.body());
+    const action = v.oneOf('action', ['test','archive'] as const, { required:true });
+    v.done();
+    if (action === 'archive' && p.archived_once_at) throw conflict('proposal_archive_already_used');
+    const changed = action === 'archive'
+      ? await ctx.sql.run(
+        `UPDATE music_collab_proposals
+         SET review_state='archived',review_started_at=coalesce(review_started_at,CURRENT_TIMESTAMP),
+           archived_once_at=CURRENT_TIMESTAMP,archive_until=datetime('now','+30 days')
+         WHERE id=? AND status='submitted' AND archived_once_at IS NULL`, p.id)
+      : await ctx.sql.run(
+        `UPDATE music_collab_proposals
+         SET review_state='testing',review_started_at=coalesce(review_started_at,CURRENT_TIMESTAMP),
+           archive_until=NULL
+         WHERE id=? AND status='submitted'`, p.id);
+    if (!changed) throw conflict('proposal_review_conflict');
+    if (!p.review_started_at) await notifyStmt(ctx.sql, {
+      userId:p.proposed_by,type:'music.proposal.in_review',category:'music',
+      entityType:'music_proposal',entityId:p.id,
+      params:{track:p.title},
+      dedupeKey:'music-review-started:'+p.id,
+    }).run();
+    const review=await ctx.sql.first<{review_state:string;archive_until:string|null;archived_once_at:string|null}>(
+      'SELECT review_state,archive_until,archived_once_at FROM music_collab_proposals WHERE id=?',p.id);
+    return { proposal:{id:p.id,status:'submitted',reviewState:review?.review_state,
+      archiveUntil:iso(review?.archive_until),canArchive:!review?.archived_once_at} };
   });
 
   const decide = (decision: 'accepted' | 'rejected') => async (ctx: Ctx) => {
