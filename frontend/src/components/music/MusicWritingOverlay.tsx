@@ -1,6 +1,6 @@
 import React,{useRef,useState} from 'react';
 import {
-  KeyboardAvoidingView,Modal,Platform,Pressable,ScrollView,
+  KeyboardAvoidingView,Platform,Pressable,ScrollView,
   Text,View,useWindowDimensions,
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
@@ -8,6 +8,7 @@ import {Ionicons} from '@expo/vector-icons';
 import {MusicAudioPreview} from './MusicAudioPreview';
 import {MusicWritingStudio,type MusicWritingResult} from './MusicWritingStudio';
 import {MusicSketchStudio} from './MusicSketchStudio';
+import {TopActions} from '@/components/navigation/TopActions';
 import {useAppTheme} from '@/theme/AppTheme';
 import type {MusicProject,MusicProjectFile} from '@/domain/musicWorkspace';
 import type {MusicNotationEvent} from '@/domain/musicNotation';
@@ -124,55 +125,26 @@ export function MusicWritingOverlay({project,mode,startTab,onModeChange,source,i
     }
     setSourceId(id);setSourceOpen(false);setSourceWarning('');
   };
-  return <Modal visible animationType="slide"
-    presentationStyle="fullScreen" onRequestClose={exit}>
-    <SafeAreaView style={{flex:1,minHeight:0,overflow:'hidden',backgroundColor:theme.background}}>
+  return <SafeAreaView style={{flex:1,minHeight:0,overflow:'hidden',backgroundColor:theme.background}}>
       <KeyboardAvoidingView behavior={Platform.OS==='ios'?'padding':undefined}
         style={{flex:1,minHeight:0}}>
         <View style={{height:54,flexShrink:0,flexDirection:'row',alignItems:'center',
           paddingHorizontal:compact?11:24,borderBottomWidth:1,borderColor:theme.border,
           backgroundColor:theme.background,zIndex:2}}>
           <Pressable onPress={exit} accessibilityRole="button"
-            accessibilityLabel="Fermer l’éditeur"
+            accessibilityLabel="Retour au morceau"
             style={{width:43,height:43,justifyContent:'center',alignItems:'center'}}>
-            <Ionicons name="close" size={23} color={theme.foreground}/>
+            <Ionicons name="arrow-back-outline" size={23} color={theme.foreground}/>
           </Pressable>
           <Text style={{flex:1,textAlign:'center',color:theme.foreground,
             fontWeight:'600',fontSize:compact?15:17}}>{page==='compose'?'Composer':'Écrire'}</Text>
-          <View style={{width:43}}/>
+          <TopActions/>
         </View>
-        <View style={{paddingHorizontal:compact?13:30,paddingVertical:8,
+        {page==='text'?<View style={{paddingHorizontal:compact?13:30,paddingVertical:8,
           backgroundColor:theme.background,borderBottomWidth:1,
-          borderColor:theme.border,gap:7,zIndex:2}}>
-          <View style={{flexDirection:'row',gap:8,alignSelf:'center',
-            width:'100%',maxWidth:compact?550:700}}>
-            {([
-              {id:'text' as const,title:'Écriture',icon:'create-outline' as const},
-              {id:'compose' as const,title:'Composition',icon:'musical-notes-outline' as const},
-            ]).map(item=>{
-              const active=page===item.id;
-              const disabled=!!initialFile&&item.id!==page;
-              return <Pressable key={item.id}
-                onPress={()=>changeTab(item.id==='text'?'lyrics':'score')}
-                disabled={disabled} accessibilityRole="tab"
-                accessibilityState={{selected:active,disabled}}
-                style={{flex:1,minHeight:44,flexDirection:'row',
-                  gap:7,alignItems:'center',justifyContent:'center',
-                  borderRadius:11,borderWidth:1,
-                  borderColor:active?PINK:theme.border,
-                  opacity:disabled?.35:1,
-                  backgroundColor:active?(theme.dark?'#462936':'#FAEAF0'):
-                    theme.surface}}>
-                <Ionicons name={item.icon} color={active?PINK:theme.muted} size={17}/>
-                <Text style={{fontSize:compact?12:13,fontWeight:active?'700':'600',
-                  color:active?theme.foreground:theme.muted}}>
-                  {item.title}
-                </Text>
-              </Pressable>;
-            })}
-          </View>
-          {page==='text'?<View style={{flexDirection:'row',
-            alignSelf:'center',gap:5,maxWidth:700,width:'100%'}}>
+          borderColor:theme.border,zIndex:2}}>
+          <View style={{flexDirection:'row',alignSelf:'center',gap:5,
+            maxWidth:700,width:'100%'}}>
             {tabs.map(item=>{
               const active=tab===item.id;
               const disabled=!!initialFile&&!active&&
@@ -187,16 +159,13 @@ export function MusicWritingOverlay({project,mode,startTab,onModeChange,source,i
                   borderBottomWidth:active?2:0,borderBottomColor:PINK,
                   opacity:disabled?.35:1}}>
                 <Ionicons name={item.icon} color={active?PINK:theme.muted} size={15}/>
-                <Text numberOfLines={1}
-                  style={{fontSize:compact?11:12,
-                    color:active?theme.foreground:theme.muted,
-                    fontWeight:active?'700':'500'}}>
-                  {item.title}
-                </Text>
+                <Text numberOfLines={1} style={{fontSize:compact?11:12,
+                  color:active?theme.foreground:theme.muted,
+                  fontWeight:active?'700':'500'}}>{item.title}</Text>
               </Pressable>;
             })}
-          </View>:null}
-        </View>
+          </View>
+        </View>:null}
         {navigationWarning?<View style={{paddingHorizontal:compact?18:45,
           paddingVertical:9,backgroundColor:theme.surface,flexDirection:'row',
           alignItems:'center',gap:8}}>
@@ -350,6 +319,5 @@ export function MusicWritingOverlay({project,mode,startTab,onModeChange,source,i
           </View>
         </View>:null}
       </KeyboardAvoidingView>
-    </SafeAreaView>
-  </Modal>;
+  </SafeAreaView>;
 }
