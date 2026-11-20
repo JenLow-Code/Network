@@ -24,8 +24,8 @@ export function DreamWorkspaceShortcutRow({
       style={{
         flexDirection: 'row', gap: 6, alignItems: 'center',
         justifyContent: 'flex-end', minHeight: 30,
-        paddingVertical: 5, paddingHorizontal: 3,
-        borderRadius: 9,
+        paddingVertical: 7, paddingHorizontal: highlighted ? 11 : 5,
+        borderRadius: 10,
         backgroundColor: highlighted ? (theme.dark ? '#432D38' : '#FCECF4') : 'transparent',
       }}>
       <Ionicons name={icon} size={13}
