@@ -7,7 +7,7 @@ import { PageHeader } from '@/components/navigation/PageHeader';
 import { Nav } from '@/components/navigation/Nav';
 import { api, ApiRequestError } from '@/lib/api/client';
 import { useAppTheme } from '@/theme/AppTheme';
-import {workspaceCanvas} from '@/theme/workspaceLayout';
+import {workspaceCanvas,PAGE_TITLE_FONT_SIZE,PAGE_TITLE_LINE_HEIGHT} from '@/theme/workspaceLayout';
 
 type Notification={
   id:string;type:string;category?:string;
@@ -45,7 +45,7 @@ export default function Notifications(){
   return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
     <ScrollView style={{flex:1}} contentContainerStyle={{...workspaceCanvas(width),paddingTop:12,paddingBottom:92}}>
       <PageHeader onBack={()=>router.back()}/>
-      <Text style={{fontFamily:'serif',fontSize:29,color:theme.foreground,marginTop:16,marginBottom:6}}>
+      <Text style={{fontFamily:'serif',fontSize:PAGE_TITLE_FONT_SIZE,lineHeight:PAGE_TITLE_LINE_HEIGHT,color:theme.foreground,marginTop:16,marginBottom:6}}>
         Notifications
       </Text>
       <Text style={{fontSize:12,color:theme.muted,lineHeight:20,marginBottom:19}}>
