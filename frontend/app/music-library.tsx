@@ -35,10 +35,9 @@ export default function MusicLibrary() {
     <ScrollView contentContainerStyle={{
       ...workspaceCanvas(width), paddingTop: 8, paddingBottom: 110, gap: 22,
     }}>
-      <PageHeader/>
+      <PageHeader title="Mes morceaux"/>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
         <View style={{ gap: 4, flex: 1 }}>
-          <Text style={{ color: theme.foreground, fontSize: 22, fontWeight: '700' }}>Mes morceaux</Text>
           <Text style={{ color: theme.muted, fontSize: 12 }}>
             {songs.length} {songs.length === 1 ? 'morceau' : 'morceaux'} · {layout === 'cards' ? 'Cartes' : 'Liste'}
           </Text>
