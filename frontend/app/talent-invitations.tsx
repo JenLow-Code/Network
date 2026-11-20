@@ -7,7 +7,7 @@ import { api, ApiRequestError } from '@/lib/api/client';
 import { PageHeader } from '@/components/navigation/PageHeader';
 import { Nav } from '@/components/navigation/Nav';
 import { useAppTheme } from '@/theme/AppTheme';
-import {workspaceCanvas} from '@/theme/workspaceLayout';
+import {workspaceCanvas,PAGE_TITLE_FONT_SIZE,PAGE_TITLE_LINE_HEIGHT} from '@/theme/workspaceLayout';
 
 type Invitation={
   id:string;need:string;needId:string;dreamId:string;dreamTitle:string;
@@ -45,7 +45,7 @@ export default function TalentInvitations(){
   return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
     <ScrollView style={{flex:1}} contentContainerStyle={{...workspaceCanvas(width),paddingTop:12,paddingBottom:95,gap:13}}>
       <PageHeader onBack={()=>router.back()}/>
-      <Text style={{color:theme.foreground,fontFamily:'serif',fontSize:28,marginTop:15}}>Mes invitations</Text>
+      <Text style={{color:theme.foreground,fontFamily:'serif',fontSize:PAGE_TITLE_FONT_SIZE,lineHeight:PAGE_TITLE_LINE_HEIGHT,marginTop:15}}>Mes invitations</Text>
       <Text style={{color:theme.muted,fontSize:12,lineHeight:19}}>
         Un talent n'est confirmé que si tu acceptes explicitement de participer au rêve.
       </Text>
