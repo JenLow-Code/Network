@@ -20,6 +20,8 @@ export function MusicCollaborateExperience({project,patch}:Props){
   const theme=useAppTheme();
   const [proposals,setProposals]=useState<Proposal[]>([]);
   const [selected,setSelected]=useState('');
+  const [demoOpen,setDemoOpen]=useState(true);
+  const [demoDecision,setDemoDecision]=useState<'pending'|'accepted'|'rejected'>('pending');
   const [editingNeedId,setEditingNeedId]=useState('');
   const [shareOpen,setShareOpen]=useState(false);
   const [recipient,setRecipient]=useState('');
@@ -57,6 +59,82 @@ export function MusicCollaborateExperience({project,patch}:Props){
     <MusicMissingTalentAction project={project} patch={patch} primary
       editNeed={needs.find(need=>need.id===editingNeedId)||null}
       onFinished={()=>setEditingNeedId('')}/>
+    {!proposals.length?<View style={{gap:10}}>
+      <View style={{flexDirection:'row',alignItems:'center',gap:9,flexWrap:'wrap'}}>
+        <Text style={{fontSize:16,fontWeight:'700',color:theme.foreground}}>
+          Demande de collaboration — aperçu
+        </Text>
+        <View style={{borderRadius:7,paddingHorizontal:8,paddingVertical:5,
+          backgroundColor:theme.dark?'#47343A':'#F5E5EA'}}>
+          <Text style={{fontSize:10,fontWeight:'700',color:PINK}}>EXEMPLE · NON ENVOYÉ</Text>
+        </View>
+      </View>
+      <Pressable onPress={()=>setDemoOpen(v=>!v)} accessibilityRole="button"
+        accessibilityState={{expanded:demoOpen}}
+        style={{padding:13,borderRadius:13,borderWidth:1,borderColor:theme.border,
+          backgroundColor:theme.surface,gap:11}}>
+        <View style={{flexDirection:'row',alignItems:'center',gap:11}}>
+          <View style={{width:42,height:42,borderRadius:21,alignItems:'center',
+            justifyContent:'center',backgroundColor:theme.dark?'#402C35':'#FBE9EF'}}>
+            <Ionicons name="person-outline" size={21} color={PINK}/>
+          </View>
+          <View style={{flex:1,gap:3}}>
+            <Text style={{fontSize:13,fontWeight:'700',color:theme.foreground}}>
+              Camille · Guitariste
+            </Text>
+            <Text style={{fontSize:11,color:theme.muted}}>
+              Propose de contribuer à {project.title}
+            </Text>
+          </View>
+          <Ionicons name={demoOpen?'chevron-up':'chevron-down'} color={theme.muted} size={18}/>
+        </View>
+        {demoOpen?<View style={{gap:12}}>
+          <Text style={{fontSize:12,lineHeight:20,color:theme.foreground}}>
+            « J’aimerais proposer une partie de guitare pour accompagner le refrain.
+            Je peux enregistrer une nouvelle prise et te l’envoyer pour validation. »
+          </Text>
+          <View style={{flexDirection:'row',gap:8,alignItems:'center',
+            borderRadius:10,padding:11,backgroundColor:theme.background}}>
+            <Ionicons name="musical-notes-outline" size={20} color={PINK}/>
+            <View style={{flex:1,gap:3}}>
+              <Text style={{fontSize:12,fontWeight:'600',color:theme.foreground}}>
+                Proposition de piste · Guitare
+              </Text>
+              <Text style={{fontSize:11,color:theme.muted}}>
+                Aucun audio réel joint à cet exemple
+              </Text>
+            </View>
+          </View>
+          <Text style={{fontSize:11,color:theme.muted,lineHeight:18}}>
+            Une véritable demande afficherait ici la prise proposée, son auteur
+            et les actions de validation. Rien ne rejoint la version automatiquement.
+          </Text>
+          {demoDecision==='pending'?<View style={{flexDirection:'row',gap:8}}>
+            <Pressable onPress={()=>setDemoDecision('rejected')} accessibilityRole="button"
+              style={{minHeight:42,borderRadius:10,paddingHorizontal:14,
+                borderWidth:1,borderColor:theme.border,justifyContent:'center'}}>
+              <Text style={{fontSize:12,color:theme.foreground,fontWeight:'600'}}>Refuser</Text>
+            </Pressable>
+            <Pressable onPress={()=>setDemoDecision('accepted')} accessibilityRole="button"
+              style={{minHeight:42,borderRadius:10,paddingHorizontal:14,
+                backgroundColor:PINK,justifyContent:'center'}}>
+              <Text style={{fontSize:12,color:'#fff',fontWeight:'700'}}>Accepter</Text>
+            </Pressable>
+          </View>:<View style={{flexDirection:'row',gap:10,alignItems:'center'}}>
+            <Ionicons name="checkmark-circle-outline" size={18} color={PINK}/>
+            <Text style={{flex:1,fontSize:11,color:theme.muted}}>
+              Simulation : {demoDecision==='accepted'?'demande acceptée':'demande refusée'}.
+              Aucune donnée enregistrée.
+            </Text>
+            <Pressable onPress={()=>setDemoDecision('pending')}
+              accessibilityRole="button" accessibilityLabel="Recommencer la simulation"
+              style={{padding:8}}>
+              <Ionicons name="refresh-outline" size={19} color={PINK}/>
+            </Pressable>
+          </View>}
+        </View>:null}
+      </Pressable>
+    </View>:null}
     {proposals.length?<View style={{gap:12}}>
       <View style={{flexDirection:'row',alignItems:'center',gap:8}}>
         <Text style={{fontSize:17,fontWeight:'700',color:theme.foreground}}>
