@@ -65,8 +65,6 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
     if(kind==='resources'){
       router.replace({pathname:'/my-dream/[id]',
         params:{id,view:phase,focus:'resources'}});
-    }else if(kind==='library'&&phase==='Rêve'){
-      router.replace({pathname:'/my-dream/[id]',params:{id,view:'Rêve'}});
     }else {
       router.replace({pathname:kind==='notes'?'/my-dream/notes/[id]':
         '/my-dream/library/[id]',
@@ -395,8 +393,6 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
         </ScrollView>
       </View>
       <View style={{gap:12,flexShrink:0,marginTop:12}}>
-        <View style={{height:1,backgroundColor:theme.border,
-          marginHorizontal:collapsed?14:24}}/>
         {renderEntry(profile)}
       </View>
     </View>;
