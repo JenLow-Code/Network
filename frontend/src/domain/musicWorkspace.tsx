@@ -137,6 +137,8 @@ export type MusicProjectFile = {
   instrumentSampleLocalId?: string;
   instrumentSampleName?: string;
   instrumentSampleRootMidi?: number;
+  /** Exact fundamental in Hz, enabling microtuning correction of transposed samples. */
+  instrumentSampleRootHz?: number;
   scoreClef?: 'treble'|'bass';
   instrument?: string;
   localFileId?: string;
