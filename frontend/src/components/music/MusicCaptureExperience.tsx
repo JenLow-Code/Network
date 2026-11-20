@@ -263,7 +263,7 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,h
         alignItems:'stretch',paddingBottom:5}}>
         {([
           {label:'Écrire',icon:'pencil-outline' as const,run:()=>openWrite()},
-          {label:'Jouer',icon:'musical-notes-outline' as const,run:()=>openWrite('','','score')},
+          {label:'Composer',icon:'musical-notes-outline' as const,run:()=>openWrite('','','score')},
           {label:'Enregistrer',icon:'mic-outline' as const,run:()=>{
             if(composer==='record'){closeComposer();return;}
             if(composer==='write')return;
@@ -289,7 +289,9 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,h
           if(composer==='write')return;
           setComposer('record');setTranslationSourceId('');
         },composer==='record')}
-        {action('Écrire','pencil-outline',()=>openWrite(),composer==='write')}
+        {action('Écrire','pencil-outline',()=>openWrite(),composer==='write'&&writingTab!=='score')}
+        {action('Composer','musical-notes-outline',()=>openWrite('','','score'),
+          composer==='write'&&writingTab==='score')}
         {action(busy?'Import…':'Importer','cloud-upload-outline',pickFiles)}
       </View>}
     {composer==='record'?<View style={{gap:16,padding:compact?16:22,
