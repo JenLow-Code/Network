@@ -1372,7 +1372,8 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
       <Pressable onPress={()=>onSave({title:title.trim()||'Idée musicale',
         events,bpm,tone,sampleRootMidi,
         sampleRootHz:sampleRootHz??undefined,clef,
-        sampleLocalId:sampleId||undefined,sampleName:sampleName||undefined})}
+        sampleLocalId:sampleId||undefined,sampleName:sampleName||undefined,
+        drumSamples})}
         disabled={!events.length||recording}
         accessibilityRole="button"
         style={{minHeight:47,paddingHorizontal:18,borderRadius:12,
