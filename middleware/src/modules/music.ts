@@ -273,7 +273,7 @@ export function registerMusic(r: Router): void {
   });
 
   const proposalRow = async (ctx: Ctx, id: string) => {
-    const p = await ctx.sql.first<{ id: string; original_track_id: string; proposed_by: string; audio_asset_id: string | null; external_audio_url: string | null; description: string; status: string; publisher_response: string | null; published_track_id: string | null; created_at: string; responded_at: string | null; publisher_id: string; publication_id: string; title: string; rights_id: string }>(
+    const p = await ctx.sql.first<{ id: string; original_track_id: string; proposed_by: string; audio_asset_id: string | null; external_audio_url: string | null; description: string; status: string; publisher_response: string | null; published_track_id: string | null; created_at: string; responded_at: string | null; publisher_id: string; publication_id: string; title: string; rights_id: string; review_state:string; review_started_at:string|null; archive_until:string|null; archived_once_at:string|null }>(
       `SELECT pr.*,t.publisher_id,t.publication_id,p.title,t.rights_id FROM music_collab_proposals pr JOIN music_tracks t ON t.id=pr.original_track_id JOIN publications p ON p.id=t.publication_id WHERE pr.id=?`,
       id,
     );
