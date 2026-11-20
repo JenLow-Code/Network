@@ -93,17 +93,11 @@ export default function MusicWorkspace() {
       paddingHorizontal:ws.gutter,
       paddingTop:desktop?16:8,paddingBottom:desktop?56:120,
       gap:compact?18:desktop?20:25}}>
-      <PageHeader onBack={()=>router.replace('/music-hub')}/>
+      <PageHeader title={project.title} onBack={()=>router.replace('/music-hub')}/>
       <View style={{flexDirection:'row',gap:desktop?16:15,alignItems:'center',
         paddingVertical:desktop?3:0}}>
         <MusicFolderCover project={project} size={compact?65:desktop?74:82}/>
         <View style={{gap:5,flex:1}}>
-          <Text style={{fontSize:PAGE_TITLE_FONT_SIZE,
-            lineHeight:PAGE_TITLE_LINE_HEIGHT,
-            fontWeight:'700',letterSpacing:-0.65,color:theme.foreground}}
-            numberOfLines={2}>
-            {project.title}
-          </Text>
           <Text style={{fontSize:12,lineHeight:18,color:theme.muted}} numberOfLines={2}>
             {project.description || (music.versions.length
               ? music.versions.length + (music.versions.length===1 ? ' version' : ' versions')+' de travail'
