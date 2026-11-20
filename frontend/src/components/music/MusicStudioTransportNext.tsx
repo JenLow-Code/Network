@@ -10,6 +10,9 @@ import type {WorkingMusicTrack,WorkingMusicVersion} from '@/domain/musicNext';
 import type {MusicProjectFile} from '@/domain/musicWorkspace';
 
 const PINK='#CB245C';
+/** Persisted arrangement metadata can contain non-finite numbers from older MIDI imports. */
+const finiteSeconds=(value:number|undefined|null,fallback=0)=>
+  typeof value==='number'&&Number.isFinite(value)?Math.max(0,value):fallback;
 type Voice={source:AudioBufferSourceNode;gain:GainNode};
 type Engine={ctx:AudioContext;voices:Map<string,Voice>;startTime:number;
   from:number;duration:number;interval:ReturnType<typeof setInterval>|null};
@@ -31,9 +34,10 @@ type Props={
 export function versionLength(version:WorkingMusicVersion,files:MusicProjectFile[]){
   return Math.max(0,...version.tracks.map(t=>{
     const file=files.find(x=>x.id===t.sourceFileId);
-    const length=musicSourceDuration(file);
-    const trim=Math.max(0,Math.min(t.trimEndSeconds??length,length)-(t.trimStartSeconds||0));
-    return Math.max(0,t.offsetSeconds)+trim;
+    const length=finiteSeconds(musicSourceDuration(file));
+    const start=Math.min(length,finiteSeconds(t.trimStartSeconds));
+    const end=Math.min(length,finiteSeconds(t.trimEndSeconds,length));
+    return finiteSeconds(t.offsetSeconds)+Math.max(0,end-start);
   }));
 }
 export function MusicStudioTransport({version,files,onPositionChange,onTrackChange,
@@ -111,29 +115,35 @@ export function MusicStudioTransport({version,files,onPositionChange,onTrackChan
         return {track:t,buffer};
       }));
       const maximum=Math.max(0,...loaded.map(({track,buffer})=>{
-        const start=Math.max(0,track.trimStartSeconds||0);
-        const end=Math.min(buffer.duration,track.trimEndSeconds??buffer.duration);
-        return Math.max(0,track.offsetSeconds)+Math.max(0,end-start);
+        const length=finiteSeconds(buffer.duration);
+        const start=Math.min(length,finiteSeconds(track.trimStartSeconds));
+        const end=Math.min(length,finiteSeconds(track.trimEndSeconds,length));
+        return finiteSeconds(track.offsetSeconds)+Math.max(0,end-start);
       }));
       if(maximum<=0)throw Error('Aucun passage écoutable dans les pistes.');
-      const from=at>=maximum?0:Math.max(0,at);
+      const requested=finiteSeconds(at);
+      const from=requested>=maximum?0:requested;
       const startTime=ctx.currentTime+.085;
       const anySolo=version.tracks.some(t=>t.solo);
       const voices=new Map<string,Voice>();
       for(const {track,buffer} of loaded){
-        const clipStart=Math.max(0,track.trimStartSeconds||0);
-        const clipEnd=Math.min(buffer.duration,track.trimEndSeconds??buffer.duration);
-        const starts=Math.max(0,track.offsetSeconds);
+        const length=finiteSeconds(buffer.duration);
+        const clipStart=Math.min(length,finiteSeconds(track.trimStartSeconds));
+        const clipEnd=Math.min(length,finiteSeconds(track.trimEndSeconds,length));
+        const starts=finiteSeconds(track.offsetSeconds);
         const playAt=Math.max(from,starts);
         const offset=clipStart+Math.max(0,playAt-starts);
         const remaining=clipEnd-offset;
-        if(remaining<=0)continue;
+        if(!Number.isFinite(playAt)||!Number.isFinite(offset)||
+          !Number.isFinite(remaining)||remaining<=.0001||offset>=length)continue;
         const source=ctx.createBufferSource();
         source.buffer=buffer;
         const gain=ctx.createGain();
         gain.gain.value=track.muted||(anySolo&&!track.solo)?0:1;
         source.connect(gain);gain.connect(ctx.destination);
-        source.start(startTime+(playAt-from),offset,remaining);
+        const when=startTime+(playAt-from);
+        if(!Number.isFinite(when)||when<0)continue;
+        source.start(when,offset,remaining);
         voices.set(track.id,{source,gain});
       }
       const running:Engine={ctx,voices,startTime,from,duration:maximum,interval:null};
@@ -142,7 +152,7 @@ export function MusicStudioTransport({version,files,onPositionChange,onTrackChan
       running.interval=setInterval(()=>{
         if(engine.current!==running)return;
         const now=Math.min(maximum,
-          from+Math.max(0,ctx!.currentTime-running.startTime));
+          from+finiteSeconds(ctx!.currentTime-running.startTime));
         posRef.current=now;setPosition(now);
         if(now>=maximum)close(true);
       },60);
@@ -153,7 +163,7 @@ export function MusicStudioTransport({version,files,onPositionChange,onTrackChan
   };
   const toggle=()=>{if(playingRef.current)pause();else void play(posRef.current);};
   const seek=(seconds:number)=>{
-    const next=Math.max(0,Math.min(duration,seconds));
+    const next=Math.min(finiteSeconds(duration),finiteSeconds(seconds));
     const resume=playingRef.current;
     close();posRef.current=next;setPosition(next);
     if(resume)void play(next);
@@ -161,7 +171,7 @@ export function MusicStudioTransport({version,files,onPositionChange,onTrackChan
   useEffect(()=>{
     if(!playbackRequest)return;
     close();
-    const next=Math.max(0,playbackRequest.at);
+    const next=finiteSeconds(playbackRequest.at);
     posRef.current=next;setPosition(next);
     void play(next);
   // A new serial is a new explicit backing-track playback request.
