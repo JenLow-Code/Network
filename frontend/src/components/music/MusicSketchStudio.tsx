@@ -392,6 +392,11 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
     setEvents(old=>old.map(e=>e.id===id?{...e,...changes}:e));
   const trigger=(instrument:Instrument,midi:number)=>{
     if(instrument==='piano'&&liveHeldRef.current.has(instrument+':'+midi))return;
+    // An unavailable uploaded sample must not silently record an unheard note.
+    if(instrument==='piano'&&tone==='Échantillon'&&!sampleRef.current){
+      setSampleError('Le son importé n’est pas chargé. Réimporte-le ou attends son chargement.');
+      return;
+    }
     const playedAt=clock();
     setMessage('');setLast(instrument==='piano'?musicNoteName(midi):
       DRUM_PADS.find(p=>p.midi===midi)?.label||'Percussion');
@@ -536,7 +541,8 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
         setPreviewPlaying(false);previewTimeout.current=null;
       },Math.ceil((last-first)*60000/bpm)+200);
       setMessage('');
-    }catch{setMessage('Lecture de la composition impossible dans ce navigateur.');}
+    }catch(e){setMessage(e instanceof Error?e.message:
+      'Lecture de la composition impossible dans ce navigateur.');}
   };
   const toggleRecording=()=>{
     if(recording){
