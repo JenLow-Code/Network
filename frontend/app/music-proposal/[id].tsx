@@ -82,8 +82,7 @@ export default function MusicProposal() {
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{
         ...workspaceCanvas(width),paddingTop:12,paddingBottom:100,gap:16,
       }}>
-        <PageHeader onBack={() => router.back()}/>
-        <Text style={{color:theme.foreground,fontWeight:'700',fontSize:PAGE_TITLE_FONT_SIZE,lineHeight:PAGE_TITLE_LINE_HEIGHT}}>Proposer une collaboration</Text>
+        <PageHeader title="Proposer une collaboration" onBack={() => router.back()}/>
         <Text style={{color:theme.muted,fontSize:13,lineHeight:21}}>
           {music ? music.title + ' · ' + music.author : 'Morceau non trouvé'}
         </Text>
