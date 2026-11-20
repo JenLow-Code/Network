@@ -23,18 +23,22 @@ export function DreamWorkspaceShortcutRow({
       onPress={onPress}
       style={{
         flexDirection: 'row', gap: 6, alignItems: 'center',
-        justifyContent: 'flex-end', minHeight: 30,
-        paddingVertical: 7, paddingHorizontal: highlighted ? 11 : 5,
+        justifyContent: 'flex-end', minHeight: 32, width: '100%',
+        paddingVertical: 6, paddingHorizontal: 8,
         borderRadius: 10,
         backgroundColor: highlighted ? (theme.dark ? '#432D38' : '#FCECF4') : 'transparent',
       }}>
-      <Ionicons name={icon} size={13}
-        color={highlighted ? '#D71D77' : theme.muted}/>
+      <View style={{width:18,alignItems:'center'}}>
+        <Ionicons name={icon} size={13}
+          color={highlighted ? '#D71D77' : theme.muted}/>
+      </View>
       <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.82}
         style={{ color: theme.foreground, fontSize: 12, fontWeight: '500',
-          flexShrink: 1 }}>{label}</Text>
-      <Ionicons name={expanded ? 'chevron-down' : 'chevron-forward'}
-        size={13} color={theme.muted}/>
+          flex:1,minWidth:0,textAlign:'right' }}>{label}</Text>
+      <View style={{width:18,alignItems:'center',justifyContent:'center'}}>
+        <Ionicons name={expanded ? 'chevron-down' : 'chevron-forward'}
+          size={13} color={theme.muted}/>
+      </View>
     </Pressable>
   );
 }
@@ -44,12 +48,12 @@ export default function DreamWorkspaceShortcuts({
   dream, showLibrary = false,
 }: { dream: DreamEntry; showLibrary?: boolean }) {
   return (
-    <View style={{ alignItems: 'flex-end', justifyContent: 'flex-start', gap: 0 }}>
+    <View style={{ alignItems: 'stretch', justifyContent: 'flex-start', gap: 0, width:'100%' }}>
       <DreamWorkspaceShortcutRow label="Notes personnelles"
         icon="lock-closed-outline" onPress={() =>
           router.push({ pathname: '/my-dream/notes/[id]', params: { id: dream.id } })}/>
       {showLibrary ? (
-        <DreamWorkspaceShortcutRow label="Inspirations / Documents"
+        <DreamWorkspaceShortcutRow label="Documents & Inspirations"
           icon="folder-open-outline" onPress={() =>
             router.push({ pathname: '/my-dream/library/[id]', params: { id: dream.id } })}/>
       ) : null}
