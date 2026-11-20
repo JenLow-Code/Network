@@ -41,7 +41,7 @@ export default function PublishedSemenceScreen(){
    <ScrollView keyboardShouldPersistTaps="handled"
      contentContainerStyle={{...workspaceCanvas(width),paddingTop:12,
        paddingBottom:115,gap:16}}>
-     <PageHeader onBack={()=>router.back()}/>
+     <PageHeader title="Semence partagée" onBack={()=>router.back()}/>
      {loading?<ActivityIndicator style={{padding:50}} color={theme.muted}/>:
        !item?<View style={{padding:24,gap:11}}>
          <Text style={{fontSize:21,fontFamily:'serif',color:theme.foreground}}>
