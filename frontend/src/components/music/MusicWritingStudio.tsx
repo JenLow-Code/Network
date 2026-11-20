@@ -63,6 +63,31 @@ export function MusicNotePreview({ text, color }: { text: string; color: string 
   </View>;
 }
 
+/** Review the exact lyric ranges bound to musical sections without
+ * replacing the editable plain-text input with an unreliable rich-text field. */
+function LinkedLyricsPreview({text,references}:{
+  text:string;references:MusicLyricReference[];
+}){
+  const ranges=references.filter(ref=>
+    ref.start>=0&&ref.end<=text.length&&ref.end>ref.start&&
+    text.slice(ref.start,ref.end)===ref.text)
+    .sort((a,b)=>a.start-b.start||a.end-b.end);
+  const parts:{value:string;linked:boolean}[]=[];
+  let at=0;
+  for(const range of ranges){
+    if(range.start<at)continue;
+    if(range.start>at)parts.push({value:text.slice(at,range.start),linked:false});
+    parts.push({value:text.slice(range.start,range.end),linked:true});
+    at=range.end;
+  }
+  if(at<text.length)parts.push({value:text.slice(at),linked:false});
+  return <Text selectable style={{fontFamily:'Georgia',fontSize:16,lineHeight:27,
+    color:'#33302F'}}>
+    {parts.map((part,index)=><Text key={index}
+      style={part.linked?{backgroundColor:'#F7DAE4',color:'#A91D4C',
+        fontWeight:'600'}:{}}>{part.value}</Text>)}
+  </Text>;
+}
 export function MusicWritingStudio({ mode, onModeChange, originalLanguage, source,
   initialFile, onSave, onRequestTranslator, requestedLanguages=[], onDirtyChange,
   immersive=false,sections=[],showTabs=true,canLinkSections=false }: Props) {
@@ -183,6 +208,7 @@ export function MusicWritingStudio({ mode, onModeChange, originalLanguage, sourc
       start:lyricSelection.start,end:lyricSelection.end,text:selectedExcerpt,
     };
     setReferences(old=>[...old,ref]);setSectionPicker(false);setSelectionError('');
+    setPreview(true);
   };
   const createSection=()=>{
     const name=customSection.trim();
@@ -343,9 +369,18 @@ export function MusicWritingStudio({ mode, onModeChange, originalLanguage, sourc
                 Associer le passage sélectionné
               </Text>
             </Pressable>
-            {references.length?<Text style={{color:theme.muted,fontSize:11}}>
-              {references.length} {references.length===1?'passage associé':'passages associés'}
-            </Text>:null}
+            {references.length?<Pressable
+              onPress={()=>setPreview(open=>!open)}
+              accessibilityRole="button"
+              accessibilityLabel={preview?'Modifier les paroles':'Voir les passages associés'}
+              style={{minHeight:39,flexDirection:'row',alignItems:'center',gap:5,
+                paddingHorizontal:7}}>
+              <Ionicons name={preview?'create-outline':'eye-outline'}
+                size={16} color={PINK}/>
+              <Text style={{fontSize:11,fontWeight:'600',color:PINK}}>
+                {preview?'Modifier':'Voir les liens'}
+              </Text>
+            </Pressable>:null}
           </View>
           {selectionError?<Text style={{color:'#AD3857',fontSize:11}}>{selectionError}</Text>:null}
           {sectionPicker&&validSelection?<View style={{
@@ -393,12 +428,16 @@ export function MusicWritingStudio({ mode, onModeChange, originalLanguage, sourc
             </View>)}
           </View>:null}
         </View>:null}
-        {isNote&&preview?<View style={{minHeight:compact?135:190,paddingVertical:15}}>
-          {body.trim()?<MusicNotePreview text={body} color={theme.foreground}/>:
-            <Text style={{fontSize:14,color:theme.muted}}>Un aperçu de ta note apparaîtra ici.</Text>}
-        </View>:editor(isNote?'Une idée, un souvenir, quelque chose à garder…':
-          'Commence à écrire tes paroles…',immersive?
-            Math.max(compact?330:450,height-(compact?310:355)):compact?145:210)}
+        {!isNote&&canLinkSections&&preview&&references.length?
+          <View style={{gap:8,paddingVertical:15,minHeight:190}}>
+            <LinkedLyricsPreview text={body} references={references}/>
+          </View>:
+          isNote&&preview?<View style={{minHeight:compact?135:190,paddingVertical:15}}>
+            {body.trim()?<MusicNotePreview text={body} color={theme.foreground}/>:
+              <Text style={{fontSize:14,color:theme.muted}}>Un aperçu de ta note apparaîtra ici.</Text>}
+          </View>:editor(isNote?'Une idée, un souvenir, quelque chose à garder…':
+            'Commence à écrire tes paroles…',immersive?
+              Math.max(compact?330:450,height-(compact?310:355)):compact?145:210)}
       </View>
     </>}
     <View style={{flexDirection:'row',alignItems:'center',
