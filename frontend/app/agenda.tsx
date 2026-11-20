@@ -11,7 +11,7 @@ import { useApp } from '@/context/AppContext';
 import { useLocale } from '@/i18n/locale';
 import { publications } from '@/mocks/publications';
 import { useAppTheme } from '@/theme/AppTheme';
-import {workspaceCanvas,WORKSPACE_TITLE_GAP} from '@/theme/workspaceLayout';
+import {workspaceCanvas,WORKSPACE_TITLE_GAP,PAGE_TITLE_FONT_SIZE,PAGE_TITLE_LINE_HEIGHT} from '@/theme/workspaceLayout';
 import { AgendaEntry, DEMO_AGENDA } from '@/domain/agendaTypes';
 import { publicationPath } from '@/components/publication/PublicationGallery';
 import { useDreams } from '@/domain/dreamRepository';
@@ -84,7 +84,7 @@ export default function Agenda() {
           style={{ flexDirection:'row',justifyContent:'space-between',alignItems:'center',
             marginTop:WORKSPACE_TITLE_GAP }}
         >
-          <Text style={{ fontSize: 30, fontWeight: '700', color: theme.foreground }}>
+          <Text style={{ fontSize:PAGE_TITLE_FONT_SIZE,lineHeight:PAGE_TITLE_LINE_HEIGHT,fontWeight: '700', color: theme.foreground }}>
             {tr('agendaTitle')}
           </Text>
           
