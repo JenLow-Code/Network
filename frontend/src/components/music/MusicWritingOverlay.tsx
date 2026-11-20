@@ -236,7 +236,7 @@ export function MusicWritingOverlay({project,mode,startTab,onModeChange,source,i
             alignSelf:'center',paddingHorizontal:compact?17:36,
             paddingTop:compact?12:23,paddingBottom:70,flexGrow:1}}>
           <View style={{display:tab==='lyrics'||tab==='note'?'flex':'none'}}>
-            <MusicWritingStudio mode={tab==='note'?'note':'lyrics'}
+            <MusicWritingStudio key={tab==='note'?'note-editor':'lyric-editor'} mode={tab==='note'?'note':'lyrics'}
               onModeChange={onModeChange} showTabs={false}
               initialFile={initialFile&&!initialFile.translationOfFileId
                 &&!initialFile.musicEvents?initialFile:undefined}
