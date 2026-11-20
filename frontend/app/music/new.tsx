@@ -6,7 +6,7 @@ import { router } from 'expo-router';
 import { PageHeader } from '@/components/navigation/PageHeader';
 import { Nav } from '@/components/navigation/Nav';
 import { useAppTheme } from '@/theme/AppTheme';
-import {workspaceCanvas,WORKSPACE_TITLE_GAP} from '@/theme/workspaceLayout';
+import {workspaceCanvas,WORKSPACE_TITLE_GAP,PAGE_TITLE_FONT_SIZE,PAGE_TITLE_LINE_HEIGHT} from '@/theme/workspaceLayout';
 import { useMusicWorkspaces, newMusicId } from '@/domain/musicWorkspace';
 import { chooseMusicFile } from '@/domain/musicMedia';
 import { saveDraftAudio, saveDraftAttachment } from '@/domain/musicLocalStorage';
@@ -98,7 +98,7 @@ export default function NewMusic(){
     <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{
       ...workspaceCanvas(width),paddingTop:12,paddingBottom:95,gap:17}}>
       <PageHeader onBack={()=>router.replace('/music-hub')} title="Musique"/>
-      <Text style={{color:theme.foreground,fontSize:compact?27:32,fontWeight:'700',
+      <Text style={{color:theme.foreground,fontSize:PAGE_TITLE_FONT_SIZE,lineHeight:PAGE_TITLE_LINE_HEIGHT,fontWeight:'700',
         marginTop:WORKSPACE_TITLE_GAP}}>
         Un nouveau morceau
       </Text>
