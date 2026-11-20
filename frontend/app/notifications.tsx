@@ -44,10 +44,7 @@ export default function Notifications(){
   };
   return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
     <ScrollView style={{flex:1}} contentContainerStyle={{...workspaceCanvas(width),paddingTop:12,paddingBottom:92}}>
-      <PageHeader onBack={()=>router.back()}/>
-      <Text style={{fontFamily:'serif',fontSize:PAGE_TITLE_FONT_SIZE,lineHeight:PAGE_TITLE_LINE_HEIGHT,color:theme.foreground,marginTop:16,marginBottom:6}}>
-        Notifications
-      </Text>
+      <PageHeader title="Notifications" onBack={()=>router.back()}/>
       <Text style={{fontSize:12,color:theme.muted,lineHeight:20,marginBottom:19}}>
         Invitations, acceptations, retraits et nouvelles de tes projets.
       </Text>
