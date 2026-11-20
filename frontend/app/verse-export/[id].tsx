@@ -15,10 +15,7 @@ export default function VerseExport() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
       <View style={{flex:1,...workspaceCanvas(width),paddingTop:12,paddingBottom:55}}>
-        <PageHeader />
-        <Text style={{ fontFamily: 'Caveat_700Bold', fontSize: 32, marginTop: 18 }}>
-          Exporter un verset
-        </Text>
+        <PageHeader title="Exporter un verset" />
         <Text style={{ fontSize: 16, lineHeight: 26, marginTop: 25 }}>
           {item ? psalm150[item.highlightedVerse - 1] : 'Verset introuvable'}
         </Text>
