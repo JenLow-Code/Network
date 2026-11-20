@@ -40,7 +40,9 @@ export default function SemenceStudio({dream,onBack,onNavigate}:{
    contentContainerStyle={{paddingHorizontal:ws.gutter,paddingTop:10,
      paddingBottom:100,maxWidth:ws.maxWidth,width:'100%',alignSelf:'center'}}>
    <DreamPhaseHeader dream={dream} phase="Rêve"
-     onBack={onBack} onNavigate={onNavigate} readOnly={!editable}/>
+     onBack={onBack} onNavigate={onNavigate} readOnly={!editable}
+     onPrimaryAction={()=>router.push({pathname:'/my-dream/notes/[id]',
+       params:{id:dream.id}})}/>
    <View style={{alignSelf:'flex-end',width:244,maxWidth:'65%',marginTop:-10,marginBottom:6}}>
      <DreamWorkspaceShortcuts dream={dream}/>
    </View>

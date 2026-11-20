@@ -137,6 +137,11 @@ export type MusicProjectFile = {
   /** Original musical idea, stored as structured notation, not rendered audio. */
   musicEvents?: MusicNotationEvent[];
   tempoBpm?: number;
+  /** Explicit metre: no measure lines are inferred from the tempo. */
+  timeSignatureNumerator?: number;
+  timeSignatureDenominator?: number;
+  /** What to do when an imported instrument sample ends before a held note. */
+  instrumentSampleEndMode?: 'fade'|'repeat'|'slow';
   /** Local monitoring preset, independent from the exported MIDI notes. */
   instrumentTone?: string;
   /** Private audio sample attached to a musical sketch on this device. */

@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { Platform, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import {router} from 'expo-router';
 import { useAppTheme } from '@/theme/AppTheme';
 import { MusicAudioCapture } from './MusicAudioCapture';
 import { MusicAudioTake } from './MusicAudioTake';
 import { MusicNotePreview, type MusicWritingResult } from './MusicWritingStudio';
-import { MusicWritingOverlay } from './MusicWritingOverlay';
 
 import { MusicLocalArt } from './MusicLocalArtNext';
 import { MusicMaterialViewer } from './MusicMaterialViewerV3';
@@ -69,12 +69,10 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
   useEffect(()=>{
     // Sidebar actions select a real Capture workflow; importing requires
     // an additional user click because browsers block delayed file pickers.
-    if(quickAction==='write'){
-      setWriting('lyrics');setWritingTab('lyrics');setComposer('write');
-      setEditingFileId('');setTranslationSourceId('');
-    }else if(quickAction==='play'){
-      setWritingTab('score');setWriting('lyrics');setComposer('write');
-      setEditingFileId('');setTranslationSourceId('');
+    if(quickAction==='write'||quickAction==='play'){
+      router.replace({pathname:quickAction==='play'
+        ?'/music-composer/[id]':'/music-lyrics/[id]',
+        params:{id:project.id}});
     }else if(quickAction==='record'){
       setComposer('record');setEditingFileId('');setTranslationSourceId('');
     }else if(quickAction==='upload'){
@@ -96,10 +94,10 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
   const openWrite=(sourceId='',fileId='',nextTab:'lyrics'|'score'='lyrics')=>{
     if(composer==='record'&&unsavedRecording){setConfirmClose(true);return;}
     const file=files.find(candidate=>candidate.id===fileId);
-    setEditingFileId(fileId);
-    setWritingTab(file?.musicEvents?'score':nextTab);
-    setWriting(file?.kind==='note'?'note':'lyrics');
-    setTranslationSourceId(sourceId);setComposer('write');setConfirmClose(false);
+    const page=file?.musicEvents?'score':nextTab;
+    router.push({pathname:page==='score'
+      ?'/music-composer/[id]':'/music-lyrics/[id]',
+      params:{id:project.id,...(sourceId?{sourceId}:{}),...(fileId?{fileId}:{})}});
   };
   const changeFile=(id:string,change:Partial<MusicProjectFile>)=>
     patch({files:files.map(file=>file.id===id?{...file,...change}:file)});
@@ -479,15 +477,6 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
       onTranslate={file=>{setSelected('');openWrite(file.id);}}
       onEdit={file=>{setSelected('');openWrite(file.translationOfFileId||'',file.id);}}
       onOpenFile={setSelected} hasVersion={hasVersion}/>
-    {composer==='write'?<MusicWritingOverlay key={editingFileId||translationSourceId||'new'}
-      project={project} mode={writing} onModeChange={setWriting}
-      startTab={writingTab}
-      source={translationSource} initialFile={editingFile}
-      onSave={addWritten} onSaveScore={saveScore} onRequestTranslator={requestTranslator}
-      requestedLanguages={(project.needs||[]).filter(need=>
-        need.sourceFileId===translationSourceId&&need.kind==='talent'&&
-        need.label.toLowerCase()==='traducteur')
-        .map(need=>need.targetLanguage||'')}
-      onClose={closeComposer}/>:null}
+
   </View>;
 }
