@@ -1141,7 +1141,8 @@ export function MusicSketchStudio({initialFile,onSave,onDirtyChange,active=true}
     <View style={{borderTopWidth:1,borderColor:theme.border,paddingTop:13,
       flexDirection:'row',gap:9,alignItems:'center',justifyContent:'flex-end'}}>
       <Pressable onPress={()=>onSave({title:title.trim()||'Idée musicale',
-        events,bpm,tone,sampleRootMidi,clef,
+        events,bpm,tone,sampleRootMidi,
+        sampleRootHz:sampleRootHz??undefined,clef,
         sampleLocalId:sampleId||undefined,sampleName:sampleName||undefined})}
         disabled={!events.length||recording}
         accessibilityRole="button"
