@@ -83,7 +83,7 @@ export function DreamPhaseHeader({
       }}>{PHASE_LABELS[phase]}</Text>
     </View>:null}
     <View style={{
-      height:desktop?242:width<520?174:208,
+      height:desktop?204:width<520?152:184,
       width:'100%',overflow:'hidden',borderRadius:desktop?12:10,
       backgroundColor:'#182723',position:'relative',
     }}>
@@ -107,11 +107,11 @@ export function DreamPhaseHeader({
       </Svg>
       <View pointerEvents="none" style={{
         position:'absolute',left:desktop?24:16,right:desktop?72:16,
-        bottom:desktop?22:16,
+        bottom:desktop?19:14,
       }}>
         <Text accessibilityRole="header" numberOfLines={3}
-          style={{fontFamily:'serif',fontSize:desktop?27:22,
-            lineHeight:desktop?35:29,fontWeight:'700',letterSpacing:-.35,
+          style={{fontFamily:'serif',fontSize:desktop?39:width<520?27:31,
+            lineHeight:desktop?46:width<520?32:38,fontWeight:'800',letterSpacing:-.35,
             color:'#FFFFFF',
             ...(Platform.OS==='web'?({
               textShadow:'0 2px 9px rgba(0,0,0,.5)',
@@ -159,10 +159,11 @@ export function DreamPhaseHeader({
             opacity:reached?1:.46}}>
           <View style={{minHeight:desktop?29:25,flexDirection:'row',
             alignItems:'center',justifyContent:'center',gap:desktop?7:width<520?3:6}}>
-            <DreamPhaseIcon phase={item} size={desktop?28:width<520?20:23}
+            {selected?<DreamPhaseIcon phase={item}
+              size={desktop?28:width<520?20:23}
               artworkScale={item==='Rêve'?.66:undefined}
               tintColor={item==='Croissance'?
-                (theme.dark?'#82C9A0':'#17613F'):undefined}/>
+                (theme.dark?'#82C9A0':'#17613F'):undefined}/>:null}
             <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={.75}
               style={{fontSize:desktop?12:width<520?10:12,
                 fontWeight:selected?'700':'500',
