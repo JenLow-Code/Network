@@ -14,10 +14,7 @@ export default function Circle() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{...workspaceCanvas(width),paddingTop:12,paddingBottom:65}}>
-        <PageHeader />
-        <Text style={{ fontFamily: 'Caveat_700Bold', fontSize: 35, marginBottom: 6 }}>
-          Mon cercle
-        </Text>
+        <PageHeader title="Mon cercle" />
         <Text style={{ fontSize: 12, color: '#888', marginBottom: 18 }}>
           Les personnes que je connais personnellement. Les appels vidéo sont réservés à ce cercle.
         </Text>
