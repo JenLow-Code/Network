@@ -10,7 +10,9 @@ import { MusicWritingOverlay } from './MusicWritingOverlay';
 import { MusicLocalArt } from './MusicLocalArtNext';
 import { MusicMaterialViewer } from './MusicMaterialViewerV3';
 import { importSongFile, classifySongFile, lyricStanzas } from '@/domain/musicImportedFiles';
-import { isMusicTrackCandidate } from '@/domain/musicNext';
+import { isMusicTrackCandidate,isPlayableMusicFile } from '@/domain/musicNext';
+import {isMidiSource} from '@/domain/musicMidiAudio';
+import {MusicMidiPreview} from './MusicMidiPreview';
 import { newMusicId } from '@/domain/musicWorkspace';
 import type { MusicProject, MusicProjectFile, MusicSection, MusicAudioMarker } from '@/domain/musicWorkspace';
 import type {MusicNotationEvent} from '@/domain/musicNotation';
@@ -23,8 +25,7 @@ type Props={project:MusicProject;patch:(changes:Partial<MusicProject>)=>void;
 type Composer='none'|'write'|'record';
 type Writing='lyrics'|'note';
 const isImage=(file:MusicProjectFile)=>/\.(jpg|jpeg|png|webp)$/i.test(file.originalFilename||'');
-const isAudio=(file:MusicProjectFile)=>!!file.mimeType?.startsWith('audio/')||
-  /\.(wav|mp3|m4a|webm|ogg|aac)$/i.test(file.originalFilename||'');
+const isAudio=(file:MusicProjectFile)=>isPlayableMusicFile(file);
 const content=(file:MusicProjectFile)=>file.text??
   (file.kind==='lyrics'?file.lyricSegments?.map(v=>v.text).join('\n\n')||'':'');
 type CaptureFilter='all'|'audio'|'image'|'lyrics'|'score'|'note'|'other';
@@ -239,7 +240,7 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,h
           <Text style={{fontSize:15,fontWeight:'700',color:theme.foreground}}>
             Éléments enregistrés
           </Text>
-          <Text style={{fontSize:12,color:theme.muted}}>{files.length}</Text>
+          <Text style={{fontSize:12,color:theme.muted}}>{files.filter(f=>!f.renderedFromMidiId).length}</Text>
         </View>
         <Pressable onPress={()=>setActionsOpen(!actionsOpen)}
           accessibilityRole="button"
@@ -381,6 +382,7 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,h
           </Pressable>
           {sound&&file.localFileId?<MusicAudioTake file={file} compact
             onOpen={()=>setSelected(file.id)}/>:null}
+          {isMidiSource(file)?<MusicMidiPreview file={file}/>:null}
           {file.kind==='lyrics'&&!file.translationOfFileId?
             <Pressable onPress={()=>openWrite(file.id)} accessibilityRole="button"
               style={{alignSelf:'flex-start',minHeight:38,flexDirection:'row',
