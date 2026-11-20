@@ -389,7 +389,7 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,h
                 <Ionicons name="chevron-forward" size={17} color={theme.muted}/>
               </View>:
               <View style={{flexDirection:'row',gap:9,alignItems:'center'}}>
-                {!sound?<Ionicons name={file.kind==='score'?'musical-notes-outline':
+                {!sound&&!file.musicEvents?.length?<Ionicons name={file.kind==='score'?'musical-notes-outline':
                   file.kind==='lyrics'?'document-text-outline':
                   file.kind==='note'?'reader-outline':'document-outline'}
                   size={17} color={theme.muted}/>:null}
