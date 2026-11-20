@@ -143,7 +143,7 @@ export async function renderMidiSource(source:MusicProjectFile):Promise<MusicPro
     mimeType:'audio/wav',localFileId,durationSeconds:(wav.size-44)/(RATE*4),
     /** Traceability to the source notation; capture keeps the editable MIDI. */
     renderedFromMidiId:source.id,createdAt:new Date().toISOString(),
-    instrument:source.instrument||'MIDI rendu en audio',
+    instrument:source.instrument,
   };
 }
 
