@@ -123,7 +123,7 @@ async function offlineWav(events:MusicNotationEvent[],bpm:number,
 
 /** One render per addition into an arrangement. Original MIDI/notation is
  * immutable; the resulting linked audio is local and editable as a track. */
-export async function renderMidiSource(source:MusicProjectFile):Promise<MusicProjectFile>{
+export async function renderMidiPreviewWav(source:MusicProjectFile):Promise<File>{
   let notes=source.musicEvents;
   let bpm=source.tempoBpm||100;
   if(!notes?.length){
@@ -134,8 +134,12 @@ export async function renderMidiSource(source:MusicProjectFile):Promise<MusicPro
     const parsed=parseMusicMidi(new Uint8Array(await blob.arrayBuffer()));
     notes=parsed.events;bpm=parsed.bpm;
   }
-  const wav=await offlineWav(notes,bpm,source.instrumentTone||'Piano doux',
+  return offlineWav(notes,bpm,source.instrumentTone||'Piano doux',
     source.instrumentSampleLocalId,source.instrumentSampleRootMidi??60);
+}
+
+export async function renderMidiSource(source:MusicProjectFile):Promise<MusicProjectFile>{
+  const wav=await renderMidiPreviewWav(source);
   const localFileId=await saveDraftAudio(wav);
   return {
     id:newMusicId(),kind:'audio',title:source.title,sectionIds:source.sectionIds||[],
