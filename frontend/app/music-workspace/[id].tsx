@@ -5,7 +5,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Nav } from '@/components/navigation/Nav';
 import { PageHeader } from '@/components/navigation/PageHeader';
-import { MusicFolderCover } from '@/components/music/MusicFolderCover';
 import { MusicCaptureExperience } from '@/components/music/MusicCaptureExperience';
 import { MusicCreateExperience } from '@/components/music/MusicCreateExperience';
 import { MusicCollaborateExperience } from '@/components/music/MusicCollaborateExperience';
@@ -94,17 +93,9 @@ export default function MusicWorkspace() {
       paddingTop:desktop?16:8,paddingBottom:desktop?56:120,
       gap:compact?18:desktop?20:25}}>
       <PageHeader title={project.title} onBack={()=>router.replace('/music-hub')}/>
-      <View style={{flexDirection:'row',gap:desktop?16:15,alignItems:'center',
-        paddingVertical:desktop?3:0}}>
-        <MusicFolderCover project={project} size={compact?65:desktop?74:82}/>
-        <View style={{gap:5,flex:1}}>
-          <Text style={{fontSize:12,lineHeight:18,color:theme.muted}} numberOfLines={2}>
-            {project.description || (music.versions.length
-              ? music.versions.length + (music.versions.length===1 ? ' version' : ' versions')+' de travail'
-              : 'Aucune version')}
-          </Text>
-        </View>
-      </View>
+      {/* The song's title is already next to Back in PageHeader.
+          Keep its cover and description in data, but do not repeat them
+          above a listening-first workspace. */}
       {/* Contextual workflow navigation belongs with the workspace, not in a
           second competing right sidebar. Desktop tabs are text-first. */}
       <View style={{flexDirection:'row',alignItems:'center',
