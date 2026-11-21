@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import {router} from 'expo-router';
 import { useAppTheme } from '@/theme/AppTheme';
 import { MusicAudioCapture } from './MusicAudioCapture';
+import {workspaceLayout} from '@/theme/workspaceLayout';
 import { MusicAudioTake } from './MusicAudioTake';
 import { MusicNotePreview, type MusicWritingResult } from './MusicWritingStudio';
 
@@ -53,6 +54,7 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
   const theme=useAppTheme();
   const {width}=useWindowDimensions();
   const compact=width<630;
+  const desktopList=Platform.OS==='web'&&workspaceLayout(width).desktop;
   const files=project.files||[];
   const [composer,setComposer]=useState<Composer>('none');
   const [unsavedRecording,setUnsavedRecording]=useState(false);
@@ -375,69 +377,119 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
         const created=new Date(file.createdAt||'');
         const dateLabel=Number.isNaN(created.getTime())?'':created.toLocaleDateString(
           'fr-FR',{day:'numeric',month:'short',year:'numeric'});
-        return <View key={file.id} style={{width:'100%',minWidth:0,
-          paddingVertical:compact?14:19,borderTopWidth:1,
-          borderColor:theme.border,gap:compact?8:11}}>
-          <Pressable onPress={()=>{
-            if(file.musicEvents?.length){
-              openWrite('',file.id,'score');return;
-            }
-            if(file.kind==='lyrics'||file.kind==='note'){
-              openWrite(file.translationOfFileId||'',file.id);return;
-            }
-            setSelected(file.id);
-          }} accessibilityRole="button"
-            accessibilityLabel={'Ouvrir '+file.title}
-            style={{gap:compact?7:11}}>
-            <View style={{flexDirection:'row',alignItems:'center',gap:11}}>
-              <Text numberOfLines={1} style={{flex:1,minWidth:0,
-                color:theme.foreground,fontSize:compact?14:16,
-                fontWeight:'600'}}>{file.title}</Text>
-              {dateLabel?<Text style={{fontSize:11,color:theme.muted,
-                fontVariant:['tabular-nums']}}>{dateLabel}</Text>:null}
-              <Ionicons name="chevron-forward" color={theme.muted} size={16}/>
-            </View>
-            {image?<MusicLocalArt file={file} banner/>:null}
-          </Pressable>
-          {text&&!image&&!sound&&(file.kind==='note'||file.kind==='lyrics')?
-            <View style={{gap:5,alignItems:'flex-start'}}>
-              <Text numberOfLines={lyricExpanded?undefined:1}
-                ellipsizeMode="tail"
-                style={{fontFamily:file.kind==='lyrics'?'Georgia':undefined,
-                  fontSize:file.kind==='lyrics'?(compact?14:16):13,
-                  lineHeight:compact?21:23,color:theme.muted,width:'100%'}}>
-                {file.kind==='lyrics'&&!lyricExpanded?firstLine:text}
-              </Text>
-              {file.kind==='lyrics'?<Pressable accessibilityRole="button"
-                accessibilityLabel={(lyricExpanded?'Voir moins':'Voir plus')+
-                  ' : '+file.title}
-                accessibilityState={{expanded:lyricExpanded}}
-                onPress={()=>setExpandedLyrics(old=>({
-                  ...old,[file.id]:!old[file.id],
-                }))}
-                style={{alignSelf:'flex-start',minHeight:35,
-                  justifyContent:'center',paddingRight:12}}>
-                <Text style={{fontSize:12,fontWeight:'700',color:PINK}}>
-                  {lyricExpanded?'Voir moins':'Voir plus…'}
+        const openDetails=()=>{
+          if(file.musicEvents?.length){
+            openWrite('',file.id,'score');return;
+          }
+          if(file.kind==='lyrics'||file.kind==='note'){
+            openWrite(file.translationOfFileId||'',file.id);return;
+          }
+          setSelected(file.id);
+        };
+        // One true list row: title -> date -> file preview -> details arrow.
+        // On narrow screens the preview wraps below the same header, rather
+        // than squeezing a waveform or notation into an unusably small strip.
+        const representation=<View style={{width:'100%',minWidth:0}}>
+          {image?
+            <Pressable onPress={openDetails} accessibilityRole="button"
+              accessibilityLabel={'Voir l’image '+file.title}>
+              <MusicLocalArt file={file} banner/>
+            </Pressable>:
+            sound&&file.localFileId?
+              <MusicAudioTake file={file} compact
+                onOpen={openDetails}/>:
+            file.musicEvents?.length?
+              <MusicCaptureScoreStrip file={file}/>:
+            isMidiSource(file)?
+              <MusicMidiPreview file={file}/>:
+            text&&(file.kind==='lyrics'||file.kind==='note')?
+              <View style={{flexDirection:'row',alignItems:'center',gap:10,
+                minHeight:38,minWidth:0}}>
+                <Text numberOfLines={lyricExpanded?undefined:1}
+                  ellipsizeMode="tail"
+                  style={{flex:1,minWidth:0,
+                    fontFamily:file.kind==='lyrics'?'Georgia':undefined,
+                    fontSize:compact?14:15,lineHeight:23,
+                    color:theme.muted}}>
+                  {lyricExpanded?text:firstLine}
                 </Text>
-              </Pressable>:null}
-            </View>:null}
+                {file.kind==='lyrics'?
+                  <Pressable accessibilityRole="button"
+                    accessibilityLabel={(lyricExpanded?'Voir moins':'Voir plus')+
+                      ' : '+file.title}
+                    accessibilityState={{expanded:lyricExpanded}}
+                    onPress={()=>setExpandedLyrics(old=>({
+                      ...old,[file.id]:!old[file.id],
+                    }))}
+                    style={{minHeight:38,justifyContent:'center',
+                      flexShrink:0,paddingHorizontal:5}}>
+                    <Text style={{fontSize:12,fontWeight:'700',color:PINK}}>
+                      {lyricExpanded?'Voir moins':'Voir plus…'}
+                    </Text>
+                  </Pressable>:null}
+              </View>:
+              <Pressable onPress={openDetails} accessibilityRole="button"
+                accessibilityLabel={'Ouvrir '+file.title}
+                style={{minHeight:38,flexDirection:'row',
+                  alignItems:'center',gap:9}}>
+                <Ionicons name={file.kind==='document'?
+                  'document-outline':file.kind==='note'?
+                  'reader-outline':'attach-outline'}
+                  size={17} color={theme.muted}/>
+                <Text numberOfLines={1} style={{color:theme.muted,fontSize:13,
+                  flex:1,minWidth:0}}>
+                  {text?firstLine:file.originalFilename||file.title}
+                </Text>
+              </Pressable>}
+        </View>;
+        const detailArrow=<Pressable onPress={openDetails}
+          accessibilityRole="button"
+          accessibilityLabel={'Voir les détails de '+file.title}
+          style={{height:44,width:28,alignItems:'flex-end',
+            justifyContent:'center',flexShrink:0}}>
+          <Ionicons name="chevron-forward" size={17} color={theme.muted}/>
+        </Pressable>;
+        return <View key={file.id} style={{width:'100%',minWidth:0,
+          paddingVertical:compact?10:14,borderTopWidth:1,
+          borderColor:theme.border,gap:6}}>
+          <View style={{flexDirection:desktopList?'row':'column',
+            width:'100%',minWidth:0,
+            alignItems:desktopList?'center':'stretch',gap:desktopList?16:4}}>
+            <View style={{flexDirection:'row',alignItems:'center',
+              gap:desktopList?14:9,
+              width:desktopList?350:'100%',minWidth:0}}>
+              <Pressable onPress={openDetails} accessibilityRole="button"
+                accessibilityLabel={'Ouvrir '+file.title}
+                style={{flex:1,minWidth:0,minHeight:40,
+                  justifyContent:'center'}}>
+                <Text numberOfLines={1} style={{
+                  color:theme.foreground,fontSize:compact?14:15,
+                  fontWeight:'600'}}>{file.title}</Text>
+              </Pressable>
+              {dateLabel?<Text numberOfLines={1}
+                style={{width:desktopList?105:90,textAlign:'right',
+                  color:theme.muted,fontSize:11,flexShrink:0,
+                  fontVariant:['tabular-nums']}}>{dateLabel}</Text>:null}
+              {!desktopList?detailArrow:null}
+            </View>
+            <View style={{flex:desktopList?1:undefined,
+              width:desktopList?undefined:'100%',minWidth:0}}>
+              {representation}
+            </View>
+            {desktopList?detailArrow:null}
+          </View>
           {newVersionMode&&isMusicTrackCandidate(file)?
             <Pressable accessibilityRole="button"
               accessibilityLabel={'Créer une nouvelle version depuis '+file.title}
               onPress={()=>onStartVersion(file)}
-              style={{alignSelf:'flex-start',flexDirection:'row',alignItems:'center',
-                gap:7,minHeight:39,paddingHorizontal:12,borderRadius:9,
-                backgroundColor:PINK}}>
+              style={{alignSelf:'flex-start',flexDirection:'row',
+                alignItems:'center',gap:7,minHeight:39,
+                paddingHorizontal:12,borderRadius:9,backgroundColor:PINK}}>
               <Ionicons name="add-circle-outline" color="#FFFFFF" size={16}/>
               <Text style={{fontSize:12,fontWeight:'700',color:'#FFFFFF'}}>
                 Démarrer une version avec cette prise
               </Text>
             </Pressable>:null}
-          {sound&&file.localFileId?<MusicAudioTake file={file} compact
-            onOpen={()=>setSelected(file.id)}/>:null}
-          {file.musicEvents?.length?<MusicCaptureScoreStrip file={file}/>:
-            isMidiSource(file)?<MusicMidiPreview file={file}/>:null}
           {translations.length?<View style={{gap:6}}>
             {translations.map(translation=><Pressable key={translation.id}
               accessibilityRole="button"
