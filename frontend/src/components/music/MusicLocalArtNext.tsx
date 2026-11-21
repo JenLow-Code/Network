@@ -5,8 +5,8 @@ import {getDraftAttachment} from '@/domain/musicLocalStorage';
 import {useAppTheme} from '@/theme/AppTheme';
 import type {MusicProjectFile} from '@/domain/musicWorkspace';
 const pink='#CB245C';
-export function MusicLocalArt({file,size=42,cover=false,thumbnail=false}:{
-  file:MusicProjectFile;size?:number;cover?:boolean;thumbnail?:boolean;
+export function MusicLocalArt({file,size=42,cover=false,thumbnail=false,banner=false}:{
+  file:MusicProjectFile;size?:number;cover?:boolean;thumbnail?:boolean;banner?:boolean;
 }){
   const theme=useAppTheme();
   const [uri,setUri]=useState('');
@@ -22,11 +22,12 @@ export function MusicLocalArt({file,size=42,cover=false,thumbnail=false}:{
     }
     return()=>{active=false;if(url)URL.revokeObjectURL(url);};
   },[file.localFileId]);
-  return <View style={{width:thumbnail?100:cover?'100%':size,
-    height:thumbnail?70:cover?164:size,borderRadius:thumbnail?11:cover?0:11,
+  return <View style={{width:banner?'100%':thumbnail?100:cover?'100%':size,
+    height:banner?136:thumbnail?70:cover?164:size,
+    borderRadius:banner?7:thumbnail?11:cover?0:11,
     overflow:'hidden',
     alignItems:'center',justifyContent:'center',backgroundColor:theme.surface,
-    borderWidth:1,borderColor:theme.border}}>
+    borderWidth:banner?0:1,borderColor:theme.border}}>
     {uri?<Image source={{uri}} style={{width:'100%',height:'100%'}}
       resizeMode="cover"/>:<Ionicons name="image-outline" color={pink} size={21}/>}
   </View>;
