@@ -27,11 +27,14 @@ function MiniStaff({events,kind,clef,playheadBeats}:{
 }){
   const theme=useAppTheme();
   const scroll=useRef<React.ElementRef<typeof ScrollView>>(null);
+  const [availableWidth,setAvailableWidth]=useState(0);
   const notes=events.filter(event=>event.instrument===kind)
     .sort((a,b)=>a.startBeats-b.startBeats);
   const end=Math.max(8,...notes.map(n=>n.startBeats+n.lengthBeats));
-  // Draw only the occupied staff, while longer scores remain horizontally scrollable.
-  const width=Math.max(185,LEFT+end*STEP+18);
+  // Extend the five ruled lines across most of the preview column, without
+  // returning to full-page-width staves. Notes remain compact and readable.
+  const width=Math.max(LEFT+end*STEP+18,
+    availableWidth>0?Math.min(740,availableWidth*.85):460);
   const rawYs=notes.map(n=>kind==='piano'?
     pianoHeight(n.midi,clef):drumHeight(n.midi));
   const highestStem=Math.min(10,...rawYs.map((y,i)=>
@@ -50,7 +53,9 @@ function MiniStaff({events,kind,clef,playheadBeats}:{
   if(!notes.length)return null;
   const y=(n:MusicNotationEvent)=>topInset+(kind==='piano'?
     pianoHeight(n.midi,clef):drumHeight(n.midi));
-  return <View style={{width:'100%',minWidth:0,height:staffHeight}}>
+  return <View onLayout={event=>
+      setAvailableWidth(Math.ceil(event.nativeEvent.layout.width))}
+    style={{width:'100%',minWidth:0,height:staffHeight}}>
     <ScrollView ref={scroll} horizontal showsHorizontalScrollIndicator={false}
       accessibilityLabel={kind==='piano'?'Extrait de portée musicale':'Extrait de percussion'}
       style={{height:staffHeight,flexGrow:0,width:'100%'}}>
