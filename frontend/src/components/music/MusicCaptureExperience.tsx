@@ -556,7 +556,7 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
               <View style={{flexDirection:'row',alignItems:'center',
                 justifyContent:'space-between',minHeight:32}}>
                 {dateLabel?<Text numberOfLines={1} style={{
-                  color:theme.muted,fontSize:11,
+                  color:theme.foreground,fontSize:11,
                   fontVariant:['tabular-nums']}}>{dateLabel}</Text>:<View/>}
                 {detailArrow}
               </View>}
