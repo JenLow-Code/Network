@@ -95,8 +95,8 @@ export default function MusicWorkspace() {
       {/* Song actions replace the title in the top bar. The song title is
           displayed once above the saved items inside Capturer. */}
       <PageHeader onBack={()=>router.replace('/music-hub')} center={
-      <View style={{flex:1,minWidth:0,flexDirection:'row',alignItems:'center',
-        gap:desktop?20:3}}>
+      <View style={{flex:desktop?undefined:1,minWidth:0,flexDirection:'row',
+        alignItems:'center',justifyContent:'center',gap:desktop?20:3}}>
         {spaces.map(item=>{
           const selected=space===item.id;
           return <Pressable key={item.id} onPress={()=>{setSpace(item.id);router.replace({pathname:'/music-workspace/[id]',params:{id:project.id,tab:item.id}});}}
