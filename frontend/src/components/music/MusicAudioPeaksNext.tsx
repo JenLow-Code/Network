@@ -36,12 +36,14 @@ function getPeaks(id:string){
   return cache.get(id)!;
 }
 /** Same visual language for live recorder and recorded timeline clips. */
-export function MusicPeakBars({levels,height=34,muted=false,progress}:{
+export function MusicPeakBars({levels,height=34,muted=false,progress,detailed=false}:{
   levels:number[];height?:number;muted?:boolean;
   /** Real playback fraction; omitted for live recording. */
-  progress?:number;
+  progress?:number;detailed?:boolean;
 }){
   const theme=useAppTheme();
+  if(detailed)return <MusicDensePeakBars levels={levels} height={height}
+    muted={muted} progress={progress}/>;
   return <View accessibilityLabel="Forme d’onde audio"
     style={{height,flexDirection:'row',alignItems:'center',gap:1,
       flex:1,justifyContent:'space-between',overflow:'hidden'}}>
