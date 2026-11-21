@@ -469,6 +469,52 @@ export function MusicCreateExperience({project,patch,onCapture}:Props) {
         </Text>:null}
       </View>:null}
     </View>:null}
+    {/* Other versions remain visible as collapsed siblings, even while
+        the selected version's full studio is expanded. */}
+    {versions.filter(other=>other.id!==version?.id).map(other=>
+      <Pressable key={other.id} accessibilityRole="button"
+        accessibilityLabel={'Déployer '+other.title}
+        accessibilityState={{expanded:false}}
+        onPress={()=>{
+          if(recording&&unsavedRecording){
+            setError('Termine ou sauvegarde la prise avant de changer de version.');
+            return;
+          }
+          patch({musicNext:{...state,activeVersionId:other.id}});
+          setVersionExpanded(true);setVersionMenu(false);
+          setSelectedTrackId('');setEditTrack('');setError('');
+        }}
+        style={{paddingHorizontal:compact?11:15,paddingVertical:11,gap:7,
+          borderRadius:12,borderWidth:1,borderColor:theme.border,
+          backgroundColor:theme.dark?'rgba(255,255,255,.045)':'rgba(36,38,37,.035)'}}>
+        <View style={{flexDirection:'row',alignItems:'center',gap:9}}>
+          <Ionicons name="layers-outline" size={17} color={theme.muted}/>
+          <Text numberOfLines={1} style={{flex:1,color:theme.foreground,
+            fontWeight:'600',fontSize:compact?13:15}}>{other.title}</Text>
+          <Text style={{fontSize:11,color:theme.muted}}>
+            {other.tracks.length} piste{other.tracks.length>1?'s':''}
+          </Text>
+          <Ionicons name="chevron-down" size={17} color={theme.muted}/>
+        </View>
+        <Text numberOfLines={1} style={{fontSize:11,color:theme.muted,
+          paddingLeft:26}}>
+          {formatMusicDuration(versionLength(other,project.files))+
+            ' · '+(other.bpm||100)+' BPM'}
+          {other.key?' · '+other.key:''}
+        </Text>
+        <View style={{flexDirection:'row',flexWrap:'wrap',gap:5,paddingLeft:26}}>
+          {other.tracks.slice(0,4).map(track=>
+            <View key={track.id} style={{borderRadius:7,paddingHorizontal:7,
+              paddingVertical:4,borderWidth:1,borderColor:theme.border}}>
+              <Text numberOfLines={1} style={{color:theme.foreground,
+                fontSize:10,maxWidth:compact?95:150}}>
+                {track.emoji||'♫'} {track.title}
+              </Text>
+            </View>)}
+          {other.tracks.length>4?<Text style={{fontSize:10,
+            color:theme.muted}}>+{other.tracks.length-4}</Text>:null}
+        </View>
+      </Pressable>)}
     {!version?<View style={{alignSelf:'flex-start',paddingTop:compact?4:10}}>
       {sources.length?
         button('Choisir une prise · 1re version',()=>setPickMode('start'),true,'add-outline'):
