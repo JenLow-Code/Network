@@ -301,10 +301,10 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
                     <Text style={{fontSize:11,fontWeight:'700',color:theme.foreground}}>Capturer</Text>
                   </Pressable>
                   {([
-                    {key:'thought',title:'Pensées',icon:'chatbox-ellipses-outline'},
-                    {key:'record',title:'Son',icon:'mic-circle-outline'},
-                    {key:'doc',title:'Document',icon:'document-text-outline'},
-                    {key:'idea',title:'Idée',icon:'bulb-outline'},
+                    {key:'thought',title:'Pensées'},
+                    {key:'record',title:'Son'},
+                    {key:'doc',title:'Document'},
+                    {key:'idea',title:'Idée'},
                   ] as const).map(action=>{
                     const active=action.key==='thought'?path.startsWith('/music-lyrics/'):
                       action.key==='idea'?path.startsWith('/music-composer/'):
@@ -320,8 +320,8 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
                       style={{minHeight:34,flexDirection:'row',alignItems:'center',gap:9,
                         paddingHorizontal:7,marginLeft:21,borderRadius:7,
                         backgroundColor:active?'rgba(215,29,119,.10)':'transparent'}}>
-                      <Ionicons name={action.icon} size={16}
-                        color={active?'#CB245C':theme.muted}/>
+                      <Ionicons name="add" size={16}
+                        color={active?'#D71D77':theme.muted}/>
                       <Text numberOfLines={1} style={{flex:1,minWidth:0,fontSize:11,
                         fontWeight:active?'700':'500',
                         color:active?'#CB245C':theme.foreground}}>{action.title}</Text>
