@@ -71,14 +71,16 @@ function Playback({uri,transcription,captureStyle}:{uri:string;transcription:boo
       let bytes:ArrayBuffer;
       if(response.body){
         const reader=response.body.getReader();
-        const chunks:Uint8Array[]=[];
+        const chunks:ArrayBuffer[]=[];
         let size=0;
         while(true){
           const {done,value}=await reader.read();
           if(done)break;
           size+=value.byteLength;
           if(size>maximum){await reader.cancel();return;}
-          chunks.push(value);
+          const chunk=new ArrayBuffer(value.byteLength);
+          new Uint8Array(chunk).set(value);
+          chunks.push(chunk);
         }
         bytes=await new Blob(chunks).arrayBuffer();
       }else bytes=await response.arrayBuffer();
