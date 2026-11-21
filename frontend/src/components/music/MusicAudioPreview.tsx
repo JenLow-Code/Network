@@ -113,7 +113,8 @@ function Playback({uri,transcription,captureStyle}:{uri:string;transcription:boo
   if(captureStyle)return <MusicCapturePlaybackBar title="la piste proposée"
     playing={status.playing} onToggle={toggle}
     position={status.currentTime} duration={length}
-    waveform={<MusicPeakBars levels={actualPeaks} height={26}/>}/>;
+    waveform={<MusicPeakBars levels={actualPeaks} height={26}
+      progress={length>0?status.currentTime/length:0}/>}/>;
   return <View style={{flexDirection:'row',gap:10,alignItems:'center'}}>
     <Pressable accessibilityRole="button" accessibilityLabel={status.playing?'Pause':'Lecture'}
       onPress={()=>{if(status.playing)player.pause();else{
