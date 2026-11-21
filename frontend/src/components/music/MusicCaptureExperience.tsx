@@ -4,7 +4,6 @@ import { Ionicons } from '@expo/vector-icons';
 import {router} from 'expo-router';
 import { useAppTheme } from '@/theme/AppTheme';
 import { MusicAudioCapture } from './MusicAudioCapture';
-import {workspaceLayout} from '@/theme/workspaceLayout';
 import { MusicAudioTake } from './MusicAudioTake';
 import { MusicNotePreview, type MusicWritingResult } from './MusicWritingStudio';
 
@@ -54,8 +53,6 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
   const theme=useAppTheme();
   const {width}=useWindowDimensions();
   const compact=width<630;
-  // Only wide non-touch desktop canvases use the editorial grid.
-  const desktopCards=Platform.OS==='web'&&workspaceLayout(width).desktop;
   const files=project.files||[];
   const [composer,setComposer]=useState<Composer>('none');
   const [unsavedRecording,setUnsavedRecording]=useState(false);
@@ -87,8 +84,6 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
     .filter(file=>!file.translationOfFileId||
       !files.some(original=>original.id===file.translationOfFileId))
     .filter(file=>filter==='all'||fileGroup(file)===filter);
-  // Preserve the Capture list order. Every type shares the same two-column
-  // desktop grid; no special full-width rows for audio or notation.
   const selectedFile=files.find(f=>f.id===selected)||null;
   const translationSource=files.find(f=>f.id===translationSourceId)||null;
   const editingFile=files.find(f=>f.id===editingFileId)||null;
@@ -368,9 +363,7 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
         </Pressable>;
       })}
     </ScrollView>:null}
-    {files.length?<View style={{flexDirection:'row',flexWrap:'wrap',
-      columnGap:desktopCards?18:0,rowGap:0,alignItems:'flex-start',
-      width:'100%'}}>
+    {files.length?<View style={{width:'100%',gap:0}}>
 
       {visibleFiles.map(file=>{
         const image=isImage(file);
@@ -378,14 +371,13 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
         const text=content(file).trim();
         const translations=files.filter(candidate=>candidate.translationOfFileId===file.id);
         const lyricExpanded=!!expandedLyrics[file.id];
-        return <View key={file.id} style={{
-          // Two equal columns for every entry: lyrics, notes, images, audio,
-          // MIDI/score and other imported material. Mobile remains one column.
-          width:desktopCards?'48.5%':'100%',minWidth:0,
-          paddingVertical:compact?12:18,
-          paddingHorizontal:0,
-          borderTopWidth:1,borderColor:theme.border,
-          backgroundColor:'transparent',gap:compact?7:11}}>
+        const firstLine=text.split(/\r?\n/).find(line=>line.trim())?.trim()||'';
+        const created=new Date(file.createdAt||'');
+        const dateLabel=Number.isNaN(created.getTime())?'':created.toLocaleDateString(
+          'fr-FR',{day:'numeric',month:'short',year:'numeric'});
+        return <View key={file.id} style={{width:'100%',minWidth:0,
+          paddingVertical:compact?14:19,borderTopWidth:1,
+          borderColor:theme.border,gap:compact?8:11}}>
           <Pressable onPress={()=>{
             if(file.musicEvents?.length){
               openWrite('',file.id,'score');return;
@@ -397,37 +389,24 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
           }} accessibilityRole="button"
             accessibilityLabel={'Ouvrir '+file.title}
             style={{gap:compact?7:11}}>
-            {image?
-              <View style={{flexDirection:'row',alignItems:'center',gap:12}}>
-                <MusicLocalArt file={file} thumbnail/>
-                <Text numberOfLines={2} style={{flex:1,fontSize:compact?14:16,
-                  fontWeight:'600',color:theme.foreground}}>{file.title}</Text>
-                <Ionicons name="chevron-forward" size={17} color={theme.muted}/>
-              </View>:
-              <View style={{flexDirection:'row',gap:9,alignItems:'center'}}>
-                {!sound&&!file.musicEvents?.length?<Ionicons name={file.kind==='score'?'musical-notes-outline':
-                  file.kind==='lyrics'?'document-text-outline':
-                  file.kind==='note'?'reader-outline':'document-outline'}
-                  size={17} color={theme.muted}/>:null}
-                <View style={{flex:1,gap:2}}>
-                  <Text numberOfLines={2} style={{fontSize:compact?14:16,
-                    fontWeight:'600',color:theme.foreground}}>{file.title}</Text>
-                  {file.kind==='lyrics'&&file.language?
-                    <Text style={{fontSize:11,color:theme.muted}}>{file.language}</Text>:null}
-                </View>
-                <Ionicons name="chevron-forward" color={theme.muted} size={16}/>
-              </View>}
+            <View style={{flexDirection:'row',alignItems:'center',gap:11}}>
+              <Text numberOfLines={1} style={{flex:1,minWidth:0,
+                color:theme.foreground,fontSize:compact?14:16,
+                fontWeight:'600'}}>{file.title}</Text>
+              {dateLabel?<Text style={{fontSize:11,color:theme.muted,
+                fontVariant:['tabular-nums']}}>{dateLabel}</Text>:null}
+              <Ionicons name="chevron-forward" color={theme.muted} size={16}/>
+            </View>
+            {image?<MusicLocalArt file={file} banner/>:null}
           </Pressable>
           {text&&!image&&!sound&&(file.kind==='note'||file.kind==='lyrics')?
-            <View style={{gap:6,alignItems:'flex-start'}}>
-              <Text
-                numberOfLines={file.kind==='lyrics'
-                  ?(lyricExpanded?undefined:compact?3:2):2}
+            <View style={{gap:5,alignItems:'flex-start'}}>
+              <Text numberOfLines={lyricExpanded?undefined:1}
                 ellipsizeMode="tail"
                 style={{fontFamily:file.kind==='lyrics'?'Georgia':undefined,
                   fontSize:file.kind==='lyrics'?(compact?14:16):13,
                   lineHeight:compact?21:23,color:theme.muted,width:'100%'}}>
-                {text}
+                {file.kind==='lyrics'&&!lyricExpanded?firstLine:text}
               </Text>
               {file.kind==='lyrics'?<Pressable accessibilityRole="button"
                 accessibilityLabel={(lyricExpanded?'Voir moins':'Voir plus')+
