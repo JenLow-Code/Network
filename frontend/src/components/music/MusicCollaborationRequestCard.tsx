@@ -101,7 +101,7 @@ export function MusicCollaborationRequestCard({
             paddingHorizontal:12,paddingVertical:12,borderRadius:12,
             borderWidth:1,borderColor:theme.border,
             backgroundColor:theme.dark?'rgba(255,255,255,.03)':'#FBF8F5'}}>
-          <Ionicons name="play-circle-outline" size={27} color={PINK}/>
+          <Ionicons name="musical-notes-outline" size={20} color={PINK}/>
           <View style={{flex:1,gap:3,minWidth:0}}>
             <Text numberOfLines={1} style={{fontWeight:'700',fontSize:12,
               color:theme.foreground}}>Proposition de piste · {request.trackTitle}</Text>
@@ -115,7 +115,7 @@ export function MusicCollaborationRequestCard({
         {loading?<Text style={{fontSize:11,color:theme.muted}}>
           Chargement de la piste…
         </Text>:null}
-        {audioOpen&&audioUrl?<MusicAudioPreview source={{audioUrl}}/>:null}
+        {audioOpen&&audioUrl?<MusicAudioPreview source={{audioUrl}} captureStyle/>:null}
         {audioOpen&&!audioUrl&&!loading?<Text style={{
           fontSize:11,color:theme.muted}}>
           Aucun audio lisible joint à cette demande.
