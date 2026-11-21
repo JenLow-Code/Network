@@ -378,51 +378,33 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
         suggestedTitle={'Prise '+(files.filter(isAudio).length+1)}/>
     </View>:null}
     {error?<Text style={{fontSize:12,color:'#B64A60'}}>{error}</Text>:null}
-    {desktopList&&files.length?<View
-      accessibilityRole="header"
+    {desktopList&&files.length?<View accessibilityRole="header"
       style={{width:'100%',flexDirection:'row',alignItems:'center',
-        paddingHorizontal:12,paddingVertical:8,gap:16,
+        paddingHorizontal:12,paddingVertical:8,gap:14,
         borderBottomWidth:1,borderBottomColor:theme.border}}>
-      <View style={{width:350,flexDirection:'row',
-        alignItems:'center',gap:14}}>
-        {([
-          {id:'name' as const,label:'Nom',grow:true},
-          {id:'date' as const,label:'Date',grow:false},
-        ]).map(column=>{
-          const selected=sortBy===column.id;
-          return <Pressable key={column.id}
-            onPress={()=>updateSort(column.id)}
-            accessibilityRole="button"
-            accessibilityLabel={'Trier les fichiers par '+column.label+
-              (selected?(sortAscending?' (croissant)':' (décroissant)'):'')}
-            accessibilityState={{selected}}
-            style={{flex:column.grow?1:undefined,
-              width:column.grow?undefined:130,
-              flexDirection:'row',alignItems:'center',gap:5,
-              minWidth:0,minHeight:38}}>
-            <Text style={{color:selected?PINK:theme.muted,
-              fontSize:13,fontWeight:'700'}}>{column.label}</Text>
-            <Ionicons size={13}
-              name={selected?(sortAscending?'arrow-up':'arrow-down'):
-                'swap-vertical-outline'}
-              color={selected?PINK:theme.muted}/>
-          </Pressable>;
-        })}
-      </View>
-      <Pressable onPress={()=>updateSort('type')}
-        accessibilityRole="button"
-        accessibilityLabel={'Trier les fichiers par type'+
-          (sortBy==='type'?(sortAscending?' (croissant)':' (décroissant)'):'')}
-        accessibilityState={{selected:sortBy==='type'}}
-        style={{flex:1,minWidth:0,flexDirection:'row',
-          alignItems:'center',gap:5,minHeight:38}}>
-        <Text style={{color:sortBy==='type'?PINK:theme.muted,
-          fontSize:13,fontWeight:'700'}}>Type</Text>
-        <Ionicons size={13}
-          name={sortBy==='type'?(sortAscending?'arrow-up':'arrow-down'):
-            'swap-vertical-outline'}
-          color={sortBy==='type'?PINK:theme.muted}/>
-      </Pressable>
+      {([
+        {id:'name' as const,label:'Nom',width:210},
+        {id:'date' as const,label:'Date',width:120},
+        {id:'type' as const,label:'Type',width:undefined},
+      ]).map(column=>{
+        const selected=sortBy===column.id;
+        return <Pressable key={column.id}
+          onPress={()=>updateSort(column.id)}
+          accessibilityRole="button"
+          accessibilityLabel={'Trier les fichiers par '+column.label+
+            (selected?(sortAscending?' (croissant)':' (décroissant)'):'')}
+          accessibilityState={{selected}}
+          style={{width:column.width,flex:column.id==='type'?1:undefined,
+            flexDirection:'row',alignItems:'center',gap:5,
+            minWidth:0,minHeight:38}}>
+          <Text style={{color:selected?PINK:theme.muted,
+            fontSize:13,fontWeight:'700'}}>{column.label}</Text>
+          <Ionicons size={13}
+            name={selected?(sortAscending?'arrow-up':'arrow-down'):
+              'swap-vertical-outline'}
+            color={selected?PINK:theme.muted}/>
+        </Pressable>;
+      })}
       <View style={{width:28}}/>
     </View>:null}
     {!desktopList&&files.length?<ScrollView horizontal showsHorizontalScrollIndicator={false}
@@ -483,13 +465,13 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
             text&&(file.kind==='lyrics'||file.kind==='note')?
               <View style={{flexDirection:'row',alignItems:'center',gap:10,
                 minHeight:38,minWidth:0}}>
-                <Text numberOfLines={lyricExpanded?undefined:1}
+                <Text numberOfLines={desktopList?1:lyricExpanded?undefined:1}
                   ellipsizeMode="tail"
                   style={{flex:1,minWidth:0,
                     fontFamily:file.kind==='lyrics'?'Georgia':undefined,
                     fontSize:compact?14:15,lineHeight:23,
                     color:theme.muted}}>
-                  {lyricExpanded?text:firstLine}
+                  {lyricExpanded&&!desktopList?text:firstLine}
                 </Text>
                 {file.kind==='lyrics'?
                   <Pressable accessibilityRole="button"
@@ -532,7 +514,6 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
           onPointerLeave={desktopList?()=>setHoveredRow(current=>
             current===file.id?'':current):undefined}
           style={{width:'100%',minWidth:0,
-            paddingVertical:compact?10:desktopList?12:14,
             paddingHorizontal:desktopList?12:0,
             borderTopWidth:desktopList?0:1,
             borderColor:theme.border,gap:6,
@@ -541,31 +522,46 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
               (theme.dark?'#28242A':'#F7F3EE'):'transparent'}}>
           <View style={{flexDirection:desktopList?'row':'column',
             width:'100%',minWidth:0,
-            alignItems:desktopList?'center':'stretch',gap:desktopList?16:4}}>
-            <View style={{flexDirection:'row',alignItems:'center',
-              gap:desktopList?14:9,
-              width:desktopList?350:'100%',minWidth:0}}>
-              <Pressable onPress={openDetails} accessibilityRole="button"
-                accessibilityLabel={'Ouvrir '+file.title}
-                style={{flex:1,minWidth:0,minHeight:40,
-                  justifyContent:'center'}}>
-                <Text numberOfLines={1} style={{
-                  color:theme.foreground,fontSize:compact?14:15,
-                  fontWeight:'600'}}>{file.title}</Text>
-              </Pressable>
-              {dateLabel?<Text numberOfLines={1}
-                style={{width:desktopList?130:90,textAlign:'right',
-                  color:theme.muted,fontSize:desktopList?15:11,
-                  fontWeight:'400',flexShrink:0,
-                  fontVariant:['tabular-nums']}}>{dateLabel}</Text>:null}
-              {!desktopList?detailArrow:null}
-            </View>
+            height:desktopList?94:undefined,
+            paddingVertical:desktopList?0:compact?10:14,
+            alignItems:desktopList?'center':'stretch',
+            gap:desktopList?14:4}}>
+            <Pressable onPress={openDetails} accessibilityRole="button"
+              accessibilityLabel={'Ouvrir '+file.title}
+              style={{width:desktopList?210:'100%',minWidth:0,
+                minHeight:40,justifyContent:'center'}}>
+              <Text numberOfLines={1} style={{
+                color:theme.foreground,fontSize:compact?14:15,
+                fontWeight:'600'}}>{file.title}</Text>
+            </Pressable>
+            {desktopList?
+              <Text numberOfLines={1} style={{width:120,
+                color:theme.muted,fontSize:15,
+                fontWeight:'400',fontVariant:['tabular-nums']}}>
+                {dateLabel}
+              </Text>:
+              <View style={{flexDirection:'row',alignItems:'center',
+                justifyContent:'space-between',minHeight:32}}>
+                {dateLabel?<Text numberOfLines={1} style={{
+                  color:theme.muted,fontSize:11,
+                  fontVariant:['tabular-nums']}}>{dateLabel}</Text>:<View/>}
+                {detailArrow}
+              </View>}
             <View style={{flex:desktopList?1:undefined,
-              width:desktopList?undefined:'100%',minWidth:0}}>
+              width:desktopList?undefined:'100%',minWidth:0,
+              maxHeight:desktopList?86:undefined,
+              overflow:desktopList?'hidden':'visible',
+              justifyContent:'center'}}>
               {representation}
             </View>
             {desktopList?detailArrow:null}
           </View>
+          {desktopList&&lyricExpanded&&file.kind==='lyrics'?
+            <View style={{paddingLeft:210+120+28,paddingRight:28,
+              paddingBottom:14}}>
+              <Text style={{fontFamily:'Georgia',fontSize:15,
+                lineHeight:24,color:theme.muted}}>{text}</Text>
+            </View>:null}
           {newVersionMode&&isMusicTrackCandidate(file)?
             <Pressable accessibilityRole="button"
               accessibilityLabel={'Créer une nouvelle version depuis '+file.title}
