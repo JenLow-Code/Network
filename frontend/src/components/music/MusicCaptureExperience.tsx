@@ -31,6 +31,7 @@ const isAudio=(file:MusicProjectFile)=>isPlayableMusicFile(file);
 const content=(file:MusicProjectFile)=>file.text??
   (file.kind==='lyrics'?file.lyricSegments?.map(v=>v.text).join('\n\n')||'':'');
 type CaptureFilter='all'|'audio'|'image'|'lyrics'|'score'|'note'|'other';
+type CaptureSort='name'|'date'|'type';
 const filterOptions:{id:CaptureFilter;label:string}[]=[
   {id:'all',label:'Tous'},
   {id:'audio',label:'Audio'},
@@ -67,6 +68,9 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState('');
   const [filter,setFilter]=useState<CaptureFilter>('all');
+  const [sortBy,setSortBy]=useState<CaptureSort>('date');
+  const [sortAscending,setSortAscending]=useState(false);
+  const [hoveredRow,setHoveredRow]=useState('');
   const [actionsOpen,setActionsOpen]=useState(false);
   const [expandedLyrics,setExpandedLyrics]=useState<Record<string,boolean>>({});
   useEffect(()=>{
@@ -85,7 +89,32 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
   const visibleFiles=files.filter(file=>!file.renderedFromMidiId)
     .filter(file=>!file.translationOfFileId||
       !files.some(original=>original.id===file.translationOfFileId))
-    .filter(file=>filter==='all'||fileGroup(file)===filter);
+    // Mobile keeps its existing filters; desktop always shows every type.
+    .filter(file=>desktopList||filter==='all'||fileGroup(file)===filter);
+  const displayedFiles=desktopList?[...visibleFiles].sort((a,b)=>{
+    let comparison=0;
+    if(sortBy==='date'){
+      const aTime=Date.parse(a.createdAt||'');
+      const bTime=Date.parse(b.createdAt||'');
+      comparison=(Number.isFinite(aTime)?aTime:0)-
+        (Number.isFinite(bTime)?bTime:0);
+    }else if(sortBy==='type'){
+      comparison=fileGroup(a).localeCompare(fileGroup(b),'fr',
+        {sensitivity:'base',numeric:true});
+    }else{
+      comparison=a.title.localeCompare(b.title,'fr',
+        {sensitivity:'base',numeric:true});
+    }
+    if(comparison!==0)return sortAscending?comparison:-comparison;
+    // Secondary alphabetical order ensures a predictable sort within types/dates.
+    const titleOrder=a.title.localeCompare(b.title,'fr',
+      {sensitivity:'base',numeric:true});
+    return titleOrder||a.id.localeCompare(b.id);
+  }):visibleFiles;
+  const updateSort=(next:CaptureSort)=>{
+    if(next===sortBy)setSortAscending(previous=>!previous);
+    else {setSortBy(next);setSortAscending(next!=='date');}
+  };
   const selectedFile=files.find(f=>f.id===selected)||null;
   const translationSource=files.find(f=>f.id===translationSourceId)||null;
   const editingFile=files.find(f=>f.id===editingFileId)||null;
@@ -347,7 +376,34 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
         suggestedTitle={'Prise '+(files.filter(isAudio).length+1)}/>
     </View>:null}
     {error?<Text style={{fontSize:12,color:'#B64A60'}}>{error}</Text>:null}
-    {files.length?<ScrollView horizontal showsHorizontalScrollIndicator={false}
+    {desktopList&&files.length?<View style={{flexDirection:'row',
+      alignItems:'center',justifyContent:'flex-end',
+      flexWrap:'wrap',gap:7,paddingVertical:5}}>
+      <Text style={{fontSize:12,color:theme.muted,marginRight:5}}>Trier par</Text>
+      {([
+        {id:'name',label:'Nom'},
+        {id:'date',label:'Date'},
+        {id:'type',label:'Type'},
+      ] as {id:CaptureSort;label:string}[]).map(option=>{
+        const active=sortBy===option.id;
+        return <Pressable key={option.id} onPress={()=>updateSort(option.id)}
+          accessibilityRole="button"
+          accessibilityLabel={'Trier par '+option.label.toLowerCase()+
+            (active?(sortAscending?' décroissant':' croissant'):'')}
+          accessibilityState={{selected:active}}
+          style={{minHeight:38,paddingHorizontal:12,
+            flexDirection:'row',alignItems:'center',gap:4,
+            borderRadius:8,
+            backgroundColor:active?
+              (theme.dark?'#382A33':'#F9E9EF'):'transparent'}}>
+          <Text style={{fontSize:13,fontWeight:active?'700':'500',
+            color:active?PINK:theme.muted}}>{option.label}</Text>
+          {active?<Ionicons name={sortAscending?'arrow-up':'arrow-down'}
+            size={12} color={PINK}/>:null}
+        </Pressable>;
+      })}
+    </View>:null}
+    {!desktopList&&files.length?<ScrollView horizontal showsHorizontalScrollIndicator={false}
       style={{flexGrow:0}}
       contentContainerStyle={{gap:7,alignItems:'center',paddingRight:6}}>
       {filterOptions.map(option=>{
@@ -367,7 +423,7 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
     </ScrollView>:null}
     {files.length?<View style={{width:'100%',gap:0}}>
 
-      {visibleFiles.map(file=>{
+      {displayedFiles.map(file=>{
         const image=isImage(file);
         const sound=isAudio(file)||file.kind==='audio';
         const text=content(file).trim();
@@ -449,9 +505,18 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
             justifyContent:'center',flexShrink:0}}>
           <Ionicons name="chevron-forward" size={17} color={theme.muted}/>
         </Pressable>;
-        return <View key={file.id} style={{width:'100%',minWidth:0,
-          paddingVertical:compact?10:14,borderTopWidth:1,
-          borderColor:theme.border,gap:6}}>
+        return <View key={file.id}
+          onPointerEnter={desktopList?()=>setHoveredRow(file.id):undefined}
+          onPointerLeave={desktopList?()=>setHoveredRow(current=>
+            current===file.id?'':current):undefined}
+          style={{width:'100%',minWidth:0,
+            paddingVertical:compact?10:desktopList?12:14,
+            paddingHorizontal:desktopList?12:0,
+            borderTopWidth:desktopList?0:1,
+            borderColor:theme.border,gap:6,
+            borderRadius:desktopList?10:0,
+            backgroundColor:desktopList&&hoveredRow===file.id?
+              (theme.dark?'#28242A':'#F7F3EE'):'transparent'}}>
           <View style={{flexDirection:desktopList?'row':'column',
             width:'100%',minWidth:0,
             alignItems:desktopList?'center':'stretch',gap:desktopList?16:4}}>
@@ -467,8 +532,9 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
                   fontWeight:'600'}}>{file.title}</Text>
               </Pressable>
               {dateLabel?<Text numberOfLines={1}
-                style={{width:desktopList?105:90,textAlign:'right',
-                  color:theme.muted,fontSize:11,flexShrink:0,
+                style={{width:desktopList?130:90,textAlign:'right',
+                  color:theme.muted,fontSize:desktopList?15:11,
+                  fontWeight:'400',flexShrink:0,
                   fontVariant:['tabular-nums']}}>{dateLabel}</Text>:null}
               {!desktopList?detailArrow:null}
             </View>
