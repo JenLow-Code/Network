@@ -289,18 +289,22 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
                   gap:2,marginBottom:4}}>
                   <Pressable accessibilityRole="button"
                     accessibilityLabel="Ouvrir Capturer"
-                    accessibilityState={{selected:params.tab==='capture'&&path.startsWith('/music-workspace/')}}
+                    accessibilityState={{selected:path.startsWith('/music-workspace/')&&
+                      (!params.tab||params.tab==='capture')&&!params.intent}}
                     onPress={()=>openMusicArea('capture')}
                     style={{minHeight:36,flexDirection:'row',alignItems:'center',
-                      gap:9,paddingHorizontal:7,borderRadius:7}}>
+                      gap:9,paddingHorizontal:7,marginLeft:21,borderRadius:7,
+                      backgroundColor:path.startsWith('/music-workspace/')&&
+                        (!params.tab||params.tab==='capture')&&!params.intent?
+                        (theme.dark?'rgba(215,29,119,.13)':'rgba(215,29,119,.07)'):'transparent'}}>
                     <Ionicons name="mic-outline" size={16} color={theme.foreground}/>
                     <Text style={{fontSize:11,fontWeight:'700',color:theme.foreground}}>Capturer</Text>
                   </Pressable>
                   {([
-                    {key:'thought',title:'Pensées · notes et paroles',icon:'chatbox-ellipses-outline'},
-                    {key:'record',title:'Son · enregistrer',icon:'mic-circle-outline'},
-                    {key:'doc',title:'Document · importer',icon:'document-text-outline'},
-                    {key:'idea',title:'Idée · clavier et pads',icon:'bulb-outline'},
+                    {key:'thought',title:'Pensées',icon:'chatbox-ellipses-outline'},
+                    {key:'record',title:'Son',icon:'mic-circle-outline'},
+                    {key:'doc',title:'Document',icon:'document-text-outline'},
+                    {key:'idea',title:'Idée',icon:'bulb-outline'},
                   ] as const).map(action=>{
                     const active=action.key==='thought'?path.startsWith('/music-lyrics/'):
                       action.key==='idea'?path.startsWith('/music-composer/'):
@@ -314,8 +318,8 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
                       accessibilityRole="button" accessibilityLabel={action.title}
                       accessibilityState={{selected:active}}
                       style={{minHeight:34,flexDirection:'row',alignItems:'center',gap:9,
-                        paddingHorizontal:7,borderRadius:7,
-                        backgroundColor:active?'rgba(203,36,92,.10)':'transparent'}}>
+                        paddingHorizontal:7,marginLeft:21,borderRadius:7,
+                        backgroundColor:active?'rgba(215,29,119,.10)':'transparent'}}>
                       <Ionicons name={action.icon} size={16}
                         color={active?'#CB245C':theme.muted}/>
                       <Text numberOfLines={1} style={{flex:1,minWidth:0,fontSize:11,
