@@ -8,7 +8,8 @@ import {Ionicons} from '@expo/vector-icons';
 import {MusicAudioPreview} from './MusicAudioPreview';
 import {MusicWritingStudio,type MusicWritingResult} from './MusicWritingStudio';
 import {MusicSketchStudio} from './MusicSketchStudio';
-import {TopActions} from '@/components/navigation/TopActions';
+import {PageHeader} from '@/components/navigation/PageHeader';
+import {workspaceCanvas,workspaceLayout} from '@/theme/workspaceLayout';
 import {useAppTheme} from '@/theme/AppTheme';
 import type {MusicProject,MusicProjectFile} from '@/domain/musicWorkspace';
 import type {MusicNotationEvent} from '@/domain/musicNotation';
@@ -50,6 +51,8 @@ export function MusicWritingOverlay({project,mode,startTab,onModeChange,source,i
   const theme=useAppTheme();
   const {width}=useWindowDimensions();
   const compact=width<650;
+  const desktop=Platform.OS==='web'&&workspaceLayout(width).desktop;
+  const canvas=workspaceCanvas(width);
   const initialTab:Tab=initialFile?.musicEvents?'score':
     (source||initialFile?.translationOfFileId)?'translation':(startTab||mode);
   const [tab,setTab]=useState<Tab>(initialTab);
@@ -108,18 +111,13 @@ export function MusicWritingOverlay({project,mode,startTab,onModeChange,source,i
   return <SafeAreaView style={{flex:1,minHeight:0,overflow:'hidden',backgroundColor:theme.background}}>
       <KeyboardAvoidingView behavior={Platform.OS==='ios'?'padding':undefined}
         style={{flex:1,minHeight:0}}>
-        <View style={{height:54,flexShrink:0,flexDirection:'row',alignItems:'center',
-          paddingHorizontal:compact?11:24,
-          backgroundColor:theme.background,zIndex:2}}>
-          <Pressable onPress={exit} accessibilityRole="button"
-            accessibilityLabel="Retour au morceau"
-            style={{width:43,height:43,justifyContent:'center',alignItems:'center'}}>
-            <Ionicons name="arrow-back-outline" size={23} color={theme.foreground}/>
-          </Pressable>
-          <Text accessibilityLabel={dirty?'Enregistrement en cours':'Enregistrement automatique activé'}
-            style={{flex:1,textAlign:'center',color:theme.foreground,
-            fontWeight:'600',fontSize:compact?15:17}}>{page==='compose'?'Composer':'Paroles'}</Text>
-          <TopActions/>
+        {/* Match the global page-title, back-arrow, Fire and Messages layout
+            used by the music workspace and all other JenLow pages. */}
+        <View style={{...canvas,flexShrink:0,paddingTop:desktop?16:8,zIndex:2,
+          backgroundColor:theme.background}}>
+          <PageHeader title={page==='compose'?'Composer':
+            tab==='note'?'Notes':tab==='translation'?'Traduction':'Paroles'}
+            onBack={exit}/>
         </View>
         {page==='text'?<View style={{paddingHorizontal:compact?13:30,paddingVertical:8,
           backgroundColor:theme.background,zIndex:2}}>
