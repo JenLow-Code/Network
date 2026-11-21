@@ -87,17 +87,8 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
     .filter(file=>!file.translationOfFileId||
       !files.some(original=>original.id===file.translationOfFileId))
     .filter(file=>filter==='all'||fileGroup(file)===filter);
-  // Full-width audio and scores break a wrapping row. On desktop, collect
-  // personal writings and images together FIRST so the editorial cards
-  // actually form two columns instead of leaving an empty right column.
-  // In compact views, preserve the original chronological file order.
-  const isEditorialFile=(file:MusicProjectFile)=>
-    !isAudio(file)&&file.kind!=='audio'&&
-    (isImage(file)||file.kind==='lyrics'||file.kind==='note');
-  const displayedFiles=desktopCards?
-    [...visibleFiles.filter(isEditorialFile),
-      ...visibleFiles.filter(file=>!isEditorialFile(file))]:
-    visibleFiles;
+  // Preserve the Capture list order. Every type shares the same two-column
+  // desktop grid; no special full-width rows for audio or notation.
   const selectedFile=files.find(f=>f.id===selected)||null;
   const translationSource=files.find(f=>f.id===translationSourceId)||null;
   const editingFile=files.find(f=>f.id===editingFileId)||null;
@@ -378,25 +369,23 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
       })}
     </ScrollView>:null}
     {files.length?<View style={{flexDirection:'row',flexWrap:'wrap',
-      columnGap:16,rowGap:desktopCards?15:0,alignItems:'flex-start'}}>
+      columnGap:desktopCards?18:0,rowGap:0,alignItems:'flex-start',
+      width:'100%'}}>
 
-      {displayedFiles.map(file=>{
+      {visibleFiles.map(file=>{
         const image=isImage(file);
         const sound=isAudio(file)||file.kind==='audio';
         const text=content(file).trim();
         const translations=files.filter(candidate=>candidate.translationOfFileId===file.id);
-        const editorialCard=desktopCards&&!sound&&
-          (image||file.kind==='lyrics'||file.kind==='note');
         const lyricExpanded=!!expandedLyrics[file.id];
         return <View key={file.id} style={{
-          width:editorialCard?'48.5%':'100%',minWidth:0,
-          paddingVertical:editorialCard?15:compact?12:18,
-          paddingHorizontal:editorialCard?14:0,
-          borderWidth:editorialCard?1:0,borderTopWidth:1,
-          borderColor:theme.border,borderRadius:editorialCard?14:0,
-          backgroundColor:editorialCard
-            ?(theme.dark?theme.surface:'#FFFCF8'):'transparent',
-          gap:compact?7:11}}>
+          // Two equal columns for every entry: lyrics, notes, images, audio,
+          // MIDI/score and other imported material. Mobile remains one column.
+          width:desktopCards?'48.5%':'100%',minWidth:0,
+          paddingVertical:compact?12:18,
+          paddingHorizontal:0,
+          borderTopWidth:1,borderColor:theme.border,
+          backgroundColor:'transparent',gap:compact?7:11}}>
           <Pressable onPress={()=>{
             if(file.musicEvents?.length){
               openWrite('',file.id,'score');return;
