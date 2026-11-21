@@ -99,7 +99,9 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
       comparison=(Number.isFinite(aTime)?aTime:0)-
         (Number.isFinite(bTime)?bTime:0);
     }else if(sortBy==='type'){
-      comparison=fileGroup(a).localeCompare(fileGroup(b),'fr',
+      const typeName=(file:MusicProjectFile)=>
+        filterOptions.find(option=>option.id===fileGroup(file))?.label||'Autres';
+      comparison=typeName(a).localeCompare(typeName(b),'fr',
         {sensitivity:'base',numeric:true});
     }else{
       comparison=a.title.localeCompare(b.title,'fr',
