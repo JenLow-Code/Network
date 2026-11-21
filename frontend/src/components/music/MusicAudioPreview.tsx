@@ -88,7 +88,7 @@ function Playback({uri,transcription,captureStyle}:{uri:string;transcription:boo
       try{
         const decoded=await context.decodeAudioData(bytes);
         const samples=decoded.getChannelData(0);
-        const count=76;
+        const count=1536;
         const peaks=Array.from({length:count},(_,i)=>{
           const lo=Math.floor(i*samples.length/count);
           const hi=Math.floor((i+1)*samples.length/count);
@@ -113,7 +113,7 @@ function Playback({uri,transcription,captureStyle}:{uri:string;transcription:boo
   if(captureStyle)return <MusicCapturePlaybackBar title="la piste proposée"
     playing={status.playing} onToggle={toggle}
     position={status.currentTime} duration={length}
-    waveform={<MusicPeakBars levels={actualPeaks} height={26}
+    waveform={<MusicPeakBars levels={actualPeaks} height={26} detailed
       progress={length>0?status.currentTime/length:0}/>}/>;
   return <View style={{flexDirection:'row',gap:10,alignItems:'center'}}>
     <Pressable accessibilityRole="button" accessibilityLabel={status.playing?'Pause':'Lecture'}
