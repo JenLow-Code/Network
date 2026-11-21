@@ -23,7 +23,8 @@ export function PageHeader({ title, center, onBack, showFire = true }: {
     onPress={onBack || (()=>router.canGoBack()?router.back():router.replace('/discover'))}
     accessibilityRole="button" accessibilityLabel="Retour"
     style={{width:44,height:44,alignItems:'flex-start',justifyContent:'center',
-      position:'absolute',left:desktop?-52:0,top:desktop?2:0,zIndex:6}}>
+      position:'absolute',left:desktop?(width>=1360?-52:-28):0,
+      top:desktop?2:0,zIndex:6}}>
     <Ionicons name="arrow-back-outline" size={23} color={theme.foreground}/>
    </Pressable>
    {desktop&&center
