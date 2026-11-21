@@ -7,8 +7,9 @@ import { useAppTheme } from '@/theme/AppTheme';
 import { workspaceLayout } from '@/theme/workspaceLayout';
 
 /** Shared inside-page navigation. Discovery is the landing page and deliberately has no Back button. */
-export function PageHeader({ title, onBack, showFire = true }: {
+export function PageHeader({ title, center, onBack, showFire = true }: {
  title?: string;
+ center?: React.ReactNode;
  onBack?: () => void;
  showFire?: boolean;
 }) {
@@ -27,6 +28,7 @@ export function PageHeader({ title, onBack, showFire = true }: {
    <View style={{flex:1,minWidth:0,justifyContent:'center',paddingRight:12}}>
     {title?<Text numberOfLines={1} style={{color:theme.foreground,fontWeight:'700',
       fontSize:desktop?24:21,lineHeight:desktop?32:28,letterSpacing:-0.4}}>{title}</Text>:null}
+    {center||null}
    </View>
    <TopActions showFire={showFire}/>
   </View>
