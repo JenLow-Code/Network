@@ -378,32 +378,52 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
         suggestedTitle={'Prise '+(files.filter(isAudio).length+1)}/>
     </View>:null}
     {error?<Text style={{fontSize:12,color:'#B64A60'}}>{error}</Text>:null}
-    {desktopList&&files.length?<View style={{flexDirection:'row',
-      alignItems:'center',justifyContent:'flex-end',
-      flexWrap:'wrap',gap:7,paddingVertical:5}}>
-      <Text style={{fontSize:12,color:theme.muted,marginRight:5}}>Trier par</Text>
-      {([
-        {id:'name',label:'Nom'},
-        {id:'date',label:'Date'},
-        {id:'type',label:'Type'},
-      ] as {id:CaptureSort;label:string}[]).map(option=>{
-        const active=sortBy===option.id;
-        return <Pressable key={option.id} onPress={()=>updateSort(option.id)}
-          accessibilityRole="button"
-          accessibilityLabel={'Trier par '+option.label.toLowerCase()+
-            (active?(sortAscending?' décroissant':' croissant'):'')}
-          accessibilityState={{selected:active}}
-          style={{minHeight:38,paddingHorizontal:12,
-            flexDirection:'row',alignItems:'center',gap:4,
-            borderRadius:8,
-            backgroundColor:active?
-              (theme.dark?'#382A33':'#F9E9EF'):'transparent'}}>
-          <Text style={{fontSize:13,fontWeight:active?'700':'500',
-            color:active?PINK:theme.muted}}>{option.label}</Text>
-          {active?<Ionicons name={sortAscending?'arrow-up':'arrow-down'}
-            size={12} color={PINK}/>:null}
-        </Pressable>;
-      })}
+    {desktopList&&files.length?<View
+      accessibilityRole="header"
+      style={{width:'100%',flexDirection:'row',alignItems:'center',
+        paddingHorizontal:12,paddingVertical:8,gap:16,
+        borderBottomWidth:1,borderBottomColor:theme.border}}>
+      <View style={{width:350,flexDirection:'row',
+        alignItems:'center',gap:14}}>
+        {([
+          {id:'name' as const,label:'Nom',grow:true},
+          {id:'date' as const,label:'Date',grow:false},
+        ]).map(column=>{
+          const selected=sortBy===column.id;
+          return <Pressable key={column.id}
+            onPress={()=>updateSort(column.id)}
+            accessibilityRole="button"
+            accessibilityLabel={'Trier les fichiers par '+column.label+
+              (selected?(sortAscending?' (croissant)':' (décroissant)'):'')}
+            accessibilityState={{selected}}
+            style={{flex:column.grow?1:undefined,
+              width:column.grow?undefined:130,
+              flexDirection:'row',alignItems:'center',gap:5,
+              minWidth:0,minHeight:38}}>
+            <Text style={{color:selected?PINK:theme.muted,
+              fontSize:13,fontWeight:'700'}}>{column.label}</Text>
+            <Ionicons size={13}
+              name={selected?(sortAscending?'arrow-up':'arrow-down'):
+                'swap-vertical-outline'}
+              color={selected?PINK:theme.muted}/>
+          </Pressable>;
+        })}
+      </View>
+      <Pressable onPress={()=>updateSort('type')}
+        accessibilityRole="button"
+        accessibilityLabel={'Trier les fichiers par type'+
+          (sortBy==='type'?(sortAscending?' (croissant)':' (décroissant)'):'')}
+        accessibilityState={{selected:sortBy==='type'}}
+        style={{flex:1,minWidth:0,flexDirection:'row',
+          alignItems:'center',gap:5,minHeight:38}}>
+        <Text style={{color:sortBy==='type'?PINK:theme.muted,
+          fontSize:13,fontWeight:'700'}}>Type</Text>
+        <Ionicons size={13}
+          name={sortBy==='type'?(sortAscending?'arrow-up':'arrow-down'):
+            'swap-vertical-outline'}
+          color={sortBy==='type'?PINK:theme.muted}/>
+      </Pressable>
+      <View style={{width:28}}/>
     </View>:null}
     {!desktopList&&files.length?<ScrollView horizontal showsHorizontalScrollIndicator={false}
       style={{flexGrow:0}}
