@@ -35,26 +35,37 @@ function getPeaks(id:string){
   return cache.get(id)!;
 }
 /** Same visual language for live recorder and recorded timeline clips. */
-export function MusicPeakBars({levels,height=34,muted=false}:{
+export function MusicPeakBars({levels,height=34,muted=false,progress}:{
   levels:number[];height?:number;muted?:boolean;
+  /** Real playback fraction; omitted for live recording. */
+  progress?:number;
 }){
   const theme=useAppTheme();
   return <View accessibilityLabel="Forme d’onde audio"
     style={{height,flexDirection:'row',alignItems:'center',gap:1,
       flex:1,justifyContent:'space-between',overflow:'hidden'}}>
-    {levels.length?levels.map((value,i)=><View key={i}
-      style={{flex:1,maxWidth:8,
-        height:Math.max(2,Math.min(height-2,2+value*(height-4))),
-        borderRadius:1,backgroundColor:muted?theme.muted:PINK,
-        opacity:muted?.35:.77}}/>):
+    {levels.length?levels.map((value,i)=>{
+      const portion=progress===undefined?undefined:
+        Math.max(0,Math.min(1,Number.isFinite(progress)?progress:0));
+      const played=portion!==undefined&&i<(portion*levels.length);
+      return <View key={i}
+        style={{flex:1,maxWidth:8,
+          height:Math.max(2,Math.min(height-2,2+value*(height-4))),
+          borderRadius:1,
+          backgroundColor:portion===undefined?
+            (muted?theme.muted:PINK):
+            played?PINK:(theme.dark?'#77747B':'#C9C6C8'),
+          opacity:portion===undefined?(muted?.35:.77):played?.9:.85}}/>;
+    }):
       <View style={{height:2,backgroundColor:theme.border,flex:1,borderRadius:1}}/>}
   </View>;
 }
 type Props={file?:MusicProjectFile;muted?:boolean;height?:number;
-  trimStartSeconds?:number;trimEndSeconds?:number;barCount?:number};
+  trimStartSeconds?:number;trimEndSeconds?:number;barCount?:number;
+  progress?:number};
 /** Actual decoded audio peaks, optionally limited to the selected (non-destructive) clip. */
 export function MusicAudioPeaks({file,muted=false,height=25,
-  trimStartSeconds=0,trimEndSeconds,barCount=48}:Props){
+  trimStartSeconds=0,trimEndSeconds,barCount=48,progress}:Props){
   const [data,setData]=useState<PeakData|null>(null);
   useEffect(()=>{
     let live=true;setData(null);
@@ -76,5 +87,6 @@ export function MusicAudioPeaks({file,muted=false,height=25,
       return peak;
     });
   },[data,trimStartSeconds,trimEndSeconds,barCount]);
-  return <MusicPeakBars levels={levels} muted={muted} height={height}/>;
+  return <MusicPeakBars levels={levels} muted={muted} height={height}
+    progress={progress}/>;
 }
