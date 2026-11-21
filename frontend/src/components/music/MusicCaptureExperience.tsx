@@ -86,10 +86,16 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
   const selectedFile=files.find(f=>f.id===selected)||null;
   const translationSource=files.find(f=>f.id===translationSourceId)||null;
   const editingFile=files.find(f=>f.id===editingFileId)||null;
+  const finishRecordingNavigation=()=>{
+    // Clear only the temporary recording intent. Keep the open recorder and
+    // its not-yet-saved take mounted when the microphone stops.
+    if(quickAction==='record')router.setParams({intent:undefined});
+  };
   const closeComposer=()=>{
     if(composer==='record'&&unsavedRecording){setConfirmClose(true);return;}
     setComposer('none');setTranslationSourceId('');setEditingFileId('');
     setConfirmClose(false);
+    finishRecordingNavigation();
   };
   const openWrite=(sourceId='',fileId='',nextTab:'lyrics'|'score'='lyrics')=>{
     if(composer==='record'&&unsavedRecording){setConfirmClose(true);return;}
@@ -182,7 +188,7 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
       durationSeconds,markers:markers||[],createdAt:new Date().toISOString(),
     };
     patch({files:[...files,item]});setComposer('none');setUnsavedRecording(false);
-    setConfirmClose(false);
+    setConfirmClose(false);finishRecordingNavigation();
   };
   const pickFiles=()=>{
     if(Platform.OS!=='web'||typeof document==='undefined'){
@@ -285,7 +291,8 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
         </Pressable>
       </View>
       {actionsOpen?<View style={{flexDirection:'row',gap:7,
-        alignItems:'stretch',paddingBottom:5,maxWidth:compact?undefined:650}}>
+        alignItems:'stretch',paddingBottom:5,width:'100%',
+        maxWidth:compact?undefined:650,alignSelf:'flex-end'}}>
         {([
           {label:'Écrire',icon:'pencil-outline' as const,run:()=>openWrite()},
           {label:'Composer',icon:'musical-notes-outline' as const,run:()=>openWrite('','','score')},
@@ -327,10 +334,12 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
           {action('Abandonner','close-outline',()=>{
             setUnsavedRecording(false);setTranslationSourceId('');
             setComposer('none');setConfirmClose(false);
+            finishRecordingNavigation();
           })}
         </View>
       </View>:null}
       <MusicAudioCapture onSaved={addRecorded}
+        onPaused={finishRecordingNavigation}
         onDraftChange={setUnsavedRecording}
         suggestedTitle={'Prise '+(files.filter(isAudio).length+1)}/>
     </View>:null}
