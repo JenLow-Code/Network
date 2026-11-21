@@ -87,6 +87,17 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
     .filter(file=>!file.translationOfFileId||
       !files.some(original=>original.id===file.translationOfFileId))
     .filter(file=>filter==='all'||fileGroup(file)===filter);
+  // Full-width audio and scores break a wrapping row. On desktop, collect
+  // personal writings and images together FIRST so the editorial cards
+  // actually form two columns instead of leaving an empty right column.
+  // In compact views, preserve the original chronological file order.
+  const isEditorialFile=(file:MusicProjectFile)=>
+    !isAudio(file)&&file.kind!=='audio'&&
+    (isImage(file)||file.kind==='lyrics'||file.kind==='note');
+  const displayedFiles=desktopCards?
+    [...visibleFiles.filter(isEditorialFile),
+      ...visibleFiles.filter(file=>!isEditorialFile(file))]:
+    visibleFiles;
   const selectedFile=files.find(f=>f.id===selected)||null;
   const translationSource=files.find(f=>f.id===translationSourceId)||null;
   const editingFile=files.find(f=>f.id===editingFileId)||null;
@@ -369,7 +380,7 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
     {files.length?<View style={{flexDirection:'row',flexWrap:'wrap',
       columnGap:16,rowGap:desktopCards?15:0,alignItems:'flex-start'}}>
 
-      {visibleFiles.map(file=>{
+      {displayedFiles.map(file=>{
         const image=isImage(file);
         const sound=isAudio(file)||file.kind==='audio';
         const text=content(file).trim();
