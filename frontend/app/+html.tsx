@@ -9,6 +9,11 @@ export default function Html({ children }: PropsWithChildren) {
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+        <style dangerouslySetInnerHTML={{ __html: `
+          /* Hide scrollbars globally without disabling scroll interaction. */
+          html, body, * { scrollbar-width: none !important; -ms-overflow-style: none !important; }
+          *::-webkit-scrollbar { width: 0 !important; height: 0 !important; display: none !important; }
+        ` }} />
       </head>
       <body>{children}</body>
     </html>
