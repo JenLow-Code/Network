@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import {router} from 'expo-router';
 import { useAppTheme } from '@/theme/AppTheme';
 import { MusicAudioCapture } from './MusicAudioCapture';
+import {workspaceLayout} from '@/theme/workspaceLayout';
 import { MusicAudioTake } from './MusicAudioTake';
 import { MusicNotePreview, type MusicWritingResult } from './MusicWritingStudio';
 
@@ -53,6 +54,8 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
   const theme=useAppTheme();
   const {width}=useWindowDimensions();
   const compact=width<630;
+  // Only wide non-touch desktop canvases use the editorial grid.
+  const desktopCards=Platform.OS==='web'&&workspaceLayout(width).desktop;
   const files=project.files||[];
   const [composer,setComposer]=useState<Composer>('none');
   const [unsavedRecording,setUnsavedRecording]=useState(false);
@@ -66,6 +69,7 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
   const [error,setError]=useState('');
   const [filter,setFilter]=useState<CaptureFilter>('all');
   const [actionsOpen,setActionsOpen]=useState(false);
+  const [expandedLyrics,setExpandedLyrics]=useState<Record<string,boolean>>({});
   useEffect(()=>{
     // Sidebar actions select a real Capture workflow; importing requires
     // an additional user click because browsers block delayed file pickers.
@@ -362,15 +366,26 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
         </Pressable>;
       })}
     </ScrollView>:null}
-    {files.length?<View style={{gap:0}}>
+    {files.length?<View style={{flexDirection:'row',flexWrap:'wrap',
+      columnGap:16,rowGap:desktopCards?15:0,alignItems:'flex-start'}}>
 
       {visibleFiles.map(file=>{
         const image=isImage(file);
         const sound=isAudio(file)||file.kind==='audio';
         const text=content(file).trim();
         const translations=files.filter(candidate=>candidate.translationOfFileId===file.id);
-        return <View key={file.id} style={{paddingVertical:compact?12:18,
-          borderTopWidth:1,borderColor:theme.border,gap:compact?7:12}}>
+        const editorialCard=desktopCards&&!sound&&
+          (image||file.kind==='lyrics'||file.kind==='note');
+        const lyricExpanded=!!expandedLyrics[file.id];
+        return <View key={file.id} style={{
+          width:editorialCard?'48.5%':'100%',minWidth:0,
+          paddingVertical:editorialCard?15:compact?12:18,
+          paddingHorizontal:editorialCard?14:0,
+          borderWidth:editorialCard?1:0,borderTopWidth:1,
+          borderColor:theme.border,borderRadius:editorialCard?14:0,
+          backgroundColor:editorialCard
+            ?(theme.dark?theme.surface:'#FFFCF8'):'transparent',
+          gap:compact?7:11}}>
           <Pressable onPress={()=>{
             if(file.musicEvents?.length){
               openWrite('',file.id,'score');return;
@@ -402,14 +417,32 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
                 </View>
                 <Ionicons name="chevron-forward" color={theme.muted} size={16}/>
               </View>}
-            {text&&!image&&!sound&&(file.kind==='note'||file.kind==='lyrics')?
-              <Text numberOfLines={1} ellipsizeMode="tail"
+          </Pressable>
+          {text&&!image&&!sound&&(file.kind==='note'||file.kind==='lyrics')?
+            <View style={{gap:6,alignItems:'flex-start'}}>
+              <Text
+                numberOfLines={file.kind==='lyrics'
+                  ?(lyricExpanded?undefined:compact?3:2):2}
+                ellipsizeMode="tail"
                 style={{fontFamily:file.kind==='lyrics'?'Georgia':undefined,
                   fontSize:file.kind==='lyrics'?(compact?14:16):13,
-                  lineHeight:compact?21:23,color:theme.muted}}>
-                {text.replace(/\s+/g,' ').trim()}
-              </Text>:null}
-          </Pressable>
+                  lineHeight:compact?21:23,color:theme.muted,width:'100%'}}>
+                {text}
+              </Text>
+              {file.kind==='lyrics'?<Pressable accessibilityRole="button"
+                accessibilityLabel={(lyricExpanded?'Voir moins':'Voir plus')+
+                  ' : '+file.title}
+                accessibilityState={{expanded:lyricExpanded}}
+                onPress={()=>setExpandedLyrics(old=>({
+                  ...old,[file.id]:!old[file.id],
+                }))}
+                style={{alignSelf:'flex-start',minHeight:35,
+                  justifyContent:'center',paddingRight:12}}>
+                <Text style={{fontSize:12,fontWeight:'700',color:PINK}}>
+                  {lyricExpanded?'Voir moins':'Voir plus…'}
+                </Text>
+              </Pressable>:null}
+            </View>:null}
           {newVersionMode&&isMusicTrackCandidate(file)?
             <Pressable accessibilityRole="button"
               accessibilityLabel={'Créer une nouvelle version depuis '+file.title}
