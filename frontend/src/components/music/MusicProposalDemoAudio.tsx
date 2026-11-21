@@ -73,7 +73,8 @@ export function MusicProposalDemoAudio(){
     </Text>
     <MusicCapturePlaybackBar title="la démo sonore" playing={playing}
       onToggle={toggle} position={position} duration={DURATION}
-      waveform={<MusicPeakBars levels={levels} height={26}/>}/>
+      waveform={<MusicPeakBars levels={levels} height={26}
+         progress={position/DURATION}/>}/>
     <Text style={{fontSize:10,color:theme.muted}}>
       Exemple original synthétisé · non envoyé
     </Text>
