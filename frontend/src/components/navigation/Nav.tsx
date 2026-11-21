@@ -293,7 +293,7 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
                       (!params.tab||params.tab==='capture')&&!params.intent}}
                     onPress={()=>openMusicArea('capture')}
                     style={{minHeight:36,flexDirection:'row',alignItems:'center',
-                      gap:9,paddingHorizontal:7,marginLeft:21,borderRadius:7,
+                      gap:9,paddingHorizontal:7,borderRadius:7,
                       backgroundColor:path.startsWith('/music-workspace/')&&
                         (!params.tab||params.tab==='capture')&&!params.intent?
                         (theme.dark?'rgba(215,29,119,.13)':'rgba(215,29,119,.07)'):'transparent'}}>
