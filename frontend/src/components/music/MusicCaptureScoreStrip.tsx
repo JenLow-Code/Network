@@ -34,7 +34,7 @@ function MiniStaff({events,kind,clef,playheadBeats}:{
   // Extend the five ruled lines across most of the preview column, without
   // returning to full-page-width staves. Notes remain compact and readable.
   const width=Math.max(LEFT+end*STEP+18,
-    availableWidth>0?Math.min(740,availableWidth*.85):460);
+    availableWidth>0?availableWidth-3:460);
   const rawYs=notes.map(n=>kind==='piano'?
     pianoHeight(n.midi,clef):drumHeight(n.midi));
   const highestStem=Math.min(10,...rawYs.map((y,i)=>
@@ -99,14 +99,20 @@ function MiniStaff({events,kind,clef,playheadBeats}:{
 }
 /** Capture overview: no paper panel, no empty instrumental staves and no
  * extra edit button. Only the row's single chevron opens the editor. */
-export function MusicCaptureScoreStrip({file}:{file:MusicProjectFile}){
+export function MusicCaptureScoreStrip({file,aligned=false}:{
+  file:MusicProjectFile;aligned?:boolean;
+}){
   const [seconds,setSeconds]=useState<number|null>(null);
   const notes=file.musicEvents||[];
   const piano=notes.some(n=>n.instrument==='piano');
   const drum=notes.some(n=>n.instrument==='drum');
   const bpm=file.tempoBpm||100;
-  return <View style={{flexDirection:'row',alignItems:'center',gap:7}}>
-    <MusicMidiPreview iconOnly file={file} onPlaybackSeconds={setSeconds}/>
+  return <View style={{flexDirection:'row',alignItems:'center',gap:aligned?10:7,
+    width:'100%',minWidth:0}}>
+    <View style={aligned?{width:34,flexShrink:0,
+      alignItems:'center',justifyContent:'center'}:undefined}>
+      <MusicMidiPreview iconOnly file={file} onPlaybackSeconds={setSeconds}/>
+    </View>
     <View style={{flex:1,minWidth:0,gap:0}}>
       {piano?<MiniStaff events={notes} kind="piano"
         clef={file.scoreClef||'treble'}
@@ -114,5 +120,6 @@ export function MusicCaptureScoreStrip({file}:{file:MusicProjectFile}){
       {drum?<MiniStaff events={notes} kind="drum" clef="treble"
         playheadBeats={seconds===null?null:seconds*bpm/60}/>:null}
     </View>
+    {aligned?<View style={{width:65,flexShrink:0}}/>:null}
   </View>;
 }
