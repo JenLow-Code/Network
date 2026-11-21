@@ -322,7 +322,7 @@ export function MusicWritingStudio({ mode, onModeChange, originalLanguage, sourc
       paddingVertical:desktopNotebook?14:12,
       paddingHorizontal:desktopNotebook?0:compact?2:8,
       color:theme.foreground,letterSpacing:desktopNotebook?.1:.15,
-      backgroundColor:'transparent',
+      backgroundColor:'transparent',borderWidth:0,borderColor:'transparent',
       ...(Platform.OS==='web'?({
         // The browser's focus outline is not part of the paper design.
         outlineStyle:'none',outlineWidth:0,boxShadow:'none',
