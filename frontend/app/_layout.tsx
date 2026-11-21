@@ -1,4 +1,4 @@
-import React from 'react';
+import React,{useEffect} from 'react';
 import { Image, Platform, View, useWindowDimensions } from 'react-native';
 import { Stack, usePathname } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -26,6 +26,32 @@ function ThemedStack() {
     (['flower','notes','library'].includes(parts[1])?parts[2]:parts[1]):
     parts[0]==='my-dream-participants'?parts[1]:undefined;
   const image=dreamId?dreams.find(d=>d.id===decodeURIComponent(dreamId))?.image:undefined;
+  // Expo's custom HTML may not apply global stylesheet rules during a
+  // client-only web navigation. Install the scrollbar rule in the running app
+  // as well: every page and modal continues to scroll normally.
+  useEffect(()=>{
+    if(Platform.OS!=='web'||typeof document==='undefined')return;
+    const id='jenlow-hide-native-scrollbars';
+    if(document.getElementById(id))return;
+    const style=document.createElement('style');
+    style.id=id;
+    style.textContent=`
+      html, body, #root, #__next, * {
+        scrollbar-width: none !important;
+        -ms-overflow-style: none !important;
+      }
+      *::-webkit-scrollbar,
+      *::-webkit-scrollbar-track,
+      *::-webkit-scrollbar-thumb {
+        width: 0 !important;
+        height: 0 !important;
+        display: none !important;
+        background: transparent !important;
+      }
+    `;
+    document.head.appendChild(style);
+    return ()=>{style.remove();};
+  },[]);
   return (
     <>
       <StatusBar style={theme.dark ? 'light' : 'dark'} />
