@@ -1,10 +1,11 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from 'react-native';
+import { Platform, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/theme/AppTheme';
 import {newMusicId} from '@/domain/musicWorkspace';
 import {shiftLyricAnchors,isLyricAnchorValid} from '@/domain/musicLyricAnchors';
 import {musicLanguageOptions} from '@/domain/musicLanguages';
+import {workspaceLayout} from '@/theme/workspaceLayout';
 import type { MusicProjectFile, MusicLyricReference, MusicLyricComment, MusicSection } from '@/domain/musicWorkspace';
 
 const PINK = '#CB245C';
@@ -135,6 +136,9 @@ export function MusicWritingStudio({ mode, onModeChange, originalLanguage, sourc
   const [requestNotice, setRequestNotice] = useState(false);
 
   const isNote = !translating && mode === 'note';
+  // Desktop lyrics use a ruled notebook; mobile and other editors keep their layout.
+  const desktopNotebook=Platform.OS==='web'&&workspaceLayout(width).desktop&&
+    !isNote&&!translating;
   const body = translating ? translationBody : isNote ? noteBody : lyricBody;
   const title = translating ? translationTitle : isNote ? noteTitle : lyricTitle;
   const setBody = translating ? setTranslationBody : isNote ? setNoteBody : setLyricBody;
@@ -310,11 +314,19 @@ export function MusicWritingStudio({ mode, onModeChange, originalLanguage, sourc
     placeholder={placeholder} placeholderTextColor={theme.muted}
     accessibilityLabel={translating?'Traduction':isNote?'Contenu de la note':'Paroles'}
     style={{fontFamily:isNote?undefined:'Georgia',
-      fontSize:isNote?15:translating&&compact?13:compact?14:15,
-      lineHeight:isNote?25:translating&&compact?21:compact?24:26,
-      minHeight:minimum,
-      paddingVertical:12,paddingHorizontal:compact?2:8,color:theme.foreground,
-      letterSpacing:.15}}/>;
+      fontSize:isNote?15:translating&&compact?13:compact?14:
+        desktopNotebook?17:15,
+      lineHeight:isNote?25:translating&&compact?21:compact?24:
+        desktopNotebook?31:26,
+      minHeight:desktopNotebook?Math.max(minimum,445):minimum,
+      paddingVertical:desktopNotebook?14:12,
+      paddingHorizontal:desktopNotebook?0:compact?2:8,
+      color:theme.foreground,letterSpacing:desktopNotebook?.1:.15,
+      backgroundColor:'transparent',
+      ...(Platform.OS==='web'?({
+        // The browser's focus outline is not part of the paper design.
+        outlineStyle:'none',outlineWidth:0,boxShadow:'none',
+      } as any):{})}}/>;
   const filteredLanguages=languages.filter(option=>
     option.toLocaleLowerCase('fr').includes(languageQuery.trim().toLocaleLowerCase('fr')));
   const languageControl=<View style={{gap:7,alignItems:'flex-start',width:'100%'}}>
@@ -414,7 +426,38 @@ export function MusicWritingStudio({ mode, onModeChange, originalLanguage, sourc
         </Text>:null}
       </View>:null}
     </> : <>
-      <View style={{gap:compact?9:12,paddingHorizontal:compact?0:10}}>
+      <View style={{gap:compact?9:12,
+        paddingHorizontal:desktopNotebook?57:compact?0:10,
+        paddingTop:desktopNotebook?24:0,
+        paddingBottom:desktopNotebook?30:0,
+        minHeight:desktopNotebook?650:undefined,
+        backgroundColor:desktopNotebook
+          ?(theme.dark?'#252327':'#FFFFFA'):'transparent',
+        borderRadius:desktopNotebook?8:0,
+        borderWidth:desktopNotebook?1:0,
+        borderColor:desktopNotebook
+          ?(theme.dark?'#413B40':'#E9E4D9'):'transparent',
+        ...(desktopNotebook?{
+          shadowColor:'#2E2723',shadowOpacity:theme.dark?.12:.07,
+          shadowOffset:{width:0,height:8},shadowRadius:18,elevation:1,
+        }:{}),
+      }}>
+        {desktopNotebook?<View pointerEvents="none"
+          style={{position:'absolute',top:0,bottom:0,left:0,right:0,
+            borderRadius:8,overflow:'hidden'}}>
+          {/* Quiet ruled paper with a subtle binder margin. */}
+          <View style={{position:'absolute',left:40,top:0,bottom:0,width:1,
+            backgroundColor:theme.dark?'#623E4E':'#F1CCD3'}}/>
+          {Array.from({length:36},(_,index)=><View key={index}
+            style={{position:'absolute',left:55,right:24,
+              top:152+index*31,height:1,
+              backgroundColor:theme.dark?'#37383A':'#EAEAE3'}}/>)}
+        </View>:null}
+        {desktopNotebook?<Text style={{
+          color:theme.dark?'#B5A4AA':'#A2948C',
+          fontSize:10,letterSpacing:1.9,fontWeight:'700',
+          lineHeight:15,
+        }}>CARNET DE PAROLES</Text>:null}
         <View style={{flexDirection:'row',alignItems:'center',gap:10}}>
           <TextInput value={title} onChangeText={setTitle}
             placeholder={isNote?'Titre de la note':'Titre des paroles'}
