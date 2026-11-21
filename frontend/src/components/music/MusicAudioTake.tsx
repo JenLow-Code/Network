@@ -7,6 +7,7 @@ import {MusicWaveformEditor} from './MusicWaveformEditor';
 import {MusicAudioCapture} from './MusicAudioCapture';
 import {MusicAudioMarkers} from './MusicAudioMarkers';
 import {MusicAudioPeaks} from './MusicAudioPeaksNext';
+import {MusicCapturePlaybackBar} from './MusicCapturePlaybackBar';
 import {useAppTheme} from '@/theme/AppTheme';
 import type {MusicProjectFile,MusicAudioMarker,MusicSection} from '@/domain/musicWorkspace';
 
@@ -105,23 +106,9 @@ export function MusicAudioTake({file,compact=false,editable=false,onUpdate,onOpe
       onEnded:()=>setPlaying(false),
       style:{display:'none'}
     }):null}
-    <View style={{flexDirection:'row',alignItems:'center',gap:10,minHeight:38}}>
-      <Pressable onPress={toggle} accessibilityRole="button"
-        accessibilityLabel={playing?'Pause '+file.title:'Écouter '+file.title}
-        style={{width:34,height:38,alignItems:'center',justifyContent:'center',
-          flexShrink:0}}>
-        <Ionicons name={playing?'pause-circle-outline':'play-circle-outline'}
-          size={21} color={PINK}/>
-      </Pressable>
-      <View style={{flex:1,minWidth:0,justifyContent:'center'}}>
-        <MusicAudioPeaks file={file} height={26} barCount={76}/>
-      </View>
-      <Text style={{fontSize:10,color:theme.muted,
-        fontVariant:['tabular-nums'],minWidth:65,textAlign:'right'}}>
-        {Math.floor(cursor/60)}:{String(Math.floor(cursor%60)).padStart(2,'0')}
-        {' / '}{Math.floor(duration/60)}:{String(Math.floor(duration%60)).padStart(2,'0')}
-      </Text>
-    </View>
+    <MusicCapturePlaybackBar playing={playing} onToggle={toggle}
+      title={file.title} position={cursor} duration={duration}
+      waveform={<MusicAudioPeaks file={file} height={26} barCount={76}/>}/>
   </View>;
   return <View style={{gap:compact?8:13}}>
     {editing?<View style={{gap:9}}>
