@@ -278,7 +278,7 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
         justifyContent:'space-between',minHeight:46}}>
         <View style={{flexDirection:'row',alignItems:'baseline',gap:8}}>
           <Text style={{fontSize:compact?15:17,fontWeight:'700',color:theme.foreground}}>
-            Éléments enregistrés
+            {project.title}
           </Text>
           <Text style={{fontSize:12,color:theme.muted}}>{files.filter(f=>!f.renderedFromMidiId).length}</Text>
         </View>
