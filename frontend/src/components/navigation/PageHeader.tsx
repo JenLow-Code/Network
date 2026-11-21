@@ -36,6 +36,9 @@ export function PageHeader({ title, center, onBack, showFire = true }: {
           fontSize:desktop?24:21,lineHeight:desktop?32:28,letterSpacing:-0.4}}>{title}</Text>:null}
         {center||null}
       </View>}
+   {/* Preserve the right-side actions in the normal row flow while the
+       desktop tabs are centered independently in an absolute overlay. */}
+   {desktop&&center?<View style={{flex:1,minWidth:0}}/>:null}
    <TopActions showFire={showFire}/>
   </View>
  );
