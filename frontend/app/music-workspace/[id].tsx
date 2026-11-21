@@ -92,14 +92,10 @@ export default function MusicWorkspace() {
       paddingHorizontal:ws.gutter,
       paddingTop:desktop?16:8,paddingBottom:desktop?56:120,
       gap:compact?18:desktop?20:25}}>
-      <PageHeader title={project.title} onBack={()=>router.replace('/music-hub')}/>
-      {/* The song's title is already next to Back in PageHeader.
-          Keep its cover and description in data, but do not repeat them
-          above a listening-first workspace. */}
-      {/* Contextual workflow navigation belongs with the workspace, not in a
-          second competing right sidebar. Desktop tabs are text-first. */}
-      <View style={{flexDirection:'row',alignItems:'center',
-        borderBottomWidth:1,borderColor:theme.border,
+      {/* Song actions replace the title in the top bar. The song title is
+          displayed once above the saved items inside Capturer. */}
+      <PageHeader onBack={()=>router.replace('/music-hub')} center={
+      <View style={{flex:1,minWidth:0,flexDirection:'row',alignItems:'center',
         gap:desktop?20:3}}>
         {spaces.map(item=>{
           const selected=space===item.id;
@@ -123,6 +119,7 @@ export default function MusicWorkspace() {
           </Pressable>;
         })}
       </View>
+      }/>
       {space==='capture'&&intent==='new-version'?
         <View style={{flexDirection:'row',alignItems:'flex-start',gap:11,
           paddingHorizontal:14,paddingVertical:13,borderRadius:12,
