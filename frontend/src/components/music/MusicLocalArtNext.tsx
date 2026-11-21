@@ -23,7 +23,7 @@ export function MusicLocalArt({file,size=42,cover=false,thumbnail=false,banner=f
     return()=>{active=false;if(url)URL.revokeObjectURL(url);};
   },[file.localFileId]);
   return <View style={{width:banner?'100%':thumbnail?100:cover?'100%':size,
-    height:banner?92:thumbnail?70:cover?164:size,
+    height:banner?54:thumbnail?70:cover?164:size,
     borderRadius:banner?7:thumbnail?11:cover?0:11,
     overflow:'hidden',
     alignItems:'center',justifyContent:'center',backgroundColor:theme.surface,
