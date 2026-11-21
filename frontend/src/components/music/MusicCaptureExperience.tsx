@@ -449,21 +449,34 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
         // One true list row: title -> date -> file preview -> details arrow.
         // On narrow screens the preview wraps below the same header, rather
         // than squeezing a waveform or notation into an unusably small strip.
+        // Match the inner waveform boundaries of the audio player for every
+        // preview type. The first 34px are reserved for the play button and
+        // the final 65px for duration, even when that type has neither.
+        const alignedPreview=(child:React.ReactNode)=>
+          desktopList?<View style={{flexDirection:'row',alignItems:'center',
+            gap:10,width:'100%',minWidth:0}}>
+            <View style={{width:34,flexShrink:0}}/>
+            <View style={{flex:1,minWidth:0,justifyContent:'center'}}>
+              {child}
+            </View>
+            <View style={{width:65,flexShrink:0}}/>
+          </View>:child;
         const representation=<View style={{width:'100%',minWidth:0}}>
           {image?
-            <Pressable onPress={openDetails} accessibilityRole="button"
+            alignedPreview(<Pressable onPress={openDetails}
+              accessibilityRole="button"
               accessibilityLabel={'Voir l’image '+file.title}>
               <MusicLocalArt file={file} banner/>
-            </Pressable>:
+            </Pressable>):
             sound&&file.localFileId?
               <MusicAudioTake file={file} compact
                 onOpen={openDetails}/>:
             file.musicEvents?.length?
-              <MusicCaptureScoreStrip file={file}/>:
+              <MusicCaptureScoreStrip file={file} aligned={desktopList}/>:
             isMidiSource(file)?
-              <MusicMidiPreview file={file}/>:
+              alignedPreview(<MusicMidiPreview file={file}/>):
             text&&(file.kind==='lyrics'||file.kind==='note')?
-              <View style={{flexDirection:'row',alignItems:'center',gap:10,
+              alignedPreview(<View style={{flexDirection:'row',alignItems:'center',gap:10,
                 minHeight:38,minWidth:0}}>
                 <Text numberOfLines={desktopList?1:lyricExpanded?undefined:1}
                   ellipsizeMode="tail"
@@ -487,8 +500,8 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
                       {lyricExpanded?'Voir moins':'Voir plus…'}
                     </Text>
                   </Pressable>:null}
-              </View>:
-              <Pressable onPress={openDetails} accessibilityRole="button"
+              </View>):
+              alignedPreview(<Pressable onPress={openDetails} accessibilityRole="button"
                 accessibilityLabel={'Ouvrir '+file.title}
                 style={{minHeight:38,flexDirection:'row',
                   alignItems:'center',gap:9}}>
@@ -500,7 +513,7 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
                   flex:1,minWidth:0}}>
                   {text?firstLine:file.originalFilename||file.title}
                 </Text>
-              </Pressable>}
+              </Pressable>)}
         </View>;
         const detailArrow=<Pressable onPress={openDetails}
           accessibilityRole="button"
@@ -536,7 +549,7 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
             </Pressable>
             {desktopList?
               <Text numberOfLines={1} style={{width:120,
-                color:theme.muted,fontSize:15,
+                color:theme.foreground,fontSize:15,
                 fontWeight:'400',fontVariant:['tabular-nums']}}>
                 {dateLabel}
               </Text>:
