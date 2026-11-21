@@ -108,8 +108,8 @@ export function MusicAudioTake({file,compact=false,editable=false,onUpdate,onOpe
     }):null}
     <MusicCapturePlaybackBar playing={playing} onToggle={toggle}
       title={file.title} position={cursor} duration={duration}
-      waveform={<MusicAudioPeaks file={file} height={26} barCount={76}
-        progress={duration>0?cursor/duration:0}/>}/>
+      waveform={<MusicAudioPeaks file={file} height={26} barCount={2048}
+        detailed progress={duration>0?cursor/duration:0}/>}/>
   </View>;
   return <View style={{gap:compact?8:13}}>
     {editing?<View style={{gap:9}}>
