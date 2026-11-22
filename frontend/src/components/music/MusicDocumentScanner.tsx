@@ -4,7 +4,8 @@ import {Image as RNImage,Modal,Platform,Pressable,ScrollView,Text,TextInput,View
 import {Ionicons} from '@expo/vector-icons';
 import {useAppTheme} from '@/theme/AppTheme';
 import {ApiRequestError} from '@/lib/api/client';
-import {API_BASE} from '@/lib/authApi';
+const SCAN_API_BASE=(process.env.EXPO_PUBLIC_MUSIC_SCAN_API_URL||
+  'https://jenlow-music-scan.jenlow-production.workers.dev').replace(/\/$/,'');
 import {useAuth} from '@/context/AuthProvider';
 import {MusicCaptureScoreStrip} from './MusicCaptureScoreStrip';
 import {saveMusicWorkspaceFile,getDraftAudio} from '@/domain/musicLocalStorage';
@@ -133,7 +134,7 @@ export function MusicDocumentScanner({visible,initialFile,sourceFile,onClose,onS
       const image=await compressed(file);
       if(!session?.access_token)
         throw new ApiRequestError(401,'not_authenticated');
-      const response=await fetch(API_BASE+'/api/music/scan',{
+      const response=await fetch(SCAN_API_BASE+'/api/music/scan',{
         method:'POST',headers:{
           'Content-Type':'application/json',
           'Authorization':'Bearer '+session.access_token,
