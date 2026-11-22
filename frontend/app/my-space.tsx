@@ -162,7 +162,7 @@ export default function MySpace() {
   const [roleFilter,setRoleFilter]=useState<RoleFilter>('all');
   const [roleMenuOpen,setRoleMenuOpen]=useState(false);
   const [activeTestimony, setActiveTestimony] = useState(0);
-  const galleryRef = useRef<ScrollView>(null);
+  const galleryRef = useRef<React.ComponentRef<typeof ScrollView>>(null);
   const [longDream,setLongDream]=useState<DreamEntry|null>(null);
   const side=ws.gutter;
   const workspaceViewport=Math.max(0,windowWidth-(ws.desktop?212:0));
