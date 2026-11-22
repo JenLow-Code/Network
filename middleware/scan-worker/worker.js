@@ -195,6 +195,11 @@ export default{
       return error('invalid_image',400,origin);
     // A failure of the primary model is NOT proof the scanner is unconfigured.
     // Try a second EU-usable vision model. Both outputs are unverified drafts.
+    // Disabled: a generic vision LLM is not an Optical Music Recognition engine.
+    // No note pitches can be accepted until the specialist OMR backend is live.
+    if(mode==='score')return error('omr_required',503,origin,
+      'La reconnaissance de partitions nécessite le moteur OMR spécialisé. '+
+      'Aucune note n’a été créée.');
     let failure='model_unavailable';
     const failures=[];
     for(const model of [MODEL,FALLBACK_MODEL]){
