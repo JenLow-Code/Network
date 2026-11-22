@@ -14,6 +14,7 @@ import { registerPublications } from './modules/publications';
 import { registerSemenceShares } from './modules/semenceShares';
 import { registerTalents } from './modules/talents';
 import { registerMusic } from './modules/music';
+import { registerMusicScan } from './modules/musicScan';
 import { registerBible } from './modules/bible';
 import { registerSocial } from './modules/social';
 import { registerMessaging } from './modules/messaging';
@@ -54,6 +55,7 @@ export function buildRouter(): Router {
   registerSemenceShares(r);
   registerTalents(r);
   registerMusic(r);
+  registerMusicScan(r);
   registerBible(r);
   registerSocial(r);
   registerMessaging(r);
