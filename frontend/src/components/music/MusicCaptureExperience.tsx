@@ -427,7 +427,7 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
     </ScrollView>:null}
     {files.length?<View style={{width:'100%',gap:0}}>
 
-      {displayedFiles.map(file=>{
+      {displayedFiles.map((file,index)=>{
         const image=isImage(file);
         const sound=isAudio(file)||file.kind==='audio';
         const text=content(file).trim();
@@ -530,9 +530,18 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
             paddingHorizontal:desktopList?12:0,
             borderTopWidth:desktopList?0:1,
             borderColor:theme.border,gap:6,
-            borderRadius:desktopList?10:0,
-            backgroundColor:desktopList&&hoveredRow===file.id?
-              (theme.dark?'#28242A':'#F7F3EE'):'transparent'}}>
+            borderRadius:desktopList?7:0,
+            // A quiet editorial rhythm, without item cards or heavy borders.
+            backgroundColor:desktopList?
+              (hoveredRow===file.id?
+                (theme.dark?'#372B33':'#FBEFF2'):
+                index%2===1?(theme.dark?'#242127':'#FAF8F4'):'transparent'):
+              'transparent'}}>
+          {desktopList&&hoveredRow===file.id?
+            <View pointerEvents="none" style={{
+              position:'absolute',left:0,top:16,bottom:16,width:2,
+              borderRadius:2,backgroundColor:PINK,
+            }}/>:null}
           <View style={{flexDirection:desktopList?'row':'column',
             width:'100%',minWidth:0,
             height:desktopList?94:undefined,
