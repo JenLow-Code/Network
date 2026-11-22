@@ -82,58 +82,15 @@ function parseResponse(raw){
   }
   throw Error('unreadable');
 }
-function scanResult(data,mode,sourceStructure){
+function textScanResult(data){
   if(!data||typeof data!=='object')throw Error('unreadable');
-  const title=typeof data.title==='string'?data.title.trim().slice(0,100):'';
-  if(mode==='text'){
-    const text=typeof data.text==='string'?data.text.trim().slice(0,16000):'';
-    if(text.length<2)throw Error('no_text');
-    return {mode:'text',title:title||'Texte numérisé',
-      text,language:typeof data.language==='string'?data.language.slice(0,30):'fr',
-      engine:MODEL,warnings:[
-        'Vérifie les mots manuscrits, accents et retours à la ligne avant d’enregistrer.',
-      ]};
-  }
-  const notes=[];
-  for(const raw of (Array.isArray(data.notes)?data.notes:[]).slice(0,350)){
-    if(!raw||typeof raw!=='object')continue;
-    const midi=Number(raw.midi),startBeats=Number(raw.startBeats);
-    const lengthBeats=Number(raw.lengthBeats);
-    if(![midi,startBeats,lengthBeats].every(Number.isFinite)||
-      midi<21||midi>108||startBeats<0||startBeats>6000||
-      lengthBeats<=0||lengthBeats>64)continue;
-    notes.push({midi:Math.round(midi),
-      startBeats:Math.round(startBeats*1000)/1000,
-      lengthBeats:Math.round(lengthBeats*1000)/1000,
-      velocity:85});
-  }
-  notes.sort((a,b)=>a.startBeats-b.startBeats||a.midi-b.midi);
-  if(!notes.length)throw Error('no_notes');
-  const bpm=Number(data.bpm),numerator=Number(data.numerator);
-  const denominator=Number(data.denominator);
-  // Quality check on temporal coverage, not the raw number of noteheads.
-  // For example, 27 notes condensed into just three chords are NOT a
-  // transcription of a photograph with four separate staves.
-  const onsets=new Set(notes.map(n=>n.startBeats.toFixed(2))).size;
-  const duration=Math.max(...notes.map(n=>n.startBeats+n.lengthBeats));
-  const staves=Number(sourceStructure?.staffCount)||0;
-  const systems=Math.max(0,Math.min(12,
-    Math.floor(Number(sourceStructure?.estimatedSystems)||0)));
-  const meter=Number.isInteger(numerator)&&numerator>=1&&numerator<=16?
-    numerator:4;
-  const lacksCoverage=staves>=4&&systems>=2&&notes.length>=8&&
-    onsets<systems*3&&duration<meter*systems-.05;
-  const suspiciousChordCluster=notes.length>=12&&onsets<=3&&
-    duration<meter*3;
-  if(lacksCoverage||suspiciousChordCluster)
-    throw Error('incomplete_score');
-  return {mode:'score',title:title||'Partition numérisée',
-    notes,bpm:bpm>=30&&bpm<=240?Math.round(bpm):100,
-    numerator:Number.isInteger(numerator)&&numerator>=1&&numerator<=16?
-      numerator:4,denominator:[2,4,8,16].includes(denominator)?
-      denominator:4,clef:data.clef==='bass'?'bass':'treble',
+  const text=typeof data.text==='string'?data.text.trim().slice(0,16000):'';
+  if(text.length<2)throw Error('no_text');
+  return {mode:'text',
+    title:typeof data.title==='string'?data.title.trim().slice(0,100)||'Texte numérisé':'Texte numérisé',
+    text,language:typeof data.language==='string'?data.language.slice(0,30):'fr',
     engine:MODEL,warnings:[
-      'Estimation expérimentale, non une transcription garantie : vérifie les notes, les rythmes et les voix avant utilisation.',
+      'Vérifie les mots manuscrits, accents et retours à la ligne avant d’enregistrer.',
     ]};
 }
 const TEXT_PROMPT=[
@@ -141,22 +98,6 @@ const TEXT_PROMPT=[
   'Return ONLY JSON {"title":"", "text":"verbatim visible text with line breaks",',
   '"language":"fr"}. Preserve line breaks and original language.',
   'Mark illegible words [illisible], do not invent or translate.',
-].join(' ');
-const SCORE_PROMPT=[
-  'Analyze this printed music score photo. Respond ONLY with JSON:',
-  '{"title":"", "bpm":100,"numerator":3,"denominator":4,',
-  '"clef":"treble","notes":[{"midi":60,"startBeats":0,"lengthBeats":1}]}.',
-  'Read ONLY VISIBLE notes, based on staff positions and clef.',
-  'Each note has a MIDI pitch and exact timing in quarter notes.',
-  'Simultaneous notes share startBeats. Do not treat lyrics as notes.',
-  'Read the ENTIRE score, including all systems, measures and both grand-staff lines.',
-  'Measure time MUST advance across barlines; do not collapse an entire score',
-  'into three simultaneous chords. For example, if a source has eight measures',
-  'of 3/4, the final event may start near beat 21, not beat 2.',
-  'Return one event per actually visible note, ordered from the first measure',
-  'to the last, and include visible bass notes where present.',
-  'Skip unclear notes rather than guessing. If impossible return notes: [].',
-  'This is an uncertain draft for human review, not authoritative OMR.',
 ].join(' ');
 export default{
   async fetch(request,env){
@@ -262,7 +203,7 @@ export default{
           temperature:0,store:false,
         });
         const raw=answer?.choices?.[0]?.message?.content||answer?.response;
-        const scanned=scanResult(parseResponse(raw),'text',null);
+        const scanned=textScanResult(parseResponse(raw));
         return json({...scanned,engine:model},200,origin);
       }catch(e){
         const reason=String(e?.message||e);
