@@ -238,7 +238,7 @@ export default function MySpace() {
 
             {/* Swipe on touch devices, click the side arrows on desktop. */}
             {testimonies.length>1 && !compact ? (
-              <View style={{position:'absolute',right:18,bottom:16,
+              <View style={{position:'absolute',right:18,top:'50%',marginTop:-17,
                 flexDirection:'row',alignItems:'center',gap:7,zIndex:7}}>
                 {([-1,1] as const).map(direction=>(
                   <Pressable key={direction} accessibilityRole="button"
