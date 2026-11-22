@@ -6,6 +6,7 @@ import { MusicParticipantBadges, type MusicCollaborator } from './MusicCollabora
 import { CassetteArtwork } from '@/components/publication/PublicationGallery';
 import { MusicAudioPreview } from './MusicAudioPreview';
 import { useAppTheme } from '@/theme/AppTheme';
+import { HANDWRITING_FAMILY } from '@/theme/handwriting';
 
 type MusicTileProps = {
   title: string;
@@ -40,6 +41,8 @@ export function MusicTile({
   const surface = theme.dark ? '#332D32' : mode === 'draft' ? '#E6DACB' : '#EFE9E2';
   const secondary = theme.dark ? '#D6D0D3' : '#514943';
   const playAvailable = !!audioUrl && !demo;
+  const handwrittenSize = Math.min(23, Math.max(16, imageWidth * 0.085));
+  const sketchTitle = (demo ? title.replace(/^\[Démo\]\s*/i, '') : title).toLocaleUpperCase('fr');
 
   const visual = <View style={{
     width: imageWidth, height: imageHeight, borderRadius: listed ? 11 : 15,
@@ -47,11 +50,43 @@ export function MusicTile({
     alignItems: 'center', justifyContent: 'center', position: 'relative',
   }}>
     {mode === 'draft'
-      ? <MusicCassetteDraft width={imageWidth} variant="tile"/>
+      ? <>
+          <MusicCassetteDraft width={imageWidth} variant="tile"/>
+          <View pointerEvents="none" style={{
+            position:'absolute', left:'7%',right:'7%',top:demo?'17%':'7%',
+          }}>
+            <Text numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.65}
+              style={{color:theme.dark?'#EFE3D5':'#483D32', fontSize:Math.min(16,Math.max(11,imageWidth*0.058)),
+                fontWeight:'700',textAlign:'center',letterSpacing:imageWidth<130?0.7:1.3,
+                lineHeight:Math.min(21,Math.max(14,imageWidth*0.075))}}>
+              {sketchTitle}
+            </Text>
+          </View>
+          <View pointerEvents="none" style={{
+            position:'absolute',left:'7%',bottom:detail||status?'13%':'7%',
+            right:participants.length?'47%':'7%',
+          }}>
+            <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}
+              style={{fontFamily:HANDWRITING_FAMILY,fontSize:handwrittenSize,
+                color:theme.dark?'#EEE2D3':'#4B4137',lineHeight:handwrittenSize+4}}>
+              {byline}
+            </Text>
+          </View>
+          {(status||detail) ? <View pointerEvents="none" style={{
+            position:'absolute',left:'7%',right:'7%',bottom:'4%',
+          }}>
+            <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}
+              style={{fontSize:Math.min(11,Math.max(9,imageWidth*0.043)),
+                fontWeight:status?'600':'400',letterSpacing:0.2,
+                color:status?'#AC3059':theme.dark?'#D4C8BE':'#776A5D'}}>
+              {status || detail}
+            </Text>
+          </View> : null}
+        </>
       : <CassetteArtwork width={imageWidth} height={imageHeight}
           title={title} artwork={artwork} transparent/>}
     {participants.length > 0 ? <View pointerEvents="none" style={{
-      position: 'absolute', right: 8, bottom: 9,
+      position: 'absolute', right: 7, bottom: mode === 'draft' ? '15%' : 8,
     }}>
       <MusicParticipantBadges people={participants} size={listed ? 23 : 31}/>
     </View> : null}
@@ -66,7 +101,7 @@ export function MusicTile({
   </View>;
 
   return <View style={{ width: listed ? '100%' : width, gap: 6 }}>
-    <Pressable disabled={demo || !onPress} onPress={onPress}
+    <Pressable disabled={!onPress} onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={(demo ? 'Exemple : ' : 'Ouvrir le morceau ') + title}
       style={listed
@@ -74,7 +109,7 @@ export function MusicTile({
           borderBottomWidth:1,borderBottomColor:theme.border,paddingVertical:8 }
         : { width:'100%',gap:9,alignItems:'stretch' }}>
       {visual}
-      <View style={{ flex: listed ? 1 : undefined, minWidth:0, gap:4,
+      {(mode !== 'draft' || listed) ? <View style={{ flex: listed ? 1 : undefined, minWidth:0, gap:4,
         paddingHorizontal:listed ? 0 : 2 }}>
         <Text numberOfLines={listed ? 1 : 2}
           style={{fontSize:listed?14:14,fontWeight:'700',
@@ -85,10 +120,16 @@ export function MusicTile({
           color:theme.muted}}>{detail}</Text> : null}
         {status ? <Text numberOfLines={1} style={{fontSize:10,color:'#C6235D',
           fontWeight:'700'}}>{status}</Text> : null}
-      </View>
+      </View> : null}
       {listed && !demo ? <Ionicons name="chevron-forward-outline"
         size={17} color={theme.foreground}/> : null}
     </Pressable>
+    {mode === 'cassette' && onPress ? <Pressable onPress={onPress}
+      accessibilityRole="button" accessibilityLabel={'En savoir plus sur ' + title}
+      style={{paddingHorizontal:2,minHeight:27,flexDirection:'row',alignItems:'center',gap:5}}>
+      <Text style={{fontSize:11,fontWeight:'600',color:theme.foreground}}>En savoir plus</Text>
+      <Ionicons name="arrow-forward-outline" size={13} color={theme.foreground}/>
+    </Pressable> : null}
     {playAvailable ? <View style={{paddingHorizontal:2,gap:6}}>
       <Pressable onPress={() => setAudioOpen(prev => !prev)}
         accessibilityRole="button"
