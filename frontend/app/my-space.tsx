@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Image, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
+import { Image, Platform, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -96,9 +96,9 @@ function PictureCard({ dream, width, height, onLongPress, presentation = 'card' 
         }}>
           <Defs>
             <LinearGradient id="fruit-banner-shade" x1="0%" y1="0%" x2="0%" y2="100%">
-              <Stop offset="0%" stopColor="#000000" stopOpacity={theme.dark ? 0.12 : 0.17}/>
-              <Stop offset="38%" stopColor="#000000" stopOpacity={theme.dark ? 0.22 : 0.29}/>
-              <Stop offset="100%" stopColor="#000000" stopOpacity={theme.dark ? 0.9 : 0.94}/>
+              <Stop offset="0%" stopColor="#000000" stopOpacity={theme.dark ? 0.13 : 0.11}/>
+              <Stop offset="38%" stopColor="#000000" stopOpacity={theme.dark ? 0.26 : 0.27}/>
+              <Stop offset="100%" stopColor="#000000" stopOpacity={theme.dark ? 0.91 : 0.88}/>
             </LinearGradient>
           </Defs>
           <Rect width="100%" height="100%" fill="url(#fruit-banner-shade)" />
@@ -113,7 +113,7 @@ function PictureCard({ dream, width, height, onLongPress, presentation = 'card' 
         position: 'absolute', bottom: 0, left: 0, right: 0,
         paddingHorizontal: isBanner ? (width < 540 ? 16 : 24) : 13,
         paddingTop: isBanner ? 16 : 36,
-        paddingBottom: isBanner ? (width < 540 ? 65 : 68) : 12,
+        paddingBottom: isBanner ? (width < 540 ? 74 : 84) : 12,
         backgroundColor: isBanner ? 'transparent' : 'rgba(0,0,0,0.30)',
       }}>
         {!isBanner && isPublishedFlower(dream) ? (
@@ -123,20 +123,22 @@ function PictureCard({ dream, width, height, onLongPress, presentation = 'card' 
           </View>
         ) : null}
         <Text style={{
-          fontSize: isBanner ? (width < 540 ? 22 : 30) : (width < 230 ? 13 : 18),
-          lineHeight: isBanner ? (width < 540 ? 27 : 36) : (width < 230 ? 18 : 24),
-          letterSpacing: isBanner ? -0.8 : 0,
-          color: '#FFFFFF', fontWeight: '700',
+          fontSize: isBanner ? (width < 540 ? 27 : width < 780 ? 34 : 40) : (width < 230 ? 13 : 18),
+          lineHeight: isBanner ? (width < 540 ? 33 : width < 780 ? 40 : 47) : (width < 230 ? 18 : 24),
+          letterSpacing: isBanner ? -1.0 : 0,
+          color: '#FFFFFF', fontWeight: '800',
+          textShadowColor: isBanner ? 'rgba(0,0,0,.26)' : 'transparent',
+          textShadowRadius: isBanner ? 9 : 0,
         }} numberOfLines={isBanner ? 2 : 3}>{dream.title}</Text>
         {isBanner && !!(dream.testimony?.comment || dream.summary) ? (
           <Text numberOfLines={1} style={{
-            color:'rgba(255,255,255,.88)',fontSize:width<540?11:12,
+            color:'rgba(255,255,255,.90)',fontSize:width<540?11:13,
             lineHeight:width<540?16:19,marginTop:5,maxWidth:width<540?'90%':'75%',
           }}>{dream.testimony?.comment || dream.summary}</Text>
         ) : null}
         {isBanner ? (
           <View style={{flexDirection:'row',alignItems:'center',gap:7,marginTop:width<540?8:10}}>
-            <Text style={{color:'#FFFFFF',fontSize:width<540?12:13,fontWeight:'700'}}>
+            <Text style={{color:'#FFFFFF',fontSize:width<540?12:13,fontWeight:'800'}}>
               Découvrir cette histoire
             </Text>
             <Ionicons name="arrow-forward-outline" size={width<540?15:17} color="#FFFFFF"/>
@@ -202,10 +204,20 @@ export default function MySpace() {
   // instead of overflowing the shared desktop canvas's horizontal gutters.
   const galleryWidth=innerWidth;
   // The shorter, more panoramic image reads as a header rather than a full page.
-  const galleryHeight=compact ? 196 : Math.min(232,Math.max(195,Math.round(galleryWidth*.205)));
+  const galleryHeight=compact ? 228 : Math.min(274,Math.max(244,Math.round(galleryWidth*.25)));
   const desktopGrid=ws.desktop;
   const desktopGridGap=18;
   const desktopPanelWidth=Math.max(0,(innerWidth-desktopGridGap)/2);
+  const heroGlass=Platform.OS==='web'
+    ? ({backdropFilter:'blur(14px) saturate(125%)',
+        WebkitBackdropFilter:'blur(14px) saturate(125%)'} as any)
+    : {};
+  const heroControlBase={
+    height:42,justifyContent:'center' as const,alignItems:'center' as const,
+    borderWidth:1,borderColor:'rgba(255,255,255,.28)',
+    shadowColor:'#000000',shadowOpacity:.13,shadowRadius:8,
+    shadowOffset:{width:0,height:2},elevation:2,
+  };
   const tileWidth = compact ? Math.max(137, Math.min(205, Math.floor(innerWidth * .48))) : 210;
   const list = view === 'Liste';
   const matchingRole = roleFilter === 'all' ? items :
@@ -289,56 +301,71 @@ export default function MySpace() {
               </View>
             ):null}
 
-            {/* Filters and view controls float along the bottom edge of the hero. */}
+            {/* Purpose-designed gallery action bar: dark glass controls and a clear primary CTA. */}
             <View style={{position:'absolute',zIndex:10,
-              bottom:compact?10:15,left:compact?10:22,right:compact?10:22}}>
-              <View style={{flexDirection:'row',alignItems:'center',gap:compact?5:8}}>
+              bottom:compact?13:19,left:compact?12:24,right:compact?12:24}}>
+              <View style={{flexDirection:'row',alignItems:'center',gap:compact?6:10}}>
                 <Pressable onPress={()=>setRoleMenuOpen(current=>!current)}
                   accessibilityRole="button"
                   accessibilityLabel={'Filtrer mes projets : '+roleOption.label}
                   accessibilityState={{expanded:roleMenuOpen}}
-                  style={{flexDirection:'row',alignItems:'center',gap:4,
-                    flexShrink:1,minWidth:0,
-                    paddingHorizontal:compact?8:11,minHeight:35,borderRadius:19,
-                    borderWidth:1,borderColor:'rgba(255,255,255,.65)',
-                    backgroundColor:'rgba(255,253,251,.93)'}}>
-                  <Ionicons name="filter-outline" size={14} color="#383238"/>
-                  <Text numberOfLines={1} style={{flexShrink:1,fontSize:compact?10:11,
-                    fontWeight:'600',color:'#383238'}}>{roleOption.label}</Text>
+                  style={({pressed})=>[heroControlBase,{
+                    flexDirection:'row',flexShrink:1,minWidth:0,gap:7,
+                    paddingHorizontal:compact?11:15,borderRadius:10,
+                    backgroundColor:pressed?'rgba(27,29,31,.83)':'rgba(23,26,29,.62)',
+                  },heroGlass]}>
+                  <Ionicons name="options-outline" size={compact?15:17} color="#FFFFFF"/>
+                  <Text numberOfLines={1} style={{
+                    flexShrink:1,fontSize:compact?11:12,fontWeight:'700',color:'#FFFFFF',
+                  }}>{roleOption.label}</Text>
                   <Ionicons name={roleMenuOpen?'chevron-up':'chevron-down'}
-                    size={12} color="#383238"/>
+                    size={13} color="rgba(255,255,255,.9)"/>
                 </Pressable>
                 {!compact?(
                   <Pressable onPress={()=>router.push('/my-dream/new')}
                     accessibilityRole="button" accessibilityLabel="Créer un projet"
-                    style={{flexDirection:'row',gap:5,alignItems:'center',
-                      paddingHorizontal:12,minHeight:35,borderRadius:19,
-                      backgroundColor:'#D71D77'}}>
-                    <Ionicons name="add" size={17} color="#FFFFFF"/>
-                    <Text style={{fontSize:11,fontWeight:'700',color:'#FFFFFF'}}>
+                    style={({pressed})=>[heroControlBase,{
+                      flexDirection:'row',gap:8,paddingHorizontal:17,borderRadius:10,
+                      borderColor:'rgba(255,255,255,.25)',
+                      backgroundColor:pressed?'#BD1465':'#D71D77',
+                    }]}>
+                    <Ionicons name="add" size={20} color="#FFFFFF"/>
+                    <Text style={{fontSize:12,fontWeight:'800',color:'#FFFFFF',
+                      letterSpacing:.15}}>
                       Créer un projet
                     </Text>
                   </Pressable>
                 ):null}
                 <View style={{flex:1,minWidth:0}}/>
-                {(['Liste','Congelés'] as ViewFilter[]).map(choice=>(
-                  <Pressable key={choice}
-                    onPress={()=>setView(current=>current===choice?'Tout':choice)}
-                    accessibilityRole="button"
-                    accessibilityState={{selected:view===choice}}
-                    accessibilityLabel={choice==='Liste'?'Afficher en liste':'Afficher les projets gelés'}
-                    style={{paddingHorizontal:compact?8:12,minHeight:35,
-                      justifyContent:'center',alignItems:'center',borderRadius:19,
-                      borderWidth:1,
-                      borderColor:view===choice?'#242228':'rgba(255,255,255,.65)',
-                      backgroundColor:view===choice?'#242228':'rgba(255,253,251,.93)'}}>
-                    <Text style={{fontSize:compact?10:11,fontWeight:'600',
-                      color:view===choice?'#FFFFFF':'#383238'}}>{choice}</Text>
-                  </Pressable>
-                ))}
+                <View style={[{
+                  height:44,flexDirection:'row',alignItems:'center',
+                  gap:3,padding:3,borderRadius:11,borderWidth:1,
+                  borderColor:'rgba(255,255,255,.28)',
+                  backgroundColor:'rgba(23,26,29,.62)',
+                },heroGlass]}>
+                  {(['Liste','Congelés'] as ViewFilter[]).map(choice=>(
+                    <Pressable key={choice}
+                      onPress={()=>setView(current=>current===choice?'Tout':choice)}
+                      accessibilityRole="button"
+                      accessibilityState={{selected:view===choice}}
+                      accessibilityLabel={choice==='Liste'?'Afficher en liste':'Afficher les projets gelés'}
+                      style={({pressed})=>({
+                        height:36,minWidth:compact?43:57,
+                        paddingHorizontal:compact?8:14,
+                        justifyContent:'center',alignItems:'center',borderRadius:8,
+                        backgroundColor:view===choice?'rgba(255,255,255,.96)':
+                          pressed?'rgba(255,255,255,.18)':'transparent',
+                      })}>
+                      <Text style={{
+                        fontSize:compact?11:12,fontWeight:'700',
+                        color:view===choice?'#202126':'#FFFFFF',
+                      }}>{choice}</Text>
+                    </Pressable>
+                  ))}
+                </View>
               </View>
               {roleMenuOpen?(
-                <View style={{position:'absolute',bottom:43,left:0,zIndex:20,
+                <View style={{position:'absolute',bottom:51,left:0,zIndex:20,
                   width:Math.min(galleryWidth-24,246),
                   backgroundColor:theme.surface,borderRadius:12,
                   borderWidth:1,borderColor:theme.border,
@@ -373,12 +400,14 @@ export default function MySpace() {
             marginTop:-9,marginBottom:19}}>
             <Pressable onPress={()=>router.push('/my-dream/new')}
               accessibilityRole="button" accessibilityLabel="Créer un projet"
-              style={{flexDirection:'row',alignItems:'center',gap:6,
-                minHeight:36,paddingHorizontal:11,borderRadius:18,
+              style={({pressed})=>({
+                flexDirection:'row',alignItems:'center',gap:8,
+                minHeight:42,paddingHorizontal:15,borderRadius:10,
                 borderWidth:1,borderColor:'#D71D77',
-                backgroundColor:theme.surface}}>
-              <Ionicons name="add" size={16} color="#D71D77"/>
-              <Text style={{fontSize:12,color:'#D71D77',fontWeight:'700'}}>
+                backgroundColor:pressed?'#BD1465':'#D71D77',
+              })}>
+              <Ionicons name="add" size={19} color="#FFFFFF"/>
+              <Text style={{fontSize:12,color:'#FFFFFF',fontWeight:'800'}}>
                 Créer un projet
               </Text>
             </Pressable>
@@ -420,7 +449,7 @@ export default function MySpace() {
                 <View key={panel.phase} style={{
                   width:desktopPanelWidth,minHeight:242,
                   paddingHorizontal:17,paddingTop:16,paddingBottom:17,
-                  borderRadius:12,borderWidth:1,
+                  borderRadius:3,borderWidth:1,
                   borderColor:theme.dark?panel.darkBorder:panel.lightBorder,
                   backgroundColor:theme.dark?panel.darkTint:panel.lightTint,
                 }}>
@@ -434,8 +463,10 @@ export default function MySpace() {
                       <Text style={{color:theme.muted,fontSize:11,
                         lineHeight:16,marginTop:4}}>{panel.sub}</Text>
                     </View>
-                    <Text style={{color:theme.muted,fontSize:11,
-                      marginTop:4}}>{dreams.length}</Text>
+                    {dreams.length>0?(
+                      <Text style={{color:theme.muted,fontSize:11,
+                        marginTop:4}}>{dreams.length}</Text>
+                    ):null}
                   </View>
                   {dreams.length>0 ? (
                     <ScrollView horizontal showsHorizontalScrollIndicator={false}
