@@ -3,7 +3,9 @@ import {Image as RNImage,Modal,Platform,Pressable,ScrollView,Text,TextInput,View
   useWindowDimensions} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {useAppTheme} from '@/theme/AppTheme';
-import {api,ApiRequestError} from '@/lib/api/client';
+import {ApiRequestError} from '@/lib/api/client';
+import {API_BASE} from '@/lib/authApi';
+import {useAuth} from '@/context/AuthProvider';
 import {MusicCaptureScoreStrip} from './MusicCaptureScoreStrip';
 import {saveMusicWorkspaceFile,getDraftAudio} from '@/domain/musicLocalStorage';
 import {newMusicId} from '@/domain/musicWorkspace';
@@ -32,6 +34,7 @@ type Props={
  * musical transcription and cannot silently overwrite the original photo. */
 export function MusicDocumentScanner({visible,initialFile,sourceFile,onClose,onSaved}:Props){
   const theme=useAppTheme();
+  const {session}=useAuth();
   const {width}=useWindowDimensions();
   const compact=width<670;
   const [mode,setMode]=useState<Mode>('score');
@@ -127,16 +130,28 @@ export function MusicDocumentScanner({visible,initialFile,sourceFile,onClose,onS
     setLoading(true);setError('');setResult(null);setConfirmed(false);
     try{
       const image=await compressed(file);
-      const data=await api<ScanResult>('/api/music/scan',{
-        method:'POST',auth:'required',body:{mode,image},
+      if(!session?.access_token)
+        throw new ApiRequestError(401,'not_authenticated');
+      const response=await fetch(API_BASE+'/api/music/scan',{
+        method:'POST',headers:{
+          'Content-Type':'application/json',
+          'Authorization':'Bearer '+session.access_token,
+        },body:JSON.stringify({mode,image}),
       });
+      const payload=await response.json().catch(()=>({}));
+      if(!response.ok){
+        const issue=payload?.error;
+        throw new ApiRequestError(response.status,
+          issue?.code||'scan_failed',issue?.message);
+      }
+      const data=payload as ScanResult;
       if(data.mode!==mode||(!data.notes?.length&&!data.text?.trim()))
         throw Error('La reconnaissance ne contient aucun élément exploitable.');
       setResult(data);setDraftTitle(data.title);setDraftText(data.text||'');
     }catch(e){
       if(e instanceof ApiRequestError){
         setError(e.status===401?
-          'Connecte-toi avec ta session JenLow pour utiliser le scanner sécurisé.':
+          'Connecte-toi à JenLow pour utiliser la reconnaissance sécurisée.':
           e.status===503||e.status===404?
             'Le moteur de numérisation n’est pas encore activé sur le serveur. Tu peux importer du MusicXML en attendant.':
             e.message||'Analyse impossible pour cette photo.');
