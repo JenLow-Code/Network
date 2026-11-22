@@ -252,7 +252,9 @@ export default function MusicHub() {
           ? {gap:1} : tileContainer}>
           {songs.map(song => <MusicSongCard key={song.id}
             song={song} layout={layout}
-            width={tileWidth} participants={peopleForLocal(song)}/>)}
+            width={tileWidth} participants={peopleForLocal(song)}
+            pendingCount={proposals.filter(p => p.direction === 'received' &&
+              p.status === 'submitted' && p.trackPublicationId === song.publishedId).length}/>)}
           {sharedPieces.map(piece => <MusicTile
             key={'shared-'+piece.publicationId} width={tileWidth}
             title={piece.title} mode="draft" layout={layout}
