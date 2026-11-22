@@ -12,15 +12,17 @@ export function DetailMoreDrawer({
   subtitle,
   children,
   label = 'En savoir plus',
+  defaultOpen = false,
 }: {
   heading: string;
   subtitle?: string;
   children: React.ReactNode;
   label?: string;
+  defaultOpen?: boolean;
 }) {
   const theme = useAppTheme();
   const { width } = useWindowDimensions();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultOpen);
   const offset = useRef(new Animated.Value(440)).current;
   useEffect(() => {
     if (open) Animated.timing(offset, { toValue: 0, duration: 240, useNativeDriver: true }).start();
