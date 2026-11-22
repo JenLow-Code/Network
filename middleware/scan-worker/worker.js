@@ -195,6 +195,7 @@ export default{
     // A failure of the primary model is NOT proof the scanner is unconfigured.
     // Try a second EU-usable vision model. Both outputs are unverified drafts.
     let failure='model_unavailable';
+    const failures=[];
     for(const model of [MODEL,FALLBACK_MODEL]){
       try{
         const answer=await env.AI.run(model,{
@@ -225,8 +226,14 @@ export default{
         else if(/quota|insufficient|limit exceeded|rate limit|credits|balance/i.test(reason))
           failure='model_quota';
         else failure='model_unavailable';
+        failures.push(failure);
       }
     }
+    // When the first model produced an incomplete score and the fallback
+    // failed for a different reason, report the structural failure rather
+    // than falsely saying the whole scanner is not configured.
+    if(failures.includes('scan_incomplete_score'))failure='scan_incomplete_score';
+    else if(failures.includes('scan_no_notes'))failure='scan_no_notes';
     const unreadable=['scan_no_notes','scan_no_text','scan_unreadable',
       'image_unreadable','scan_incomplete_score'].includes(failure);
     const explanation=failure==='scan_incomplete_score'?
