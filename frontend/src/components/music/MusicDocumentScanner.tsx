@@ -22,6 +22,7 @@ type ScanResult={
 type Props={
   visible:boolean;
   initialFile?:MusicProjectFile|null;
+  sourceFile?:File|null;
   onClose:()=>void;
   onSaved:(file:MusicProjectFile)=>void;
 };
@@ -29,7 +30,7 @@ type Props={
 /** The source is kept local; it is transferred to Workers AI only when the
  * user deliberately clicks "Analyser". The preview is NEVER called verified
  * musical transcription and cannot silently overwrite the original photo. */
-export function MusicDocumentScanner({visible,initialFile,onClose,onSaved}:Props){
+export function MusicDocumentScanner({visible,initialFile,sourceFile,onClose,onSaved}:Props){
   const theme=useAppTheme();
   const {width}=useWindowDimensions();
   const compact=width<670;
@@ -47,7 +48,7 @@ export function MusicDocumentScanner({visible,initialFile,onClose,onSaved}:Props
     if(!visible)return;
     setResult(null);setError('');setDraftTitle('');setDraftText('');
     setConfirmed(false);setMode('score');
-    if(!initialFile){setFile(null);return;}
+    if(!initialFile){setFile(sourceFile||null);return;}
     if(!initialFile.localFileId){setFile(null);return;}
     let live=true;
     void getDraftAudio(initialFile.localFileId).then(blob=>{
@@ -56,7 +57,7 @@ export function MusicDocumentScanner({visible,initialFile,onClose,onSaved}:Props
         {type:blob.type||initialFile.mimeType||'image/jpeg'}));
     });
     return()=>{live=false;};
-  },[visible,initialFile?.id]);
+  },[visible,initialFile?.id,sourceFile]);
   useEffect(()=>{
     if(!file||typeof URL==='undefined'){setPreview('');return;}
     const url=URL.createObjectURL(file);setPreview(url);
