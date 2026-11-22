@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Platform, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, Image, Platform, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -7,6 +7,7 @@ import { router, useFocusEffect } from 'expo-router';
 import { Nav } from '@/components/navigation/Nav';
 import { PageHeader } from '@/components/navigation/PageHeader';
 import { MusicSongCard } from '@/components/music/MusicSongCard';
+import { MusicCollaboratorAvatars, type MusicCollaborator } from '@/components/music/MusicCollaboratorAvatars';
 import { MusicAudioPreview } from '@/components/music/MusicAudioPreview';
 import { CassetteArtwork } from '@/components/publication/PublicationGallery';
 import { readMusicLibraryLayout, type MusicLibraryLayout } from '@/domain/musicLibraryPreferences';
@@ -28,7 +29,8 @@ type Proposal = {
   status: string;
   createdAt?: string;
   reviewState?:string;
-  proposer?: { displayName?: string };
+  proposer?: MusicCollaborator;
+  publisher?: MusicCollaborator;
 };
 type ProposalItem = Proposal & { direction: 'received' | 'sent' };
 
@@ -53,6 +55,11 @@ export default function MusicHub() {
   const ws = workspaceLayout(width);
   const compact = width < 630;
   const desktop = Platform.OS === 'web' && ws.desktop;
+  // Real responsive grids: no sideways scrolling to find a song or a person.
+  const columns = compact ? 1 : desktop ? 3 : 2;
+  const usableWidth = Math.min(width, ws.maxWidth || width) - ws.gutter * 2;
+  const cardWidth = Math.max(200, Math.floor((usableWidth - (columns - 1) * 12) / columns));
+  const songPreviewCount = compact ? 2 : desktop ? 3 : 4;
   const app = useApp();
   const { items, ready, error } = useMusicWorkspaces();
   const discovery = useDiscovery({ type: 'music' });
@@ -162,7 +169,7 @@ export default function MusicHub() {
     return <Pressable key={p.direction + ':' + p.id}
       accessibilityRole="button" accessibilityLabel={'Ouvrir ' + p.trackTitle}
       onPress={() => openProposal(p)}
-      style={{ width: compact ? 270 : 320, padding: 14,
+      style={{ width: cardWidth, padding: 14,
         borderRadius: 16, borderColor: theme.border, borderWidth: 1,
         backgroundColor: panelColor, gap: 9 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}>
@@ -191,6 +198,53 @@ export default function MusicHub() {
     </Pressable>;
   };
 
+  const collaborationCard = (p: ProposalItem) => <Pressable
+    key={p.direction + ':' + p.id} onPress={() => openProposal(p)}
+    accessibilityRole="button" accessibilityLabel={'Ouvrir la collaboration ' + p.trackTitle}
+    style={{ width: cardWidth, minHeight: 144, padding: 16, borderRadius: 17,
+      borderWidth: 1, borderColor: theme.border, backgroundColor: panelColor,
+      gap: 13, justifyContent: 'space-between' }}>
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+      <MusicCollaboratorAvatars publisher={p.publisher} proposer={p.proposer} size={46}/>
+      <View style={{ flex: 1, minWidth: 0, gap: 5 }}>
+        <Text numberOfLines={2} style={{
+          color: theme.foreground, fontSize: 15, fontWeight: '700',
+        }}>{p.trackTitle}</Text>
+        <Text numberOfLines={2} style={{ color: theme.muted, fontSize: 11, lineHeight: 16 }}>
+          {p.publisher?.displayName || 'Auteur'} · {p.proposer?.displayName || 'Collaborateur'}
+        </Text>
+      </View>
+    </View>
+    <View style={{ flexDirection: 'row', justifyContent: 'space-between',
+      alignItems: 'center', gap: 8 }}>
+      <Text style={{ color: p.status === 'published' ? theme.muted : PINK,
+        fontSize: 11, fontWeight: '700' }}>
+        {p.status === 'published' ? 'Publiée' : 'En collaboration'}
+      </Text>
+      <Ionicons name="arrow-forward-outline" size={18} color={theme.muted}/>
+    </View>
+  </Pressable>;
+
+  const emptyCard = (message: string, action: string, icon: keyof typeof Ionicons.glyphMap,
+    onPress: () => void) => <View style={{
+    flexDirection: 'row', alignItems: 'center', gap: 14, padding: compact ? 15 : 19,
+    borderWidth: 1, borderColor: theme.border, borderRadius: 16,
+    backgroundColor: panelColor,
+  }}>
+    <View style={{ width: 45, height: 45, borderRadius: 23, backgroundColor: softColor,
+      alignItems: 'center', justifyContent: 'center' }}>
+      <Ionicons name={icon} size={21} color={PINK}/>
+    </View>
+    <View style={{ flex: 1, gap: 6 }}>
+      <Text style={{ color: theme.muted, fontSize: 13, lineHeight: 19 }}>{message}</Text>
+      <Pressable accessibilityRole="button" accessibilityLabel={action} onPress={onPress}
+        style={{ minHeight: 30, flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+        <Text style={{ color: PINK, fontSize: 12, fontWeight: '700' }}>{action}</Text>
+        <Ionicons name="arrow-forward-outline" color={PINK} size={14}/>
+      </Pressable>
+    </View>
+  </View>;
+
   return <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
     <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{
       paddingHorizontal: ws.gutter, paddingTop: desktop ? 8 : 4, paddingBottom: 125,
@@ -203,7 +257,7 @@ export default function MusicHub() {
           alignItems: 'center', gap: 12 }}>
           {sectionTitle('Mes morceaux', songs.length)}
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 13 }}>
-            {songs.length > (layout === 'cards' ? 3 : 2) ?
+            {songs.length > (layout === 'cards' ? songPreviewCount : 3) ?
               viewAll('Voir tous mes morceaux', () => router.push('/music-library')) : null}
             <Pressable onPress={() => router.push('/music/new')} accessibilityRole="button"
               accessibilityLabel="Créer une nouvelle chanson"
@@ -216,22 +270,18 @@ export default function MusicHub() {
         </View>
         {!ready ? <ActivityIndicator color={PINK}/> : null}
         {error ? <Text style={{ color: '#B84D63', fontSize: 12 }}>{error}</Text> : null}
-        {ready && !songs.length ? <View style={{paddingVertical:16,gap:8,alignItems:'flex-start'}}>
-          <Text style={{color:theme.muted,fontSize:13,lineHeight:20}}>
-            Oups, rien ici pour l’instant. Ton premier morceau commence avec une idée.
-          </Text>
-          <Pressable onPress={()=>router.push('/music/new')} accessibilityRole="button"
-            accessibilityLabel="Commencer un morceau pour capturer un moment musical"
-            style={{minHeight:36,justifyContent:'center'}}>
-            <Text style={{color:PINK,fontSize:13,fontWeight:'700'}}>+ Capturer un moment musical</Text>
-          </Pressable>
-        </View> : null}
+        {ready && !songs.length ? emptyCard(
+          'Ton premier morceau commence avec une idée.',
+          'Créer un morceau', 'create-outline',
+          () => router.push('/music/new'),
+        ) : null}
         {songs.length ? layout === 'cards'
-          ? <ScrollView horizontal showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ gap: 12, paddingBottom: 2 }}>
-              {songs.map(song => <MusicSongCard key={song.id} song={song}
-                layout="cards" width={compact ? 178 : 218}/>)}
-            </ScrollView>
+          ? <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12,
+              alignItems: 'stretch' }}>
+              {songs.slice(0, songPreviewCount).map(song =>
+                <MusicSongCard key={song.id} song={song}
+                  layout="cards" width={cardWidth}/>)}
+            </View>
           : <View style={{ gap: 0 }}>
               {songs.slice(0, 3).map(song => <MusicSongCard key={song.id}
                 song={song} layout="list"/>)}
@@ -242,30 +292,35 @@ export default function MusicHub() {
         {sectionTitle('Pour moi', opportunities.length)}
         {opportunities.length ? <>
           <Text style={{ color: theme.muted, fontSize: 12 }}>
-            Des demandes ouvertes qui correspondent à tes talents.
+            Des morceaux partagés qui cherchent tes talents.
           </Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ gap: 12, paddingBottom: 2 }}>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap',
+            gap: 12, alignItems: 'stretch' }}>
             {opportunities.map(song => <View key={song.id} style={{
-              width: compact ? 238 : 265, borderRadius: 17, padding: 12,
+              width: cardWidth, borderRadius: 17, padding: 14,
               borderWidth: 1, borderColor: theme.border, backgroundColor: panelColor,
-              gap: 10,
+              gap: 12, justifyContent: 'space-between',
             }}>
               <Pressable accessibilityRole="button" accessibilityLabel={'Ouvrir ' + song.title}
                 onPress={() => router.push({ pathname: '/music/[id]', params: { id: song.id } })}
-                style={{ gap: 9 }}>
-                <View style={{ height: 135, borderRadius: 12, alignItems: 'center',
-                  backgroundColor: softColor, justifyContent: 'center' }}>
-                  <CassetteArtwork width={compact ? 197 : 220} height={128}
-                    title={song.title} artwork={song.coverArt || song.image} transparent/>
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 13 }}>
+                <View style={{ width: 82, height: 82, borderRadius: 41,
+                  overflow: 'hidden', backgroundColor: softColor,
+                  alignItems: 'center', justifyContent: 'center' }}>
+                  {song.coverArt || song.image ?
+                    <Image source={{ uri: song.coverArt || song.image }}
+                      style={{ width: 82, height: 82, borderRadius: 41 }}
+                      resizeMode="cover"/> :
+                    <Ionicons name="disc-outline" size={35} color={PINK}/>}
                 </View>
-                <Text numberOfLines={1} style={{ color: theme.foreground,
-                  fontWeight: '700', fontSize: 15 }}>{song.title}</Text>
-                <Text numberOfLines={1} style={{ color: theme.muted, fontSize: 12 }}>
-                  {song.author}
-                </Text>
-                <Text numberOfLines={1} style={{ color: PINK, fontSize: 11,
-                  fontWeight: '600' }}>Recherche : {song.requestedTalents?.join(', ')}</Text>
+                <View style={{ flex: 1, minWidth: 0, gap: 5 }}>
+                  <Text numberOfLines={2} style={{ color: theme.foreground,
+                    fontWeight: '700', fontSize: 15 }}>{song.title}</Text>
+                  <Text numberOfLines={1} style={{ color: theme.muted,
+                    fontSize: 12 }}>{song.author}</Text>
+                  <Text numberOfLines={2} style={{ color: PINK, fontSize: 11,
+                    fontWeight: '600' }}>Recherche : {song.requestedTalents?.join(', ')}</Text>
+                </View>
               </Pressable>
               {song.audioUrl ? <MusicAudioPreview source={{ audioUrl: song.audioUrl }}/> : (
                 <Pressable accessibilityRole="button" onPress={() =>
@@ -276,53 +331,39 @@ export default function MusicHub() {
                 </Pressable>
               )}
             </View>)}
-          </ScrollView>
-        </> : <View style={{paddingVertical:14,gap:7,alignItems:'flex-start'}}>
-          <Text style={{color:theme.muted,fontSize:13,lineHeight:20}}>
-            Oups, aucun appel qui correspond à tes talents pour le moment.
-          </Text>
-          <Pressable accessibilityRole="button"
-            onPress={()=>router.push(talents.length?{pathname:'/discover',params:{filter:'Musique'}}:'/profile')}
-            style={{minHeight:36,justifyContent:'center'}}>
-            <Text style={{color:PINK,fontSize:13,fontWeight:'700'}}>
-              {talents.length?'Découvrir les collaborations':'Ajouter mes talents'}
-            </Text>
-          </Pressable>
-        </View>}
+          </View>
+        </> : emptyCard(
+          'Aucun appel ne correspond encore à tes talents.',
+          talents.length ? 'Découvrir les collaborations' : 'Ajouter mes talents',
+          'headset-outline',
+          () => router.push(talents.length
+            ? { pathname: '/discover', params: { filter: 'Musique' } } : '/profile'),
+        )}
       </View>
 
       <View style={{ gap: 13 }}>
         {sectionTitle('Mes collaborations', active.length + pending.length)}
         {active.length ? <View style={{ gap: 9 }}>
           <Text style={{ fontSize: 12, fontWeight: '700', color: theme.foreground }}>
-            En cours
+            Projets partagés
           </Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ gap: 12, paddingBottom: 2 }}>
-            {active.map(proposalCard)}
-          </ScrollView>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
+            {active.map(collaborationCard)}
+          </View>
         </View> : null}
         {pending.length ? <View style={{ gap: 9 }}>
           <Text style={{ fontSize: 12, fontWeight: '700', color: theme.foreground }}>
-            À suivre
+            Propositions en attente
           </Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ gap: 12, paddingBottom: 2 }}>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
             {pending.map(proposalCard)}
-          </ScrollView>
+          </View>
         </View> : null}
-        {!active.length && !pending.length ? <View style={{paddingVertical:14,gap:7,alignItems:'flex-start'}}>
-          <Text style={{color:theme.muted,fontSize:13,lineHeight:20}}>
-            Rien à suivre pour l’instant. Une belle collaboration peut commencer ici.
-          </Text>
-          <Pressable accessibilityRole="button"
-            onPress={()=>router.push({pathname:'/discover',params:{filter:'Musique'}})}
-            style={{minHeight:36,justifyContent:'center'}}>
-            <Text style={{color:PINK,fontSize:13,fontWeight:'700'}}>
-              Découvrir les appels à collaboration
-            </Text>
-          </Pressable>
-        </View> : null}
+        {!active.length && !pending.length ? emptyCard(
+          'Les morceaux que tu construis avec d’autres apparaîtront ici.',
+          'Découvrir les appels à collaboration', 'people-outline',
+          () => router.push({ pathname: '/discover', params: { filter: 'Musique' } }),
+        ) : null}
         {requestsError ? <Text style={{ fontSize: 12, color: theme.muted }}>
           Certaines propositions en ligne ne sont pas accessibles avec cette session.
         </Text> : null}
