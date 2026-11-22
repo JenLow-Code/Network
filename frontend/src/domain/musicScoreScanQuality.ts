@@ -103,8 +103,10 @@ export function auditRecognizedScore(
   // This is intentionally a lower bound. Two systems cannot fit entirely
   // into three short onsets in a single measure of 3/4.
   const sourceTooLong=sourcesHaveMultipleStaves&&systems>=2&&
-    (spanBeats<beats*systems-.05||uniqueOnsets<systems*3);
-  const implausibleCluster=valid.length>=12&&uniqueOnsets<=3;
+    valid.length>=8&&spanBeats<beats*systems-.05&&
+    uniqueOnsets<systems*3;
+  const implausibleCluster=valid.length>=12&&uniqueOnsets<=3&&
+    spanBeats<beats*3;
   if(sourceTooLong||implausibleCluster){
     return {accepted:false,code:'score_incomplete',
       description:sourcesHaveMultipleStaves?
