@@ -421,8 +421,10 @@ export function MusicDocumentScanner({visible,initialFile,sourceFile,onClose,onS
             <Ionicons name={aiConsent?'checkbox':'square-outline'}
               color={PINK} size={20}/>
             <Text style={{fontSize:12,lineHeight:19,color:theme.foreground,flex:1}}>
-              J’autorise l’analyse temporaire de cette image par Cloudflare Workers AI.
-              Aucun document n’est publié ; je vérifierai le résultat.
+              {mode==='score'?
+                'J’autorise l’envoi temporaire de cette image au service OMR privé JenLow (Audiveris / Python). Aucun document ne sera publié.':
+                'J’autorise l’analyse temporaire de cette image par Cloudflare Workers AI. Aucun document ne sera publié.'}
+              {' '}Je vérifierai le résultat avant enregistrement.
             </Text>
           </Pressable>
           {mode==='score'&&omrChecked&&!omrAvailable?
