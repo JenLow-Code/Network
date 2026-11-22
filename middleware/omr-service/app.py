@@ -87,7 +87,8 @@ def _run_audiveris(input_bytes: bytes) -> bytes:
         dest = directory / "results"
         dest.mkdir()
         source.write_bytes(input_bytes)
-        command = [AUDIVERIS, "-batch", "-transcribe", "-export", "-output",
+        command = ["xvfb-run", "-a", AUDIVERIS, "-batch",
+                   "-transcribe", "-export", "-output",
                    str(dest), "--", str(source)]
         try:
             run = subprocess.run(
