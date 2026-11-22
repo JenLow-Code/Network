@@ -92,7 +92,19 @@ export function MusicDocumentScanner({visible,initialFile,sourceFile,onClose,onS
   const [kind,setKind]=useState<'lyrics'|'note'>('lyrics');
   const [confirmed,setConfirmed]=useState(false);
   const [aiConsent,setAiConsent]=useState(false);
+  const [omrAvailable,setOmrAvailable]=useState(false);
+  const [omrChecked,setOmrChecked]=useState(false);
   const [previewPart,setPreviewPart]=useState('all');
+  useEffect(()=>{
+    if(!visible)return;
+    let alive=true;
+    setOmrAvailable(false);setOmrChecked(false);
+    void fetch(SCAN_API_BASE+'/health').then(response=>response.ok?response.json():null)
+      .then(data=>{if(alive)setOmrAvailable(data?.omr===true);})
+      .catch(()=>{if(alive)setOmrAvailable(false);})
+      .finally(()=>{if(alive)setOmrChecked(true);});
+    return()=>{alive=false;};
+  },[visible]);
   useEffect(()=>{
     if(!visible)return;
     setResult(null);setError('');setDraftTitle('');setDraftText('');
@@ -207,7 +219,7 @@ export function MusicDocumentScanner({visible,initialFile,sourceFile,onClose,onS
     }finally{URL.revokeObjectURL(object);}
   };
   const scan=async()=>{
-    if(!file||loading||!aiConsent)return;
+    if(!file||loading||!aiConsent||(mode==='score'&&!omrAvailable))return;
     setLoading(true);setError('');setResult(null);setConfirmed(false);
     try{
       const {image,geometry}=await compressed(file);
@@ -413,10 +425,18 @@ export function MusicDocumentScanner({visible,initialFile,sourceFile,onClose,onS
               Aucun document n’est publié ; je vérifierai le résultat.
             </Text>
           </Pressable>
-          <Pressable onPress={()=>{void scan();}} disabled={!file||loading||!aiConsent}
+          {mode==='score'&&omrChecked&&!omrAvailable?
+            <Text style={{fontSize:12,lineHeight:19,color:theme.muted}}>
+              La conversion musicale est momentanément indisponible :
+              le nouveau moteur Audiveris doit être déployé.
+              L’ancien détecteur d’accords a été retiré.
+              Tu peux toujours conserver la photo originale ou importer du MusicXML.
+            </Text>:null}
+          <Pressable onPress={()=>{void scan();}}
+            disabled={!file||loading||!aiConsent||(mode==='score'&&!omrAvailable)}
             accessibilityRole="button"
             style={{alignSelf:'flex-start',backgroundColor:PINK,
-              opacity:!file||loading||!aiConsent?0.55:1,borderRadius:9,
+              opacity:!file||loading||!aiConsent||(mode==='score'&&!omrAvailable)?0.55:1,borderRadius:9,
               paddingVertical:12,paddingHorizontal:18}}>
             <Text style={{fontWeight:'700',color:'#FFFFFF',fontSize:13}}>
               {loading?'Analyse en cours…':
