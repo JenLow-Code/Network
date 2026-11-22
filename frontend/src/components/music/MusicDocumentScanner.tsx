@@ -12,18 +12,42 @@ import {saveMusicWorkspaceFile,getDraftAudio} from '@/domain/musicLocalStorage';
 import {newMusicId} from '@/domain/musicWorkspace';
 import type {MusicProjectFile} from '@/domain/musicWorkspace';
 import type {MusicNotationEvent} from '@/domain/musicNotation';
+import {auditRecognizedScore,detectScoreGeometry} from '@/domain/musicScoreScanQuality';
+import type {ScoreGeometry} from '@/domain/musicScoreScanQuality';
 
 const PINK='#D71D77';
 type Mode='text'|'score';
 type ScanFrame='center'|'full';
 /** Phone screenshots often contain huge empty margins around the actual score.
  * Only trim those tall images; an ordinary A4 photograph stays unaltered. */
-function cropForAnalysis(width:number,height:number,mode:Mode,frame:ScanFrame){
-  if(mode==='score'&&frame==='center'&&height/Math.max(1,width)>1.55){
-    return {x:0,y:Math.round(height*.27),
-      width,height:Math.round(height*.59)};
+function imageStructureAndCrop(image:HTMLImageElement,mode:Mode,frame:ScanFrame){
+  const full={x:0,y:0,width:image.naturalWidth,height:image.naturalHeight};
+  const noStructure:ScoreGeometry={
+    staffCount:0,estimatedSystems:0,staffBands:[],suggestedCrop:null,
+  };
+  if(mode!=='score')return {crop:full,geometry:noStructure};
+  const source=document.createElement('canvas');
+  const ratio=Math.min(1,1300/Math.max(full.width,full.height));
+  source.width=Math.max(1,Math.round(full.width*ratio));
+  source.height=Math.max(1,Math.round(full.height*ratio));
+  const ctx=source.getContext('2d',{willReadFrequently:true});
+  if(!ctx)return {crop:full,geometry:noStructure};
+  ctx.drawImage(image,0,0,source.width,source.height);
+  const geometry=detectScoreGeometry(ctx.getImageData(
+    0,0,source.width,source.height));
+  if(frame==='full')return {crop:full,geometry};
+  const detected=geometry.suggestedCrop;
+  if(detected&&geometry.staffCount>=2){
+    const y=Math.max(0,Math.round(detected.y/ratio));
+    const height=Math.min(full.height-y,Math.ceil(detected.height/ratio));
+    return {crop:{x:0,y,width:full.width,height},geometry};
   }
-  return {x:0,y:0,width,height};
+  // Only crop an unusually tall phone screenshot when the staff detector
+  // cannot establish a reliable crop. Never trim ordinary A4 pages.
+  if(full.height/Math.max(1,full.width)>1.55)
+    return {crop:{x:0,y:Math.round(full.height*.27),
+      width:full.width,height:Math.round(full.height*.59)},geometry};
+  return {crop:full,geometry};
 }
 type Note={midi:number;startBeats:number;lengthBeats:number;velocity:number};
 type ScanResult={
@@ -53,6 +77,7 @@ export function MusicDocumentScanner({visible,initialFile,sourceFile,onClose,onS
   const [preview,setPreview]=useState('');
   const [scanPreview,setScanPreview]=useState('');
   const [frame,setFrame]=useState<ScanFrame>('center');
+  const [detectedStaves,setDetectedStaves]=useState(0);
   const [loading,setLoading]=useState(false);
   const [error,setError]=useState('');
   const [result,setResult]=useState<ScanResult|null>(null);
@@ -65,6 +90,7 @@ export function MusicDocumentScanner({visible,initialFile,sourceFile,onClose,onS
     if(!visible)return;
     setResult(null);setError('');setDraftTitle('');setDraftText('');
     setConfirmed(false);setAiConsent(false);setMode('score');setFrame('center');
+    setDetectedStaves(0);
     if(!initialFile){setFile(sourceFile||null);return;}
     if(!initialFile.localFileId){setFile(null);return;}
     let live=true;
@@ -88,7 +114,8 @@ export function MusicDocumentScanner({visible,initialFile,sourceFile,onClose,onS
     const img=new window.Image();
     img.onload=()=>{
       if(!active)return;
-      const crop=cropForAnalysis(img.naturalWidth,img.naturalHeight,mode,frame);
+      const {crop,geometry}=imageStructureAndCrop(img,mode,frame);
+      setDetectedStaves(geometry.staffCount);
       if(crop.height===img.naturalHeight&&crop.width===img.naturalWidth){
         setScanPreview(preview);return;
       }
@@ -134,7 +161,7 @@ export function MusicDocumentScanner({visible,initialFile,sourceFile,onClose,onS
     };
     input.click();
   };
-  const compressed=async(source:File):Promise<string>=>{
+  const compressed=async(source:File):Promise<{image:string;geometry:ScoreGeometry}>=>{
     if(!source.type.startsWith('image/')||
       !['image/jpeg','image/png','image/webp'].includes(source.type))
       throw Error('Choisis une photo JPG, PNG ou WebP. Pour un PDF, exporte d’abord sa page en image.');
@@ -147,7 +174,7 @@ export function MusicDocumentScanner({visible,initialFile,sourceFile,onClose,onS
         img.onload=()=>resolve(img);img.onerror=()=>reject(Error('Photo illisible.'));
         img.src=object;
       });
-      const region=cropForAnalysis(image.naturalWidth,image.naturalHeight,mode,frame);
+      const {crop:region,geometry}=imageStructureAndCrop(image,mode,frame);
       const canvas=document.createElement('canvas');
       const scale=Math.min(1,1650/Math.max(region.width,region.height));
       canvas.width=Math.max(1,Math.round(region.width*scale));
@@ -164,21 +191,25 @@ export function MusicDocumentScanner({visible,initialFile,sourceFile,onClose,onS
       }
       if(data.length>1_550_000)
         throw Error('Image trop détaillée : recadre la partition ou utilise une photo plus légère.');
-      return data;
+      return {image:data,geometry};
     }finally{URL.revokeObjectURL(object);}
   };
   const scan=async()=>{
     if(!file||loading||!aiConsent)return;
     setLoading(true);setError('');setResult(null);setConfirmed(false);
     try{
-      const image=await compressed(file);
+      const {image,geometry}=await compressed(file);
       if(!session?.access_token)
         throw new ApiRequestError(401,'not_authenticated');
       const response=await fetch(SCAN_API_BASE+'/api/music/scan',{
         method:'POST',headers:{
           'Content-Type':'application/json',
           'Authorization':'Bearer '+session.access_token,
-        },body:JSON.stringify({mode,image}),
+        },body:JSON.stringify({mode,image,
+          sourceStructure:mode==='score'?{
+            staffCount:geometry.staffCount,
+            estimatedSystems:geometry.estimatedSystems,
+          }:undefined}),
       });
       const payload=await response.json().catch(()=>({}));
       if(!response.ok){
@@ -189,12 +220,20 @@ export function MusicDocumentScanner({visible,initialFile,sourceFile,onClose,onS
       const data=payload as ScanResult;
       if(data.mode!==mode||(!data.notes?.length&&!data.text?.trim()))
         throw Error('La reconnaissance ne contient aucun élément exploitable.');
+      if(mode==='score'){
+        const assessment=auditRecognizedScore(
+          data.notes||[],data.numerator||4,geometry);
+        if(!assessment.accepted)throw Error(assessment.description+
+          ' JenLow ne peut pas enregistrer cette partition comme jouable. '
+          +'Essaie une image recadrée ou un fichier MusicXML.');
+      }
       setResult(data);setDraftTitle(data.title);setDraftText(data.text||'');
     }catch(e){
       if(e instanceof ApiRequestError){
         const messages:Record<string,string>={
           not_authenticated:'Ta connexion a expiré. Reconnecte-toi à JenLow.',
           scan_no_notes:'Aucune note exploitable reconnue. Recadre uniquement les portées et réessaie.',
+          scan_incomplete_score:'Le moteur n’a reconnu qu’une partie de la partition. Ce résultat ne peut pas être enregistré comme transcription jouable.',
           scan_no_text:'Aucun texte lisible. Essaie une photo plus nette.',
           scan_unreadable:'Le résultat de reconnaissance est incomplet. Recadre le document.',
           image_unreadable:'Le modèle ne parvient pas à lire cette image. Réduis ou recadre la photo.',
@@ -329,6 +368,8 @@ export function MusicDocumentScanner({visible,initialFile,sourceFile,onClose,onS
             </View>
             <Text style={{fontSize:11,color:theme.muted}}>
               Aperçu de la zone analysée · le fichier original reste inchangé
+              {mode==='score'&&detectedStaves>=2?
+                ' · '+detectedStaves+' portées détectées':''}
             </Text>
           </>:null}
           <Pressable onPress={()=>setAiConsent(value=>!value)}
