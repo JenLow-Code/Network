@@ -34,7 +34,7 @@ async function scannerIdentity(ctx:Ctx):Promise<string>{
 type ScanMode='text'|'score';
 type ScoreNote={midi:number;startBeats:number;lengthBeats:number;velocity:number};
 
-const BASE_MODEL='@cf/meta/llama-3.2-11b-vision-instruct';
+const BASE_MODEL='@cf/google/gemma-4-26b-a4b-it';
 const MAX_REQUEST_BYTES=1_800_000;
 const MAX_EVENTS=350;
 
@@ -157,13 +157,18 @@ export function registerMusicScan(r:Router):void{
     try{
       response=await ctx.env.AI.run(BASE_MODEL,{
         messages:[{role:'system',content:'You extract only what is visible. Respond strictly as JSON.'},
-          {role:'user',content:prompt}],
-        image,max_tokens:mode==='score'?2900:2500,temperature:0,
+          {role:'user',content:[
+            {type:'text',text:prompt},{type:'image_url',image_url:{url:image}},
+          ]}],
+        max_completion_tokens:mode==='score'?4400:2900,temperature:0,
+        chat_template_kwargs:{enable_thinking:false},store:false,
       });
     }catch{
       throw unavailable('scan_engine_failed','Le moteur de reconnaissance est indisponible.');
     }
-    const raw=str((response as {response?:unknown})?.response,18000);
+    const output=response as {response?:unknown;
+      choices?:{message?:{content?:unknown}}[]};
+    const raw=str(output?.choices?.[0]?.message?.content||output?.response,18000);
     if(!raw)throw unprocessable('scan_unreadable','Aucun texte reconnu.');
     const parsed=fromModel(raw);
     if(mode==='score')return scoreResult(parsed);
