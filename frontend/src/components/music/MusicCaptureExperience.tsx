@@ -20,6 +20,7 @@ import { newMusicId } from '@/domain/musicWorkspace';
 import type { MusicProject, MusicProjectFile, MusicSection, MusicAudioMarker } from '@/domain/musicWorkspace';
 import type {MusicNotationEvent} from '@/domain/musicNotation';
 import {MusicCaptureScoreStrip} from './MusicCaptureScoreStrip';
+import {CassetteBlueprintBackground} from './CassetteBlueprintBackground';
 
 const PINK='#CB245C';
 type Props={project:MusicProject;patch:(changes:Partial<MusicProject>)=>void;
@@ -481,7 +482,9 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
         </Pressable>;
       })}
     </ScrollView>:null}
-    {files.length?<View style={{width:'100%',gap:0}}>
+    {files.length?<View style={{width:'100%',gap:0,position:'relative'}}>
+      {/* Decorative SVG stays underneath the real list; never captures touches. */}
+      <CassetteBlueprintBackground desktop={desktopList}/>
 
       {displayedFiles.map((file,index)=>{
         const image=isImage(file);
