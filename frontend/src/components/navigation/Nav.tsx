@@ -182,9 +182,13 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
         {item.active?<View pointerEvents="none" style={{
           position:'absolute',left:0,top:10,bottom:10,width:3,
           backgroundColor:activeColor,borderRadius:3}}/>:null}
-        <Ionicons name={item.path==='/discover'?'ellipse-outline':
-          item.path==='/profile'?'person-outline':item.icon}
-          size={19} color={item.active?activeColor:theme.muted}/>
+        {item.path==='/my-space'?
+          <Image source={require('../../../assets/icons/dreams-nav.png')}
+            resizeMode="contain" style={{width:22,height:22,
+              tintColor:item.active?activeColor:theme.muted}}/>:
+          <Ionicons name={item.path==='/discover'?'ellipse-outline':
+            item.path==='/profile'?'person-outline':item.icon}
+            size={19} color={item.active?activeColor:theme.muted}/>}
         {!collapsed?<Text numberOfLines={1} style={{
           color:item.active?activeColor:theme.foreground,
           fontSize:14,fontWeight:item.active?'700':'500',flex:1}}>
@@ -586,12 +590,18 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
                 borderWidth: x.active ? 2 : 1, borderColor: x.active ? '#CB245C' : '#B2B8B9',
               }}
             />
+          ) : x.path === '/my-space' ? (
+            <Image
+              source={require('../../../assets/icons/dreams-nav.png')}
+              resizeMode="contain"
+              style={{width:27,height:27,
+                tintColor:x.active ? '#CB245C' : foreground}}
+            />
           ) : (
             <Ionicons
               name={
                 x.path === '/agenda' && x.active ? 'calendar'
                 : x.path === '/music-hub' && x.active ? 'musical-note'
-                : x.path === '/my-space' && x.active ? 'layers'
                 : x.icon
               }
               size={24}
