@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Image, Platform, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { BlurView } from 'expo-blur';
 import Svg, { Defs, LinearGradient, Stop, Rect, Filter, FeTurbulence, FeDisplacementMap } from 'react-native-svg';
-import { Feather, Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { router, useGlobalSearchParams, usePathname } from 'expo-router';
 import { useLocale } from '@/i18n/locale';
 import { useAppTheme } from '@/theme/AppTheme';
@@ -127,7 +127,7 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
         (path.startsWith('/music/') && path !== '/music/new'),
     },
     {
-      icon: 'layers-outline' as const, title: 'Projets',
+      icon: 'folder-outline' as const, title: 'Projets',
       path: '/my-space' as const,
       active: path === '/my-space' || path === '/my-dreams' || path.startsWith('/my-dream'),
     },
@@ -182,12 +182,9 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
         {item.active?<View pointerEvents="none" style={{
           position:'absolute',left:0,top:10,bottom:10,width:3,
           backgroundColor:activeColor,borderRadius:3}}/>:null}
-        {item.path==='/my-space'?
-          <Feather name="feather" size={20}
-            color={item.active?activeColor:theme.muted}/>:
-          <Ionicons name={item.path==='/discover'?'ellipse-outline':
-            item.path==='/profile'?'person-outline':item.icon}
-            size={19} color={item.active?activeColor:theme.muted}/>}
+        <Ionicons name={item.path==='/discover'?'ellipse-outline':
+          item.path==='/profile'?'person-outline':item.icon}
+          size={19} color={item.active?activeColor:theme.muted}/>
         {!collapsed?<Text numberOfLines={1} style={{
           color:item.active?activeColor:theme.foreground,
           fontSize:14,fontWeight:item.active?'700':'500',flex:1}}>
@@ -589,9 +586,6 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
                 borderWidth: x.active ? 2 : 1, borderColor: x.active ? '#CB245C' : '#B2B8B9',
               }}
             />
-          ) : x.path === '/my-space' ? (
-            <Feather name="feather" size={23}
-              color={x.active ? '#CB245C' : foreground}/>
           ) : (
             <Ionicons
               name={
