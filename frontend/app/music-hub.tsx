@@ -16,11 +16,14 @@ import { matchesForMe, profileTalentStorageKey, type SavedTalent } from '@/domai
 import { useApp } from '@/context/AppContext';
 import { useDiscovery } from '@/lib/api/hooks';
 import { api } from '@/lib/api/client';
+import { fetchDemoMusicPreview, type DemoMusicPreview } from '@/lib/api/musicPreview';
 import { useAppTheme } from '@/theme/AppTheme';
 import { workspaceLayout } from '@/theme/workspaceLayout';
 import type { MusicPublication } from '@/domain/publication';
 
 const PINK = '#CB245C';
+// Beta-only read-only samples are stored in D1; unified live mode never injects test data.
+const BETA_MUSIC_EXAMPLES = process.env.EXPO_PUBLIC_DISCOVERY_SOURCE !== 'unified';
 type Proposal = {
   id: string;
   trackTitle: string;
@@ -31,6 +34,7 @@ type Proposal = {
   reviewState?:string;
   proposer?: MusicCollaborator;
   publisher?: MusicCollaborator;
+  isDemo?: boolean;
 };
 type ProposalItem = Proposal & { direction: 'received' | 'sent' };
 
@@ -68,6 +72,7 @@ export default function MusicHub() {
   const [sent, setSent] = useState<Proposal[]>([]);
   const [received, setReceived] = useState<Proposal[]>([]);
   const [requestsError, setRequestsError] = useState(false);
+  const [demoPreview, setDemoPreview] = useState<DemoMusicPreview | null>(null);
 
   useFocusEffect(useCallback(() => {
     let active = true;
@@ -105,6 +110,17 @@ export default function MusicHub() {
     return () => { mounted = false; };
   }, [app.email]);
 
+  useEffect(() => {
+    if (!BETA_MUSIC_EXAMPLES) return;
+    let live = true;
+    void fetchDemoMusicPreview().then(result => {
+      if (live) setDemoPreview(result);
+    }).catch(() => {
+      if (live) setDemoPreview(null);
+    });
+    return () => { live = false; };
+  }, []);
+
   const songs = useMemo(() => [...items].sort((a, b) =>
     (b.updatedAt || b.createdAt).localeCompare(a.updatedAt || a.createdAt)), [items]);
   const saved = useMemo(() => discovery.state === 'ready'
@@ -132,6 +148,8 @@ export default function MusicHub() {
     ...sent.map(p => ({ ...p, direction: 'sent' as const })),
   ].sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || '')), [received, sent]);
   const active = proposals.filter(p => p.status === 'accepted' || p.status === 'published');
+  const displayedActive: ProposalItem[] = [...active, ...(demoPreview?.collaborations || [])];
+  const displayedOpportunities: MusicPublication[] = [...opportunities, ...(demoPreview?.songs || [])];
   const pending = proposals.filter(p => p.status !== 'accepted' && p.status !== 'published' &&
     p.status !== 'withdrawn' && p.status !== 'rejected');
   const panelColor = theme.dark ? '#28242A' : '#FFFCF8';
@@ -153,6 +171,7 @@ export default function MusicHub() {
     <Ionicons name="arrow-forward-outline" color={PINK} size={15}/>
   </Pressable>;
   const openProposal = (p: ProposalItem) => {
+    if (p.isDemo) return; // Fictional preview: never open a real conversation or proposal.
     if (p.direction === 'received') {
       const project = items.find(song => song.publishedId === p.trackPublicationId);
       if (project) {
@@ -200,7 +219,8 @@ export default function MusicHub() {
 
   const collaborationCard = (p: ProposalItem) => <Pressable
     key={p.direction + ':' + p.id} onPress={() => openProposal(p)}
-    accessibilityRole="button" accessibilityLabel={'Ouvrir la collaboration ' + p.trackTitle}
+    disabled={p.isDemo}
+    accessibilityRole="button" accessibilityLabel={(p.isDemo ? 'Exemple de ' : 'Ouvrir la ') + 'collaboration ' + p.trackTitle}
     style={{ width: cardWidth, minHeight: 144, padding: 16, borderRadius: 17,
       borderWidth: 1, borderColor: theme.border, backgroundColor: panelColor,
       gap: 13, justifyContent: 'space-between' }}>
@@ -219,7 +239,7 @@ export default function MusicHub() {
       alignItems: 'center', gap: 8 }}>
       <Text style={{ color: p.status === 'published' ? theme.muted : PINK,
         fontSize: 11, fontWeight: '700' }}>
-        {p.status === 'published' ? 'Publiée' : 'En collaboration'}
+        {p.isDemo ? 'Exemple · En collaboration' : p.status === 'published' ? 'Publiée' : 'En collaboration'}
       </Text>
       <Ionicons name="arrow-forward-outline" size={18} color={theme.muted}/>
     </View>
@@ -289,19 +309,20 @@ export default function MusicHub() {
       </View>
 
       <View style={{ gap: 13 }}>
-        {sectionTitle('Pour moi', opportunities.length)}
-        {opportunities.length ? <>
+        {sectionTitle('Pour moi', displayedOpportunities.length)}
+        {displayedOpportunities.length ? <>
           <Text style={{ color: theme.muted, fontSize: 12 }}>
             Des morceaux partagés qui cherchent tes talents.
           </Text>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap',
             gap: 12, alignItems: 'stretch' }}>
-            {opportunities.map(song => <View key={song.id} style={{
+            {displayedOpportunities.map(song => <View key={song.id} style={{
               width: cardWidth, borderRadius: 17, padding: 14,
               borderWidth: 1, borderColor: theme.border, backgroundColor: panelColor,
               gap: 12, justifyContent: 'space-between',
             }}>
               <Pressable accessibilityRole="button" accessibilityLabel={'Ouvrir ' + song.title}
+                disabled={!!(song as MusicPublication & { isDemo?: boolean }).isDemo}
                 onPress={() => router.push({ pathname: '/music/[id]', params: { id: song.id } })}
                 style={{ gap: 8, alignItems: 'center' }}>
                 <View style={{ width: '100%', alignItems: 'center', justifyContent: 'center',
@@ -317,9 +338,12 @@ export default function MusicHub() {
                     fontSize: 12 }}>{song.author}</Text>
                   <Text numberOfLines={2} style={{ color: PINK, fontSize: 11,
                     fontWeight: '600' }}>Recherche : {song.requestedTalents?.join(', ')}</Text>
+                  {(song as MusicPublication & { isDemo?: boolean }).isDemo ?
+                    <Text style={{ color: theme.muted, fontSize: 10 }}>Exemple de présentation · sans action</Text> : null}
                 </View>
               </Pressable>
-              {song.audioUrl ? <MusicAudioPreview source={{ audioUrl: song.audioUrl }}/> : (
+              {(song as MusicPublication & { isDemo?: boolean }).isDemo ? null : song.audioUrl ?
+                <MusicAudioPreview source={{ audioUrl: song.audioUrl }}/> : (
                 <Pressable accessibilityRole="button" onPress={() =>
                   router.push({ pathname: '/music/[id]', params: { id: song.id } })}
                   style={{ flexDirection: 'row', alignItems: 'center', gap: 7, paddingVertical: 5 }}>
@@ -339,13 +363,13 @@ export default function MusicHub() {
       </View>
 
       <View style={{ gap: 13 }}>
-        {sectionTitle('Mes collaborations', active.length + pending.length)}
-        {active.length ? <View style={{ gap: 9 }}>
+        {sectionTitle('Mes collaborations', displayedActive.length + pending.length)}
+        {displayedActive.length ? <View style={{ gap: 9 }}>
           <Text style={{ fontSize: 12, fontWeight: '700', color: theme.foreground }}>
             Projets partagés
           </Text>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
-            {active.map(collaborationCard)}
+            {displayedActive.map(collaborationCard)}
           </View>
         </View> : null}
         {pending.length ? <View style={{ gap: 9 }}>
@@ -356,7 +380,7 @@ export default function MusicHub() {
             {pending.map(proposalCard)}
           </View>
         </View> : null}
-        {!active.length && !pending.length && !requestsError ? emptyCard(
+        {!displayedActive.length && !pending.length && !requestsError ? emptyCard(
           'Les morceaux que tu construis avec d’autres apparaîtront ici.',
           'Découvrir les appels à collaboration', 'people-outline',
           () => router.push({ pathname: '/discover', params: { filter: 'Musique' } }),
