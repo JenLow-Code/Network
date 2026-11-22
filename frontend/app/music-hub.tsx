@@ -195,7 +195,11 @@ export default function MusicHub() {
   const forMeCount = recommended.length + pendingSent.length;
 
   const openProposal = (p: ProposalItem) => {
-    if (p.isDemo) return;
+    if (p.isDemo) {
+      router.push({pathname:'/music/[id]',
+        params:{id:p.trackPublicationId,from:'music-tab'}});
+      return;
+    }
     if (p.direction === 'received') {
       const project = items.find(song => song.publishedId === p.trackPublicationId);
       if (project) {
@@ -206,7 +210,7 @@ export default function MusicHub() {
     }
     router.push(p.direction === 'sent' && (p.status === 'accepted' || p.status === 'published')
       ? {pathname:'/music-collaboration/[id]',params:{id:p.trackPublicationId}}
-      : {pathname:'/music/[id]',params:{id:p.trackPublicationId}});
+      : {pathname:'/music/[id]',params:{id:p.trackPublicationId,from:'music-tab'}});
   };
 
   const sectionTitle = (title:string,count:number) => <View style={{
@@ -280,8 +284,18 @@ export default function MusicHub() {
       </View>
 
       <View style={{gap:16}}>
-        <View style={{gap:4}}>
-          {sectionTitle('Pour moi',forMeCount)}
+        <View style={{gap:5}}>
+          <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',
+            flexWrap:'wrap',gap:10}}>
+            {sectionTitle('Pour moi',forMeCount)}
+            <Pressable accessibilityRole="button"
+              accessibilityLabel="Découvrir tous les morceaux dans Discovery"
+              onPress={() => router.push({pathname:'/discover',params:{filter:'Musique'}})}
+              style={{minHeight:38,paddingHorizontal:7,flexDirection:'row',alignItems:'center',gap:6}}>
+              <Text style={{color:PINK,fontSize:12,fontWeight:'700'}}>Découvrir tout</Text>
+              <Ionicons name="arrow-forward-outline" color={PINK} size={16}/>
+            </Pressable>
+          </View>
           <Text style={{fontSize:12,color:theme.muted}}>
             Des morceaux à écouter, des talents recherchés et tes propositions en cours.
           </Text>
@@ -296,7 +310,7 @@ export default function MusicHub() {
             artwork={song.coverArt || song.image} audioUrl={song.audioUrl}
             demo={!!song.isDemo}
             onPress={() => router.push({pathname:'/music/[id]',
-              params:{id:song.id}})}/>)}
+              params:{id:song.id,from:'music-tab'}})}/>)}
           {pendingSent.map(p => <MusicTile key={'pending-'+p.id}
             width={tileWidth} layout={layout} mode="cassette"
             title={p.trackTitle} byline={p.publisher?.displayName || 'Morceau proposé'}
