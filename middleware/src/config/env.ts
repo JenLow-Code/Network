@@ -9,6 +9,9 @@ export interface Env {
   /** R2 bucket for member media. Uploads return 503 media_storage_not_configured without it. */
   MEDIA?: R2Bucket;
   /** Optional Cloudflare Workers AI vision binding; missing -> explicit 503. */
+  /** Supabase project used for the production JenLow identity provider. */
+  SUPABASE_URL?:string;
+  SUPABASE_PUBLISHABLE_KEY?:string;
   AI?: {run(model:string,request:{
     messages:{role:'system'|'user';content:string}[];
     image:string;
