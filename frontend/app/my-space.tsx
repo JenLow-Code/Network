@@ -682,13 +682,15 @@ export default function MySpace() {
                     <DreamPhaseIcon phase={panel.phase}
                       size={compact?52:96} artworkScale={1}/>
                   </View>
-                  {/* The vertical heading is centered in the ORIGINAL left
-                      inset, never sitting on the project content. */}
+                  {/* Center the vertical heading EXACTLY on the left frame:
+                      half of its width on either side of the border (x = 0).
+                      No inset, extra strip, panel resizing or overflow clipping. */}
                   <View pointerEvents="none" accessible={false}
                     importantForAccessibility="no-hide-descendants"
                     style={{position:'absolute',top:0,bottom:0,
-                      left:0,width:panelInset,
-                      alignItems:'center',justifyContent:'center'}}>
+                      left:compact?-7:-9,width:compact?14:18,
+                      alignItems:'center',justifyContent:'center',
+                      overflow:'visible'}}>
                     <Svg width={compact?14:18} height={compact?155:192}
                       viewBox={compact?'0 0 14 155':'0 0 18 192'}>
                       <SvgText x={compact?7:9} y={compact?77.5:96}
@@ -697,7 +699,7 @@ export default function MySpace() {
                         fontSize={compact?9:12}
                         letterSpacing={compact?0.9:1.7}
                         fontWeight="400"
-                        fill={theme.dark?'#FFFFFF':'#000000'}>
+                        fill={panel.accent}>
                         {panel.phase==='Rêve'?'SEMENCE':
                          panel.phase==='Initiation'?'GERMINATION':
                          panel.phase==='Croissance'?'CROISSANCE':'FLORAISON'}
