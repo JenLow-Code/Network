@@ -124,7 +124,9 @@ export default function MusicLibrary() {
         columnGap:14,rowGap:22,
       }}>
         {songs.map(song=><MusicSongCard key={song.id} song={song}
-          layout={layout} width={cardWidth} participants={peopleFor(song.publishedId)}/>)}
+          layout={layout} width={cardWidth} participants={peopleFor(song.publishedId)}
+          pendingCount={proposals.filter(p=>p.direction==='received' &&
+            p.status==='submitted' && p.trackPublicationId===song.publishedId).length}/>)}
         {[...shared.entries()].map(([id,p])=><MusicTile key={id}
           title={p.title} width={cardWidth} mode="draft" layout={layout}
           byline="Morceau partagé"
