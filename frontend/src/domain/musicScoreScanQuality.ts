@@ -37,7 +37,7 @@ export function detectScoreGeometry(image:StaffImageData):ScoreGeometry{
   }
   const clusters:number[][]=[];
   for(const y of matching){
-    if(clusters.length&&y-clusters[clusters.length-1].at(-1)!<=2)
+    if(clusters.length&&y-clusters[clusters.length-1][clusters[clusters.length-1].length-1]<=2)
       clusters[clusters.length-1].push(y);
     else clusters.push([y]);
   }
