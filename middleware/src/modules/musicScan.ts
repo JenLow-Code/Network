@@ -1,7 +1,35 @@
 import type {Router} from '../http/router';
-import {ApiError, badRequest, unprocessable, unavailable} from '../http/errors';
+import {ApiError, badRequest, unprocessable, unavailable, unauthenticated} from '../http/errors';
 import {enforceLimit,LIMITS} from '../http/rateLimit';
 import type {Ctx} from '../http/context';
+
+// Publishable details match the existing JenLow Supabase auth client; they
+// are NOT privileged secrets. The access token is verified with Supabase,
+// never merely decoded or trusted based on a client-supplied user ID.
+const SUPABASE_URL='https://ldliraxelqftisjofwgv.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY='sb_publishable_cpxxQyXcEYEy3mwWAaTG9w_QNFg9tC9';
+async function scannerIdentity(ctx:Ctx):Promise<string>{
+  const native=await ctx.viewer();
+  if(native)return 'jenlow:'+native.id;
+  const token=ctx.request.headers.get('authorization')?.match(/^Bearer ([^ ]+)$/)?.[1];
+  if(!token||token.length>4096)throw unauthenticated();
+  const host=(ctx.env.SUPABASE_URL||SUPABASE_URL).replace(/\/$/,'');
+  if(!/^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(host))
+    throw unavailable('auth_not_configured');
+  const key=ctx.env.SUPABASE_PUBLISHABLE_KEY||SUPABASE_PUBLISHABLE_KEY;
+  let response:Response;
+  try{
+    response=await fetch(host+'/auth/v1/user',{
+      headers:{apikey:key,Authorization:'Bearer '+token},
+      signal:AbortSignal.timeout(8000),
+    });
+  }catch{throw unavailable('supabase_auth_unreachable');}
+  if(!response.ok)throw unauthenticated();
+  const user=await response.json() as {id?:unknown};
+  if(typeof user.id!=='string'||!/^[a-f0-9-]{36}$/i.test(user.id))
+    throw unauthenticated();
+  return 'supabase:'+user.id;
+}
 
 type ScanMode='text'|'score';
 type ScoreNote={midi:number;startBeats:number;lengthBeats:number;velocity:number};
@@ -92,8 +120,8 @@ export function registerMusicScan(r:Router):void{
     tag:'Music',summary:'Analyse privée d’une photo de paroles ou partition (résultat à vérifier)',
     auth:'required',
   },async(ctx:Ctx)=>{
-    const user=await ctx.user();
-    await enforceLimit(ctx.sql,'write',user.id,LIMITS.write);
+    const identity=await scannerIdentity(ctx);
+    await enforceLimit(ctx.sql,'music_scan',identity,Math.min(16,LIMITS.write));
     if(!ctx.env.AI)throw unavailable('music_scan_unavailable',
       'Le moteur de reconnaissance n’est pas encore configuré.');
     const body=await boundedJson(ctx.request);
