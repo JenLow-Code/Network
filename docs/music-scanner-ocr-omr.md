@@ -1,5 +1,16 @@
 # JenLow Music — Scan intelligent : paroles et partitions
 
+## État implémenté (22 novembre 2026)
+
+- Capture → **+ → Scanner** ; les photos JPG/PNG/WebP importées isolément ouvrent ce même parcours. Les photos déjà importées proposent **Reconnaître le document** depuis leurs détails.
+- **Texte** : OCR assisté par Google Gemma 4 Vision via le Worker privé `jenlow-music-scan`; résultat éditable en paroles ou note, et original conservé.
+- **Partition** : transcription visuelle **expérimentale** des notes en événements MIDI, audition et contrôle utilisateur obligatoires avant enregistrement. **Ce n'est pas encore un moteur OMR de niveau Audiveris** et la fidélité rythmique ou polyphonique n'est pas garantie.
+- Worker séparé Cloudflare Workers AI (binding AI + D1, authentification Supabase, quotas, taille limitée, consentement avant analyse, pas de stockage serveur de la photo). Le modèle `@cf/google/gemma-4-26b-a4b-it` a été choisi après qu'un modèle Meta a opposé une restriction de licence EU. Un test réel de vision (image de test) et la réponse publique `/health` ont été vérifiés. Les scans complexes doivent encore être testés avec des partitions réelles.
+- **Suppression** : corbeille par entrée Capture, demande de confirmation, nettoyage local et protection des entrées liées à des versions musicales.
+- Limites actuelles du scanner : entrée **photo/image** uniquement (pas encore de PDF multipage ni de fichiers `.mxl`). Les documents scannés doivent être conservés localement dans le navigateur qui les a importés. Les fichiers MusicXML natifs sont importés sans OCR.
+
+
+
 ## Décision UX
 
 Les photos isolées n'ont plus de rôle créatif dans Capture. L'entrée « Scanner » aura deux choix distincts :
