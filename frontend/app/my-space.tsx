@@ -25,11 +25,36 @@ const ROLE_OPTIONS: {key:RoleFilter;label:string;empty:string}[] = [
  * Never derive participant status from encouragements, prayers or "Moi aussi".
  */
 const viewerRole = (dream:DreamEntry) => dream.viewerRole || 'creator';
-const series: { phase: DreamPhase; title: string; sub: string }[] = [
-  { phase: 'Témoignage', title: 'Fruits potentiels', sub: 'Des rêves accomplis, de possibles nouvelles semences.' },
-  { phase: 'Rêve', title: 'Mes semences', sub: 'Les idées que je cultive.' },
-  { phase: 'Initiation', title: 'En germination', sub: 'Les projets que je prépare.' },
-  { phase: 'Croissance', title: 'En croissance', sub: 'Les rêves qui prennent vie.' },
+// Unpublished Floraison projects are still workspaces; published fruits belong
+// exclusively to the gallery. Tints stay quiet in both light and dark themes.
+const phasePanels: {
+  phase: DreamPhase; title: string; sub: string; lightTint: string; darkTint: string;
+  lightBorder: string; darkBorder: string; accent: string;
+}[] = [
+  {
+    phase: 'Rêve', title: 'Mes semences', sub: 'Les idées que je cultive.',
+    lightTint: 'rgba(166,114,76,0.055)', darkTint: 'rgba(190,138,93,0.13)',
+    lightBorder: 'rgba(166,114,76,0.10)', darkBorder: 'rgba(190,138,93,0.21)',
+    accent: '#B88962',
+  },
+  {
+    phase: 'Initiation', title: 'En germination', sub: 'Les projets que je prépare.',
+    lightTint: 'rgba(154,185,64,0.062)', darkTint: 'rgba(154,185,64,0.12)',
+    lightBorder: 'rgba(134,164,53,0.11)', darkBorder: 'rgba(154,185,64,0.19)',
+    accent: '#A1BA44',
+  },
+  {
+    phase: 'Croissance', title: 'En croissance', sub: 'Les rêves qui prennent vie.',
+    lightTint: 'rgba(39,132,91,0.052)', darkTint: 'rgba(47,153,107,0.12)',
+    lightBorder: 'rgba(39,132,91,0.10)', darkBorder: 'rgba(47,153,107,0.20)',
+    accent: '#27845B',
+  },
+  {
+    phase: 'Témoignage', title: 'Floraison', sub: 'Prépare et partage le résultat de ton rêve.',
+    lightTint: 'rgba(215,29,119,0.047)', darkTint: 'rgba(215,29,119,0.115)',
+    lightBorder: 'rgba(215,29,119,0.10)', darkBorder: 'rgba(215,29,119,0.19)',
+    accent: '#D71D77',
+  },
 ];
 /** In "Tout", active dreams open their current workspace directly.
  * Published Fruit remains the intentional immersive result cover. */
@@ -45,7 +70,12 @@ const frozen = (dream: DreamEntry) =>
   (dream.phase === 'Initiation' || dream.phase === 'Croissance') &&
   !!dream.paused && !!dream.pauseUntil &&
   dream.pauseUntil >= new Date().toISOString().slice(0, 10);
-const coverImage = (d: DreamEntry) => d.phase === 'Témoignage' ? d.resultImage || d.image : d.image;
+const coverImage = (d: DreamEntry) => {
+  if (d.phase !== 'Témoignage') return d.image;
+  return isPublishedFlower(d)
+    ? d.resultImage || d.image
+    : d.flowerDraft?.attachments?.find(media=>media.kind==='photo')?.uri || d.image;
+};
 
 function PictureCard({ dream, width, height, onLongPress, presentation = 'card' }: {
   dream: DreamEntry; width: number; height: number; onLongPress:()=>void;
@@ -168,10 +198,14 @@ export default function MySpace() {
   const workspaceViewport=Math.max(0,windowWidth-(ws.desktop?212:0));
   const contentWidth=Math.min(workspaceViewport,ws.maxWidth??workspaceViewport);
   const innerWidth=Math.max(0,contentWidth-2*side);
-  // The gallery is full-bleed inside the workspace; stage cards keep their inset.
-  const galleryWidth=contentWidth;
-  // Editorial hero stays a shallow panorama (roughly half the old tall gallery).
-  const galleryHeight=compact ? 196 : Math.min(240,Math.max(210,Math.round(galleryWidth*.22)));
+  // Align the editorial hero with the header title and every project panel,
+  // instead of overflowing the shared desktop canvas's horizontal gutters.
+  const galleryWidth=innerWidth;
+  // The shorter, more panoramic image reads as a header rather than a full page.
+  const galleryHeight=compact ? 196 : Math.min(232,Math.max(195,Math.round(galleryWidth*.205)));
+  const desktopGrid=ws.desktop;
+  const desktopGridGap=18;
+  const desktopPanelWidth=Math.max(0,(innerWidth-desktopGridGap)/2);
   const tileWidth = compact ? Math.max(137, Math.min(205, Math.floor(innerWidth * .48))) : 210;
   const list = view === 'Liste';
   const matchingRole = roleFilter === 'all' ? items :
@@ -351,7 +385,7 @@ export default function MySpace() {
           </View>
         ):null}
 
-        {visible.length === 0 ? (
+        {visible.length === 0 && (list || !desktopGrid) ? (
           <View style={{ marginTop: 44, alignItems: 'center', paddingHorizontal: 30, gap: 10 }}>
             <Ionicons name={view === 'Congelés' ? 'snow' : 'sparkles-outline'} size={27}
               color={view === 'Congelés' ? '#427FA6' : theme.muted} />
@@ -367,28 +401,87 @@ export default function MySpace() {
             </Text>
           </View>
         ) : list ? (
-          // List mode is a single flat list: no phase headings or category sections.
+          // List mode remains a single flat list, without phase sections.
           <View style={{ paddingHorizontal: side }}>
             {visible.map(d => <DreamListRow key={d.id} dream={d} onLongPress={()=>setLongDream(d)}/>)}
           </View>
+        ) : desktopGrid ? (
+          // Desktop: a balanced 2 × 2 composition, even with 0 or 1 projects.
+          // A panel's background reflects its phase but is never a saturated block.
+          <View style={{
+            paddingHorizontal:side,flexDirection:'row',flexWrap:'wrap',
+            columnGap:desktopGridGap,rowGap:desktopGridGap,
+            paddingBottom:26,
+          }}>
+            {phasePanels.map(panel=>{
+              const dreams=visible.filter(d=>panel.phase==='Témoignage'
+                ? inFlower(d) : d.phase===panel.phase);
+              return (
+                <View key={panel.phase} style={{
+                  width:desktopPanelWidth,minHeight:242,
+                  paddingHorizontal:17,paddingTop:16,paddingBottom:17,
+                  borderRadius:12,borderWidth:1,
+                  borderColor:theme.dark?panel.darkBorder:panel.lightBorder,
+                  backgroundColor:theme.dark?panel.darkTint:panel.lightTint,
+                }}>
+                  <View style={{height:2,width:26,borderRadius:2,
+                    marginBottom:12,backgroundColor:panel.accent,opacity:0.66}}/>
+                  <View style={{flexDirection:'row',alignItems:'flex-start',
+                    justifyContent:'space-between',gap:12,marginBottom:14}}>
+                    <View style={{flex:1,minWidth:0}}>
+                      <Text style={{color:theme.foreground,fontWeight:'700',
+                        fontSize:17,lineHeight:22}}>{panel.title}</Text>
+                      <Text style={{color:theme.muted,fontSize:11,
+                        lineHeight:16,marginTop:4}}>{panel.sub}</Text>
+                    </View>
+                    <Text style={{color:theme.muted,fontSize:11,
+                      marginTop:4}}>{dreams.length}</Text>
+                  </View>
+                  {dreams.length>0 ? (
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false}
+                      style={{flexGrow:0,width:'100%'}}
+                      contentContainerStyle={{gap:11,paddingRight:2}}>
+                      {dreams.map(d=>(
+                        <PictureCard key={d.id} dream={d}
+                          width={183} height={146}
+                          onLongPress={()=>setLongDream(d)}/>
+                      ))}
+                    </ScrollView>
+                  ):(
+                    <View style={{minHeight:146,alignItems:'flex-start',
+                      justifyContent:'center',paddingHorizontal:4}}>
+                      <Text style={{fontSize:12,color:theme.muted,lineHeight:18}}>
+                        {panel.phase==='Témoignage'
+                          ? 'Aucune floraison en préparation.'
+                          : 'Aucun projet dans cette étape.'}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              );
+            })}
+          </View>
         ) : (
           <>
-            {series.filter(g => g.phase !== 'Témoignage').map(group => {
-              const dreams = visible.filter(d => d.phase === group.phase);
-              if (!dreams.length) return null;
+            {phasePanels.filter(panel=>panel.phase!=='Témoignage').map(group=>{
+              const dreams=visible.filter(d=>d.phase===group.phase);
+              if(!dreams.length)return null;
               return (
-                <View key={group.phase} style={{ marginBottom: compact ? 27 : 36 }}>
-                  <View style={{ paddingHorizontal: side, flexDirection: 'row',
-                    alignItems: 'center', justifyContent: 'space-between', marginBottom: 13 }}>
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ color: theme.foreground, fontWeight: '700', fontSize: 17 }}>{group.title}</Text>
-                      <Text style={{ color: theme.muted, fontSize: 11, marginTop: 4 }}>{group.sub}</Text>
+                <View key={group.phase} style={{marginBottom:compact?27:36}}>
+                  <View style={{paddingHorizontal:side,flexDirection:'row',
+                    alignItems:'center',justifyContent:'space-between',marginBottom:13}}>
+                    <View style={{flex:1}}>
+                      <Text style={{color:theme.foreground,fontWeight:'700',fontSize:17}}>{group.title}</Text>
+                      <Text style={{color:theme.muted,fontSize:11,marginTop:4}}>{group.sub}</Text>
                     </View>
-                    <Text style={{ color: theme.muted, fontSize: 11 }}>{dreams.length}</Text>
+                    <Text style={{color:theme.muted,fontSize:11}}>{dreams.length}</Text>
                   </View>
                   <ScrollView horizontal showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={{ paddingHorizontal: side, gap: 11 }}>
-                    {dreams.map(d => <PictureCard key={d.id} dream={d} width={tileWidth} height={compact ? 137 : 165} onLongPress={()=>setLongDream(d)}/>)}
+                    contentContainerStyle={{paddingHorizontal:side,gap:11}}>
+                    {dreams.map(d=>(
+                      <PictureCard key={d.id} dream={d} width={tileWidth}
+                        height={compact?137:165} onLongPress={()=>setLongDream(d)}/>
+                    ))}
                   </ScrollView>
                 </View>
               );
@@ -396,28 +489,20 @@ export default function MySpace() {
           </>
         )}
 
-        {view==='Tout' && roleFilter!=='participant' && unfinished.length>0 ? (
+        {/* On smaller screens Floraison remains its familiar separate section. */}
+        {!desktopGrid && view==='Tout' && roleFilter!=='participant' && unfinished.length>0 ? (
           <View style={{marginTop:6,marginBottom:26}}>
             <View style={{paddingHorizontal:side,marginBottom:12}}>
               <Text style={{fontSize:17,fontWeight:'700',color:theme.foreground}}>Floraison</Text>
               <Text style={{fontSize:11,color:theme.muted,marginTop:4}}>Prépare et partage le résultat de ton rêve.</Text>
             </View>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}
-                contentContainerStyle={{paddingHorizontal:side,gap:11}}>
-                {unfinished.map(d=><Pressable key={d.id} accessibilityRole="button"
-                  onLongPress={()=>setLongDream(d)} delayLongPress={460}
-                  accessibilityHint="Maintenir pour voir les actions du rêve"
-                  accessibilityLabel={'Reprendre ma Floraison : '+d.title}
-                  onPress={()=>open(d)}
-                  style={{width:tileWidth,height:compact?137:165,borderRadius:11,overflow:'hidden'}}>
-                  <Image source={{uri:d.flowerDraft?.attachments?.find(m=>m.kind==='photo')?.uri||d.image}}
-                    resizeMode="cover" style={{width:'100%',height:'100%'}}/>
-                  <View style={{position:'absolute',left:0,right:0,top:0,bottom:0,
-                    backgroundColor:'rgba(0,0,0,.32)'}}/>
-                  <Text numberOfLines={2} style={{position:'absolute',bottom:12,left:12,right:12,
-                    color:'#FFFFFF',fontWeight:'700',fontSize:14}}>{d.title}</Text>
-                </Pressable>)}
-              </ScrollView>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{paddingHorizontal:side,gap:11}}>
+              {unfinished.map(d=>(
+                <PictureCard key={d.id} dream={d} width={tileWidth}
+                  height={compact?137:165} onLongPress={()=>setLongDream(d)}/>
+              ))}
+            </ScrollView>
           </View>
         ):null}
       </ScrollView>
