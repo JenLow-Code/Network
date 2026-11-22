@@ -27,6 +27,7 @@ function MiniStaff({events,kind,clef,playheadBeats}:{
 }){
   const theme=useAppTheme();
   const scroll=useRef<React.ElementRef<typeof ScrollView>>(null);
+  const offsetRef=useRef(0);
   const [availableWidth,setAvailableWidth]=useState(0);
   const notes=events.filter(event=>event.instrument===kind)
     .sort((a,b)=>a.startBeats-b.startBeats);
@@ -45,11 +46,21 @@ function MiniStaff({events,kind,clef,playheadBeats}:{
   const lowest=Math.max(44,...rawYs);
   const staffHeight=Math.max(BASE_STAFF_HEIGHT,topInset+lowest+13);
   useEffect(()=>{
-    if(playheadBeats===null)return;
-    scroll.current?.scrollTo({
-      x:Math.max(0,LEFT+playheadBeats*STEP-105),animated:false,
-    });
-  },[playheadBeats]);
+    if(playheadBeats===null||availableWidth<=0)return;
+    const position=LEFT+playheadBeats*STEP;
+    const current=offsetRef.current;
+    const maxOffset=Math.max(0,width-availableWidth);
+    // Follow long notation only after the playhead reaches the rightmost
+    // quarter of the *visible* staff; short scores never scroll.
+    if(maxOffset<=0)return;
+    if(position>current+availableWidth*.76||
+      position<current+availableWidth*.12){
+      const next=Math.max(0,Math.min(maxOffset,
+        position-availableWidth*.4));
+      scroll.current?.scrollTo({x:next,animated:false});
+      offsetRef.current=next;
+    }
+  },[playheadBeats,availableWidth,width]);
   if(!notes.length)return null;
   const y=(n:MusicNotationEvent)=>topInset+(kind==='piano'?
     pianoHeight(n.midi,clef):drumHeight(n.midi));
@@ -57,6 +68,10 @@ function MiniStaff({events,kind,clef,playheadBeats}:{
       setAvailableWidth(Math.ceil(event.nativeEvent.layout.width))}
     style={{width:'100%',minWidth:0,height:staffHeight}}>
     <ScrollView ref={scroll} horizontal showsHorizontalScrollIndicator={false}
+      scrollEventThrottle={32}
+      onScroll={event=>{
+        offsetRef.current=event.nativeEvent.contentOffset.x;
+      }}
       accessibilityLabel={kind==='piano'?'Extrait de portée musicale':'Extrait de percussion'}
       style={{height:staffHeight,flexGrow:0,width:'100%'}}>
     <Svg width={width} height={staffHeight} viewBox={`0 0 ${width} ${staffHeight}`}>
