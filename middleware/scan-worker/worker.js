@@ -82,7 +82,7 @@ function parseResponse(raw){
   }
   throw Error('unreadable');
 }
-function scanResult(data,mode){
+function scanResult(data,mode,sourceStructure){
   if(!data||typeof data!=='object')throw Error('unreadable');
   const title=typeof data.title==='string'?data.title.trim().slice(0,100):'';
   if(mode==='text'){
@@ -111,6 +111,21 @@ function scanResult(data,mode){
   if(!notes.length)throw Error('no_notes');
   const bpm=Number(data.bpm),numerator=Number(data.numerator);
   const denominator=Number(data.denominator);
+  // Quality check on temporal coverage, not the raw number of noteheads.
+  // For example, 27 notes condensed into just three chords are NOT a
+  // transcription of a photograph with four separate staves.
+  const onsets=new Set(notes.map(n=>n.startBeats.toFixed(2))).size;
+  const duration=Math.max(...notes.map(n=>n.startBeats+n.lengthBeats));
+  const staves=Number(sourceStructure?.staffCount)||0;
+  const systems=Math.max(0,Math.min(12,
+    Math.floor(Number(sourceStructure?.estimatedSystems)||0)));
+  const meter=Number.isInteger(numerator)&&numerator>=1&&numerator<=16?
+    numerator:4;
+  const lacksCoverage=staves>=4&&systems>=2&&(
+    onsets<systems*3||duration<meter*systems-.05);
+  const suspiciousChordCluster=notes.length>=12&&onsets<=3;
+  if(lacksCoverage||suspiciousChordCluster)
+    throw Error('incomplete_score');
   return {mode:'score',title:title||'Partition numérisée',
     notes,bpm:bpm>=30&&bpm<=240?Math.round(bpm):100,
     numerator:Number.isInteger(numerator)&&numerator>=1&&numerator<=16?
@@ -133,8 +148,14 @@ const SCORE_PROMPT=[
   'Read ONLY VISIBLE notes, based on staff positions and clef.',
   'Each note has a MIDI pitch and exact timing in quarter notes.',
   'Simultaneous notes share startBeats. Do not treat lyrics as notes.',
-  'Skip unclear notes rather than guessing. If impossible, return notes: [].',
-  'This is a draft for human review, not an authoritative transcription.',
+  'Read the ENTIRE score, including all systems, measures and both grand-staff lines.',
+  'Measure time MUST advance across barlines; do not collapse an entire score',
+  'into three simultaneous chords. For example, if a source has eight measures',
+  'of 3/4, the final event may start near beat 21, not beat 2.',
+  'Return one event per actually visible note, ordered from the first measure',
+  'to the last, and include visible bass notes where present.',
+  'Skip unclear notes rather than guessing. If impossible return notes: [].',
+  'This is an uncertain draft for human review, not authoritative OMR.',
 ].join(' ');
 export default{
   async fetch(request,env){
@@ -180,7 +201,10 @@ export default{
           messages:[{role:'system',
             content:'Return strictly valid JSON from the visible image; never invent missing notes or text.'},
             {role:'user',content:[
-              {type:'text',text:mode==='text'?TEXT_PROMPT:SCORE_PROMPT},
+              {type:'text',text:mode==='text'?TEXT_PROMPT:
+                SCORE_PROMPT+' The image analysis estimates '+
+                Math.max(0,Math.min(24,Number(body.sourceStructure?.staffCount)||0))+
+                ' staff groups; preserve the full sequence of measures.'},
               {type:'image_url',image_url:{url:image}},
             ]}],
           max_completion_tokens:mode==='text'?2900:4400,
@@ -188,11 +212,12 @@ export default{
           temperature:0,store:false,
         });
         const raw=answer?.choices?.[0]?.message?.content||answer?.response;
-        const scanned=scanResult(parseResponse(raw),mode);
+        const scanned=scanResult(parseResponse(raw),mode,body.sourceStructure);
         return json({...scanned,engine:model},200,origin);
       }catch(e){
         const reason=String(e?.message||e);
-        if(reason.includes('no_notes'))failure='scan_no_notes';
+        if(reason.includes('incomplete_score'))failure='scan_incomplete_score';
+        else if(reason.includes('no_notes'))failure='scan_no_notes';
         else if(reason.includes('no_text'))failure='scan_no_text';
         else if(reason.includes('unreadable'))failure='scan_unreadable';
         else if(/invalid data for image|image dimensions|invalid base64|too large/i.test(reason))
@@ -202,9 +227,11 @@ export default{
         else failure='model_unavailable';
       }
     }
-    const unreadable=['scan_no_notes','scan_no_text','scan_unreadable','image_unreadable']
-      .includes(failure);
-    const explanation=failure==='scan_no_notes'?
+    const unreadable=['scan_no_notes','scan_no_text','scan_unreadable',
+      'image_unreadable','scan_incomplete_score'].includes(failure);
+    const explanation=failure==='scan_incomplete_score'?
+      'La partition comporte plusieurs mesures mais le moteur ne les a pas toutes reconnues. Aucune transcription jouable n’a été validée.':
+      failure==='scan_no_notes'?
       'Aucune note fiable reconnue. Recadre la portée et réessaie ou importe du MusicXML.':
       failure==='scan_no_text'?
       'Aucun texte lisible reconnu. Réessaie avec un scan plus net.':
