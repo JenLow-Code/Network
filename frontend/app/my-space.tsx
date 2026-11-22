@@ -375,7 +375,7 @@ export default function MySpace() {
                   width:Math.min(galleryWidth-24,246),
                   backgroundColor:theme.surface,borderRadius:12,
                   borderWidth:1,borderColor:theme.border,
-                  paddingVertical:5,overflow:'hidden'}}>
+                  paddingVertical:compact?2:5,overflow:'hidden'}}>
                   {ROLE_OPTIONS.map(option=>(
                     <Pressable key={option.key} accessibilityRole="button"
                       accessibilityState={{selected:option.key===roleFilter}}
@@ -384,7 +384,7 @@ export default function MySpace() {
                         setActiveTestimony(0);
                         setRoleMenuOpen(false);
                       }}
-                      style={{minHeight:40,paddingHorizontal:13,
+                      style={{minHeight:compact?33:40,paddingHorizontal:13,
                         flexDirection:'row',alignItems:'center',gap:10}}>
                       <Text style={{flex:1,color:option.key===roleFilter?theme.foreground:theme.muted,
                         fontSize:12,fontWeight:option.key===roleFilter?'700':'500'}}>
