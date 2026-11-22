@@ -24,7 +24,7 @@ export default function Stage() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor:theme.background }}>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{...workspaceCanvas(width),paddingTop:12,paddingBottom:65}}>
-        <PageHeader title={current || 'Mes rêves'} />
+        <PageHeader title={current || 'Mes projets'} />
         <View style={{flexDirection:'row',justifyContent:'flex-end',marginBottom:10}}>
           <Pressable
             onPress={() => router.push('/my-dream/new')}
