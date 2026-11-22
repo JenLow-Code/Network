@@ -350,7 +350,7 @@ export default function DreamHub({ dream, startInSemence = false, startPhase }: 
               <Pressable
                 onPress={() => router.replace('/my-space')}
                 accessibilityRole="button"
-                accessibilityLabel="Retour à mes rêves"
+                accessibilityLabel="Retour à mes projets"
                 style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}
               >
                 <Ionicons name="arrow-back-outline" color={ink} size={22} />
