@@ -230,7 +230,7 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
     }
     const picker=document.createElement('input');
     picker.type='file';picker.multiple=true;
-    picker.accept='.doc,.docx,.txt,.md,.pdf,.png,.jpg,.jpeg,.webp,.mp3,.wav,.m4a,.ogg,.aac,.webm,.mid,.midi';
+    picker.accept='.doc,.docx,.txt,.md,.pdf,.png,.jpg,.jpeg,.webp,.mp3,.wav,.m4a,.ogg,.aac,.webm,.mid,.midi,.musicxml,.xml';
     picker.onchange=()=>{
       const incoming=Array.from(picker.files||[]);
       if(!incoming.length)return;
