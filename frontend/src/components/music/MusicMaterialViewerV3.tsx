@@ -36,10 +36,11 @@ type Props={
   onTranslate?:(file:MusicProjectFile)=>void;
   onEdit?:(file:MusicProjectFile)=>void;
   onOpenFile?:(id:string)=>void;
+  onScan?:(file:MusicProjectFile)=>void;
   hasVersion:boolean;
 };
 export function MusicMaterialViewer({visible,file,project,onClose,onUpdate,onChangeType,
-  onSection,onNewSection,onStartVersion,onUseFile,onTranslate,onEdit,onOpenFile,hasVersion}:Props){
+  onSection,onNewSection,onStartVersion,onUseFile,onTranslate,onEdit,onOpenFile,onScan,hasVersion}:Props){
   const theme=useAppTheme();
   const {width,height}=useWindowDimensions();
   const compact=width<650;
@@ -192,6 +193,10 @@ export function MusicMaterialViewer({visible,file,project,onClose,onUpdate,onCha
                 if(onEdit){onClose();onEdit(file);}
                 else{setDraft(textOf(file));setEditing(true);setMenu('none');}
               }):null}
+              {onScan&&isArtwork(file)?row('scan-outline',
+                'Reconnaître le texte ou les notes',()=>{
+                  onClose();onScan(file);
+                }):null}
               {row('text-outline','Renommer',()=>setMenu('rename'))}
               {file.kind!=='lyrics'&&project.sections.length>0?
                 row('musical-notes-outline','Associer à une partie existante',
@@ -373,6 +378,15 @@ export function MusicMaterialViewer({visible,file,project,onClose,onUpdate,onCha
                 <Ionicons name="language-outline" size={16} color={pink}/>
                 <Text style={{color:pink,fontSize:12,fontWeight:'600'}}>Traduire</Text>
               </Pressable>:null}
+            {onScan&&isArtwork(file)?<Pressable
+    onPress={()=>{onClose();onScan(file);}}
+    accessibilityRole="button"
+    style={{flexDirection:'row',alignItems:'center',gap:7,paddingVertical:9}}>
+    <Ionicons name="scan-outline" size={16} color={pink}/>
+    <Text style={{fontSize:12,fontWeight:'600',color:pink}}>
+      Reconnaître le document
+    </Text>
+  </Pressable>:null}
             {file.localFileId?<Pressable onPress={()=>{void download();}}
               style={{flexDirection:'row',alignItems:'center',gap:7,paddingVertical:9}}>
               <Ionicons name="download-outline" size={16} color={theme.muted}/>
