@@ -87,3 +87,45 @@ test('unreadable score never creates synthetic notes',async()=>{
     assert.equal(data.error.code,'scan_no_notes');
   }finally{globalThis.fetch=prior;}
 });
+
+test('regression: a four-staff hymn cannot be accepted as 27 notes at three onsets',async()=>{
+  const prior=globalThis.fetch;
+  globalThis.fetch=async()=>fakeIdentity();
+  try{
+    const suspicious=Array.from({length:27},(_,i)=>({
+      midi:48+(i%12),startBeats:i%3,lengthBeats:1,
+    }));
+    let modelCalls=0;
+    const response=await scanner.fetch(makeRequest({
+      mode:'score',image:IMAGE,
+      sourceStructure:{staffCount:4,estimatedSystems:2},
+    }),{AI:{run:async()=>{
+      modelCalls++;
+      return {choices:[{message:{content:JSON.stringify({
+        title:'Hymn',bpm:100,numerator:3,denominator:4,
+        notes:suspicious,
+      })}}]};
+    }},DB:mockDb});
+    assert.equal(response.status,422);
+    assert.equal((await response.json()).error.code,'scan_incomplete_score');
+    assert.equal(modelCalls,2,'Both models rejected rather than accepting a false positive');
+  }finally{globalThis.fetch=prior;}
+});
+
+test('complete multimeasure scan can still proceed to human review',async()=>{
+  const prior=globalThis.fetch;
+  globalThis.fetch=async()=>fakeIdentity();
+  try{
+    const notes=Array.from({length:24},(_,i)=>({
+      midi:60+i%8,startBeats:i,lengthBeats:1,
+    }));
+    const response=await scanner.fetch(makeRequest({
+      mode:'score',image:IMAGE,sourceStructure:{
+        staffCount:4,estimatedSystems:2,
+      },
+    }),{AI:model({title:'Multi-system',bpm:90,numerator:3,
+      denominator:4,notes}),DB:mockDb});
+    assert.equal(response.status,200);
+    assert.equal((await response.json()).notes.length,24);
+  }finally{globalThis.fetch=prior;}
+});
