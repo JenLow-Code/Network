@@ -172,11 +172,12 @@ export default{
         'access-control-max-age':'3600','vary':'Origin',
       }});
     if(path==='/health'&&request.method==='GET')
-      return json({status:'ok',ai:!!env.AI,quota:!!env.DB},200,origin);
+      return json({status:'ok',ai:!!env.AI,quota:!!env.DB,
+        omr:!!(env.OMR_ORIGIN&&env.OMR_API_TOKEN)},200,origin);
     if(path!=='/api/music/scan'||request.method!=='POST')
       return error('not_found',404,origin);
-    if(!env.AI||!env.DB)return error('scan_unavailable',503,origin,
-      'Scanner AI not configured.');
+    if(!env.DB)return error('scan_unavailable',503,origin,
+      'Scanner quota service not configured.');
     const identity=await auth(request);
     if(!identity)return error('not_authenticated',401,origin);
     try{
@@ -193,13 +194,58 @@ export default{
     if(typeof image!=='string'||image.length<100||image.length>1_750_000||
       !/^data:image\/(jpeg|png|webp);base64,[a-zA-Z0-9+/=]+$/.test(image))
       return error('invalid_image',400,origin);
-    // A failure of the primary model is NOT proof the scanner is unconfigured.
-    // Try a second EU-usable vision model. Both outputs are unverified drafts.
-    // Disabled: a generic vision LLM is not an Optical Music Recognition engine.
-    // No note pitches can be accepted until the specialist OMR backend is live.
-    if(mode==='score')return error('omr_required',503,origin,
-      'La reconnaissance de partitions nécessite le moteur OMR spécialisé. '+
-      'Aucune note n’a été créée.');
+    // Music is handled ONLY by the genuine Audiveris/Python OMR service.
+    // Never generate MIDI from a visual-language-model JSON approximation.
+    if(mode==='score'){
+      if(!env.OMR_ORIGIN||!env.OMR_API_TOKEN)
+        return error('omr_required',503,origin,
+          'Le moteur OMR spécialisé doit être installé et configuré avant de numériser des partitions.');
+      let address;
+      try{
+        address=new URL('/v1/score',env.OMR_ORIGIN);
+        if(address.protocol!=='https:'||address.username||address.password)
+          throw Error('origin_not_https');
+      }catch{return error('omr_configuration',503,origin,
+        'Le service OMR n’est pas configuré correctement.');}
+      try{
+        const response=await fetch(address,{
+          method:'POST',headers:{
+            'Content-Type':'application/json',
+            'Authorization':'Bearer '+env.OMR_API_TOKEN,
+          },
+          body:JSON.stringify({
+            image,
+            expectedStaves:Math.max(0,Math.min(24,
+              Number(body.sourceStructure?.staffCount)||0)),
+            expectedSystems:Math.max(0,Math.min(12,
+              Number(body.sourceStructure?.estimatedSystems)||0)),
+          }),
+          signal:AbortSignal.timeout(125000),
+        });
+        if(!response.ok)return error('omr_failed',
+          response.status===422?422:503,origin,
+          response.status===422?
+            'Audiveris n’a pas produit une partition complète et vérifiable.' :
+            'Le service OMR est momentanément indisponible.');
+        const result=await response.json();
+        const notes=result?.notes,parts=result?.parts;
+        if(result?.engine!=='audiveris'||result?.status!=='needs_review'||
+          !Array.isArray(notes)||!notes.length||
+          !Array.isArray(parts)||!parts.length||
+          typeof result.musicXml!=='string'||
+          result.musicXml.length>4_000_000)
+          return error('omr_invalid',422,origin,
+            'Le résultat MusicXML du moteur OMR est incomplet.');
+        // The client receives distinct staves and voices, never an invented
+        // single staff. Source remains local to the user's browser.
+        return json(result,200,origin);
+      }catch{
+        return error('omr_unavailable',503,origin,
+          'Le service OMR spécialisé est inaccessible ou a dépassé le délai autorisé.');
+      }
+    }
+    if(!env.AI)return error('text_ocr_unavailable',503,origin,
+      'Le moteur de reconnaissance de textes est indisponible.');
     let failure='model_unavailable';
     const failures=[];
     for(const model of [MODEL,FALLBACK_MODEL]){
@@ -208,18 +254,15 @@ export default{
           messages:[{role:'system',
             content:'Return strictly valid JSON from the visible image; never invent missing notes or text.'},
             {role:'user',content:[
-              {type:'text',text:mode==='text'?TEXT_PROMPT:
-                SCORE_PROMPT+' The image analysis estimates '+
-                Math.max(0,Math.min(24,Number(body.sourceStructure?.staffCount)||0))+
-                ' staff groups; preserve the full sequence of measures.'},
+              {type:'text',text:TEXT_PROMPT},
               {type:'image_url',image_url:{url:image}},
             ]}],
-          max_completion_tokens:mode==='text'?2900:4400,
+          max_completion_tokens:2900,
           chat_template_kwargs:{enable_thinking:false},
           temperature:0,store:false,
         });
         const raw=answer?.choices?.[0]?.message?.content||answer?.response;
-        const scanned=scanResult(parseResponse(raw),mode,body.sourceStructure);
+        const scanned=scanResult(parseResponse(raw),'text',null);
         return json({...scanned,engine:model},200,origin);
       }catch(e){
         const reason=String(e?.message||e);
