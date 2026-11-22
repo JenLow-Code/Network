@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Image, Platform, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
+import { Animated, Image, PanResponder, Platform, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -255,62 +255,92 @@ function PhaseMobileOverlap({dreams,viewportWidth,cardHeight,onLongPress}:{
   onLongPress:(dream:DreamEntry)=>void;
 }){
   const theme=useAppTheme();
-  const scrollRef=useRef<React.ComponentRef<typeof ScrollView>>(null);
   const [current,setCurrent]=useState(0);
+  const currentRef=useRef(current);
+  currentRef.current=current;
+  const busy=useRef(false);
+  const dragX=useRef(new Animated.Value(0)).current;
   const ids=dreams.map(d=>d.id).join('|');
   const lastIndex=Math.max(0,dreams.length-1);
-  // Each slide occupies the ENTIRE viewport. The next card is only a
-  // non-interactive visual peek behind the front card. No negative margins,
-  // shifting z-index or partial scroll steps to fight native touch gestures.
+  const lastIndexRef=useRef(lastIndex);
+  lastIndexRef.current=lastIndex;
   const frontWidth=dreams.length>1
     ?Math.max(64,Math.round(viewportWidth*.83)):viewportWidth;
   const peekInset=10;
+
   useEffect(()=>{
-    scrollRef.current?.scrollTo({x:0,animated:false});
+    currentRef.current=0;
     setCurrent(0);
-  },[ids,viewportWidth]);
-  const go=(direction:number)=>{
-    const next=Math.max(0,Math.min(lastIndex,current+direction));
-    scrollRef.current?.scrollTo({x:next*viewportWidth,animated:true});
-    setCurrent(next);
+    dragX.stopAnimation();
+    dragX.setValue(0);
+    busy.current=false;
+  },[ids,viewportWidth,dragX]);
+
+  // Intercept horizontal drags from the nested project card while leaving
+  // vertical page scrolling and ordinary project taps untouched.
+  const switchTo=(next:number,direction:number)=>{
+    if(busy.current||next===currentRef.current)return;
+    busy.current=true;
+    Animated.timing(dragX,{
+      toValue:direction*viewportWidth,duration:140,
+      useNativeDriver:false,
+    }).start(()=>{
+      currentRef.current=next;
+      setCurrent(next);
+      dragX.setValue(0);
+      busy.current=false;
+    });
   };
+  const snapBack=()=>{
+    Animated.spring(dragX,{
+      toValue:0,tension:100,friction:12,useNativeDriver:false,
+    }).start();
+  };
+  const panResponder=React.useMemo(()=>PanResponder.create({
+    onStartShouldSetPanResponder:()=>false,
+    onMoveShouldSetPanResponderCapture:(_,g)=>
+      Math.abs(g.dx)>10&&Math.abs(g.dx)>Math.abs(g.dy)*1.3,
+    onMoveShouldSetPanResponder:(_,g)=>
+      Math.abs(g.dx)>10&&Math.abs(g.dx)>Math.abs(g.dy)*1.3,
+    onPanResponderTerminationRequest:()=>false,
+    onPanResponderMove:(_,g)=>{
+      if(!busy.current)dragX.setValue(
+        Math.max(-viewportWidth,Math.min(viewportWidth,g.dx)));
+    },
+    onPanResponderRelease:(_,g)=>{
+      const distance=Math.min(36,viewportWidth*.22);
+      if(g.dx<-distance&&currentRef.current<lastIndexRef.current)
+        switchTo(currentRef.current+1,-1);
+      else if(g.dx>distance&&currentRef.current>0)
+        switchTo(currentRef.current-1,1);
+      else snapBack();
+    },
+    onPanResponderTerminate:()=>snapBack(),
+  }),[dragX,viewportWidth]);
+
+  const nextDream=dreams[current+1];
+  const nextPhoto=nextDream?coverImage(nextDream):undefined;
+  const activeDream=dreams[current];
+  if(!activeDream)return null;
   return <View style={{width:'100%',gap:4}}>
-    <ScrollView ref={scrollRef} horizontal pagingEnabled
-      directionalLockEnabled nestedScrollEnabled
-      showsHorizontalScrollIndicator={false}
-      scrollEventThrottle={32}
-      onScroll={e=>{
-        const index=Math.max(0,Math.min(lastIndex,
-          Math.round(e.nativeEvent.contentOffset.x/viewportWidth)));
-        setCurrent(old=>old===index?old:index);
-      }}
-      onMomentumScrollEnd={e=>{
-        setCurrent(Math.max(0,Math.min(lastIndex,
-          Math.round(e.nativeEvent.contentOffset.x/viewportWidth))));
-      }}
-      style={{width:'100%',height:cardHeight,flexGrow:0}}>
-      {dreams.map((dream,index)=>{
-        const next=dreams[index+1];
-        const nextPhoto=next?coverImage(next):undefined;
-        return <View key={dream.id} style={{
-          width:viewportWidth,height:cardHeight,
-          overflow:'hidden',position:'relative',
-        }}>
-          {next?<View pointerEvents="none" accessible={false}
-            importantForAccessibility="no-hide-descendants"
-            style={{position:'absolute',left:frontWidth-peekInset,right:0,
-              top:5,bottom:5,borderRadius:10,overflow:'hidden',
-              backgroundColor:theme.surface}}>
-            {nextPhoto?<Image source={{uri:nextPhoto}} resizeMode="cover"
-              style={{width:'100%',height:'100%'}}/>:null}
-          </View>:null}
-          <View style={{position:'absolute',top:0,left:0}}>
-            <PictureCard dream={dream} width={frontWidth}
-              height={cardHeight} onLongPress={()=>onLongPress(dream)}/>
-          </View>
-        </View>;
-      })}
-    </ScrollView>
+    <View {...panResponder.panHandlers}
+      style={[{width:viewportWidth,height:cardHeight,
+        overflow:'hidden',position:'relative'},
+        Platform.OS==='web'?({touchAction:'pan-y'} as any):undefined]}>
+      {nextDream?<View pointerEvents="none" accessible={false}
+        importantForAccessibility="no-hide-descendants"
+        style={{position:'absolute',left:frontWidth-peekInset,right:0,
+          top:5,bottom:5,borderRadius:10,overflow:'hidden',
+          backgroundColor:theme.surface}}>
+        {nextPhoto?<Image source={{uri:nextPhoto}} resizeMode="cover"
+          style={{width:'100%',height:'100%'}}/>:null}
+      </View>:null}
+      <Animated.View style={{position:'absolute',top:0,left:0,
+        transform:[{translateX:dragX}]}}>
+        <PictureCard dream={activeDream} width={frontWidth}
+          height={cardHeight} onLongPress={()=>onLongPress(activeDream)}/>
+      </Animated.View>
+    </View>
     {dreams.length>1?(
       <View style={{minHeight:28,flexDirection:'row',
         alignItems:'center',justifyContent:'flex-end',gap:4}}>
@@ -322,8 +352,8 @@ function PhaseMobileOverlap({dreams,viewportWidth,cardHeight,onLongPress}:{
         {([-1,1] as const).map(direction=>{
           const disabled=direction<0?current===0:current===lastIndex;
           return <Pressable key={direction}
-            onPress={()=>go(direction)} disabled={disabled}
-            accessibilityRole="button"
+            onPress={()=>switchTo(currentRef.current+direction,direction<0?1:-1)}
+            disabled={disabled} accessibilityRole="button"
             accessibilityLabel={direction<0?'Projet précédent':'Projet suivant'}
             accessibilityState={{disabled}}
             style={{width:27,height:28,justifyContent:'center',
