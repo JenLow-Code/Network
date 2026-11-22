@@ -84,10 +84,12 @@ export function MusicCassetteDraft({ width = 216, variant = 'standard' }: {
         </SvgText>
         <SvgText x={9} y={112} fontSize={8} textAnchor="middle"
           transform="rotate(-90 9 112)">63,8</SvgText>
-        <SvgText x={26} y={191} fontSize={8} letterSpacing={1.2}>
-          JL / MUSIQUE — ÉTUDE
-        </SvgText>
-        <SvgText x={294} y={191} textAnchor="end" fontSize={8}>01</SvgText>
+        {variant !== 'tile' ? <>
+          <SvgText x={26} y={191} fontSize={8} letterSpacing={1.2}>
+            JL / MUSIQUE — ÉTUDE
+          </SvgText>
+          <SvgText x={294} y={191} textAnchor="end" fontSize={8}>01</SvgText>
+        </> : null}
       </G>
       </G>
     </Svg>
