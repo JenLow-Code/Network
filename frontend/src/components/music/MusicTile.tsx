@@ -52,43 +52,48 @@ export function MusicTile({
     {mode === 'draft'
       ? <>
           <MusicCassetteDraft width={imageWidth} variant="tile"/>
-          <View pointerEvents="none" style={{
-            position:'absolute', left:'7%',right:'7%',top:demo?'17%':'7%',
-          }}>
-            <Text numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.65}
-              style={{color:theme.dark?'#EFE3D5':'#483D32', fontSize:Math.min(16,Math.max(11,imageWidth*0.058)),
-                fontWeight:'700',textAlign:'center',letterSpacing:imageWidth<130?0.7:1.3,
-                lineHeight:Math.min(21,Math.max(14,imageWidth*0.075))}}>
-              {sketchTitle}
-            </Text>
-          </View>
-          <View pointerEvents="none" style={{
-            position:'absolute',left:'7%',bottom:detail||status?'13%':'7%',
-            right:participants.length?'47%':'7%',
-          }}>
-            <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}
-              style={{fontFamily:HANDWRITING_FAMILY,fontSize:handwrittenSize,
-                color:theme.dark?'#EEE2D3':'#4B4137',lineHeight:handwrittenSize+4}}>
-              {byline}
-            </Text>
-          </View>
-          {(status||detail) ? <View pointerEvents="none" style={{
-            position:'absolute',left:'7%',right:'7%',bottom:'4%',
-          }}>
-            <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}
-              style={{fontSize:Math.min(11,Math.max(9,imageWidth*0.043)),
-                fontWeight:status?'600':'400',letterSpacing:0.2,
-                color:status?'#AC3059':theme.dark?'#D4C8BE':'#776A5D'}}>
-              {status || detail}
-            </Text>
-          </View> : null}
+          {!listed ? <>
+            <View pointerEvents="none" style={{
+              position:'absolute',left:'7%',right:'7%',bottom:'20%',
+            }}>
+              <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.53}
+                style={{color:theme.dark?'#EFE3D5':'#483D32',
+                  fontSize:Math.min(17,Math.max(11,imageWidth*0.06)),
+                  fontWeight:'700',textAlign:'left',
+                  letterSpacing:imageWidth<150?0.7:1.35,
+                  lineHeight:Math.min(22,Math.max(14,imageWidth*0.078))}}>
+                {sketchTitle}
+              </Text>
+            </View>
+            <View pointerEvents="none" style={{
+              position:'absolute',left:'7%',bottom:detail||status?'10%':'5%',
+              right:participants.length?'47%':'7%',
+            }}>
+              <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}
+                style={{fontFamily:HANDWRITING_FAMILY,fontSize:handwrittenSize,
+                  color:theme.dark?'#EEE2D3':'#4B4137',lineHeight:handwrittenSize+4}}>
+                {byline}
+              </Text>
+            </View>
+            {(status||detail) ? <View pointerEvents="none" style={{
+              position:'absolute',left:'7%',right:'7%',bottom:'3%',
+            }}>
+              <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}
+                style={{fontSize:Math.min(11,Math.max(9,imageWidth*0.043)),
+                  fontWeight:status?'600':'400',letterSpacing:0.2,
+                  color:status?'#AC3059':theme.dark?'#D4C8BE':'#776A5D'}}>
+                {status || detail}
+              </Text>
+            </View> : null}
+          </> : null}
         </>
       : <CassetteArtwork width={imageWidth} height={imageHeight}
           title={title} artwork={artwork} transparent/>}
     {participants.length > 0 ? <View pointerEvents="none" style={{
       position: 'absolute', right: 7, bottom: mode === 'draft' ? '15%' : 8,
     }}>
-      <MusicParticipantBadges people={participants} size={listed ? 23 : 31}/>
+      <MusicParticipantBadges people={participants} size={listed ? 23 : imageWidth < 210 ? 25 : 30}
+        maxVisible={imageWidth < 210 ? 2 : 3}/>
     </View> : null}
     {demo ? <View pointerEvents="none" style={{
       position: 'absolute', left: 8, top: 8, borderRadius: 10,
