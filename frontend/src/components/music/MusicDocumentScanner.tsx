@@ -234,6 +234,7 @@ export function MusicDocumentScanner({visible,initialFile,sourceFile,onClose,onS
           not_authenticated:'Ta connexion a expiré. Reconnecte-toi à JenLow.',
           scan_no_notes:'Aucune note exploitable reconnue. Recadre uniquement les portées et réessaie.',
           scan_incomplete_score:'Le moteur n’a reconnu qu’une partie de la partition. Ce résultat ne peut pas être enregistré comme transcription jouable.',
+          omr_required:'Le moteur précédent ne lisait pas correctement les clés et les voix. La conversion de partition est suspendue jusqu’à l’intégration du nouveau moteur OMR. Le scan original est conservé.',
           scan_no_text:'Aucun texte lisible. Essaie une photo plus nette.',
           scan_unreadable:'Le résultat de reconnaissance est incomplet. Recadre le document.',
           image_unreadable:'Le modèle ne parvient pas à lire cette image. Réduis ou recadre la photo.',
