@@ -121,9 +121,10 @@ function scanResult(data,mode,sourceStructure){
     Math.floor(Number(sourceStructure?.estimatedSystems)||0)));
   const meter=Number.isInteger(numerator)&&numerator>=1&&numerator<=16?
     numerator:4;
-  const lacksCoverage=staves>=4&&systems>=2&&(
-    onsets<systems*3||duration<meter*systems-.05);
-  const suspiciousChordCluster=notes.length>=12&&onsets<=3;
+  const lacksCoverage=staves>=4&&systems>=2&&notes.length>=8&&
+    onsets<systems*3&&duration<meter*systems-.05;
+  const suspiciousChordCluster=notes.length>=12&&onsets<=3&&
+    duration<meter*3;
   if(lacksCoverage||suspiciousChordCluster)
     throw Error('incomplete_score');
   return {mode:'score',title:title||'Partition numérisée',
