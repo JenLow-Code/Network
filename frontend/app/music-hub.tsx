@@ -310,13 +310,17 @@ export default function MusicHub() {
             artwork={song.coverArt || song.image} audioUrl={song.audioUrl}
             demo={!!song.isDemo}
             onPress={() => router.push({pathname:'/music/[id]',
-              params:{id:song.id,from:'music-tab'}})}/>)}
+              params:{id:song.id,from:'music-tab'}})}
+            onLearnMore={() => router.push({pathname:'/music/[id]',
+              params:{id:song.id,from:'music-tab',openMore:'1'}})}/>)}
           {pendingSent.map(p => <MusicTile key={'pending-'+p.id}
             width={tileWidth} layout={layout} mode="cassette"
             title={p.trackTitle} byline={p.publisher?.displayName || 'Morceau proposé'}
             detail={p.description} status={p.status === 'submitted'
               ? 'Réponse en attente' : 'Proposition en brouillon'}
-            onPress={() => openProposal(p)}/>)}
+            onPress={() => openProposal(p)}
+            onLearnMore={() => router.push({pathname:'/music/[id]',
+              params:{id:p.trackPublicationId,from:'music-tab',openMore:'1'}})}/>)}
         </View> : empty('Aucune proposition musicale pour le moment.',
           'Découvrir la musique',() => router.push({
             pathname:'/discover',params:{filter:'Musique'},
