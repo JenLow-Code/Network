@@ -77,7 +77,7 @@ export function MusicTile({
       <View style={{ flex: listed ? 1 : undefined, minWidth:0, gap:4,
         paddingHorizontal:listed ? 0 : 2 }}>
         <Text numberOfLines={listed ? 1 : 2}
-          style={{fontSize:listed?14:14,fontWeight:'750',
+          style={{fontSize:listed?14:14,fontWeight:'700',
             color:theme.foreground,lineHeight:19}}>{title}</Text>
         <Text numberOfLines={1} style={{fontSize:11,color:secondary,
           fontWeight:'500'}}>{byline}</Text>
