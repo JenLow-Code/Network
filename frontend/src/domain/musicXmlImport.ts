@@ -81,7 +81,7 @@ export function parseMusicXml(xml:string):ParsedMusicXml{
           continue;
         }
         if(element.localName==='backup'){
-          cursor=Math.max(0,cursor-number(text(element,'duration'),'0'=== ''?1:0)/divisions);
+          cursor=Math.max(0,cursor-number(text(element,'duration'),0)/divisions);
           continue;
         }
         if(element.localName==='forward'){
