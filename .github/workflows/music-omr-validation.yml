@@ -30,3 +30,26 @@ jobs:
         run: |
           grep -q 'AUDIVERIS_VERSION=5.11.0' Dockerfile
           grep -q 'sha256sum -c' Dockerfile
+  image-build:
+    name: Build Audiveris Docker runtime and verify executable
+    runs-on: ubuntu-latest
+    needs: validate
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build pinned Python and Audiveris 5.11.0 image
+        run: docker build --pull --file middleware/omr-service/Dockerfile --tag jenlow-omr:ci middleware/omr-service
+      - name: Verify real Audiveris CLI can start headlessly
+        run: timeout 75s docker run --rm jenlow-omr:ci xvfb-run -a /opt/audiveris/bin/Audiveris -version
+      - name: Verify HTTP backend health
+        run: |
+          docker run -d --rm --name omr-service-test -e OMR_API_SECRET=unit-test-secret-must-be-at-least-32-chars -p 127.0.0.1:8000:8000 jenlow-omr:ci
+          for attempt in $(seq 1 18); do
+            if curl -fsS http://127.0.0.1:8000/health | grep -q '"available":true'; then
+              docker stop omr-service-test
+              exit 0
+            fi
+            sleep 2
+          done
+          docker logs omr-service-test
+          docker stop omr-service-test
+          exit 1
