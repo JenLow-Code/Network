@@ -2,6 +2,7 @@ import { textFromDocx } from '@/lib/docxPreview';
 import { saveMusicWorkspaceFile } from './musicLocalStorage';
 import { fileAudioDuration } from './musicProjectSelectors';
 import { newMusicId } from './musicWorkspace';
+import {parseMusicXml} from './musicXmlImport';
 import type { MusicProjectFile, MusicLyricSegment } from './musicWorkspace';
 
 export function lyricStanzas(text:string):MusicLyricSegment[] {
@@ -19,21 +20,35 @@ export async function importSongFile(file:File, originalLanguage:string):Promise
   const midi=/\.(mid|midi)$/i.test(lower);
   const docx=/\.docx$/i.test(lower);
   const plain=/\.(txt|md)$/i.test(lower);
-  const score=/\.(pdf|png|jpg|jpeg|webp)$/i.test(lower);
+  const musicXml=/\.(musicxml|xml)$/i.test(lower);
+  const scanned=/\.(pdf|png|jpg|jpeg|webp)$/i.test(lower);
   let text:string|undefined;
   let conversionWarning:string|undefined;
-  if(docx){
+  let parsedScore:ReturnType<typeof parseMusicXml>|undefined;
+  if(musicXml){
+    parsedScore=parseMusicXml(await file.text());
+    conversionWarning=parsedScore.warnings.join(' ');
+  }else if(docx){
     try{text=await textFromDocx(await file.arrayBuffer(),{preserveStanzas:true});}
     catch{conversionWarning='Document Word importé. L’extraction du texte n’est pas disponible pour ce fichier ; tu peux quand même le conserver et le classer.';}
   }else if(plain) text=await file.text();
-  else if(/\.doc$/i.test(lower)){
+  else if(scanned){
+    // Keeping a scan is not the same as extracting its text or recognizing
+    // musical notes. Never show a fake playable score before OCR/OMR succeeds.
+    conversionWarning='Original conservé. Reconnaissance OCR/OMR nécessaire avant de créer des paroles ou une partition jouable.';
+  }else if(/\.doc$/i.test(lower)){
     conversionWarning='Ancien format Word (.doc) conservé sans extraction. Convertis-le en .docx pour récupérer les paroles dans JenLow.';
   }
   const localFileId=await saveMusicWorkspaceFile(file);
   return {
     id:newMusicId(),title:file.name.replace(/\.[^.]+$/,''),
-    kind:audio?'audio':midi?'track':score?'score':'document',
+    kind:audio?'audio':midi?'track':musicXml?'score':'document',
     sectionIds:[],text,
+    musicEvents:parsedScore?.events,
+    tempoBpm:parsedScore?.bpm,
+    timeSignatureNumerator:parsedScore?.numerator,
+    timeSignatureDenominator:parsedScore?.denominator,
+    scoreClef:parsedScore?.clef,
     originalFilename:file.name,mimeType:file.type||undefined,localFileId,conversionWarning,
     durationSeconds:audio?await fileAudioDuration(file):undefined,
     language:docx||plain?originalLanguage:undefined,
