@@ -4,7 +4,7 @@ FROM ubuntu:24.04
 ENV DEBIAN_FRONTEND=noninteractive PYTHONUNBUFFERED=1 \
     AUDIVERIS_BIN=/opt/audiveris/bin/Audiveris OMR_TIMEOUT_SECONDS=110
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3 python3-venv ca-certificates curl ghostscript xvfb \
+    python3 python3-venv ca-certificates curl ghostscript xvfb xauth \
     tesseract-ocr tesseract-ocr-fra tesseract-ocr-eng \
     tesseract-ocr-deu tesseract-ocr-por fonts-dejavu-core \
     libasound2t64 libfreetype6 libfontconfig1 && \
