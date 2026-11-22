@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Image, Platform, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { BlurView } from 'expo-blur';
 import Svg, { Defs, LinearGradient, Stop, Rect, Filter, FeTurbulence, FeDisplacementMap } from 'react-native-svg';
-import { Ionicons } from '@expo/vector-icons';
+import { Feather, Ionicons } from '@expo/vector-icons';
 import { router, useGlobalSearchParams, usePathname } from 'expo-router';
 import { useLocale } from '@/i18n/locale';
 import { useAppTheme } from '@/theme/AppTheme';
@@ -127,7 +127,7 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
         (path.startsWith('/music/') && path !== '/music/new'),
     },
     {
-      icon: 'layers-outline' as const, title: 'Mes projets',
+      icon: 'layers-outline' as const, title: 'Projets',
       path: '/my-space' as const,
       active: path === '/my-space' || path === '/my-dreams' || path.startsWith('/my-dream'),
     },
@@ -183,9 +183,8 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
           position:'absolute',left:0,top:10,bottom:10,width:3,
           backgroundColor:activeColor,borderRadius:3}}/>:null}
         {item.path==='/my-space'?
-          <Image source={require('../../../assets/icons/dreams-nav.png')}
-            resizeMode="contain" style={{width:22,height:22,
-              tintColor:item.active?activeColor:theme.muted}}/>:
+          <Feather name="feather" size={20}
+            color={item.active?activeColor:theme.muted}/>:
           <Ionicons name={item.path==='/discover'?'ellipse-outline':
             item.path==='/profile'?'person-outline':item.icon}
             size={19} color={item.active?activeColor:theme.muted}/>}
@@ -591,12 +590,8 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
               }}
             />
           ) : x.path === '/my-space' ? (
-            <Image
-              source={require('../../../assets/icons/dreams-nav.png')}
-              resizeMode="contain"
-              style={{width:27,height:27,
-                tintColor:x.active ? '#CB245C' : foreground}}
-            />
+            <Feather name="feather" size={23}
+              color={x.active ? '#CB245C' : foreground}/>
           ) : (
             <Ionicons
               name={
