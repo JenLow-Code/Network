@@ -11,6 +11,9 @@ export type ParsedMusicXml={
   denominator:number;
   clef:'treble'|'bass';
   warnings:string[];
+  scoreParts:{id:string;name:string;originalPart:string;staff:number;
+    voice:string;clef:'treble'|'bass'|'alto';noteCount:number}[];
+  measureCount:number;
 };
 
 const PITCH:Record<string,number>={
@@ -49,13 +52,17 @@ export function parseMusicXml(xml:string):ParsedMusicXml{
   let bpm=100,numerator=4,denominator=4;
   let clef:'treble'|'bass'='treble',haveTempo=false,haveMeter=false;
   const events:MusicNotationEvent[]=[];
+  const scoreParts:ParsedMusicXml['scoreParts']=[];
+  let measureCount=0;
   for(const part of parts){
     const partName=partNames.get(part.getAttribute('id')||'')||'';
     const percussion=/drum|percussion|batterie|schlagzeug/i.test(partName);
     let divisions=1,signature=0,offset=0;
-    let partClef:'treble'|'bass'='treble';
+    const pid=part.getAttribute('id')||'P1';
+    const staffClefs=new Map<number,'treble'|'bass'|'alto'>([[1,'treble']]);
     const measures=direct(part,'measure');
-    for(const measure of measures){
+    measureCount=Math.max(measureCount,measures.length);
+    for(const [measureIndex,measure] of measures.entries()){
       let cursor=0,measureLength=0,previousStart=0;
       const meterDuration=numerator*4/denominator;
       for(const element of Array.from(measure.children)){
@@ -68,8 +75,12 @@ export function parseMusicXml(xml:string):ParsedMusicXml{
           if(n>=1&&n<=32&&[1,2,4,8,16,32].includes(d)){
             if(!haveMeter){numerator=n;denominator=d;haveMeter=true;}
           }
-          if(text(element,'clef sign')==='F'){
-            partClef='bass';if(events.length===0)clef='bass';
+          for(const clefElement of direct(element,'clef')){
+            const sign=text(clefElement,'sign');
+            const staffNumber=number(clefElement.getAttribute('number')||'1',1);
+            if(sign==='G'||sign==='F'||sign==='C')
+              staffClefs.set(staffNumber,
+                sign==='F'?'bass':sign==='C'?'alto':'treble');
           }
           continue;
         }
@@ -107,10 +118,27 @@ export function parseMusicXml(xml:string):ParsedMusicXml{
           const midi=12*(octave+1)+(PITCH[step]??-100)+alter;
           if(midi>=0&&midi<=127&&step in PITCH){
             const velocity=clamp(Math.round(number(text(element,'velocity'),90)),1,127);
+            const staff=number(text(element,'staff'),1);
+            const voice=text(element,'voice')||'1';
+            const staffClef=staffClefs.get(staff)||'treble';
+            const trackId=pid+':staff-'+staff+':voice-'+voice;
+            let partInfo=scoreParts.find(item=>item.id===trackId);
+            if(!partInfo){
+              partInfo={id:trackId,
+                name:staffClef==='bass'?'Main gauche / basse':
+                  staffClef==='treble'?'Voix / main droite':partName,
+                originalPart:partName,staff,voice,clef:staffClef,
+                noteCount:0};
+              scoreParts.push(partInfo);
+            }
+            partInfo.noteCount++;
             events.push({
               id:'xml-'+events.length,
               instrument:percussion?'drum':'piano',
               midi:Math.round(midi),velocity,
+              scorePartId:trackId,scoreStaff:staff,
+              scoreVoice:voice,scoreClef:staffClef,
+              scoreMeasure:measureIndex+1,
               startBeats:Math.round((offset+start)*1000)/1000,
               lengthBeats:Math.max(.125,Math.round(length*1000)/1000),
             });
@@ -126,11 +154,12 @@ export function parseMusicXml(xml:string):ParsedMusicXml{
       offset+=Math.max(measureLength,measures.length===1?0:
         (measureLength===0?meterDuration:0));
     }
-    if(partClef==='bass'&&events.length<=1)clef='bass';
+    if(scoreParts.length===1&&scoreParts[0].clef==='bass')clef='bass';
   }
   if(!events.length)throw Error('Aucune note jouable reconnue dans ce MusicXML.');
-  if(parts.length>1)warnings.push(
-    'Les parties instrumentales sont réunies dans l’éditeur JenLow. Vérifie les voix et les instruments.');
+  if(scoreParts.length>1)warnings.push(
+    'Les voix et portées sont conservées séparément pour l’écoute. Vérifie chaque instrument et chaque mesure.');
   warnings.push('Vérifie les reprises, articulations et signes complexes avant utilisation.');
-  return {events,bpm,numerator,denominator,clef,warnings:[...new Set(warnings)]};
+  return {events,bpm,numerator,denominator,clef,scoreParts,measureCount,
+    warnings:[...new Set(warnings)]};
 }
