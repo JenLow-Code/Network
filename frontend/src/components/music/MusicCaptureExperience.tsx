@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Platform, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
+import { Modal, Platform, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {router} from 'expo-router';
 import { useAppTheme } from '@/theme/AppTheme';
 import { MusicAudioCapture } from './MusicAudioCapture';
+import {deleteLocalMusicFile} from '@/domain/musicLocalStorage';
 import {workspaceLayout} from '@/theme/workspaceLayout';
 import { MusicAudioTake } from './MusicAudioTake';
 import { MusicNotePreview, type MusicWritingResult } from './MusicWritingStudio';
@@ -65,6 +66,8 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
   const [translationSourceId,setTranslationSourceId]=useState('');
   const [editingFileId,setEditingFileId]=useState('');
   const [selected,setSelected]=useState('');
+  const [pendingDelete,setPendingDelete]=useState('');
+  const [deleteBusy,setDeleteBusy]=useState(false);
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState('');
   const [filter,setFilter]=useState<CaptureFilter>('all');
@@ -118,6 +121,37 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
     else {setSortBy(next);setSortAscending(next!=='date');}
   };
   const selectedFile=files.find(f=>f.id===selected)||null;
+  const deleteCandidate=files.find(f=>f.id===pendingDelete)||null;
+  const linkedTranslations=deleteCandidate?
+    files.filter(other=>other.translationOfFileId===deleteCandidate.id):[];
+  const referencedByVersion=deleteCandidate?
+    (project.musicNext?.versions||[]).some(v=>v.tracks.some(t=>
+      t.sourceFileId===deleteCandidate.id))||
+    (project.musicNext?.history||[]).some(h=>h.before.tracks.some(t=>
+      t.sourceFileId===deleteCandidate.id)):false;
+  const removeCaptured=async()=>{
+    if(!deleteCandidate||deleteBusy||referencedByVersion)return;
+    setDeleteBusy(true);setError('');
+    const removed=[deleteCandidate,...linkedTranslations];
+    const ids=new Set(removed.map(item=>item.id));
+    const cleaned=files.filter(item=>!ids.has(item.id)&&
+      !ids.has(item.renderedFromMidiId||''));
+    patch({files:cleaned});
+    setSelected('');setPendingDelete('');
+    setExpandedLyrics(old=>{
+      const next={...old};ids.forEach(id=>delete next[id]);return next;
+    });
+    // Never erase a blob another surviving Capture item still references.
+    try{
+      const survivingIds=new Set(cleaned.map(file=>file.localFileId).filter(Boolean));
+      for(const localId of new Set(removed.map(item=>item.localFileId).filter(
+        (id):id is string=>!!id))){
+        if(!survivingIds.has(localId))await deleteLocalMusicFile(localId);
+      }
+    }catch{
+      setError('Élément retiré de la liste ; certains fichiers locaux n’ont pas pu être effacés.');
+    }finally{setDeleteBusy(false);}
+  };
   const translationSource=files.find(f=>f.id===translationSourceId)||null;
   const editingFile=files.find(f=>f.id===editingFileId)||null;
   const finishRecordingNavigation=()=>{
@@ -405,7 +439,7 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
             color={selected?PINK:theme.muted}/>
         </Pressable>;
       })}
-      <View style={{width:28}}/>
+      <View style={{width:62}}/>
     </View>:null}
     {!desktopList&&files.length?<ScrollView horizontal showsHorizontalScrollIndicator={false}
       style={{flexGrow:0}}
@@ -515,13 +549,25 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
                 </Text>
               </Pressable>)}
         </View>;
-        const detailArrow=<Pressable onPress={openDetails}
-          accessibilityRole="button"
-          accessibilityLabel={'Voir les détails de '+file.title}
-          style={{height:44,width:28,alignItems:'flex-end',
-            justifyContent:'center',flexShrink:0}}>
-          <Ionicons name="chevron-forward" size={17} color={theme.muted}/>
-        </Pressable>;
+        const detailArrow=<View style={{height:44,width:desktopList?62:68,
+          alignItems:'center',justifyContent:'flex-end',
+          flexDirection:'row',flexShrink:0,gap:7}}>
+          <Pressable onPress={()=>setPendingDelete(file.id)}
+            accessibilityRole="button"
+            accessibilityLabel={'Supprimer '+file.title}
+            style={{height:40,width:29,alignItems:'center',
+              justifyContent:'center'}}>
+            <Ionicons name="trash-outline" size={16}
+              color={desktopList&&hoveredRow===file.id?PINK:theme.muted}/>
+          </Pressable>
+          <Pressable onPress={openDetails}
+            accessibilityRole="button"
+            accessibilityLabel={'Voir les détails de '+file.title}
+            style={{height:40,width:25,alignItems:'flex-end',
+              justifyContent:'center'}}>
+            <Ionicons name="chevron-forward" size={17} color={theme.muted}/>
+          </Pressable>
+        </View>;
         return <View key={file.id}
           onPointerEnter={desktopList?()=>setHoveredRow(file.id):undefined}
           onPointerLeave={desktopList?()=>setHoveredRow(current=>
@@ -629,6 +675,47 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
           l'utiliser comme première piste d'une nouvelle version.
         </Text>
       </View>:null}
+    <Modal transparent visible={!!deleteCandidate} animationType="fade"
+      onRequestClose={()=>{if(!deleteBusy)setPendingDelete('');}}>
+      <View style={{flex:1,backgroundColor:'rgba(0,0,0,.45)',
+        alignItems:'center',justifyContent:'center',padding:22}}>
+        <View style={{width:'100%',maxWidth:440,padding:23,gap:15,
+          borderRadius:16,backgroundColor:theme.background,
+          borderWidth:1,borderColor:theme.border}}>
+          <Text style={{fontSize:18,fontWeight:'700',color:theme.foreground}}>
+            Supprimer cet élément ?
+          </Text>
+          <Text style={{fontSize:14,lineHeight:22,color:theme.foreground}}>
+            {deleteCandidate?.title||''}
+          </Text>
+          {referencedByVersion?<Text style={{fontSize:13,lineHeight:20,
+            color:theme.foreground}}>
+            Cet élément est utilisé dans une version musicale. Retire-le
+            d’abord de la version pour protéger le montage et son historique.
+          </Text>:
+          <Text style={{fontSize:13,lineHeight:20,color:theme.muted}}>
+            L’élément et son fichier local seront supprimés de cet appareil.
+            {linkedTranslations.length?' Ses '+linkedTranslations.length+
+              ' traduction(s) liées seront également supprimées.':''}
+            {' '}Cette action est irréversible.
+          </Text>}
+          <View style={{flexDirection:'row',gap:10,justifyContent:'flex-end'}}>
+            <Pressable onPress={()=>setPendingDelete('')} disabled={deleteBusy}
+              accessibilityRole="button" style={{padding:12}}>
+              <Text style={{fontSize:13,color:theme.foreground}}>Annuler</Text>
+            </Pressable>
+            {!referencedByVersion?<Pressable onPress={()=>{void removeCaptured();}}
+              disabled={deleteBusy} accessibilityRole="button"
+              style={{paddingHorizontal:17,paddingVertical:12,
+                backgroundColor:'#B7274B',borderRadius:9,opacity:deleteBusy?.6:1}}>
+              <Text style={{fontSize:13,fontWeight:'700',color:'#FFFFFF'}}>
+                {deleteBusy?'Suppression…':'Supprimer définitivement'}
+              </Text>
+            </Pressable>:null}
+          </View>
+        </View>
+      </View>
+    </Modal>
     <MusicMaterialViewer key={selectedFile?.id||'closed'} visible={!!selectedFile}
       file={selectedFile} project={project} onClose={()=>setSelected('')}
       onUpdate={changeFile} onChangeType={(id,kind)=>{
