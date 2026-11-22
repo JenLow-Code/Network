@@ -136,6 +136,12 @@ export type MusicProjectFile = {
   renderedFromMidiId?:string;
   /** Original musical idea, stored as structured notation, not rendered audio. */
   musicEvents?: MusicNotationEvent[];
+  /** Original Audiveris MusicXML to allow faithful later editing/reexport. */
+  musicXml?:string;
+  /** Independent playable OMR voices/staves; distinct from drum/piano pads. */
+  scoreParts?:{id:string;name:string;originalPart:string;
+    staff:number;voice:string;clef:'treble'|'bass'|'alto';noteCount:number}[];
+  scoreMeasureCount?:number;
   tempoBpm?: number;
   /** Explicit metre: no measure lines are inferred from the tempo. */
   timeSignatureNumerator?: number;
