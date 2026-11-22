@@ -66,9 +66,9 @@ function PictureCard({ dream, width, height, onLongPress, presentation = 'card' 
         }}>
           <Defs>
             <LinearGradient id="fruit-banner-shade" x1="0%" y1="0%" x2="0%" y2="100%">
-              <Stop offset="0%" stopColor="#000000" stopOpacity={0.02}/>
-              <Stop offset="48%" stopColor="#000000" stopOpacity={0.13}/>
-              <Stop offset="100%" stopColor="#000000" stopOpacity={0.82}/>
+              <Stop offset="0%" stopColor="#000000" stopOpacity={theme.dark ? 0.12 : 0.17}/>
+              <Stop offset="38%" stopColor="#000000" stopOpacity={theme.dark ? 0.22 : 0.29}/>
+              <Stop offset="100%" stopColor="#000000" stopOpacity={theme.dark ? 0.9 : 0.94}/>
             </LinearGradient>
           </Defs>
           <Rect width="100%" height="100%" fill="url(#fruit-banner-shade)" />
@@ -83,7 +83,7 @@ function PictureCard({ dream, width, height, onLongPress, presentation = 'card' 
         position: 'absolute', bottom: 0, left: 0, right: 0,
         paddingHorizontal: isBanner ? (width < 540 ? 16 : 24) : 13,
         paddingTop: isBanner ? 16 : 36,
-        paddingBottom: isBanner ? (width < 540 ? 14 : 18) : 12,
+        paddingBottom: isBanner ? (width < 540 ? 65 : 68) : 12,
         backgroundColor: isBanner ? 'transparent' : 'rgba(0,0,0,0.30)',
       }}>
         {!isBanner && isPublishedFlower(dream) ? (
@@ -255,9 +255,9 @@ export default function MySpace() {
               </View>
             ):null}
 
-            {/* Project controls overlay the top of the hero, not a separate strip below. */}
+            {/* Filters and view controls float along the bottom edge of the hero. */}
             <View style={{position:'absolute',zIndex:10,
-              top:compact?10:14,left:compact?10:22,right:compact?10:22}}>
+              bottom:compact?10:15,left:compact?10:22,right:compact?10:22}}>
               <View style={{flexDirection:'row',alignItems:'center',gap:compact?5:8}}>
                 <Pressable onPress={()=>setRoleMenuOpen(current=>!current)}
                   accessibilityRole="button"
@@ -274,6 +274,18 @@ export default function MySpace() {
                   <Ionicons name={roleMenuOpen?'chevron-up':'chevron-down'}
                     size={12} color="#383238"/>
                 </Pressable>
+                {!compact?(
+                  <Pressable onPress={()=>router.push('/my-dream/new')}
+                    accessibilityRole="button" accessibilityLabel="Créer un projet"
+                    style={{flexDirection:'row',gap:5,alignItems:'center',
+                      paddingHorizontal:12,minHeight:35,borderRadius:19,
+                      backgroundColor:'#D71D77'}}>
+                    <Ionicons name="add" size={17} color="#FFFFFF"/>
+                    <Text style={{fontSize:11,fontWeight:'700',color:'#FFFFFF'}}>
+                      Créer un projet
+                    </Text>
+                  </Pressable>
+                ):null}
                 <View style={{flex:1,minWidth:0}}/>
                 {(['Liste','Congelés'] as ViewFilter[]).map(choice=>(
                   <Pressable key={choice}
@@ -290,15 +302,10 @@ export default function MySpace() {
                       color:view===choice?'#FFFFFF':'#383238'}}>{choice}</Text>
                   </Pressable>
                 ))}
-                <Pressable onPress={()=>router.push('/my-dream/new')}
-                  accessibilityRole="button" accessibilityLabel="Créer un projet"
-                  style={{width:35,height:35,borderRadius:11,
-                    backgroundColor:'#D71D77',alignItems:'center',justifyContent:'center'}}>
-                  <Ionicons name="add" size={21} color="#FFFFFF"/>
-                </Pressable>
               </View>
               {roleMenuOpen?(
-                <View style={{marginTop:7,width:Math.min(galleryWidth-24,246),
+                <View style={{position:'absolute',bottom:43,left:0,zIndex:20,
+                  width:Math.min(galleryWidth-24,246),
                   backgroundColor:theme.surface,borderRadius:12,
                   borderWidth:1,borderColor:theme.border,
                   paddingVertical:5,overflow:'hidden'}}>
@@ -326,6 +333,23 @@ export default function MySpace() {
             </View>
           </View>
         </View>
+
+        {compact?(
+          <View style={{paddingHorizontal:side,alignItems:'flex-start',
+            marginTop:-9,marginBottom:19}}>
+            <Pressable onPress={()=>router.push('/my-dream/new')}
+              accessibilityRole="button" accessibilityLabel="Créer un projet"
+              style={{flexDirection:'row',alignItems:'center',gap:6,
+                minHeight:36,paddingHorizontal:11,borderRadius:18,
+                borderWidth:1,borderColor:'#D71D77',
+                backgroundColor:theme.surface}}>
+              <Ionicons name="add" size={16} color="#D71D77"/>
+              <Text style={{fontSize:12,color:'#D71D77',fontWeight:'700'}}>
+                Créer un projet
+              </Text>
+            </Pressable>
+          </View>
+        ):null}
 
         {visible.length === 0 ? (
           <View style={{ marginTop: 44, alignItems: 'center', paddingHorizontal: 30, gap: 10 }}>
