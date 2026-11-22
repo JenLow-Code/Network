@@ -12,6 +12,7 @@
     "verify:layout": "node scripts/verify-workspace-layout.cjs",
     "verify:midi": "node scripts/verify-midi-parser.cjs",
     "verify:lyrics": "node scripts/verify-lyrics.cjs",
+    "verify:score-scan": "node scripts/verify-music-score-scan.cjs",
     "format": "npx prettier --write \"app/**/*.{ts,tsx}\" \"src/**/*.{ts,tsx}\" \"assets/**/*.ts\""
   },
   "dependencies": {
