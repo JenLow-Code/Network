@@ -15,14 +15,21 @@ async function extract(id:string):Promise<PeakData>{
   const ctx=new AudioContext();
   try{
     const buffer=await ctx.decodeAudioData(await blob.arrayBuffer());
-    const samples=buffer.getChannelData(0);
-    const count=2048;
+    // Extract real per-window peaks from every channel. A quiet voice should
+    // not disappear because the source was recorded at a low input gain.
+    const channels=Array.from({length:buffer.numberOfChannels},(_,i)=>
+      buffer.getChannelData(i));
+    const sampleCount=buffer.length;
+    const count=4096;
     const peaks=Array.from({length:count},(_,i)=>{
-      const start=Math.floor(i*samples.length/count);
-      const end=Math.floor((i+1)*samples.length/count);
-      const stride=Math.max(1,Math.floor((end-start)/80));
+      const start=Math.floor(i*sampleCount/count);
+      const end=Math.min(sampleCount,Math.max(start+1,
+        Math.floor((i+1)*sampleCount/count)));
+      const stride=Math.max(1,Math.floor((end-start)/120));
       let level=0;
-      for(let j=start;j<end;j+=stride)level=Math.max(level,Math.abs(samples[j]||0));
+      for(let j=start;j<end;j+=stride)
+        for(const channel of channels)
+          level=Math.max(level,Math.abs(channel[j]||0));
       return level;
     });
     return {duration:buffer.duration,peaks};
@@ -74,7 +81,7 @@ function MusicDensePeakBars({levels,height,progress,muted=false}:{
   const clipId=React.useId().replace(/[^a-zA-Z0-9_-]/g,'');
   const geometry=useMemo(()=>{
     if(!width||!levels.length)return '';
-    const pitch=1.55;
+    const pitch=1.2;
     const count=Math.max(1,Math.floor(width/pitch));
     const peaks=Array.from({length:count},(_,i)=>{
       const lo=Math.floor(i*levels.length/count);
@@ -84,18 +91,23 @@ function MusicDensePeakBars({levels,height,progress,muted=false}:{
         level=Math.max(level,levels[j]||0);
       return level;
     });
-    // Dynamic gain is based on this recording's distribution. Very quiet
-    // real takes retain their transients instead of degenerating into dashes.
-    const sorted=[...peaks].sort((a,b)=>a-b);
-    const reference=sorted[Math.floor((sorted.length-1)*.94)]||0;
-    const gain=Math.min(45,.76/Math.max(.018,reference));
-    const maxHeight=height-2;
+    // Peak normalization for *display only* (never touches the recording).
+    // A fixed gain ceiling previously flattened soft recordings into dashes.
+    // Use the actual 96th percentile of audible/non-zero peaks; this keeps
+    // quiet speech readable while retaining each recording's natural dynamics.
+    const audible=peaks.filter(value=>value>0.000002).sort((a,b)=>a-b);
+    const reference=audible.length?
+      audible[Math.floor((audible.length-1)*.96)]:0;
+    const maxHeight=height-1;
     return peaks.map((level,i)=>{
-      const barHeight=Math.max(1.05,Math.min(maxHeight,
-        1+Math.sqrt(Math.max(0,level)*gain)*maxHeight*.54));
+      const ratio=reference>0.000002?
+        Math.min(1.5,Math.max(0,level)/reference):0;
+      const envelope=Math.pow(Math.min(1,ratio),.66);
+      const barHeight=ratio>0?
+        Math.min(maxHeight,1.0+envelope*(maxHeight*.78)):0.9;
       const x=(i*pitch).toFixed(2);
       const top=((height-barHeight)/2).toFixed(2);
-      return `M${x} ${top} h0.78 v${barHeight.toFixed(2)} h-0.78 Z`;
+      return `M${x} ${top} h0.96 v${barHeight.toFixed(2)} h-0.96 Z`;
     }).join(' ');
   },[levels,width,height]);
   const playback=Math.max(0,Math.min(1,
