@@ -1,0 +1,32 @@
+name: Music OMR Python validation
+on:
+  push:
+    paths:
+      - 'middleware/omr-service/**'
+      - '.github/workflows/music-omr-validation.yml'
+  pull_request:
+    paths:
+      - 'middleware/omr-service/**'
+      - '.github/workflows/music-omr-validation.yml'
+jobs:
+  validate:
+    name: Validate MusicXML timing and separated staves
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: middleware/omr-service
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install OMR service dependencies
+        run: python -m pip install -r requirements-dev.txt
+      - name: Compile Python sources
+        run: python -m compileall -q .
+      - name: Python unit tests (synthetic score)
+        run: python -m pytest -q tests
+      - name: Verify Dockerfile references pinned Audiveris
+        run: |
+          grep -q 'AUDIVERIS_VERSION=5.11.0' Dockerfile
+          grep -q 'sha256sum -c' Dockerfile
