@@ -31,6 +31,11 @@ migrations_dir = "../database/migrations"
 # binding = "MEDIA"
 # bucket_name = "jenlow-network-media"
 
+# Optional private OCR/score photo recognition via Workers AI.
+# Remove if not using the scan endpoint; without it the API answers 503.
+[ai]
+binding = "AI"
+
 # Prayer reminders, scheduled notifications, expired uploads and housekeeping.
 [triggers]
 crons = ["*/15 * * * *"]
