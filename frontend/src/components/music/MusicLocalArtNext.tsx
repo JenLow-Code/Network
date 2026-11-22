@@ -23,12 +23,17 @@ export function MusicLocalArt({file,size=42,cover=false,thumbnail=false,banner=f
     return()=>{active=false;if(url)URL.revokeObjectURL(url);};
   },[file.localFileId]);
   return <View style={{width:banner?'100%':thumbnail?100:cover?'100%':size,
-    height:banner?54:thumbnail?70:cover?164:size,
-    borderRadius:banner?7:thumbnail?11:cover?0:11,
-    overflow:'hidden',
-    alignItems:'center',justifyContent:'center',backgroundColor:theme.surface,
-    borderWidth:banner?0:1,borderColor:theme.border}}>
+    maxWidth:banner?350:undefined,
+    height:banner?66:thumbnail?70:cover?164:size,
+    borderRadius:banner?6:thumbnail?11:cover?0:11,
+    overflow:'hidden',alignItems:'center',justifyContent:'center',
+    // The Capture preview is a small framed artwork/document thumbnail, not
+    // a wide cropped strip that hides most of the original image.
+    backgroundColor:banner?
+      (theme.dark?'#28262A':'#F3F0E9'):theme.surface,
+    borderWidth:banner?.5:1,borderColor:theme.border}}>
     {uri?<Image source={{uri}} style={{width:'100%',height:'100%'}}
-      resizeMode="cover"/>:<Ionicons name="image-outline" color={pink} size={21}/>}
+      resizeMode={banner?'contain':'cover'}/>:
+      <Ionicons name="image-outline" color={pink} size={21}/>}
   </View>;
 }
