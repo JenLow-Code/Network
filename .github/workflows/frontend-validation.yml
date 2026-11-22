@@ -27,6 +27,8 @@ jobs:
         run: npm run verify:midi
       - name: Verify lyric annotations and comments
         run: npm run verify:lyrics
+      - name: Verify score scanner never accepts a collapsed multi-staff result
+        run: npm run verify:score-scan
       - run: npm run typecheck
       - name: Validate Expo web export
         run: npx expo export --platform web
