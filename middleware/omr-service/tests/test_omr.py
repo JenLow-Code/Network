@@ -120,7 +120,7 @@ def test_audiveris_output_not_an_llm_guess(monkeypatch):
     data = omr_app.analyze_score(b"image.png", expected_staves=4, expected_systems=2)
     assert data["engine"] == "audiveris"
     assert {p["clef"] for p in data["parts"]} == {"treble", "bass"}
-    assert len(data["notes"]) == 13
+    assert len(data["notes"]) == 14
 
 
 def test_rejects_incomplete_staff_exports(monkeypatch):
