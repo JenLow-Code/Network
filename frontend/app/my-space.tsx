@@ -269,43 +269,58 @@ function PhaseMobileOverlap({dreams,viewportWidth,cardHeight,onLongPress}:{
   const scrollRef=useRef<React.ComponentRef<typeof ScrollView>>(null);
   const [current,setCurrent]=useState(0);
   const ids=dreams.map(d=>d.id).join('|');
-  const cardWidth=Math.max(64,Math.round(viewportWidth*.83));
-  const overlap=Math.round(cardWidth*.25);
-  const step=cardWidth-overlap;
   const lastIndex=Math.max(0,dreams.length-1);
+  // Each slide occupies the ENTIRE viewport. The next card is only a
+  // non-interactive visual peek behind the front card. No negative margins,
+  // shifting z-index or partial scroll steps to fight native touch gestures.
+  const frontWidth=dreams.length>1
+    ?Math.max(64,Math.round(viewportWidth*.83)):viewportWidth;
+  const peekInset=10;
   useEffect(()=>{
     scrollRef.current?.scrollTo({x:0,animated:false});
     setCurrent(0);
-  },[ids,cardWidth]);
+  },[ids,viewportWidth]);
   const go=(direction:number)=>{
     const next=Math.max(0,Math.min(lastIndex,current+direction));
-    scrollRef.current?.scrollTo({x:next*step,animated:true});
+    scrollRef.current?.scrollTo({x:next*viewportWidth,animated:true});
     setCurrent(next);
   };
   return <View style={{width:'100%',gap:4}}>
-    <ScrollView ref={scrollRef} horizontal
-      decelerationRate="fast" snapToInterval={step}
-      nestedScrollEnabled showsHorizontalScrollIndicator={false}
+    <ScrollView ref={scrollRef} horizontal pagingEnabled
+      directionalLockEnabled nestedScrollEnabled
+      showsHorizontalScrollIndicator={false}
       scrollEventThrottle={32}
+      onScroll={e=>{
+        const index=Math.max(0,Math.min(lastIndex,
+          Math.round(e.nativeEvent.contentOffset.x/viewportWidth)));
+        setCurrent(old=>old===index?old:index);
+      }}
       onMomentumScrollEnd={e=>{
         setCurrent(Math.max(0,Math.min(lastIndex,
-          Math.round(e.nativeEvent.contentOffset.x/step))));
+          Math.round(e.nativeEvent.contentOffset.x/viewportWidth))));
       }}
-      style={{width:'100%',height:cardHeight,flexGrow:0}}
-      contentContainerStyle={{
-        alignItems:'center',
-        paddingRight:Math.max(0,viewportWidth-cardWidth),
-      }}>
-      {dreams.map((dream,index)=>(
-        <View key={dream.id} style={{
-          width:cardWidth,
-          marginLeft:index===0?0:-overlap,
-          zIndex:index===current?dreams.length+1:dreams.length-index,
+      style={{width:'100%',height:cardHeight,flexGrow:0}}>
+      {dreams.map((dream,index)=>{
+        const next=dreams[index+1];
+        const nextPhoto=next?coverImage(next):undefined;
+        return <View key={dream.id} style={{
+          width:viewportWidth,height:cardHeight,
+          overflow:'hidden',position:'relative',
         }}>
-          <PictureCard dream={dream} width={cardWidth} height={cardHeight}
-            onLongPress={()=>onLongPress(dream)}/>
-        </View>
-      ))}
+          {next?<View pointerEvents="none" accessible={false}
+            importantForAccessibility="no-hide-descendants"
+            style={{position:'absolute',left:frontWidth-peekInset,right:0,
+              top:5,bottom:5,borderRadius:10,overflow:'hidden',
+              backgroundColor:theme.surface}}>
+            {nextPhoto?<Image source={{uri:nextPhoto}} resizeMode="cover"
+              style={{width:'100%',height:'100%'}}/>:null}
+          </View>:null}
+          <View style={{position:'absolute',top:0,left:0}}>
+            <PictureCard dream={dream} width={frontWidth}
+              height={cardHeight} onLongPress={()=>onLongPress(dream)}/>
+          </View>
+        </View>;
+      })}
     </ScrollView>
     {dreams.length>1?(
       <View style={{minHeight:28,flexDirection:'row',
