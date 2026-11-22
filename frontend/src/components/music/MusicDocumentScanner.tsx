@@ -15,6 +15,16 @@ import type {MusicNotationEvent} from '@/domain/musicNotation';
 
 const PINK='#D71D77';
 type Mode='text'|'score';
+type ScanFrame='center'|'full';
+/** Phone screenshots often contain huge empty margins around the actual score.
+ * Only trim those tall images; an ordinary A4 photograph stays unaltered. */
+function cropForAnalysis(width:number,height:number,mode:Mode,frame:ScanFrame){
+  if(mode==='score'&&frame==='center'&&height/Math.max(1,width)>1.55){
+    return {x:0,y:Math.round(height*.27),
+      width,height:Math.round(height*.59)};
+  }
+  return {x:0,y:0,width,height};
+}
 type Note={midi:number;startBeats:number;lengthBeats:number;velocity:number};
 type ScanResult={
   mode:Mode;title:string;engine:string;warnings:string[];
@@ -41,6 +51,8 @@ export function MusicDocumentScanner({visible,initialFile,sourceFile,onClose,onS
   const [mode,setMode]=useState<Mode>('score');
   const [file,setFile]=useState<File|null>(null);
   const [preview,setPreview]=useState('');
+  const [scanPreview,setScanPreview]=useState('');
+  const [frame,setFrame]=useState<ScanFrame>('center');
   const [loading,setLoading]=useState(false);
   const [error,setError]=useState('');
   const [result,setResult]=useState<ScanResult|null>(null);
@@ -52,7 +64,7 @@ export function MusicDocumentScanner({visible,initialFile,sourceFile,onClose,onS
   useEffect(()=>{
     if(!visible)return;
     setResult(null);setError('');setDraftTitle('');setDraftText('');
-    setConfirmed(false);setAiConsent(false);setMode('score');
+    setConfirmed(false);setAiConsent(false);setMode('score');setFrame('center');
     if(!initialFile){setFile(sourceFile||null);return;}
     if(!initialFile.localFileId){setFile(null);return;}
     let live=true;
@@ -68,6 +80,32 @@ export function MusicDocumentScanner({visible,initialFile,sourceFile,onClose,onS
     const url=URL.createObjectURL(file);setPreview(url);
     return()=>URL.revokeObjectURL(url);
   },[file]);
+  useEffect(()=>{
+    if(!file||!preview||Platform.OS!=='web'){
+      setScanPreview('');return;
+    }
+    let active=true;
+    const img=new window.Image();
+    img.onload=()=>{
+      if(!active)return;
+      const crop=cropForAnalysis(img.naturalWidth,img.naturalHeight,mode,frame);
+      if(crop.height===img.naturalHeight&&crop.width===img.naturalWidth){
+        setScanPreview(preview);return;
+      }
+      const canvas=document.createElement('canvas');
+      const limit=1250/Math.max(crop.width,crop.height);
+      canvas.width=Math.max(1,Math.round(crop.width*Math.min(1,limit)));
+      canvas.height=Math.max(1,Math.round(crop.height*Math.min(1,limit)));
+      const ctx=canvas.getContext('2d');
+      if(!ctx){setScanPreview(preview);return;}
+      ctx.drawImage(img,crop.x,crop.y,crop.width,crop.height,
+        0,0,canvas.width,canvas.height);
+      setScanPreview(canvas.toDataURL('image/jpeg',.80));
+    };
+    img.onerror=()=>{if(active)setScanPreview(preview);};
+    img.src=preview;
+    return()=>{active=false;};
+  },[file,preview,mode,frame]);
   const notes:MusicNotationEvent[]=useMemo(()=>
     (result?.notes||[]).map((note,index)=>({
       id:'scan-'+index,instrument:'piano' as const,midi:note.midi,
@@ -92,7 +130,7 @@ export function MusicDocumentScanner({visible,initialFile,sourceFile,onClose,onS
     input.onchange=()=>{
       const chosen=input.files?.[0];
       if(!chosen)return;
-      setFile(chosen);setResult(null);setError('');setConfirmed(false);
+      setFile(chosen);setResult(null);setError('');setConfirmed(false);setFrame('center');
     };
     input.click();
   };
@@ -109,14 +147,16 @@ export function MusicDocumentScanner({visible,initialFile,sourceFile,onClose,onS
         img.onload=()=>resolve(img);img.onerror=()=>reject(Error('Photo illisible.'));
         img.src=object;
       });
+      const region=cropForAnalysis(image.naturalWidth,image.naturalHeight,mode,frame);
       const canvas=document.createElement('canvas');
-      const scale=Math.min(1,1650/Math.max(image.naturalWidth,image.naturalHeight));
-      canvas.width=Math.max(1,Math.round(image.naturalWidth*scale));
-      canvas.height=Math.max(1,Math.round(image.naturalHeight*scale));
+      const scale=Math.min(1,1650/Math.max(region.width,region.height));
+      canvas.width=Math.max(1,Math.round(region.width*scale));
+      canvas.height=Math.max(1,Math.round(region.height*scale));
       const context=canvas.getContext('2d');
       if(!context)throw Error('Traitement de la photo indisponible.');
       context.fillStyle='#FFFFFF';context.fillRect(0,0,canvas.width,canvas.height);
-      context.drawImage(image,0,0,canvas.width,canvas.height);
+      context.drawImage(image,region.x,region.y,region.width,region.height,
+        0,0,canvas.width,canvas.height);
       let quality=.84;
       let data=canvas.toDataURL('image/jpeg',quality);
       while(data.length>1_550_000&&quality>.48){
@@ -152,12 +192,29 @@ export function MusicDocumentScanner({visible,initialFile,sourceFile,onClose,onS
       setResult(data);setDraftTitle(data.title);setDraftText(data.text||'');
     }catch(e){
       if(e instanceof ApiRequestError){
-        setError(e.status===401?
-          'Connecte-toi à JenLow pour utiliser la reconnaissance sécurisée.':
-          e.status===503||e.status===404?
-            'Le moteur de numérisation n’est pas encore activé sur le serveur. Tu peux importer du MusicXML en attendant.':
-            e.message||'Analyse impossible pour cette photo.');
-      }else setError(e instanceof Error?e.message:'Analyse impossible.');
+        const messages:Record<string,string>={
+          not_authenticated:'Ta connexion a expiré. Reconnecte-toi à JenLow.',
+          scan_no_notes:'Aucune note exploitable reconnue. Recadre uniquement les portées et réessaie.',
+          scan_no_text:'Aucun texte lisible. Essaie une photo plus nette.',
+          scan_unreadable:'Le résultat de reconnaissance est incomplet. Recadre le document.',
+          image_unreadable:'Le modèle ne parvient pas à lire cette image. Réduis ou recadre la photo.',
+          model_quota:'Le moteur a atteint sa limite temporaire de requêtes.',
+          model_unavailable:'La reconnaissance a échoué côté IA. Essaie une photo recadrée ou réessaie.',
+          quota_unavailable:'La vérification des limites du scanner est momentanément indisponible.',
+          scan_unavailable:'Le moteur de reconnaissance n’est pas configuré sur ce serveur.',
+          origin_not_allowed:'La connexion entre JenLow et son scanner a été refusée.',
+          rate_limited:'Trop d’analyses récentes. Le quota se renouvelle dans les 15 minutes.',
+        };
+        const detail=messages[e.code]||e.message||
+          (e.status===404?'Le scanner est introuvable sur le serveur.':
+           'La numérisation a échoué.');
+        setError(detail+' (code : '+e.code+')');
+      }else{
+        const network=e instanceof TypeError;
+        setError(network?
+          'Impossible de joindre le service de reconnaissance. Vérifie ta connexion.':
+          e instanceof Error?e.message:'Analyse impossible.');
+      }
     }finally{setLoading(false);}
   };
   const save=async()=>{
@@ -246,12 +303,34 @@ export function MusicDocumentScanner({visible,initialFile,sourceFile,onClose,onS
           </View>
           {file?<Text numberOfLines={1} style={{fontSize:12,
             color:theme.muted}}>{file.name}</Text>:null}
-          {preview&&Platform.OS==='web'?
-            <View style={{maxHeight:225,backgroundColor:theme.surface,
-              borderRadius:9,overflow:'hidden',alignItems:'center'}}>
-              <RNImage source={{uri:preview}} accessibilityLabel="Document original à numériser"
-                resizeMode="contain" style={{width:'100%',height:225}}/>
+          {preview&&Platform.OS==='web'?<>
+            {mode==='score'?<View style={{flexDirection:'row',flexWrap:'wrap',
+              alignItems:'center',gap:8}}>
+              {(['center','full'] as ScanFrame[]).map(option=>
+                <Pressable key={option}
+                  accessibilityRole="button"
+                  accessibilityState={{selected:frame===option}}
+                  onPress={()=>{setFrame(option);setResult(null);setConfirmed(false);setError('');}}
+                  style={{paddingHorizontal:12,paddingVertical:8,borderRadius:8,
+                    borderWidth:1,borderColor:frame===option?PINK:theme.border,
+                    backgroundColor:frame===option?
+                      (theme.dark?'#392332':'#FAE7EF'):theme.background}}>
+                  <Text style={{fontSize:12,fontWeight:frame===option?'700':'500',
+                    color:frame===option?PINK:theme.foreground}}>
+                    {option==='center'?'Centrer sur la partition':'Image entière'}
+                  </Text>
+                </Pressable>)}
             </View>:null}
+            <View style={{backgroundColor:theme.surface,
+              borderRadius:9,overflow:'hidden',alignItems:'center'}}>
+              <RNImage source={{uri:scanPreview||preview}}
+                accessibilityLabel="Aperçu de la zone envoyée à la reconnaissance"
+                resizeMode="contain" style={{width:'100%',height:225}}/>
+            </View>
+            <Text style={{fontSize:11,color:theme.muted}}>
+              Aperçu de la zone analysée · le fichier original reste inchangé
+            </Text>
+          </>:null}
           <Pressable onPress={()=>setAiConsent(value=>!value)}
             accessibilityRole="checkbox"
             accessibilityState={{checked:aiConsent}}
