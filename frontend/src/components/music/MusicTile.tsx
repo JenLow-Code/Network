@@ -21,6 +21,7 @@ type MusicTileProps = {
   demo?: boolean;
   status?: string;
   onPress?: () => void;
+  onLearnMore?: () => void;
 };
 
 /**
@@ -31,7 +32,7 @@ type MusicTileProps = {
  */
 export function MusicTile({
   title, byline, detail, width, mode, layout = 'cards', participants = [],
-  artwork, audioUrl, demo = false, status, onPress,
+  artwork, audioUrl, demo = false, status, onPress, onLearnMore,
 }: MusicTileProps) {
   const theme = useAppTheme();
   const [audioOpen, setAudioOpen] = useState(false);
@@ -129,7 +130,7 @@ export function MusicTile({
       {listed && !demo ? <Ionicons name="chevron-forward-outline"
         size={17} color={theme.foreground}/> : null}
     </Pressable>
-    {mode === 'cassette' && onPress ? <Pressable onPress={onPress}
+    {mode === 'cassette' && onPress ? <Pressable onPress={onLearnMore || onPress}
       accessibilityRole="button" accessibilityLabel={'En savoir plus sur ' + title}
       style={{paddingHorizontal:2,minHeight:27,flexDirection:'row',alignItems:'center',gap:5}}>
       <Text style={{fontSize:11,fontWeight:'600',color:theme.foreground}}>En savoir plus</Text>
