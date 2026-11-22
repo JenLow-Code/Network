@@ -2,7 +2,7 @@ import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { MusicFolderCover } from './MusicFolderCover';
+import { MusicCassetteDraft } from './MusicCassetteDraft';
 import type { MusicProject } from '@/domain/musicWorkspace';
 import { musicNextState } from '@/domain/musicNext';
 import { useAppTheme } from '@/theme/AppTheme';
@@ -20,15 +20,17 @@ export function MusicSongCard({ song, layout, width }: {
     pathname: '/music-workspace/[id]',
     params: { id: song.id },
   });
-  const info = `${song.files.length} ${song.files.length === 1 ? 'fichier' : 'fichiers'}` +
-    (versions ? ` · ${versions} ${versions === 1 ? 'version' : 'versions'}` : '');
+  const info = [
+    song.files.length ? `${song.files.length} ${song.files.length === 1 ? 'fichier' : 'fichiers'}` : '',
+    versions ? `${versions} ${versions === 1 ? 'version' : 'versions'}` : '',
+  ].filter(Boolean).join(' · ') || 'Premières idées';
 
   if (layout === 'list') return <Pressable
     accessibilityRole="button" accessibilityLabel={'Ouvrir ' + song.title}
     onPress={open}
     style={{ flexDirection: 'row', alignItems: 'center', gap: 13, paddingVertical: 10,
       borderBottomWidth: 1, borderColor: theme.border, width: width || '100%' }}>
-    <MusicFolderCover project={song} size={64}/>
+    <MusicCassetteDraft width={96}/>
     <View style={{ flex: 1, gap: 5 }}>
       <Text numberOfLines={1} style={{ color: theme.foreground, fontSize: 14,
         fontWeight: '700' }}>{song.title}</Text>
@@ -43,8 +45,9 @@ export function MusicSongCard({ song, layout, width }: {
     onPress={open} style={{ width: width || 205, padding: 11, borderRadius: 16,
       borderWidth: 1, borderColor: theme.border, backgroundColor: panel,
       gap: 9, overflow: 'hidden' }}>
-    <View style={{ alignItems: 'center', justifyContent: 'center', paddingVertical: 7 }}>
-      <MusicFolderCover project={song} size={106}/>
+    <View style={{ alignItems: 'center', justifyContent: 'center', paddingVertical: 5 }}>
+      <MusicCassetteDraft width={Math.max(90, Math.min(280,
+        typeof width === 'number' ? width - 24 : 192))}/>
     </View>
     <Text numberOfLines={1} style={{ color: theme.foreground, fontSize: 14,
       fontWeight: '700' }}>{song.title}</Text>
