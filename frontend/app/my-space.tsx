@@ -187,53 +187,41 @@ function PhaseProjectCarousel({dreams,cardWidth,cardHeight,viewportWidth,gap,com
   const scrollRef=useRef<React.ComponentRef<typeof ScrollView>>(null);
   const [position,setPosition]=useState(0);
   const identities=dreams.map(d=>d.id).join('|');
-  // Existing single-project cards retain their original dimensions.
-  // Multiple cards form a readable deck rather than three chopped-off tiles.
-  const deckWidth=dreams.length>1?Math.round(viewportWidth*.68):cardWidth;
-  const overlap=dreams.length>1?Math.round(deckWidth*.2):0;
-  const step=deckWidth-overlap;
-  const lastPosition=Math.max(0,dreams.length-1);
+  const step=cardWidth+gap;
+  const lastPosition=Math.max(0,dreams.length-2);
+  const contentWidth=dreams.length*cardWidth+Math.max(0,dreams.length-1)*gap;
+  const maxOffset=Math.max(0,contentWidth-viewportWidth);
   useEffect(()=>{
     scrollRef.current?.scrollTo({x:0,animated:false});
     setPosition(0);
-  },[identities,deckWidth,viewportWidth]);
+  },[identities,cardWidth,viewportWidth]);
   const go=(direction:number)=>{
     const next=Math.max(0,Math.min(lastPosition,position+direction));
-    scrollRef.current?.scrollTo({x:next*step,animated:true});
+    scrollRef.current?.scrollTo({x:Math.min(maxOffset,next*step),animated:true});
     setPosition(next);
   };
   return <View style={{width:'100%',gap:9}}>
-    <ScrollView ref={scrollRef} horizontal
-      decelerationRate="fast" snapToInterval={step}
-      showsHorizontalScrollIndicator={false}
+    <ScrollView ref={scrollRef} horizontal decelerationRate="fast"
+      snapToInterval={step} showsHorizontalScrollIndicator={false}
       scrollEventThrottle={32}
-      onMomentumScrollEnd={e=>{
-        setPosition(Math.max(0,Math.min(lastPosition,
-          Math.round(e.nativeEvent.contentOffset.x/step))));
+      onScroll={e=>{
+        const next=Math.max(0,Math.min(lastPosition,
+          Math.round(e.nativeEvent.contentOffset.x/step)));
+        setPosition(current=>current===next?current:next);
       }}
       style={{width:'100%',flexGrow:0}}
-      contentContainerStyle={{
-        alignItems:'center',
-        paddingRight:Math.max(0,viewportWidth-deckWidth),
-      }}>
-      {dreams.map((d,index)=>(
-        <View key={d.id} style={{
-          width:deckWidth,
-          marginLeft:index===0?0:-overlap,
-          zIndex:index===position?dreams.length+1:dreams.length-index,
-        }}>
-          <PictureCard dream={d} width={deckWidth} height={cardHeight}
-            onLongPress={()=>onLongPress(d)}/>
-        </View>
-      ))}
+      contentContainerStyle={{gap}}>
+      {dreams.map(d=><PictureCard key={d.id} dream={d}
+        width={cardWidth} height={cardHeight}
+        onLongPress={()=>onLongPress(d)}/>)}
     </ScrollView>
-    {dreams.length>1?(
+    {dreams.length>2?(
       <View style={{flexDirection:'row',alignItems:'center',
         justifyContent:'flex-end',minHeight:27}}>
         <View style={{flexDirection:'row',alignItems:'center',gap:7}}>
-          <Text style={{fontSize:10,color:theme.dark?'#FFFFFF':'#000000',
+          <Text style={{fontSize:10,color:theme.muted,
             fontVariant:['tabular-nums']}}>
-            {position+1}{position<lastPosition?'–'+(position+2):''} / {dreams.length}
+            {position+1}–{Math.min(position+2,dreams.length)} / {dreams.length}
           </Text>
           {([-1,1] as const).map(direction=>{
             const disabled=direction<0?position===0:position===lastPosition;
@@ -255,6 +243,7 @@ function PhaseProjectCarousel({dreams,cardWidth,cardHeight,viewportWidth,gap,com
     ):null}
   </View>;
 }
+
 
 /**
  * A single, foreground project and the edge of the next project underneath:
