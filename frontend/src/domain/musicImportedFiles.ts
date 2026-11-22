@@ -25,8 +25,10 @@ export async function importSongFile(file:File, originalLanguage:string):Promise
   let text:string|undefined;
   let conversionWarning:string|undefined;
   let parsedScore:ReturnType<typeof parseMusicXml>|undefined;
+  let musicXmlSource:string|undefined;
   if(musicXml){
-    parsedScore=parseMusicXml(await file.text());
+    musicXmlSource=await file.text();
+    parsedScore=parseMusicXml(musicXmlSource);
     conversionWarning=parsedScore.warnings.join(' ');
   }else if(docx){
     try{text=await textFromDocx(await file.arrayBuffer(),{preserveStanzas:true});}
@@ -45,6 +47,9 @@ export async function importSongFile(file:File, originalLanguage:string):Promise
     kind:audio?'audio':midi?'track':musicXml?'score':'document',
     sectionIds:[],text,
     musicEvents:parsedScore?.events,
+    musicXml:musicXmlSource,
+    scoreParts:parsedScore?.scoreParts,
+    scoreMeasureCount:parsedScore?.measureCount,
     tempoBpm:parsedScore?.bpm,
     timeSignatureNumerator:parsedScore?.numerator,
     timeSignatureDenominator:parsedScore?.denominator,
