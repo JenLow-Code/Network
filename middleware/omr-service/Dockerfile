@@ -14,8 +14,9 @@ ARG AUDIVERIS_SHA256=f20113aaa33b3149ec8d6a09b2a7963360e65fafd92d69389987a85bbc3
 RUN curl -fsSL -o /tmp/audiveris.deb \
   "https://github.com/Audiveris/audiveris/releases/download/${AUDIVERIS_VERSION}/Audiveris-${AUDIVERIS_VERSION}-ubuntu24.04-x86_64.deb" \
   && echo "${AUDIVERIS_SHA256}  /tmp/audiveris.deb" | sha256sum -c - \
-  && apt-get update && apt-get install -y --no-install-recommends /tmp/audiveris.deb \
-  && rm /tmp/audiveris.deb && rm -rf /var/lib/apt/lists/*
+  && dpkg-deb --extract /tmp/audiveris.deb / \
+  && test -x /opt/audiveris/bin/Audiveris \
+  && rm /tmp/audiveris.deb
 WORKDIR /service
 COPY requirements.txt /service/requirements.txt
 RUN python3 -m venv /venv \
