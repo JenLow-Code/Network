@@ -1,5 +1,5 @@
 import React,{useEffect,useMemo,useState} from 'react';
-import {Modal,Platform,Pressable,ScrollView,Text,TextInput,View,
+import {Image as RNImage,Modal,Platform,Pressable,ScrollView,Text,TextInput,View,
   useWindowDimensions} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {useAppTheme} from '@/theme/AppTheme';
@@ -99,7 +99,7 @@ export function MusicDocumentScanner({visible,initialFile,onClose,onSaved}:Props
     const object=URL.createObjectURL(source);
     try{
       const image=await new Promise<HTMLImageElement>((resolve,reject)=>{
-        const img=new Image();
+        const img=new window.Image();
         img.onload=()=>resolve(img);img.onerror=()=>reject(Error('Photo illisible.'));
         img.src=object;
       });
@@ -150,11 +150,11 @@ export function MusicDocumentScanner({visible,initialFile,onClose,onSaved}:Props
     try{
       const localFileId=initialFile?.localFileId||await saveMusicWorkspaceFile(file);
       const base:MusicProjectFile={
-        id:newMusicId(),title:draftTitle.trim()||(mode==='score'?'Partition numérisée':'Texte numérisé'),
+        id:initialFile?.id||newMusicId(),title:draftTitle.trim()||(mode==='score'?'Partition numérisée':'Texte numérisé'),
         kind:mode==='score'?'score':kind,
         sectionIds:[],localFileId,
         originalFilename:file.name,mimeType:file.type,
-        createdAt:new Date().toISOString(),
+        createdAt:initialFile?.createdAt||new Date().toISOString(),
         conversionWarning:'Transcription assistée par IA : vérifiée par le créateur ; original conservé.',
       };
       if(mode==='score'){
@@ -231,13 +231,13 @@ export function MusicDocumentScanner({visible,initialFile,onClose,onSaved}:Props
           {preview&&Platform.OS==='web'?
             <View style={{maxHeight:225,backgroundColor:theme.surface,
               borderRadius:9,overflow:'hidden',alignItems:'center'}}>
-              <img src={preview} alt="Document original à numériser"
-                style={{maxHeight:225,maxWidth:'100%',objectFit:'contain'}}/>
+              <RNImage source={{uri:preview}} accessibilityLabel="Document original à numériser"
+                resizeMode="contain" style={{width:'100%',height:225}}/>
             </View>:null}
           <Pressable onPress={()=>{void scan();}} disabled={!file||loading}
             accessibilityRole="button"
             style={{alignSelf:'flex-start',backgroundColor:PINK,
-              opacity:!file||loading?.55:1,borderRadius:9,
+              opacity:!file||loading?0.55:1,borderRadius:9,
               paddingVertical:12,paddingHorizontal:18}}>
             <Text style={{fontWeight:'700',color:'#FFFFFF',fontSize:13}}>
               {loading?'Analyse en cours…':
