@@ -6,6 +6,12 @@ export type MusicNotationEvent = {
   startBeats: number;
   lengthBeats: number;
   velocity: number;
+  /** OMR source identity: prevents merging melody, harmony and bass voices. */
+  scorePartId?:string;
+  scoreStaff?:number;
+  scoreVoice?:string;
+  scoreClef?:'treble'|'bass'|'alto';
+  scoreMeasure?:number;
   /** A grey, uncommitted manual sketch note; not yet part of MIDI export. */
   draft?: boolean;
 };
