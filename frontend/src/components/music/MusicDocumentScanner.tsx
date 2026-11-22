@@ -426,7 +426,7 @@ export function MusicDocumentScanner({visible,initialFile,sourceFile,onClose,onS
                   padding:15,borderWidth:1,borderColor:theme.border}}/>
             </View>:audition?<View style={{gap:8}}>
               <Text style={{fontSize:12,color:theme.muted}}>
-                {notes.length} notes proposées, non vérifiées · {result.bpm||100} BPM ·
+                {notes.length} notes proposées, non vérifiées · Lecture à {result.bpm||100} BPM (tempo provisoire) ·
                 {' '}{result.numerator||4}/{result.denominator||4}
               </Text>
               <MusicCaptureScoreStrip file={audition}/>
