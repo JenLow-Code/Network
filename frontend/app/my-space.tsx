@@ -663,12 +663,12 @@ export default function MySpace() {
                     <DreamPhaseIcon phase={panel.phase}
                       size={compact?52:96} artworkScale={1}/>
                   </View>
-                  {/* Editorial phase lettering stays INSIDE the left border.
-                      The inset isn't enlarged and the panel width is unchanged. */}
+                  {/* The vertical heading is centered in the ORIGINAL left
+                      inset, never sitting on the project content. */}
                   <View pointerEvents="none" accessible={false}
                     importantForAccessibility="no-hide-descendants"
                     style={{position:'absolute',top:0,bottom:0,
-                      left:compact?3:5,width:compact?15:19,
+                      left:0,width:panelInset,
                       alignItems:'center',justifyContent:'center'}}>
                     <Svg width={compact?14:18} height={compact?155:192}
                       viewBox={compact?'0 0 14 155':'0 0 18 192'}>
@@ -709,11 +709,16 @@ export default function MySpace() {
                         viewportWidth={phaseViewportWidth} gap={phaseCardGap}
                         compact={compact} onLongPress={setLongDream}/>
                   ):(
-                    <View style={{minHeight:phaseTileHeight,alignItems:'flex-start',
-                      justifyContent:'center',paddingHorizontal:compact?1:4}}>
+                    <View style={{minHeight:phaseTileHeight,
+                      width:'100%',alignItems:'center',
+                      justifyContent:'flex-end',
+                      paddingHorizontal:compact?5:22,
+                      paddingBottom:compact?9:16}}>
                       <Text style={{fontSize:compact?10:12,
                         color:theme.dark?'#FFFFFF':'#000000',
-                        lineHeight:compact?15:18}}>
+                        fontWeight:'400',
+                        lineHeight:compact?15:18,
+                        textAlign:'center'}}>
                         {panel.phase==='Témoignage'
                           ? 'Aucune floraison en préparation.'
                           : 'Aucun projet dans cette étape.'}
