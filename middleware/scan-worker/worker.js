@@ -4,7 +4,7 @@
  * Private image bytes are not persisted, cached, logged or returned.
  * Exact notes from a scan are only drafts for mandatory human review.
  */
-const MODEL='@cf/meta/llama-3.2-11b-vision-instruct';
+const MODEL='@cf/google/gemma-4-26b-a4b-it';
 const URL_AUTH='https://ldliraxelqftisjofwgv.supabase.co';
 const ANON_KEY='sb_publishable_cpxxQyXcEYEy3mwWAaTG9w_QNFg9tC9';
 const ALLOWED=new Set(['https://network.jenlow.net',
@@ -173,12 +173,19 @@ export default{
     let answer;
     try{
       answer=await env.AI.run(MODEL,{
-        messages:[{role:'system',content:'Transcribe visually observed content only. JSON only.'},
-          {role:'user',content:mode==='text'?TEXT_PROMPT:SCORE_PROMPT}],
-        image,max_tokens:mode==='text'?2600:3600,temperature:0,
+        messages:[{role:'system',
+          content:'Transcribe visually observed content only. JSON only.'},
+          {role:'user',content:[
+            {type:'text',text:mode==='text'?TEXT_PROMPT:SCORE_PROMPT},
+            {type:'image_url',image_url:{url:image}},
+          ]}],
+        max_completion_tokens:mode==='text'?2900:4400,
+        chat_template_kwargs:{enable_thinking:false},
+        temperature:0,store:false,
       });
     }catch{return error('model_unavailable',503,origin);}
-    try{return json(scanResult(parseResponse(answer?.response),mode),200,origin);}
+    const raw=answer?.choices?.[0]?.message?.content||answer?.response;
+    try{return json(scanResult(parseResponse(raw),mode),200,origin);}
     catch(e){return error('scan_'+e.message,422,origin,
       'Unable to recognize a usable result. Try a sharper photo or MusicXML.');}
   },
