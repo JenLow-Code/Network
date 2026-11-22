@@ -12,6 +12,7 @@ import { useDreams } from '@/domain/dreamRepository';
 import { useAppTheme } from '@/theme/AppTheme';
 import {workspaceCanvas,workspaceLayout} from '@/theme/workspaceLayout';
 import DreamQuickActions from '@/components/dream/DreamQuickActions';
+import {DreamPhaseIcon} from '@/icons/DreamPhaseIcon';
 
 type ViewFilter = 'Liste' | 'Grille';
 type RoleFilter = 'all' | 'frozen' | 'creator' | 'co_owner' | 'participant';
@@ -365,8 +366,12 @@ export default function MySpace() {
   // shows two square cards vertically; a horizontal swipe changes the pair.
   const phasePanelWidth=Math.max(0,(innerWidth-phaseGridGap)/2);
   const panelInset=compact?8:17;
+  // The vertical phase label has its own reserved rail, so it never covers
+  // project tiles (including on narrow phone screens).
+  const phaseTitleRail=compact?18:28;
   const phaseCardGap=compact?8:11;
-  const phaseViewportWidth=Math.max(0,phasePanelWidth-2*panelInset);
+  const phaseViewportWidth=Math.max(0,
+    phasePanelWidth-2*panelInset-phaseTitleRail);
   const phaseTileWidth=compact?phaseViewportWidth:
     Math.max(100,Math.floor((phaseViewportWidth-2*phaseCardGap)/2.2));
   const phaseTileHeight=compact?phaseTileWidth:146;
@@ -615,28 +620,51 @@ export default function MySpace() {
               return (
                 <View key={panel.phase} style={{
                   width:phasePanelWidth,minHeight:compact?214:242,
-                  paddingHorizontal:panelInset,paddingTop:compact?12:16,
+                  paddingLeft:panelInset+phaseTitleRail,
+                  paddingRight:panelInset,paddingTop:compact?12:16,
                   paddingBottom:compact?11:17,
+                  position:'relative',
                   borderRadius:3,borderWidth:1,
                   borderColor:theme.dark?panel.darkBorder:panel.lightBorder,
                   backgroundColor:theme.dark?panel.darkTint:panel.lightTint,
                 }}>
-                  <View style={{height:2,width:compact?20:26,borderRadius:2,
-                    marginBottom:compact?10:12,
-                    backgroundColor:panel.accent,opacity:0.66}}/>
-                  <View style={{flexDirection:'row',alignItems:'flex-start',
-                    justifyContent:'space-between',gap:compact?4:12,
-                    marginBottom:compact?10:14}}>
-                    <View style={{flex:1,minWidth:0}}>
-                      <Text numberOfLines={compact?2:1}
-                        style={{color:theme.foreground,fontWeight:'700',
-                          fontSize:compact?12:17,lineHeight:compact?17:22}}>
-                        {panel.title}
-                      </Text>
-                    </View>
+                  {/* A small, nearly transparent illustration of each phase
+                      sits at the exact center of its quadrant, beneath cards. */}
+                  <View pointerEvents="none" accessible={false}
+                    importantForAccessibility="no-hide-descendants"
+                    style={{position:'absolute',top:0,bottom:0,left:0,right:0,
+                      alignItems:'center',justifyContent:'center',
+                      opacity:theme.dark?0.20:0.17}}>
+                    <DreamPhaseIcon phase={panel.phase}
+                      size={compact?52:96} artworkScale={1}/>
+                  </View>
+                  {/* Phase name is a vertical editorial label. Reserve a
+                      separate left rail so it never obscures the projects. */}
+                  <View pointerEvents="none" accessible={false}
+                    style={{position:'absolute',top:0,bottom:0,
+                      left:panelInset,width:phaseTitleRail,
+                      justifyContent:'center',alignItems:'center'}}>
+                    <Text numberOfLines={1} style={{
+                      width:compact?155:190,textAlign:'center',
+                      fontSize:compact?9:10,lineHeight:compact?14:16,
+                      fontWeight:'600',letterSpacing:compact?1.0:1.6,
+                      color:theme.dark?'#FFFFFF':'#000000',
+                      transform:[{rotate:'-90deg'}],
+                    }}>{panel.phase==='Rêve'?'SEMENCE':
+                      panel.phase==='Initiation'?'GERMINATION':
+                      panel.phase==='Croissance'?'CROISSANCE':'FLORAISON'}</Text>
+                  </View>
+                  <View pointerEvents="none"
+                    style={{position:'absolute',top:compact?11:16,
+                      left:panelInset+5,width:2,height:compact?16:22,
+                      borderRadius:2,backgroundColor:panel.accent,opacity:0.7}}/>
+                  {/* The count keeps its hierarchy through size, not gray. */}
+                  <View style={{height:compact?17:21,
+                    flexDirection:'row',justifyContent:'flex-end',
+                    alignItems:'flex-start',marginBottom:compact?9:12}}>
                     {dreams.length>0?(
-                      <Text style={{color:theme.muted,fontSize:11,
-                        marginTop:4}}>{dreams.length}</Text>
+                      <Text style={{color:theme.dark?'#FFFFFF':'#000000',
+                        fontSize:10,fontWeight:'400'}}>{dreams.length}</Text>
                     ):null}
                   </View>
                   {dreams.length>0 ? (
@@ -651,7 +679,8 @@ export default function MySpace() {
                   ):(
                     <View style={{minHeight:phaseTileHeight,alignItems:'flex-start',
                       justifyContent:'center',paddingHorizontal:compact?1:4}}>
-                      <Text style={{fontSize:compact?10:12,color:theme.muted,
+                      <Text style={{fontSize:compact?10:12,
+                        color:theme.dark?'#FFFFFF':'#000000',
                         lineHeight:compact?15:18}}>
                         {panel.phase==='Témoignage'
                           ? 'Aucune floraison en préparation.'
