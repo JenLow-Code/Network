@@ -121,8 +121,9 @@ export async function saveMusicWorkspaceFile(file: File): Promise<string> {
   return id;
 }
 
-/** Only discard an unused, newly recorded take after explicit user confirmation. */
-export async function deleteUnassignedMusicTake(localAudioId:string):Promise<void> {
+/** Erase a confirmed, unreferenced private original from IndexedDB. The
+ * caller must check version/translation relationships before invoking this. */
+export async function deleteLocalMusicFile(localAudioId:string):Promise<void> {
   if(Platform.OS!=='web')return;
   await access<void>(AUDIO,'readwrite',(store,resolve,reject)=>{
     const tx=store.transaction;
@@ -131,3 +132,6 @@ export async function deleteUnassignedMusicTake(localAudioId:string):Promise<voi
     request.onerror=()=>reject(request.error);
   });
 }
+
+/** Backward-compatible alias for temporary recorder takes. */
+export const deleteUnassignedMusicTake=deleteLocalMusicFile;
