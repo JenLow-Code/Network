@@ -3,7 +3,7 @@ import { Image, Platform, Pressable, ScrollView, Text, View, useWindowDimensions
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
+import Svg, { Defs, LinearGradient, Rect, Stop, Text as SvgText } from 'react-native-svg';
 import { Nav } from '@/components/navigation/Nav';
 import { PageHeader } from '@/components/navigation/PageHeader';
 import { isPublishedFlower, type DreamEntry } from '@/domain/dreamWorkspace';
@@ -349,11 +349,10 @@ export default function MySpace() {
   const [activeTestimony, setActiveTestimony] = useState(0);
   const galleryRef = useRef<React.ComponentRef<typeof ScrollView>>(null);
   const [longDream,setLongDream]=useState<DreamEntry|null>(null);
-  const [canvasWidth,setCanvasWidth]=useState<number|null>(null);
   const side=ws.gutter;
-  const workspaceViewport=canvasWidth??Math.max(0,windowWidth-(ws.desktop?236:0));
-  const contentWidth=ws.desktop?workspaceViewport:
-    Math.min(workspaceViewport,ws.maxWidth??workspaceViewport);
+  // Restore the established page canvas and banner alignment.
+  const workspaceViewport=Math.max(0,windowWidth-(ws.desktop?212:0));
+  const contentWidth=Math.min(workspaceViewport,ws.maxWidth??workspaceViewport);
   const innerWidth=Math.max(0,contentWidth-2*side);
   // The gallery spans the entire page canvas on phones, while aligning with
   // the inset content grid on desktop. Carousel page width matches this exactly.
@@ -366,12 +365,8 @@ export default function MySpace() {
   // shows two square cards vertically; a horizontal swipe changes the pair.
   const phasePanelWidth=Math.max(0,(innerWidth-phaseGridGap)/2);
   const panelInset=compact?8:17;
-  // The vertical phase label has its own reserved rail, so it never covers
-  // project tiles (including on narrow phone screens).
-  const phaseTitleRail=compact?18:28;
   const phaseCardGap=compact?8:11;
-  const phaseViewportWidth=Math.max(0,
-    phasePanelWidth-2*panelInset-phaseTitleRail);
+  const phaseViewportWidth=Math.max(0,phasePanelWidth-2*panelInset);
   const phaseTileWidth=compact?phaseViewportWidth:
     Math.max(100,Math.floor((phaseViewportWidth-2*phaseCardGap)/2.2));
   const phaseTileHeight=compact?phaseTileWidth:146;
@@ -408,15 +403,9 @@ export default function MySpace() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
-      <ScrollView style={{ flex: 1 }}
-        onLayout={event=>{
-          const measured=Math.round(event.nativeEvent.layout.width);
-          setCanvasWidth(current=>current===measured?current:measured);
-        }}
-        contentContainerStyle={{
-        ...workspaceCanvas(windowWidth),
-        maxWidth:ws.desktop?'100%':ws.maxWidth,
-        paddingHorizontal:0,paddingBottom:64,paddingTop:12,
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{
+        ...workspaceCanvas(windowWidth), paddingHorizontal:0, paddingBottom:64,
+        paddingTop:12,
       }}>
         <View style={{paddingHorizontal:side}}>
           <PageHeader title="Mes projets" />
@@ -620,8 +609,7 @@ export default function MySpace() {
               return (
                 <View key={panel.phase} style={{
                   width:phasePanelWidth,minHeight:compact?214:242,
-                  paddingLeft:panelInset+phaseTitleRail,
-                  paddingRight:panelInset,paddingTop:compact?12:16,
+                  paddingHorizontal:panelInset,paddingTop:compact?12:16,
                   paddingBottom:compact?11:17,
                   position:'relative',
                   borderRadius:3,borderWidth:1,
@@ -638,21 +626,26 @@ export default function MySpace() {
                     <DreamPhaseIcon phase={panel.phase}
                       size={compact?52:96} artworkScale={1}/>
                   </View>
-                  {/* Phase name is a vertical editorial label. Reserve a
-                      separate left rail so it never obscures the projects. */}
+                  {/* A typographic rail inside the original panel inset:
+                      full-height vertical lettering, without width changes. */}
                   <View pointerEvents="none" accessible={false}
-                    style={{position:'absolute',top:0,bottom:0,
-                      left:panelInset,width:phaseTitleRail,
-                      justifyContent:'center',alignItems:'center'}}>
-                    <Text numberOfLines={1} style={{
-                      width:compact?155:190,textAlign:'center',
-                      fontSize:compact?9:10,lineHeight:compact?14:16,
-                      fontWeight:'600',letterSpacing:compact?1.0:1.6,
-                      color:theme.dark?'#FFFFFF':'#000000',
-                      transform:[{rotate:'-90deg'}],
-                    }}>{panel.phase==='Rêve'?'SEMENCE':
-                      panel.phase==='Initiation'?'GERMINATION':
-                      panel.phase==='Croissance'?'CROISSANCE':'FLORAISON'}</Text>
+                    importantForAccessibility="no-hide-descendants"
+                    style={{position:'absolute',top:0,bottom:0,left:0,
+                      width:panelInset,alignItems:'center',justifyContent:'center'}}>
+                    <Svg width={compact?8:17} height={compact?160:192}
+                      viewBox={compact?'0 0 8 160':'0 0 17 192'}>
+                      <SvgText x={compact?4:8.5} y={compact?80:96}
+                        textAnchor="middle"
+                        transform={compact?'rotate(-90 4 80)':'rotate(-90 8.5 96)'}
+                        fontSize={compact?8:11}
+                        letterSpacing={compact?0.8:1.6}
+                        fontWeight="500"
+                        fill={theme.dark?'#FFFFFF':'#000000'}>
+                        {panel.phase==='Rêve'?'SEMENCE':
+                         panel.phase==='Initiation'?'GERMINATION':
+                         panel.phase==='Croissance'?'CROISSANCE':'FLORAISON'}
+                      </SvgText>
+                    </Svg>
                   </View>
                   <View pointerEvents="none"
                     style={{position:'absolute',top:compact?11:16,
