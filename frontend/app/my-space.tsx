@@ -12,7 +12,6 @@ import { useDreams } from '@/domain/dreamRepository';
 import { useAppTheme } from '@/theme/AppTheme';
 import {workspaceCanvas,workspaceLayout} from '@/theme/workspaceLayout';
 import DreamQuickActions from '@/components/dream/DreamQuickActions';
-import {DreamPhaseIcon} from '@/icons/DreamPhaseIcon';
 
 type ViewFilter = 'Liste' | 'Grille';
 type RoleFilter = 'all' | 'frozen' | 'creator' | 'co_owner' | 'participant';
@@ -29,6 +28,9 @@ const ROLE_OPTIONS: {key:RoleFilter;label:string;empty:string}[] = [
 const viewerRole = (dream:DreamEntry) => dream.viewerRole || 'creator';
 // Unpublished Floraison projects are still workspaces; published fruits belong
 // exclusively to the gallery. Tints stay quiet in both light and dark themes.
+const EDITORIAL_BOTANICAL_PHOTO =
+  'https://images.unsplash.com/photo-1589185810360-8ea760bb9836?auto=format&fit=crop&w=1600&q=78&sat=-100';
+
 const phasePanels: {
   phase: DreamPhase; title: string; lightTint: string; darkTint: string;
   lightBorder: string; darkBorder: string; accent: string;
@@ -426,6 +428,10 @@ export default function MySpace() {
   const phaseTileWidth=compact?phaseViewportWidth:
     Math.max(100,Math.floor((phaseViewportWidth-2*phaseCardGap)/2.2));
   const phaseTileHeight=compact?Math.min(155,Math.round(phaseViewportWidth*.9)):146;
+  // Uniform cell heights make the single botanical photograph align across
+  // all four quarters, while preserving the existing page and hero widths.
+  const phasePanelHeight=compact?Math.max(232,phaseTileHeight+98):282;
+  const botanicalHeight=phasePanelHeight*2+phaseGridGap;
   const heroGlass=Platform.OS==='web'
     ? ({backdropFilter:'blur(14px) saturate(125%)',
         WebkitBackdropFilter:'blur(14px) saturate(125%)'} as any)
@@ -659,46 +665,54 @@ export default function MySpace() {
             columnGap:phaseGridGap,rowGap:phaseGridGap,
             paddingBottom:compact?20:26,
           }}>
-            {phasePanels.map(panel=>{
+            {phasePanels.map((panel,index)=>{
               const dreams=visible.filter(d=>panel.phase==='Témoignage'
                 ? inFlower(d) : d.phase===panel.phase);
               return (
                 <View key={panel.phase} style={{
-                  width:phasePanelWidth,minHeight:compact?214:242,
+                  width:phasePanelWidth,height:phasePanelHeight,
                   paddingHorizontal:panelInset,paddingTop:compact?12:16,
                   paddingBottom:compact?11:17,
                   position:'relative',
                   borderRadius:3,borderWidth:1,
-                  borderColor:theme.dark?'rgba(255,255,255,.18)':'rgba(0,0,0,.11)',
-                  backgroundColor:'transparent',
+                  borderColor:theme.dark?'rgba(255,255,255,.23)':'rgba(28,25,22,.13)',
+                  backgroundColor:theme.dark?'#1C1B1A':'#FAF8F4',
                 }}>
-                  {/* A small, nearly transparent illustration of each phase
-                      sits at the exact center of its quadrant, beneath cards. */}
+                  {/* One monochrome botanical photo, positioned as a continuous
+                      2×2 composition; each panel clips only its own quadrant.
+                      The image never receives taps or affects layout. */}
                   <View pointerEvents="none" accessible={false}
                     importantForAccessibility="no-hide-descendants"
                     style={{position:'absolute',top:0,bottom:0,left:0,right:0,
-                      alignItems:'center',justifyContent:'center',
-                      opacity:theme.dark?0.20:0.17}}>
-                    <DreamPhaseIcon phase={panel.phase}
-                      size={compact?52:96} artworkScale={1}/>
+                      overflow:'hidden',borderRadius:2}}>
+                    <Image source={{uri:EDITORIAL_BOTANICAL_PHOTO}}
+                      resizeMode="cover" fadeDuration={0}
+                      style={{position:'absolute',
+                        width:innerWidth,height:botanicalHeight,
+                        left:-(index%2)*(phasePanelWidth+phaseGridGap),
+                        top:-Math.floor(index/2)*(phasePanelHeight+phaseGridGap),
+                        opacity:theme.dark?0.3:0.52}}/>
+                    <View style={{position:'absolute',top:0,bottom:0,
+                      left:0,right:0,
+                      backgroundColor:theme.dark?
+                        'rgba(0,0,0,0.39)':'rgba(253,250,246,0.28)'}}/>
                   </View>
-                  {/* Center the vertical heading EXACTLY on the left frame:
-                      half of its width on either side of the border (x = 0).
-                      No inset, extra strip, panel resizing or overflow clipping. */}
+                  {/* Bold editorial lettering is centered ON the existing
+                      border (x=0), with no dedicated colored sidebar. */}
                   <View pointerEvents="none" accessible={false}
                     importantForAccessibility="no-hide-descendants"
                     style={{position:'absolute',top:0,bottom:0,
-                      left:compact?-7:-9,width:compact?14:18,
+                      left:compact?-9:-14,width:compact?18:28,
                       alignItems:'center',justifyContent:'center',
                       overflow:'visible'}}>
-                    <Svg width={compact?14:18} height={compact?155:192}
-                      viewBox={compact?'0 0 14 155':'0 0 18 192'}>
-                      <SvgText x={compact?7:9} y={compact?77.5:96}
+                    <Svg width={compact?18:28} height={compact?180:250}
+                      viewBox={compact?'0 0 18 180':'0 0 28 250'}>
+                      <SvgText x={compact?9:14} y={compact?90:125}
                         textAnchor="middle"
-                        transform={compact?'rotate(-90 7 77.5)':'rotate(-90 9 96)'}
-                        fontSize={compact?9:12}
-                        letterSpacing={compact?0.9:1.7}
-                        fontWeight="400"
+                        transform={compact?'rotate(-90 9 90)':'rotate(-90 14 125)'}
+                        fontSize={compact?10:19}
+                        letterSpacing={compact?0.65:1.7}
+                        fontWeight="600"
                         fill={panel.accent}>
                         {panel.phase==='Rêve'?'SEMENCE':
                          panel.phase==='Initiation'?'GERMINATION':
@@ -706,10 +720,6 @@ export default function MySpace() {
                       </SvgText>
                     </Svg>
                   </View>
-                  <View pointerEvents="none"
-                    style={{position:'absolute',top:compact?11:16,
-                      left:panelInset+5,width:2,height:compact?16:22,
-                      borderRadius:2,backgroundColor:panel.accent,opacity:0.7}}/>
                   {/* The count keeps its hierarchy through size, not gray. */}
                   <View style={{height:compact?17:21,
                     flexDirection:'row',justifyContent:'flex-end',
@@ -731,18 +741,17 @@ export default function MySpace() {
                         compact={compact} onLongPress={setLongDream}/>
                   ):(
                     <View style={{minHeight:phaseTileHeight,
-                      width:'100%',alignItems:'center',
-                      justifyContent:'flex-end',
-                      paddingHorizontal:compact?5:22,
-                      paddingBottom:compact?9:16}}>
-                      <Text style={{fontSize:compact?10:12,
-                        color:theme.dark?'#FFFFFF':'#000000',
-                        fontWeight:'400',
-                        lineHeight:compact?15:18,
-                        textAlign:'center'}}>
+                      width:'100%',alignItems:'center',justifyContent:'center',
+                      paddingHorizontal:compact?2:16}}>
+                      <Text style={{
+                        fontSize:compact?8:14,
+                        color:theme.dark?'#FFFFFF':'#181716',
+                        fontWeight:'500',fontFamily:'Georgia',
+                        letterSpacing:compact?0.5:2,
+                        lineHeight:compact?14:24,textAlign:'center'}}>
                         {panel.phase==='Témoignage'
-                          ? 'Aucune floraison en préparation.'
-                          : 'Aucun projet dans cette étape.'}
+                          ? 'AUCUNE FLORAISON EN PRÉPARATION.'
+                          : 'AUCUN PROJET DANS CETTE ÉTAPE.'}
                       </Text>
                     </View>
                   )}
