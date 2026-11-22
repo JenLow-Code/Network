@@ -49,12 +49,18 @@ function imageStructureAndCrop(image:HTMLImageElement,mode:Mode,frame:ScanFrame)
       width:full.width,height:Math.round(full.height*.59)},geometry};
   return {crop:full,geometry};
 }
-type Note={midi:number;startBeats:number;lengthBeats:number;velocity:number};
+type Note=MusicNotationEvent;
+type OMRPart={id:string;name:string;originalPart:string;staff:number;
+  voice:string;clef:'treble'|'bass'|'alto';noteCount:number};
 type ScanResult={
   mode:Mode;title:string;engine:string;warnings:string[];
   text?:string;language?:string;
   notes?:Note[];bpm?:number;numerator?:number;denominator?:number;
   clef?:'treble'|'bass';
+  musicXml?:string;
+  parts?:OMRPart[];
+  measureCount?:number;
+  status?:'needs_review';
 };
 type Props={
   visible:boolean;
@@ -86,11 +92,12 @@ export function MusicDocumentScanner({visible,initialFile,sourceFile,onClose,onS
   const [kind,setKind]=useState<'lyrics'|'note'>('lyrics');
   const [confirmed,setConfirmed]=useState(false);
   const [aiConsent,setAiConsent]=useState(false);
+  const [previewPart,setPreviewPart]=useState('all');
   useEffect(()=>{
     if(!visible)return;
     setResult(null);setError('');setDraftTitle('');setDraftText('');
     setConfirmed(false);setAiConsent(false);setMode('score');setFrame('center');
-    setDetectedStaves(0);
+    setDetectedStaves(0);setPreviewPart('all');
     if(!initialFile){setFile(sourceFile||null);return;}
     if(!initialFile.localFileId){setFile(null);return;}
     let live=true;
@@ -135,16 +142,21 @@ export function MusicDocumentScanner({visible,initialFile,sourceFile,onClose,onS
   },[file,preview,mode,frame]);
   const notes:MusicNotationEvent[]=useMemo(()=>
     (result?.notes||[]).map((note,index)=>({
-      id:'scan-'+index,instrument:'piano' as const,midi:note.midi,
-      startBeats:note.startBeats,lengthBeats:note.lengthBeats,
+      ...note,id:note.id||'scan-'+index,instrument:'piano' as const,
       velocity:note.velocity||85,
     })),[result]);
-  const audition:MusicProjectFile|null=result?.mode==='score'&&notes.length?
-    {id:'scan-preview',title:draftTitle||'Partition à vérifier',kind:'score',
-      sectionIds:[],musicEvents:notes,tempoBpm:result.bpm||100,
+  const parts=result?.mode==='score'?result.parts||[]:[];
+  const auditionNotes=previewPart==='all'?notes:
+    notes.filter(note=>note.scorePartId===previewPart);
+  const selectedPart=parts.find(part=>part.id===previewPart);
+  const audition:MusicProjectFile|null=result?.mode==='score'&&auditionNotes.length?
+    {id:'scan-preview-'+previewPart,title:draftTitle||'Partition à vérifier',kind:'score',
+      sectionIds:[],musicEvents:auditionNotes,tempoBpm:result.bpm||100,
+      scoreParts:previewPart==='all'?parts:parts.filter(part=>part.id===previewPart),
       timeSignatureNumerator:result.numerator||4,
       timeSignatureDenominator:result.denominator||4,
-      scoreClef:result.clef||'treble',createdAt:new Date().toISOString()}:null;
+      scoreClef:selectedPart?.clef==='bass'?'bass':'treble',
+      createdAt:new Date().toISOString()}:null;
   const choose=(capture=false)=>{
     if(Platform.OS!=='web'||typeof document==='undefined'){
       setError('La numérisation est disponible dans la version web de JenLow.');
@@ -221,20 +233,31 @@ export function MusicDocumentScanner({visible,initialFile,sourceFile,onClose,onS
       if(data.mode!==mode||(!data.notes?.length&&!data.text?.trim()))
         throw Error('La reconnaissance ne contient aucun élément exploitable.');
       if(mode==='score'){
+        if(data.engine!=='audiveris'||data.status!=='needs_review'||
+          !data.musicXml||!data.parts?.length||
+          !data.notes?.every(note=>note.scorePartId&&note.scoreClef)){
+          throw Error('Le service n’a pas fourni une partition MusicXML vérifiable et des voix séparées.');
+        }
         const assessment=auditRecognizedScore(
           data.notes||[],data.numerator||4,geometry);
         if(!assessment.accepted)throw Error(assessment.description+
-          ' JenLow ne peut pas enregistrer cette partition comme jouable. '
-          +'Essaie une image recadrée ou un fichier MusicXML.');
+          ' Le résultat OMR demande une correction, sans inventer de notes.');
+        const keys=new Set(data.parts.map(part=>part.clef));
+        if(geometry.staffCount>=4&&(!keys.has('treble')||!keys.has('bass')))
+          throw Error('La portée en clé de sol ou la portée en clé de fa manque dans la transcription.');
       }
-      setResult(data);setDraftTitle(data.title);setDraftText(data.text||'');
+      setPreviewPart('all');setResult(data);
+      setDraftTitle(data.title);setDraftText(data.text||'');
     }catch(e){
       if(e instanceof ApiRequestError){
         const messages:Record<string,string>={
           not_authenticated:'Ta connexion a expiré. Reconnecte-toi à JenLow.',
           scan_no_notes:'Aucune note exploitable reconnue. Recadre uniquement les portées et réessaie.',
           scan_incomplete_score:'Le moteur n’a reconnu qu’une partie de la partition. Ce résultat ne peut pas être enregistré comme transcription jouable.',
-          omr_required:'Le moteur précédent ne lisait pas correctement les clés et les voix. La conversion de partition est suspendue jusqu’à l’intégration du nouveau moteur OMR. Le scan original est conservé.',
+          omr_required:'Le nouveau moteur OMR (Audiveris / Python) n’est pas encore hébergé. L’ancien système a été retiré pour éviter de fabriquer des notes. Le document original reste intact.',
+          omr_failed:'Audiveris n’a pas pu reconstruire cette partition. Aucun accord inventé ne sera enregistré.',
+          omr_unavailable:'Le service OMR Python est momentanément inaccessible.',
+          omr_invalid:'Audiveris a produit une partition incomplète. Vérifie le document source.',
           scan_no_text:'Aucun texte lisible. Essaie une photo plus nette.',
           scan_unreadable:'Le résultat de reconnaissance est incomplet. Recadre le document.',
           image_unreadable:'Le modèle ne parvient pas à lire cette image. Réduis ou recadre la photo.',
@@ -270,13 +293,18 @@ export function MusicDocumentScanner({visible,initialFile,sourceFile,onClose,onS
         sectionIds:[],localFileId,
         originalFilename:file.name,mimeType:file.type,
         createdAt:initialFile?.createdAt||new Date().toISOString(),
-        conversionWarning:'Transcription assistée par IA : vérifiée par le créateur ; original conservé.',
+        conversionWarning:mode==='score'?
+          'Transcription Audiveris MusicXML à vérifier par le créateur ; original conservé.':
+          'Transcription OCR à vérifier par le créateur ; original conservé.',
       };
       if(mode==='score'){
         base.musicEvents=notes;base.tempoBpm=result.bpm||100;
+        base.musicXml=result.musicXml;
+        base.scoreParts=parts;
+        base.scoreMeasureCount=result.measureCount;
         base.timeSignatureNumerator=result.numerator||4;
         base.timeSignatureDenominator=result.denominator||4;
-        base.scoreClef=result.clef||'treble';
+        base.scoreClef=parts[0]?.clef==='bass'?'bass':'treble';
       }else{
         base.text=draftText;
         base.language=result.language||'fr';
@@ -321,7 +349,7 @@ export function MusicDocumentScanner({visible,initialFile,sourceFile,onClose,onS
         <ScrollView contentContainerStyle={{gap:15,padding:compact?14:22}}>
           <Text style={{fontSize:12,lineHeight:19,color:theme.muted}}>
             {mode==='score'?
-              'La reconnaissance des notes est expérimentale. Tu dois vérifier la partition et les rythmes avant de l’utiliser.':
+              'Le moteur Audiveris reconstruit les portées, mesures et voix en MusicXML. Vérifie chaque mesure avant de conserver la partition.':
               'La reconnaissance des textes imprimés et manuscrits peut contenir des erreurs. Vérifie le résultat avant de l’enregistrer.'}
           </Text>
           <View style={{flexDirection:'row',gap:9,flexWrap:'wrap'}}>
@@ -427,10 +455,30 @@ export function MusicDocumentScanner({visible,initialFile,sourceFile,onClose,onS
                   padding:15,borderWidth:1,borderColor:theme.border}}/>
             </View>:audition?<View style={{gap:8}}>
               <Text style={{fontSize:12,color:theme.muted}}>
-                {notes.length} notes proposées, non vérifiées · Lecture à {result.bpm||100} BPM (tempo provisoire) ·
-                {' '}{result.numerator||4}/{result.denominator||4}
+                Audiveris : {result.measureCount||'?'} mesures · {parts.length} voix reconnues
+                {' · '}{result.numerator||4}/{result.denominator||4}
+                {' · '}{result.bpm?'Tempo indiqué : '+result.bpm+' BPM':'Tempo de préécoute : 100 BPM'}
               </Text>
-              <MusicCaptureScoreStrip file={audition}/>
+              <View style={{flexDirection:'row',gap:8,flexWrap:'wrap'}}>
+                {[{id:'all',name:'Tout écouter'},...parts.map(part=>({
+                  id:part.id,name:part.name+' · voix '+part.voice,
+                }))].map(option=>
+                  <Pressable key={option.id}
+                    onPress={()=>setPreviewPart(option.id)}
+                    accessibilityRole="button"
+                    accessibilityState={{selected:previewPart===option.id}}
+                    style={{paddingHorizontal:11,minHeight:35,
+                      borderRadius:8,borderWidth:1,
+                      borderColor:previewPart===option.id?PINK:theme.border,
+                      justifyContent:'center'}}>
+                    <Text style={{fontSize:12,
+                      fontWeight:previewPart===option.id?'700':'400',
+                      color:previewPart===option.id?PINK:theme.foreground}}>
+                      {option.name}
+                    </Text>
+                  </Pressable>)}
+              </View>
+              <MusicCaptureScoreStrip key={previewPart} file={audition}/>
               <Text style={{fontSize:12,color:theme.muted}}>
                 L’aperçu n’est pas une transcription certifiée.
                 Compare chaque mesure avec le document original avant validation.
