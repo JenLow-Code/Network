@@ -131,18 +131,23 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
   const deleteCandidate=files.find(f=>f.id===pendingDelete)||null;
   const linkedTranslations=deleteCandidate?
     files.filter(other=>other.translationOfFileId===deleteCandidate.id):[];
+  const deletingIds=new Set(deleteCandidate?[
+    deleteCandidate.id,
+    ...linkedTranslations.map(file=>file.id),
+    ...files.filter(file=>file.renderedFromMidiId===deleteCandidate.id)
+      .map(file=>file.id),
+  ]:[]);
   const referencedByVersion=deleteCandidate?
     (project.musicNext?.versions||[]).some(v=>v.tracks.some(t=>
-      t.sourceFileId===deleteCandidate.id))||
+      deletingIds.has(t.sourceFileId)))||
     (project.musicNext?.history||[]).some(h=>h.before.tracks.some(t=>
-      t.sourceFileId===deleteCandidate.id)):false;
+      deletingIds.has(t.sourceFileId))):false;
   const removeCaptured=async()=>{
     if(!deleteCandidate||deleteBusy||referencedByVersion)return;
     setDeleteBusy(true);setError('');
-    const removed=[deleteCandidate,...linkedTranslations];
-    const ids=new Set(removed.map(item=>item.id));
-    const cleaned=files.filter(item=>!ids.has(item.id)&&
-      !ids.has(item.renderedFromMidiId||''));
+    const ids=deletingIds;
+    const removed=files.filter(file=>ids.has(file.id));
+    const cleaned=files.filter(file=>!ids.has(file.id));
     patch({files:cleaned});
     setSelected('');setPendingDelete('');
     setExpandedLyrics(old=>{
@@ -150,7 +155,19 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
     });
     // Never erase a blob another surviving Capture item still references.
     try{
-      const survivingIds=new Set(cleaned.map(file=>file.localFileId).filter(Boolean));
+      // Legacy song versions, section attachments and samples can refer to
+      // the same local bytes without an explicit Capture file relationship.
+      const survivingIds=new Set([
+        ...cleaned.map(file=>file.localFileId),
+        ...project.versions.map(version=>version.localAudioId),
+        ...project.layers.map(layer=>layer.localAudioId),
+        ...project.sections.map(section=>section.scoreLocalId),
+        project.coverLocalId,
+        ...cleaned.flatMap(file=>[
+          file.instrumentSampleLocalId,
+          ...Object.values(file.drumSamples||{}).map(sample=>sample.localFileId),
+        ]),
+      ].filter(Boolean));
       for(const localId of new Set(removed.map(item=>item.localFileId).filter(
         (id):id is string=>!!id))){
         if(!survivingIds.has(localId))await deleteLocalMusicFile(localId);
