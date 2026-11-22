@@ -29,29 +29,29 @@ const viewerRole = (dream:DreamEntry) => dream.viewerRole || 'creator';
 // Unpublished Floraison projects are still workspaces; published fruits belong
 // exclusively to the gallery. Tints stay quiet in both light and dark themes.
 const phasePanels: {
-  phase: DreamPhase; title: string; sub: string; lightTint: string; darkTint: string;
+  phase: DreamPhase; title: string; lightTint: string; darkTint: string;
   lightBorder: string; darkBorder: string; accent: string;
 }[] = [
   {
-    phase: 'Rêve', title: 'Mes semences', sub: 'Les idées que je cultive.',
+    phase: 'Rêve', title: 'Mes semences',
     lightTint: 'rgba(166,114,76,0.055)', darkTint: 'rgba(190,138,93,0.13)',
     lightBorder: 'rgba(166,114,76,0.10)', darkBorder: 'rgba(190,138,93,0.21)',
     accent: '#B88962',
   },
   {
-    phase: 'Initiation', title: 'En germination', sub: 'Les projets que je prépare.',
+    phase: 'Initiation', title: 'En germination',
     lightTint: 'rgba(154,185,64,0.062)', darkTint: 'rgba(154,185,64,0.12)',
     lightBorder: 'rgba(134,164,53,0.11)', darkBorder: 'rgba(154,185,64,0.19)',
     accent: '#A1BA44',
   },
   {
-    phase: 'Croissance', title: 'En croissance', sub: 'Les rêves qui prennent vie.',
+    phase: 'Croissance', title: 'En croissance',
     lightTint: 'rgba(39,132,91,0.052)', darkTint: 'rgba(47,153,107,0.12)',
     lightBorder: 'rgba(39,132,91,0.10)', darkBorder: 'rgba(47,153,107,0.20)',
     accent: '#27845B',
   },
   {
-    phase: 'Témoignage', title: 'Floraison', sub: 'Prépare et partage le résultat de ton rêve.',
+    phase: 'Témoignage', title: 'Floraison',
     lightTint: 'rgba(215,29,119,0.047)', darkTint: 'rgba(215,29,119,0.115)',
     lightBorder: 'rgba(215,29,119,0.10)', darkBorder: 'rgba(215,29,119,0.19)',
     accent: '#D71D77',
@@ -97,9 +97,9 @@ function PictureCard({ dream, width, height, onLongPress, presentation = 'card' 
         }}>
           <Defs>
             <LinearGradient id="fruit-banner-shade" x1="0%" y1="0%" x2="0%" y2="100%">
-              <Stop offset="0%" stopColor="#000000" stopOpacity={theme.dark ? 0.13 : 0.11}/>
-              <Stop offset="38%" stopColor="#000000" stopOpacity={theme.dark ? 0.26 : 0.27}/>
-              <Stop offset="100%" stopColor="#000000" stopOpacity={theme.dark ? 0.91 : 0.88}/>
+              <Stop offset="0%" stopColor="#000000" stopOpacity={0.08}/>
+              <Stop offset="40%" stopColor="#000000" stopOpacity={0.25}/>
+              <Stop offset="100%" stopColor="#000000" stopOpacity={0.85}/>
             </LinearGradient>
           </Defs>
           <Rect width="100%" height="100%" fill="url(#fruit-banner-shade)" />
@@ -112,9 +112,9 @@ function PictureCard({ dream, width, height, onLongPress, presentation = 'card' 
       )}
       <View style={{
         position: 'absolute', bottom: 0, left: 0, right: 0,
-        paddingHorizontal: isBanner ? (width < 540 ? 18 : 28) : 13,
-        paddingTop: isBanner ? 18 : 36,
-        paddingBottom: isBanner ? (width < 540 ? 77 : 93) : 12,
+        paddingHorizontal: isBanner ? (width < 540 ? 20 : width < 800 ? 30 : 46) : 13,
+        paddingTop: isBanner ? 12 : 36,
+        paddingBottom: isBanner ? (width < 540 ? 78 : 81) : 12,
         backgroundColor: isBanner ? 'transparent' : 'rgba(0,0,0,0.30)',
       }}>
         {!isBanner && isPublishedFlower(dream) ? (
@@ -123,27 +123,38 @@ function PictureCard({ dream, width, height, onLongPress, presentation = 'card' 
             <Text style={{color:'#F7E7C7',fontSize:10,fontWeight:'700',letterSpacing:1.1}}>FRUIT</Text>
           </View>
         ) : null}
+        {isBanner ? (
+          <Text style={{fontSize:width<540?9:10,lineHeight:14,
+            fontWeight:'500',letterSpacing:2.0,
+            color:'rgba(255,255,255,.88)',marginBottom:width<540?5:10}}>
+            UN RÊVE ACCOMPLI
+          </Text>
+        ) : null}
         <Text style={{
-          fontSize: isBanner ? (width < 380 ? 28 : width < 540 ? 32 : width < 780 ? 39 : 48) : (width < 230 ? 13 : 18),
-          lineHeight: isBanner ? (width < 380 ? 33 : width < 540 ? 39 : width < 780 ? 47 : 56) : (width < 230 ? 18 : 24),
-          letterSpacing: isBanner ? -0.65 : 0,
-          color: '#FFFFFF', fontWeight: isBanner ? '500' : '800',
-          textShadowColor: isBanner ? 'rgba(0,0,0,.26)' : 'transparent',
-          textShadowRadius: isBanner ? 9 : 0,
-        }} numberOfLines={isBanner ? 2 : 3}>{dream.title}</Text>
+          fontFamily:isBanner?'Georgia':undefined,
+          fontSize:isBanner?(width<380?27:width<540?32:width<780?38:46)
+            :(width<230?13:18),
+          lineHeight:isBanner?(width<380?34:width<540?40:width<780?47:56)
+            :(width<230?18:24),
+          letterSpacing:isBanner?-0.8:0,
+          color:'#FFFFFF',fontWeight:isBanner?'400':'800',
+          textShadowColor:isBanner?'rgba(0,0,0,.32)':'transparent',
+          textShadowRadius:isBanner?8:0,
+        }} numberOfLines={isBanner?2:3}>{dream.title}</Text>
         {isBanner ? (
           <Text numberOfLines={2} style={{
-            color:'#FFFFFF',fontSize:width<540?13:15,
-            lineHeight:width<540?19:23,marginTop:8,
-            maxWidth:width<540?'97%':'82%',
-            fontWeight:'400',textShadowColor:'rgba(0,0,0,.45)',
+            color:'rgba(255,255,255,.96)',
+            fontSize:width<540?12:15,lineHeight:width<540?18:23,
+            marginTop:width<540?7:11,
+            maxWidth:width<540?'98%':'82%',
+            fontWeight:'400',textShadowColor:'rgba(0,0,0,.54)',
             textShadowRadius:5,
           }}>{dream.testimony?.comment || dream.summary ||
             'Une histoire accomplie, à découvrir et à partager.'}</Text>
         ) : null}
         {isBanner ? (
-          <View style={{flexDirection:'row',alignItems:'center',gap:7,marginTop:width<540?10:14}}>
-            <Text style={{color:'#FFFFFF',fontSize:width<540?12:13,fontWeight:'600'}}>
+          <View style={{flexDirection:'row',alignItems:'center',gap:7,marginTop:width<540?13:18}}>
+            <Text style={{color:'#FFFFFF',fontSize:width<540?11:12,fontWeight:'500'}}>
               Découvrir cette histoire
             </Text>
             <Ionicons name="arrow-forward-outline" size={width<540?15:17} color="#FFFFFF"/>
@@ -203,14 +214,7 @@ function PhaseProjectCarousel({dreams,cardWidth,cardHeight,viewportWidth,gap,com
     </ScrollView>
     {dreams.length>2?(
       <View style={{flexDirection:'row',alignItems:'center',
-        justifyContent:'space-between',minHeight:27,gap:6}}>
-        <View style={{flexDirection:'row',alignItems:'center',gap:5,
-          flexShrink:1}}>
-          <Ionicons name="swap-horizontal-outline" size={15} color={theme.muted}/>
-          <Text numberOfLines={1} style={{color:theme.muted,fontSize:compact?10:11}}>
-            {compact?'Glisser pour explorer':'Faire défiler les projets'}
-          </Text>
-        </View>
+        justifyContent:'flex-end',minHeight:27}}>
         <View style={{flexDirection:'row',alignItems:'center',gap:7}}>
           <Text style={{fontSize:10,color:theme.muted,
             fontVariant:['tabular-nums']}}>
@@ -227,6 +231,75 @@ function PhaseProjectCarousel({dreams,cardWidth,cardHeight,viewportWidth,gap,com
                 borderColor:theme.border,backgroundColor:theme.surface,
                 justifyContent:'center',alignItems:'center',
                 opacity:disabled?.37:1}}>
+              <Ionicons name={direction<0?'chevron-back':'chevron-forward'}
+                size={15} color={theme.foreground}/>
+            </Pressable>;
+          })}
+        </View>
+      </View>
+    ):null}
+  </View>;
+}
+
+
+/**
+ * Keeps the four-phase raster intact on phones. Two square projects are
+ * stacked in each quadrant, with horizontal swipe between pairs so the gesture
+ * does not compete with the page's vertical scrolling.
+ */
+function PhaseMobileStack({dreams,cardSize,gap,onLongPress}:{
+  dreams:DreamEntry[];cardSize:number;gap:number;
+  onLongPress:(dream:DreamEntry)=>void;
+}){
+  const theme=useAppTheme();
+  const scrollRef=useRef<React.ComponentRef<typeof ScrollView>>(null);
+  const [page,setPage]=useState(0);
+  const pages=Array.from({length:Math.ceil(dreams.length/2)},(_,i)=>
+    dreams.slice(i*2,i*2+2));
+  const keys=dreams.map(d=>d.id).join('|');
+  const total=pages.length;
+  const pageHeight=cardSize*(dreams.length>1?2:1)+(dreams.length>1?gap:0);
+  useEffect(()=>{
+    scrollRef.current?.scrollTo({x:0,animated:false});
+    setPage(0);
+  },[keys,cardSize]);
+  const go=(direction:number)=>{
+    const next=Math.max(0,Math.min(total-1,page+direction));
+    scrollRef.current?.scrollTo({x:next*cardSize,animated:true});
+    setPage(next);
+  };
+  return <View style={{width:'100%',gap:5}}>
+    <ScrollView ref={scrollRef} horizontal pagingEnabled
+      nestedScrollEnabled showsHorizontalScrollIndicator={false}
+      scrollEventThrottle={32}
+      onMomentumScrollEnd={e=>{
+        setPage(Math.max(0,Math.min(total-1,
+          Math.round(e.nativeEvent.contentOffset.x/cardSize))));
+      }}
+      style={{width:cardSize,height:pageHeight,flexGrow:0}}>
+      {pages.map((pair,i)=>
+        <View key={pair.map(d=>d.id).join('|')||i}
+          style={{width:cardSize,height:pageHeight,gap}}>
+          {pair.map(d=><PictureCard key={d.id} dream={d}
+            width={cardSize} height={cardSize}
+            onLongPress={()=>onLongPress(d)}/>)}
+        </View>
+      )}
+    </ScrollView>
+    {total>1?(
+      <View style={{minHeight:29,flexDirection:'row',alignItems:'center',
+        justifyContent:'space-between',gap:3}}>
+        <Text style={{fontSize:10,color:theme.muted,
+          fontVariant:['tabular-nums']}}>{page+1}/{total}</Text>
+        <View style={{flexDirection:'row',gap:2}}>
+          {([-1,1] as const).map(direction=>{
+            const disabled=direction<0?page===0:page===total-1;
+            return <Pressable key={direction} disabled={disabled}
+              onPress={()=>go(direction)} accessibilityRole="button"
+              accessibilityLabel={direction<0?'Projets précédents':'Projets suivants'}
+              accessibilityState={{disabled}}
+              style={{width:26,height:28,alignItems:'center',
+                justifyContent:'center',opacity:disabled?.3:1}}>
               <Ionicons name={direction<0?'chevron-back':'chevron-forward'}
                 size={15} color={theme.foreground}/>
             </Pressable>;
@@ -275,9 +348,11 @@ export default function MySpace() {
   const [activeTestimony, setActiveTestimony] = useState(0);
   const galleryRef = useRef<React.ComponentRef<typeof ScrollView>>(null);
   const [longDream,setLongDream]=useState<DreamEntry|null>(null);
+  const [canvasWidth,setCanvasWidth]=useState<number|null>(null);
   const side=ws.gutter;
-  const workspaceViewport=Math.max(0,windowWidth-(ws.desktop?212:0));
-  const contentWidth=Math.min(workspaceViewport,ws.maxWidth??workspaceViewport);
+  const workspaceViewport=canvasWidth??Math.max(0,windowWidth-(ws.desktop?236:0));
+  const contentWidth=ws.desktop?workspaceViewport:
+    Math.min(workspaceViewport,ws.maxWidth??workspaceViewport);
   const innerWidth=Math.max(0,contentWidth-2*side);
   // The gallery spans the entire page canvas on phones, while aligning with
   // the inset content grid on desktop. Carousel page width matches this exactly.
@@ -286,23 +361,24 @@ export default function MySpace() {
     ? Math.min(294,Math.max(252,Math.round(galleryWidth*.64)))
     : Math.min(318,Math.max(282,Math.round(galleryWidth*.29)));
   const phaseGridGap=compact?10:ws.tablet?14:18;
-  // On mobile a full-width panel fits two usable cards and a peek of the next.
-  const phasePanelWidth=Math.max(0,compact?innerWidth:(innerWidth-phaseGridGap)/2);
-  const panelInset=compact?13:17;
-  const phaseCardGap=compact?10:11;
+  // Four quadrants on mobile and desktop. On narrow screens, each quadrant
+  // shows two square cards vertically; a horizontal swipe changes the pair.
+  const phasePanelWidth=Math.max(0,(innerWidth-phaseGridGap)/2);
+  const panelInset=compact?8:17;
+  const phaseCardGap=compact?8:11;
   const phaseViewportWidth=Math.max(0,phasePanelWidth-2*panelInset);
-  const phaseTileWidth=Math.max(100,Math.floor(
-    (phaseViewportWidth-2*phaseCardGap)/2.2));
-  const phaseTileHeight=compact?138:146;
+  const phaseTileWidth=compact?phaseViewportWidth:
+    Math.max(100,Math.floor((phaseViewportWidth-2*phaseCardGap)/2.2));
+  const phaseTileHeight=compact?phaseTileWidth:146;
   const heroGlass=Platform.OS==='web'
     ? ({backdropFilter:'blur(14px) saturate(125%)',
         WebkitBackdropFilter:'blur(14px) saturate(125%)'} as any)
     : {};
   const heroControlBase={
-    height:42,justifyContent:'center' as const,alignItems:'center' as const,
+    height:36,justifyContent:'center' as const,alignItems:'center' as const,
     borderWidth:1,borderColor:'rgba(255,255,255,.28)',
-    shadowColor:'#000000',shadowOpacity:.13,shadowRadius:8,
-    shadowOffset:{width:0,height:2},elevation:2,
+    shadowColor:'#000000',shadowOpacity:.07,shadowRadius:5,
+    shadowOffset:{width:0,height:1},elevation:1,
   };
   const tileWidth = compact ? Math.max(137, Math.min(205, Math.floor(innerWidth * .48))) : 210;
   const list = view === 'Liste';
@@ -327,9 +403,15 @@ export default function MySpace() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{
-        ...workspaceCanvas(windowWidth), paddingHorizontal:0, paddingBottom:64,
-        paddingTop:12,
+      <ScrollView style={{ flex: 1 }}
+        onLayout={event=>{
+          const measured=Math.round(event.nativeEvent.layout.width);
+          setCanvasWidth(current=>current===measured?current:measured);
+        }}
+        contentContainerStyle={{
+        ...workspaceCanvas(windowWidth),
+        maxWidth:ws.desktop?'100%':ws.maxWidth,
+        paddingHorizontal:0,paddingBottom:64,paddingTop:12,
       }}>
         <View style={{paddingHorizontal:side}}>
           <PageHeader title="Mes projets" />
@@ -389,20 +471,20 @@ export default function MySpace() {
 
             {/* Purpose-designed gallery action bar: dark glass controls and a clear primary CTA. */}
             <View style={{position:'absolute',zIndex:10,
-              bottom:compact?13:19,left:compact?12:24,right:compact?12:24}}>
-              <View style={{flexDirection:'row',alignItems:'center',gap:compact?6:10}}>
+              bottom:compact?12:17,left:compact?12:24,right:compact?12:24}}>
+              <View style={{flexDirection:'row',alignItems:'center',gap:compact?5:8}}>
                 <Pressable onPress={()=>setRoleMenuOpen(current=>!current)}
                   accessibilityRole="button"
                   accessibilityLabel={'Filtrer mes projets : '+roleOption.label}
                   accessibilityState={{expanded:roleMenuOpen}}
                   style={({pressed})=>[heroControlBase,{
                     flexDirection:'row',flexShrink:1,minWidth:0,gap:7,
-                    paddingHorizontal:compact?11:15,borderRadius:10,
+                    paddingHorizontal:compact?9:12,borderRadius:9,
                     backgroundColor:pressed?'rgba(27,29,31,.83)':'rgba(23,26,29,.62)',
                   },heroGlass]}>
-                  <Ionicons name="options-outline" size={compact?15:17} color="#FFFFFF"/>
+                  <Ionicons name="options-outline" size={compact?14:16} color="#FFFFFF"/>
                   <Text numberOfLines={1} style={{
-                    flexShrink:1,fontSize:compact?11:12,fontWeight:'700',color:'#FFFFFF',
+                    flexShrink:1,fontSize:compact?10:11,fontWeight:'600',color:'#FFFFFF',
                   }}>{roleOption.label}</Text>
                   <Ionicons name={roleMenuOpen?'chevron-up':'chevron-down'}
                     size={13} color="rgba(255,255,255,.9)"/>
@@ -411,12 +493,12 @@ export default function MySpace() {
                   <Pressable onPress={()=>router.push('/my-dream/new')}
                     accessibilityRole="button" accessibilityLabel="Créer un projet"
                     style={({pressed})=>[heroControlBase,{
-                      flexDirection:'row',gap:8,paddingHorizontal:17,borderRadius:10,
+                      flexDirection:'row',gap:6,paddingHorizontal:12,borderRadius:9,
                       borderColor:'rgba(255,255,255,.25)',
                       backgroundColor:pressed?'#BD1465':'#D71D77',
                     }]}>
-                    <Ionicons name="add" size={20} color="#FFFFFF"/>
-                    <Text style={{fontSize:12,fontWeight:'800',color:'#FFFFFF',
+                    <Ionicons name="add" size={17} color="#FFFFFF"/>
+                    <Text style={{fontSize:11,fontWeight:'600',color:'#FFFFFF',
                       letterSpacing:.15}}>
                       Créer un projet
                     </Text>
@@ -424,8 +506,8 @@ export default function MySpace() {
                 ):null}
                 <View style={{flex:1,minWidth:0}}/>
                 <View style={[{
-                  height:44,flexDirection:'row',alignItems:'center',
-                  gap:3,padding:3,borderRadius:11,borderWidth:1,
+                  height:38,flexDirection:'row',alignItems:'center',
+                  gap:3,padding:3,borderRadius:10,borderWidth:1,
                   borderColor:'rgba(255,255,255,.28)',
                   backgroundColor:'rgba(23,26,29,.62)',
                 },heroGlass]}>
@@ -436,14 +518,14 @@ export default function MySpace() {
                       accessibilityState={{selected:view===choice}}
                       accessibilityLabel={choice==='Liste'?'Afficher en liste':'Afficher en grille par étape'}
                       style={({pressed})=>({
-                        height:36,minWidth:compact?56:70,
-                        paddingHorizontal:compact?9:14,
+                        height:30,minWidth:compact?48:62,
+                        paddingHorizontal:compact?8:11,
                         justifyContent:'center',alignItems:'center',borderRadius:8,
                         backgroundColor:view===choice?'rgba(255,255,255,.96)':
                           pressed?'rgba(255,255,255,.18)':'transparent',
                       })}>
                       <Text style={{
-                        fontSize:compact?11:12,fontWeight:'700',
+                        fontSize:compact?10:11,fontWeight:'600',
                         color:view===choice?'#202126':'#FFFFFF',
                       }}>{choice}</Text>
                     </Pressable>
@@ -520,8 +602,8 @@ export default function MySpace() {
             {visible.map(d => <DreamListRow key={d.id} dream={d} onLongPress={()=>setLongDream(d)}/>)}
           </View>
         ) : (
-          // Four phase zones: two columns on desktop and full-width on phones.
-          // Each phase shelf displays two readable cards with horizontal navigation.
+          // Four phase zones remain in a 2 × 2 raster on desktop and phone.
+          // Phone panels show two vertically stacked square cards per page.
           <View style={{
             paddingHorizontal:side,flexDirection:'row',flexWrap:'wrap',
             columnGap:phaseGridGap,rowGap:phaseGridGap,
@@ -543,17 +625,14 @@ export default function MySpace() {
                     marginBottom:compact?10:12,
                     backgroundColor:panel.accent,opacity:0.66}}/>
                   <View style={{flexDirection:'row',alignItems:'flex-start',
-                    justifyContent:'space-between',gap:compact?5:12,
-                    marginBottom:compact?11:14}}>
+                    justifyContent:'space-between',gap:compact?4:12,
+                    marginBottom:compact?10:14}}>
                     <View style={{flex:1,minWidth:0}}>
-                      <Text style={{color:theme.foreground,fontWeight:'700',
-                        fontSize:compact?14:17,lineHeight:compact?19:22}}>
+                      <Text numberOfLines={compact?2:1}
+                        style={{color:theme.foreground,fontWeight:'700',
+                          fontSize:compact?12:17,lineHeight:compact?17:22}}>
                         {panel.title}
                       </Text>
-                      {!compact?(
-                        <Text style={{color:theme.muted,fontSize:11,
-                          lineHeight:16,marginTop:4}}>{panel.sub}</Text>
-                      ):null}
                     </View>
                     {dreams.length>0?(
                       <Text style={{color:theme.muted,fontSize:11,
@@ -561,10 +640,14 @@ export default function MySpace() {
                     ):null}
                   </View>
                   {dreams.length>0 ? (
-                    <PhaseProjectCarousel dreams={dreams}
-                      cardWidth={phaseTileWidth} cardHeight={phaseTileHeight}
-                      viewportWidth={phaseViewportWidth} gap={phaseCardGap}
-                      compact={compact} onLongPress={setLongDream}/>
+                    compact?
+                      <PhaseMobileStack dreams={dreams}
+                        cardSize={phaseTileWidth} gap={phaseCardGap}
+                        onLongPress={setLongDream}/>:
+                      <PhaseProjectCarousel dreams={dreams}
+                        cardWidth={phaseTileWidth} cardHeight={phaseTileHeight}
+                        viewportWidth={phaseViewportWidth} gap={phaseCardGap}
+                        compact={compact} onLongPress={setLongDream}/>
                   ):(
                     <View style={{minHeight:phaseTileHeight,alignItems:'flex-start',
                       justifyContent:'center',paddingHorizontal:compact?1:4}}>
