@@ -364,7 +364,8 @@ export function MusicDocumentScanner({visible,initialFile,sourceFile,onClose,onS
               borderRadius:9,overflow:'hidden',alignItems:'center'}}>
               <RNImage source={{uri:scanPreview||preview}}
                 accessibilityLabel="Aperçu de la zone envoyée à la reconnaissance"
-                resizeMode="contain" style={{width:'100%',height:225}}/>
+                resizeMode="contain" style={{width:'100%',
+                  height:mode==='score'?(compact?245:340):225}}/>
             </View>
             <Text style={{fontSize:11,color:theme.muted}}>
               Aperçu de la zone analysée · le fichier original reste inchangé
@@ -398,7 +399,8 @@ export function MusicDocumentScanner({visible,initialFile,sourceFile,onClose,onS
           {result?<View style={{gap:13,paddingTop:10,
             borderTopWidth:1,borderColor:theme.border}}>
             <Text style={{color:theme.foreground,fontWeight:'700',
-              fontSize:15}}>Vérifier le résultat</Text>
+              fontSize:15}}>{mode==='score'?
+                'Brouillon musical — à vérifier':'Vérifier le résultat'}</Text>
             <TextInput value={draftTitle} onChangeText={setDraftTitle}
               placeholder="Titre" placeholderTextColor={theme.muted}
               accessibilityLabel="Titre du document numérisé"
@@ -424,12 +426,13 @@ export function MusicDocumentScanner({visible,initialFile,sourceFile,onClose,onS
                   padding:15,borderWidth:1,borderColor:theme.border}}/>
             </View>:audition?<View style={{gap:8}}>
               <Text style={{fontSize:12,color:theme.muted}}>
-                {notes.length} notes détectées · {result.bpm||100} BPM ·
+                {notes.length} notes proposées, non vérifiées · {result.bpm||100} BPM ·
                 {' '}{result.numerator||4}/{result.denominator||4}
               </Text>
               <MusicCaptureScoreStrip file={audition}/>
               <Text style={{fontSize:12,color:theme.muted}}>
-                Écoute l’aperçu, puis corrige les notes dans Composer après l’enregistrement.
+                L’aperçu n’est pas une transcription certifiée.
+                Compare chaque mesure avec le document original avant validation.
               </Text>
             </View>:null}
             {(result.warnings||[]).map((warning,i)=>
