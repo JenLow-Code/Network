@@ -10,17 +10,27 @@ import { useAppTheme } from '@/theme/AppTheme';
  * Deliberately independent of the project's cover image. The cover is kept
  * in the project data for publication and editing, never discarded.
  */
-export function MusicCassetteDraft({ width = 216 }: { width?: number }) {
+export function MusicCassetteDraft({ width = 216, variant = 'standard' }: {
+  width?: number;
+  variant?: 'standard' | 'tile';
+}) {
   const theme = useAppTheme();
-  const ink = theme.dark ? '#D8C9C4' : '#655B55';
-  const background = theme.dark ? '#302B2D' : '#F7F2EB';
-  const height = Math.round(width * 0.65);
+  const ink = theme.dark ? '#EEE1D5' : '#514439';
+  const background = theme.dark ? '#332D32' : '#E6DACB';
+  const height = variant === 'tile' ? width : Math.round(width * 0.65);
 
   return <View style={{
-    width, height, borderRadius: 11, overflow: 'hidden',
+    width, height, borderRadius: variant === 'tile' ? 0 : 11, overflow: 'hidden',
     backgroundColor: background, alignItems: 'center', justifyContent: 'center',
   }}>
-    <Svg width="100%" height="100%" viewBox="0 0 320 208">
+    <Svg width="100%" height="100%" viewBox={variant === 'tile' ? '0 0 320 320' : '0 0 320 208'}>
+      {variant === 'tile' ? <G stroke={ink} opacity={0.075} strokeWidth={0.6}>
+        {Array.from({length:15},(_,i) => <Line key={'v'+i}
+          x1={i*24} y1={0} x2={i*24} y2={320}/>)}
+        {Array.from({length:15},(_,i) => <Line key={'h'+i}
+          x1={0} y1={i*24} x2={320} y2={i*24}/>)}
+      </G> : null}
+      <G transform={variant === 'tile' ? 'translate(0 55)' : undefined}>
       <G fill="none" stroke={ink} strokeWidth={1.25}
         strokeLinecap="round" strokeLinejoin="round" opacity={0.88}>
         {/* Outer shell and the faint construction line of a second plate. */}
@@ -78,6 +88,7 @@ export function MusicCassetteDraft({ width = 216 }: { width?: number }) {
           JL / MUSIQUE — ÉTUDE
         </SvgText>
         <SvgText x={294} y={191} textAnchor="end" fontSize={8}>01</SvgText>
+      </G>
       </G>
     </Svg>
   </View>;
