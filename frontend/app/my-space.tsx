@@ -124,22 +124,26 @@ function PictureCard({ dream, width, height, onLongPress, presentation = 'card' 
           </View>
         ) : null}
         <Text style={{
-          fontSize: isBanner ? (width < 380 ? 23 : width < 540 ? 27 : width < 780 ? 34 : 40) : (width < 230 ? 13 : 18),
-          lineHeight: isBanner ? (width < 380 ? 29 : width < 540 ? 33 : width < 780 ? 40 : 47) : (width < 230 ? 18 : 24),
-          letterSpacing: isBanner ? -1.0 : 0,
-          color: '#FFFFFF', fontWeight: '800',
+          fontSize: isBanner ? (width < 380 ? 28 : width < 540 ? 32 : width < 780 ? 39 : 48) : (width < 230 ? 13 : 18),
+          lineHeight: isBanner ? (width < 380 ? 33 : width < 540 ? 39 : width < 780 ? 47 : 56) : (width < 230 ? 18 : 24),
+          letterSpacing: isBanner ? -0.65 : 0,
+          color: '#FFFFFF', fontWeight: isBanner ? '500' : '800',
           textShadowColor: isBanner ? 'rgba(0,0,0,.26)' : 'transparent',
           textShadowRadius: isBanner ? 9 : 0,
         }} numberOfLines={isBanner ? 2 : 3}>{dream.title}</Text>
-        {isBanner && !!(dream.testimony?.comment || dream.summary) ? (
-          <Text numberOfLines={1} style={{
-            color:'rgba(255,255,255,.90)',fontSize:width<540?11:13,
-            lineHeight:width<540?16:19,marginTop:8,maxWidth:width<540?'90%':'75%',
-          }}>{dream.testimony?.comment || dream.summary}</Text>
+        {isBanner ? (
+          <Text numberOfLines={2} style={{
+            color:'#FFFFFF',fontSize:width<540?13:15,
+            lineHeight:width<540?19:23,marginTop:8,
+            maxWidth:width<540?'97%':'82%',
+            fontWeight:'400',textShadowColor:'rgba(0,0,0,.45)',
+            textShadowRadius:5,
+          }}>{dream.testimony?.comment || dream.summary ||
+            'Une histoire accomplie, à découvrir et à partager.'}</Text>
         ) : null}
         {isBanner ? (
           <View style={{flexDirection:'row',alignItems:'center',gap:7,marginTop:width<540?10:14}}>
-            <Text style={{color:'#FFFFFF',fontSize:width<540?12:13,fontWeight:'800'}}>
+            <Text style={{color:'#FFFFFF',fontSize:width<540?12:13,fontWeight:'600'}}>
               Découvrir cette histoire
             </Text>
             <Ionicons name="arrow-forward-outline" size={width<540?15:17} color="#FFFFFF"/>
@@ -157,6 +161,80 @@ function PictureCard({ dream, width, height, onLongPress, presentation = 'card' 
       ) : null}
     </Pressable>
   );
+}
+
+
+/** Two readable cards and a glimpse of the next, with real swipe + arrow navigation. */
+function PhaseProjectCarousel({dreams,cardWidth,cardHeight,viewportWidth,gap,compact,onLongPress}:{
+  dreams:DreamEntry[];cardWidth:number;cardHeight:number;viewportWidth:number;
+  gap:number;compact:boolean;onLongPress:(dream:DreamEntry)=>void;
+}){
+  const theme=useAppTheme();
+  const scrollRef=useRef<React.ComponentRef<typeof ScrollView>>(null);
+  const [position,setPosition]=useState(0);
+  const identities=dreams.map(d=>d.id).join('|');
+  const step=cardWidth+gap;
+  const lastPosition=Math.max(0,dreams.length-2);
+  const contentWidth=dreams.length*cardWidth+Math.max(0,dreams.length-1)*gap;
+  const maxOffset=Math.max(0,contentWidth-viewportWidth);
+  useEffect(()=>{
+    scrollRef.current?.scrollTo({x:0,animated:false});
+    setPosition(0);
+  },[identities,cardWidth,viewportWidth]);
+  const go=(direction:number)=>{
+    const next=Math.max(0,Math.min(lastPosition,position+direction));
+    scrollRef.current?.scrollTo({x:Math.min(maxOffset,next*step),animated:true});
+    setPosition(next);
+  };
+  return <View style={{width:'100%',gap:9}}>
+    <ScrollView ref={scrollRef} horizontal decelerationRate="fast"
+      snapToInterval={step} showsHorizontalScrollIndicator={false}
+      scrollEventThrottle={32}
+      onScroll={e=>{
+        const next=Math.max(0,Math.min(lastPosition,
+          Math.round(e.nativeEvent.contentOffset.x/step)));
+        setPosition(current=>current===next?current:next);
+      }}
+      style={{width:'100%',flexGrow:0}}
+      contentContainerStyle={{gap}}>
+      {dreams.map(d=><PictureCard key={d.id} dream={d}
+        width={cardWidth} height={cardHeight}
+        onLongPress={()=>onLongPress(d)}/>)}
+    </ScrollView>
+    {dreams.length>2?(
+      <View style={{flexDirection:'row',alignItems:'center',
+        justifyContent:'space-between',minHeight:27,gap:6}}>
+        <View style={{flexDirection:'row',alignItems:'center',gap:5,
+          flexShrink:1}}>
+          <Ionicons name="swap-horizontal-outline" size={15} color={theme.muted}/>
+          <Text numberOfLines={1} style={{color:theme.muted,fontSize:compact?10:11}}>
+            {compact?'Glisser pour explorer':'Faire défiler les projets'}
+          </Text>
+        </View>
+        <View style={{flexDirection:'row',alignItems:'center',gap:7}}>
+          <Text style={{fontSize:10,color:theme.muted,
+            fontVariant:['tabular-nums']}}>
+            {position+1}–{Math.min(position+2,dreams.length)} / {dreams.length}
+          </Text>
+          {([-1,1] as const).map(direction=>{
+            const disabled=direction<0?position===0:position===lastPosition;
+            return <Pressable key={direction} disabled={disabled}
+              accessibilityRole="button"
+              accessibilityLabel={direction<0?'Projets précédents':'Projets suivants'}
+              accessibilityState={{disabled}}
+              onPress={()=>go(direction)}
+              style={{width:27,height:27,borderRadius:14,borderWidth:1,
+                borderColor:theme.border,backgroundColor:theme.surface,
+                justifyContent:'center',alignItems:'center',
+                opacity:disabled?.37:1}}>
+              <Ionicons name={direction<0?'chevron-back':'chevron-forward'}
+                size={15} color={theme.foreground}/>
+            </Pressable>;
+          })}
+        </View>
+      </View>
+    ):null}
+  </View>;
 }
 
 function DreamListRow({ dream, onLongPress }: { dream: DreamEntry; onLongPress:()=>void }) {
@@ -208,10 +286,14 @@ export default function MySpace() {
     ? Math.min(294,Math.max(252,Math.round(galleryWidth*.64)))
     : Math.min(318,Math.max(282,Math.round(galleryWidth*.29)));
   const phaseGridGap=compact?10:ws.tablet?14:18;
-  const phasePanelWidth=Math.max(0,(innerWidth-phaseGridGap)/2);
-  const panelInset=compact?10:17;
-  const phaseTileWidth=Math.min(183,Math.max(92,phasePanelWidth-2*panelInset));
-  const phaseTileHeight=compact?118:146;
+  // On mobile a full-width panel fits two usable cards and a peek of the next.
+  const phasePanelWidth=Math.max(0,compact?innerWidth:(innerWidth-phaseGridGap)/2);
+  const panelInset=compact?13:17;
+  const phaseCardGap=compact?10:11;
+  const phaseViewportWidth=Math.max(0,phasePanelWidth-2*panelInset);
+  const phaseTileWidth=Math.max(100,Math.floor(
+    (phaseViewportWidth-2*phaseCardGap)/2.2));
+  const phaseTileHeight=compact?138:146;
   const heroGlass=Platform.OS==='web'
     ? ({backdropFilter:'blur(14px) saturate(125%)',
         WebkitBackdropFilter:'blur(14px) saturate(125%)'} as any)
@@ -438,8 +520,8 @@ export default function MySpace() {
             {visible.map(d => <DreamListRow key={d.id} dream={d} onLongPress={()=>setLongDream(d)}/>)}
           </View>
         ) : (
-          // Four phase zones, in two columns on phones as well as desktop.
-          // Compact mobile panels keep the same subtle, theme-aware colors.
+          // Four phase zones: two columns on desktop and full-width on phones.
+          // Each phase shelf displays two readable cards with horizontal navigation.
           <View style={{
             paddingHorizontal:side,flexDirection:'row',flexWrap:'wrap',
             columnGap:phaseGridGap,rowGap:phaseGridGap,
@@ -479,15 +561,10 @@ export default function MySpace() {
                     ):null}
                   </View>
                   {dreams.length>0 ? (
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false}
-                      style={{flexGrow:0,width:'100%'}}
-                      contentContainerStyle={{gap:11,paddingRight:2}}>
-                      {dreams.map(d=>(
-                        <PictureCard key={d.id} dream={d}
-                          width={phaseTileWidth} height={phaseTileHeight}
-                          onLongPress={()=>setLongDream(d)}/>
-                      ))}
-                    </ScrollView>
+                    <PhaseProjectCarousel dreams={dreams}
+                      cardWidth={phaseTileWidth} cardHeight={phaseTileHeight}
+                      viewportWidth={phaseViewportWidth} gap={phaseCardGap}
+                      compact={compact} onLongPress={setLongDream}/>
                   ):(
                     <View style={{minHeight:phaseTileHeight,alignItems:'flex-start',
                       justifyContent:'center',paddingHorizontal:compact?1:4}}>
