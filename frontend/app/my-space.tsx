@@ -3,6 +3,7 @@ import { Image, Pressable, ScrollView, Text, View, useWindowDimensions } from 'r
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { Nav } from '@/components/navigation/Nav';
 import { PageHeader } from '@/components/navigation/PageHeader';
 import { isPublishedFlower, type DreamEntry } from '@/domain/dreamWorkspace';
@@ -46,23 +47,44 @@ const frozen = (dream: DreamEntry) =>
   dream.pauseUntil >= new Date().toISOString().slice(0, 10);
 const coverImage = (d: DreamEntry) => d.phase === 'Témoignage' ? d.resultImage || d.image : d.image;
 
-function PictureCard({ dream, width, height, onLongPress }: { dream: DreamEntry; width: number; height: number; onLongPress:()=>void }) {
+function PictureCard({ dream, width, height, onLongPress, presentation = 'card' }: {
+  dream: DreamEntry; width: number; height: number; onLongPress:()=>void;
+  presentation?: 'card' | 'banner';
+}) {
   const theme = useAppTheme();
   const photo = coverImage(dream);
+  const isBanner = presentation === 'banner';
   return (
     <Pressable accessibilityRole="button" accessibilityLabel={'Ouvrir ' + dream.title}
       onPress={() => open(dream)} onLongPress={onLongPress} delayLongPress={460}
       accessibilityHint="Maintenir pour voir les actions et la date objectif"
-      style={{ width, height, borderRadius: 11, overflow: 'hidden', backgroundColor: theme.surface }}>
+      style={{ width, height, borderRadius: isBanner ? 0 : 11, overflow: 'hidden', backgroundColor: theme.surface }}>
       {photo ? <Image source={{ uri: photo }} resizeMode="cover" style={{ width: '100%', height: '100%' }} /> : null}
-      <View pointerEvents="none" style={{
-        position: 'absolute', top: 0, bottom: 0, left: 0, right: 0,
-        backgroundColor: 'rgba(0,0,0,0.24)',
-      }} />
+      {isBanner ? (
+        <Svg pointerEvents="none" width="100%" height="100%" style={{
+          position: 'absolute', top: 0, bottom: 0, left: 0, right: 0,
+        }}>
+          <Defs>
+            <LinearGradient id="fruit-banner-shade" x1="0%" y1="0%" x2="0%" y2="100%">
+              <Stop offset="0%" stopColor="#000000" stopOpacity={0.02}/>
+              <Stop offset="48%" stopColor="#000000" stopOpacity={0.13}/>
+              <Stop offset="100%" stopColor="#000000" stopOpacity={0.82}/>
+            </LinearGradient>
+          </Defs>
+          <Rect width="100%" height="100%" fill="url(#fruit-banner-shade)" />
+        </Svg>
+      ) : (
+        <View pointerEvents="none" style={{
+          position: 'absolute', top: 0, bottom: 0, left: 0, right: 0,
+          backgroundColor: 'rgba(0,0,0,0.24)',
+        }} />
+      )}
       <View style={{
         position: 'absolute', bottom: 0, left: 0, right: 0,
-        paddingHorizontal: 13, paddingTop: 36, paddingBottom: 12,
-        backgroundColor: 'rgba(0,0,0,0.30)',
+        paddingHorizontal: isBanner ? (width < 500 ? 16 : 24) : 13,
+        paddingTop: isBanner ? 50 : 36,
+        paddingBottom: isBanner ? (width < 500 ? 18 : 23) : 12,
+        backgroundColor: isBanner ? 'transparent' : 'rgba(0,0,0,0.30)',
       }}>
         {isPublishedFlower(dream) ? (
           <View style={{flexDirection:'row',alignItems:'center',gap:5,marginBottom:6}}>
@@ -70,8 +92,11 @@ function PictureCard({ dream, width, height, onLongPress }: { dream: DreamEntry;
             <Text style={{color:'#F7E7C7',fontSize:10,fontWeight:'700',letterSpacing:1.1}}>FRUIT</Text>
           </View>
         ) : null}
-        <Text style={{ fontSize: width < 230 ? 13 : 18, lineHeight: width < 230 ? 18 : 24,
-          color: '#FFFFFF', fontWeight: '700' }} numberOfLines={3}>{dream.title}</Text>
+        <Text style={{
+          fontSize: isBanner ? (width < 500 ? 19 : 27) : (width < 230 ? 13 : 18),
+          lineHeight: isBanner ? (width < 500 ? 25 : 34) : (width < 230 ? 18 : 24),
+          color: '#FFFFFF', fontWeight: '700',
+        }} numberOfLines={isBanner ? 2 : 3}>{dream.title}</Text>
       </View>
       {frozen(dream) ? (
         <View style={{
@@ -240,7 +265,9 @@ export default function MySpace() {
                   contentContainerStyle={{ paddingHorizontal: side }}>
                   {testimonies.map(d => (
                     <View key={d.id} style={{ width: innerWidth }}>
-                      <PictureCard dream={d} width={innerWidth - 7} height={compact ? 183 : 257} onLongPress={()=>setLongDream(d)} />
+                      <PictureCard dream={d} width={innerWidth}
+                        height={compact ? Math.max(165, Math.round(innerWidth * .5)) : Math.min(300, Math.max(235, Math.round(innerWidth * .29)))}
+                        presentation="banner" onLongPress={()=>setLongDream(d)} />
                     </View>
                   ))}
                 </ScrollView>
