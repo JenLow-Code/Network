@@ -359,7 +359,7 @@ export default function MusicHub() {
             {pending.map(proposalCard)}
           </View>
         </View> : null}
-        {!active.length && !pending.length ? emptyCard(
+        {!active.length && !pending.length && !requestsError ? emptyCard(
           'Les morceaux que tu construis avec d’autres apparaîtront ici.',
           'Découvrir les appels à collaboration', 'people-outline',
           () => router.push({ pathname: '/discover', params: { filter: 'Musique' } }),
@@ -371,22 +371,21 @@ export default function MusicHub() {
 
       {saved.length ? <View style={{ gap: 13 }}>
         {sectionTitle('Enregistrés', saved.length)}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ gap: 12, paddingBottom: 2 }}>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
           {saved.map(song => <Pressable key={song.id} accessibilityRole="button"
             accessibilityLabel={'Ouvrir ' + song.title}
             onPress={() => router.push({ pathname: '/music/[id]', params: { id: song.id } })}
-            style={{ width: compact ? 196 : 224, padding: 13, borderRadius: 17,
+            style={{ width: cardWidth, padding: 13, borderRadius: 17,
               backgroundColor: panelColor, borderWidth: 1, borderColor: theme.border, gap: 10 }}>
-            <View style={{ alignItems: 'center', justifyContent: 'center', height: 110 }}>
-              <CassetteArtwork width={178} height={108} title={song.title}
+            <View style={{ alignItems: 'center', justifyContent: 'center', height: 116 }}>
+              <CassetteArtwork width={187} height={112} title={song.title}
                 artwork={song.coverArt || song.image} transparent/>
             </View>
             <Text numberOfLines={1} style={{ fontWeight: '700', fontSize: 14,
               color: theme.foreground }}>{song.title}</Text>
             <Text numberOfLines={1} style={{ color: theme.muted, fontSize: 12 }}>{song.author}</Text>
           </Pressable>)}
-        </ScrollView>
+        </View>
       </View> : null}
     </ScrollView>
     <Nav/>
