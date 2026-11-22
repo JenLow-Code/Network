@@ -7,6 +7,7 @@ import { MusicAudioCapture } from './MusicAudioCapture';
 import {deleteLocalMusicFile} from '@/domain/musicLocalStorage';
 import {workspaceLayout} from '@/theme/workspaceLayout';
 import { MusicAudioTake } from './MusicAudioTake';
+import {MusicDocumentScanner} from './MusicDocumentScanner';
 import { MusicNotePreview, type MusicWritingResult } from './MusicWritingStudio';
 
 import { MusicLocalArt } from './MusicLocalArtNext';
@@ -27,7 +28,8 @@ type Props={project:MusicProject;patch:(changes:Partial<MusicProject>)=>void;
   quickAction?:'write'|'upload'|'play'|'record'};
 type Composer='none'|'write'|'record';
 type Writing='lyrics'|'note';
-const isImage=(file:MusicProjectFile)=>/\.(jpg|jpeg|png|webp)$/i.test(file.originalFilename||'');
+const isImage=(file:MusicProjectFile)=>file.kind==='document'&&
+  /\.(jpg|jpeg|png|webp)$/i.test(file.originalFilename||'');
 const isAudio=(file:MusicProjectFile)=>isPlayableMusicFile(file);
 const content=(file:MusicProjectFile)=>file.text??
   (file.kind==='lyrics'?file.lyricSegments?.map(v=>v.text).join('\n\n')||'':'');
@@ -66,6 +68,9 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
   const [translationSourceId,setTranslationSourceId]=useState('');
   const [editingFileId,setEditingFileId]=useState('');
   const [selected,setSelected]=useState('');
+  const [scanOpen,setScanOpen]=useState(false);
+  const [scanExisting,setScanExisting]=useState('');
+  const [scanIncoming,setScanIncoming]=useState<File|null>(null);
   const [pendingDelete,setPendingDelete]=useState('');
   const [deleteBusy,setDeleteBusy]=useState(false);
   const [busy,setBusy]=useState(false);
@@ -121,6 +126,7 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
     else {setSortBy(next);setSortAscending(next!=='date');}
   };
   const selectedFile=files.find(f=>f.id===selected)||null;
+  const scanExistingFile=files.find(f=>f.id===scanExisting)||null;
   const deleteCandidate=files.find(f=>f.id===pendingDelete)||null;
   const linkedTranslations=deleteCandidate?
     files.filter(other=>other.translationOfFileId===deleteCandidate.id):[];
@@ -258,6 +264,16 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
     patch({files:[...files,item]});setComposer('none');setUnsavedRecording(false);
     setConfirmClose(false);finishRecordingNavigation();
   };
+  const openScanner=(original?:MusicProjectFile|null,incoming?:File|null)=>{
+    setSelected('');setScanExisting(original?.id||'');
+    setScanIncoming(incoming||null);setScanOpen(true);
+  };
+  const onScanned=(scanned:MusicProjectFile)=>{
+    patch({files:files.some(file=>file.id===scanned.id)
+      ?files.map(file=>file.id===scanned.id?scanned:file)
+      :[...files,scanned]});
+    setScanOpen(false);setScanExisting('');setScanIncoming(null);
+  };
   const pickFiles=()=>{
     if(Platform.OS!=='web'||typeof document==='undefined'){
       setError('L’import depuis le navigateur web est disponible pour le moment.');return;
@@ -268,6 +284,9 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
     picker.onchange=()=>{
       const incoming=Array.from(picker.files||[]);
       if(!incoming.length)return;
+      if(incoming.length===1&&/\.(png|jpg|jpeg|webp)$/i.test(incoming[0].name)){
+        openScanner(null,incoming[0]);return;
+      }
       setBusy(true);setError('');
       void (async()=>{
         const added:MusicProjectFile[]=[];
@@ -358,7 +377,7 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
           <Ionicons name={actionsOpen?'close':'add'} size={25} color="#fff"/>
         </Pressable>
       </View>
-      {actionsOpen?<View style={{flexDirection:'row',gap:7,
+      {actionsOpen?<View style={{flexDirection:'row',flexWrap:'wrap',gap:7,
         alignItems:'stretch',paddingBottom:5,width:'100%',
         maxWidth:compact?undefined:650,alignSelf:'flex-end'}}>
         {([
@@ -369,12 +388,15 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
             if(composer==='write')return;
             setComposer('record');setTranslationSourceId('');
           }},
+          {label:'Scanner',icon:'scan-outline' as const,
+            run:()=>openScanner()},
           {label:'Importer',icon:'cloud-upload-outline' as const,run:pickFiles},
         ]).map(item=><Pressable key={item.label}
           onPress={()=>{setActionsOpen(false);item.run();}}
           accessibilityRole="button" accessibilityLabel={item.label}
           disabled={busy&&item.label==='Importer'}
-          style={{flex:1,minWidth:0,minHeight:69,borderRadius:13,borderWidth:1,
+          style={{flexGrow:1,flexBasis:compact?'29%':'18%',minWidth:96,
+            minHeight:69,borderRadius:13,borderWidth:1,
             borderColor:theme.border,backgroundColor:theme.surface,
             alignItems:'center',justifyContent:'center',gap:7}}>
           <Ionicons name={item.icon} size={21} color={PINK}/>
@@ -716,6 +738,10 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
         </View>
       </View>
     </Modal>
+    <MusicDocumentScanner visible={scanOpen} initialFile={scanExistingFile}
+      sourceFile={scanIncoming}
+      onClose={()=>{setScanOpen(false);setScanExisting('');setScanIncoming(null);}}
+      onSaved={onScanned}/>
     <MusicMaterialViewer key={selectedFile?.id||'closed'} visible={!!selectedFile}
       file={selectedFile} project={project} onClose={()=>setSelected('')}
       onUpdate={changeFile} onChangeType={(id,kind)=>{
@@ -725,7 +751,8 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
       onStartVersion={onStartVersion} onUseFile={onUseFile}
       onTranslate={file=>{setSelected('');openWrite(file.id);}}
       onEdit={file=>{setSelected('');openWrite(file.translationOfFileId||'',file.id);}}
-      onOpenFile={setSelected} hasVersion={hasVersion}/>
+      onOpenFile={setSelected} onScan={file=>openScanner(file)}
+      hasVersion={hasVersion}/>
 
   </View>;
 }
