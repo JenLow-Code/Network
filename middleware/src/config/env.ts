@@ -8,6 +8,13 @@ export interface Env {
   DB: D1Database;
   /** R2 bucket for member media. Uploads return 503 media_storage_not_configured without it. */
   MEDIA?: R2Bucket;
+  /** Optional Cloudflare Workers AI vision binding; missing -> explicit 503. */
+  AI?: {run(model:string,request:{
+    messages:{role:'system'|'user';content:string}[];
+    image:string;
+    max_tokens?:number;
+    temperature?:number;
+  }):Promise<{response?:string}>};
   /** HS256 secret shared with the deployed beta auth Worker (same issuer, same tokens). */
   AUTH_JWT_SECRET: string;
   /** Private beta invitation code required for email registration. */
