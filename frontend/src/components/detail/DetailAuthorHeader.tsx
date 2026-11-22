@@ -1,7 +1,7 @@
 import React from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import type { Publication } from '@/domain/publication';
 import { personPath } from '@/mocks/people';
 import { TopActions } from '@/components/navigation/TopActions';
@@ -13,7 +13,10 @@ import { HANDWRITING_FAMILY } from '@/theme/handwriting';
  * Real uploaded avatars display when present; otherwise show initials.
  * Never substitute a generic stock portrait for a member's identity.
  */
-export function DetailAuthorHeader({ item, flushToImage = false }: { item: Publication; flushToImage?: boolean }) {
+export function DetailAuthorHeader({ item, flushToImage = false, previewOnly = false }: {
+  item: Publication; flushToImage?: boolean; previewOnly?: boolean;
+}) {
+  const { from } = useLocalSearchParams<{from?: string}>();
   const theme = useAppTheme();
   const initial = item.author.trim().slice(0, 1).toLocaleUpperCase('fr');
   return (
@@ -26,14 +29,15 @@ export function DetailAuthorHeader({ item, flushToImage = false }: { item: Publi
       <Pressable
         accessibilityRole="button"
         accessibilityLabel="Retour"
-        onPress={() => router.back()}
+        onPress={() => router.canGoBack() ? router.back() : router.replace(from === 'music-tab' ? '/music-hub' : '/discover')}
         style={styles.side}
       >
         <Ionicons name="arrow-back" size={23} color={theme.foreground} />
       </Pressable>
       <Pressable
+        disabled={previewOnly}
         accessibilityRole="button"
-        accessibilityLabel={'Voir le profil de ' + item.author}
+        accessibilityLabel={previewOnly ? 'Auteur fictif de démonstration' : 'Voir le profil de ' + item.author}
         onPress={() => router.push(personPath(item.authorHandle ?? item.author))}
         style={styles.member}
       >
