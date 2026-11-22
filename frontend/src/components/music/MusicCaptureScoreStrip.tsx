@@ -1,5 +1,5 @@
 import React,{useEffect,useRef,useState} from 'react';
-import {ScrollView,View} from 'react-native';
+import {ScrollView,Text,View} from 'react-native';
 import Svg,{Ellipse,Line} from 'react-native-svg';
 import {useAppTheme} from '@/theme/AppTheme';
 import type {MusicProjectFile} from '@/domain/musicWorkspace';
@@ -21,15 +21,17 @@ const pianoHeight=(pitch:number,clef:'treble'|'bass')=>{
   };
   return 44-(diatonic(pitch)-diatonic(reference))*4;
 };
-function MiniStaff({events,kind,clef,playheadBeats}:{
+function MiniStaff({events,kind,clef,playheadBeats,scorePartId}:{
   events:MusicNotationEvent[];kind:'piano'|'drum';
   clef:'treble'|'bass';playheadBeats:number|null;
+  scorePartId?:string;
 }){
   const theme=useAppTheme();
   const scroll=useRef<React.ElementRef<typeof ScrollView>>(null);
   const offsetRef=useRef(0);
   const [availableWidth,setAvailableWidth]=useState(0);
-  const notes=events.filter(event=>event.instrument===kind)
+  const notes=events.filter(event=>event.instrument===kind&&
+    (!scorePartId||event.scorePartId===scorePartId))
     .sort((a,b)=>a.startBeats-b.startBeats);
   const end=Math.max(8,...notes.map(n=>n.startBeats+n.lengthBeats));
   // Extend the five ruled lines across most of the preview column, without
@@ -122,6 +124,8 @@ export function MusicCaptureScoreStrip({file,aligned=false}:{
   const piano=notes.some(n=>n.instrument==='piano');
   const drum=notes.some(n=>n.instrument==='drum');
   const bpm=file.tempoBpm||100;
+  const theme=useAppTheme();
+  const scoreParts=file.scoreParts||[];
   return <View style={{flexDirection:'row',alignItems:'center',gap:aligned?10:7,
     width:'100%',minWidth:0}}>
     <View style={aligned?{width:34,flexShrink:0,
@@ -129,9 +133,22 @@ export function MusicCaptureScoreStrip({file,aligned=false}:{
       <MusicMidiPreview iconOnly file={file} onPlaybackSeconds={setSeconds}/>
     </View>
     <View style={{flex:1,minWidth:0,gap:0}}>
-      {piano?<MiniStaff events={notes} kind="piano"
-        clef={file.scoreClef||'treble'}
-        playheadBeats={seconds===null?null:seconds*bpm/60}/>:null}
+      {piano&&scoreParts.length>0?
+        scoreParts.filter(part=>notes.some(note=>
+          note.scorePartId===part.id)).map(part=>
+          <View key={part.id} style={{gap:3,marginBottom:5}}>
+            <Text style={{fontSize:11,color:theme.muted}}>
+              {part.name} · {part.clef==='bass'?'Clé de fa':
+                part.clef==='treble'?'Clé de sol':'Clé d’ut'}
+            </Text>
+            <MiniStaff events={notes} kind="piano"
+              clef={part.clef==='bass'?'bass':'treble'}
+              scorePartId={part.id}
+              playheadBeats={seconds===null?null:seconds*bpm/60}/>
+          </View>):
+        piano?<MiniStaff events={notes} kind="piano"
+          clef={file.scoreClef||'treble'}
+          playheadBeats={seconds===null?null:seconds*bpm/60}/>:null}
       {drum?<MiniStaff events={notes} kind="drum" clef="treble"
         playheadBeats={seconds===null?null:seconds*bpm/60}/>:null}
     </View>
