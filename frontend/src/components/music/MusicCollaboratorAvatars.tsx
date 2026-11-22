@@ -39,8 +39,7 @@ export function MusicCollaboratorAvatars({ publisher, proposer, size = 50 }: {
   proposer?: MusicCollaborator;
   size?: number;
 }) {
-  return <View style={{ flexDirection: 'row', alignItems: 'center',
-    paddingRight: size - 12 }}>
+  return <View style={{ flexDirection: 'row', alignItems: 'center' }}>
     <Portrait person={publisher} size={size} fallback="author"/>
     <View style={{ marginLeft: -12 }}>
       <Portrait person={proposer} size={size} fallback="collaborator"/>
