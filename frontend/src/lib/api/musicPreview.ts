@@ -51,7 +51,8 @@ export async function fetchDemoMusicPreview(): Promise<DemoMusicPreview> {
     throw new Error('music_preview_invalid_response');
   return {
     songs: data.songs.filter(s => s.isDemo === true &&
-      s.id.startsWith('demo-music-publication-')).map(s => ({
+      s.id.startsWith('demo-music-publication-') &&
+      Array.isArray(s.requestedTalents) && s.requestedTalents.length > 0).map(s => ({
       id: s.id,
       type: 'music' as const,
       title: s.title,
@@ -59,8 +60,8 @@ export async function fetchDemoMusicPreview(): Promise<DemoMusicPreview> {
       authorHandle: s.authorHandle,
       songAuthor: s.author,
       description: 'Exemple de présentation — chanson fictive',
-      audioIndex: s.sampleAsset === 'pierre-02-esperance' ? 1 :
-        s.sampleAsset === 'pierre-03-lumiere' ? 2 : 0,
+      audioIndex: (s.sampleAsset === 'pierre-02-esperance' ? 1 :
+        s.sampleAsset === 'pierre-03-lumiere' ? 2 : 0) as 0 | 1 | 2,
       image: '', imageAlt: 'Cassette de démonstration',
       requestedTalents: Array.isArray(s.requestedTalents) ? s.requestedTalents : [],
       isDemo: true as const,
