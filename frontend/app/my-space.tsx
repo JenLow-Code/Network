@@ -223,7 +223,7 @@ export default function MySpace() {
               </ScrollView>
             ):(
               <View style={{width:galleryWidth,height:galleryHeight,
-                paddingHorizontal:compact?16:24,paddingBottom:compact?19:23,
+                paddingHorizontal:compact?16:24,paddingBottom:compact?63:68,
                 backgroundColor:theme.dark?'#343137':'#E9E4E0',
                 justifyContent:'flex-end'}}>
                 <Text style={{color:theme.foreground,fontSize:compact?21:28,
