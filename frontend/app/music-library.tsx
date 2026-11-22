@@ -74,11 +74,17 @@ export default function MusicLibrary() {
   const accepted=[...proposals.filter(p=>p.status==='accepted'||p.status==='published'),
     ...(preview?.collaborations || [])];
   const mineIds=new Set(songs.map(song=>song.publishedId).filter(Boolean));
-  const peopleFor=(id?:string):MusicCollaborator[]=>id
-    ? accepted.filter(p=>p.trackPublicationId===id && !p.isDemo)
+  const peopleFor=(song:typeof songs[number]):MusicCollaborator[]=>{
+    const acceptedPeople=song.publishedId?accepted
+      .filter(p=>p.trackPublicationId===song.publishedId&&!p.isDemo)
       .map(p=>p.direction==='received'?p.proposer:p.publisher)
-      .filter((person):person is MusicCollaborator=>!!person?.displayName)
-    : [];
+      .filter((person):person is MusicCollaborator=>!!person?.displayName):[];
+    const credited=song.layers.filter(layer=>layer.contributor?.trim() &&
+      layer.contributor.trim().toLowerCase()!==song.ownerName.trim().toLowerCase() &&
+      !['moi','me','you'].includes(layer.contributor.trim().toLowerCase()))
+      .map(layer=>({displayName:layer.contributor.trim()}));
+    return [...acceptedPeople,...credited];
+  };
   const shared=new Map<string,{
     title:string;first:Proposal;people:MusicCollaborator[];demo:boolean;
   }>();
@@ -124,7 +130,7 @@ export default function MusicLibrary() {
         columnGap:14,rowGap:22,
       }}>
         {songs.map(song=><MusicSongCard key={song.id} song={song}
-          layout={layout} width={cardWidth} participants={peopleFor(song.publishedId)}
+          layout={layout} width={cardWidth} participants={peopleFor(song)}
           pendingCount={proposals.filter(p=>p.direction==='received' &&
             p.status==='submitted' && p.trackPublicationId===song.publishedId).length}/>)}
         {[...shared.entries()].map(([id,p])=><MusicTile key={id}
