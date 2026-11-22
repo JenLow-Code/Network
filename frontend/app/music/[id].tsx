@@ -18,7 +18,7 @@ import type { MusicPublication } from '@/domain/publication';
  * the read-only demo endpoint. No demo is allowed to send a real proposal.
  */
 export default function MusicDetail() {
-  const { id } = useLocalSearchParams<{ id:string; from?:string }>();
+  const { id, openMore } = useLocalSearchParams<{ id:string; from?:string; openMore?:string }>();
   const theme = useAppTheme();
   const demoId = !!id && /^demo-music-publication-\d{2}$/.test(id);
   const local = musics.find(x => x.id === id);
@@ -76,7 +76,8 @@ export default function MusicDetail() {
             <MusicLyrics lines={item.lyrics || []} currentTime={time} onSeek={seek}/>
           </View>
         </EditorialInline>
-        <DetailMoreDrawer heading={item.title} subtitle={'Musique · ' + item.author}>
+        <DetailMoreDrawer key={item.id} heading={item.title} subtitle={'Musique · ' + item.author}
+          defaultOpen={openMore === '1'}>
           <DetailInfoSection title="À propos du morceau" text={item.description}/>
           {!!item.requestedTalents?.length && <DetailInfoSection
             title="Talents recherchés" text={item.requestedTalents.join(' · ')}/>}
