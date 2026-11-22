@@ -51,9 +51,10 @@ export function MusicCollaboratorAvatars({ publisher, proposer, size = 50 }: {
  * Small, overlapping member photos placed directly over a music project.
  * No avatar is invented; initials are used where the profile has no image.
  */
-export function MusicParticipantBadges({ people, size = 29 }: {
+export function MusicParticipantBadges({ people, size = 29, maxVisible = 3 }: {
   people: MusicCollaborator[];
   size?: number;
+  maxVisible?: number;
 }) {
   const distinct = people.filter((person, index, all) => {
     const key = person.avatarUrl || person.displayName?.trim().toLowerCase();
@@ -63,18 +64,18 @@ export function MusicParticipantBadges({ people, size = 29 }: {
   if (!distinct.length) return null;
   return <View accessibilityLabel={distinct.map(p => p.displayName || 'Musicien').join(', ')}
     style={{flexDirection:'row',alignItems:'center'}}>
-    {distinct.slice(0,3).map((person,i) => <View
+    {distinct.slice(0,maxVisible).map((person,i) => <View
       key={(person.avatarUrl || person.displayName || 'person') + i}
       style={{ marginLeft:i ? -9 : 0 }}>
       <Portrait person={person} size={size} fallback="collaborator"/>
     </View>)}
-    {distinct.length > 3 ? <View style={{
+    {distinct.length > maxVisible ? <View accessibilityLabel={'Et ' + (distinct.length-maxVisible) + ' autres collaborateurs'} style={{
       marginLeft:-7,width:size,height:size,borderRadius:size/2,
       backgroundColor:'#CB245C',alignItems:'center',justifyContent:'center',
       borderWidth:2,borderColor:'#FFF',
     }}>
       <Text style={{color:'#FFF',fontSize:10,fontWeight:'700'}}>
-        +{distinct.length - 3}
+        +{distinct.length - maxVisible}
       </Text>
     </View> : null}
   </View>;
