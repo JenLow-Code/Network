@@ -244,68 +244,77 @@ function PhaseProjectCarousel({dreams,cardWidth,cardHeight,viewportWidth,gap,com
 
 
 /**
- * Keeps the four-phase raster intact on phones. Two square projects are
- * stacked in each quadrant, with horizontal swipe between pairs so the gesture
- * does not compete with the page's vertical scrolling.
+ * A single, foreground project and the edge of the next project underneath:
+ * discoverable horizontal swiping in each phase, not vertical stacks.
+ * The four-quadrant page raster and canvas dimensions remain untouched.
  */
-function PhaseMobileStack({dreams,cardSize,gap,onLongPress}:{
-  dreams:DreamEntry[];cardSize:number;gap:number;
+function PhaseMobileOverlap({dreams,viewportWidth,cardHeight,onLongPress}:{
+  dreams:DreamEntry[];viewportWidth:number;cardHeight:number;
   onLongPress:(dream:DreamEntry)=>void;
 }){
   const theme=useAppTheme();
   const scrollRef=useRef<React.ComponentRef<typeof ScrollView>>(null);
-  const [page,setPage]=useState(0);
-  const pages=Array.from({length:Math.ceil(dreams.length/2)},(_,i)=>
-    dreams.slice(i*2,i*2+2));
-  const keys=dreams.map(d=>d.id).join('|');
-  const total=pages.length;
-  const pageHeight=cardSize*(dreams.length>1?2:1)+(dreams.length>1?gap:0);
+  const [current,setCurrent]=useState(0);
+  const ids=dreams.map(d=>d.id).join('|');
+  const cardWidth=Math.max(64,Math.round(viewportWidth*.83));
+  const overlap=Math.round(cardWidth*.25);
+  const step=cardWidth-overlap;
+  const lastIndex=Math.max(0,dreams.length-1);
   useEffect(()=>{
     scrollRef.current?.scrollTo({x:0,animated:false});
-    setPage(0);
-  },[keys,cardSize]);
+    setCurrent(0);
+  },[ids,cardWidth]);
   const go=(direction:number)=>{
-    const next=Math.max(0,Math.min(total-1,page+direction));
-    scrollRef.current?.scrollTo({x:next*cardSize,animated:true});
-    setPage(next);
+    const next=Math.max(0,Math.min(lastIndex,current+direction));
+    scrollRef.current?.scrollTo({x:next*step,animated:true});
+    setCurrent(next);
   };
-  return <View style={{width:'100%',gap:5}}>
-    <ScrollView ref={scrollRef} horizontal pagingEnabled
+  return <View style={{width:'100%',gap:4}}>
+    <ScrollView ref={scrollRef} horizontal
+      decelerationRate="fast" snapToInterval={step}
       nestedScrollEnabled showsHorizontalScrollIndicator={false}
       scrollEventThrottle={32}
       onMomentumScrollEnd={e=>{
-        setPage(Math.max(0,Math.min(total-1,
-          Math.round(e.nativeEvent.contentOffset.x/cardSize))));
+        setCurrent(Math.max(0,Math.min(lastIndex,
+          Math.round(e.nativeEvent.contentOffset.x/step))));
       }}
-      style={{width:cardSize,height:pageHeight,flexGrow:0}}>
-      {pages.map((pair,i)=>
-        <View key={pair.map(d=>d.id).join('|')||i}
-          style={{width:cardSize,height:pageHeight,gap}}>
-          {pair.map(d=><PictureCard key={d.id} dream={d}
-            width={cardSize} height={cardSize}
-            onLongPress={()=>onLongPress(d)}/>)}
+      style={{width:'100%',height:cardHeight,flexGrow:0}}
+      contentContainerStyle={{
+        alignItems:'center',
+        paddingRight:Math.max(0,viewportWidth-cardWidth),
+      }}>
+      {dreams.map((dream,index)=>(
+        <View key={dream.id} style={{
+          width:cardWidth,
+          marginLeft:index===0?0:-overlap,
+          zIndex:index===current?dreams.length+1:dreams.length-index,
+        }}>
+          <PictureCard dream={dream} width={cardWidth} height={cardHeight}
+            onLongPress={()=>onLongPress(dream)}/>
         </View>
-      )}
+      ))}
     </ScrollView>
-    {total>1?(
-      <View style={{minHeight:29,flexDirection:'row',alignItems:'center',
-        justifyContent:'space-between',gap:3}}>
-        <Text style={{fontSize:10,color:theme.muted,
-          fontVariant:['tabular-nums']}}>{page+1}/{total}</Text>
-        <View style={{flexDirection:'row',gap:2}}>
-          {([-1,1] as const).map(direction=>{
-            const disabled=direction<0?page===0:page===total-1;
-            return <Pressable key={direction} disabled={disabled}
-              onPress={()=>go(direction)} accessibilityRole="button"
-              accessibilityLabel={direction<0?'Projets précédents':'Projets suivants'}
-              accessibilityState={{disabled}}
-              style={{width:26,height:28,alignItems:'center',
-                justifyContent:'center',opacity:disabled?.3:1}}>
-              <Ionicons name={direction<0?'chevron-back':'chevron-forward'}
-                size={15} color={theme.foreground}/>
-            </Pressable>;
-          })}
-        </View>
+    {dreams.length>1?(
+      <View style={{minHeight:28,flexDirection:'row',
+        alignItems:'center',justifyContent:'flex-end',gap:4}}>
+        <Text style={{fontSize:10,fontWeight:'500',
+          color:theme.dark?'#FFFFFF':'#000000',
+          fontVariant:['tabular-nums'],marginRight:3}}>
+          {current+1}/{dreams.length}
+        </Text>
+        {([-1,1] as const).map(direction=>{
+          const disabled=direction<0?current===0:current===lastIndex;
+          return <Pressable key={direction}
+            onPress={()=>go(direction)} disabled={disabled}
+            accessibilityRole="button"
+            accessibilityLabel={direction<0?'Projet précédent':'Projet suivant'}
+            accessibilityState={{disabled}}
+            style={{width:27,height:28,justifyContent:'center',
+              alignItems:'center',opacity:disabled?.35:1}}>
+            <Ionicons name={direction<0?'chevron-back':'chevron-forward'}
+              size={16} color={theme.dark?'#FFFFFF':'#000000'}/>
+          </Pressable>;
+        })}
       </View>
     ):null}
   </View>;
@@ -361,15 +370,15 @@ export default function MySpace() {
     ? Math.min(294,Math.max(252,Math.round(galleryWidth*.64)))
     : Math.min(318,Math.max(282,Math.round(galleryWidth*.29)));
   const phaseGridGap=compact?10:ws.tablet?14:18;
-  // Four quadrants on mobile and desktop. On narrow screens, each quadrant
-  // shows two square cards vertically; a horizontal swipe changes the pair.
+  // Preserve the established 2 × 2 raster and the page's fixed canvas width.
+  // Mobile projects overlap horizontally instead of stacking vertically.
   const phasePanelWidth=Math.max(0,(innerWidth-phaseGridGap)/2);
   const panelInset=compact?8:17;
   const phaseCardGap=compact?8:11;
   const phaseViewportWidth=Math.max(0,phasePanelWidth-2*panelInset);
   const phaseTileWidth=compact?phaseViewportWidth:
     Math.max(100,Math.floor((phaseViewportWidth-2*phaseCardGap)/2.2));
-  const phaseTileHeight=compact?phaseTileWidth:146;
+  const phaseTileHeight=compact?Math.min(155,Math.round(phaseViewportWidth*.9)):146;
   const heroGlass=Platform.OS==='web'
     ? ({backdropFilter:'blur(14px) saturate(125%)',
         WebkitBackdropFilter:'blur(14px) saturate(125%)'} as any)
@@ -596,8 +605,8 @@ export default function MySpace() {
             {visible.map(d => <DreamListRow key={d.id} dream={d} onLongPress={()=>setLongDream(d)}/>)}
           </View>
         ) : (
-          // Four phase zones remain in a 2 × 2 raster on desktop and phone.
-          // Phone panels show two vertically stacked square cards per page.
+          // Four phase zones remain 2 × 2 on desktop and phone.
+          // On phone the next project peeks out behind the current card.
           <View style={{
             paddingHorizontal:side,flexDirection:'row',flexWrap:'wrap',
             columnGap:phaseGridGap,rowGap:phaseGridGap,
@@ -613,8 +622,8 @@ export default function MySpace() {
                   paddingBottom:compact?11:17,
                   position:'relative',
                   borderRadius:3,borderWidth:1,
-                  borderColor:theme.dark?panel.darkBorder:panel.lightBorder,
-                  backgroundColor:theme.dark?panel.darkTint:panel.lightTint,
+                  borderColor:theme.dark?'rgba(255,255,255,.18)':'rgba(0,0,0,.11)',
+                  backgroundColor:'transparent',
                 }}>
                   {/* A small, nearly transparent illustration of each phase
                       sits at the exact center of its quadrant, beneath cards. */}
@@ -626,20 +635,21 @@ export default function MySpace() {
                     <DreamPhaseIcon phase={panel.phase}
                       size={compact?52:96} artworkScale={1}/>
                   </View>
-                  {/* A typographic rail inside the original panel inset:
-                      full-height vertical lettering, without width changes. */}
+                  {/* Editorial phase lettering stays INSIDE the left border.
+                      The inset isn't enlarged and the panel width is unchanged. */}
                   <View pointerEvents="none" accessible={false}
                     importantForAccessibility="no-hide-descendants"
-                    style={{position:'absolute',top:0,bottom:0,left:0,
-                      width:panelInset,alignItems:'center',justifyContent:'center'}}>
-                    <Svg width={compact?8:17} height={compact?160:192}
-                      viewBox={compact?'0 0 8 160':'0 0 17 192'}>
-                      <SvgText x={compact?4:8.5} y={compact?80:96}
+                    style={{position:'absolute',top:0,bottom:0,
+                      left:compact?3:5,width:compact?15:19,
+                      alignItems:'center',justifyContent:'center'}}>
+                    <Svg width={compact?14:18} height={compact?155:192}
+                      viewBox={compact?'0 0 14 155':'0 0 18 192'}>
+                      <SvgText x={compact?7:9} y={compact?77.5:96}
                         textAnchor="middle"
-                        transform={compact?'rotate(-90 4 80)':'rotate(-90 8.5 96)'}
-                        fontSize={compact?8:11}
-                        letterSpacing={compact?0.8:1.6}
-                        fontWeight="500"
+                        transform={compact?'rotate(-90 7 77.5)':'rotate(-90 9 96)'}
+                        fontSize={compact?9:12}
+                        letterSpacing={compact?0.9:1.7}
+                        fontWeight="400"
                         fill={theme.dark?'#FFFFFF':'#000000'}>
                         {panel.phase==='Rêve'?'SEMENCE':
                          panel.phase==='Initiation'?'GERMINATION':
@@ -662,8 +672,9 @@ export default function MySpace() {
                   </View>
                   {dreams.length>0 ? (
                     compact?
-                      <PhaseMobileStack dreams={dreams}
-                        cardSize={phaseTileWidth} gap={phaseCardGap}
+                      <PhaseMobileOverlap dreams={dreams}
+                        viewportWidth={phaseViewportWidth}
+                        cardHeight={phaseTileHeight}
                         onLongPress={setLongDream}/>:
                       <PhaseProjectCarousel dreams={dreams}
                         cardWidth={phaseTileWidth} cardHeight={phaseTileHeight}
