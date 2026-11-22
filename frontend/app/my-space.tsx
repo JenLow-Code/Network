@@ -13,10 +13,11 @@ import { useAppTheme } from '@/theme/AppTheme';
 import {workspaceCanvas,workspaceLayout} from '@/theme/workspaceLayout';
 import DreamQuickActions from '@/components/dream/DreamQuickActions';
 
-type ViewFilter = 'Tout' | 'Liste' | 'Congelés';
-type RoleFilter = 'all' | 'creator' | 'co_owner' | 'participant';
+type ViewFilter = 'Liste' | 'Grille';
+type RoleFilter = 'all' | 'frozen' | 'creator' | 'co_owner' | 'participant';
 const ROLE_OPTIONS: {key:RoleFilter;label:string;empty:string}[] = [
   {key:'all',label:'Tous les projets',empty:'Tout commence par une semence'},
+  {key:'frozen',label:'Congelés',empty:'Aucun projet congelé pour le moment'},
   {key:'creator',label:'Créés par moi',empty:'Aucun projet créé pour le moment'},
   {key:'co_owner',label:'Co-propriétaire',empty:'Aucun projet en copropriété pour le moment'},
   {key:'participant',label:'Mes participations',empty:'Aucune participation pour le moment'},
@@ -111,9 +112,9 @@ function PictureCard({ dream, width, height, onLongPress, presentation = 'card' 
       )}
       <View style={{
         position: 'absolute', bottom: 0, left: 0, right: 0,
-        paddingHorizontal: isBanner ? (width < 540 ? 16 : 24) : 13,
-        paddingTop: isBanner ? 16 : 36,
-        paddingBottom: isBanner ? (width < 540 ? 74 : 84) : 12,
+        paddingHorizontal: isBanner ? (width < 540 ? 18 : 28) : 13,
+        paddingTop: isBanner ? 18 : 36,
+        paddingBottom: isBanner ? (width < 540 ? 77 : 93) : 12,
         backgroundColor: isBanner ? 'transparent' : 'rgba(0,0,0,0.30)',
       }}>
         {!isBanner && isPublishedFlower(dream) ? (
@@ -133,11 +134,11 @@ function PictureCard({ dream, width, height, onLongPress, presentation = 'card' 
         {isBanner && !!(dream.testimony?.comment || dream.summary) ? (
           <Text numberOfLines={1} style={{
             color:'rgba(255,255,255,.90)',fontSize:width<540?11:13,
-            lineHeight:width<540?16:19,marginTop:5,maxWidth:width<540?'90%':'75%',
+            lineHeight:width<540?16:19,marginTop:8,maxWidth:width<540?'90%':'75%',
           }}>{dream.testimony?.comment || dream.summary}</Text>
         ) : null}
         {isBanner ? (
-          <View style={{flexDirection:'row',alignItems:'center',gap:7,marginTop:width<540?8:10}}>
+          <View style={{flexDirection:'row',alignItems:'center',gap:7,marginTop:width<540?10:14}}>
             <Text style={{color:'#FFFFFF',fontSize:width<540?12:13,fontWeight:'800'}}>
               Découvrir cette histoire
             </Text>
@@ -190,7 +191,7 @@ export default function MySpace() {
   const compact = windowWidth < 600;
   const ws=workspaceLayout(windowWidth);
   const { items } = useDreams();
-  const [view, setView] = useState<ViewFilter>('Tout');
+  const [view, setView] = useState<ViewFilter>('Grille');
   const [roleFilter,setRoleFilter]=useState<RoleFilter>('all');
   const [roleMenuOpen,setRoleMenuOpen]=useState(false);
   const [activeTestimony, setActiveTestimony] = useState(0);
@@ -204,7 +205,7 @@ export default function MySpace() {
   // instead of overflowing the shared desktop canvas's horizontal gutters.
   const galleryWidth=innerWidth;
   // The shorter, more panoramic image reads as a header rather than a full page.
-  const galleryHeight=compact ? 228 : Math.min(274,Math.max(244,Math.round(galleryWidth*.25)));
+  const galleryHeight=compact ? 244 : Math.min(318,Math.max(282,Math.round(galleryWidth*.29)));
   const desktopGrid=ws.desktop;
   const desktopGridGap=18;
   const desktopPanelWidth=Math.max(0,(innerWidth-desktopGridGap)/2);
@@ -220,9 +221,9 @@ export default function MySpace() {
   };
   const tileWidth = compact ? Math.max(137, Math.min(205, Math.floor(innerWidth * .48))) : 210;
   const list = view === 'Liste';
-  const matchingRole = roleFilter === 'all' ? items :
+  const matchingRole = roleFilter === 'all' || roleFilter === 'frozen' ? items :
     items.filter(dream => viewerRole(dream) === roleFilter);
-  const visible = view === 'Congelés' ? matchingRole.filter(frozen) : matchingRole;
+  const visible = roleFilter === 'frozen' ? matchingRole.filter(frozen) : matchingRole;
   const roleOption = ROLE_OPTIONS.find(option=>option.key===roleFilter)!;
   // Keep the gallery visible when switching to List or Frozen work modes.
   const testimonies = matchingRole.filter(isPublishedFlower);
@@ -343,23 +344,28 @@ export default function MySpace() {
                   borderColor:'rgba(255,255,255,.28)',
                   backgroundColor:'rgba(23,26,29,.62)',
                 },heroGlass]}>
-                  {(['Liste','Congelés'] as ViewFilter[]).map(choice=>(
+                  {(['Liste','Grille'] as ViewFilter[]).map(choice=>(
                     <Pressable key={choice}
-                      onPress={()=>setView(current=>current===choice?'Tout':choice)}
+                      onPress={()=>setView(choice)}
                       accessibilityRole="button"
                       accessibilityState={{selected:view===choice}}
-                      accessibilityLabel={choice==='Liste'?'Afficher en liste':'Afficher les projets gelés'}
+                      accessibilityLabel={choice==='Liste'?'Afficher en liste':'Afficher en grille par étape'}
                       style={({pressed})=>({
-                        height:36,minWidth:compact?43:57,
-                        paddingHorizontal:compact?8:14,
+                        height:36,minWidth:compact?65:86,
+                        paddingHorizontal:compact?8:13,
                         justifyContent:'center',alignItems:'center',borderRadius:8,
                         backgroundColor:view===choice?'rgba(255,255,255,.96)':
                           pressed?'rgba(255,255,255,.18)':'transparent',
                       })}>
-                      <Text style={{
-                        fontSize:compact?11:12,fontWeight:'700',
-                        color:view===choice?'#202126':'#FFFFFF',
-                      }}>{choice}</Text>
+                      <View style={{flexDirection:'row',alignItems:'center',gap:compact?4:6}}>
+                        <Ionicons name={choice==='Liste'?'list-outline':'grid-outline'}
+                          size={compact?14:15}
+                          color={view===choice?'#202126':'#FFFFFF'}/>
+                        <Text style={{
+                          fontSize:compact?11:12,fontWeight:'700',
+                          color:view===choice?'#202126':'#FFFFFF',
+                        }}>{choice}</Text>
+                      </View>
                     </Pressable>
                   ))}
                 </View>
@@ -414,16 +420,16 @@ export default function MySpace() {
           </View>
         ):null}
 
-        {visible.length === 0 && (list || !desktopGrid) ? (
+        {visible.length === 0 && (list || !desktopGrid || roleFilter==='frozen') ? (
           <View style={{ marginTop: 44, alignItems: 'center', paddingHorizontal: 30, gap: 10 }}>
-            <Ionicons name={view === 'Congelés' ? 'snow' : 'sparkles-outline'} size={27}
-              color={view === 'Congelés' ? '#427FA6' : theme.muted} />
+            <Ionicons name={roleFilter==='frozen' ? 'snow' : 'sparkles-outline'} size={27}
+              color={roleFilter==='frozen' ? '#427FA6' : theme.muted} />
             <Text style={{ color: theme.foreground, fontWeight: '700', fontSize: 16 }}>
-              {view === 'Congelés' ? 'Aucun projet gelé dans cette catégorie' : roleOption.empty}
+              {roleFilter==='frozen' ? 'Aucun projet congelé' : roleOption.empty}
             </Text>
             <Text style={{ color: theme.muted, fontSize: 12, textAlign: 'center', lineHeight: 19 }}>
-              {view === 'Congelés'
-                ? 'Les projets gelés apparaîtront ici.'
+              {roleFilter==='frozen'
+                ? 'Les projets mis en pause apparaîtront ici.'
                 : roleFilter==='participant'?'Les projets auxquels tu contribues apparaîtront après acceptation de ta ressource.'
                 : roleFilter==='co_owner'?'Les projets partagés apparaîtront après acceptation d’une invitation de copropriété.'
                 : 'Plante une semence ou retrouve tes projets existants.'}
@@ -521,7 +527,7 @@ export default function MySpace() {
         )}
 
         {/* On smaller screens Floraison remains its familiar separate section. */}
-        {!desktopGrid && view==='Tout' && roleFilter!=='participant' && unfinished.length>0 ? (
+        {!desktopGrid && view==='Grille' && roleFilter!=='participant' && unfinished.length>0 ? (
           <View style={{marginTop:6,marginBottom:26}}>
             <View style={{paddingHorizontal:side,marginBottom:12}}>
               <Text style={{fontSize:17,fontWeight:'700',color:theme.foreground}}>Floraison</Text>
