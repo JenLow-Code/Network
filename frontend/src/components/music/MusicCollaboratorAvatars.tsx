@@ -46,3 +46,36 @@ export function MusicCollaboratorAvatars({ publisher, proposer, size = 50 }: {
     </View>
   </View>;
 }
+
+/**
+ * Small, overlapping member photos placed directly over a music project.
+ * No avatar is invented; initials are used where the profile has no image.
+ */
+export function MusicParticipantBadges({ people, size = 29 }: {
+  people: MusicCollaborator[];
+  size?: number;
+}) {
+  const distinct = people.filter((person, index, all) => {
+    const key = person.avatarUrl || person.displayName?.trim().toLowerCase();
+    return !!key && all.findIndex(other =>
+      (other.avatarUrl || other.displayName?.trim().toLowerCase()) === key) === index;
+  });
+  if (!distinct.length) return null;
+  return <View accessibilityLabel={distinct.map(p => p.displayName || 'Musicien').join(', ')}
+    style={{flexDirection:'row',alignItems:'center'}}>
+    {distinct.slice(0,3).map((person,i) => <View
+      key={(person.avatarUrl || person.displayName || 'person') + i}
+      style={{ marginLeft:i ? -9 : 0 }}>
+      <Portrait person={person} size={size} fallback="collaborator"/>
+    </View>)}
+    {distinct.length > 3 ? <View style={{
+      marginLeft:-7,width:size,height:size,borderRadius:size/2,
+      backgroundColor:'#CB245C',alignItems:'center',justifyContent:'center',
+      borderWidth:2,borderColor:'#FFF',
+    }}>
+      <Text style={{color:'#FFF',fontSize:10,fontWeight:'700'}}>
+        +{distinct.length - 3}
+      </Text>
+    </View> : null}
+  </View>;
+}
