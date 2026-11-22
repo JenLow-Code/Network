@@ -47,10 +47,11 @@ export function MusicDocumentScanner({visible,initialFile,sourceFile,onClose,onS
   const [draftText,setDraftText]=useState('');
   const [kind,setKind]=useState<'lyrics'|'note'>('lyrics');
   const [confirmed,setConfirmed]=useState(false);
+  const [aiConsent,setAiConsent]=useState(false);
   useEffect(()=>{
     if(!visible)return;
     setResult(null);setError('');setDraftTitle('');setDraftText('');
-    setConfirmed(false);setMode('score');
+    setConfirmed(false);setAiConsent(false);setMode('score');
     if(!initialFile){setFile(sourceFile||null);return;}
     if(!initialFile.localFileId){setFile(null);return;}
     let live=true;
@@ -126,7 +127,7 @@ export function MusicDocumentScanner({visible,initialFile,sourceFile,onClose,onS
     }finally{URL.revokeObjectURL(object);}
   };
   const scan=async()=>{
-    if(!file||loading)return;
+    if(!file||loading||!aiConsent)return;
     setLoading(true);setError('');setResult(null);setConfirmed(false);
     try{
       const image=await compressed(file);
@@ -250,10 +251,21 @@ export function MusicDocumentScanner({visible,initialFile,sourceFile,onClose,onS
               <RNImage source={{uri:preview}} accessibilityLabel="Document original à numériser"
                 resizeMode="contain" style={{width:'100%',height:225}}/>
             </View>:null}
-          <Pressable onPress={()=>{void scan();}} disabled={!file||loading}
+          <Pressable onPress={()=>setAiConsent(value=>!value)}
+            accessibilityRole="checkbox"
+            accessibilityState={{checked:aiConsent}}
+            style={{flexDirection:'row',gap:9,alignItems:'center',paddingVertical:6}}>
+            <Ionicons name={aiConsent?'checkbox':'square-outline'}
+              color={PINK} size={20}/>
+            <Text style={{fontSize:12,lineHeight:19,color:theme.foreground,flex:1}}>
+              J’autorise l’analyse temporaire de cette image par Cloudflare Workers AI.
+              Aucun document n’est publié ; je vérifierai le résultat.
+            </Text>
+          </Pressable>
+          <Pressable onPress={()=>{void scan();}} disabled={!file||loading||!aiConsent}
             accessibilityRole="button"
             style={{alignSelf:'flex-start',backgroundColor:PINK,
-              opacity:!file||loading?0.55:1,borderRadius:9,
+              opacity:!file||loading||!aiConsent?0.55:1,borderRadius:9,
               paddingVertical:12,paddingHorizontal:18}}>
             <Text style={{fontWeight:'700',color:'#FFFFFF',fontSize:13}}>
               {loading?'Analyse en cours…':
