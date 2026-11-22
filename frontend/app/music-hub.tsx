@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Image, Platform, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -303,17 +303,14 @@ export default function MusicHub() {
             }}>
               <Pressable accessibilityRole="button" accessibilityLabel={'Ouvrir ' + song.title}
                 onPress={() => router.push({ pathname: '/music/[id]', params: { id: song.id } })}
-                style={{ flexDirection: 'row', alignItems: 'center', gap: 13 }}>
-                <View style={{ width: 82, height: 82, borderRadius: 41,
-                  overflow: 'hidden', backgroundColor: softColor,
-                  alignItems: 'center', justifyContent: 'center' }}>
-                  {song.coverArt || song.image ?
-                    <Image source={{ uri: song.coverArt || song.image }}
-                      style={{ width: 82, height: 82, borderRadius: 41 }}
-                      resizeMode="cover"/> :
-                    <Ionicons name="disc-outline" size={35} color={PINK}/>}
+                style={{ gap: 8, alignItems: 'center' }}>
+                <View style={{ width: '100%', alignItems: 'center', justifyContent: 'center',
+                  minHeight: 190, borderRadius: 13, backgroundColor: softColor,
+                  overflow: 'hidden' }}>
+                  <CassetteArtwork width={Math.min(cardWidth - 30, 330)} height={190}
+                    title={song.title} artwork={song.coverArt || song.image} transparent/>
                 </View>
-                <View style={{ flex: 1, minWidth: 0, gap: 5 }}>
+                <View style={{ alignSelf: 'stretch', gap: 5 }}>
                   <Text numberOfLines={2} style={{ color: theme.foreground,
                     fontWeight: '700', fontSize: 15 }}>{song.title}</Text>
                   <Text numberOfLines={1} style={{ color: theme.muted,
