@@ -288,9 +288,11 @@ export function registerMusic(r: Router): void {
       ...args,
     );
     const credits = rows.length ? await ctx.sql.all<{ proposal_id: string; credit_order: number; display_name: string; contribution: string }>(`SELECT proposal_id,credit_order,display_name,contribution FROM music_proposal_credits WHERE proposal_id IN (${rows.map(() => '?').join(',')}) ORDER BY credit_order`, ...rows.map(x => x.id)) : [];
-    const people = await authorMap(ctx, rows.map(x => x.proposed_by));
+    const people = await authorMap(ctx, rows.flatMap(x => [x.proposed_by, x.publisher_id]));
     return rows.map(x => ({
-      id: x.id, trackPublicationId: x.publication_id, trackTitle: x.title, proposer: people.get(x.proposed_by), description: x.description, status: x.status,
+      id: x.id, trackPublicationId: x.publication_id, trackTitle: x.title,
+      proposer: people.get(x.proposed_by), publisher: people.get(x.publisher_id),
+      description: x.description, status: x.status,
       reviewState: x.status !== 'submitted' ? 'completed' :
         x.publisher_id === viewer.id ? x.review_state :
         x.review_started_at ? 'in_review' : 'pending',
