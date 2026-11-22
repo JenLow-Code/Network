@@ -13,11 +13,17 @@ export interface Env {
   SUPABASE_URL?:string;
   SUPABASE_PUBLISHABLE_KEY?:string;
   AI?: {run(model:string,request:{
-    messages:{role:'system'|'user';content:string}[];
-    image:string;
-    max_tokens?:number;
+    messages:{role:'system'|'user';content:string|{
+      type:'text';text:string;
+    }[]|{
+      type:'image_url';image_url:{url:string};
+    }[]}[];
+    max_completion_tokens?:number;
+    chat_template_kwargs?:{enable_thinking:boolean};
     temperature?:number;
-  }):Promise<{response?:string}>};
+    store?:boolean;
+  }):Promise<{response?:string;
+    choices?:{message?:{content?:string}}[]}>};
   /** HS256 secret shared with the deployed beta auth Worker (same issuer, same tokens). */
   AUTH_JWT_SECRET: string;
   /** Private beta invitation code required for email registration. */
