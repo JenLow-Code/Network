@@ -127,7 +127,7 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
         (path.startsWith('/music/') && path !== '/music/new'),
     },
     {
-      icon: 'layers-outline' as const, title: 'Mes rêves',
+      icon: 'layers-outline' as const, title: 'Mes projets',
       path: '/my-space' as const,
       active: path === '/my-space' || path === '/my-dreams' || path.startsWith('/my-dream'),
     },
