@@ -25,6 +25,7 @@ export function DetailLayout({
   headerIcon,
   onCoverPress,
   musicPlaying = false,
+  previewOnly = false,
 }: {
   item: Publication;
   children: React.ReactNode;
@@ -32,6 +33,7 @@ export function DetailLayout({
   headerIcon?: React.ReactNode;
   onCoverPress?: () => void;
   musicPlaying?: boolean;
+  previewOnly?: boolean;
 }) {
   const theme = useAppTheme();
   const { from } = useLocalSearchParams<{ from?: string }>();
@@ -73,7 +75,7 @@ export function DetailLayout({
         }}
       >
         <View style={{maxWidth:760,width:'100%',alignSelf:'center'}}>
-          <DetailAuthorHeader item={item} flushToImage={isFloraison} />
+          <DetailAuthorHeader item={item} flushToImage={isFloraison} previewOnly={previewOnly} />
         </View>
 
         <View style={{maxWidth:760,width:'100%',alignSelf:'center',
@@ -105,12 +107,19 @@ export function DetailLayout({
             {!isSeed && (
               <View style={{ flexDirection: 'row', alignItems: 'stretch', gap: 10 }}>
                 {/* Both columns share the same top/bottom; the rail cannot drift above the buttons. */}
-                <View style={{ flex: 1, minWidth: 0 }}>
-                  <PublicationPrimaryAction item={item} />
-                </View>
-                <View style={{ width: 40, paddingTop: 7, justifyContent: 'center' }}>
-                  <DreamReactionRail item={item} />
-                </View>
+                {previewOnly ? <View style={{paddingTop:10, paddingBottom:15, flex:1}}>
+                  <Text style={{color:theme.muted,fontSize:12,lineHeight:19}}>
+                    Exemple de démonstration · aucune demande ni collaboration réelle ne peut être envoyée.
+                  </Text>
+                </View> : <>
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <PublicationPrimaryAction item={item} />
+                  </View>
+                  <View style={{ width: 40, paddingTop: 7, justifyContent: 'center' }}>
+                    <DreamReactionRail item={item} />
+                  </View>
+                </>}
+
               </View>
             )}
           </View>
