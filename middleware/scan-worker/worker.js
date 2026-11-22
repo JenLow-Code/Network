@@ -5,6 +5,7 @@
  * Exact notes from a scan are only drafts for mandatory human review.
  */
 const MODEL='@cf/google/gemma-4-26b-a4b-it';
+const FALLBACK_MODEL='@cf/qwen/qwen3.8-27b';
 const URL_AUTH='https://ldliraxelqftisjofwgv.supabase.co';
 const ANON_KEY='sb_publishable_cpxxQyXcEYEy3mwWAaTG9w_QNFg9tC9';
 const ALLOWED=new Set(['https://network.jenlow.net',
@@ -170,23 +171,50 @@ export default{
     if(typeof image!=='string'||image.length<100||image.length>1_750_000||
       !/^data:image\/(jpeg|png|webp);base64,[a-zA-Z0-9+/=]+$/.test(image))
       return error('invalid_image',400,origin);
-    let answer;
-    try{
-      answer=await env.AI.run(MODEL,{
-        messages:[{role:'system',
-          content:'Transcribe visually observed content only. JSON only.'},
-          {role:'user',content:[
-            {type:'text',text:mode==='text'?TEXT_PROMPT:SCORE_PROMPT},
-            {type:'image_url',image_url:{url:image}},
-          ]}],
-        max_completion_tokens:mode==='text'?2900:4400,
-        chat_template_kwargs:{enable_thinking:false},
-        temperature:0,store:false,
-      });
-    }catch{return error('model_unavailable',503,origin);}
-    const raw=answer?.choices?.[0]?.message?.content||answer?.response;
-    try{return json(scanResult(parseResponse(raw),mode),200,origin);}
-    catch(e){return error('scan_'+e.message,422,origin,
-      'Unable to recognize a usable result. Try a sharper photo or MusicXML.');}
+    // A failure of the primary model is NOT proof the scanner is unconfigured.
+    // Try a second EU-usable vision model. Both outputs are unverified drafts.
+    let failure='model_unavailable';
+    for(const model of [MODEL,FALLBACK_MODEL]){
+      try{
+        const answer=await env.AI.run(model,{
+          messages:[{role:'system',
+            content:'Return strictly valid JSON from the visible image; never invent missing notes or text.'},
+            {role:'user',content:[
+              {type:'text',text:mode==='text'?TEXT_PROMPT:SCORE_PROMPT},
+              {type:'image_url',image_url:{url:image}},
+            ]}],
+          max_completion_tokens:mode==='text'?2900:4400,
+          chat_template_kwargs:{enable_thinking:false},
+          temperature:0,store:false,
+        });
+        const raw=answer?.choices?.[0]?.message?.content||answer?.response;
+        const scanned=scanResult(parseResponse(raw),mode);
+        return json({...scanned,engine:model},200,origin);
+      }catch(e){
+        const reason=String(e?.message||e);
+        if(reason.includes('no_notes'))failure='scan_no_notes';
+        else if(reason.includes('no_text'))failure='scan_no_text';
+        else if(reason.includes('unreadable'))failure='scan_unreadable';
+        else if(/invalid data for image|image dimensions|invalid base64|too large/i.test(reason))
+          failure='image_unreadable';
+        else if(/quota|insufficient|limit exceeded|rate limit|credits|balance/i.test(reason))
+          failure='model_quota';
+        else failure='model_unavailable';
+      }
+    }
+    const unreadable=['scan_no_notes','scan_no_text','scan_unreadable','image_unreadable']
+      .includes(failure);
+    const explanation=failure==='scan_no_notes'?
+      'Aucune note fiable reconnue. Recadre la portée et réessaie ou importe du MusicXML.':
+      failure==='scan_no_text'?
+      'Aucun texte lisible reconnu. Réessaie avec un scan plus net.':
+      failure==='image_unreadable'?
+      'Le modèle ne peut pas lire cette image. Essaie une photo JPG recadrée.':
+      failure==='model_quota'?
+      'Le service d’analyse a atteint sa limite temporaire.':
+      unreadable?
+      'La reconnaissance de cette image a échoué. Recadre le document et réessaie.':
+      'Le service d’analyse a échoué. Réessaie avec une image plus petite.';
+    return error(failure,unreadable?422:503,origin,explanation);
   },
 };
