@@ -11,6 +11,36 @@
 
 
 
+## Régression sur une photographie à quatre portées (22 novembre 2026)
+
+Une photographie de chant harmonisé (clé de sol + clé de fa, sur deux systèmes)
+a été reconnue comme « 27 notes » regroupées sur seulement trois instants.
+**Ce résultat n'est pas une transcription musicale** : il représente trois
+accords synthétiques à la place de plusieurs mesures. Le nombre de notes
+seul ne doit jamais valider une numérisation.
+
+Mesures de protection implémentées :
+- Inspection locale des pixels de l'image : recherche de groupes de cinq lignes
+  parallèles (portées) et cadrage de la zone musicale.
+- Double contrôle de couverture : nombre d'instants distincts, durée du
+  résultat en temps musicaux, confrontation au nombre de portées/systèmes.
+- Renvoi de `scan_incomplete_score` plutôt qu'un « succès » si les notes
+  sont concentrées sur quelques instants, avec tentative d'un second modèle.
+- L'interface refuse d'enregistrer le résultat comme partition jouable lorsque
+  le contrôle échoue, et garde le scan d'origine disponible.
+- Tests automatisés sur 4 portées **synthétiques**, sans déposer la
+  photographie privée de l'utilisatrice dans GitHub.
+
+**Limitation non résolue :** Gemma/Qwen sont des modèles généralistes de vision,
+et non des moteurs OMR spécialisés. Même un résultat passant ces contrôles
+n'est pas garanti juste sur les voix, mesures, soupirs, rythmes ou liaisons.
+Pour promettre la reconnaissance fidèle d'une partition complète, il faut
+intégrer et valider un moteur OMR dédié avec export MusicXML, par exemple
+Audiveris dans un service Java conteneurisé, ou une API OMR spécialisée
+(F​lat Interactive Jobs) avec identifiants, consentement et budget configurés.
+Ne pas activer un fournisseur externe payant ni transmettre des partitions
+privées à un prestataire tiers sans autorisation.
+
 ## Décision UX
 
 Les photos isolées n'ont plus de rôle créatif dans Capture. L'entrée « Scanner » aura deux choix distincts :
