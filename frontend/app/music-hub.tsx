@@ -133,10 +133,17 @@ export default function MusicHub() {
   ));
 
   const peopleForLocal = (song: MusicProject): MusicCollaborator[] => {
-    if (!song.publishedId) return [];
-    return accepted.filter(p => p.trackPublicationId === song.publishedId)
+    const acceptedPeople = song.publishedId ? accepted
+      .filter(p => p.trackPublicationId === song.publishedId)
       .flatMap(p => p.direction === 'received' ? [p.proposer] : [p.publisher])
-      .filter((person): person is MusicCollaborator => !!person?.displayName);
+      .filter((person): person is MusicCollaborator => !!person?.displayName) : [];
+    // Attribution entered by the owner on a local track is a real contributor
+    // reference; a private invitation draft is NOT an accepted participant.
+    const credited = song.layers.filter(layer => layer.contributor?.trim() &&
+      layer.contributor.trim().toLowerCase() !== song.ownerName.trim().toLowerCase() &&
+      !['moi','me','you'].includes(layer.contributor.trim().toLowerCase()))
+      .map(layer => ({displayName:layer.contributor.trim()}));
+    return [...acceptedPeople, ...credited];
   };
 
   // One remote/shared song card even when several contributors have joined it.
