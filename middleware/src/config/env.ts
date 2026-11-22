@@ -13,11 +13,10 @@ export interface Env {
   SUPABASE_URL?:string;
   SUPABASE_PUBLISHABLE_KEY?:string;
   AI?: {run(model:string,request:{
-    messages:{role:'system'|'user';content:string|{
-      type:'text';text:string;
-    }[]|{
-      type:'image_url';image_url:{url:string};
-    }[]}[];
+    messages:{role:'system'|'user';
+      content:string|({type:'text';text:string}|
+        {type:'image_url';image_url:{url:string}})[];
+    }[];
     max_completion_tokens?:number;
     chat_template_kwargs?:{enable_thinking:boolean};
     temperature?:number;
