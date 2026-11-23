@@ -14,7 +14,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { Avatar } from '@/components/ui/Avatar';
 import { Nav } from '@/components/navigation/Nav';
 import { TopActions } from '@/components/navigation/TopActions';
 import { useApp } from '@/context/AppContext';
@@ -22,7 +21,7 @@ import { colors as c } from '@/theme/colors';
 import { useDreams } from '@/domain/dreamRepository';
 import { api } from '@/lib/api/client';
 import { useAppTheme } from '@/theme/AppTheme';
-import {workspaceCanvas} from '@/theme/workspaceLayout';
+import {workspaceCanvas,PAGE_TITLE_FONT_SIZE,PAGE_TITLE_LINE_HEIGHT} from '@/theme/workspaceLayout';
 import { useMusicWorkspaces } from '@/domain/musicWorkspace';
 
 function ChatHeader({ name, subtitle }: { name: string; subtitle: string }) {
@@ -34,12 +33,10 @@ function ChatHeader({ name, subtitle }: { name: string; subtitle: string }) {
         style={{width:44,height:44,alignItems:'center',justifyContent:'center'}}>
         <Ionicons name="arrow-back-outline" size={23} color={theme.foreground} />
       </Pressable>
-      <Avatar size={35} />
       <View style={{ flex: 1 }}>
-        <Text style={[s.headerName,{color:theme.foreground}]}>{name}</Text>
+        <Text numberOfLines={1} style={[s.headerName,{color:theme.foreground,fontSize:PAGE_TITLE_FONT_SIZE,lineHeight:PAGE_TITLE_LINE_HEIGHT}]}>{name}</Text>
         <Text style={[s.headerDetail,{color:theme.muted}]}>{subtitle}</Text>
       </View>
-      <Ionicons name="videocam-outline" size={21} color={theme.foreground} />
       <TopActions />
     </View>
   );
@@ -294,7 +291,7 @@ function MusicSharedConversation({ conversationId }: { conversationId: string })
         <Ionicons name="arrow-back-outline" size={22} color={theme.foreground}/>
       </Pressable>
       <View style={{flex:1}}>
-        <Text style={{fontWeight:'700',fontSize:16,color:theme.foreground}}>{title}</Text>
+        <Text style={{fontWeight:'700',fontSize:PAGE_TITLE_FONT_SIZE,lineHeight:PAGE_TITLE_LINE_HEIGHT,color:theme.foreground}}>{title}</Text>
         <Text style={{color:theme.muted,fontSize:11}}>Conversation partagée des collaborateurs autorisés</Text>
       </View>
       <Pressable accessibilityRole="button" accessibilityLabel="Actualiser la discussion"
@@ -377,7 +374,7 @@ function DreamConversation({ dreamId }: { dreamId: string }) {
       style={{width:44,height:44,alignItems:'center',justifyContent:'center'}}>
       <Ionicons name="arrow-back-outline" size={23} color={theme.foreground}/>
     </Pressable>
-   <View style={{ flex: 1 }}><Text style={{ color:theme.foreground,fontWeight: '800', fontSize: 16 }}>{dream?.title || 'Conversation du rêve'}</Text><Text style={{ color: theme.muted, fontSize: 11 }}>Espace de conversation du rêve · Sur cet appareil</Text></View>
+   <View style={{ flex: 1 }}><Text numberOfLines={1} style={{ color:theme.foreground,fontWeight: '700', fontSize: PAGE_TITLE_FONT_SIZE,lineHeight:PAGE_TITLE_LINE_HEIGHT }}>{dream?.title || 'Conversation du rêve'}</Text><Text style={{ color: theme.muted, fontSize: 11 }}>Espace de conversation du rêve · Sur cet appareil</Text></View>
   </View>
   <ScrollView style={{ flex: 1 }} contentContainerStyle={{...workspaceCanvas(width),paddingTop:16,paddingBottom:20,gap:10}}>
    <Text style={{ fontSize: 12, color: theme.muted, textAlign: 'center', marginBottom: 18 }}>Cette conversation est enregistrée localement. Les invitations et la messagerie entre membres ne sont pas encore connectées.</Text>
