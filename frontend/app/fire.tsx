@@ -51,7 +51,7 @@ export default function FireList() {
               position: 'absolute', right: 2, bottom: 3, borderRadius: 9,
               backgroundColor: theme.background, padding: 1,
             }}>
-              <Ionicons name="add-circle" size={15} color="#CB245C"/>
+              <Ionicons name="add-circle" size={15} color={theme.accent}/>
             </View>
           </Pressable>
         </View>
@@ -93,7 +93,7 @@ export default function FireList() {
           {renaming === selectedFolder ? (
             <>
               <TextInput value={editName} onChangeText={setEditName} style={{ flex: 1, color: theme.foreground, borderBottomWidth: 1, borderColor: theme.border }} />
-              <Pressable onPress={() => { renameFireFolder(selectedFolder, editName); setRenaming(null); }}><Text style={{ color: '#CB245C' }}>Enregistrer</Text></Pressable>
+              <Pressable onPress={() => { renameFireFolder(selectedFolder, editName); setRenaming(null); }}><Text style={{ color: theme.accent }}>Enregistrer</Text></Pressable>
             </>
           ) : (
             <Pressable onPress={() => { setRenaming(selectedFolder); setEditName(fireFolders.find(f => f.id === selectedFolder)?.name || ''); }}>
@@ -101,7 +101,7 @@ export default function FireList() {
             </Pressable>
           )}
           <Pressable onPress={() => Alert.alert('Supprimer le dossier ?', 'Les publications restent dans Fire.', [{ text: 'Annuler', style: 'cancel' }, { text: 'Supprimer', style: 'destructive', onPress: () => { deleteFireFolder(selectedFolder); setSelectedFolder(null); } }])}>
-            <Text style={{ color: '#B71D53', fontSize: 12 }}>Supprimer</Text>
+            <Text style={{ color: theme.accent, fontSize: 12 }}>Supprimer</Text>
           </Pressable>
         </View>}
         {fireFolders.length > 0 && !selectedFolder && fireIds.length > 0 && (
