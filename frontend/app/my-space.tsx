@@ -26,11 +26,8 @@ const ROLE_OPTIONS: {key:RoleFilter;label:string;empty:string}[] = [
  * Never derive participant status from encouragements, prayers or "Moi aussi".
  */
 const viewerRole = (dream:DreamEntry) => dream.viewerRole || 'creator';
-// Unpublished Floraison projects are still workspaces; published fruits belong
-// exclusively to the gallery. Tints stay quiet in both light and dark themes.
-const EDITORIAL_BOTANICAL_PHOTO =
-  'https://images.unsplash.com/photo-1589185810360-8ea760bb9836?auto=format&fit=crop&w=1600&q=78&sat=-100';
-
+// Published fruits appear in the gallery; these panels show unpublished projects.
+// Phase identity uses typography, not illustrations or tinted backgrounds.
 const phasePanels: {
   phase: DreamPhase; title: string; lightTint: string; darkTint: string;
   lightBorder: string; darkBorder: string; accent: string;
@@ -99,10 +96,15 @@ function PictureCard({ dream, width, height, onLongPress, presentation = 'card' 
           position: 'absolute', top: 0, bottom: 0, left: 0, right: 0,
         }}>
           <Defs>
-            <LinearGradient id="fruit-banner-shade" x1="0%" y1="0%" x2="0%" y2="100%">
-              <Stop offset="0%" stopColor="#000000" stopOpacity={0.08}/>
-              <Stop offset="40%" stopColor="#000000" stopOpacity={0.25}/>
-              <Stop offset="100%" stopColor="#000000" stopOpacity={0.85}/>
+            <LinearGradient id="fruit-banner-shade" x1="0%" y1="0%" x2="100%" y2="0%">
+              {/* Readable light left side, unobstructed photography on the right. */}
+              <Stop offset="0%" stopColor={theme.dark?'#141414':'#FAF8F5'} stopOpacity={0.99}/>
+              <Stop offset={width<600?'66%':'44%'}
+                stopColor={theme.dark?'#141414':'#FAF8F5'} stopOpacity={width<600?0.94:0.9}/>
+              <Stop offset={width<600?'100%':'72%'}
+                stopColor={theme.dark?'#141414':'#FAF8F5'} stopOpacity={width<600?0.66:0.24}/>
+              <Stop offset="100%" stopColor={theme.dark?'#141414':'#FAF8F5'}
+                stopOpacity={width<600?0.66:0.01}/>
             </LinearGradient>
           </Defs>
           <Rect width="100%" height="100%" fill="url(#fruit-banner-shade)" />
@@ -126,13 +128,6 @@ function PictureCard({ dream, width, height, onLongPress, presentation = 'card' 
             <Text style={{color:'#F7E7C7',fontSize:10,fontWeight:'700',letterSpacing:1.1}}>FRUIT</Text>
           </View>
         ) : null}
-        {isBanner ? (
-          <Text style={{fontSize:width<540?9:10,lineHeight:14,
-            fontWeight:'500',letterSpacing:2.0,
-            color:'rgba(255,255,255,.88)',marginBottom:width<540?5:10}}>
-            UN RÊVE ACCOMPLI
-          </Text>
-        ) : null}
         <Text style={{
           fontFamily:isBanner?'Georgia':undefined,
           fontSize:isBanner?(width<380?27:width<540?32:width<780?38:46)
@@ -140,27 +135,29 @@ function PictureCard({ dream, width, height, onLongPress, presentation = 'card' 
           lineHeight:isBanner?(width<380?34:width<540?40:width<780?47:56)
             :(width<230?18:24),
           letterSpacing:isBanner?-0.8:0,
-          color:'#FFFFFF',fontWeight:isBanner?'400':'800',
-          textShadowColor:isBanner?'rgba(0,0,0,.32)':'transparent',
-          textShadowRadius:isBanner?8:0,
+          color:isBanner?(theme.dark?'#FFFFFF':'#181716'):'#FFFFFF',
+          fontWeight:isBanner?'400':'800',
+          textShadowColor:'transparent',textShadowRadius:0,
         }} numberOfLines={isBanner?2:3}>{dream.title}</Text>
         {isBanner ? (
           <Text numberOfLines={2} style={{
-            color:'rgba(255,255,255,.96)',
+            color:theme.dark?'#F8F7F6':'#282523',
             fontSize:width<540?12:15,lineHeight:width<540?18:23,
             marginTop:width<540?7:11,
-            maxWidth:width<540?'98%':'82%',
-            fontWeight:'400',textShadowColor:'rgba(0,0,0,.54)',
-            textShadowRadius:5,
+            maxWidth:width<540?'98%':'68%',
+            fontWeight:'400',textShadowColor:'transparent',
+            textShadowRadius:0,
           }}>{dream.testimony?.comment || dream.summary ||
             'Une histoire accomplie, à découvrir et à partager.'}</Text>
         ) : null}
         {isBanner ? (
           <View style={{flexDirection:'row',alignItems:'center',gap:7,marginTop:width<540?13:18}}>
-            <Text style={{color:'#FFFFFF',fontSize:width<540?11:12,fontWeight:'500'}}>
+            <Text style={{color:theme.dark?'#FFFFFF':'#181716',
+              fontSize:width<540?11:12,fontWeight:'600'}}>
               Découvrir cette histoire
             </Text>
-            <Ionicons name="arrow-forward-outline" size={width<540?15:17} color="#FFFFFF"/>
+            <Ionicons name="arrow-forward-outline" size={width<540?15:17}
+              color={theme.dark?'#FFFFFF':'#181716'}/>
           </View>
         ) : null}
       </View>
@@ -424,14 +421,12 @@ export default function MySpace() {
   const phasePanelWidth=Math.max(0,(innerWidth-phaseGridGap)/2);
   const panelInset=compact?8:17;
   const phaseCardGap=compact?8:11;
-  const phaseViewportWidth=Math.max(0,phasePanelWidth-2*panelInset);
+  const phaseLabelRail=compact?16:30;
+  const phaseViewportWidth=Math.max(0,phasePanelWidth-2*panelInset-phaseLabelRail);
   const phaseTileWidth=compact?phaseViewportWidth:
     Math.max(100,Math.floor((phaseViewportWidth-2*phaseCardGap)/2.2));
   const phaseTileHeight=compact?Math.min(155,Math.round(phaseViewportWidth*.9)):146;
-  // Uniform cell heights make the single botanical photograph align across
-  // all four quarters, while preserving the existing page and hero widths.
-  const phasePanelHeight=compact?Math.max(232,phaseTileHeight+98):282;
-  const botanicalHeight=phasePanelHeight*2+phaseGridGap;
+  const phasePanelHeight=compact?Math.max(204,phaseTileHeight+58):282;
   const heroGlass=Platform.OS==='web'
     ? ({backdropFilter:'blur(14px) saturate(125%)',
         WebkitBackdropFilter:'blur(14px) saturate(125%)'} as any)
@@ -536,14 +531,19 @@ export default function MySpace() {
                   style={({pressed})=>[heroControlBase,{
                     flexDirection:'row',flexShrink:1,minWidth:0,gap:7,
                     paddingHorizontal:compact?9:12,borderRadius:9,
-                    backgroundColor:pressed?'rgba(27,29,31,.83)':'rgba(23,26,29,.62)',
-                  },heroGlass]}>
-                  <Ionicons name="options-outline" size={compact?14:16} color="#FFFFFF"/>
+                    backgroundColor:theme.dark?
+                      (pressed?'rgba(32,32,32,.92)':'rgba(20,20,20,.78)'):
+                      (pressed?'rgba(255,255,255,.97)':'rgba(255,255,255,.86)'),
+                    borderColor:theme.dark?'rgba(255,255,255,.24)':'rgba(25,25,25,.27)',
+                  }]}>
+                  <Ionicons name="options-outline" size={compact?14:16}
+                    color={theme.dark?'#FFFFFF':'#181716'}/>
                   <Text numberOfLines={1} style={{
-                    flexShrink:1,fontSize:compact?10:11,fontWeight:'600',color:'#FFFFFF',
+                    flexShrink:1,fontSize:compact?10:11,fontWeight:'600',
+                    color:theme.dark?'#FFFFFF':'#181716',
                   }}>{roleOption.label}</Text>
                   <Ionicons name={roleMenuOpen?'chevron-up':'chevron-down'}
-                    size={13} color="rgba(255,255,255,.9)"/>
+                    size={13} color={theme.dark?'#FFFFFF':'#181716'}/>
                 </Pressable>
                 {!compact?(
                   <Pressable onPress={()=>router.push('/my-dream/new')}
@@ -665,58 +665,36 @@ export default function MySpace() {
             columnGap:phaseGridGap,rowGap:phaseGridGap,
             paddingBottom:compact?20:26,
           }}>
-            {phasePanels.map((panel,index)=>{
+            {phasePanels.map(panel=>{
               const dreams=visible.filter(d=>panel.phase==='Témoignage'
                 ? inFlower(d) : d.phase===panel.phase);
               return (
                 <View key={panel.phase} style={{
                   width:phasePanelWidth,height:phasePanelHeight,
-                  paddingHorizontal:panelInset,paddingTop:compact?12:16,
+                  paddingLeft:panelInset+phaseLabelRail,
+                  paddingRight:panelInset,paddingTop:compact?12:16,
                   paddingBottom:compact?11:17,
                   position:'relative',
-                  borderRadius:3,borderWidth:1,
-                  borderColor:theme.dark?'rgba(255,255,255,.23)':'rgba(28,25,22,.13)',
-                  backgroundColor:theme.dark?'#1C1B1A':'#FAF8F4',
+                  borderWidth:0,backgroundColor:'transparent',
                 }}>
-                  {/* One monochrome botanical photo, positioned as a continuous
-                      2×2 composition; each panel clips only its own quadrant.
-                      The image never receives taps or affects layout. */}
+                  {/* Vertical phase name is the sole phase heading. */}
                   <View pointerEvents="none" accessible={false}
                     importantForAccessibility="no-hide-descendants"
-                    style={{position:'absolute',top:0,bottom:0,left:0,right:0,
-                      overflow:'hidden',borderRadius:2}}>
-                    <Image source={{uri:EDITORIAL_BOTANICAL_PHOTO}}
-                      resizeMode="cover" fadeDuration={0}
-                      style={{position:'absolute',
-                        width:innerWidth,height:botanicalHeight,
-                        left:-(index%2)*(phasePanelWidth+phaseGridGap),
-                        top:-Math.floor(index/2)*(phasePanelHeight+phaseGridGap),
-                        opacity:theme.dark?0.3:0.52}}/>
-                    <View style={{position:'absolute',top:0,bottom:0,
-                      left:0,right:0,
-                      backgroundColor:theme.dark?
-                        'rgba(0,0,0,0.39)':'rgba(253,250,246,0.28)'}}/>
-                  </View>
-                  {/* Bold editorial lettering is centered ON the existing
-                      border (x=0), with no dedicated colored sidebar. */}
-                  <View pointerEvents="none" accessible={false}
-                    importantForAccessibility="no-hide-descendants"
-                    style={{position:'absolute',top:0,bottom:0,
-                      left:compact?-9:-14,width:compact?18:28,
-                      alignItems:'center',justifyContent:'center',
-                      overflow:'visible'}}>
-                    <Svg width={compact?18:28} height={compact?180:250}
-                      viewBox={compact?'0 0 18 180':'0 0 28 250'}>
-                      <SvgText x={compact?9:14} y={compact?90:125}
+                    style={{position:'absolute',top:0,bottom:0,left:0,
+                      width:panelInset+phaseLabelRail,
+                      alignItems:'center',justifyContent:'center'}}>
+                    <Svg width={compact?18:30} height={compact?166:242}
+                      viewBox={compact?'0 0 18 166':'0 0 30 242'}>
+                      <SvgText x={compact?9:15} y={compact?83:121}
                         textAnchor="middle"
-                        transform={compact?'rotate(-90 9 90)':'rotate(-90 14 125)'}
-                        fontSize={compact?10:19}
-                        letterSpacing={compact?0.65:1.7}
-                        fontWeight="600"
+                        transform={compact?'rotate(-90 9 83)':'rotate(-90 15 121)'}
+                        fontSize={compact?9:15}
+                        letterSpacing={compact?0.6:1.5}
+                        fontWeight="500" fontFamily="Georgia"
                         fill={panel.accent}>
                         {panel.phase==='Rêve'?'SEMENCE':
                          panel.phase==='Initiation'?'GERMINATION':
-                         panel.phase==='Croissance'?'CROISSANCE':'FLORAISON'}
+                         panel.phase==='Croissance'?'CROISSANCE':'EN FLORAISON'}
                       </SvgText>
                     </Svg>
                   </View>
@@ -744,14 +722,14 @@ export default function MySpace() {
                       width:'100%',alignItems:'center',justifyContent:'center',
                       paddingHorizontal:compact?2:16}}>
                       <Text style={{
-                        fontSize:compact?8:14,
-                        color:theme.dark?'#FFFFFF':'#181716',
-                        fontWeight:'500',fontFamily:'Georgia',
-                        letterSpacing:compact?0.5:2,
-                        lineHeight:compact?14:24,textAlign:'center'}}>
+                        fontSize:compact?9:13,
+                        color:theme.foreground,opacity:0.76,
+                        fontStyle:'italic',fontWeight:'400',
+                        letterSpacing:0,
+                        lineHeight:compact?14:21,textAlign:'center'}}>
                         {panel.phase==='Témoignage'
-                          ? 'AUCUNE FLORAISON EN PRÉPARATION.'
-                          : 'AUCUN PROJET DANS CETTE ÉTAPE.'}
+                          ? 'Aucune floraison en préparation.'
+                          : 'Aucun projet dans cette étape.'}
                       </Text>
                     </View>
                   )}
