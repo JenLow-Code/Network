@@ -112,7 +112,7 @@ export default function Agenda() {
             accessibilityLabel="Choisir une date"
             style={{ flexDirection: 'row', gap: 7, alignItems: 'center' }}
           >
-            <Ionicons name="calendar-outline" size={20} color="#D71D77" />
+            <Ionicons name="calendar-outline" size={20} color={theme.accent} />
             <Text style={{ color: theme.foreground, fontWeight: '700', fontSize: 13, textTransform: 'capitalize' }}>
               {dateCaption}
             </Text>
@@ -229,7 +229,7 @@ export default function Agenda() {
         </Pressable>
         <View style={{marginTop:22,marginBottom:8,gap:10}}>
           <View style={{flexDirection:'row',alignItems:'center',gap:9}}>
-            <Ionicons name="flag-outline" size={22} color="#CB245C"/>
+            <Ionicons name="flag-outline" size={22} color={theme.accent}/>
             <Text style={{color:theme.foreground,fontSize:17,fontWeight:'700',flex:1}}>
               Mes rêves · {selectedDreamEvents.length}
             </Text>
@@ -432,8 +432,8 @@ export default function Agenda() {
                   onPress={() => void exportEvent(e)}
                   style={{ flexDirection: 'row', alignItems: 'center', gap: 7, marginTop: 13 }}
                 >
-                  <Ionicons name="calendar-outline" size={17} color="#D71D77" />
-                  <Text style={{ color: '#D71D77', fontSize: 12 }}>{tr('exportCalendar')}</Text>
+                  <Ionicons name="calendar-outline" size={17} color={theme.accent} />
+                  <Text style={{ color: theme.accent, fontSize: 12 }}>{tr('exportCalendar')}</Text>
                 </Pressable>
               )}
             </View>
