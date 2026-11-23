@@ -143,7 +143,7 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
     {
       icon: 'person-circle-outline' as const, title: 'Mon profil',
       path: '/profile' as const,
-      active: path === '/profile' || path === '/settings',
+      active: path === '/profile' || path.startsWith('/profile-') || path === '/settings',
     },
   ];
   const profileAvatar=(size:number,active:boolean)=><View style={{
