@@ -1,12 +1,28 @@
-# JenLow Agenda V1
+# JenLow Agenda — état du front-end (23 novembre 2026)
 
-The Agenda now shows the selected calendar date, today's saved Bible/Dream/Music prayer subjects in a list, and demonstration accepted/pending appointments. There is NO separate personal-prayer composition feature or separate prayer list screen in the intended main navigation.
+## Sources connectées dans l'application
 
-Calendar integration design:
-1. Once an invitation is accepted, store a concrete start/end ISO datetime and timezone on agenda_events; there must never be a fabricated time when exporting.
-2. iOS/Android: use expo-calendar native permissions in an installed app to explicitly write a confirmed event; user chooses which device calendar to use (their OS may have Google/Outlook accounts enabled). An independent ICS calendar subscription URL is an optional read-only alternative for calendar clients.
-3. Google/Outlook two-way synchronization requires OAuth calendar-specific scopes, refresh tokens in backend secret storage, explicit user consent, idempotent event sync, cancellation handling, and careful recurrence/timezone logic.
-4. Reminder/prayer scheduler is separate from the calendar export. Daily prayer assignments should read prayer_saves.scheduled_for from D1 and never assume an undated local favorite is a real daily prayer.
-5. Without completed event dates/credentials, show a transparent demo action rather than creating fake events.
+L'Agenda lit **en temps réel depuis les stores locaux déjà utilisés par les écrans**, sans recopier les dates dans un deuxième registre :
 
-Backend API / calendar endpoints are not implemented yet. The Agenda currently shows demo-only date navigation and a shareable text summary; it does not sync with any provider.
+- **Rêves** : dates objectifs, jalons du journal de Croissance, changements de ressources (trouvée, perdue, ajoutée), réalisation de Floraison, rappel de Floraison et date de reprise après congélation.
+- **Habitudes** : habitudes des rêves en Croissance et habitudes personnelles, avec mesures/validations répercutées dans l'espace de travail d'origine. Les jours futurs restent non éditables.
+- **Prières** : sujets enregistrés, projetés sur le jour sélectionné selon la récurrence quotidienne, hebdomadaire ou unique existante.
+- Les marqueurs du mois correspondent aux événements **réellement datés** de la projection des rêves. Une date invalide est écartée.
+
+L'entrée Agenda ouvre le rêve concerné. Les sélecteurs sont dans `src/domain/agendaOverview.ts` ; leurs contrôles de régression sont dans `scripts/verify-agenda.cjs`.
+
+## Ce qui n'est pas une synchronisation externe
+
+Les rendez-vous fictifs `DEMO_AGENDA` ne sont **plus affichés comme des rendez-vous réels**. Aucun rendez-vous ne peut encore être créé automatiquement depuis une invitation tant qu'un événement backend validé (date, heure, timezone, participants et statut) n'existe pas.
+
+L'intégration des calendriers Apple / Google / Outlook n'est **pas implémentée**. Son futur développement doit respecter :
+
+1. Invitation acceptée par le destinataire, dates de début/fin explicites et fuseau horaire réel.
+2. Export vers le calendrier natif seulement après autorisation (Expo Calendar sur iOS/Android installés).
+3. OAuth avec autorisations calendrier et renouvellement de jetons côté backend pour la synchronisation bidirectionnelle Google/Outlook.
+4. Gestion idempotente des récurrences, annulations, notifications, modifications et zones horaires.
+5. Éviter les notifications, heures, éléments sociaux et services fictifs.
+
+## Contrôles de livraison
+
+Le workflow `frontend-validation.yml` vérifie les sélecteurs d'Agenda, les dates et les éléments de thème, les largeurs communes et les exports web/Android. Il **ne remplace pas** la revue visuelle sur les véritables appareils : tester jours et mois, orientation mobile, thèmes clair/sombre, titres longs et petit écran, puis vérifier que les modifications d'habitudes se reflètent dans Croissance.
