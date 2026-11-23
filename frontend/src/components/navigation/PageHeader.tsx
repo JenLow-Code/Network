@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { TopActions } from './TopActions';
 import { useAppTheme } from '@/theme/AppTheme';
-import { workspaceLayout,PAGE_TITLE_FONT_SIZE,PAGE_TITLE_LINE_HEIGHT } from '@/theme/workspaceLayout';
+import { workspaceLayout,DESKTOP_PAGE_CONTENT_INSET,PAGE_TITLE_FONT_SIZE,PAGE_TITLE_LINE_HEIGHT } from '@/theme/workspaceLayout';
 
 /** Shared inside-page navigation. Discovery is the landing page and deliberately has no Back button. */
 export function PageHeader({ title, center, onBack, showFire = true }: {
@@ -23,7 +23,7 @@ export function PageHeader({ title, center, onBack, showFire = true }: {
     onPress={onBack || (()=>router.canGoBack()?router.back():router.replace('/discover'))}
     accessibilityRole="button" accessibilityLabel="Retour"
     style={{width:44,height:44,alignItems:'center',justifyContent:'center',
-      position:'absolute',left:0,
+      position:'absolute',left:desktop?-DESKTOP_PAGE_CONTENT_INSET:0,
       top:desktop?2:0,zIndex:6}}>
     <Ionicons name="arrow-back-outline" size={23} color={theme.foreground}/>
    </Pressable>
@@ -34,7 +34,7 @@ export function PageHeader({ title, center, onBack, showFire = true }: {
         {center}
       </View>
     : <View style={{flex:1,minWidth:0,justifyContent:'center',
-          paddingLeft:52,paddingRight:12}}>
+          paddingLeft:desktop?0:52,paddingRight:12}}>
         {title?<Text numberOfLines={1} style={{color:theme.foreground,fontWeight:'700',
           fontSize:PAGE_TITLE_FONT_SIZE,lineHeight:PAGE_TITLE_LINE_HEIGHT,
           letterSpacing:-0.35}}>{title}</Text>:null}
