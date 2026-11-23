@@ -271,12 +271,10 @@ function PhaseMobileOverlap({dreams,viewportWidth,cardHeight,onLongPress}:{
   const lastIndex=Math.max(0,dreams.length-1);
   const lastIndexRef=useRef(lastIndex);
   lastIndexRef.current=lastIndex;
-  // Mobile dream tiles stay deliberately compact so a user can perceive
-  // the current phase and the next phase within the same screen.
-  // Single-item phases must not stretch their card to the full row width.
-  const frontWidth=Math.min(viewportWidth,
-    Math.max(190,Math.round(viewportWidth*.68)));
-  const peekInset=10;
+  // Mobile aspiration tiles are square: their width follows the existing
+  // compact card height. Rounded corners are preserved.
+  const frontWidth=Math.min(viewportWidth,cardHeight);
+  const peekInset=8;
 
   useEffect(()=>{
     currentRef.current=0;
@@ -339,7 +337,8 @@ function PhaseMobileOverlap({dreams,viewportWidth,cardHeight,onLongPress}:{
         Platform.OS==='web'?({touchAction:'pan-y'} as any):undefined]}>
       {nextDream?<View pointerEvents="none" accessible={false}
         importantForAccessibility="no-hide-descendants"
-        style={{position:'absolute',left:frontWidth-peekInset,right:0,
+        style={{position:'absolute',left:Math.max(0,frontWidth-peekInset),
+          width:Math.min(cardHeight,Math.max(0,viewportWidth-frontWidth+peekInset)),
           top:5,bottom:5,borderRadius:11,overflow:'hidden',
           backgroundColor:theme.surface}}>
         {nextPhoto?<Image source={{uri:nextPhoto}} resizeMode="cover"
