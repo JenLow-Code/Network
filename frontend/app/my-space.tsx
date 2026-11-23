@@ -414,14 +414,17 @@ export default function MySpace() {
   const [longDream,setLongDream]=useState<DreamEntry|null>(null);
   // Read the actual centered canvas width, never infer the sidebar width.
   const [measuredCanvasWidth,setMeasuredCanvasWidth]=useState(0);
-  const side=ws.contentGutter;
-  const right=ws.gutter;
+  // On phones, the hero and the four coloured phase sections are full-bleed.
+  // The page title and interactive content keep their own safe inner spacing.
+  // Desktop retains the shared inset workspace rail unchanged.
+  const side=compact?0:ws.contentGutter;
+  const right=compact?0:ws.gutter;
   // The hero and the four panels share the same measured inner bounds.
   // A window-width guess can push the hero into the sidebar on desktop.
   const fallbackCanvasWidth=Math.min(windowWidth,ws.maxWidth??windowWidth);
   const canvasWidth=measuredCanvasWidth||fallbackCanvasWidth;
   const innerWidth=Math.max(0,canvasWidth-side-right);
-  // Align the hero gallery with the shared inset content grid on all devices.
+  // Phone: banner spans edge to edge. Desktop: aligned to the shared canvas.
   // The carousel page width must match the visible banner width exactly.
   const galleryWidth=innerWidth;
   const galleryHeight=compact
@@ -483,7 +486,7 @@ export default function MySpace() {
           const measured=Math.round(event.nativeEvent.layout.width);
           if(measured>0)setMeasuredCanvasWidth(current=>current===measured?current:measured);
         }}>
-        <View style={{paddingLeft:side,paddingRight:right}}>
+        <View style={{paddingLeft:ws.contentGutter,paddingRight:ws.gutter}}>
           <PageHeader title="Mes projets" />
         </View>
 
@@ -647,7 +650,7 @@ export default function MySpace() {
         </View>
 
         {compact?(
-          <View style={{paddingLeft:side,paddingRight:right,alignItems:'flex-end',
+          <View style={{paddingLeft:ws.contentGutter,paddingRight:ws.gutter,alignItems:'flex-end',
             marginTop:-11,marginBottom:10}}>
             <Pressable onPress={()=>router.push('/my-dream/new')}
               accessibilityRole="button" accessibilityLabel="Créer un projet"
