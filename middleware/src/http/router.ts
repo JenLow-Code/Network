@@ -26,7 +26,39 @@ export class Router {
       keys.push(key);
       return '([^/]+)';
     });
-    this.routes.push({ method, path, ...meta, handler, regex: new RegExp('^' + pattern + '$'), keys });
+    // Every application API route is private by default. Only explicit
+    // operational diagnostics are public; the runtime enforces the same rule.
+    const diagnostic=path==='/api/health/ready'||path==='/api/openapi.json';
+    const enforced=path.startsWith('/api/')&&!diagnostic&&meta.auth!=='moderator';
+    this.routes.push({ method, path, ...meta,
+      auth:enforced?'required':meta.auth,
+      handler, regex: new RegExp('^' + pattern + '
+    return this;
+  }
+
+  match(method: string, pathname: string): { route: RouteDef; params: Record<string, string> } | { allowed: string[] } | null {
+    const allowed: string[] = [];
+    for (const route of this.routes) {
+      const m = route.regex.exec(pathname);
+      if (!m) continue;
+      if (route.method !== method) {
+        allowed.push(route.method);
+        continue;
+      }
+      const params: Record<string, string> = {};
+      route.keys.forEach((k, i) => {
+        try {
+          params[k] = decodeURIComponent(m[i + 1]);
+        } catch {
+          params[k] = m[i + 1];
+        }
+      });
+      return { route, params };
+    }
+    return allowed.length ? { allowed } : null;
+  }
+}
+), keys });
     return this;
   }
 
