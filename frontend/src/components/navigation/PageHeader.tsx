@@ -24,7 +24,7 @@ export function PageHeader({ title, center, onBack, showFire = true }: {
     accessibilityRole="button" accessibilityLabel="Retour"
     style={{width:44,height:44,alignItems:'center',justifyContent:'center',
       position:'absolute',left:0,
-      top:0,zIndex:6}}>
+      top:desktop?2:0,zIndex:6}}>
     <Ionicons name="arrow-back-outline" size={23} color={theme.foreground}/>
    </Pressable>
    {desktop&&center
