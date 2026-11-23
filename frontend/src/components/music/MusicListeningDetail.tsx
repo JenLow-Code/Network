@@ -26,7 +26,8 @@ export function MusicListeningDetail({
   queue:BrowsableSong[];
   contentWidth:number;
   onSelect:(id:string)=>void;
-  onClose:()=>void;
+  /** Optional for embedded layouts; the dedicated page already has a Back arrow. */
+  onClose?:()=>void;
   onContact:(handle:string)=>void;
   contactBusy:boolean;
   contactError:string;
@@ -43,8 +44,11 @@ export function MusicListeningDetail({
   const previous=index>0?queue[index-1]:null;
   const next=index>=0&&index<queue.length-1?queue[index+1]:null;
   const related=queue.filter(item=>item.id!==song.id);
-  const canPlay=!!song.audioUrl||!!song.isDemo;
-  const handle=(!song.isDemo&&song.authorHandle)||null;
+  // The beta Discovery feed also contains static editorial examples. They
+  // may play bundled samples but must not pretend to be real collaborators.
+  const previewOnly=!!song.isDemo||song.source!=='api';
+  const canPlay=!!song.audioUrl||previewOnly;
+  const handle=(!previewOnly&&song.authorHandle)||null;
   const pan=useMemo(()=>PanResponder.create({
     onMoveShouldSetPanResponder:(_,g)=>
       mobile&&Math.abs(g.dx)>17&&Math.abs(g.dx)>Math.abs(g.dy)*1.4,
@@ -76,11 +80,11 @@ export function MusicListeningDetail({
           fontSize:mobile?25:29,lineHeight:mobile?31:36,
           color:theme.foreground}}>{song.title}</Text>
       </View>
-      <Pressable onPress={onClose} accessibilityRole="button"
+      {onClose?<Pressable onPress={onClose} accessibilityRole="button"
         accessibilityLabel="Refermer le morceau"
         style={{width:42,height:42,alignItems:'center',justifyContent:'center'}}>
         <Ionicons name="close-outline" size={24} color={theme.foreground}/>
-      </Pressable>
+      </Pressable>:null}
     </View>
     <View style={{height:1,backgroundColor:theme.border}}/>
     <View style={{flexDirection:mobile?'column':'row',alignItems:mobile?'center':'flex-start',
@@ -142,7 +146,7 @@ export function MusicListeningDetail({
       </View>
       <View style={{width:mobile?'100%':Math.min(250,Math.max(180,available-mediaWidth-35)),
         flex:mobile?undefined:1,gap:9,alignSelf:mobile?'stretch':'center'}}>
-        {song.isDemo?<View style={{gap:6,paddingVertical:10}}>
+        {previewOnly?<View style={{gap:6,paddingVertical:10}}>
           <Text style={{color:theme.muted,fontSize:12,lineHeight:19}}>
             Exemple de morceau fictif · présentation en lecture seule
           </Text>
