@@ -136,7 +136,7 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
         (path.startsWith('/music/') && path !== '/music/new'),
     },
     {
-      icon: 'folder-outline' as const, title: 'Projets',
+      icon: 'folder-outline' as const, title: 'Mes projets',
       path: '/my-space' as const,
       active: path === '/my-space' || path === '/my-dreams' || path.startsWith('/my-dream'),
     },
@@ -173,6 +173,9 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
   if(placement==='desktop') {
     const mainLinks=links.filter(x=>x.path!=='/profile');
     const profile=links.find(x=>x.path==='/profile')!;
+    // The projects overview uses the new neutral page canvas, not the
+    // legacy translucent/glass image backing of the older navigation shell.
+    const cleanProjectsNav=path==='/my-space';
     const activeColor='#CB245C';
     // Desktop-only translucent glass with actual dream imagery behind the navigation.
     // The content remains legible over a soft, context-aware colour wash.
@@ -214,10 +217,11 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
       </Pressable>;
     return <View accessibilityRole="navigation" style={{
       width:collapsed?72:236,minWidth:collapsed?72:236,
-      height:'100%',minHeight:0,flexShrink:0,backgroundColor:navSurface,
+      height:'100%',minHeight:0,flexShrink:0,
+      backgroundColor:cleanProjectsNav?theme.background:navSurface,
       borderLeftWidth:0,
       paddingTop:28,paddingBottom:Math.max(6,insets.bottom+6),
-      overflow:'hidden',...glassEffects,
+      overflow:'hidden',...(cleanProjectsNav?{}:glassEffects),
     }}>
       {currentDream?.image?<Image pointerEvents="none"
         source={{uri:currentDream.image}} resizeMode="cover"
@@ -225,25 +229,29 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
           width:'125%',height:'110%',
           opacity:theme.dark?.26:.32,
           ...(Platform.OS==='web'?({filter:'blur(28px) saturate(125%)'} as any):{})}}/>:null}
-      <BlurView pointerEvents="none" intensity={25}
-        tint={theme.dark?'systemUltraThinMaterialDark':'systemUltraThinMaterialLight'}
-        style={{position:'absolute',top:0,left:0,right:0,bottom:0,
-          opacity:theme.dark?.10:.07}}/>
-      <Svg pointerEvents="none" width="100%" height="100%"
-        style={{position:'absolute',top:0,right:0,bottom:0,left:0}}>
-        <Defs>
-          <LinearGradient id="jenlow-premium-desktop-glass"
-            x1="0%" y1="0%" x2="100%" y2="100%">
-            <Stop offset="0%" stopColor={theme.dark?'#102522':'#FAFAF8'}
-              stopOpacity={theme.dark?.43:.40}/>
-            <Stop offset="43%" stopColor={theme.dark?'#182923':'#E8ECE7'}
-              stopOpacity={theme.dark?.18:.19}/>
-            <Stop offset="100%" stopColor={theme.dark?'#16201E':'#F8F9F5'}
-              stopOpacity={theme.dark?.53:.44}/>
-          </LinearGradient>
-        </Defs>
-        <Rect width="100%" height="100%" fill="url(#jenlow-premium-desktop-glass)"/>
-      </Svg>
+      {!cleanProjectsNav?(
+        <>
+          <BlurView pointerEvents="none" intensity={25}
+            tint={theme.dark?'systemUltraThinMaterialDark':'systemUltraThinMaterialLight'}
+            style={{position:'absolute',top:0,left:0,right:0,bottom:0,
+              opacity:theme.dark?.10:.07}}/>
+          <Svg pointerEvents="none" width="100%" height="100%"
+            style={{position:'absolute',top:0,right:0,bottom:0,left:0}}>
+            <Defs>
+              <LinearGradient id="jenlow-premium-desktop-glass"
+                x1="0%" y1="0%" x2="100%" y2="100%">
+                <Stop offset="0%" stopColor={theme.dark?'#102522':'#FAFAF8'}
+                  stopOpacity={theme.dark?.43:.40}/>
+                <Stop offset="43%" stopColor={theme.dark?'#182923':'#E8ECE7'}
+                  stopOpacity={theme.dark?.18:.19}/>
+                <Stop offset="100%" stopColor={theme.dark?'#16201E':'#F8F9F5'}
+                  stopOpacity={theme.dark?.53:.44}/>
+              </LinearGradient>
+            </Defs>
+            <Rect width="100%" height="100%" fill="url(#jenlow-premium-desktop-glass)"/>
+          </Svg>
+        </>
+      ):null}
       <View style={{flex:1,minHeight:0,gap:16}}>
         <View style={{paddingHorizontal:collapsed?13:20,
           flexDirection:'row',alignItems:'center',
