@@ -31,6 +31,8 @@ jobs:
         run: npm run verify:midi
       - name: Verify lyric annotations and comments
         run: npm run verify:lyrics
+      - name: Verify personal music opens the workspace (never the public player)
+        run: npm run verify:music-routing
       - name: Verify score scanner never accepts a collapsed multi-staff result
         run: npm run verify:score-scan
       - run: npm run typecheck
