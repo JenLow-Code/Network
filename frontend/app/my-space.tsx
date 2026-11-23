@@ -409,9 +409,9 @@ export default function MySpace() {
   const workspaceViewport=Math.max(0,windowWidth-(ws.desktop?212:0));
   const contentWidth=Math.min(workspaceViewport,ws.maxWidth??workspaceViewport);
   const innerWidth=Math.max(0,contentWidth-2*side);
-  // The gallery spans the entire page canvas on phones, while aligning with
-  // the inset content grid on desktop. Carousel page width matches this exactly.
-  const galleryWidth=compact?contentWidth:innerWidth;
+  // Align the hero gallery with the shared inset content grid on all devices.
+  // The carousel page width must match the visible banner width exactly.
+  const galleryWidth=innerWidth;
   const galleryHeight=compact
     ? Math.min(294,Math.max(252,Math.round(galleryWidth*.64)))
     : Math.min(318,Math.max(282,Math.round(galleryWidth*.29)));
@@ -472,7 +472,7 @@ export default function MySpace() {
           <PageHeader title="Mes projets" />
         </View>
 
-        {/* A shallow, edge-to-edge gallery. Filters float over the image. */}
+        {/* A shallow, inset gallery aligned with the common page margins. */}
         <View style={{marginTop:compact?8:12,marginBottom:compact?19:25}}>
           <View style={{width:galleryWidth,height:galleryHeight,alignSelf:'center',overflow:'visible'}}>
             {testimonies.length>0 ? (
