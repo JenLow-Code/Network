@@ -298,6 +298,7 @@ function MusicSharedConversation({ conversationId }: { conversationId: string })
         onPress={()=>{void reload().catch(e=>setError(e instanceof Error?e.message:'Chargement impossible.'));}}>
         <Ionicons name="refresh-outline" size={20} color={theme.foreground}/>
       </Pressable>
+      <TopActions />
     </View>
     <ScrollView style={{flex:1}} contentContainerStyle={{...workspaceCanvas(width),paddingTop:16,paddingBottom:30,gap:10}}>
       {loading?<ActivityIndicator color="#CB245C"/>:null}
@@ -375,6 +376,7 @@ function DreamConversation({ dreamId }: { dreamId: string }) {
       <Ionicons name="arrow-back-outline" size={23} color={theme.foreground}/>
     </Pressable>
    <View style={{ flex: 1 }}><Text numberOfLines={1} style={{ color:theme.foreground,fontWeight: '700', fontSize: PAGE_TITLE_FONT_SIZE,lineHeight:PAGE_TITLE_LINE_HEIGHT }}>{dream?.title || 'Conversation du rêve'}</Text><Text style={{ color: theme.muted, fontSize: 11 }}>Espace de conversation du rêve · Sur cet appareil</Text></View>
+    <TopActions/>
   </View>
   <ScrollView style={{ flex: 1 }} contentContainerStyle={{...workspaceCanvas(width),paddingTop:16,paddingBottom:20,gap:10}}>
    <Text style={{ fontSize: 12, color: theme.muted, textAlign: 'center', marginBottom: 18 }}>Cette conversation est enregistrée localement. Les invitations et la messagerie entre membres ne sont pas encore connectées.</Text>
