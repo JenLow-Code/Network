@@ -2,7 +2,7 @@
  * Regression guard for the exact JenLow Music UX contract:
  * - Preserve the sample collaboration AND the sample discovery cassette;
  * - all Mes morceaux tiles open a three-tab workspace;
- * - Pour moi cassettes unfold their details below the shelf.
+ * - Pour moi cassettes navigate to a separate, music-focused page.
  * Demo fixtures remain read-only and must never gain real permissions.
  */
 const {readFileSync}=require('node:fs');
@@ -17,6 +17,9 @@ const capture=read('src/components/music/MusicCaptureExperience.tsx');
 const demoData=read('src/lib/api/musicPreview.ts');
 const more=read('src/components/music/MusicMoreDetails.tsx');
 const listener=read('src/components/music/MusicListeningDetail.tsx');
+const listenPage=read('app/music-listen/[id].tsx');
+const layout=read('app/_layout.tsx');
+const nav=read('src/components/navigation/Nav.tsx');
 
 const personalBlock=home.split('const openMyPiece = ')[1]?.split('const sectionTitle = ')[0]||'';
 const checks=[
@@ -46,11 +49,21 @@ const checks=[
   ['Collaborate shows the participant roster',
     shared.includes('collaborators.map(person')&&
     read('src/components/music/MusicCollaborateExperience.tsx').includes('collaborators.length')],
-  ['For-me cassette opens a Discovery-style listener under the shelf',
-    home.includes('const toggleForMe=')&&
-    home.includes('expandedForMe')&&
-    home.includes("onPress={() => toggleForMe(song.id)}")&&
-    home.includes('<MusicListeningDetail key={expandedSong.id}')],
+  ['Pour moi cassette and Infos navigate to their own full music page',
+    home.includes("pathname:'/music-listen/[id]'")&&
+    home.includes("onPress={() => openForMe(song.id)}")&&
+    home.includes("onLearnMore={() => openForMe(song.id)}")&&
+    home.includes("onPress={() => openForMe(p.trackPublicationId)}")&&
+    !home.includes('<MusicListeningDetail')],
+  ['Dedicated page renders the compact player with Discovery author header',
+    listenPage.includes('<DetailAuthorHeader item={song}')&&
+    listenPage.includes('<MusicListeningDetail song={song}')&&
+    listenPage.includes('<ScrollView key={id}')],
+  ['New listening route requires the same verified login as every private screen',
+    layout.includes("'music-listen/[id]'")&&
+    layout.includes('<Stack.Protected guard={!!user} redirectTo="/login">')],
+  ['Music navigation remains active within the listening page',
+    nav.includes("path.startsWith('/music-listen/')")],
   ['Listening view preserves the same full Discover More sections as Discovery',
     listener.includes('<MusicMoreDetails item={song}/>')&&
     detail.includes('<MusicMoreDetails item={item}/>')&&
@@ -71,20 +84,21 @@ const checks=[
   ['Continue discovering shows other real or read-only fixture music projects',
     listener.includes('Continuer à découvrir')&&
     listener.includes('related.slice(0,12).map')&&
-    home.includes('demoPreview?.catalog')&&
+    listenPage.includes('preview?.catalog')&&
     demoData.includes('catalog:data.songs.filter(isFictionalSong).map(toDemoPublication)')],
   ['No extra summary panel or duplicated audio player',
     !home.includes('<MusicWaveform key={expandedSong.id}')&&
     !home.includes('borderRadius:15,backgroundColor:theme.surface,gap:14,maxWidth:780')],
-  ['Bottom cassette info button does not navigate to side/public detail',
-    home.includes("onLearnMore={() => toggleForMe(song.id)}")],
+  ['Bottom cassette Info uses the focused page, not a side panel',
+    home.includes("onLearnMore={() => openForMe(song.id)}")&&
+    !home.includes('expandedForMe')],
   ['Real discovery offers a real collaboration action, never for demos',
     listener.includes("pathname:'/music-proposal/[id]'")&&
     listener.includes("song.isDemo?<View")],
-  ['Real cassette details offer authorized direct contact without leaving until requested',
+  ['Real cassette details retain authorized contact through the dedicated page',
     listener.includes("Contacter l’artiste")&&
-    home.includes("api<{conversationId:string}>('/api/conversations'")&&
-    home.includes("method:'POST',auth:'required',body:{handle}")],
+    listenPage.includes("api<{conversationId:string}>('/api/conversations'")&&
+    listenPage.includes("method:'POST',auth:'required',body:{handle}")],
   ['Legacy player links still check actual authenticated membership',
     detail.includes("+'/conversation'")&&detail.includes("auth:'required'")],
 ];
