@@ -636,13 +636,13 @@ export default function MySpace() {
                   ))}
                 </View>
               ):null}
-              {/* Hide a native image/SVG antialiasing hairline only. This is
-                  an opaque two-pixel seal, not a second gradient. */}
-              <View pointerEvents="none" style={{
-                position:'absolute',bottom:0,left:0,right:0,height:2,
-                backgroundColor:theme.background,zIndex:8,
-              }}/>
             </View>
+            {/* Seal the hero's actual lower edge, outside the action bar.
+                This is a solid 2 px anti-alias fix, never a vertical fade. */}
+            <View pointerEvents="none" style={{
+              position:'absolute',bottom:0,left:0,right:0,height:2,
+              backgroundColor:theme.background,zIndex:8,
+            }}/>
           </View>
         </View>
 
