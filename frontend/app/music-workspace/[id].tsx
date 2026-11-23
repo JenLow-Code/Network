@@ -8,6 +8,7 @@ import { PageHeader } from '@/components/navigation/PageHeader';
 import { MusicCaptureExperience } from '@/components/music/MusicCaptureExperience';
 import { MusicCreateExperience } from '@/components/music/MusicCreateExperience';
 import { MusicCollaborateExperience } from '@/components/music/MusicCollaborateExperience';
+import { MusicWorkspaceTabs } from '@/components/music/MusicWorkspaceTabs';
 import { useMusicWorkspaces } from '@/domain/musicWorkspace';
 import { musicNextState, makeWorkingVersion, makeWorkingTrack, changeWorkingVersion } from '@/domain/musicNext';
 import {isMidiSource,renderMidiSource} from '@/domain/musicMidiAudio';
@@ -81,11 +82,6 @@ export default function MusicWorkspace() {
   };
   const start=(file:MusicProjectFile)=>{void addFromCapture(file,true);};
   const useFile=(file:MusicProjectFile)=>{void addFromCapture(file);};
-  const spaces: {id:Space; title:string; icon:keyof typeof Ionicons.glyphMap}[]=[
-    {id:'capture',title:'Capturer',icon:'mic-outline'},
-    {id:'create',title:'Créer',icon:'layers-outline'},
-    {id:'collaborate',title:'Collaborer',icon:'people-outline'},
-  ];
   return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
     <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{
       width:'100%',maxWidth:ws.maxWidth,alignSelf:'center',
@@ -95,30 +91,12 @@ export default function MusicWorkspace() {
       {/* Song actions replace the title in the top bar. The song title is
           displayed once above the saved items inside Capturer. */}
       <PageHeader onBack={()=>router.replace('/music-hub')} center={
-      <View style={{flex:desktop?undefined:1,minWidth:0,flexDirection:'row',
-        alignItems:'center',justifyContent:'center',gap:desktop?20:3}}>
-        {spaces.map(item=>{
-          const selected=space===item.id;
-          return <Pressable key={item.id} onPress={()=>{setSpace(item.id);router.replace({pathname:'/music-workspace/[id]',params:{id:project.id,tab:item.id}});}}
-            accessibilityRole="tab" accessibilityLabel={item.title}
-            accessibilityState={{selected}}
-            style={{flex:desktop?undefined:1,
-              flexDirection:'row',alignItems:'center',
-              justifyContent:'center',gap:compact?5:desktop?8:9,
-              minHeight:desktop?46:52,borderBottomWidth:selected?2:0,
-              borderBottomColor:selected?PINK:'transparent',
-              paddingHorizontal:desktop?12:3}}>
-            <Ionicons name={item.icon} size={compact?22:desktop?18:19}
-              color={selected?PINK:theme.muted}/>
-            {(desktop||!compact||selected)?<Text numberOfLines={1}
-              style={{fontSize:compact?12:desktop?14:14,
-                fontWeight:selected?'700':'500',
-                color:selected?theme.foreground:theme.muted}}>
-              {item.title}
-            </Text>:null}
-          </Pressable>;
-        })}
-      </View>
+        <MusicWorkspaceTabs space={space} compact={compact} desktop={desktop}
+          onChange={next=>{
+            setSpace(next);
+            router.replace({pathname:'/music-workspace/[id]',
+              params:{id:project.id,tab:next}});
+          }}/>
       }/>
       {space==='capture'&&intent==='new-version'?
         <View style={{flexDirection:'row',alignItems:'flex-start',gap:11,
