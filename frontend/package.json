@@ -10,6 +10,7 @@
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
     "verify:layout": "node scripts/verify-workspace-layout.cjs",
+    "verify:agenda": "node scripts/verify-agenda.cjs",
     "verify:midi": "node scripts/verify-midi-parser.cjs",
     "verify:lyrics": "node scripts/verify-lyrics.cjs",
     "verify:score-scan": "node scripts/verify-music-score-scan.cjs",
