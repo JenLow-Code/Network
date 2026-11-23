@@ -25,6 +25,8 @@ jobs:
         run: npm run verify:layout
       - name: Verify Agenda projection and local date behavior
         run: npm run verify:agenda
+      - name: Verify theme contrast and navigation invariants
+        run: npm run verify:theme
       - name: Verify MIDI import-export roundtrip
         run: npm run verify:midi
       - name: Verify lyric annotations and comments
