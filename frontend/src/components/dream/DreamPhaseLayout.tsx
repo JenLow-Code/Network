@@ -38,6 +38,7 @@ export function DreamPhaseHeader({
   const {width}=useWindowDimensions();
   const ws=workspaceLayout(width);
   const desktop=Platform.OS==='web'&&ws.desktop;
+  const heroBleed=desktop?Math.min(120,Math.max(0,(width-1100)/4)):0;
   const description=summary===undefined?dream.summary:summary;
   const {setCoverImage,ready}=useDreams();
   const [savingCover,setSavingCover]=useState(false);
@@ -61,7 +62,7 @@ export function DreamPhaseHeader({
       height:desktop?440:width<520?355:420,
       // The photograph alone may bleed beyond the capped reading canvas.
       // Never change the shared max-width of the actual workspace.
-      marginHorizontal:desktop?-Math.min(120,Math.max(0,(width-1100)/4)):0,
+      marginHorizontal:-heroBleed,
       width:'auto',
       position:'relative',
       overflow:'hidden',
@@ -90,7 +91,7 @@ export function DreamPhaseHeader({
         <Rect width="100%" height="100%" fill="url(#dream-full-bleed-hero)"/>
       </Svg>
       <View style={{position:'absolute',top:desktop?18:12,
-        left:ws.gutter,right:ws.gutter,zIndex:4,
+        left:heroBleed,right:heroBleed,zIndex:4,
         flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
         <Pressable accessibilityRole="button" accessibilityLabel="Retour à mes rêves"
           onPress={onBack} style={{width:44,height:44,borderRadius:22,
