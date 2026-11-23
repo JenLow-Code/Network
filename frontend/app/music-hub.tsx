@@ -8,7 +8,8 @@ import { Nav } from '@/components/navigation/Nav';
 import { PageHeader } from '@/components/navigation/PageHeader';
 import { MusicSongCard } from '@/components/music/MusicSongCard';
 import { MusicTile } from '@/components/music/MusicTile';
-import { MusicWaveform } from '@/components/music/MusicWaveform';
+import { MusicMoreDetails } from '@/components/music/MusicMoreDetails';
+import { DetailInfoSection } from '@/components/detail/DetailMoreDrawer';
 import type { MusicCollaborator } from '@/components/music/MusicCollaboratorAvatars';
 import { readMusicLibraryLayout, type MusicLibraryLayout } from '@/domain/musicLibraryPreferences';
 import { useMusicWorkspaces, type MusicProject } from '@/domain/musicWorkspace';
@@ -367,21 +368,22 @@ export default function MusicHub() {
           'Découvrir la musique',() => router.push({
             pathname:'/discover',params:{filter:'Musique'},
           }))}
-        {/* A cassette unfolds HERE, underneath the row, never in a side
-            drawer or on the full-screen public player. */}
+        {/* A cassette unfolds HERE, underneath the row: the SAME complete
+            "En savoir plus" content as Discovery, not a separate summary box. */}
         {(expandedSong||expandedPending)?<View style={{
-          padding:narrow?14:20,borderWidth:1,borderColor:theme.border,
-          borderRadius:15,backgroundColor:theme.surface,gap:14,maxWidth:780,
+          width:'100%',maxWidth:780,
+          paddingTop:narrow?8:12,paddingBottom:4,gap:4,
         }}>
           <View style={{flexDirection:'row',alignItems:'flex-start',gap:14}}>
-            <View style={{flex:1,gap:5}}>
-              <Text numberOfLines={2} style={{fontSize:narrow?17:20,
-                fontWeight:'800',color:theme.foreground}}>
-                {expandedSong?.title||expandedPending?.trackTitle}
+            <View style={{flex:1,gap:7}}>
+              <Text style={{color:theme.muted,fontSize:10,letterSpacing:1.2}}>
+                {('Musique · '+(expandedSong?.author||
+                  expandedPending?.publisher?.displayName||'Auteur')).toLocaleUpperCase('fr')}
               </Text>
-              <Text style={{fontSize:12,color:theme.muted}}>
-                {expandedSong?.author||
-                  expandedPending?.publisher?.displayName||'Auteur'}
+              <Text numberOfLines={2} style={{fontFamily:'serif',
+                fontSize:narrow?24:27,lineHeight:narrow?30:34,
+                color:theme.foreground}}>
+                {expandedSong?.title||expandedPending?.trackTitle}
               </Text>
             </View>
             <Pressable onPress={()=>setExpandedForMe(null)}
@@ -391,34 +393,9 @@ export default function MusicHub() {
               <Ionicons name="close-outline" size={22} color={theme.foreground}/>
             </Pressable>
           </View>
-          {expandedSong?.isDemo?<Text style={{fontSize:11,color:theme.muted}}>
-            Exemple de présentation · aucune invitation réelle
-          </Text>:null}
-          {!!expandedSong?.description?<Text style={{fontSize:13,
-            lineHeight:21,color:theme.foreground}}>
-            {expandedSong.description}
-          </Text>:null}
-          {!!expandedPending?.description?<Text style={{fontSize:13,
-            lineHeight:21,color:theme.foreground}}>
-            {expandedPending.description}
-          </Text>:null}
-          {!!expandedSong?.requestedTalents?.length?<View style={{gap:7}}>
-            <Text style={{fontSize:12,fontWeight:'700',color:theme.foreground}}>
-              Talents recherchés
-            </Text>
-            <View style={{flexDirection:'row',flexWrap:'wrap',gap:7}}>
-              {expandedSong.requestedTalents.map(label=><View key={label}
-                style={{paddingHorizontal:10,paddingVertical:7,borderRadius:14,
-                  backgroundColor:theme.background,borderWidth:1,
-                  borderColor:theme.border}}>
-                <Text style={{fontSize:11,color:theme.foreground}}>{label}</Text>
-              </View>)}
-            </View>
-          </View>:null}
-          {expandedSong&&(expandedSong.isDemo||expandedSong.audioUrl)
-            ?<MusicWaveform key={expandedSong.id}
-              index={expandedSong.audioIndex} uri={expandedSong.audioUrl}/>
-            :null}
+          {expandedSong?<MusicMoreDetails item={expandedSong}/>:null}
+          {expandedPending?<DetailInfoSection title="Proposition en cours"
+            text={expandedPending.description||'Informations du morceau non disponibles.'}/>:null}
           <View style={{flexDirection:'row',gap:10,flexWrap:'wrap'}}>
             {!!expandedSong?.authorHandle&&!expandedSong.isDemo?<>
               <Pressable disabled={contactBusy}
