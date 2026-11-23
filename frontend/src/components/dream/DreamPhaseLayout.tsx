@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { ActivityIndicator, Image, Platform, Pressable, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { useAppTheme } from '@/theme/AppTheme';
 import type { DreamEntry } from '@/domain/dreamWorkspace';
 import { DREAM_PHASES, PHASE_LABELS, type DreamPhase } from '@/domain/publication';
@@ -23,6 +22,10 @@ export const phaseAccent: Record<DreamPhase, string> = {
 /** Full-bleed editorial hero for the dream workspace.
  * Only the dream's title and its own summary belong over the cover image.
  * Stage navigation, dates and working actions remain outside the hero. */
+/** Compact workspace identity, shared by Semence, Germination, Croissance and Floraison.
+ * Unlike the public fruit gallery, working inside a dream is not a full-screen cover.
+ * The right-hand global navigation stays untouched.
+ */
 export function DreamPhaseHeader({
   dream, phase, onBack, onNavigate, action, summary, readOnly = false,
 }: {
@@ -34,137 +37,106 @@ export function DreamPhaseHeader({
   summary?: string | null;
   readOnly?: boolean;
 }) {
-  const theme=useAppTheme();
-  const {width}=useWindowDimensions();
-  const ws=workspaceLayout(width);
-  const desktop=Platform.OS==='web'&&ws.desktop;
-  const heroBleed=desktop?Math.min(120,Math.max(0,(width-1100)/4)):0;
-  const description=summary===undefined?dream.summary:summary;
-  const {setCoverImage,ready}=useDreams();
-  const [savingCover,setSavingCover]=useState(false);
-  const [coverError,setCoverError]=useState('');
-  const canChangeCover=phase===dream.phase&&phase!=='Témoignage'&&!readOnly;
-  const chooseCover=()=>{
-    if(!canChangeCover||savingCover||!ready)return;
+  const theme = useAppTheme();
+  const {width} = useWindowDimensions();
+  const ws = workspaceLayout(width);
+  const desktop = Platform.OS === 'web' && ws.desktop;
+  const narrow = width < 600;
+  const coverSize = desktop ? 106 : narrow ? 82 : 96;
+  const description = summary === undefined ? dream.summary : summary;
+  const {setCoverImage, ready} = useDreams();
+  const [savingCover, setSavingCover] = useState(false);
+  const [coverError, setCoverError] = useState('');
+  const canChangeCover = phase === dream.phase && phase !== 'Témoignage' && !readOnly;
+  const chooseCover = () => {
+    if (!canChangeCover || savingCover || !ready) return;
     setCoverError('');
-    pickDreamImage(uri=>{
+    pickDreamImage(uri => {
       setSavingCover(true);
-      void setCoverImage(dream.id,uri)
-        .catch(error=>setCoverError(error instanceof Error?error.message:
+      void setCoverImage(dream.id, uri)
+        .catch(error => setCoverError(error instanceof Error ? error.message :
           "Impossible d'enregistrer cette image. Réessaie."))
-        .finally(()=>setSavingCover(false));
-    },message=>setCoverError(message));
+        .finally(() => setSavingCover(false));
+    }, message => setCoverError(message));
   };
-  return <View style={{marginBottom:desktop?16:18}}>
-    {/* The hero starts at the top; the reading column remains at its shared
-        fixed workspace width. Only the cover image receives a visual zoom. */}
-    <View style={{
-      height:desktop?440:width<520?355:420,
-      // The photograph alone may bleed beyond the capped reading canvas.
-      // Never change the shared max-width of the actual workspace.
-      marginHorizontal:-heroBleed,
-      width:'auto',
-      position:'relative',
-      overflow:'hidden',
-      backgroundColor:theme.dark?'#142521':'#233831',
-    }}>
-      {dream.image?
-        <Image source={{uri:dream.image}} resizeMode="cover"
-          style={{position:'absolute',left:0,right:0,top:0,bottom:0,
-            width:'100%',height:'100%',transform:[{scale:desktop?1.06:1.02}]}}/>:
-        <View pointerEvents="none" style={{position:'absolute',
-          left:0,right:0,top:0,bottom:0,
-          backgroundColor:theme.dark?'#18352E':'#36534B'}}/>}
-      {/* Light at the top protects the photograph. The lower gradient
-          makes the real words of this dream readable on any cover. */}
-      <Svg pointerEvents="none" width="100%" height="100%"
-        style={{position:'absolute',left:0,right:0,top:0,bottom:0}}>
-        <Defs>
-          <LinearGradient id="dream-full-bleed-hero" x1="0%" y1="0%" x2="0%" y2="100%">
-            <Stop offset="0%" stopColor="#08110F" stopOpacity={.17}/>
-            <Stop offset="29%" stopColor="#08110F" stopOpacity={.06}/>
-            <Stop offset="54%" stopColor="#08110F" stopOpacity={.21}/>
-            <Stop offset="79%" stopColor="#08110F" stopOpacity={.72}/>
-            <Stop offset="100%" stopColor="#08110F" stopOpacity={.91}/>
-          </LinearGradient>
-        </Defs>
-        <Rect width="100%" height="100%" fill="url(#dream-full-bleed-hero)"/>
-      </Svg>
-      <View style={{position:'absolute',top:desktop?18:12,
-        left:heroBleed,right:heroBleed,zIndex:4,
-        flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
-        <Pressable accessibilityRole="button" accessibilityLabel="Retour à mes rêves"
-          onPress={onBack} style={{width:44,height:44,borderRadius:22,
-            alignItems:'center',justifyContent:'center',
-            backgroundColor:'rgba(8,18,16,.62)'}}>
-          <Ionicons name="arrow-back-outline" size={22} color="#FFFFFF"/>
-        </Pressable>
-        <View style={{paddingHorizontal:8,borderRadius:13,
-          backgroundColor:theme.background,opacity:.96}}>
-          <TopActions/>
-        </View>
-      </View>
-      <View pointerEvents="none" style={{
-        position:'absolute',
-        left:desktop?48:width<520?23:35,
-        right:desktop?68:width<520?22:40,
-        bottom:desktop?45:width<520?30:36,
-        maxWidth:desktop?880:undefined,
-        gap:desktop?15:10,
-        alignItems:'flex-start',
+  const backButton = (
+    <Pressable accessibilityRole="button" accessibilityLabel="Retour à mes rêves"
+      onPress={onBack} style={{
+        width:42,height:42,borderRadius:21,alignItems:'center',justifyContent:'center',
+        backgroundColor:theme.surface,borderWidth:1,borderColor:theme.border,
       }}>
-        <Text accessibilityRole="header"
-          numberOfLines={desktop?3:4}
-          style={{
-            color:'#FFFFFF',
-            fontFamily:'serif',
-            fontSize:desktop?52:width<520?33:42,
-            lineHeight:desktop?62:width<520?40:50,
-            fontWeight:'700',
-            letterSpacing:desktop?-1.4:-.6,
-            ...(Platform.OS==='web'?({
-              textShadow:'0 2px 16px rgba(0,0,0,.35)',
-            } as any):{
-              textShadowColor:'rgba(0,0,0,.38)',
-              textShadowOffset:{width:0,height:2},
-              textShadowRadius:12,
-            }),
-          }}>{dream.title}</Text>
-        {description?.trim()?
-          <Text numberOfLines={desktop?3:3} style={{
-            color:'rgba(255,255,255,.94)',
-            fontSize:desktop?17:width<520?13:15,
-            lineHeight:desktop?25:width<520?20:23,
-            fontWeight:'400',
-            maxWidth:desktop?660:540,
-            ...(Platform.OS==='web'?({
-              textShadow:'0 1px 9px rgba(0,0,0,.5)',
-            } as any):{}),
-          }}>{description}</Text>:null}
+      <Ionicons name="arrow-back-outline" size={22} color={theme.foreground}/>
+    </Pressable>
+  );
+  return <View style={{marginBottom:desktop?17:18}}>
+    <View style={{position:'relative',paddingTop:desktop?16:0}}>
+      {desktop ?
+        <View style={{position:'absolute',left:-54,top:29,zIndex:5}}>
+          {backButton}
+        </View> :
+        <View style={{flexDirection:'row',justifyContent:'space-between',
+          alignItems:'center',marginBottom:14}}>
+          {backButton}
+          <View style={{backgroundColor:theme.surface,borderRadius:12,
+            paddingHorizontal:8,borderWidth:1,borderColor:theme.border}}>
+            <TopActions/>
+          </View>
+        </View>}
+      <View style={{flexDirection:'row',alignItems:'center',
+        gap:desktop?20:12,minHeight:coverSize}}>
+        <Pressable accessibilityRole="button"
+          accessibilityLabel={canChangeCover ?
+            (dream.image ? "Changer l'image de couverture du rêve" :
+              "Ajouter une couverture au rêve") : "Image de couverture du rêve"}
+          accessibilityState={{disabled:!canChangeCover||savingCover||!ready}}
+          disabled={!canChangeCover||savingCover||!ready}
+          onPress={chooseCover}
+          style={{width:coverSize,height:coverSize,borderRadius:12,
+            flexShrink:0,overflow:'hidden',backgroundColor:theme.surface,
+            borderWidth:1,borderColor:theme.border}}>
+          {dream.image ?
+            <Image source={{uri:dream.image}} resizeMode="cover"
+              style={{width:'100%',height:'100%'}}/> :
+            <View style={{flex:1,alignItems:'center',justifyContent:'center'}}>
+              <Ionicons name="image-outline" size={24} color={theme.muted}/>
+            </View>}
+          {canChangeCover ?
+            <View pointerEvents="none" style={{position:'absolute',right:5,bottom:5,
+              width:27,height:27,borderRadius:8,alignItems:'center',
+              justifyContent:'center',backgroundColor:'rgba(12,19,17,.78)'}}>
+              {savingCover?<ActivityIndicator size="small" color="#FFFFFF"/>:
+                <Ionicons name="pencil-outline" size={13} color="#FFFFFF"/>}
+            </View> : null}
+        </Pressable>
+        <View style={{flex:1,minWidth:0,gap:narrow?5:7}}>
+          <Text accessibilityRole="header" numberOfLines={3}
+            style={{color:theme.foreground,fontFamily:'serif',
+              fontSize:desktop?32:narrow?23:28,
+              lineHeight:desktop?39:narrow?29:35,
+              fontWeight:'600',letterSpacing:-0.6}}>
+            {dream.title}
+          </Text>
+          {description?.trim() ?
+            <Text numberOfLines={narrow?3:2}
+              style={{color:theme.muted,fontSize:desktop?14:narrow?12:13,
+                lineHeight:desktop?21:narrow?18:20,maxWidth:760}}>
+              {description}
+            </Text> : null}
+        </View>
+        {desktop ?
+          <View style={{alignSelf:'flex-start',paddingHorizontal:8,
+            borderRadius:12,borderWidth:1,borderColor:theme.border,
+            backgroundColor:theme.surface}}>
+            <TopActions/>
+          </View> : null}
       </View>
-      {canChangeCover?<Pressable accessibilityRole="button"
-        accessibilityLabel={dream.image?
-          "Changer l'image de couverture du rêve":"Ajouter une couverture au rêve"}
-        disabled={savingCover||!ready} onPress={chooseCover}
-        style={{
-          position:'absolute',
-          // The cover action sits below the fixed back / flame / message controls.
-          top:desktop?77:72,
-          right:desktop?21:15,
-          zIndex:5,
-          width:42,height:42,
-          alignItems:'center',justifyContent:'center',
-          borderRadius:12,
-          backgroundColor:'rgba(9,22,18,.52)',
-          borderWidth:1,borderColor:'rgba(255,255,255,.40)',
-        }}>
-        {savingCover?<ActivityIndicator color="#FFFFFF" size="small"/>:
-          <Ionicons name="image-outline" color="#FFFFFF" size={18}/>}
-      </Pressable>:null}
     </View>
-    {coverError?<Text accessibilityRole="alert"
-      style={{fontSize:11,color:theme.dark?'#FF98AD':'#B24753',
-        marginTop:9,lineHeight:18}}>{coverError}</Text>:null}
+    {coverError ?
+      <Text accessibilityRole="alert" style={{
+        fontSize:11,color:theme.dark?'#FF98AD':'#B24753',
+        marginTop:9,lineHeight:18}}>
+        {coverError}
+      </Text> : null}
     <View accessibilityRole="tablist" style={{
       marginTop:desktop?24:18,marginBottom:desktop?17:10,
       paddingBottom:3,flexDirection:'row',alignItems:'stretch',
