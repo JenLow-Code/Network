@@ -110,24 +110,26 @@ const layoutRules=[
     'Projects carousel must respect its inset width'],
   ['app/my-space.tsx',/onLayout=\{event=>\{/,
     'Project overview must measure its actual visible canvas'],
-  ['app/my-space.tsx',/const phaseColumns=ws.desktop\?4:2;/,
-    'Desktop must show four phase columns (responsive two-column fallback)'],
-  ['app/my-space.tsx',/\(innerWidth-\(phaseColumns-1\)\*phaseGridGap\)\/phaseColumns/,
-    'Phase columns must share the exact measured hero rail'],
-  ['app/my-space.tsx',/const phaseViewportWidth=Math.max\(0,phasePanelWidth-2\*panelInset-2\);/,
-    'Every project carousel must fit within its own narrow phase panel'],
+  ['app/my-space.tsx',/const phasePanelWidth=innerWidth;/,
+    'All four phase rows must span the same useful width as the hero'],
+  ['app/my-space.tsx',/flexDirection:'column',\s*gap:phaseGridGap/,
+    'Phase panels must stack as four horizontal rows, not columns'],
+  ['app/my-space.tsx',/flexDirection:compact\?'column':'row'/,
+    'Desktop phase rows must position heading and projects side by side'],
+  ['app/my-space.tsx',/const phaseViewportWidth=Math.max\(0,/,
+    'Carousel width must be derived from the available phase row width'],
   ['app/my-space.tsx',/LinearGradient id=\{'phase-wash-'\+index\}/,
-    'Every phase must retain a background colour wash'],
-  ['app/my-space.tsx',/stopOpacity=\{theme.dark\?0.34:0.29\}/,
-    'Phase colour must be strongest at the left edge'],
-  ['app/my-space.tsx',/offset="100%" stopColor=\{panel.accent\}/,
-    'Phase colour must fade into the page background on the right'],
+    'Every phase must retain its coloured background wash'],
+  ['app/my-space.tsx',/offset="0%" stopColor=\{panel.accent\}\s*stopOpacity=\{0\}/,
+    'Phase colour must disappear into the page background at the left edge'],
+  ['app/my-space.tsx',/offset="100%" stopColor=\{panel.accent\}\s*stopOpacity=\{theme.dark\?0.20:0.13\}/,
+    'A gentle phase colour must remain at the right edge'],
   ['app/my-space.tsx',/borderRadius:0,borderWidth:1/,
     'Phase panels must have square, non-rounded edges'],
   ['app/my-space.tsx',/panel.title.toLocaleUpperCase\('fr-FR'\)/,
-    'Phase titles must be uppercase and horizontal'],
+    'Phase titles must remain uppercase and horizontal'],
   ['app/my-space.tsx',/DreamPhaseIcon phase=\{panel.phase\}/,
-    'Soft phase illustrations must stay in the background'],
+    'Faint phase illustrations must remain behind the content'],
   ['app/music-hub.tsx',/\.\.\.workspaceCanvas\(width\),paddingTop:12/,
     'Music landing must use the shared page canvas'],
   ['app/music-hub.tsx',/ws.contentGutter - ws.gutter/,
@@ -161,8 +163,8 @@ if(failures.length){
   console.log('Desktop content rails and notebook/music/chat/project headers verified ('+
     layoutRules.length+' assertions).');
 }
-// Responsive geometry regression: four columns on desktop, two on narrow
-// screens; all phase blocks stay within the exact same bounds as the hero.
+// Responsive geometry regression: four full-width rows, preserving the
+// content rail and allowing a separate label and card area on desktop.
 for(const [canvasWidth,desktop,tablet] of [
   [320,false,false],[360,false,false],[430,false,false],
   [780,false,true],[1100,true,false],[1160,true,false],
@@ -171,17 +173,18 @@ for(const [canvasWidth,desktop,tablet] of [
   const side=desktop?82:tablet?24:canvasWidth<520?16:20;
   const right=desktop?30:tablet?24:canvasWidth<520?16:20;
   const innerWidth=Math.max(0,canvasWidth-side-right);
-  const columns=desktop?4:2;
-  const gap=compact?10:tablet?14:12;
-  const panelWidth=Math.max(0,(innerWidth-(columns-1)*gap)/columns);
-  const inset=compact?9:12;
-  const viewportWidth=Math.max(0,panelWidth-2*inset-2);
-  const tileWidth=compact?viewportWidth:Math.max(1,Math.floor(viewportWidth*.84));
-  if(side+innerWidth+right>canvasWidth+0.01||
-    columns*panelWidth+(columns-1)*gap>innerWidth+0.01||
-    viewportWidth>panelWidth-2*inset-2+0.01||
-    viewportWidth<1||tileWidth>viewportWidth){
-    console.error('Projects phase columns overflow at '+canvasWidth+'px');
+  const phasePanelWidth=innerWidth;
+  const panelInset=compact?12:16;
+  const phaseLabelWidth=compact?0:
+    Math.min(230,Math.max(150,Math.round(innerWidth*.23)));
+  const contentGap=compact?0:20;
+  const viewportWidth=Math.max(0,
+    phasePanelWidth-2*panelInset-2-phaseLabelWidth-contentGap);
+  const cardWidth=compact?viewportWidth:
+    Math.min(232,Math.max(150,Math.round(viewportWidth*.31)));
+  if(side+phasePanelWidth+right>canvasWidth+0.01 ||
+    phasePanelWidth<1 || viewportWidth<1 || cardWidth>viewportWidth){
+    console.error('Full-width project phase row overflows at '+canvasWidth+'px');
     process.exitCode=1;
   }
 }
