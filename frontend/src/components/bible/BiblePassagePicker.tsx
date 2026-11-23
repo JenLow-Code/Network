@@ -12,10 +12,17 @@ type Props={
  onSelect:(verse:BiblePassage)=>void;
  title?:string;
  compact?:boolean;
+ showHeading?:boolean;
+ showHint?:boolean;
+ selectedPassage?:BiblePassage|null;
+ readerMaxHeight?:number;
 };
 
 /** Reusable book/chapter reader and reference search for Semence and the profile library. */
-export default function BiblePassagePicker({onSelect,title='Choisir un verset',compact=false}:Props){
+export default function BiblePassagePicker({
+ onSelect,title='Choisir un verset',compact=false,showHeading=true,showHint=true,
+ selectedPassage=null,readerMaxHeight,
+}:Props){
  const theme=useAppTheme();
  const [bookCode,setBookCode]=useState<BibleBookCode>('John');
  const [chapter,setChapter]=useState(3);
@@ -78,12 +85,12 @@ export default function BiblePassagePicker({onSelect,title='Choisir un verset',c
  });
  const color=theme.foreground;
  return <View style={{gap:11}}>
-   <View style={{gap:4}}>
+   {showHeading?<View style={{gap:4}}>
      <Text style={{fontSize:19,fontFamily:'serif',color,fontWeight:'600'}}>{title}</Text>
      <Text style={{fontSize:11,color:theme.muted}}>
        {BIBLE_EDITION} · domaine public
      </Text>
-   </View>
+   </View>:null}
    <View style={{flexDirection:'row',alignItems:'center',gap:8,
      borderWidth:1,borderRadius:10,borderColor:theme.border,
      backgroundColor:theme.background,paddingHorizontal:10}}>
@@ -173,22 +180,31 @@ export default function BiblePassagePicker({onSelect,title='Choisir un verset',c
    {loading?<ActivityIndicator color={theme.muted} style={{marginTop:18}}/>:null}
    {error?<Text style={{fontSize:12,color:'#B74A5F',lineHeight:19}}>{error}</Text>:null}
    {!loading&&verses.length?<ScrollView nestedScrollEnabled
-      style={{maxHeight:compact?235:330}}
+      style={{maxHeight:readerMaxHeight??(compact?235:330)}}
       keyboardShouldPersistTaps="handled"
       contentContainerStyle={{gap:2,paddingBottom:7}}>
-     {verses.map((text,i)=>text?<Pressable key={i}
-       onPress={()=>select(verseByNumber(i+1))}
-       accessibilityRole="button"
-       accessibilityLabel={'Choisir '+bibleBookName(bookCode)+' '+chapter+':'+(i+1)}
-       style={{flexDirection:'row',gap:9,paddingHorizontal:7,
-         paddingVertical:9,borderBottomWidth:.5,borderColor:theme.border}}>
-       <Text style={{fontSize:11,color:'#B88962',fontWeight:'700',minWidth:21,marginTop:3}}>{i+1}</Text>
-       <Text style={{fontSize:compact?14:15,color,lineHeight:compact?21:24,flex:1,
-         fontFamily:'serif'}}>{text}</Text>
-     </Pressable>:null)}
+     {verses.map((text,i)=>{
+       const active=selectedPassage?.bookCode===bookCode&&
+         selectedPassage.chapter===chapter&&selectedPassage.verse===i+1;
+       return text?<Pressable key={i}
+         onPress={()=>select(verseByNumber(i+1))}
+         accessibilityRole="button"
+         accessibilityLabel={'Choisir '+bibleBookName(bookCode)+' '+chapter+':'+(i+1)}
+         accessibilityState={{selected:active}}
+         style={{flexDirection:'row',gap:9,paddingHorizontal:7,
+           paddingVertical:9,borderBottomWidth:.5,borderColor:theme.border,
+           borderLeftWidth:active?3:0,borderLeftColor:'#D71D77',
+           backgroundColor:active?(theme.dark?'rgba(215,29,119,.18)':'rgba(215,29,119,.07)'):'transparent'}}>
+         <Text style={{fontSize:11,color:active?'#D71D77':'#B88962',
+           fontWeight:'700',minWidth:21,marginTop:3}}>{i+1}</Text>
+         <Text style={{fontSize:compact?14:15,
+           color:active?(theme.dark?'#FF86AE':'#A51855'):color,
+           lineHeight:compact?21:24,flex:1,fontFamily:'serif'}}>{text}</Text>
+       </Pressable>:null;
+     })}
    </ScrollView>:null}
-   <Text style={{fontSize:10,color:theme.muted,lineHeight:16}}>
+   {showHint?<Text style={{fontSize:10,color:theme.muted,lineHeight:16}}>
      Appuie sur un verset pour le sélectionner. Les textes déjà lus restent disponibles hors ligne.
-   </Text>
+   </Text>:null}
  </View>;
 }
