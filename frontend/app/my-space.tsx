@@ -426,7 +426,8 @@ export default function MySpace() {
   const phaseTileWidth=compact?phaseViewportWidth:
     Math.max(100,Math.floor((phaseViewportWidth-2*phaseCardGap)/2.2));
   const phaseTileHeight=compact?Math.min(155,Math.round(phaseViewportWidth*.9)):146;
-  const phasePanelHeight=compact?Math.max(204,phaseTileHeight+58):282;
+  // Give the project cards and carousel controls room without oversized empty panels.
+  const phasePanelHeight=compact?Math.max(204,phaseTileHeight+82):244;
   const heroGlass=Platform.OS==='web'
     ? ({backdropFilter:'blur(14px) saturate(125%)',
         WebkitBackdropFilter:'blur(14px) saturate(125%)'} as any)
@@ -615,6 +616,11 @@ export default function MySpace() {
                   ))}
                 </View>
               ):null}
+              {/* Mask the thin image-edge artefact underneath the hero. */}
+              <View pointerEvents="none" style={{
+                position:'absolute',bottom:0,left:0,right:0,height:2,
+                backgroundColor:theme.background,zIndex:11,
+              }}/>
             </View>
           </View>
         </View>
@@ -665,7 +671,7 @@ export default function MySpace() {
             columnGap:phaseGridGap,rowGap:phaseGridGap,
             paddingBottom:compact?20:26,
           }}>
-            {phasePanels.map(panel=>{
+            {phasePanels.map((panel,index)=>{
               const dreams=visible.filter(d=>panel.phase==='Témoignage'
                 ? inFlower(d) : d.phase===panel.phase);
               return (
@@ -677,6 +683,23 @@ export default function MySpace() {
                   position:'relative',
                   borderWidth:0,backgroundColor:'transparent',
                 }}>
+                  {/* A quiet left-to-right color wash, with no visible frame.
+                      The phase name stays clear against the neutral left side. */}
+                  <Svg pointerEvents="none" width="100%" height="100%"
+                    style={{position:'absolute',top:0,bottom:0,left:0,right:0}}>
+                    <Defs>
+                      <LinearGradient id={'phase-wash-'+index}
+                        x1="0%" y1="0%" x2="100%" y2="0%">
+                        <Stop offset="0%" stopColor={panel.accent} stopOpacity={0}/>
+                        <Stop offset="34%" stopColor={panel.accent} stopOpacity={0}/>
+                        <Stop offset="72%" stopColor={panel.accent}
+                          stopOpacity={theme.dark?0.05:0.035}/>
+                        <Stop offset="100%" stopColor={panel.accent}
+                          stopOpacity={theme.dark?0.14:0.09}/>
+                      </LinearGradient>
+                    </Defs>
+                    <Rect width="100%" height="100%" fill={'url(#phase-wash-'+index+')'}/>
+                  </Svg>
                   {/* Vertical phase name is the sole phase heading. */}
                   <View pointerEvents="none" accessible={false}
                     importantForAccessibility="no-hide-descendants"
