@@ -140,16 +140,32 @@ const layoutRules=[
     'The left hero fade must exactly match the real page background'],
   ['app/my-space.tsx',/paddingHorizontal: isBanner \? bannerInset : 13/,
     'The hero title and description must use the same content inset as the cards'],
-  ['app/my-space.tsx',/bannerInset=\{panelInset\}/,
-    'The hero banner must receive the phase card inset'],
-  ['app/my-space.tsx',/bottom:compact\?12:17,left:panelInset,right:panelInset/,
-    'Hero buttons must align with the headline and project cards'],
+  ['app/my-space.tsx',/const phaseLeftInset=compact\?12:0;/,
+    'Desktop hero and cards must start directly on the shared page rail'],
+  ['app/my-space.tsx',/bannerInset=\{phaseLeftInset\}/,
+    'The banner headline must share the project card left inset'],
+  ['app/my-space.tsx',/bottom:compact\?12:17,left:phaseLeftInset,right:panelInset/,
+    'Hero controls must align precisely with headline and first project tile'],
+  ['app/my-space.tsx',/paddingLeft:phaseLeftInset,paddingRight:panelInset/,
+    'Each phase row must keep its first dream tile on the shared content rail'],
+  ['app/my-space.tsx',/height:2,\s*backgroundColor:theme.background,zIndex:8/,
+    'A solid two-pixel seam seal must hide the hero image edge without a bottom fade'],
+  ['app/my-space.tsx',/backgroundColor: isBanner \? theme.background : theme.surface/,
+    'The hero must not use a legacy white backing different from the page'],
   ['app/my-space.tsx',/headingLight:'#261C22'/,
     'Floraison titles must be near-black with a subtle magenta-brown tint'],
   ['app/my-space.tsx',/panel.title.toLocaleUpperCase\('fr-FR'\)/,
     'Phase titles must remain uppercase and horizontal'],
   ['app/my-space.tsx',/DreamPhaseIcon phase=\{panel.phase\}/,
     'Faint phase illustrations must remain behind the content'],
+  ['src/components/navigation/Nav.tsx',/icon: 'folder-outline' as const, title: 'Mes projets'/,
+    'Projects navigation must use the same name as the overview page'],
+  ['src/components/navigation/Nav.tsx',/const cleanProjectsNav=path==='\/my-space';/,
+    'The projects overview navigation must not inherit the legacy background'],
+  ['src/components/navigation/Nav.tsx',/backgroundColor:cleanProjectsNav\?theme.background:navSurface/,
+    'The projects navigation surface must match the current page colour'],
+  ['src/components/navigation/Nav.tsx',/!cleanProjectsNav\?\(/,
+    'The legacy glass background must be disabled only on the Projects overview'],
   ['app/music-hub.tsx',/\.\.\.workspaceCanvas\(width\),paddingTop:12/,
     'Music landing must use the shared page canvas'],
   ['app/music-hub.tsx',/ws.contentGutter - ws.gutter/,
@@ -206,7 +222,8 @@ for(const [canvasWidth,desktop,tablet] of [
   const innerWidth=Math.max(0,canvasWidth-side-right);
   const phasePanelWidth=innerWidth;
   const panelInset=compact?12:16;
-  const viewportWidth=Math.max(0,phasePanelWidth-2*panelInset);
+  const phaseLeftInset=compact?12:0;
+  const viewportWidth=Math.max(0,phasePanelWidth-phaseLeftInset-panelInset);
   const cardWidth=compact?viewportWidth:
     Math.min(232,Math.max(150,Math.round(viewportWidth*.31)));
   if(side+phasePanelWidth+right>canvasWidth+0.01 ||
