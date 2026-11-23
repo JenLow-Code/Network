@@ -130,7 +130,7 @@ export default function DreamLibrary(){
   // The shared Inspirations editor is available in Germination and Croissance.
   return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
     <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{
-      paddingHorizontal:ws.gutter,paddingTop:10,paddingBottom:110,
+      paddingLeft:ws.contentGutter,paddingRight:ws.gutter,paddingTop:12,paddingBottom:110,
       maxWidth:ws.maxWidth,width:'100%',alignSelf:'center',minHeight:'100%',
     }}>
       <PageHeader title="Documents & Inspirations" onBack={()=>router.replace({pathname:'/my-dream/[id]',
