@@ -13,14 +13,10 @@ const pages=[
   'app/music-workspace/[id].tsx',
   'app/my-space.tsx',
   'app/profile.tsx',
-  'app/profile-talents.tsx',
-  'app/profile-publications.tsx',
+  'src/components/profile/ProfileBible.tsx',
   'app/profile-preview.tsx',
-  'app/prayers.tsx',
-  'app/settings.tsx',
   'app/notifications.tsx',
   'app/talent-invitations.tsx',
-  'app/bible-library.tsx',
   'app/fire.tsx',
   'app/space.tsx',
   'app/circle.tsx',
@@ -316,4 +312,10 @@ if(!notificationCopy.includes("title: 'Invitation à rejoindre une aspiration'")
    !notificationCopy.includes("title: 'Aspiration invitation'")){
   console.error('Notifications still use old dream terminology.');
   process.exitCode=1;
+}
+
+// Personal profile: navigation stays on the same scroll view; legacy links redirect.
+const personalProfile=read('app/profile.tsx');
+if(!personalProfile.includes('onPress={()=>jump(link.id)}')||!personalProfile.includes('anchors.current[item.id]')||!personalProfile.includes('<ProfileTalents contentWidth={contentWidth}/>' )||!['profile-talents','profile-publications','prayers','settings'].every(route=>read('app/'+route+'.tsx').includes('pathname:\'/profile\''))){
+  console.error('Personal profile must retain its integrated sections and legacy anchor redirects.');process.exitCode=1;
 }
