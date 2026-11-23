@@ -5,10 +5,10 @@ import { useAppTheme } from '@/theme/AppTheme';
 import type { DreamEntry } from '@/domain/dreamWorkspace';
 import { DREAM_PHASES, PHASE_LABELS, type DreamPhase } from '@/domain/publication';
 import { DreamPhaseIcon } from '@/icons/DreamPhaseIcon';
-import { TopActions } from '@/components/navigation/TopActions';
+import { PageHeader } from '@/components/navigation/PageHeader';
 import { pickDreamImage } from '@/lib/pickDreamImage';
 import { useDreams } from '@/domain/dreamRepository';
-import { workspaceLayout,DESKTOP_PAGE_CONTENT_INSET } from '@/theme/workspaceLayout';
+import { workspaceLayout } from '@/theme/workspaceLayout';
 
 /** One editorial design language for all four dream phases. */
 export const phaseAccent: Record<DreamPhase, string> = {
@@ -36,8 +36,7 @@ export function DreamPhaseHeader({
 }) {
   const theme = useAppTheme();
   const {width} = useWindowDimensions();
-  const ws = workspaceLayout(width);
-  const desktop = Platform.OS === 'web' && ws.desktop;
+  const desktop = Platform.OS === 'web' && workspaceLayout(width).desktop;
   const narrow = width < 600;
   const coverSize = desktop ? 106 : narrow ? 82 : 96;
   const description = summary === undefined ? dream.summary : summary;
@@ -56,77 +55,45 @@ export function DreamPhaseHeader({
         .finally(() => setSavingCover(false));
     }, message => setCoverError(message));
   };
-  const backButton = (
-    <Pressable accessibilityRole="button" accessibilityLabel="Retour à mes rêves"
-      onPress={onBack} style={{
-        width:42,height:42,borderRadius:21,alignItems:'center',justifyContent:'center',
-        backgroundColor:theme.surface,borderWidth:1,borderColor:theme.border,
-      }}>
-      <Ionicons name="arrow-back-outline" size={22} color={theme.foreground}/>
-    </Pressable>
-  );
   return <View style={{marginBottom:desktop?17:18}}>
-    <View style={{position:'relative',paddingTop:desktop?16:0}}>
-      {desktop ?
-        <View style={{position:'absolute',left:-DESKTOP_PAGE_CONTENT_INSET,top:29,zIndex:5}}>
-          {backButton}
-        </View> :
-        <View style={{flexDirection:'row',justifyContent:'space-between',
-          alignItems:'center',marginBottom:14}}>
-          {backButton}
-          <View style={{backgroundColor:theme.surface,borderRadius:12,
-            paddingHorizontal:8,borderWidth:1,borderColor:theme.border}}>
-            <TopActions/>
-          </View>
-        </View>}
-      <View style={{flexDirection:'row',alignItems:'center',
-        gap:desktop?20:12,minHeight:coverSize}}>
-        <Pressable accessibilityRole="button"
-          accessibilityLabel={canChangeCover ?
-            (dream.image ? "Changer l'image de couverture du rêve" :
-              "Ajouter une couverture au rêve") : "Image de couverture du rêve"}
-          accessibilityState={{disabled:!canChangeCover||savingCover||!ready}}
-          disabled={!canChangeCover||savingCover||!ready}
-          onPress={chooseCover}
-          style={{width:coverSize,height:coverSize,borderRadius:12,
-            flexShrink:0,overflow:'hidden',backgroundColor:theme.surface,
-            borderWidth:1,borderColor:theme.border}}>
-          {dream.image ?
-            <Image source={{uri:dream.image}} resizeMode="cover"
-              style={{width:'100%',height:'100%'}}/> :
-            <View style={{flex:1,alignItems:'center',justifyContent:'center'}}>
-              <Ionicons name="image-outline" size={24} color={theme.muted}/>
-            </View>}
-          {canChangeCover ?
-            <View pointerEvents="none" style={{position:'absolute',right:5,bottom:5,
-              width:27,height:27,borderRadius:8,alignItems:'center',
-              justifyContent:'center',backgroundColor:'rgba(12,19,17,.78)'}}>
-              {savingCover?<ActivityIndicator size="small" color="#FFFFFF"/>:
-                <Ionicons name="pencil-outline" size={13} color="#FFFFFF"/>}
-            </View> : null}
-        </Pressable>
-        <View style={{flex:1,minWidth:0,gap:narrow?5:7}}>
-          <Text accessibilityRole="header" numberOfLines={3}
-            style={{color:theme.foreground,fontFamily:'serif',
-              fontSize:desktop?32:narrow?23:28,
-              lineHeight:desktop?39:narrow?29:35,
-              fontWeight:'600',letterSpacing:-0.6}}>
-            {dream.title}
-          </Text>
-          {description?.trim() ?
-            <Text numberOfLines={narrow?3:2}
-              style={{color:theme.muted,fontSize:desktop?14:narrow?12:13,
-                lineHeight:desktop?21:narrow?18:20,maxWidth:760}}>
-              {description}
-            </Text> : null}
-        </View>
-        {desktop ?
-          <View style={{alignSelf:'flex-start',paddingHorizontal:8,
-            borderRadius:12,borderWidth:1,borderColor:theme.border,
-            backgroundColor:theme.surface}}>
-            <TopActions/>
+    {/* The dream's title and Back control use the same rail, typography and
+        global actions as every other internal JenLow page. The cover and
+        descriptive summary are secondary content, not a second page header. */}
+    <PageHeader title={dream.title} onBack={onBack}/>
+    <View style={{flexDirection:'row',alignItems:'center',
+      gap:desktop?20:12,marginTop:desktop?14:12,minHeight:coverSize}}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={canChangeCover ?
+          (dream.image ? "Changer l'image de couverture du rêve" :
+            "Ajouter une couverture au rêve") : "Image de couverture du rêve"}
+        accessibilityState={{disabled:!canChangeCover||savingCover||!ready}}
+        disabled={!canChangeCover||savingCover||!ready}
+        onPress={chooseCover}
+        style={{width:coverSize,height:coverSize,borderRadius:12,
+          flexShrink:0,overflow:'hidden',backgroundColor:theme.surface,
+          borderWidth:1,borderColor:theme.border}}>
+        {dream.image ?
+          <Image source={{uri:dream.image}} resizeMode="cover"
+            style={{width:'100%',height:'100%'}}/> :
+          <View style={{flex:1,alignItems:'center',justifyContent:'center'}}>
+            <Ionicons name="image-outline" size={24} color={theme.muted}/>
+          </View>}
+        {canChangeCover ?
+          <View pointerEvents="none" style={{position:'absolute',right:5,bottom:5,
+            width:27,height:27,borderRadius:8,alignItems:'center',
+            justifyContent:'center',backgroundColor:'rgba(12,19,17,.78)'}}>
+            {savingCover?<ActivityIndicator size="small" color="#FFFFFF"/>:
+              <Ionicons name="pencil-outline" size={13} color="#FFFFFF"/>}
           </View> : null}
-      </View>
+      </Pressable>
+      {description?.trim() ?
+        <Text numberOfLines={narrow?4:3}
+          style={{flex:1,minWidth:0,color:theme.muted,
+            fontSize:desktop?14:narrow?12:13,
+            lineHeight:desktop?21:narrow?18:20}}>
+          {description}
+        </Text>:null}
     </View>
     {coverError ?
       <Text accessibilityRole="alert" style={{

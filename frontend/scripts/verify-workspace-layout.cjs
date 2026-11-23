@@ -71,6 +71,20 @@ if(!dreamNav.includes("||phase==='Rêve')return phaseNav;")||
 }
 
 
+// Germination must expose its existing shared Documents & Inspirations
+// workspace in the same sidebar as personal notes (Semence stays unchanged).
+const germinationNav=dreamNav.split("(phase==='Initiation'?[")[1]?.split(']:[')[0]||'';
+if(!germinationNav.includes("{kind:'library' as const,title:'Documents & Inspirations'}")||
+   !germinationNav.includes("{kind:'notes' as const,title:'Notes personnelles'}")||
+   !dreamNav.includes("'/my-dream/library/[id]'")||
+   !dreamNav.includes("section:kind==='library'?'all':'notes'")){
+  console.error('Germination navigation must open Documents & Inspirations and Notes personnelles.');
+  process.exitCode=1;
+}else{
+  console.log('Germination library is visible and routes to the existing documents workspace.');
+}
+
+
 // Desktop content rail: titles, headers, hero and notebook body share one x
 // position. The back control alone is offset to the left. On touch/mobile,
 // retain the established narrower grid so cards never lose a column.
@@ -110,8 +124,8 @@ const layoutRules=[
     'Music card grid must use the actual smaller content width'],
   ['app/chat/[id].tsx',/left:workspaceLayout\(width\).gutter/,
     'Chat back controls must sit left of their padded title rail'],
-  ['src/components/dream/DreamPhaseLayout.tsx',/left:-DESKTOP_PAGE_CONTENT_INSET/,
-    'Dream workspace back arrow must be the only element beyond its hero rail'],
+  ['src/components/dream/DreamPhaseLayout.tsx',/<PageHeader title=\{dream\.title\} onBack=\{onBack\}\/>/,
+    'All dream phases must use the canonical page header and Back alignment'],
 ];
 const directWorkspacePages=[
   'app/music-workspace/[id].tsx',

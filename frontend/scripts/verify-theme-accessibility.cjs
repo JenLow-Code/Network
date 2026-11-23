@@ -39,9 +39,9 @@ assert.ok(nav.includes('left:desktop?-DESKTOP_PAGE_CONTENT_INSET:0') &&
   nav.includes('paddingLeft:desktop?0:52'),
   'Shared Back and title alignment must stay consistent');
 const hero = source('src/components/dream/DreamPhaseLayout.tsx');
-assert.ok(hero.includes('left:-DESKTOP_PAGE_CONTENT_INSET') &&
-  hero.includes('workspaceLayout(width)'),
-  'Dream Back must stay aligned to the shared desktop canvas inset');
+assert.ok(hero.includes('<PageHeader title={dream.title} onBack={onBack}/>') &&
+  hero.includes("import { PageHeader } from '@/components/navigation/PageHeader';"),
+  'Dream Back, title and top actions must use the shared JenLow PageHeader');
 for (const file of ['app/space.tsx','app/login.tsx','app/chat/[id].tsx','app/agenda.tsx']) {
   const contents = source(file);
   assert.ok(!/<SafeAreaView style=\{\{[^}]*backgroundColor: ['"]#fff['"]/.test(contents),
