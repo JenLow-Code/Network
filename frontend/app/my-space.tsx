@@ -689,11 +689,11 @@ export default function MySpace() {
                       <LinearGradient id={'phase-wash-'+index}
                         x1="0%" y1="0%" x2="100%" y2="0%">
                         <Stop offset="0%" stopColor={panel.accent} stopOpacity={0}/>
-                        <Stop offset="34%" stopColor={panel.accent} stopOpacity={0}/>
+                        <Stop offset="28%" stopColor={panel.accent} stopOpacity={0.015}/>
                         <Stop offset="72%" stopColor={panel.accent}
-                          stopOpacity={theme.dark?0.05:0.035}/>
+                          stopOpacity={theme.dark?0.09:0.06}/>
                         <Stop offset="100%" stopColor={panel.accent}
-                          stopOpacity={theme.dark?0.14:0.09}/>
+                          stopOpacity={theme.dark?0.22:0.16}/>
                       </LinearGradient>
                     </Defs>
                     <Rect width="100%" height="100%" fill={'url(#phase-wash-'+index+')'}/>
@@ -705,8 +705,9 @@ export default function MySpace() {
                     marginBottom:compact?9:12}}>
                     <Text numberOfLines={1} style={{
                       color:panel.accent,
-                      fontSize:compact?11:16,lineHeight:compact?17:21,
-                      fontWeight:'500',letterSpacing:compact?0:0.1,
+                      fontSize:compact?10:14,lineHeight:compact?17:21,
+                      fontWeight:'500',letterSpacing:compact?0.8:1.8,
+                      textTransform:'uppercase',
                     }}>{panel.title}</Text>
                   </View>
                   {dreams.length>0 ? (
@@ -730,8 +731,8 @@ export default function MySpace() {
                         letterSpacing:0,
                         lineHeight:compact?14:21,textAlign:'center'}}>
                         {panel.phase==='Témoignage'
-                          ? 'Aucune floraison en préparation.'
-                          : 'Aucun projet dans cette étape.'}
+                          ? 'Aucun rêve en floraison pour le moment.'
+                          : 'Aucun rêve dans cette étape pour le moment.'}
                       </Text>
                     </View>
                   )}
