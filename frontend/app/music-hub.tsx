@@ -15,7 +15,7 @@ import { useMusicWorkspaces, type MusicProject } from '@/domain/musicWorkspace';
 import { matchesForMe, profileTalentStorageKey, type SavedTalent } from '@/domain/personalDiscovery';
 import { useApp } from '@/context/AppContext';
 import { useDiscovery } from '@/lib/api/hooks';
-import { api } from '@/lib/api/client';
+import { api, ApiRequestError } from '@/lib/api/client';
 import {fetchDemoMusicPreview,type DemoMusicPreview} from '@/lib/api/musicPreview';
 import { useAppTheme } from '@/theme/AppTheme';
 import { workspaceLayout } from '@/theme/workspaceLayout';
@@ -81,6 +81,8 @@ export default function MusicHub() {
   // Opening a cassette in Pour moi reveals its information UNDER the shelf.
   // It does not replace the library with a full-screen public player.
   const [expandedForMe,setExpandedForMe]=useState<string|null>(null);
+  const [contactBusy,setContactBusy]=useState(false);
+  const [contactError,setContactError]=useState('');
   const [demoPreview,setDemoPreview]=useState<DemoMusicPreview|null>(null);
 
   useFocusEffect(useCallback(() => {
@@ -208,7 +210,27 @@ export default function MusicHub() {
   const forMeCount = recommended.length + pendingSent.length;
   const expandedSong=recommended.find(p=>p.id===expandedForMe);
   const expandedPending=pendingSent.find(p=>p.trackPublicationId===expandedForMe);
-  const toggleForMe=(id:string)=>setExpandedForMe(current=>current===id?null:id);
+  const toggleForMe=(id:string)=>{
+    setContactError('');
+    setExpandedForMe(current=>current===id?null:id);
+  };
+  const contactAuthor=async(handle:string)=>{
+    if(contactBusy)return;
+    setContactBusy(true);setContactError('');
+    try{
+      const result=await api<{conversationId:string}>('/api/conversations',{
+        method:'POST',auth:'required',body:{handle},
+      });
+      router.push({pathname:'/chat/[id]',params:{id:result.conversationId}});
+    }catch(e){
+      const reason=e instanceof ApiRequestError?e.code:'';
+      setContactError(reason==='contact_required'
+        ?'La discussion directe est réservée aux contacts ou aux membres de ton Circle.'
+        :reason==='not_authenticated'
+          ?'Connecte-toi pour contacter cette personne.'
+          :'Impossible d’ouvrir la conversation actuellement.');
+    }finally{setContactBusy(false);}
+  };
 
   // A personal music tile is ALWAYS a workspace entry, never the Discovery
   // player. The latter is exclusively for music the viewer is exploring.
@@ -398,16 +420,27 @@ export default function MusicHub() {
               index={expandedSong.audioIndex} uri={expandedSong.audioUrl}/>
             :null}
           <View style={{flexDirection:'row',gap:10,flexWrap:'wrap'}}>
-            {!!expandedSong?.authorHandle&&!expandedSong.isDemo?
+            {!!expandedSong?.authorHandle&&!expandedSong.isDemo?<>
+              <Pressable disabled={contactBusy}
+                onPress={()=>{void contactAuthor(expandedSong.authorHandle!);}}
+                accessibilityRole="button"
+                style={{borderRadius:11,backgroundColor:PINK,
+                  paddingHorizontal:14,minHeight:42,justifyContent:'center',
+                  opacity:contactBusy?.55:1}}>
+                <Text style={{color:'#FFFFFF',fontWeight:'700',fontSize:12}}>
+                  {contactBusy?'Ouverture…':'Contacter l’auteur'}
+                </Text>
+              </Pressable>
               <Pressable onPress={()=>router.push({pathname:'/member/[name]',
                 params:{name:expandedSong.authorHandle!}})}
                 accessibilityRole="button"
                 style={{borderRadius:11,borderWidth:1,borderColor:PINK,
                   paddingHorizontal:14,minHeight:42,justifyContent:'center'}}>
                 <Text style={{color:PINK,fontWeight:'700',fontSize:12}}>
-                  Voir le profil de l’auteur
+                  Voir le profil
                 </Text>
-              </Pressable>:null}
+              </Pressable>
+            </>:null}
             {expandedSong&&!expandedSong.isDemo?
               <Pressable onPress={()=>router.push({pathname:'/music-proposal/[id]',
                 params:{id:expandedSong.id}})}
@@ -425,6 +458,9 @@ export default function MusicHub() {
                 :'Proposition en brouillon'}
             </Text>:null}
           </View>
+          {!!contactError?<Text style={{fontSize:11,color:PINK,lineHeight:18}}>
+            {contactError}
+          </Text>:null}
         </View>:null}
       </View>
     </ScrollView>
