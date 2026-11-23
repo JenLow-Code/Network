@@ -210,7 +210,7 @@ for(const path of directWorkspacePages){
 // These regressions are intentional failures, not optional style changes.
 const projectSource=read('app/my-space.tsx');
 if(/Aspiration précédente/.test(projectSource)||
-   /fontVariant:\['tabular-nums'\]/.test(projectSource)){
+   /\{current\+1\}\/\{dreams.length\}/.test(projectSource)){
   console.error('Mobile aspiration navigation must use subtle top-left bullets, not bottom counters/arrows.');
   process.exitCode=1;
 }
