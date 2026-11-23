@@ -668,10 +668,6 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
                 </View>
                 {detailArrow}
               </View>}
-            {desktopList&&showEditor?<Text numberOfLines={1}
-              style={{width:130,fontSize:12,color:theme.foreground}}>
-              {file.editedBy||project.ownerName||'—'}
-            </Text>:null}
             <View style={{flex:desktopList?1:undefined,
               width:desktopList?undefined:'100%',minWidth:0,
               maxHeight:desktopList?86:undefined,
@@ -679,10 +675,14 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
               justifyContent:'center'}}>
               {representation}
             </View>
+            {desktopList&&showEditor?<Text numberOfLines={1}
+              style={{width:130,fontSize:12,color:theme.foreground}}>
+              {file.editedBy||project.ownerName||'—'}
+            </Text>:null}
             {desktopList?detailArrow:null}
           </View>
           {desktopList&&lyricExpanded&&file.kind==='lyrics'?
-            <View style={{paddingLeft:(showEditor?185+105+130:210+120)+28,paddingRight:28,
+            <View style={{paddingLeft:(showEditor?185+105:210+120)+28,paddingRight:28,
               paddingBottom:14}}>
               <Text style={{fontFamily:'Georgia',fontSize:15,
                 lineHeight:24,color:theme.muted}}>{text}</Text>
