@@ -127,7 +127,7 @@ export default function MusicListenPage(){
       {song?<View style={{width:'100%',maxWidth:960,alignSelf:'center'}}>
         <DetailAuthorHeader item={song} previewOnly={!!song.isDemo||song.source!=='api'}/>
         <MusicListeningDetail song={song} queue={queue}
-          contentWidth={Math.max(0,Math.min(width,960)-36)}
+          contentWidth={Math.min(contentWidth,960)}
           onSelect={select} onContact={handle=>{void contact(handle);}}
           contactBusy={contactBusy} contactError={contactError}/>
       </View>:pending?<View style={{maxWidth:800,width:'100%',alignSelf:'center',gap:19}}>
