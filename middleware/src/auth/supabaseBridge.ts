@@ -95,6 +95,15 @@ export async function exchangeSupabase(ctx:Ctx):Promise<Response>{
       if(!member)member={id,email,handle,display_name:name,account_status:'active'};
     }
   }
+  // Re-read the unique provider subject. INSERT OR IGNORE must never silently
+  // link the requesting identity to a different account in a concurrent race.
+  const binding=await ctx.sql.first<{user_id:string}>(
+    "SELECT user_id FROM auth_identities WHERE provider='oidc' AND provider_subject=?",
+    subject,
+  );
+  if(!binding||binding.user_id!==member.id){
+    return legacyError('identity_link_failed',409);
+  }
   if(member.account_status!=='active'||member.email.toLowerCase()!==email){
     return legacyError('not_authenticated',401);
   }
