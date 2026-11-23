@@ -62,7 +62,7 @@ export default function MusicHub() {
   // Unlike the former 1/2/3 layout, five small tiles fit the desktop music shelf.
   const columns = width < 340 ? 1 : width < 700 ? 2 :
     width < 950 ? 3 : width < 1100 ? 4 : 5;
-  const availableWidth = Math.min(width, ws.maxWidth || width) - ws.gutter * 2;
+  const availableWidth = Math.max(0,Math.min(width, ws.maxWidth || width) - ws.contentGutter - ws.gutter);
   const gutter = 14;
   // Keep three cassette thumbnails fully visible across a phone viewport.
   // Extra items scroll horizontally like a music streaming app.
