@@ -81,7 +81,7 @@ const layoutRules=[
     'The Music landing header must use the same canvas and top offset as other pages'],
   ['app/music-workspace/[id].tsx',/paddingTop:12,paddingBottom:/,
     'Owned music workspaces must keep the common top offset'],
-  ['app/music-collaboration/[id].tsx',/paddingHorizontal:ws\.gutter,paddingTop:12/,
+  ['app/music-collaboration/[id].tsx',/(?:paddingHorizontal:ws\.gutter|paddingLeft:ws\.contentGutter,paddingRight:ws\.gutter),paddingTop:12/,
     'Collaborative music workspaces must keep the common top offset'],
   ['src/components/navigation/PageHeader.tsx',/top:desktop\?2:0,zIndex:6/,
     'The shared back arrow must be vertically centered with its page title'],
