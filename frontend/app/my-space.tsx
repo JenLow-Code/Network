@@ -3,7 +3,7 @@ import { Animated, Image, PanResponder, Platform, Pressable, ScrollView, Text, V
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import Svg, { Defs, LinearGradient, Rect, Stop, Text as SvgText } from 'react-native-svg';
+import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { Nav } from '@/components/navigation/Nav';
 import { PageHeader } from '@/components/navigation/PageHeader';
 import { isPublishedFlower, type DreamEntry } from '@/domain/dreamWorkspace';
@@ -51,7 +51,7 @@ const phasePanels: {
     accent: '#27845B',
   },
   {
-    phase: 'Témoignage', title: 'Floraison',
+    phase: 'Témoignage', title: 'En floraison',
     lightTint: 'rgba(215,29,119,0.047)', darkTint: 'rgba(215,29,119,0.115)',
     lightBorder: 'rgba(215,29,119,0.10)', darkBorder: 'rgba(215,29,119,0.19)',
     accent: '#D71D77',
@@ -421,8 +421,7 @@ export default function MySpace() {
   const phasePanelWidth=Math.max(0,(innerWidth-phaseGridGap)/2);
   const panelInset=compact?8:17;
   const phaseCardGap=compact?8:11;
-  const phaseLabelRail=compact?16:30;
-  const phaseViewportWidth=Math.max(0,phasePanelWidth-2*panelInset-phaseLabelRail);
+  const phaseViewportWidth=Math.max(0,phasePanelWidth-2*panelInset);
   const phaseTileWidth=compact?phaseViewportWidth:
     Math.max(100,Math.floor((phaseViewportWidth-2*phaseCardGap)/2.2));
   const phaseTileHeight=compact?Math.min(155,Math.round(phaseViewportWidth*.9)):146;
@@ -677,8 +676,7 @@ export default function MySpace() {
               return (
                 <View key={panel.phase} style={{
                   width:phasePanelWidth,height:phasePanelHeight,
-                  paddingLeft:panelInset+phaseLabelRail,
-                  paddingRight:panelInset,paddingTop:compact?12:16,
+                  paddingHorizontal:panelInset,paddingTop:compact?12:16,
                   paddingBottom:compact?11:17,
                   position:'relative',
                   borderWidth:0,backgroundColor:'transparent',
@@ -700,35 +698,16 @@ export default function MySpace() {
                     </Defs>
                     <Rect width="100%" height="100%" fill={'url(#phase-wash-'+index+')'}/>
                   </Svg>
-                  {/* Vertical phase name is the sole phase heading. */}
-                  <View pointerEvents="none" accessible={false}
-                    importantForAccessibility="no-hide-descendants"
-                    style={{position:'absolute',top:0,bottom:0,left:0,
-                      width:panelInset+phaseLabelRail,
-                      alignItems:'center',justifyContent:'center'}}>
-                    <Svg width={compact?18:30} height={compact?166:242}
-                      viewBox={compact?'0 0 18 166':'0 0 30 242'}>
-                      <SvgText x={compact?9:15} y={compact?83:121}
-                        textAnchor="middle"
-                        transform={compact?'rotate(-90 9 83)':'rotate(-90 15 121)'}
-                        fontSize={compact?9:15}
-                        letterSpacing={compact?0.6:1.5}
-                        fontWeight="500" fontFamily="Georgia"
-                        fill={panel.accent}>
-                        {panel.phase==='Rêve'?'SEMENCE':
-                         panel.phase==='Initiation'?'GERMINATION':
-                         panel.phase==='Croissance'?'CROISSANCE':'EN FLORAISON'}
-                      </SvgText>
-                    </Svg>
-                  </View>
-                  {/* The count keeps its hierarchy through size, not gray. */}
+                  {/* One horizontal title per phase. No extra phase numbers,
+                      subtitles, ornamental lines or icons. */}
                   <View style={{height:compact?17:21,
-                    flexDirection:'row',justifyContent:'flex-end',
-                    alignItems:'flex-start',marginBottom:compact?9:12}}>
-                    {dreams.length>0?(
-                      <Text style={{color:theme.dark?'#FFFFFF':'#000000',
-                        fontSize:10,fontWeight:'400'}}>{dreams.length}</Text>
-                    ):null}
+                    flexDirection:'row',alignItems:'center',
+                    marginBottom:compact?9:12}}>
+                    <Text numberOfLines={1} style={{
+                      color:theme.dark?'#FFFFFF':'#111111',
+                      fontSize:compact?11:16,lineHeight:compact?17:21,
+                      fontWeight:'600',letterSpacing:compact?0:0.1,
+                    }}>{panel.title}</Text>
                   </View>
                   {dreams.length>0 ? (
                     compact?
