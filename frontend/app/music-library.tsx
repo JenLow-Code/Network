@@ -102,10 +102,10 @@ export default function MusicLibrary() {
     }
   }
   // The complete library keeps a dense grid, while the home is a phone shelf.
-  const columns=width<370?2:width<700?3:width<950?4:width<1100?5:6;
+  const columns=width<310?2:width<700?3:width<950?4:width<1100?5:6;
   const availableWidth=Math.min(width,ws.maxWidth||width)-ws.gutter*2;
-  const cardWidth=Math.min(188,Math.max(96,
-    Math.floor((availableWidth-(columns-1)*12)/columns)));
+  const cardWidth=Math.min(188,Math.max(76,
+    Math.floor((availableWidth-(columns-1)*9)/columns)));
   const count=songs.length+shared.size;
 
   return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
@@ -129,7 +129,7 @@ export default function MusicLibrary() {
       {error?<Text style={{color:'#CB245C',fontSize:12}}>{error}</Text>:null}
       {count?<View style={layout==='list'?{gap:1}:{
         flexDirection:'row',flexWrap:'wrap',alignItems:'flex-start',
-        columnGap:12,rowGap:18,
+        columnGap:9,rowGap:14,
       }}>
         {songs.map(song=><MusicSongCard key={song.id} song={song}
           layout={layout} width={cardWidth} participants={peopleFor(song)}
