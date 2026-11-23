@@ -51,6 +51,8 @@ const PRIVATE_SCREENS=[
   'prayers',
   'profile-preview',
   'profile',
+  'profile-talents',
+  'profile-publications',
   'publish/music',
   'semence-share/[id]',
   'settings',
