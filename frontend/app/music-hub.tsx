@@ -8,18 +8,21 @@ import { Nav } from '@/components/navigation/Nav';
 import { PageHeader } from '@/components/navigation/PageHeader';
 import { MusicSongCard } from '@/components/music/MusicSongCard';
 import { MusicTile } from '@/components/music/MusicTile';
+import { MusicWaveform } from '@/components/music/MusicWaveform';
 import type { MusicCollaborator } from '@/components/music/MusicCollaboratorAvatars';
 import { readMusicLibraryLayout, type MusicLibraryLayout } from '@/domain/musicLibraryPreferences';
 import { useMusicWorkspaces, type MusicProject } from '@/domain/musicWorkspace';
 import { matchesForMe, profileTalentStorageKey, type SavedTalent } from '@/domain/personalDiscovery';
 import { useApp } from '@/context/AppContext';
 import { useDiscovery } from '@/lib/api/hooks';
-import { api } from '@/lib/api/client';
+import { api, ApiRequestError } from '@/lib/api/client';
+import {fetchDemoMusicPreview,type DemoMusicPreview} from '@/lib/api/musicPreview';
 import { useAppTheme } from '@/theme/AppTheme';
 import { workspaceLayout, workspaceCanvas } from '@/theme/workspaceLayout';
 import type { MusicPublication } from '@/domain/publication';
 
 const PINK = '#CB245C';
+const BETA_MUSIC_EXAMPLES = process.env.EXPO_PUBLIC_DISCOVERY_SOURCE !== 'unified';
 
 type Proposal = {
   id: string;
@@ -31,6 +34,7 @@ type Proposal = {
   reviewState?: string;
   proposer?: MusicCollaborator;
   publisher?: MusicCollaborator;
+  isDemo?: boolean;
 };
 type ProposalItem = Proposal & { direction: 'received' | 'sent' };
 type SharedPiece = {
@@ -38,6 +42,7 @@ type SharedPiece = {
   title: string;
   primary: ProposalItem;
   participants: MusicCollaborator[];
+  isDemo: boolean;
   pending: boolean;
 };
 
@@ -73,6 +78,12 @@ export default function MusicHub() {
   const [sent, setSent] = useState<Proposal[]>([]);
   const [received, setReceived] = useState<Proposal[]>([]);
   const [requestsError, setRequestsError] = useState(false);
+  // Opening a cassette in Pour moi reveals its information UNDER the shelf.
+  // It does not replace the library with a full-screen public player.
+  const [expandedForMe,setExpandedForMe]=useState<string|null>(null);
+  const [contactBusy,setContactBusy]=useState(false);
+  const [contactError,setContactError]=useState('');
+  const [demoPreview,setDemoPreview]=useState<DemoMusicPreview|null>(null);
 
   useFocusEffect(useCallback(() => {
     let active = true;
@@ -110,6 +121,15 @@ export default function MusicHub() {
     return () => { live = false; };
   }, [app.email]);
 
+  useEffect(()=>{
+    if(!BETA_MUSIC_EXAMPLES)return;
+    let live=true;
+    void fetchDemoMusicPreview()
+      .then(value=>{if(live)setDemoPreview(value);})
+      .catch(()=>{if(live)setDemoPreview(null);});
+    return ()=>{live=false;};
+  },[]);
+
   const songs = useMemo(() => [...items].sort((a,b) =>
     (b.updatedAt || b.createdAt).localeCompare(a.updatedAt || a.createdAt)), [items]);
   const proposals = useMemo<ProposalItem[]>(() => [
@@ -118,6 +138,11 @@ export default function MusicHub() {
   ].sort((a,b) => (b.createdAt || '').localeCompare(a.createdAt || '')), [sent, received]);
 
   const accepted = proposals.filter(p => p.status === 'accepted' || p.status === 'published');
+  // Keep the same clearly fictional demonstration tiles while beta data is on.
+  // They do not represent server-authorized membership.
+  const acceptedWithDemo: ProposalItem[]=[
+    ...accepted,...(demoPreview?.collaborations||[]),
+  ];
   const publishedLocalIds = new Set(songs.map(song => song.publishedId).filter(
     (id): id is string => !!id,
   ));
@@ -146,7 +171,7 @@ export default function MusicHub() {
       if (!piece) {
         piece = {
           publicationId:id, title:proposal.trackTitle, primary:proposal,
-          participants:[], pending,
+          participants:[], pending, isDemo:!!proposal.isDemo,
         };
         grouped.set(id,piece);
       }
@@ -161,12 +186,12 @@ export default function MusicHub() {
       }
       return piece;
     };
-    accepted.forEach(p => ensure(p,false));
+    acceptedWithDemo.forEach(p => ensure(p,false));
     // Received requests still refer to a song I own, but are not collaborations yet.
     proposals.filter(p => p.direction === 'received' &&
       (p.status === 'submitted' || p.status === 'draft')).forEach(p => ensure(p,true));
     return [...grouped.values()];
-  }, [accepted, proposals, songs]);
+  }, [acceptedWithDemo, proposals, songs]);
 
   const opportunities = useMemo(() => discovery.state === 'ready'
     ? discovery.items.filter((p): p is MusicPublication =>
@@ -174,17 +199,49 @@ export default function MusicHub() {
       !!p.requestedTalents?.length && matchesForMe(p,talents) &&
       !publishedLocalIds.has(p.id))
     : [], [discovery.state, discovery.items, talents, songs]);
-  const recommended: MusicPublication[] = opportunities;
+  const recommended:(MusicPublication&{isDemo?:boolean})[]=[
+    ...opportunities,...(demoPreview?.songs||[]),
+  ];
   // An outgoing, unanswered proposal remains in For me, not in My pieces.
   const pendingSent = proposals.filter(p => p.direction === 'sent' &&
     (p.status === 'submitted' || p.status === 'draft') &&
     !recommended.some(song => song.id === p.trackPublicationId));
   const myCount = songs.length + sharedPieces.length;
   const forMeCount = recommended.length + pendingSent.length;
+  const expandedSong=recommended.find(p=>p.id===expandedForMe);
+  const expandedPending=pendingSent.find(p=>p.trackPublicationId===expandedForMe);
+  const toggleForMe=(id:string)=>{
+    setContactError('');
+    setExpandedForMe(current=>current===id?null:id);
+  };
+  const contactAuthor=async(handle:string)=>{
+    if(contactBusy)return;
+    setContactBusy(true);setContactError('');
+    try{
+      const result=await api<{conversationId:string}>('/api/conversations',{
+        method:'POST',auth:'required',body:{handle},
+      });
+      router.push({pathname:'/chat/[id]',params:{id:result.conversationId}});
+    }catch(e){
+      const reason=e instanceof ApiRequestError?e.code:'';
+      setContactError(reason==='contact_required'
+        ?'La discussion directe est réservée aux contacts ou aux membres de ton Circle.'
+        :reason==='not_authenticated'
+          ?'Connecte-toi pour contacter cette personne.'
+          :'Impossible d’ouvrir la conversation actuellement.');
+    }finally{setContactBusy(false);}
+  };
 
   // A personal music tile is ALWAYS a workspace entry, never the Discovery
   // player. The latter is exclusively for music the viewer is exploring.
   const openMyPiece = (p: ProposalItem) => {
+    // The demo collaboration is a valid UI example and opens the same three
+    // tabs, using fictional data only. Never call authenticated APIs for it.
+    if(p.isDemo){
+      router.push({pathname:'/music-collaboration/[id]',
+        params:{id:p.trackPublicationId,tab:'capture'}});
+      return;
+    }
     const project=items.find(song=>song.publishedId===p.trackPublicationId);
     if(project){
       router.push({pathname:'/music-workspace/[id]',
@@ -195,11 +252,6 @@ export default function MusicHub() {
       params:{id:p.trackPublicationId,
         tab:p.direction==='received'?'collaborate':'capture'}});
   };
-  const openForMeProposal = (p: ProposalItem) => {
-    router.push({pathname:'/music/[id]',
-      params:{id:p.trackPublicationId,from:'music-tab'}});
-  };
-
   const sectionTitle = (title:string,count:number) => <View style={{
     flexDirection:'row',alignItems:'baseline',gap:9,
   }}>
@@ -268,10 +320,11 @@ export default function MusicHub() {
             byline=""
             participants={piece.participants}
             status={piece.pending?'À examiner':undefined}
+            demo={piece.isDemo}
             onPress={() => openMyPiece(piece.primary)}/>)
         ]) : ready ? empty('Ton premier morceau commence ici.',
           'Créer un morceau',() => router.push('/music/new')) : null}
-        {requestsError ? <Text style={{color:theme.muted,fontSize:10}}>
+        {requestsError && !demoPreview ? <Text style={{color:theme.muted,fontSize:10}}>
           Les morceaux partagés nécessitent une session API connectée.
         </Text> : null}
       </View>
@@ -300,22 +353,115 @@ export default function MusicHub() {
             detail={song.requestedTalents?.length
               ? 'Recherche : ' + song.requestedTalents.join(' · ') : 'À découvrir'}
             artwork={song.coverArt || song.image} audioUrl={song.audioUrl}
-            onPress={() => router.push({pathname:'/music/[id]',
-              params:{id:song.id,from:'music-tab'}})}
-            onLearnMore={() => router.push({pathname:'/music/[id]',
-              params:{id:song.id,from:'music-tab',openMore:'1'}})}/>),
+            demo={!!song.isDemo}
+            onPress={() => toggleForMe(song.id)}
+            onLearnMore={() => toggleForMe(song.id)}/>),
           ...pendingSent.map(p => <MusicTile key={'pending-'+p.id}
             width={tileWidth} layout={layout} mode="cassette"
             title={p.trackTitle} byline={p.publisher?.displayName || 'Morceau proposé'}
             detail={p.description} status={p.status === 'submitted'
               ? 'Réponse en attente' : 'Proposition en brouillon'}
-            onPress={() => openForMeProposal(p)}
-            onLearnMore={() => router.push({pathname:'/music/[id]',
-              params:{id:p.trackPublicationId,from:'music-tab',openMore:'1'}})}/>)
+            onPress={() => toggleForMe(p.trackPublicationId)}
+            onLearnMore={() => toggleForMe(p.trackPublicationId)}/>)
         ]) : empty('Aucune proposition musicale pour le moment.',
           'Découvrir la musique',() => router.push({
             pathname:'/discover',params:{filter:'Musique'},
           }))}
+        {/* A cassette unfolds HERE, underneath the row, never in a side
+            drawer or on the full-screen public player. */}
+        {(expandedSong||expandedPending)?<View style={{
+          padding:narrow?14:20,borderWidth:1,borderColor:theme.border,
+          borderRadius:15,backgroundColor:theme.surface,gap:14,maxWidth:780,
+        }}>
+          <View style={{flexDirection:'row',alignItems:'flex-start',gap:14}}>
+            <View style={{flex:1,gap:5}}>
+              <Text numberOfLines={2} style={{fontSize:narrow?17:20,
+                fontWeight:'800',color:theme.foreground}}>
+                {expandedSong?.title||expandedPending?.trackTitle}
+              </Text>
+              <Text style={{fontSize:12,color:theme.muted}}>
+                {expandedSong?.author||
+                  expandedPending?.publisher?.displayName||'Auteur'}
+              </Text>
+            </View>
+            <Pressable onPress={()=>setExpandedForMe(null)}
+              accessibilityRole="button" accessibilityLabel="Refermer les détails"
+              style={{width:38,height:38,justifyContent:'center',
+                alignItems:'center'}}>
+              <Ionicons name="close-outline" size={22} color={theme.foreground}/>
+            </Pressable>
+          </View>
+          {expandedSong?.isDemo?<Text style={{fontSize:11,color:theme.muted}}>
+            Exemple de présentation · aucune invitation réelle
+          </Text>:null}
+          {!!expandedSong?.description?<Text style={{fontSize:13,
+            lineHeight:21,color:theme.foreground}}>
+            {expandedSong.description}
+          </Text>:null}
+          {!!expandedPending?.description?<Text style={{fontSize:13,
+            lineHeight:21,color:theme.foreground}}>
+            {expandedPending.description}
+          </Text>:null}
+          {!!expandedSong?.requestedTalents?.length?<View style={{gap:7}}>
+            <Text style={{fontSize:12,fontWeight:'700',color:theme.foreground}}>
+              Talents recherchés
+            </Text>
+            <View style={{flexDirection:'row',flexWrap:'wrap',gap:7}}>
+              {expandedSong.requestedTalents.map(label=><View key={label}
+                style={{paddingHorizontal:10,paddingVertical:7,borderRadius:14,
+                  backgroundColor:theme.background,borderWidth:1,
+                  borderColor:theme.border}}>
+                <Text style={{fontSize:11,color:theme.foreground}}>{label}</Text>
+              </View>)}
+            </View>
+          </View>:null}
+          {expandedSong&&(expandedSong.isDemo||expandedSong.audioUrl)
+            ?<MusicWaveform key={expandedSong.id}
+              index={expandedSong.audioIndex} uri={expandedSong.audioUrl}/>
+            :null}
+          <View style={{flexDirection:'row',gap:10,flexWrap:'wrap'}}>
+            {!!expandedSong?.authorHandle&&!expandedSong.isDemo?<>
+              <Pressable disabled={contactBusy}
+                onPress={()=>{void contactAuthor(expandedSong.authorHandle!);}}
+                accessibilityRole="button"
+                style={{borderRadius:11,backgroundColor:PINK,
+                  paddingHorizontal:14,minHeight:42,justifyContent:'center',
+                  opacity:contactBusy?.55:1}}>
+                <Text style={{color:'#FFFFFF',fontWeight:'700',fontSize:12}}>
+                  {contactBusy?'Ouverture…':'Contacter l’auteur'}
+                </Text>
+              </Pressable>
+              <Pressable onPress={()=>router.push({pathname:'/member/[name]',
+                params:{name:expandedSong.authorHandle!}})}
+                accessibilityRole="button"
+                style={{borderRadius:11,borderWidth:1,borderColor:PINK,
+                  paddingHorizontal:14,minHeight:42,justifyContent:'center'}}>
+                <Text style={{color:PINK,fontWeight:'700',fontSize:12}}>
+                  Voir le profil
+                </Text>
+              </Pressable>
+            </>:null}
+            {expandedSong&&!expandedSong.isDemo?
+              <Pressable onPress={()=>router.push({pathname:'/music-proposal/[id]',
+                params:{id:expandedSong.id}})}
+                accessibilityRole="button" style={{borderRadius:11,
+                  backgroundColor:PINK,paddingHorizontal:14,minHeight:42,
+                  justifyContent:'center'}}>
+                <Text style={{color:'#FFFFFF',fontSize:12,fontWeight:'700'}}>
+                  Proposer une collaboration
+                </Text>
+              </Pressable>:null}
+            {expandedPending?<Text style={{fontSize:12,color:PINK,
+              fontWeight:'600',alignSelf:'center'}}>
+              {expandedPending.status==='submitted'
+                ?'Proposition envoyée · réponse en attente'
+                :'Proposition en brouillon'}
+            </Text>:null}
+          </View>
+          {!!contactError?<Text style={{fontSize:11,color:PINK,lineHeight:18}}>
+            {contactError}
+          </Text>:null}
+        </View>:null}
       </View>
     </ScrollView>
     <Nav/>
