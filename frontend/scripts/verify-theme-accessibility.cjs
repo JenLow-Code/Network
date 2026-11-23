@@ -92,6 +92,34 @@ assert.ok(musicTabs.includes("backgroundColor:compact?(theme.dark?'#252B2B':'#F3
   musicTabs.includes('accessibilityRole="tablist"'),
   'Mobile Music tabs need a single distinct segmented grouping around icon-only controls');
 
+// The content regression was caused by SemenceInspirations being removed
+// from the stage, not by a data loss. Protect both the existing card board and
+// the plus button that opens its real document/link/reference creation menu.
+const semenceWorkspace = source('src/components/dream/SemenceStudio.tsx');
+const inspirations = source('src/components/dream/SemenceInspirations.tsx');
+assert.ok(semenceWorkspace.includes("import SemenceInspirations from './SemenceInspirations'") &&
+  semenceWorkspace.includes('<SemenceInspirations dream={dream} editable={editable}') &&
+  semenceWorkspace.includes('addRequestToken={addRequestToken}') &&
+  semenceWorkspace.includes('onShareInspiration={id=>') &&
+  semenceWorkspace.includes('editable&&width<700?<Pressable') &&
+  semenceWorkspace.includes('accessibilityLabel="Ajouter une inspiration"') &&
+  semenceWorkspace.includes('bottom:94,zIndex:55') &&
+  inspirations.includes('visibleGroups.map') &&
+  inspirations.includes("kind:'document'") &&
+  inspirations.includes("kind:'link'") &&
+  inspirations.includes("kind:'publication-ref'") &&
+  inspirations.includes("kind:'bible-verse'") &&
+  inspirations.includes('onPress={()=>make(o.kind)}'),
+  'Semence must show its original inspirations plus creation picker and saved cards');
+const mobileHeader = nav.split('if(!desktop&&center){')[1]?.split('\n return (')[0]||'';
+assert.ok(mobileHeader.includes("flexWrap:'nowrap'") &&
+  mobileHeader.includes("flex:1,minWidth:0,height:44") &&
+  mobileHeader.includes("width:44,height:44,flexShrink:0") &&
+  mobileHeader.indexOf('accessibilityLabel="Retour"') <
+    mobileHeader.indexOf('{center}') &&
+  mobileHeader.indexOf('{center}') < mobileHeader.indexOf('<TopActions'),
+  'Mobile stage tabs must physically sit between Back and Fire/Chat in one row');
+
 // The personal shortcut icons once rendered as isolated symbols on the far left
 // of full-width pages. Only those two rows should omit their leading icon.
 const shortcuts = source('src/components/dream/DreamWorkspaceShortcuts.tsx');
@@ -100,20 +128,20 @@ assert.ok(shortcuts.includes('!hideLeadingIcon ?') &&
   /label="Documents & Inspirations"[\s\S]{0,100}hideLeadingIcon/.test(shortcuts) &&
   shortcuts.includes("name={icon}"),
   'Notes and Documents links must stay right-aligned without leading icons');
-// Stage advancement belongs in a dedicated in-flow destination across the
-// full reading rail. The forward action is visually last on desktop, first on
-// mobile. Pausing and destroying remain smaller utility actions.
+// The user chose the button hierarchy, not the additional heading or divider.
+// Keep the main action first on phones; Arracher is on the left of the
+// outlined secondary control across all four stages.
 const milestone = source('src/components/dream/DreamMilestoneActions.tsx');
-assert.ok(milestone.includes('PROCHAINE ÉTAPE') &&
-  milestone.includes("borderTopWidth:1,borderColor:theme.border") &&
+assert.ok(!milestone.includes('PROCHAINE ÉTAPE') &&
+  !milestone.includes('borderTopWidth:1,borderColor:theme.border') &&
   milestone.includes("width:'100%'") &&
   milestone.includes("minWidth:desktop?194:undefined") &&
   milestone.includes("backgroundColor:pressed?'#292929':'#151515'") &&
-  milestone.includes('{secondary}') && milestone.includes('{destructive}') &&
-  milestone.includes('{primary}') &&
-  milestone.indexOf('{secondary}') < milestone.indexOf('{primary}') &&
+  milestone.includes('{destructive}\n            {secondary}') &&
+  milestone.includes('{secondary}\n          <View style={{marginLeft:14}}>{primary}</View>') &&
+  milestone.includes('{primary}\n          <View style={{flexDirection:') &&
   milestone.includes("accessibilityState={{disabled:primaryDisabled}}"),
-  'Dream stage destination must keep an emphasized forward action and safer secondary controls');
+  'Stage actions must retain the approved hierarchy without an invented next-stage title');
 for (const [file,nextStage] of [
   ['src/components/dream/SemenceStudio.tsx','Germination'],
   ['src/components/dream/DreamExperience.tsx','Croissance'],
