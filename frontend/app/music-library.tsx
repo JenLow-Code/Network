@@ -101,9 +101,11 @@ export default function MusicLibrary() {
       }
     }
   }
-  const columns=width<340?1:width<700?2:width<950?3:width<1100?4:5;
+  // The complete library keeps a dense grid, while the home is a phone shelf.
+  const columns=width<370?2:width<700?3:width<950?4:width<1100?5:6;
   const availableWidth=Math.min(width,ws.maxWidth||width)-ws.gutter*2;
-  const cardWidth=Math.max(142,Math.floor((availableWidth-(columns-1)*14)/columns));
+  const cardWidth=Math.min(188,Math.max(96,
+    Math.floor((availableWidth-(columns-1)*12)/columns)));
   const count=songs.length+shared.size;
 
   return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
@@ -127,7 +129,7 @@ export default function MusicLibrary() {
       {error?<Text style={{color:'#CB245C',fontSize:12}}>{error}</Text>:null}
       {count?<View style={layout==='list'?{gap:1}:{
         flexDirection:'row',flexWrap:'wrap',alignItems:'flex-start',
-        columnGap:14,rowGap:22,
+        columnGap:12,rowGap:18,
       }}>
         {songs.map(song=><MusicSongCard key={song.id} song={song}
           layout={layout} width={cardWidth} participants={peopleFor(song)}
@@ -135,9 +137,8 @@ export default function MusicLibrary() {
             p.status==='submitted' && p.trackPublicationId===song.publishedId).length}/>)}
         {[...shared.entries()].map(([id,p])=><MusicTile key={id}
           title={p.title} width={cardWidth} mode="draft" layout={layout}
-          byline="Morceau partagé"
-          detail={p.people.map(person=>person.displayName).join(' · ')}
-          status="En collaboration" participants={p.people} demo={p.demo}
+          byline=""
+          participants={p.people} demo={p.demo}
           onPress={()=>router.push(p.first.direction==='sent'
             ? {pathname:'/music-collaboration/[id]',params:{id}}
             : {pathname:'/music/[id]',params:{id}})}/>)}
