@@ -50,11 +50,11 @@ function toDemoPublication(song: DemoMusicResponse['songs'][number]): MusicPubli
   return {
     id: song.id,
     type: 'music',
-    title: song.title,
+    title: song.title.replace(/^\[Démo\]\s*/i, ''),
     author: song.author,
     authorHandle: song.authorHandle,
     songAuthor: song.author,
-    description: 'Morceau fictif enregistré dans la base de démonstration JenLow.',
+    description: 'Aperçu d’un morceau fictif dans JenLow Network.',
     audioIndex: (song.sampleAsset === 'pierre-02-esperance' ? 1 :
       song.sampleAsset === 'pierre-03-lumiere' ? 2 : 0) as 0 | 1 | 2,
     image: '', imageAlt: 'Cassette de démonstration',
