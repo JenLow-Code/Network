@@ -484,6 +484,7 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
                           'rgba(255,255,255,.15)':'rgba(71,77,78,.15)',
                         gap:1,marginVertical:2}}>
                         {(phase==='Initiation'?[
+                            {kind:'library' as const,title:'Documents & Inspirations'},
                             {kind:'notes' as const,title:'Notes personnelles'},
                           ]:[
                             {kind:'library' as const,title:'Documents & Inspirations'},
