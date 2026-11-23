@@ -13,7 +13,8 @@ function coloredDots(level: string) {
   if (value.includes('interm')) return 3;
   if (value.includes('notion')) return 2;
   if (value.includes('début') || value.includes('debut')) return 1;
-  return 1;
+  // Unknown / not-yet-selected levels must not imply any competence rating.
+  return 0;
 }
 
 export function TalentLevelDots({
