@@ -405,26 +405,33 @@ export default function MySpace() {
   const [activeTestimony, setActiveTestimony] = useState(0);
   const galleryRef = useRef<React.ComponentRef<typeof ScrollView>>(null);
   const [longDream,setLongDream]=useState<DreamEntry|null>(null);
+  // Read the actual centered canvas width, never infer the sidebar width.
+  const [measuredCanvasWidth,setMeasuredCanvasWidth]=useState(0);
   const side=ws.contentGutter;
   const right=ws.gutter;
-  // Restore the established page canvas and banner alignment.
-  const workspaceViewport=Math.max(0,windowWidth-(ws.desktop?212:0));
-  const contentWidth=Math.min(workspaceViewport,ws.maxWidth??workspaceViewport);
-  const innerWidth=Math.max(0,contentWidth-side-right);
+  // The hero and the four panels share the same measured inner bounds.
+  // A window-width guess can push the hero into the sidebar on desktop.
+  const fallbackCanvasWidth=Math.min(windowWidth,ws.maxWidth??windowWidth);
+  const canvasWidth=measuredCanvasWidth||fallbackCanvasWidth;
+  const innerWidth=Math.max(0,canvasWidth-side-right);
   // Align the hero gallery with the shared inset content grid on all devices.
   // The carousel page width must match the visible banner width exactly.
   const galleryWidth=innerWidth;
   const galleryHeight=compact
     ? Math.min(294,Math.max(252,Math.round(galleryWidth*.64)))
     : Math.min(318,Math.max(282,Math.round(galleryWidth*.29)));
-  // Restore the previously approved 2 × 2 dream overview on desktop and phone.
+  // Keep the approved 2 × 2 grid, with a proper label zone on wide panels.
+  // Each panel's total width (including border, label, padding and carousel)
+  // is strictly bounded by the same inner content rail as the hero.
   const phaseGridGap=compact?10:ws.tablet?14:18;
-  // Preserve the established 2 × 2 raster and the page's fixed canvas width.
-  // Mobile projects overlap horizontally instead of stacking vertically.
   const phasePanelWidth=Math.max(0,(innerWidth-phaseGridGap)/2);
-  const panelInset=compact?8:17;
+  const phaseSideLabel=!compact&&phasePanelWidth>=390;
+  const panelInset=compact?10:16;
+  const phaseLabelWidth=phaseSideLabel?110:compact?22:26;
+  const phaseContentGap=phaseSideLabel?12:0;
   const phaseCardGap=compact?8:11;
-  const phaseViewportWidth=Math.max(0,phasePanelWidth-2*panelInset);
+  const phaseViewportWidth=Math.max(0,phasePanelWidth-2*panelInset-2-
+    phaseLabelWidth-phaseContentGap);
   const phaseTileWidth=compact?phaseViewportWidth:
     Math.max(100,Math.floor((phaseViewportWidth-2*phaseCardGap)/2.2));
   const phaseTileHeight=compact?Math.min(155,Math.round(phaseViewportWidth*.9)):146;
@@ -465,6 +472,10 @@ export default function MySpace() {
         ...workspaceCanvas(windowWidth), paddingHorizontal:0, paddingBottom:64,
         paddingTop:12,
       }}>
+        <View style={{width:'100%'}} onLayout={event=>{
+          const measured=Math.round(event.nativeEvent.layout.width);
+          if(measured>0)setMeasuredCanvasWidth(current=>current===measured?current:measured);
+        }}>
         <View style={{paddingLeft:side,paddingRight:right}}>
           <PageHeader title="Mes projets" />
         </View>
@@ -672,96 +683,128 @@ export default function MySpace() {
             columnGap:phaseGridGap,rowGap:phaseGridGap,
             paddingBottom:compact?20:26,
           }}>
-            {phasePanels.map(panel=>{
+            {phasePanels.map((panel,index)=>{
               const dreams=visible.filter(d=>panel.phase==='Témoignage'
                 ? inFlower(d) : d.phase===panel.phase);
               return (
                 <View key={panel.phase} style={{
                   width:phasePanelWidth,minHeight:compact?214:242,
-                  paddingHorizontal:panelInset,paddingTop:compact?12:16,
+                  paddingLeft:phaseSideLabel?panelInset:panelInset+phaseLabelWidth,
+                  paddingRight:panelInset,paddingTop:compact?12:16,
                   paddingBottom:compact?11:17,
-                  position:'relative',
-                  borderRadius:3,borderWidth:1,
-                  borderColor:theme.dark?'rgba(255,255,255,.18)':'rgba(0,0,0,.11)',
-                  backgroundColor:'transparent',
+                  position:'relative',overflow:'hidden',
+                  flexDirection:phaseSideLabel?'row':'column',
+                  alignItems:phaseSideLabel?'center':'stretch',
+                  gap:phaseContentGap,
+                  borderRadius:10,borderWidth:1,
+                  borderColor:theme.dark?panel.darkBorder:panel.lightBorder,
+                  backgroundColor:theme.dark?'#211F22':'#FBF9F5',
                 }}>
-                  {/* A small, nearly transparent illustration of each phase
-                      sits at the exact center of its quadrant, beneath cards. */}
+                  {/* Original phase-colored wash, restored behind the illustration
+                      and all controls rather than painted over the cards. */}
+                  <Svg pointerEvents="none" width="100%" height="100%"
+                    style={{position:'absolute',top:0,bottom:0,left:0,right:0}}>
+                    <Defs>
+                      <LinearGradient id={'phase-wash-'+index}
+                        x1="0%" y1="0%" x2="100%" y2="0%">
+                        <Stop offset="0%" stopColor={panel.accent}
+                          stopOpacity={theme.dark?0.12:0.055}/>
+                        <Stop offset="55%" stopColor={panel.accent}
+                          stopOpacity={theme.dark?0.16:0.09}/>
+                        <Stop offset="100%" stopColor={panel.accent}
+                          stopOpacity={theme.dark?0.29:0.19}/>
+                      </LinearGradient>
+                    </Defs>
+                    <Rect width="100%" height="100%"
+                      fill={'url(#phase-wash-'+index+')'}/>
+                  </Svg>
                   <View pointerEvents="none" accessible={false}
                     importantForAccessibility="no-hide-descendants"
                     style={{position:'absolute',top:0,bottom:0,left:0,right:0,
                       alignItems:'center',justifyContent:'center',
-                      opacity:theme.dark?0.20:0.17}}>
+                      opacity:theme.dark?0.13:0.10}}>
                     <DreamPhaseIcon phase={panel.phase}
                       size={compact?52:96} artworkScale={1}/>
                   </View>
-                  {/* The vertical heading is centered in the ORIGINAL left
-                      inset, never sitting on the project content. */}
-                  <View pointerEvents="none" accessible={false}
-                    importantForAccessibility="no-hide-descendants"
-                    style={{position:'absolute',top:0,bottom:0,
-                      left:0,width:panelInset,
-                      alignItems:'center',justifyContent:'center'}}>
-                    <Svg width={compact?14:18} height={compact?155:192}
-                      viewBox={compact?'0 0 14 155':'0 0 18 192'}>
-                      <SvgText x={compact?7:9} y={compact?77.5:96}
-                        textAnchor="middle"
-                        transform={compact?'rotate(-90 7 77.5)':'rotate(-90 9 96)'}
-                        fontSize={compact?9:12}
-                        letterSpacing={compact?0.9:1.7}
-                        fontWeight="400"
-                        fill={theme.dark?'#FFFFFF':'#000000'}>
-                        {panel.phase==='Rêve'?'SEMENCE':
-                         panel.phase==='Initiation'?'GERMINATION':
-                         panel.phase==='Croissance'?'CROISSANCE':'FLORAISON'}
-                      </SvgText>
-                    </Svg>
-                  </View>
-                  <View pointerEvents="none"
-                    style={{position:'absolute',top:compact?11:16,
-                      left:panelInset+5,width:2,height:compact?16:22,
-                      borderRadius:2,backgroundColor:panel.accent,opacity:0.7}}/>
-                  {/* The count keeps its hierarchy through size, not gray. */}
-                  <View style={{height:compact?17:21,
-                    flexDirection:'row',justifyContent:'flex-end',
-                    alignItems:'flex-start',marginBottom:compact?9:12}}>
-                    {dreams.length>0?(
-                      <Text style={{color:theme.dark?'#FFFFFF':'#000000',
-                        fontSize:10,fontWeight:'400'}}>{dreams.length}</Text>
-                    ):null}
-                  </View>
-                  {dreams.length>0 ? (
-                    compact?
-                      <PhaseMobileOverlap dreams={dreams}
-                        viewportWidth={phaseViewportWidth}
-                        cardHeight={phaseTileHeight}
-                        onLongPress={setLongDream}/>:
-                      <PhaseProjectCarousel dreams={dreams}
-                        cardWidth={phaseTileWidth} cardHeight={phaseTileHeight}
-                        viewportWidth={phaseViewportWidth} gap={phaseCardGap}
-                        compact={compact} onLongPress={setLongDream}/>
-                  ):(
-                    <View style={{minHeight:phaseTileHeight,
-                      width:'100%',alignItems:'center',
-                      justifyContent:'flex-end',
-                      paddingHorizontal:compact?5:22,
-                      paddingBottom:compact?9:16}}>
-                      <Text style={{fontSize:compact?10:12,
-                        color:theme.dark?'#FFFFFF':'#000000',
-                        fontWeight:'400',
-                        lineHeight:compact?15:18,
-                        textAlign:'center'}}>
-                        {panel.phase==='Témoignage'
-                          ? 'Aucune floraison en préparation.'
-                          : 'Aucun projet dans cette étape.'}
+                  {phaseSideLabel?(
+                    <View style={{width:phaseLabelWidth,alignSelf:'stretch',
+                      justifyContent:'center',gap:9}}>
+                      <View style={{width:23,height:2,borderRadius:1,
+                        backgroundColor:panel.accent}}/>
+                      <Text numberOfLines={2} style={{
+                        color:theme.dark?'#F5F2ED':'#24211F',
+                        fontSize:14,lineHeight:20,fontWeight:'700'}}>
+                        {panel.title}
+                      </Text>
+                      <Text style={{fontSize:11,lineHeight:16,color:theme.muted}}>
+                        {dreams.length} projet{dreams.length>1?'s':''}
                       </Text>
                     </View>
+                  ):(
+                    <View pointerEvents="none" accessible={false}
+                      importantForAccessibility="no-hide-descendants"
+                      style={{position:'absolute',top:0,bottom:0,
+                        left:panelInset-2,width:phaseLabelWidth,
+                        alignItems:'center',justifyContent:'center'}}>
+                      <Svg width={compact?17:20} height={compact?155:192}
+                        viewBox={compact?'0 0 17 155':'0 0 20 192'}>
+                        <SvgText x={compact?8.5:10} y={compact?77.5:96}
+                          textAnchor="middle"
+                          transform={compact?'rotate(-90 8.5 77.5)':'rotate(-90 10 96)'}
+                          fontSize={compact?9:12}
+                          letterSpacing={compact?0.9:1.7}
+                          fontWeight="500"
+                          fill={theme.dark?'#F5F2ED':'#24211F'}>
+                          {panel.phase==='Rêve'?'SEMENCE':
+                           panel.phase==='Initiation'?'GERMINATION':
+                           panel.phase==='Croissance'?'CROISSANCE':'FLORAISON'}
+                        </SvgText>
+                      </Svg>
+                    </View>
                   )}
+                  <View style={{width:phaseViewportWidth,minWidth:0,
+                    justifyContent:'center'}}>
+                    {!phaseSideLabel?(
+                      <View style={{height:compact?17:21,
+                        flexDirection:'row',justifyContent:'flex-end',
+                        alignItems:'flex-start',marginBottom:compact?9:12}}>
+                        {dreams.length>0?(
+                          <Text style={{color:theme.foreground,fontSize:10,
+                            fontWeight:'500'}}>{dreams.length}</Text>
+                        ):null}
+                      </View>
+                    ):null}
+                    {dreams.length>0 ? (
+                      compact?
+                        <PhaseMobileOverlap dreams={dreams}
+                          viewportWidth={phaseViewportWidth}
+                          cardHeight={phaseTileHeight}
+                          onLongPress={setLongDream}/>:
+                        <PhaseProjectCarousel dreams={dreams}
+                          cardWidth={phaseTileWidth} cardHeight={phaseTileHeight}
+                          viewportWidth={phaseViewportWidth} gap={phaseCardGap}
+                          compact={compact} onLongPress={setLongDream}/>
+                    ):(
+                      <View style={{minHeight:phaseTileHeight,
+                        width:'100%',alignItems:'center',
+                        justifyContent:'center',
+                        paddingHorizontal:compact?5:10}}>
+                        <Text style={{fontSize:compact?10:12,
+                          color:theme.muted,lineHeight:compact?15:18,
+                          textAlign:'center'}}>
+                          {panel.phase==='Témoignage'
+                            ? 'Aucune floraison en préparation.'
+                            : 'Aucun projet dans cette étape.'}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
                 </View>
               );
             })}
           </View>
         )}
+        </View>
 
       </ScrollView>
       <DreamQuickActions dream={longDream} onClose={()=>setLongDream(null)}/>
