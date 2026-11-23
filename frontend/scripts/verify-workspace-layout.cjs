@@ -69,3 +69,29 @@ if(!dreamNav.includes("||phase==='Rêve')return phaseNav;")||
 }else{
   console.log('Semence: no sidebar child entries or redundant library shortcut.');
 }
+
+
+// Gallery and music header alignment regression: keep a single shared inset
+// from the page title through the hero, and the same top rhythm in Music.
+const read=path=>readFileSync(join(base,path),'utf8');
+const layoutRules=[
+  ['app/my-space.tsx',/const galleryWidth=innerWidth;/,
+    'The project hero must fit inside the page gutters on mobile and desktop'],
+  ['app/music-hub.tsx',/\.\.\.workspaceCanvas\(width\),paddingTop:12/,
+    'The Music landing header must use the same canvas and top offset as other pages'],
+  ['app/music-workspace/[id].tsx',/paddingTop:12,paddingBottom:/,
+    'Owned music workspaces must keep the common top offset'],
+  ['app/music-collaboration/[id].tsx',/paddingHorizontal:ws\.gutter,paddingTop:12/,
+    'Collaborative music workspaces must keep the common top offset'],
+  ['src/components/navigation/PageHeader.tsx',/top:desktop\?2:0,zIndex:6/,
+    'The shared back arrow must be vertically centered with its page title'],
+];
+const failedLayoutRules=layoutRules.filter(([path,pattern])=>!pattern.test(read(path)));
+if(failedLayoutRules.length){
+  for(const [path,,reason] of failedLayoutRules){
+    console.error('Workspace alignment regression: '+path+' — '+reason);
+  }
+  process.exitCode=1;
+}else{
+  console.log('Project hero and music headers match shared page alignment rules.');
+}
