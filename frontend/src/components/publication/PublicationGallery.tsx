@@ -116,12 +116,15 @@ export function CassetteArtwork({
   title,
   artwork,
   transparent = false,
+  technicalLabel = false,
 }: {
   width: number;
   height: number;
   title: string;
   artwork?: string;
   transparent?: boolean;
+  /** Draft music thumbnails: plain engineering lettering, not final-release BiroScript. */
+  technicalLabel?: boolean;
 }) {
   const theme = useAppTheme();
   const cassetteId = useId().replace(/[^A-Za-z0-9_-]/g, '');
@@ -186,10 +189,13 @@ export function CassetteArtwork({
             minimumFontScale={0.65}
             numberOfLines={2}
             style={{
-              fontFamily: HANDWRITING_FAMILY,
+              fontFamily: technicalLabel ? 'monospace' : HANDWRITING_FAMILY,
+              letterSpacing: technicalLabel ? 0.35 : undefined,
               color: '#28231F',
-              fontSize: tiny ? 13 : cassetteWidth < 280 ? 17 : 21,
-              lineHeight: tiny ? 14 : cassetteWidth < 280 ? 18 : 22,
+              fontSize: technicalLabel ? (width < 145 ? 8 : tiny ? 11 : 15) :
+                tiny ? 13 : cassetteWidth < 280 ? 17 : 21,
+              lineHeight: technicalLabel ? (width < 145 ? 10 : tiny ? 13 : 18) :
+                tiny ? 14 : cassetteWidth < 280 ? 18 : 22,
             }}
           >
             {title}
