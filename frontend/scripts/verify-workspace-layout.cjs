@@ -106,6 +106,8 @@ const layoutRules=[
     'The Projects page removes exterior gutters on phone only'],
   ['app/my-space.tsx',/const right=compact\?0:ws.gutter;/,
     'The Projects hero and phase rows must reach the phone right edge'],
+  ['app/my-space.tsx',/paddingLeft:0,paddingRight:0,paddingBottom:64,paddingTop:12/,
+    'The Projects ScrollView must not retain any inherited workspace side padding'],
   ['app/my-space.tsx',/paddingLeft:ws.contentGutter,paddingRight:ws.gutter/,
     'Mobile page heading and independent controls retain safe reading gutters'],
   ['app/my-space.tsx',/const innerWidth=Math.max\(0,canvasWidth-side-right\);/,
