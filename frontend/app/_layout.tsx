@@ -31,6 +31,7 @@ const PRIVATE_SCREENS=[
   'music-collaboration/[id]',
   'music-composer/[id]',
   'music-hub',
+  'music-listen/[id]',
   'music-library',
   'music-lyrics/[id]',
   'music-proposal/[id]',
