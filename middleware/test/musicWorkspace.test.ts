@@ -26,6 +26,11 @@ test('music workspaces: publisher chat exists, accepted collaborators may join, 
   assert.equal((await app.call('GET', '/api/music/' + id + '/conversation', { token: stranger.token })).status, 404);
   assert.equal((await app.call('GET', '/api/conversations/' + chatId, { token: stranger.token })).status, 404);
 
+  const rosterBefore = await app.call('GET', '/api/music/' + id + '/collaborators', { token: owner.token });
+  assert.equal(rosterBefore.status, 200);
+  assert.deepEqual(rosterBefore.body.members.map((person: {role: string}) => person.role), ['owner']);
+  assert.equal((await app.call('GET', '/api/music/' + id + '/collaborators', { token: stranger.token })).status, 404);
+
   const firstMessage = await app.call('POST', '/api/conversations/' + chatId + '/messages', {
     token: owner.token, body: { type: 'text', body: 'Bienvenue dans ce morceau !' },
   });
@@ -47,6 +52,13 @@ test('music workspaces: publisher chat exists, accepted collaborators may join, 
     token: owner.token, body: {},
   });
   assert.equal(accepted.status, 200, JSON.stringify(accepted.body));
+  const roster = await app.call('GET', '/api/music/' + id + '/collaborators', { token: bassist.token });
+  assert.equal(roster.status, 200, JSON.stringify(roster.body));
+  assert.deepEqual(roster.body.members.map((person: {role: string}) => person.role),
+    ['owner', 'collaborator']);
+  assert.deepEqual(roster.body.members.map((person: {displayName: string}) => person.displayName),
+    ['Original Artist', 'Bassist']);
+  assert.equal((await app.call('GET', '/api/music/' + id + '/collaborators', { token: stranger.token })).status, 404);
   const joined = await app.call('GET', '/api/music/' + id + '/conversation', { token: bassist.token });
   assert.equal(joined.body.conversationId, chatId);
   const inbox = await app.call('GET', '/api/conversations/' + chatId + '/messages', { token: bassist.token });
