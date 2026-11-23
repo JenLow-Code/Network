@@ -281,7 +281,14 @@ export default function SharedMusicFolder(){
                 </Text>
                 <Text style={{fontSize:11,color:theme.muted}}>
                   {person.role==='owner'?'Auteur du morceau':'Collaborateur'}
+                  {person.handle?' · @'+person.handle:''}
                 </Text>
+                {person.role==='collaborator'&&accepted.some(p=>
+                  p.proposer?.displayName===person.displayName)?
+                  <Text style={{fontSize:11,lineHeight:17,color:theme.muted}}
+                    numberOfLines={2}>
+                    {accepted.find(p=>p.proposer?.displayName===person.displayName)?.description}
+                  </Text>:null}
               </View>
               {person.handle&&!demoId?<Pressable accessibilityRole="button"
                 accessibilityLabel={'Voir le profil de '+person.displayName}
