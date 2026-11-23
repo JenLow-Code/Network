@@ -9,7 +9,7 @@ import { DreamPhaseIcon } from '@/icons/DreamPhaseIcon';
 import { TopActions } from '@/components/navigation/TopActions';
 import { pickDreamImage } from '@/lib/pickDreamImage';
 import { useDreams } from '@/domain/dreamRepository';
-import { workspaceLayout } from '@/theme/workspaceLayout';
+import { workspaceLayout,DESKTOP_PAGE_CONTENT_INSET } from '@/theme/workspaceLayout';
 
 /** One editorial design language for all four dream phases. */
 export const phaseAccent: Record<DreamPhase, string> = {
@@ -38,7 +38,8 @@ export function DreamPhaseHeader({
   const {width}=useWindowDimensions();
   const ws=workspaceLayout(width);
   const desktop=Platform.OS==='web'&&ws.desktop;
-  const heroBleed=desktop?Math.min(120,Math.max(0,(width-1100)/4)):0;
+  // Cover media respects the page grid; the back arrow alone may sit outside it.
+  const heroBleed=0;
   const description=summary===undefined?dream.summary:summary;
   const {setCoverImage,ready}=useDreams();
   const [savingCover,setSavingCover]=useState(false);
@@ -55,14 +56,18 @@ export function DreamPhaseHeader({
         .finally(()=>setSavingCover(false));
     },message=>setCoverError(message));
   };
-  return <View style={{marginBottom:desktop?16:18}}>
-    {/* The hero starts at the top; the reading column remains at its shared
-        fixed workspace width. Only the cover image receives a visual zoom. */}
+  return <View style={{marginBottom:desktop?16:18,position:'relative'}}>
+    {desktop?<Pressable accessibilityRole="button" accessibilityLabel="Retour à mes rêves"
+      onPress={onBack} style={{position:'absolute',top:18,left:-DESKTOP_PAGE_CONTENT_INSET,
+        zIndex:12,width:44,height:44,borderRadius:22,
+        alignItems:'center',justifyContent:'center',
+        backgroundColor:'rgba(8,18,16,.62)'}}>
+      <Ionicons name="arrow-back-outline" size={22} color={theme.foreground}/>
+    </Pressable>:null}
+    {/* Hero media stays within the common page rail; back control is outside. */}
     <View style={{
       height:desktop?440:width<520?355:420,
-      // The photograph alone may bleed beyond the capped reading canvas.
-      // Never change the shared max-width of the actual workspace.
-      marginHorizontal:-heroBleed,
+      marginHorizontal:0,
       width:'auto',
       position:'relative',
       overflow:'hidden',
@@ -92,13 +97,13 @@ export function DreamPhaseHeader({
       </Svg>
       <View style={{position:'absolute',top:desktop?18:12,
         left:heroBleed,right:heroBleed,zIndex:4,
-        flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
-        <Pressable accessibilityRole="button" accessibilityLabel="Retour à mes rêves"
+        flexDirection:'row',alignItems:'center',justifyContent:desktop?'flex-end':'space-between'}}>
+        {!desktop?<Pressable accessibilityRole="button" accessibilityLabel="Retour à mes rêves"
           onPress={onBack} style={{width:44,height:44,borderRadius:22,
             alignItems:'center',justifyContent:'center',
             backgroundColor:'rgba(8,18,16,.62)'}}>
           <Ionicons name="arrow-back-outline" size={22} color="#FFFFFF"/>
-        </Pressable>
+        </Pressable>:null}
         <View style={{paddingHorizontal:8,borderRadius:13,
           backgroundColor:theme.background,opacity:.96}}>
           <TopActions/>
