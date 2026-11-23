@@ -164,22 +164,24 @@ export default function SharedMusicFolder(){
                 <Text style={{width:150,color:theme.muted,fontSize:11}}>Modifié par</Text>
               </View>:null}
               {captureRows.map(row=><View key={row.id} style={{
-                flexDirection:desktop?'row':'column',gap:desktop?12:4,
-                paddingVertical:13,borderBottomWidth:1,borderColor:theme.border,
+                gap:7,paddingVertical:13,borderBottomWidth:1,
+                borderColor:theme.border,
               }}>
-                <Text numberOfLines={2} style={{flex:desktop?1:undefined,
-                  fontSize:13,fontWeight:'600',color:theme.foreground}}>
-                  {row.name}
-                </Text>
-                <Text style={{width:desktop?115:undefined,fontSize:11,
-                  color:theme.muted}}>{row.date}</Text>
-                <Text numberOfLines={1} style={{width:desktop?150:undefined,
-                  fontSize:11,color:theme.foreground}}>
-                  {compact?'Modifié par · ':''}{row.editor}
-                </Text>
+                <View style={{flexDirection:desktop?'row':'column',
+                  gap:desktop?12:4,alignItems:desktop?'center':'stretch'}}>
+                  <Text numberOfLines={2} style={{flex:desktop?1:undefined,
+                    fontSize:13,fontWeight:'600',color:theme.foreground}}>
+                    {row.name}
+                  </Text>
+                  <Text style={{width:desktop?115:undefined,fontSize:11,
+                    color:theme.muted}}>{row.date}</Text>
+                  <Text numberOfLines={1} style={{width:desktop?150:undefined,
+                    fontSize:11,color:theme.foreground}}>
+                    {compact?'Modifié par · ':''}{row.editor}
+                  </Text>
+                </View>
                 {!!row.detail?<Text selectable style={{
-                  flexBasis:'100%',fontSize:13,lineHeight:22,
-                  color:theme.muted,marginTop:7,
+                  fontSize:13,lineHeight:22,color:theme.muted,marginTop:2,
                 }}>{row.detail}</Text>:null}
               </View>)}
             </View>:<Text style={{fontSize:12,color:theme.muted}}>
