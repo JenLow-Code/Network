@@ -23,7 +23,11 @@ export function MusicWorkspaceTabs({space,onChange,compact,desktop}:{
   const theme=useAppTheme();
   return <View accessibilityRole="tablist" style={{
     flex:desktop?undefined:1,minWidth:0,flexDirection:'row',
-    alignItems:'center',justifyContent:'center',gap:desktop?20:compact?0:3,
+    alignItems:'center',justifyContent:'center',gap:desktop?20:compact?3:3,
+    // One distinct tab group, visually separated from Back / Fire / Chat.
+    backgroundColor:compact?(theme.dark?'#252B2B':'#F3F0EA'):'transparent',
+    borderWidth:compact?1:0,borderColor:theme.border,
+    borderRadius:compact?12:0,padding:compact?3:0,
   }}>
     {SPACES.map(item=>{
       const selected=space===item.id;
@@ -32,11 +36,14 @@ export function MusicWorkspaceTabs({space,onChange,compact,desktop}:{
         accessibilityState={{selected}}
         style={{flex:desktop?undefined:1,minWidth:compact?0:undefined,
           flexDirection:'row',alignItems:'center',justifyContent:'center',
-          gap:desktop?8:9,minHeight:compact?48:desktop?46:52,
-          borderBottomWidth:compact?0:selected?2:0,
+          gap:desktop?8:9,minHeight:compact?38:desktop?46:52,
+          borderBottomWidth:selected?2:0,
           borderBottomColor:selected?'#CB245C':'transparent',
+          borderRadius:compact?9:0,
+          backgroundColor:compact&&selected?
+            (theme.dark?'rgba(203,36,92,.20)':'#FCEAF1'):'transparent',
           paddingHorizontal:compact?0:desktop?12:3}}>
-        <Ionicons name={item.icon} size={compact?25:desktop?18:19}
+        <Ionicons name={item.icon} size={compact?23:desktop?18:19}
           color={selected?'#CB245C':theme.muted}/>
         {!compact?<Text numberOfLines={1}
           style={{fontSize:14,fontWeight:selected?'700':'500',
