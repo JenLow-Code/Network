@@ -94,7 +94,7 @@ const checks=[
     !home.includes('expandedForMe')],
   ['Real discovery offers a real collaboration action, never for demos',
     listener.includes("pathname:'/music-proposal/[id]'")&&
-    listener.includes("song.isDemo?<View")],
+    listener.includes("previewOnly?<View")],
   ['Real cassette details retain authorized contact through the dedicated page',
     listener.includes("Contacter l’artiste")&&
     listenPage.includes("api<{conversationId:string}>('/api/conversations'")&&
