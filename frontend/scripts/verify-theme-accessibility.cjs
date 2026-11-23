@@ -49,6 +49,33 @@ assert.ok(hero.includes('<PageHeader center={phasesInTopRow?advancement:undefine
   hero.indexOf('{dream.title}') > hero.indexOf('style={{width:coverSize,height:coverSize') &&
   !hero.includes('<PageHeader title={dream.title}'),
   'Dream progress belongs at the top; title and description beside photo; phases remain accessible');
+// Mobile tabs remain icons only so narrow headers never clip the selected label.
+// Text labels and tab selection semantics stay available to assistive technology.
+const musicTabs = source('src/components/music/MusicWorkspaceTabs.tsx');
+assert.ok(musicTabs.includes("accessibilityRole=\"tablist\"") &&
+  musicTabs.includes('accessibilityLabel={item.title}') &&
+  musicTabs.includes('accessibilityState={{selected}}') &&
+  musicTabs.includes('!compact?<Text') &&
+  musicTabs.includes('borderBottomWidth:compact?0:selected?2:0') &&
+  musicTabs.includes("color={selected?'#CB245C':theme.muted}"),
+  'Phone music tabs must be equally sized, icon-only and magenta when active');
+const discover = source('app/discover.tsx');
+assert.ok(discover.includes("const compact=width<600;") &&
+  discover.includes("const filterIcons: Record<") &&
+  discover.includes('accessibilityRole="tablist"') &&
+  discover.includes('accessibilityLabel={filterTitle(f)}') &&
+  discover.includes('accessibilityState={{selected:filter===f}}') &&
+  discover.includes("filter===f?'#CB245C':theme.muted") &&
+  discover.includes('<Pill key={f}'),
+  'Phone Discovery filters must show six accessible icons; desktop stays labelled');
+assert.ok(hero.includes('const iconOnlyPhases = narrow;') &&
+  hero.includes("tintColor={selected?activeAccent:reached?theme.muted:theme.border}") &&
+  hero.includes('accessibilityLabel={\'Ouvrir \'+PHASE_LABELS[item]}') &&
+  hero.includes("accessibilityState={{selected,disabled:!reached||!onNavigate}}") &&
+  hero.includes('minHeight:iconOnlyPhases?48:') &&
+  hero.includes('{iconOnlyPhases ?'),
+  'Dream phase tabs must be icon-only on phones while preserving phase colours and locking');
+
 // The personal shortcut icons once rendered as isolated symbols on the far left
 // of full-width pages. Only those two rows should omit their leading icon.
 const shortcuts = source('src/components/dream/DreamWorkspaceShortcuts.tsx');
