@@ -25,7 +25,7 @@ import {CassetteBlueprintBackground} from './CassetteBlueprintBackground';
 const PINK='#CB245C';
 type Props={project:MusicProject;patch:(changes:Partial<MusicProject>)=>void;
   onStartVersion:(source:MusicProjectFile)=>void;onUseFile:(source:MusicProjectFile)=>void;
-  hasVersion:boolean;newVersionMode?:boolean;
+  hasVersion:boolean;newVersionMode?:boolean;showEditor?:boolean;
   quickAction?:'write'|'upload'|'play'|'record'};
 type Composer='none'|'write'|'record';
 type Writing='lyrics'|'note';
@@ -55,7 +55,7 @@ function fileGroup(file:MusicProjectFile):CaptureFilter {
 }
 
 export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
-  hasVersion,newVersionMode=false,quickAction}:Props) {
+  hasVersion,newVersionMode=false,quickAction,showEditor=false}:Props) {
   const theme=useAppTheme();
   const {width}=useWindowDimensions();
   const compact=width<630;
@@ -457,8 +457,8 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
         paddingHorizontal:12,paddingVertical:8,gap:14,
         borderBottomWidth:1,borderBottomColor:theme.border}}>
       {([
-        {id:'name' as const,label:'Nom',width:210},
-        {id:'date' as const,label:'Date',width:120},
+        {id:'name' as const,label:'Nom',width:showEditor?185:210},
+        {id:'date' as const,label:'Date',width:showEditor?105:120},
         {id:'type' as const,label:'Type',width:undefined},
       ]).map(column=>{
         const selected=sortBy===column.id;
@@ -479,6 +479,11 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
             color={selected?PINK:theme.muted}/>
         </Pressable>;
       })}
+      {showEditor?<View style={{width:130,justifyContent:'center'}}>
+        <Text style={{color:theme.muted,fontSize:13,fontWeight:'700'}}>
+          Modifié par
+        </Text>
+      </View>:null}
       <View style={{width:62}}/>
     </View>:null}
     {!desktopList&&files.length?<ScrollView horizontal showsHorizontalScrollIndicator={false}
@@ -638,25 +643,35 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
             gap:desktopList?14:4}}>
             <Pressable onPress={openDetails} accessibilityRole="button"
               accessibilityLabel={'Ouvrir '+file.title}
-              style={{width:desktopList?210:'100%',minWidth:0,
+              style={{width:desktopList?(showEditor?185:210):'100%',minWidth:0,
                 minHeight:40,justifyContent:'center'}}>
               <Text numberOfLines={1} style={{
                 color:theme.foreground,fontSize:compact?14:15,
                 fontWeight:'600'}}>{file.title}</Text>
             </Pressable>
             {desktopList?
-              <Text numberOfLines={1} style={{width:120,
+              <Text numberOfLines={1} style={{width:showEditor?105:120,
                 color:theme.foreground,fontSize:15,
                 fontWeight:'400',fontVariant:['tabular-nums']}}>
                 {dateLabel}
               </Text>:
               <View style={{flexDirection:'row',alignItems:'center',
                 justifyContent:'space-between',minHeight:32}}>
-                {dateLabel?<Text numberOfLines={1} style={{
-                  color:theme.foreground,fontSize:11,
-                  fontVariant:['tabular-nums']}}>{dateLabel}</Text>:<View/>}
+                <View style={{flex:1,minWidth:0,gap:3}}>
+                  {dateLabel?<Text numberOfLines={1} style={{
+                    color:theme.foreground,fontSize:11,
+                    fontVariant:['tabular-nums']}}>{dateLabel}</Text>:null}
+                  {showEditor?<Text numberOfLines={1} style={{
+                    color:theme.muted,fontSize:11}}>
+                    Modifié par · {file.editedBy||project.ownerName||'—'}
+                  </Text>:null}
+                </View>
                 {detailArrow}
               </View>}
+            {desktopList&&showEditor?<Text numberOfLines={1}
+              style={{width:130,fontSize:12,color:theme.foreground}}>
+              {file.editedBy||project.ownerName||'—'}
+            </Text>:null}
             <View style={{flex:desktopList?1:undefined,
               width:desktopList?undefined:'100%',minWidth:0,
               maxHeight:desktopList?86:undefined,
@@ -667,7 +682,7 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
             {desktopList?detailArrow:null}
           </View>
           {desktopList&&lyricExpanded&&file.kind==='lyrics'?
-            <View style={{paddingLeft:210+120+28,paddingRight:28,
+            <View style={{paddingLeft:(showEditor?185+105+130:210+120)+28,paddingRight:28,
               paddingBottom:14}}>
               <Text style={{fontFamily:'Georgia',fontSize:15,
                 lineHeight:24,color:theme.muted}}>{text}</Text>
