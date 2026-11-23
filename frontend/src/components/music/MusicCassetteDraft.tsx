@@ -98,7 +98,7 @@ export function MusicCassetteDraft({ width = 216, variant = 'standard', title }:
     {/* The unfinished drawing uses the original technical lettering,
         never the licensed BiroScript reserved for a finished release. */}
     {variant === 'tile' && !!legend ? <View pointerEvents="none" style={{
-      position:'absolute', left:'8%', right:'8%', top:'73%',
+      position:'absolute', left:'8%', right:'8%', top:'69%',
     }}>
       <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.60}
         style={{fontSize:Math.min(11,Math.max(8,width*0.051)),
