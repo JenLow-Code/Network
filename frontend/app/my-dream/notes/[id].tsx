@@ -22,7 +22,7 @@ export default function PrivateDreamNotebook(){
   const editable=!!dream&&dream.phase!=='Témoignage'&&!frozen&&dream.viewerRole!=='participant';
   return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
     <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled"
-      contentContainerStyle={{paddingHorizontal:ws.gutter,paddingTop:10,
+      contentContainerStyle={{paddingLeft:ws.contentGutter,paddingRight:ws.gutter,paddingTop:12,
         paddingBottom:115,maxWidth:ws.maxWidth,width:'100%',alignSelf:'center',flexGrow:1}}>
       <PageHeader title="Notes personnelles" onBack={()=>router.replace({pathname:'/my-dream/[id]',
         params:{id,view:view||dream?.phase||'Rêve'}})}/>
