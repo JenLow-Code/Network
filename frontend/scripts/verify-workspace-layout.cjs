@@ -71,27 +71,59 @@ if(!dreamNav.includes("||phase==='Rêve')return phaseNav;")||
 }
 
 
-// Gallery and music header alignment regression: keep a single shared inset
-// from the page title through the hero, and the same top rhythm in Music.
+// Desktop content rail: titles, headers, hero and notebook body share one x
+// position. The back control alone is offset to the left. On touch/mobile,
+// retain the established narrower grid so cards never lose a column.
 const read=path=>readFileSync(join(base,path),'utf8');
 const layoutRules=[
+  ['src/theme/workspaceLayout.ts',/DESKTOP_PAGE_CONTENT_INSET=52;/,
+    'Desktop back offset constant must remain defined'],
+  ['src/theme/workspaceLayout.ts',/const contentGutter=gutter\+\(desktop\?DESKTOP_PAGE_CONTENT_INSET:0\);/,
+    'Main page content must use the one canonical desktop rail'],
+  ['src/theme/workspaceLayout.ts',/paddingLeft:contentGutter,[\s\S]*?paddingRight:gutter,/,
+    'Desktop canvas must add space on the left without bleeding into the right edge'],
+  ['src/components/navigation/PageHeader.tsx',/left:desktop\?-DESKTOP_PAGE_CONTENT_INSET:0/,
+    'Only the desktop back arrow is outside the common content rail'],
+  ['src/components/navigation/PageHeader.tsx',/paddingLeft:desktop\?0:52/,
+    'Desktop titles must start on the content rail; mobile retains its established spacing'],
+  ['app/my-space.tsx',/const side=ws.contentGutter;/,
+    'The projects header and panels must start on the common rail'],
+  ['app/my-space.tsx',/const innerWidth=Math.max\(0,contentWidth-side-right\);/,
+    'Projects hero must account for both different side margins'],
+  ['app/my-space.tsx',/paddingLeft:side,paddingRight:right/,
+    'Projects hero must not bleed left of the content rail'],
   ['app/my-space.tsx',/const galleryWidth=innerWidth;/,
-    'The project hero must fit inside the page gutters on mobile and desktop'],
+    'Projects carousel must respect its inset width'],
   ['app/music-hub.tsx',/\.\.\.workspaceCanvas\(width\),paddingTop:12/,
-    'The Music landing header must use the same canvas and top offset as other pages'],
-  ['app/music-workspace/[id].tsx',/paddingTop:12,paddingBottom:/,
-    'Owned music workspaces must keep the common top offset'],
-  ['app/music-collaboration/[id].tsx',/paddingHorizontal:ws\.gutter,paddingTop:12/,
-    'Collaborative music workspaces must keep the common top offset'],
-  ['src/components/navigation/PageHeader.tsx',/top:desktop\?2:0,zIndex:6/,
-    'The shared back arrow must be vertically centered with its page title'],
+    'Music landing must use the shared page canvas'],
+  ['app/music-hub.tsx',/ws.contentGutter - ws.gutter/,
+    'Music card grid must use the actual smaller content width'],
+  ['app/chat/[id].tsx',/left:workspaceLayout\(width\).gutter/,
+    'Chat back controls must sit left of their padded title rail'],
+  ['src/components/dream/DreamPhaseLayout.tsx',/left:-DESKTOP_PAGE_CONTENT_INSET/,
+    'Dream workspace back arrow must be the only element beyond its hero rail'],
 ];
-const failedLayoutRules=layoutRules.filter(([path,pattern])=>!pattern.test(read(path)));
-if(failedLayoutRules.length){
-  for(const [path,,reason] of failedLayoutRules){
-    console.error('Workspace alignment regression: '+path+' — '+reason);
+const directWorkspacePages=[
+  'app/music-workspace/[id].tsx',
+  'app/music-collaboration/[id].tsx',
+  'app/my-dream/notes/[id].tsx',
+  'app/my-dream/library/[id].tsx',
+  'app/my-dream/flower/[id].tsx',
+  'src/components/dream/SemenceStudio.tsx',
+  'src/components/dream/DreamExperience.tsx',
+  'app/discover.tsx',
+];
+for(const path of directWorkspacePages){
+  layoutRules.push([path,/paddingLeft:\s*ws.contentGutter,\s*paddingRight:\s*ws.gutter/,
+    'Directly padded page must use the shared rail']);
+}
+const failures=layoutRules.filter(([path,pattern])=>!pattern.test(read(path)));
+if(failures.length){
+  for(const [path,,reason] of failures){
+    console.error('Workspace rail regression: '+path+' — '+reason);
   }
   process.exitCode=1;
 }else{
-  console.log('Project hero and music headers match shared page alignment rules.');
+  console.log('Desktop content rails and notebook/music/chat/project headers verified ('+
+    layoutRules.length+' assertions).');
 }
