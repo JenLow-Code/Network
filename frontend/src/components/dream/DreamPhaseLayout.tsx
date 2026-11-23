@@ -38,8 +38,8 @@ export function DreamPhaseHeader({
   const {width} = useWindowDimensions();
   const ws = workspaceLayout(width);
   const desktop = Platform.OS === 'web' && ws.desktop;
-  // On narrow screens the phases stay at the top, on their own compact row
-  // beneath the Back / global actions, so none of the names is truncated.
+  // Every phase selector belongs inside the shared header, including phones.
+  // Mobile icons remain compact enough to fit between Back and global actions.
   const phasesInTopRow = width >= 760;
   const workspaceWidth = Math.min(Math.max(0, width - (ws.desktop ? 212 : 0)),
     ws.maxWidth ?? width);
@@ -67,12 +67,12 @@ export function DreamPhaseHeader({
         .finally(() => setSavingCover(false));
     }, message => setCoverError(message));
   };
-  // One navigation component is mounted either inside PageHeader or directly
-  // below it on phones. The global header actions and right sidebar do not change.
+  // The phase selector is always part of the shared PageHeader rather than
+  // becoming an isolated second row on phones.
   const advancement = <View accessibilityRole="tablist" style={{
     width:phasesInTopRow?topPhaseWidth:'100%',
-    flexDirection:'row',alignItems:'stretch',gap:desktop?12:width<520?4:8,
-    paddingBottom:2,
+    flexDirection:'row',alignItems:'stretch',gap:desktop?12:iconOnlyPhases?3:8,
+    paddingBottom:iconOnlyPhases?0:2,
   }}>
     {DREAM_PHASES.map((item,i)=>{
       const reached=i<=DREAM_PHASES.indexOf(dream.phase);
@@ -84,12 +84,17 @@ export function DreamPhaseHeader({
         disabled={!reached||!onNavigate}
         onPress={()=>onNavigate?.(item)}
         style={{flex:1,minWidth:0,alignItems:'center',justifyContent:'center',
-          minHeight:iconOnlyPhases?48:phasesInTopRow?41:34,
-          gap:phasesInTopRow?5:3,opacity:reached?1:.46}}>
+          minHeight:iconOnlyPhases?42:phasesInTopRow?41:34,
+          gap:iconOnlyPhases?4:phasesInTopRow?5:3,opacity:reached?1:.46}}>
         {iconOnlyPhases ?
-          <DreamPhaseIcon phase={item} size={29}
-            artworkScale={item==='Rêve'?.72:item==='Initiation'?.88:1}
-            tintColor={selected?activeAccent:reached?theme.muted:theme.border}/> :
+          <>
+            <DreamPhaseIcon phase={item} size={25}
+              artworkScale={item==='Rêve'?.85:item==='Initiation'?1:1}
+              tintColor={selected?activeAccent:reached?theme.muted:theme.border}/>
+            <View style={{width:'100%',height:selected?3:2,borderRadius:2,
+              backgroundColor:reached?activeAccent:theme.border,
+              opacity:selected?1:reached?.65:.55}}/>
+          </> :
           <>
             <View style={{minHeight:phasesInTopRow?23:21,
               flexDirection:'row',alignItems:'center',justifyContent:'center',
@@ -114,11 +119,9 @@ export function DreamPhaseHeader({
     })}
   </View>;
   return <View style={{marginBottom:desktop?17:18}}>
-    {/* Move advancement to the page heading, not to the global sidebar.
-        On phones it sits immediately under the header to keep four readable tabs. */}
-    <PageHeader center={phasesInTopRow?advancement:undefined} onBack={onBack}/>
-    {!phasesInTopRow ?
-      <View style={{marginTop:5,marginBottom:11}}>{advancement}</View> : null}
+    {/* The four phases remain within the header at every screen width.
+        The global Back, Fire and Messages actions keep their own positions. */}
+    <PageHeader center={advancement} onBack={onBack}/>
     {/* The dream's own title belongs beside its rounded cover, with the
         description immediately underneath. No repeated phase row follows. */}
     <View style={{flexDirection:'row',alignItems:'center',
