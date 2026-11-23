@@ -114,8 +114,8 @@ const layoutRules=[
     'All four phase rows must span the same useful width as the hero'],
   ['app/my-space.tsx',/flexDirection:'column',\s*gap:phaseGridGap/,
     'Phase panels must stack as four horizontal rows, not columns'],
-  ['app/my-space.tsx',/flexDirection:compact\?'column':'row'/,
-    'Desktop phase rows must position heading and projects side by side'],
+  ['app/my-space.tsx',/paddingTop:compact\?64:59,paddingBottom:compact\?13:16/,
+    'Reserve space for the phase title at the top of each row'],
   ['app/my-space.tsx',/const phaseViewportWidth=Math.max\(0,/,
     'Carousel width must be derived from the available phase row width'],
   ['app/my-space.tsx',/LinearGradient id=\{'phase-wash-'\+index\}/,
@@ -124,8 +124,20 @@ const layoutRules=[
     'Phase colour must disappear into the page background at the left edge'],
   ['app/my-space.tsx',/offset="100%" stopColor=\{panel.accent\}\s*stopOpacity=\{theme.dark\?0.20:0.13\}/,
     'A gentle phase colour must remain at the right edge'],
-  ['app/my-space.tsx',/borderRadius:0,borderWidth:1/,
-    'Phase panels must have square, non-rounded edges'],
+  ['app/my-space.tsx',/borderRadius:0,\s*backgroundColor:theme.background/,
+    'Phase section shells must be square with no visible outline'],
+  ['app/my-space.tsx',/borderRadius: isBanner \? 0 : 11/,
+    'Dream tiles inside every phase must retain rounded corners'],
+  ['app/my-space.tsx',/top:compact\?13:16,\s*right:panelInset/,
+    'Phase names must be anchored at the top-right corner'],
+  ['app/my-space.tsx',/color:theme.dark\?panel.headingDark:panel.headingLight/,
+    'Phase headings must use soft phase-tinted ink with dark-mode contrast'],
+  ['app/my-space.tsx',/borderRadius:11,overflow:'hidden'/,
+    'Mobile stacked previews must retain rounded corners'],
+  ['app/my-space.tsx',/stopColor=\{theme.background\} stopOpacity=\{1\}/,
+    'The left hero fade must exactly match the real page background'],
+  ['app/my-space.tsx',/fruit-banner-bottom-fade/,
+    'The hero lower edge must fade into the page background'],
   ['app/my-space.tsx',/panel.title.toLocaleUpperCase\('fr-FR'\)/,
     'Phase titles must remain uppercase and horizontal'],
   ['app/my-space.tsx',/DreamPhaseIcon phase=\{panel.phase\}/,
@@ -153,6 +165,15 @@ for(const path of directWorkspacePages){
   layoutRules.push([path,/paddingLeft:\s*ws.contentGutter,\s*paddingRight:\s*ws.gutter/,
     'Directly padded page must use the shared rail']);
 }
+// These regressions are intentional failures, not optional style changes.
+const projectSource=read('app/my-space.tsx');
+if(/borderRadius:0,borderWidth:1/.test(projectSource)||
+   /presentation === 'phase' \? 0 : 11/.test(projectSource)||
+   /width:27,height:3,\s*backgroundColor:panel.accent/.test(projectSource)){
+  console.error('Project sections must have no outline or decorative title line, while dreams stay rounded.');
+  process.exitCode=1;
+}
+
 const failures=layoutRules.filter(([path,pattern])=>!pattern.test(read(path)));
 if(failures.length){
   for(const [path,,reason] of failures){
@@ -175,11 +196,7 @@ for(const [canvasWidth,desktop,tablet] of [
   const innerWidth=Math.max(0,canvasWidth-side-right);
   const phasePanelWidth=innerWidth;
   const panelInset=compact?12:16;
-  const phaseLabelWidth=compact?0:
-    Math.min(230,Math.max(150,Math.round(innerWidth*.23)));
-  const contentGap=compact?0:20;
-  const viewportWidth=Math.max(0,
-    phasePanelWidth-2*panelInset-2-phaseLabelWidth-contentGap);
+  const viewportWidth=Math.max(0,phasePanelWidth-2*panelInset);
   const cardWidth=compact?viewportWidth:
     Math.min(232,Math.max(150,Math.round(viewportWidth*.31)));
   if(side+phasePanelWidth+right>canvasWidth+0.01 ||
