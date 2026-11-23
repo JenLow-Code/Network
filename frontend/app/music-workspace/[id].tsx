@@ -98,7 +98,7 @@ export default function MusicWorkspace() {
     <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{
       width:'100%',maxWidth:ws.maxWidth,alignSelf:'center',
       paddingHorizontal:ws.gutter,
-      paddingTop:desktop?16:8,paddingBottom:desktop?56:120,
+      paddingTop:12,paddingBottom:desktop?56:120,
       gap:compact?18:desktop?20:25}}>
       {/* Song actions replace the title in the top bar. The song title is
           displayed once above the saved items inside Capturer. */}
