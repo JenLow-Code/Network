@@ -47,6 +47,9 @@ export function DreamPhaseHeader({
   const topPhaseWidth = Math.max(290, Math.min(620, readingWidth -
     (desktop ? 180 : 160)));
   const narrow = width < 600;
+  // Small screens navigate the four stages by their artwork and stage colour.
+  // Full names remain in accessibility labels and on tablet/desktop.
+  const iconOnlyPhases = narrow;
   const coverSize = desktop ? 106 : narrow ? 82 : 96;
   const description = summary === undefined ? dream.summary : summary;
   const {setCoverImage, ready} = useDreams();
@@ -80,27 +83,33 @@ export function DreamPhaseHeader({
         accessibilityState={{selected,disabled:!reached||!onNavigate}}
         disabled={!reached||!onNavigate}
         onPress={()=>onNavigate?.(item)}
-        style={{flex:1,minWidth:0,alignItems:'center',justifyContent:'flex-end',
-          minHeight:phasesInTopRow?41:34,
+        style={{flex:1,minWidth:0,alignItems:'center',justifyContent:'center',
+          minHeight:iconOnlyPhases?48:phasesInTopRow?41:34,
           gap:phasesInTopRow?5:3,opacity:reached?1:.46}}>
-        <View style={{minHeight:phasesInTopRow?23:21,
-          flexDirection:'row',alignItems:'center',justifyContent:'center',
-          gap:phasesInTopRow?5:2,maxWidth:'100%'}}>
-          {selected && width>=600 ?
-            <DreamPhaseIcon phase={item} size={desktop?20:16}
-              artworkScale={item==='Rêve'?.66:undefined}
-              tintColor={item==='Croissance'?
-                (theme.dark?'#82C9A0':'#17613F'):undefined}/> : null}
-          <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={.8}
-            style={{flexShrink:1,fontSize:desktop?12:width<380?9:width<600?10:11,
-              fontWeight:selected?'700':'500',
-              color:selected?theme.foreground:theme.muted}}>
-            {PHASE_LABELS[item]}
-          </Text>
-        </View>
-        <View style={{width:'100%',height:selected?3:2,borderRadius:2,
-          backgroundColor:reached?activeAccent:theme.border,
-          opacity:selected?1:reached?.65:.55}}/>
+        {iconOnlyPhases ?
+          <DreamPhaseIcon phase={item} size={29}
+            artworkScale={item==='Rêve'?.72:item==='Initiation'?.88:1}
+            tintColor={selected?activeAccent:reached?theme.muted:theme.border}/> :
+          <>
+            <View style={{minHeight:phasesInTopRow?23:21,
+              flexDirection:'row',alignItems:'center',justifyContent:'center',
+              gap:phasesInTopRow?5:2,maxWidth:'100%'}}>
+              {selected ?
+                <DreamPhaseIcon phase={item} size={desktop?20:16}
+                  artworkScale={item==='Rêve'?.66:undefined}
+                  tintColor={item==='Croissance'?
+                    (theme.dark?'#82C9A0':'#17613F'):undefined}/> : null}
+              <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={.8}
+                style={{flexShrink:1,fontSize:desktop?12:11,
+                  fontWeight:selected?'700':'500',
+                  color:selected?theme.foreground:theme.muted}}>
+                {PHASE_LABELS[item]}
+              </Text>
+            </View>
+            <View style={{width:'100%',height:selected?3:2,borderRadius:2,
+              backgroundColor:reached?activeAccent:theme.border,
+              opacity:selected?1:reached?.65:.55}}/>
+          </>}
       </Pressable>;
     })}
   </View>;
