@@ -279,7 +279,7 @@ export default function MusicHub() {
             song={song} layout={layout}
             width={tileWidth} participants={peopleForLocal(song)}
             pendingCount={proposals.filter(p => p.direction === 'received' &&
-              p.status === 'submitted' && p.trackPublicationId === song.publishedId).length}/>)}
+              p.status === 'submitted' && p.trackPublicationId === song.publishedId).length}/>),
           ...sharedPieces.map(piece => <MusicTile
             key={'shared-'+piece.publicationId} width={tileWidth}
             title={piece.title} mode="draft" layout={layout}
@@ -323,7 +323,7 @@ export default function MusicHub() {
             onPress={() => router.push({pathname:'/music/[id]',
               params:{id:song.id,from:'music-tab'}})}
             onLearnMore={() => router.push({pathname:'/music/[id]',
-              params:{id:song.id,from:'music-tab',openMore:'1'}})}/>)}
+              params:{id:song.id,from:'music-tab',openMore:'1'}})}/>),
           ...pendingSent.map(p => <MusicTile key={'pending-'+p.id}
             width={tileWidth} layout={layout} mode="cassette"
             title={p.trackTitle} byline={p.publisher?.displayName || 'Morceau proposé'}
