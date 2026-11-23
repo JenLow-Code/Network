@@ -35,7 +35,8 @@ for (const mode of ['light', 'dark']) {
   }
 }
 const nav = source('src/components/navigation/PageHeader.tsx');
-assert.ok(nav.includes("left:0") && nav.includes('paddingLeft:52'),
+assert.ok(nav.includes('left:desktop?-DESKTOP_PAGE_CONTENT_INSET:0') &&
+  nav.includes('paddingLeft:desktop?0:52'),
   'Shared Back and title alignment must stay consistent');
 const hero = source('src/components/dream/DreamPhaseLayout.tsx');
 assert.ok(hero.includes('marginHorizontal:-heroBleed') &&
