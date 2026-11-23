@@ -479,8 +479,10 @@ export default function MySpace() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{
-        ...workspaceCanvas(windowWidth), paddingHorizontal:0, paddingBottom:64,
-        paddingTop:12,
+        // Clear both explicit workspace side paddings here; the inner
+        // header, banner and phase rows each own their responsive spacing.
+        ...workspaceCanvas(windowWidth),paddingHorizontal:0,
+        paddingLeft:0,paddingRight:0,paddingBottom:64,paddingTop:12,
       }}>
         <View style={{width:'100%'}} onLayout={event=>{
           const measured=Math.round(event.nativeEvent.layout.width);
