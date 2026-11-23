@@ -138,8 +138,14 @@ const layoutRules=[
     'Mobile stacked previews must retain rounded corners'],
   ['app/my-space.tsx',/stopColor=\{theme.background\} stopOpacity=\{1\}/,
     'The left hero fade must exactly match the real page background'],
-  ['app/my-space.tsx',/fruit-banner-bottom-fade/,
-    'The hero lower edge must fade into the page background'],
+  ['app/my-space.tsx',/paddingHorizontal: isBanner \? bannerInset : 13/,
+    'The hero title and description must use the same content inset as the cards'],
+  ['app/my-space.tsx',/bannerInset=\{panelInset\}/,
+    'The hero banner must receive the phase card inset'],
+  ['app/my-space.tsx',/bottom:compact\?12:17,left:panelInset,right:panelInset/,
+    'Hero buttons must align with the headline and project cards'],
+  ['app/my-space.tsx',/headingLight:'#261C22'/,
+    'Floraison titles must be near-black with a subtle magenta-brown tint'],
   ['app/my-space.tsx',/panel.title.toLocaleUpperCase\('fr-FR'\)/,
     'Phase titles must remain uppercase and horizontal'],
   ['app/my-space.tsx',/DreamPhaseIcon phase=\{panel.phase\}/,
@@ -171,8 +177,10 @@ for(const path of directWorkspacePages){
 const projectSource=read('app/my-space.tsx');
 if(/borderRadius:0,borderWidth:1/.test(projectSource)||
    /presentation === 'phase' \? 0 : 11/.test(projectSource)||
+   /fruit-banner-bottom-fade/.test(projectSource)||
+   /Hide the thin lower edge of the image/.test(projectSource)||
    /width:27,height:3,\s*backgroundColor:panel.accent/.test(projectSource)){
-  console.error('Project sections must have no outline or decorative title line, while dreams stay rounded.');
+  console.error('Project panels must stay borderless, dreams rounded, and the hero free of bottom fades or decorative rules.');
   process.exitCode=1;
 }
 
