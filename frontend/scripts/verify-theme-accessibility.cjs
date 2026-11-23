@@ -39,9 +39,16 @@ assert.ok(nav.includes('left:desktop?-DESKTOP_PAGE_CONTENT_INSET:0') &&
   nav.includes('paddingLeft:desktop?0:52'),
   'Shared Back and title alignment must stay consistent');
 const hero = source('src/components/dream/DreamPhaseLayout.tsx');
-assert.ok(hero.includes('<PageHeader title={dream.title} onBack={onBack}/>') &&
-  hero.includes("import { PageHeader } from '@/components/navigation/PageHeader';"),
-  'Dream Back, title and top actions must use the shared JenLow PageHeader');
+assert.ok(hero.includes('<PageHeader center={phasesInTopRow?advancement:undefined} onBack={onBack}/>') &&
+  hero.includes("import { PageHeader } from '@/components/navigation/PageHeader';") &&
+  hero.includes('const phasesInTopRow = width >= 760;') &&
+  hero.includes('{!phasesInTopRow ?') &&
+  hero.includes('accessibilityRole="tablist"') &&
+  hero.includes("accessibilityState={{selected,disabled:!reached||!onNavigate}}") &&
+  hero.indexOf('const advancement =') < hero.indexOf('return <View style={{marginBottom:desktop?17:18}}>') &&
+  hero.indexOf('{dream.title}') > hero.indexOf('style={{width:coverSize,height:coverSize') &&
+  !hero.includes('<PageHeader title={dream.title}'),
+  'Dream progress belongs at the top; title and description beside photo; phases remain accessible');
 for (const file of ['app/space.tsx','app/login.tsx','app/chat/[id].tsx','app/agenda.tsx']) {
   const contents = source(file);
   assert.ok(!/<SafeAreaView style=\{\{[^}]*backgroundColor: ['"]#fff['"]/.test(contents),
@@ -50,4 +57,4 @@ for (const file of ['app/space.tsx','app/login.tsx','app/chat/[id].tsx','app/age
 assert.ok(!source('app/agenda.tsx').includes('DEMO_AGENDA'),
   'Demo-only appointments must not appear in the real dated Agenda');
 console.log('Theme foreground, muted and accent contrast >=4.5:1 on both surfaces.');
-console.log('Shared Back alignment, dream hero and key page surfaces verified.');
+console.log('Shared Back alignment, dream advancement/header and page surfaces verified.');

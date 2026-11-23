@@ -148,7 +148,7 @@ const layoutRules=[
     'Music card grid must use the actual smaller content width'],
   ['app/chat/[id].tsx',/left:workspaceLayout\(width\).gutter/,
     'Chat back controls must sit left of their padded title rail'],
-  ['src/components/dream/DreamPhaseLayout.tsx',/<PageHeader title=\{dream\.title\} onBack=\{onBack\}\/>/,
+  ['src/components/dream/DreamPhaseLayout.tsx',/<PageHeader center=\{phasesInTopRow\?advancement:undefined\} onBack=\{onBack\}\/>/,
     'All dream phases must use the canonical page header and Back alignment'],
 ];
 const directWorkspacePages=[

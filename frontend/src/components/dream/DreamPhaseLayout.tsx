@@ -36,7 +36,16 @@ export function DreamPhaseHeader({
 }) {
   const theme = useAppTheme();
   const {width} = useWindowDimensions();
-  const desktop = Platform.OS === 'web' && workspaceLayout(width).desktop;
+  const ws = workspaceLayout(width);
+  const desktop = Platform.OS === 'web' && ws.desktop;
+  // On narrow screens the phases stay at the top, on their own compact row
+  // beneath the Back / global actions, so none of the names is truncated.
+  const phasesInTopRow = width >= 760;
+  const workspaceWidth = Math.min(Math.max(0, width - (ws.desktop ? 212 : 0)),
+    ws.maxWidth ?? width);
+  const readingWidth = Math.max(0, workspaceWidth - ws.contentGutter - ws.gutter);
+  const topPhaseWidth = Math.max(290, Math.min(620, readingWidth -
+    (desktop ? 180 : 160)));
   const narrow = width < 600;
   const coverSize = desktop ? 106 : narrow ? 82 : 96;
   const description = summary === undefined ? dream.summary : summary;
@@ -55,13 +64,57 @@ export function DreamPhaseHeader({
         .finally(() => setSavingCover(false));
     }, message => setCoverError(message));
   };
+  // One navigation component is mounted either inside PageHeader or directly
+  // below it on phones. The global header actions and right sidebar do not change.
+  const advancement = <View accessibilityRole="tablist" style={{
+    width:phasesInTopRow?topPhaseWidth:'100%',
+    flexDirection:'row',alignItems:'stretch',gap:desktop?12:width<520?4:8,
+    paddingBottom:2,
+  }}>
+    {DREAM_PHASES.map((item,i)=>{
+      const reached=i<=DREAM_PHASES.indexOf(dream.phase);
+      const selected=item===phase;
+      const activeAccent=phaseAccent[item];
+      return <Pressable key={item} accessibilityRole="tab"
+        accessibilityLabel={'Ouvrir '+PHASE_LABELS[item]}
+        accessibilityState={{selected,disabled:!reached||!onNavigate}}
+        disabled={!reached||!onNavigate}
+        onPress={()=>onNavigate?.(item)}
+        style={{flex:1,minWidth:0,alignItems:'center',justifyContent:'flex-end',
+          minHeight:phasesInTopRow?41:34,
+          gap:phasesInTopRow?5:3,opacity:reached?1:.46}}>
+        <View style={{minHeight:phasesInTopRow?23:21,
+          flexDirection:'row',alignItems:'center',justifyContent:'center',
+          gap:phasesInTopRow?5:2,maxWidth:'100%'}}>
+          {selected && width>=600 ?
+            <DreamPhaseIcon phase={item} size={desktop?20:16}
+              artworkScale={item==='Rêve'?.66:undefined}
+              tintColor={item==='Croissance'?
+                (theme.dark?'#82C9A0':'#17613F'):undefined}/> : null}
+          <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={.8}
+            style={{flexShrink:1,fontSize:desktop?12:width<380?9:width<600?10:11,
+              fontWeight:selected?'700':'500',
+              color:selected?theme.foreground:theme.muted}}>
+            {PHASE_LABELS[item]}
+          </Text>
+        </View>
+        <View style={{width:'100%',height:selected?3:2,borderRadius:2,
+          backgroundColor:reached?activeAccent:theme.border,
+          opacity:selected?1:reached?.65:.55}}/>
+      </Pressable>;
+    })}
+  </View>;
   return <View style={{marginBottom:desktop?17:18}}>
-    {/* The dream's title and Back control use the same rail, typography and
-        global actions as every other internal JenLow page. The cover and
-        descriptive summary are secondary content, not a second page header. */}
-    <PageHeader title={dream.title} onBack={onBack}/>
+    {/* Move advancement to the page heading, not to the global sidebar.
+        On phones it sits immediately under the header to keep four readable tabs. */}
+    <PageHeader center={phasesInTopRow?advancement:undefined} onBack={onBack}/>
+    {!phasesInTopRow ?
+      <View style={{marginTop:5,marginBottom:11}}>{advancement}</View> : null}
+    {/* The dream's own title belongs beside its rounded cover, with the
+        description immediately underneath. No repeated phase row follows. */}
     <View style={{flexDirection:'row',alignItems:'center',
-      gap:desktop?20:12,marginTop:desktop?14:12,minHeight:coverSize}}>
+      gap:desktop?20:12,marginTop:phasesInTopRow?(desktop?14:12):7,
+      minHeight:coverSize}}>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={canChangeCover ?
@@ -87,13 +140,21 @@ export function DreamPhaseHeader({
               <Ionicons name="pencil-outline" size={13} color="#FFFFFF"/>}
           </View> : null}
       </Pressable>
-      {description?.trim() ?
-        <Text numberOfLines={narrow?4:3}
-          style={{flex:1,minWidth:0,color:theme.muted,
-            fontSize:desktop?14:narrow?12:13,
-            lineHeight:desktop?21:narrow?18:20}}>
-          {description}
-        </Text>:null}
+      <View style={{flex:1,minWidth:0,gap:narrow?5:7}}>
+        <Text accessibilityRole="header" numberOfLines={narrow?4:3}
+          style={{color:theme.foreground,fontFamily:'serif',
+            fontSize:desktop?27:narrow?20:24,
+            lineHeight:desktop?34:narrow?26:31,
+            fontWeight:'600',letterSpacing:-.45}}>
+          {dream.title}
+        </Text>
+        {description?.trim() ?
+          <Text numberOfLines={narrow?4:3}
+            style={{color:theme.muted,fontSize:desktop?14:narrow?12:13,
+              lineHeight:desktop?21:narrow?18:20}}>
+            {description}
+          </Text> : null}
+      </View>
     </View>
     {coverError ?
       <Text accessibilityRole="alert" style={{
@@ -101,42 +162,6 @@ export function DreamPhaseHeader({
         marginTop:9,lineHeight:18}}>
         {coverError}
       </Text> : null}
-    <View accessibilityRole="tablist" style={{
-      marginTop:desktop?24:18,marginBottom:desktop?17:10,
-      paddingBottom:3,flexDirection:'row',alignItems:'stretch',
-      gap:desktop?16:width<520?3:9,
-    }}>
-      {DREAM_PHASES.map((item,i)=>{
-        const reached=i<=DREAM_PHASES.indexOf(dream.phase);
-        const selected=item===phase;
-        const activeAccent=phaseAccent[item];
-        return <Pressable key={item} accessibilityRole="tab"
-          accessibilityLabel={'Ouvrir '+PHASE_LABELS[item]}
-          accessibilityState={{selected,disabled:!reached||!onNavigate}}
-          disabled={!reached||!onNavigate}
-          onPress={()=>onNavigate?.(item)}
-          style={{flex:1,minWidth:0,alignItems:'center',justifyContent:'flex-end',
-            gap:desktop?10:7,paddingTop:3,paddingBottom:0,
-            opacity:reached?1:.46}}>
-          <View style={{minHeight:desktop?29:25,flexDirection:'row',
-            alignItems:'center',justifyContent:'center',gap:desktop?7:width<520?3:6}}>
-            {selected?<DreamPhaseIcon phase={item}
-              size={desktop?28:width<520?20:23}
-              artworkScale={item==='Rêve'?.66:undefined}
-              tintColor={item==='Croissance'?
-                (theme.dark?'#82C9A0':'#17613F'):undefined}/>:null}
-            <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={.75}
-              style={{fontSize:desktop?12:width<520?10:12,
-                fontWeight:selected?'700':'500',
-                color:selected?theme.foreground:theme.muted,
-              }}>{PHASE_LABELS[item]}</Text>
-          </View>
-          <View style={{width:'100%',height:selected?3:1.5,borderRadius:2,
-            backgroundColor:reached?activeAccent:theme.border,
-            opacity:selected?1:reached?.57:.55}}/>
-        </Pressable>;
-      })}
-    </View>
     {readOnly?<View style={{
       flexDirection:'row',alignItems:'center',gap:7,
       paddingTop:12,marginBottom:6,alignSelf:'flex-start',
