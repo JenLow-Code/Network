@@ -55,6 +55,9 @@ export default function ProfileTalents() {
   const [talents, setTalents] = useState<Talent[]>(initial);
   const [loaded, setLoaded] = useState(false);
   const [newTalent, setNewTalent] = useState('');
+  const [newLevel,setNewLevel]=useState(-1);
+  const [newDescription,setNewDescription]=useState('');
+  const [newInterests,setNewInterests]=useState<string[]>([]);
   const [newSourceLanguage,setNewSourceLanguage] = useState('');
   const [newTargetLanguage,setNewTargetLanguage] = useState('');
   const [addLanguageError,setAddLanguageError] = useState(false);
@@ -89,6 +92,36 @@ export default function ProfileTalents() {
   }, [storage, loaded, talents]);
   const updateTalent = (index: number, patch: Partial<Talent>) =>
     setTalents(items => items.map((t, i) => (i === index ? { ...t, ...patch } : t)));
+  // Use the same visible and accessible level selector when creating or editing.
+  const levelPicker=(value:number,onChange:(next:number)=>void)=>
+    <View style={{gap:11}}>
+      <View style={{flexDirection:'row',alignItems:'center',
+        justifyContent:'space-between',flexWrap:'wrap',gap:6}}>
+        <Text style={{fontWeight:'700',fontSize:13,color:theme.foreground}}>Mon niveau</Text>
+        <Text style={{fontSize:12,color:theme.muted}}>
+          {levels[value]?.name||'À définir'}
+        </Text>
+      </View>
+      <View accessibilityRole="radiogroup" style={{flexDirection:'row',
+        justifyContent:'space-around',alignItems:'center',gap:9,
+        paddingVertical:9,paddingHorizontal:5,
+        borderWidth:1,borderColor:theme.border,borderRadius:10}}>
+        {levels.map((l,i)=><Pressable key={l.name}
+          accessibilityRole="radio"
+          accessibilityLabel={l.name+' (niveau '+(i+1)+' sur 5)'}
+          accessibilityState={{selected:i===value}}
+          onPress={()=>onChange(i)}
+          style={{width:42,height:36,alignItems:'center',justifyContent:'center'}}>
+          <View style={{width:27,height:27,borderRadius:14,
+            backgroundColor:i<=value?l.color:theme.border,
+            borderWidth:i===value?2:0,borderColor:theme.foreground,
+            alignItems:'center',justifyContent:'center'}}>
+            {i===value?<Ionicons name="checkmark" size={14}
+              color={i===2?'#171717':'#FFFFFF'}/>:null}
+          </View>
+        </Pressable>)}
+      </View>
+    </View>;
   // Tiles use the exact width inside the shared workspace canvas,
   // including the desktop back-arrow rail and right navigation column.
   const canvasWidth=Math.max(0,Math.min(ws.maxWidth??width,width-(ws.desktop?236:0)));
@@ -123,8 +156,10 @@ export default function ProfileTalents() {
         <View style={{flex:1,backgroundColor:'rgba(0,0,0,.56)',justifyContent:'center',padding:19}}>
           <Pressable onPress={()=>setAddTalentOpen(false)}
             style={{position:'absolute',top:0,bottom:0,left:0,right:0}}/>
-          <View style={{backgroundColor:theme.surface,maxWidth:430,width:'100%',
-            alignSelf:'center',padding:21,borderRadius:15,gap:15}}>
+          <ScrollView keyboardShouldPersistTaps="handled"
+            style={{backgroundColor:theme.surface,maxWidth:430,width:'100%',
+              alignSelf:'center',maxHeight:'88%',borderRadius:15}}
+            contentContainerStyle={{padding:21,gap:15}}>
             <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
               <Text style={{fontSize:20,fontWeight:'700',color:theme.foreground}}>Ajouter un talent</Text>
               <Pressable onPress={()=>setAddTalentOpen(false)} accessibilityLabel="Fermer">
@@ -174,21 +209,57 @@ export default function ProfileTalents() {
             {addLanguageError?<Text style={{color:'#C34D65',fontSize:12}}>
               Indique les deux langues de traduction.
             </Text>:null}
+            {levelPicker(newLevel,setNewLevel)}
+            <View style={{gap:7}}>
+              <Text style={{fontWeight:'700',fontSize:13,color:theme.foreground}}>
+                Ma présentation
+              </Text>
+              <TextInput multiline value={newDescription}
+                onChangeText={setNewDescription}
+                placeholder="Ce que je peux partager, mon expérience…"
+                style={{minHeight:84,borderWidth:1,borderColor:theme.border,
+                  borderRadius:10,padding:12,color:theme.foreground,
+                  fontSize:13,textAlignVertical:'top'}}/>
+            </View>
+            <View style={{gap:9}}>
+              <Text style={{fontWeight:'700',fontSize:13,color:theme.foreground}}>
+                Je souhaite
+              </Text>
+              <View style={{flexDirection:'row',gap:8,flexWrap:'wrap'}}>
+                {interests.map(interest=><Pressable key={interest}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{checked:newInterests.includes(interest)}}
+                  onPress={()=>setNewInterests(items=>items.includes(interest)
+                    ?items.filter(item=>item!==interest):[...items,interest])}
+                  style={{paddingVertical:9,paddingHorizontal:11,borderWidth:1,
+                    borderColor:newInterests.includes(interest)?'#CB245C':theme.border,
+                    borderRadius:9,backgroundColor:newInterests.includes(interest)
+                      ?(theme.dark?'rgba(203,36,92,.2)':'#FAEDF2'):'transparent'}}>
+                  <Text style={{color:theme.foreground,fontSize:12}}>{interest}</Text>
+                </Pressable>)}
+              </View>
+            </View>
             <Pressable accessibilityRole="button" onPress={()=>{
               if(!newTalent.trim())return;
               const translator=newTalent.trim().toLocaleLowerCase('fr')==='traducteur';
               if(translator&&(!newSourceLanguage.trim()||!newTargetLanguage.trim())){
                 setAddLanguageError(true);return;
               }
-              setTalents(items=>[...items,{name:translator?'Traducteur':newTalent.trim(),level:0,interests:[],
+              setTalents(items=>[...items,{
+                name:translator?'Traducteur':newTalent.trim(),
+                level:newLevel,
+                description:newDescription.trim(),
+                interests:newInterests,
                 sourceLanguage:translator?newSourceLanguage.trim():undefined,
-                targetLanguage:translator?newTargetLanguage.trim():undefined}]);
-              setNewTalent('');setNewSourceLanguage('');setNewTargetLanguage('');
+                targetLanguage:translator?newTargetLanguage.trim():undefined,
+              }]);
+              setNewTalent('');setNewLevel(-1);setNewDescription('');setNewInterests([]);
+              setNewSourceLanguage('');setNewTargetLanguage('');
               setAddLanguageError(false);setAddTalentOpen(false);setTalentPickerOpen(false);
             }} style={{backgroundColor:'#242322',borderRadius:10,padding:14,alignItems:'center'}}>
               <Text style={{color:'#FFFFFF',fontSize:13,fontWeight:'700'}}>Ajouter à mon profil</Text>
             </Pressable>
-          </View>
+          </ScrollView>
         </View>
       </Modal>
       <Modal visible={selectedTalent!==null} transparent animationType="fade" onRequestClose={()=>setSelectedTalent(null)}>
@@ -202,8 +273,8 @@ export default function ProfileTalents() {
                 targetLanguage={talents[selectedTalent].targetLanguage||''}
                 onChangeSource={sourceLanguage=>updateTalent(selectedTalent,{sourceLanguage})}
                 onChangeTarget={targetLanguage=>updateTalent(selectedTalent,{targetLanguage})}/>:null}
-              <Text style={{color:theme.muted,textAlign:'center'}}>Niveau : {levels[talents[selectedTalent].level]?.name}</Text>
-              <View style={{flexDirection:'row',justifyContent:'center',gap:12}}>{levels.map((l,i)=><Pressable key={l.name} onPress={()=>updateTalent(selectedTalent,{level:i})} style={{width:24,height:24,borderRadius:12,backgroundColor:i<=talents[selectedTalent].level?l.color:theme.border,borderWidth:i===talents[selectedTalent].level?2:0,borderColor:theme.foreground}} accessibilityLabel={l.name}/>)}</View>
+              {levelPicker(talents[selectedTalent].level,
+                level=>updateTalent(selectedTalent,{level}))}
               <Text style={{fontWeight:'700',color:theme.foreground}}>Ma présentation</Text>
               <TextInput multiline value={talents[selectedTalent].description||''} onChangeText={description=>updateTalent(selectedTalent,{description})} placeholder="Ce que je peux partager, mon expérience…" style={{minHeight:90,borderWidth:1,borderColor:theme.border,borderRadius:9,padding:12,color:theme.foreground,textAlignVertical:'top'}}/>
               <Text style={{fontWeight:'700',color:theme.foreground}}>Je souhaite</Text>

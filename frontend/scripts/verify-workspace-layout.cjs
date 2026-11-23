@@ -215,3 +215,30 @@ for(const [canvasWidth,desktop,tablet] of [
     process.exitCode=1;
   }
 }
+
+
+// Talent creation is a full editor: these fields must be visible and persisted
+// before the card is created, not hidden behind a second editing step.
+const talentCreation=read('app/profile-talents.tsx');
+const talentCreationGuards=[
+  ['levelPicker(newLevel,setNewLevel)', 'level selector in add dialog'],
+  ['onChangeText={setNewDescription}', 'description input in add dialog'],
+  ['description:newDescription.trim()', 'description saved with new talent'],
+  ['level:newLevel', 'selected level saved with new talent'],
+  ['interests:newInterests', 'selected intentions saved with new talent'],
+  ['levelPicker(talents[selectedTalent].level', 'editing retains level selector'],
+  ['setNewLevel(-1);setNewDescription(\'\')', 'creation draft reset'],
+  ['maxHeight:\'88%\'', 'creation form remains scrollable on small screens'],
+];
+for(const [needle,reason] of talentCreationGuards){
+  if(!talentCreation.includes(needle)){
+    console.error('Talent creation regression: '+reason);
+    process.exitCode=1;
+  }
+}
+
+const talentLevelDots=read('src/components/talent/TalentLevelDots.tsx');
+if(!talentLevelDots.includes('return 0;')){
+  console.error('Talent level regression: an unset level must render zero filled dots.');
+  process.exitCode=1;
+}
