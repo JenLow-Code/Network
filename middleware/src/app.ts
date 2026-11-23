@@ -6,6 +6,7 @@ import { Router } from './http/router';
 import { ApiError } from './http/errors';
 import { errorResponse, json, legacyError } from './http/respond';
 import * as legacy from './auth/legacyRoutes';
+import {exchangeSupabase} from './auth/supabaseBridge';
 import { registerMedia } from './modules/media';
 import { registerProfiles } from './modules/profiles';
 import { registerDreams } from './modules/dreams';
@@ -45,6 +46,10 @@ export function buildRouter(): Router {
   r.add('POST', '/v1/auth/email/register', { tag: 'Auth', summary: 'Register with email, 12+ char password and beta invite code', auth: 'none', status: 201 }, legacy.register);
   r.add('POST', '/v1/auth/email/login', { tag: 'Auth', summary: 'Sign in with email and password', auth: 'none' }, legacy.login);
   r.add('POST', '/v1/auth/refresh', { tag: 'Auth', summary: 'Rotate the refresh token; returns a new access token', auth: 'none' }, legacy.refresh);
+  r.add('POST','/v1/auth/supabase/exchange',{
+    tag:'Auth',summary:'Exchange a server-verified Supabase session for a short-lived JenLow API token',
+    auth:'none',
+  },exchangeSupabase);
   r.add('GET', '/v1/auth/me', { tag: 'Auth', summary: 'Who am I (beta contract)', auth: 'required' }, legacy.me);
   r.add('POST', '/v1/auth/logout', { tag: 'Auth', summary: 'Revoke a refresh token', auth: 'none' }, legacy.logout);
 
@@ -107,6 +112,14 @@ export async function handle(request: Request, env: Env, exec?: ExecutionContext
     if ('allowed' in match) return finish(json({ error: { code: 'method_not_allowed', message: 'Allowed: ' + match.allowed.join(', '), requestId } }, 405, { Allow: match.allowed.join(', ') }));
     const ctx = new Ctx(request, env, exec, requestId);
     ctx.params = match.params;
+    // No private app API can be fetched anonymously, even by bypassing Expo
+    // navigation and calling a URL directly. Health/OpenAPI remain diagnostic.
+    // The in-memory test harness retains its legacy fixture-access mode; the
+    // production access-control integration test exercises the real policy.
+    const publicDiagnostic=path==='/api/health/ready'||path==='/api/openapi.json';
+    if(path.startsWith('/api/')&&!publicDiagnostic&&env.ENVIRONMENT!=='test'){
+      await ctx.user();
+    }
     const result = await match.route.handler(ctx);
     if (result instanceof Response) return finish(result);
     return finish(json(result ?? {}, match.route.status ?? 200));
