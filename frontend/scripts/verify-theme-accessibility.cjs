@@ -39,9 +39,9 @@ assert.ok(nav.includes('left:desktop?-DESKTOP_PAGE_CONTENT_INSET:0') &&
   nav.includes('paddingLeft:desktop?0:52'),
   'Shared Back and title alignment must stay consistent');
 const hero = source('src/components/dream/DreamPhaseLayout.tsx');
-assert.ok(hero.includes('marginHorizontal:-heroBleed') &&
-  hero.includes('left:heroBleed,right:heroBleed'),
-  'Dream cover actions must align with the same canvas as the other pages');
+assert.ok(hero.includes('left:-DESKTOP_PAGE_CONTENT_INSET') &&
+  hero.includes('workspaceLayout(width)'),
+  'Dream Back must stay aligned to the shared desktop canvas inset');
 for (const file of ['app/space.tsx','app/login.tsx','app/chat/[id].tsx','app/agenda.tsx']) {
   const contents = source(file);
   assert.ok(!/<SafeAreaView style=\{\{[^}]*backgroundColor: ['"]#fff['"]/.test(contents),
