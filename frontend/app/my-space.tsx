@@ -32,30 +32,31 @@ const viewerRole = (dream:DreamEntry) => dream.viewerRole || 'creator';
 const phasePanels: {
   phase: DreamPhase; title: string; lightTint: string; darkTint: string;
   lightBorder: string; darkBorder: string; accent: string;
+  headingLight: string; headingDark: string;
 }[] = [
   {
     phase: 'Rêve', title: 'Mes semences',
     lightTint: 'rgba(166,114,76,0.055)', darkTint: 'rgba(190,138,93,0.13)',
     lightBorder: 'rgba(166,114,76,0.10)', darkBorder: 'rgba(190,138,93,0.21)',
-    accent: '#B88962',
+    accent: '#B88962', headingLight:'#332720', headingDark:'#F0DCC9',
   },
   {
     phase: 'Initiation', title: 'En germination',
     lightTint: 'rgba(154,185,64,0.062)', darkTint: 'rgba(154,185,64,0.12)',
     lightBorder: 'rgba(134,164,53,0.11)', darkBorder: 'rgba(154,185,64,0.19)',
-    accent: '#A1BA44',
+    accent: '#A1BA44', headingLight:'#272C1F', headingDark:'#E8EFD1',
   },
   {
     phase: 'Croissance', title: 'En croissance',
     lightTint: 'rgba(39,132,91,0.052)', darkTint: 'rgba(47,153,107,0.12)',
     lightBorder: 'rgba(39,132,91,0.10)', darkBorder: 'rgba(47,153,107,0.20)',
-    accent: '#27845B',
+    accent: '#27845B', headingLight:'#1D2C25', headingDark:'#D6EBDE',
   },
   {
     phase: 'Témoignage', title: 'En floraison',
     lightTint: 'rgba(215,29,119,0.047)', darkTint: 'rgba(215,29,119,0.115)',
     lightBorder: 'rgba(215,29,119,0.10)', darkBorder: 'rgba(215,29,119,0.19)',
-    accent: '#D71D77',
+    accent: '#D71D77', headingLight:'#30202A', headingDark:'#F3D7E5',
   },
 ];
 /** In "Tout", active dreams open their current workspace directly.
@@ -90,7 +91,7 @@ function PictureCard({ dream, width, height, onLongPress, presentation = 'card' 
     <Pressable accessibilityRole="button" accessibilityLabel={'Ouvrir ' + dream.title}
       onPress={() => open(dream)} onLongPress={onLongPress} delayLongPress={460}
       accessibilityHint="Maintenir pour voir les actions et la date objectif"
-      style={{ width, height, borderRadius: isBanner || presentation === 'phase' ? 0 : 11, overflow: 'hidden', backgroundColor: theme.surface }}>
+      style={{ width, height, borderRadius: isBanner ? 0 : 11, overflow: 'hidden', backgroundColor: theme.surface }}>
       {photo ? <Image source={{ uri: photo }} resizeMode="cover" style={{ width: '100%', height: '100%' }} /> : null}
       {isBanner ? (
         <Svg pointerEvents="none" width="100%" height="100%" style={{
@@ -98,17 +99,27 @@ function PictureCard({ dream, width, height, onLongPress, presentation = 'card' 
         }}>
           <Defs>
             <LinearGradient id="fruit-banner-shade" x1="0%" y1="0%" x2="100%" y2="0%">
-              {/* Readable light left side, unobstructed photography on the right. */}
-              <Stop offset="0%" stopColor={theme.dark?'#141414':'#FAF8F5'} stopOpacity={0.99}/>
-              <Stop offset={width<600?'66%':'44%'}
-                stopColor={theme.dark?'#141414':'#FAF8F5'} stopOpacity={width<600?0.94:0.9}/>
-              <Stop offset={width<600?'100%':'72%'}
-                stopColor={theme.dark?'#141414':'#FAF8F5'} stopOpacity={width<600?0.66:0.24}/>
-              <Stop offset="100%" stopColor={theme.dark?'#141414':'#FAF8F5'}
-                stopOpacity={width<600?0.66:0.01}/>
+              {/* Start with the actual page colour, completely opaque at the
+                  edge. A fixed off-white caused a visible rectangle in light mode. */}
+              <Stop offset="0%" stopColor={theme.background} stopOpacity={1}/>
+              <Stop offset="15%" stopColor={theme.background} stopOpacity={1}/>
+              <Stop offset={width<600?'55%':'32%'}
+                stopColor={theme.background} stopOpacity={width<600?0.96:0.90}/>
+              <Stop offset={width<600?'86%':'70%'}
+                stopColor={theme.background} stopOpacity={width<600?0.48:0.16}/>
+              <Stop offset="100%" stopColor={theme.background} stopOpacity={0}/>
+            </LinearGradient>
+            {/* Let the bottom of the hero melt into the same page canvas.
+                Its action buttons render above these noninteractive overlays. */}
+            <LinearGradient id="fruit-banner-bottom-fade" x1="0%" y1="0%" x2="0%" y2="100%">
+              <Stop offset="0%" stopColor={theme.background} stopOpacity={0}/>
+              <Stop offset="75%" stopColor={theme.background} stopOpacity={0}/>
+              <Stop offset="90%" stopColor={theme.background} stopOpacity={0.22}/>
+              <Stop offset="100%" stopColor={theme.background} stopOpacity={1}/>
             </LinearGradient>
           </Defs>
           <Rect width="100%" height="100%" fill="url(#fruit-banner-shade)" />
+          <Rect width="100%" height="100%" fill="url(#fruit-banner-bottom-fade)" />
         </Svg>
       ) : (
         <View pointerEvents="none" style={{
@@ -333,7 +344,7 @@ function PhaseMobileOverlap({dreams,viewportWidth,cardHeight,onLongPress}:{
       {nextDream?<View pointerEvents="none" accessible={false}
         importantForAccessibility="no-hide-descendants"
         style={{position:'absolute',left:frontWidth-peekInset,right:0,
-          top:5,bottom:5,borderRadius:0,overflow:'hidden',
+          top:5,bottom:5,borderRadius:11,overflow:'hidden',
           backgroundColor:theme.surface}}>
         {nextPhoto?<Image source={{uri:nextPhoto}} resizeMode="cover"
           style={{width:'100%',height:'100%'}}/>:null}
@@ -424,18 +435,13 @@ export default function MySpace() {
   const galleryHeight=compact
     ? Math.min(294,Math.max(252,Math.round(galleryWidth*.64)))
     : Math.min(318,Math.max(282,Math.round(galleryWidth*.29)));
-  // Four full-width phase ROWS, all aligned with the hero's inner page rail.
-  // Desktop/tablet: readable horizontal phase label on the left, cards right.
-  // Phone: horizontal heading above the cards within the same rectangular row.
+  // Four full-width phase rows, with the title positioned top-right.
+  // Only section shells have square edges; the dreams inside stay rounded.
   const phaseGridGap=compact?10:14;
   const phasePanelWidth=innerWidth;
   const panelInset=compact?12:16;
-  const phaseLabelWidth=compact?0:
-    Math.min(230,Math.max(150,Math.round(innerWidth*.23)));
-  const phaseContentGap=compact?0:20;
   const phaseCardGap=compact?8:11;
-  const phaseViewportWidth=Math.max(0,
-    phasePanelWidth-2*panelInset-2-phaseLabelWidth-phaseContentGap);
+  const phaseViewportWidth=Math.max(0,phasePanelWidth-2*panelInset);
   const phaseTileWidth=compact?phaseViewportWidth:
     Math.min(232,Math.max(150,Math.round(phaseViewportWidth*.31)));
   const phaseTileHeight=compact
@@ -692,19 +698,15 @@ export default function MySpace() {
                 ? inFlower(d) : d.phase===panel.phase);
               return (
                 <View key={panel.phase} style={{
-                  width:phasePanelWidth,minHeight:compact?225:195,
+                  width:phasePanelWidth,minHeight:compact?225:214,
                   paddingHorizontal:panelInset,
-                  paddingVertical:compact?13:16,
+                  paddingTop:compact?64:59,paddingBottom:compact?13:16,
                   position:'relative',overflow:'hidden',
-                  borderRadius:0,borderWidth:1,
-                  borderColor:theme.dark?panel.darkBorder:panel.lightBorder,
+                  borderRadius:0,
                   backgroundColor:theme.background,
-                  flexDirection:compact?'column':'row',
-                  alignItems:compact?'stretch':'center',
-                  gap:compact?11:phaseContentGap,
                 }}>
-                  {/* Fade into the page BACKGROUND at left, with a subtle
-                      phase tint arriving on the right side of each row. */}
+                  {/* No panel outline. The page colour on the left fades into
+                      a gentle phase tint at the right edge. */}
                   <Svg pointerEvents="none" width="100%" height="100%"
                     style={{position:'absolute',top:0,bottom:0,left:0,right:0}}>
                     <Defs>
@@ -721,8 +723,7 @@ export default function MySpace() {
                     <Rect width="100%" height="100%"
                       fill={'url(#phase-wash-'+index+')'}/>
                   </Svg>
-                  {/* Keep the very faint phase illustration in the
-                      background; it never blocks project interactions. */}
+                  {/* Retain the discreet phase symbol beneath the cards. */}
                   <View pointerEvents="none" accessible={false}
                     importantForAccessibility="no-hide-descendants"
                     style={{position:'absolute',top:0,bottom:0,left:0,right:0,
@@ -731,23 +732,24 @@ export default function MySpace() {
                     <DreamPhaseIcon phase={panel.phase}
                       size={compact?70:104} artworkScale={1}/>
                   </View>
-                  <View style={{
-                    width:compact?'100%':phaseLabelWidth,
-                    flexDirection:compact?'row':'column',
-                    justifyContent:compact?'space-between':'center',
-                    alignItems:compact?'center':'flex-start',
-                    gap:compact?8:11,
-                    alignSelf:compact?'auto':'stretch',
+                  {/* The phase heading belongs in the top-right, not in a
+                      dedicated left column. No decorative line above it. */}
+                  <View pointerEvents="none" style={{
+                    position:'absolute',top:compact?13:16,
+                    right:panelInset,left:compact?panelInset:undefined,
+                    alignItems:'flex-end',gap:4,
                   }}>
                     <Text numberOfLines={2} style={{
-                      color:theme.foreground,fontSize:compact?12:14,
-                      lineHeight:compact?16:21,
-                      fontWeight:'700',letterSpacing:compact?0.8:1.1,
-                      flexShrink:1}}>
+                      color:theme.dark?panel.headingDark:panel.headingLight,
+                      textAlign:'right',fontSize:compact?12:14,
+                      lineHeight:compact?16:21,fontWeight:'700',
+                      letterSpacing:compact?0.8:1.1,
+                    }}>
                       {panel.title.toLocaleUpperCase('fr-FR')}
                     </Text>
                     <Text style={{
-                      fontSize:compact?10:11,fontWeight:'500',color:theme.muted,
+                      textAlign:'right',fontSize:compact?10:11,
+                      fontWeight:'500',color:theme.muted,
                     }}>
                       {dreams.length} projet{dreams.length>1?'s':''}
                     </Text>
