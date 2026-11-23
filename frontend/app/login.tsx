@@ -16,8 +16,11 @@ import { useApp } from '@/context/AppContext';
 import { NetworkLogo } from '@/components/brand/NetworkLogo';
 import { GoogleMark } from '@/icons/GoogleMark';
 import { useAuth } from '@/context/AuthProvider';
+import { useAppTheme } from '@/theme/AppTheme';
+import { PAGE_TITLE_FONT_SIZE, PAGE_TITLE_LINE_HEIGHT } from '@/theme/workspaceLayout';
 
 export default function Login() {
+  const theme=useAppTheme();
   const [register, setRegister] = useState(false),
     [email, setEmail] = useState(''),
     [password, setPassword] = useState(''),
@@ -67,17 +70,17 @@ export default function Login() {
     }
   };
   return (
-    <SafeAreaView style={s.safe}>
+    <SafeAreaView style={[s.safe,{backgroundColor:theme.background}]}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <ScrollView contentContainerStyle={s.root} keyboardShouldPersistTaps="handled">
+        <ScrollView contentContainerStyle={[s.root,{width:'100%',maxWidth:480,alignSelf:'center'}]} keyboardShouldPersistTaps="handled">
           <View style={s.top}>
             <NetworkLogo />
           </View>
-          <Text style={s.heading}>{register ? 'Bienvenue sur JenLow' : 'Bienvenue !'}</Text>
-          <Text style={s.subheading}>
+          <Text style={[s.heading,{fontSize:PAGE_TITLE_FONT_SIZE,lineHeight:PAGE_TITLE_LINE_HEIGHT,color:theme.foreground}]}>{register ? 'Bienvenue sur JenLow' : 'Bienvenue !'}</Text>
+          <Text style={[s.subheading,{color:theme.muted}]}>
             {register ? 'Créer mon compte' : 'Se connecter à JenLow Network'}
           </Text>
           {register ? (
@@ -86,8 +89,8 @@ export default function Login() {
               onChangeText={setName}
               autoComplete="name"
               placeholder="Nom affiché"
-              placeholderTextColor="#aaa"
-              style={s.input}
+              placeholderTextColor={theme.muted}
+              style={[s.input,{backgroundColor:theme.surface,borderColor:theme.border,color:theme.foreground}]}
             />
           ) : null}
           <TextInput
@@ -97,8 +100,8 @@ export default function Login() {
             autoCapitalize="none"
             autoComplete="email"
             placeholder="email@domain.com"
-            placeholderTextColor="#aaa"
-            style={s.input}
+            placeholderTextColor={theme.muted}
+            style={[s.input,{backgroundColor:theme.surface,borderColor:theme.border,color:theme.foreground}]}
           />
           <TextInput
             value={password}
@@ -107,8 +110,8 @@ export default function Login() {
             autoCapitalize="none"
             autoComplete={register ? 'new-password' : 'current-password'}
             placeholder="Mot de passe (12 caractères minimum)"
-            placeholderTextColor="#aaa"
-            style={s.input}
+            placeholderTextColor={theme.muted}
+            style={[s.input,{backgroundColor:theme.surface,borderColor:theme.border,color:theme.foreground}]}
           />
           {register ? (
             <TextInput
@@ -116,8 +119,8 @@ export default function Login() {
               onChangeText={setCode}
               autoCapitalize="none"
               placeholder="Code d'invitation bêta"
-              placeholderTextColor="#aaa"
-              style={s.input}
+              placeholderTextColor={theme.muted}
+              style={[s.input,{backgroundColor:theme.surface,borderColor:theme.border,color:theme.foreground}]}
             />
           ) : null}
           {error ? <Text style={s.error}>{error}</Text> : null}
@@ -132,9 +135,9 @@ export default function Login() {
             onPress={() => {
               void submit();
             }}
-            style={[s.continue, busy && { opacity: 0.5 }]}
+            style={[s.continue,{backgroundColor:theme.dark?'#F7F4ED':'#242322'}, busy && { opacity: 0.5 }]}
           >
-            <Text style={s.continueLabel}>
+            <Text style={[s.continueLabel,{color:theme.dark?'#242322':'#FFFFFF'}]}>
               {busy ? 'Connexion…' : register ? 'Créer mon compte' : 'Se connecter'}
             </Text>
           </Pressable>
@@ -150,9 +153,9 @@ export default function Login() {
             </Text>
           </Pressable>
           <View style={s.separator}>
-            <View style={s.line} />
-            <Text style={s.or}>ou</Text>
-            <View style={s.line} />
+            <View style={[s.line,{backgroundColor:theme.border}]} />
+            <Text style={[s.or,{color:theme.muted}]}>ou</Text>
+            <View style={[s.line,{backgroundColor:theme.border}]} />
           </View>
           <Pressable
             disabled={!configured || busy}
@@ -162,14 +165,14 @@ export default function Login() {
                 .catch(e => setError(e.message || 'Google login failed'))
                 .finally(() => setBusy(false));
             }}
-            style={[s.oauth, (!configured || busy) && { opacity: 0.55 }]}
+            style={[s.oauth,{backgroundColor:theme.surface,borderColor:theme.border,borderWidth:1}, (!configured || busy) && { opacity: 0.55 }]}
           >
             <GoogleMark size={18} />
-            <Text style={s.oauthLabel}>Continuer avec Google</Text>
+            <Text style={[s.oauthLabel,{color:theme.foreground}]}>Continuer avec Google</Text>
           </Pressable>
-          <Pressable disabled style={[s.oauth, { opacity: 0.55 }]}>
-            <Ionicons name="logo-apple" size={19} color="#111" />
-            <Text style={s.oauthLabel}>Apple · configuration développeur requise</Text>
+          <Pressable disabled style={[s.oauth,{backgroundColor:theme.surface,borderColor:theme.border,borderWidth:1}, { opacity: 0.55 }]}>
+            <Ionicons name="logo-apple" size={19} color={theme.foreground} />
+            <Text style={[s.oauthLabel,{color:theme.foreground}]}>Apple · configuration développeur requise</Text>
           </Pressable>
           <Pressable
             onPress={() => {
@@ -179,9 +182,9 @@ export default function Login() {
             }}
             disabled={!configured || !email}
           >
-            <Text style={{ fontSize: 11, color: '#777' }}>Mot de passe oublié ?</Text>
+            <Text style={{ fontSize: 11, color: theme.muted }}>Mot de passe oublié ?</Text>
           </Pressable>
-          <Text style={s.terms}>
+          <Text style={[s.terms,{color:theme.muted}]}>
             JenLow Network utilise une authentification sécurisée externe. Google et Apple
             nécessitent une configuration fournisseur.
           </Text>
@@ -192,12 +195,12 @@ export default function Login() {
 }
 const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#fff' },
-  root: { flexGrow: 1, alignItems: 'center', paddingHorizontal: 34 },
-  top: { marginTop: 75, marginBottom: 52, alignItems: 'center' },
+  root: { flexGrow: 1, alignItems: 'center', paddingHorizontal: 24, paddingBottom:36 },
+  top: { marginTop: 42, marginBottom: 34, alignItems: 'center' },
   heading: { fontSize: 14, fontWeight: '700', color: '#191919' },
   subheading: { fontSize: 12, marginTop: 4, marginBottom: 25, color: '#222' },
   input: {
-    height: 38,
+    minHeight: 46,
     borderWidth: 1,
     borderColor: '#e4e4e4',
     width: '100%',
@@ -209,7 +212,7 @@ const s = StyleSheet.create({
   error: { color: '#D71D77', fontSize: 11, alignSelf: 'flex-start', marginTop: 5 },
   continue: {
     width: '100%',
-    height: 38,
+    minHeight: 46,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 6,
@@ -227,7 +230,7 @@ const s = StyleSheet.create({
   line: { height: 1, backgroundColor: '#e5e5e5', flex: 1 },
   or: { color: '#aaa', fontSize: 12 },
   oauth: {
-    height: 36,
+    minHeight: 46,
     backgroundColor: '#ededed',
     borderRadius: 6,
     width: '100%',
