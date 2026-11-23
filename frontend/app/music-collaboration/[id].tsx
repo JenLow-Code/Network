@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { api } from '@/lib/api/client';
+import {fetchDemoMusicPreview} from '@/lib/api/musicPreview';
 import { useAppTheme } from '@/theme/AppTheme';
 import { workspaceLayout, PAGE_TITLE_FONT_SIZE, PAGE_TITLE_LINE_HEIGHT } from '@/theme/workspaceLayout';
 import { PageHeader } from '@/components/navigation/PageHeader';
@@ -40,6 +41,7 @@ const displayDate=(value?:string)=> {
 export default function SharedMusicFolder(){
   const {id,tab}=useLocalSearchParams<{id:string;tab?:MusicWorkspaceSpace}>();
   const theme=useAppTheme();
+  const demoId=!!id&&/^demo-music-publication-\\d{2}$/.test(id);
   const {width}=useWindowDimensions();
   const ws=workspaceLayout(width);
   const compact=width<600;
@@ -61,7 +63,37 @@ export default function SharedMusicFolder(){
     let live=true;
     const resource=encodeURIComponent(id);
     setLoading(true);setError('');setConversationId(null);
-    setCollaborators([]);setRosterError(false);
+    setCollaborators([]);setProposals([]);setMusic(undefined);
+    setRosterError(false);
+    // Fictional collaboration examples are intentionally read-only, but must
+    // enter the exact same Capturer / Créer / Collaborer interface as a real
+    // accepted collaboration. They never receive real API permissions.
+    if(demoId){
+      void fetchDemoMusicPreview()
+        .then(preview=>{
+          if(!live)return;
+          const match=preview.collaborations.find(p=>p.trackPublicationId===id);
+          if(!match){setError('Exemple de collaboration introuvable.');return;}
+          const publication=preview.songs.find(s=>s.id===id);
+          setMusic({
+            title:match.trackTitle,
+            description:publication?.description||match.description,
+          });
+          setProposals([{
+            id:match.id,status:match.status,trackTitle:match.trackTitle,
+            description:match.description,proposer:match.proposer,
+          }]);
+          setCollaborators([
+            {id:'demo-author',role:'owner',
+              displayName:match.publisher.displayName},
+            {id:'demo-contributor',role:'collaborator',
+              displayName:match.proposer.displayName},
+          ]);
+        })
+        .catch(()=>{if(live)setError('Cet exemple est temporairement indisponible.');})
+        .finally(()=>{if(live)setLoading(false);});
+      return ()=>{live=false;};
+    }
     void Promise.all([
       api<{conversationId:string}>('/api/music/'+resource+'/conversation',{auth:'required'}),
       api<MusicDetail>('/api/music/'+resource,{auth:'required'}),
@@ -71,16 +103,14 @@ export default function SharedMusicFolder(){
       setConversationId(chat.conversationId);
       setMusic(detail.item);
       setProposals(contributions.items||[]);
-      // This endpoint is new; a delayed API deployment must not break the
-      // shared workshop's existing chat and proposal functionality.
       void api<{members:Collaborator[]}>('/api/music/'+resource+'/collaborators',
         {auth:'required'})
         .then(roster=>{if(live)setCollaborators(roster.members||[]);})
         .catch(()=>{if(live)setRosterError(true);});
     }).catch(e=>{if(live)setError(e instanceof Error?e.message:'Accès refusé.');})
       .finally(()=>{if(live)setLoading(false);});
-    return()=>{live=false;};
-  },[id]);
+    return ()=>{live=false;};
+  },[id,demoId]);
 
   const title=music?.title||'Morceau partagé';
   const author=collaborators.find(person=>person.role==='owner')?.displayName||
@@ -145,8 +175,11 @@ export default function SharedMusicFolder(){
           de son auteur.
         </Text>
       </>):null}
-      {!!conversationId&&!loading?<>
+      {(!!conversationId||demoId)&&!loading&&!error?<>
         {header}
+        {demoId?<Text style={{fontSize:11,color:theme.muted}}>
+          Exemple de collaboration · données fictives, aucune action réelle
+        </Text>:null}
         {space==='capture'?<>
           {section(<>
             <View style={{flexDirection:'row',alignItems:'baseline',gap:8}}>
@@ -204,7 +237,10 @@ export default function SharedMusicFolder(){
               synchronisées dans un éditeur multipiste commun. Tu peux déjà
               soumettre une contribution à l’auteur.
             </Text>
-            {button('Proposer une contribution',propose)}
+            {demoId?<Text style={{fontSize:12,color:theme.muted}}>
+              Dans un vrai projet, les contributeurs peuvent proposer leurs prises
+              et travailler avec l’auteur depuis cet espace.
+            </Text>:button('Proposer une contribution',propose)}
           </>)}
           {accepted.length?section(<>
             {heading('Contributions acceptées')}
@@ -247,7 +283,7 @@ export default function SharedMusicFolder(){
                   {person.role==='owner'?'Auteur du morceau':'Collaborateur'}
                 </Text>
               </View>
-              {person.handle?<Pressable accessibilityRole="button"
+              {person.handle&&!demoId?<Pressable accessibilityRole="button"
                 accessibilityLabel={'Voir le profil de '+person.displayName}
                 onPress={()=>router.push({pathname:'/member/[name]',
                   params:{name:person.handle!}})}>
@@ -259,8 +295,10 @@ export default function SharedMusicFolder(){
               La liste complète sera disponible lorsque la nouvelle API
               de collaboration sera déployée.
             </Text>:null}
-            {button('Ouvrir la discussion du morceau',()=>router.push({
-              pathname:'/chat/[id]',params:{id:conversationId},
+            {demoId?<Text style={{fontSize:12,color:theme.muted}}>
+              Discussion réservée aux collaborateurs d’un vrai projet.
+            </Text>:button('Ouvrir la discussion du morceau',()=>router.push({
+              pathname:'/chat/[id]',params:{id:conversationId!},
             }))}
           </>)}
           {section(<>
@@ -274,10 +312,11 @@ export default function SharedMusicFolder(){
             {!proposals.length?<Text style={{fontSize:12,color:theme.muted}}>
               Aucune proposition visible pour le moment.
             </Text>:null}
-            {button('Proposer une autre contribution',propose,true)}
+            {!demoId?button('Proposer une autre contribution',propose,true):null}
           </>)}
         </>:null}
-        {space!=='create'?button('Voir le morceau publié',openPublication,true):null}
+        {!demoId&&space!=='create'
+          ?button('Voir le morceau publié',openPublication,true):null}
       </>:null}
     </ScrollView>
     <Nav/>
