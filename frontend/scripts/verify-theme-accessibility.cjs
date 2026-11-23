@@ -10,13 +10,14 @@ const theme = source('src/theme/AppTheme.tsx');
 const names = ['background', 'surface', 'foreground', 'muted', 'accent'];
 const palette = {};
 for (const name of names) {
-  const expression = new RegExp(name + ": dark \\? '(#[0-9a-fA-F]{6})' : '(#[0-9a-fA-F]{6})'");
+  const expression = new RegExp(name + ": dark \\? '(#[0-9a-fA-F]{3}(?:[0-9a-fA-F]{3})?)' : '(#[0-9a-fA-F]{3}(?:[0-9a-fA-F]{3})?)'");
   const match = theme.match(expression);
   assert.ok(match, 'Theme token not found: ' + name);
   palette[name] = { dark: match[1], light: match[2] };
 }
 function luminance(value) {
-  const components = value.slice(1).match(/../g).map(v => parseInt(v, 16) / 255)
+  const hex = value.length === 4 ? value.slice(1).split('').map(ch => ch + ch).join('') : value.slice(1);
+  const components = hex.match(/../g).map(v => parseInt(v, 16) / 255)
     .map(v => v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
   return .2126 * components[0] + .7152 * components[1] + .0722 * components[2];
 }
