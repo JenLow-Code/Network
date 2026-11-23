@@ -274,7 +274,6 @@ function PhaseMobileOverlap({dreams,viewportWidth,cardHeight,onLongPress}:{
   // Mobile aspiration tiles are square: their width follows the existing
   // compact card height. Rounded corners are preserved.
   const frontWidth=Math.min(viewportWidth,cardHeight);
-  const peekInset=8;
 
   useEffect(()=>{
     currentRef.current=0;
@@ -326,10 +325,17 @@ function PhaseMobileOverlap({dreams,viewportWidth,cardHeight,onLongPress}:{
     onPanResponderTerminate:()=>snapBack(),
   }),[dragX,viewportWidth]);
 
-  const nextDream=dreams[current+1];
+  const previousDream=current>0?dreams[current-1]:undefined;
+  const nextDream=current<lastIndex?dreams[current+1]:undefined;
+  const previousPhoto=previousDream?coverImage(previousDream):undefined;
   const nextPhoto=nextDream?coverImage(nextDream):undefined;
   const activeDream=dreams[current];
   if(!activeDream)return null;
+  const sideWidth=Math.min(frontWidth,Math.max(72,Math.round(frontWidth*.78)));
+  const sideHeight=Math.min(cardHeight,Math.max(72,Math.round(cardHeight*.92)));
+  const sideTop=Math.round((cardHeight-sideHeight)/2);
+  const activeLeft=Math.max(0,Math.round((viewportWidth-frontWidth)/2));
+  const sidePeek=Math.max(18,Math.round(sideWidth*.42));
   return <View style={{width:'100%',position:'relative'}}>
     {dreams.length>1?(
       <View style={{position:'absolute',top:-32,left:0,zIndex:6,
@@ -353,16 +359,40 @@ function PhaseMobileOverlap({dreams,viewportWidth,cardHeight,onLongPress}:{
       style={[{width:viewportWidth,height:cardHeight,
         overflow:'hidden',position:'relative'},
         Platform.OS==='web'?({touchAction:'pan-y'} as any):undefined]}>
-      {nextDream?<View pointerEvents="none" accessible={false}
-        importantForAccessibility="no-hide-descendants"
-        style={{position:'absolute',left:Math.max(0,frontWidth-peekInset),
-          width:Math.min(cardHeight,Math.max(0,viewportWidth-frontWidth+peekInset)),
-          top:5,bottom:5,borderRadius:11,overflow:'hidden',
-          backgroundColor:theme.surface}}>
-        {nextPhoto?<Image source={{uri:nextPhoto}} resizeMode="cover"
-          style={{width:'100%',height:'100%'}}/>:null}
-      </View>:null}
-      <Animated.View style={{position:'absolute',top:0,left:0,
+      {previousDream?(
+        <Pressable accessibilityRole="button"
+          accessibilityLabel={'Afficher '+previousDream.title}
+          onPress={()=>switchTo(currentRef.current-1,1)}
+          style={{position:'absolute',
+            left:Math.max(0,activeLeft-sideWidth+sidePeek),
+            top:sideTop,width:sideWidth,height:sideHeight,
+            borderRadius:11,overflow:'hidden',
+            backgroundColor:theme.surface,opacity:.72,zIndex:1}}>
+          {previousPhoto?<Image source={{uri:previousPhoto}} resizeMode="cover"
+            style={{width:'100%',height:'100%'}}/>:null}
+          <View pointerEvents="none" style={{position:'absolute',
+            top:0,bottom:0,left:0,right:0,
+            backgroundColor:'rgba(0,0,0,.12)'}}/>
+        </Pressable>
+      ):null}
+      {nextDream?(
+        <Pressable accessibilityRole="button"
+          accessibilityLabel={'Afficher '+nextDream.title}
+          onPress={()=>switchTo(currentRef.current+1,-1)}
+          style={{position:'absolute',
+            left:Math.min(viewportWidth-sideWidth,
+              activeLeft+frontWidth-sidePeek),
+            top:sideTop,width:sideWidth,height:sideHeight,
+            borderRadius:11,overflow:'hidden',
+            backgroundColor:theme.surface,opacity:.82,zIndex:1}}>
+          {nextPhoto?<Image source={{uri:nextPhoto}} resizeMode="cover"
+            style={{width:'100%',height:'100%'}}/>:null}
+          <View pointerEvents="none" style={{position:'absolute',
+            top:0,bottom:0,left:0,right:0,
+            backgroundColor:'rgba(0,0,0,.08)'}}/>
+        </Pressable>
+      ):null}
+      <Animated.View style={{position:'absolute',top:0,left:activeLeft,zIndex:2,
         transform:[{translateX:dragX}]}}>
         <PictureCard dream={activeDream} width={frontWidth}
           height={cardHeight} presentation="phase"
@@ -700,9 +730,9 @@ export default function MySpace() {
               return (
                 <View key={panel.phase} style={{
                   width:phasePanelWidth,
-                  minHeight:compact?(dreams.length>1?178:160):214,
+                  minHeight:compact?(dreams.length>1?158:148):214,
                   paddingLeft:phaseLeftInset,paddingRight:panelInset,
-                  paddingTop:compact?46:59,paddingBottom:compact?8:16,
+                  paddingTop:compact?34:59,paddingBottom:compact?4:16,
                   position:'relative',overflow:'hidden',
                   borderRadius:0,
                   backgroundColor:theme.background,
