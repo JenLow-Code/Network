@@ -330,7 +330,25 @@ function PhaseMobileOverlap({dreams,viewportWidth,cardHeight,onLongPress}:{
   const nextPhoto=nextDream?coverImage(nextDream):undefined;
   const activeDream=dreams[current];
   if(!activeDream)return null;
-  return <View style={{width:'100%',gap:4}}>
+  return <View style={{width:'100%',position:'relative'}}>
+    {dreams.length>1?(
+      <View style={{position:'absolute',top:-32,left:0,zIndex:6,
+        minHeight:18,flexDirection:'row',alignItems:'center',gap:3}}>
+        {dreams.map((dream,index)=>{
+          const active=index===current;
+          return <Pressable key={dream.id}
+            accessibilityRole="button"
+            accessibilityLabel={'Afficher aspiration '+(index+1)}
+            accessibilityState={{selected:active}}
+            onPress={()=>switchTo(index,index<currentRef.current?1:-1)}
+            style={{width:13,height:18,alignItems:'center',justifyContent:'center'}}>
+            <View style={{width:active?6:4,height:active?6:4,borderRadius:3,
+              backgroundColor:active?theme.foreground:theme.muted,
+              opacity:active?.78:.42}}/>
+          </Pressable>;
+        })}
+      </View>
+    ):null}
     <View {...panResponder.panHandlers}
       style={[{width:viewportWidth,height:cardHeight,
         overflow:'hidden',position:'relative'},
@@ -351,29 +369,6 @@ function PhaseMobileOverlap({dreams,viewportWidth,cardHeight,onLongPress}:{
           onLongPress={()=>onLongPress(activeDream)}/>
       </Animated.View>
     </View>
-    {dreams.length>1?(
-      <View style={{minHeight:23,flexDirection:'row',
-        alignItems:'center',justifyContent:'flex-end',gap:4}}>
-        <Text style={{fontSize:10,fontWeight:'500',
-          color:theme.dark?'#FFFFFF':'#000000',
-          fontVariant:['tabular-nums'],marginRight:3}}>
-          {current+1}/{dreams.length}
-        </Text>
-        {([-1,1] as const).map(direction=>{
-          const disabled=direction<0?current===0:current===lastIndex;
-          return <Pressable key={direction}
-            onPress={()=>switchTo(currentRef.current+direction,direction<0?1:-1)}
-            disabled={disabled} accessibilityRole="button"
-            accessibilityLabel={direction<0?'Aspiration précédente':'Aspiration suivante'}
-            accessibilityState={{disabled}}
-            style={{width:25,height:23,justifyContent:'center',
-              alignItems:'center',opacity:disabled?.35:1}}>
-            <Ionicons name={direction<0?'chevron-back':'chevron-forward'}
-              size={16} color={theme.dark?'#FFFFFF':'#000000'}/>
-          </Pressable>;
-        })}
-      </View>
-    ):null}
   </View>;
 }
 
@@ -447,7 +442,7 @@ export default function MySpace() {
   const phaseTileWidth=compact?phaseViewportWidth:
     Math.min(232,Math.max(150,Math.round(phaseViewportWidth*.31)));
   const phaseTileHeight=compact
-    ? Math.min(104,Math.max(88,Math.round(phaseViewportWidth*.27)))
+    ? Math.min(124,Math.max(104,Math.round(phaseViewportWidth*.31)))
     : 132;
   const heroGlass=Platform.OS==='web'
     ? ({backdropFilter:'blur(14px) saturate(125%)',
