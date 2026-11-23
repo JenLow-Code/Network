@@ -28,7 +28,7 @@ const ROLE_OPTIONS: {key:RoleFilter;label:string;empty:string}[] = [
  */
 const viewerRole = (dream:DreamEntry) => dream.viewerRole || 'creator';
 // Published fruits appear in the gallery; these panels show unpublished projects.
-// Phase identity uses typography, not illustrations or tinted backgrounds.
+// Phase identity combines a light illustration, horizontal lettering and a left-to-right colour wash.
 const phasePanels: {
   phase: DreamPhase; title: string; lightTint: string; darkTint: string;
   lightBorder: string; darkBorder: string; accent: string;
@@ -81,7 +81,7 @@ const coverImage = (d: DreamEntry) => {
 
 function PictureCard({ dream, width, height, onLongPress, presentation = 'card' }: {
   dream: DreamEntry; width: number; height: number; onLongPress:()=>void;
-  presentation?: 'card' | 'banner';
+  presentation?: 'card' | 'banner' | 'phase';
 }) {
   const theme = useAppTheme();
   const photo = coverImage(dream);
@@ -90,7 +90,7 @@ function PictureCard({ dream, width, height, onLongPress, presentation = 'card' 
     <Pressable accessibilityRole="button" accessibilityLabel={'Ouvrir ' + dream.title}
       onPress={() => open(dream)} onLongPress={onLongPress} delayLongPress={460}
       accessibilityHint="Maintenir pour voir les actions et la date objectif"
-      style={{ width, height, borderRadius: isBanner ? 0 : 11, overflow: 'hidden', backgroundColor: theme.surface }}>
+      style={{ width, height, borderRadius: isBanner || presentation === 'phase' ? 0 : 11, overflow: 'hidden', backgroundColor: theme.surface }}>
       {photo ? <Image source={{ uri: photo }} resizeMode="cover" style={{ width: '100%', height: '100%' }} /> : null}
       {isBanner ? (
         <Svg pointerEvents="none" width="100%" height="100%" style={{
@@ -188,7 +188,7 @@ function PhaseProjectCarousel({dreams,cardWidth,cardHeight,viewportWidth,gap,com
   const [position,setPosition]=useState(0);
   const identities=dreams.map(d=>d.id).join('|');
   const step=cardWidth+gap;
-  const lastPosition=Math.max(0,dreams.length-2);
+  const lastPosition=Math.max(0,dreams.length-1);
   const contentWidth=dreams.length*cardWidth+Math.max(0,dreams.length-1)*gap;
   const maxOffset=Math.max(0,contentWidth-viewportWidth);
   useEffect(()=>{
@@ -205,23 +205,24 @@ function PhaseProjectCarousel({dreams,cardWidth,cardHeight,viewportWidth,gap,com
       snapToInterval={step} showsHorizontalScrollIndicator={false}
       scrollEventThrottle={32}
       onScroll={e=>{
-        const next=Math.max(0,Math.min(lastPosition,
-          Math.round(e.nativeEvent.contentOffset.x/step)));
+        const offset=e.nativeEvent.contentOffset.x;
+        const next=maxOffset>0 && offset>=maxOffset-1?lastPosition:
+          Math.max(0,Math.min(lastPosition,Math.round(offset/step)));
         setPosition(current=>current===next?current:next);
       }}
       style={{width:'100%',flexGrow:0}}
       contentContainerStyle={{gap}}>
       {dreams.map(d=><PictureCard key={d.id} dream={d}
-        width={cardWidth} height={cardHeight}
+        width={cardWidth} height={cardHeight} presentation="phase"
         onLongPress={()=>onLongPress(d)}/>)}
     </ScrollView>
-    {dreams.length>2?(
+    {dreams.length>1?(
       <View style={{flexDirection:'row',alignItems:'center',
         justifyContent:'flex-end',minHeight:27}}>
         <View style={{flexDirection:'row',alignItems:'center',gap:7}}>
           <Text style={{fontSize:10,color:theme.muted,
             fontVariant:['tabular-nums']}}>
-            {position+1}–{Math.min(position+2,dreams.length)} / {dreams.length}
+            {position+1} / {dreams.length}
           </Text>
           {([-1,1] as const).map(direction=>{
             const disabled=direction<0?position===0:position===lastPosition;
@@ -330,7 +331,7 @@ function PhaseMobileOverlap({dreams,viewportWidth,cardHeight,onLongPress}:{
       {nextDream?<View pointerEvents="none" accessible={false}
         importantForAccessibility="no-hide-descendants"
         style={{position:'absolute',left:frontWidth-peekInset,right:0,
-          top:5,bottom:5,borderRadius:10,overflow:'hidden',
+          top:5,bottom:5,borderRadius:0,overflow:'hidden',
           backgroundColor:theme.surface}}>
         {nextPhoto?<Image source={{uri:nextPhoto}} resizeMode="cover"
           style={{width:'100%',height:'100%'}}/>:null}
@@ -338,7 +339,8 @@ function PhaseMobileOverlap({dreams,viewportWidth,cardHeight,onLongPress}:{
       <Animated.View style={{position:'absolute',top:0,left:0,
         transform:[{translateX:dragX}]}}>
         <PictureCard dream={activeDream} width={frontWidth}
-          height={cardHeight} onLongPress={()=>onLongPress(activeDream)}/>
+          height={cardHeight} presentation="phase"
+          onLongPress={()=>onLongPress(activeDream)}/>
       </Animated.View>
     </View>
     {dreams.length>1?(
@@ -420,21 +422,22 @@ export default function MySpace() {
   const galleryHeight=compact
     ? Math.min(294,Math.max(252,Math.round(galleryWidth*.64)))
     : Math.min(318,Math.max(282,Math.round(galleryWidth*.29)));
-  // Keep the approved 2 × 2 grid, with a proper label zone on wide panels.
-  // Each panel's total width (including border, label, padding and carousel)
-  // is strictly bounded by the same inner content rail as the hero.
-  const phaseGridGap=compact?10:ws.tablet?14:18;
-  const phasePanelWidth=Math.max(0,(innerWidth-phaseGridGap)/2);
-  const phaseSideLabel=!compact&&phasePanelWidth>=390;
-  const panelInset=compact?10:16;
-  const phaseLabelWidth=phaseSideLabel?110:compact?22:26;
-  const phaseContentGap=phaseSideLabel?12:0;
-  const phaseCardGap=compact?8:11;
-  const phaseViewportWidth=Math.max(0,phasePanelWidth-2*panelInset-2-
-    phaseLabelWidth-phaseContentGap);
+  // Four equal, square-edged phase columns on desktop; keep two readable
+  // columns for touch/tablet widths. All edges share the hero's content rail.
+  const phaseColumns=ws.desktop?4:2;
+  const phaseGridGap=compact?10:ws.tablet?14:12;
+  const phasePanelWidth=Math.max(0,
+    (innerWidth-(phaseColumns-1)*phaseGridGap)/phaseColumns);
+  const panelInset=compact?9:12;
+  const phaseCardGap=compact?8:9;
+  const phaseViewportWidth=Math.max(0,phasePanelWidth-2*panelInset-2);
+  // A full-size primary card with a visible next-card edge, not two
+  // unreadably small cards squeezed into each narrow desktop column.
   const phaseTileWidth=compact?phaseViewportWidth:
-    Math.max(100,Math.floor((phaseViewportWidth-2*phaseCardGap)/2.2));
-  const phaseTileHeight=compact?Math.min(155,Math.round(phaseViewportWidth*.9)):146;
+    Math.max(1,Math.floor(phaseViewportWidth*.84));
+  const phaseTileHeight=compact
+    ? Math.min(155,Math.max(105,Math.round(phaseViewportWidth*.92)))
+    : Math.min(170,Math.max(125,Math.round(phaseViewportWidth*.74)));
   const heroGlass=Platform.OS==='web'
     ? ({backdropFilter:'blur(14px) saturate(125%)',
         WebkitBackdropFilter:'blur(14px) saturate(125%)'} as any)
@@ -676,8 +679,8 @@ export default function MySpace() {
             {visible.map(d => <DreamListRow key={d.id} dream={d} onLongPress={()=>setLongDream(d)}/>)}
           </View>
         ) : (
-          // Four phase zones remain 2 × 2 on desktop and phone.
-          // On phone the next project peeks out behind the current card.
+          // Four horizontal phase columns on desktop, two on smaller screens.
+          // The next project remains accessible within its phase carousel.
           <View style={{
             paddingLeft:side,paddingRight:right,flexDirection:'row',flexWrap:'wrap',
             columnGap:phaseGridGap,rowGap:phaseGridGap,
@@ -688,92 +691,62 @@ export default function MySpace() {
                 ? inFlower(d) : d.phase===panel.phase);
               return (
                 <View key={panel.phase} style={{
-                  width:phasePanelWidth,minHeight:compact?214:242,
-                  paddingLeft:phaseSideLabel?panelInset:panelInset+phaseLabelWidth,
-                  paddingRight:panelInset,paddingTop:compact?12:16,
-                  paddingBottom:compact?11:17,
+                  width:phasePanelWidth,minHeight:compact?220:258,
+                  paddingHorizontal:panelInset,paddingTop:compact?12:16,
+                  paddingBottom:compact?12:16,
                   position:'relative',overflow:'hidden',
-                  flexDirection:phaseSideLabel?'row':'column',
-                  alignItems:phaseSideLabel?'center':'stretch',
-                  gap:phaseContentGap,
-                  borderRadius:10,borderWidth:1,
+                  borderRadius:0,borderWidth:1,
                   borderColor:theme.dark?panel.darkBorder:panel.lightBorder,
-                  backgroundColor:theme.dark?'#211F22':'#FBF9F5',
+                  backgroundColor:theme.background,
                 }}>
-                  {/* Original phase-colored wash, restored behind the illustration
-                      and all controls rather than painted over the cards. */}
+                  {/* Strong phase colour on the LEFT; fade into the regular
+                      page background at the RIGHT, not the reverse. */}
                   <Svg pointerEvents="none" width="100%" height="100%"
                     style={{position:'absolute',top:0,bottom:0,left:0,right:0}}>
                     <Defs>
                       <LinearGradient id={'phase-wash-'+index}
                         x1="0%" y1="0%" x2="100%" y2="0%">
                         <Stop offset="0%" stopColor={panel.accent}
-                          stopOpacity={theme.dark?0.12:0.055}/>
-                        <Stop offset="55%" stopColor={panel.accent}
-                          stopOpacity={theme.dark?0.16:0.09}/>
+                          stopOpacity={theme.dark?0.34:0.29}/>
+                        <Stop offset="44%" stopColor={panel.accent}
+                          stopOpacity={theme.dark?0.19:0.14}/>
                         <Stop offset="100%" stopColor={panel.accent}
-                          stopOpacity={theme.dark?0.29:0.19}/>
+                          stopOpacity={0}/>
                       </LinearGradient>
                     </Defs>
                     <Rect width="100%" height="100%"
                       fill={'url(#phase-wash-'+index+')'}/>
                   </Svg>
+                  {/* Retain the soft symbolic phase illustration behind the
+                      project cards; it must never intercept interaction. */}
                   <View pointerEvents="none" accessible={false}
                     importantForAccessibility="no-hide-descendants"
                     style={{position:'absolute',top:0,bottom:0,left:0,right:0,
                       alignItems:'center',justifyContent:'center',
                       opacity:theme.dark?0.13:0.10}}>
                     <DreamPhaseIcon phase={panel.phase}
-                      size={compact?52:96} artworkScale={1}/>
+                      size={compact?62:92} artworkScale={1}/>
                   </View>
-                  {phaseSideLabel?(
-                    <View style={{width:phaseLabelWidth,alignSelf:'stretch',
-                      justifyContent:'center',gap:9}}>
-                      <View style={{width:23,height:2,borderRadius:1,
+                  <View style={{minHeight:compact?43:49,
+                    flexDirection:'row',alignItems:'flex-start',
+                    justifyContent:'space-between',gap:5}}>
+                    <View style={{flex:1,minWidth:0,gap:6}}>
+                      <View style={{width:27,height:3,
                         backgroundColor:panel.accent}}/>
                       <Text numberOfLines={2} style={{
-                        color:theme.dark?'#F5F2ED':'#24211F',
-                        fontSize:14,lineHeight:20,fontWeight:'700'}}>
-                        {panel.title}
-                      </Text>
-                      <Text style={{fontSize:11,lineHeight:16,color:theme.muted}}>
-                        {dreams.length} projet{dreams.length>1?'s':''}
+                        color:theme.foreground,fontSize:compact?10:12,
+                        lineHeight:compact?14:17,fontWeight:'700',
+                        letterSpacing:compact?0.4:0.9}}>
+                        {panel.title.toLocaleUpperCase('fr-FR')}
                       </Text>
                     </View>
-                  ):(
-                    <View pointerEvents="none" accessible={false}
-                      importantForAccessibility="no-hide-descendants"
-                      style={{position:'absolute',top:0,bottom:0,
-                        left:panelInset-2,width:phaseLabelWidth,
-                        alignItems:'center',justifyContent:'center'}}>
-                      <Svg width={compact?17:20} height={compact?155:192}
-                        viewBox={compact?'0 0 17 155':'0 0 20 192'}>
-                        <SvgText x={compact?8.5:10} y={compact?77.5:96}
-                          textAnchor="middle"
-                          transform={compact?'rotate(-90 8.5 77.5)':'rotate(-90 10 96)'}
-                          fontSize={compact?9:12}
-                          letterSpacing={compact?0.9:1.7}
-                          fontWeight="500"
-                          fill={theme.dark?'#F5F2ED':'#24211F'}>
-                          {panel.phase==='Rêve'?'SEMENCE':
-                           panel.phase==='Initiation'?'GERMINATION':
-                           panel.phase==='Croissance'?'CROISSANCE':'FLORAISON'}
-                        </SvgText>
-                      </Svg>
-                    </View>
-                  )}
+                    <Text style={{fontSize:10,fontWeight:'600',
+                      color:theme.foreground}}>
+                      {dreams.length}
+                    </Text>
+                  </View>
                   <View style={{width:phaseViewportWidth,minWidth:0,
-                    justifyContent:'center'}}>
-                    {!phaseSideLabel?(
-                      <View style={{height:compact?17:21,
-                        flexDirection:'row',justifyContent:'flex-end',
-                        alignItems:'flex-start',marginBottom:compact?9:12}}>
-                        {dreams.length>0?(
-                          <Text style={{color:theme.foreground,fontSize:10,
-                            fontWeight:'500'}}>{dreams.length}</Text>
-                        ):null}
-                      </View>
-                    ):null}
+                    justifyContent:'center',marginTop:compact?8:12}}>
                     {dreams.length>0 ? (
                       compact?
                         <PhaseMobileOverlap dreams={dreams}
@@ -787,8 +760,7 @@ export default function MySpace() {
                     ):(
                       <View style={{minHeight:phaseTileHeight,
                         width:'100%',alignItems:'center',
-                        justifyContent:'center',
-                        paddingHorizontal:compact?5:10}}>
+                        justifyContent:'center',paddingHorizontal:5}}>
                         <Text style={{fontSize:compact?10:12,
                           color:theme.muted,lineHeight:compact?15:18,
                           textAlign:'center'}}>
