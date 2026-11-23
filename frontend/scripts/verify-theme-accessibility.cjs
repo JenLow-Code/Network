@@ -57,17 +57,32 @@ assert.ok(shortcuts.includes('!hideLeadingIcon ?') &&
   /label="Documents & Inspirations"[\s\S]{0,100}hideLeadingIcon/.test(shortcuts) &&
   shortcuts.includes("name={icon}"),
   'Notes and Documents links must stay right-aligned without leading icons');
-// Across all dream phases the destructive action stays visibly black and narrower,
-// while the primary action remains larger; only desktop groups move to the rail.
-for (const file of ['src/components/dream/DreamExperience.tsx',
-  'src/components/dream/SemenceStudio.tsx', 'app/my-dream/flower/[id].tsx']) {
+// Stage advancement belongs in a dedicated in-flow destination across the
+// full reading rail. The forward action is visually last on desktop, first on
+// mobile. Pausing and destroying remain smaller utility actions.
+const milestone = source('src/components/dream/DreamMilestoneActions.tsx');
+assert.ok(milestone.includes('PROCHAINE ÉTAPE') &&
+  milestone.includes("borderTopWidth:1,borderColor:theme.border") &&
+  milestone.includes("width:'100%'") &&
+  milestone.includes("minWidth:desktop?194:undefined") &&
+  milestone.includes("backgroundColor:pressed?'#292929':'#151515'") &&
+  milestone.includes('{secondary}') && milestone.includes('{destructive}') &&
+  milestone.includes('{primary}') &&
+  milestone.indexOf('{secondary}') < milestone.indexOf('{primary}') &&
+  milestone.includes("accessibilityState={{disabled:primaryDisabled}}"),
+  'Dream stage destination must keep an emphasized forward action and safer secondary controls');
+for (const [file,nextStage] of [
+  ['src/components/dream/SemenceStudio.tsx','Germination'],
+  ['src/components/dream/DreamExperience.tsx','Croissance'],
+  ['app/my-dream/flower/[id].tsx','Publication'],
+]) {
   const content = source(file);
-  assert.ok(content.includes("alignSelf:ws.desktop?'flex-start':'center'") &&
-    content.includes("backgroundColor:'#151515'") &&
-    content.includes("flex:(ws.tablet||ws.desktop)?.8:undefined") &&
-    content.includes("flex:(ws.tablet||ws.desktop)?1.35:undefined"),
-    'Dream action hierarchy must retain compact black Arracher on the shared desktop rail: ' + file);
+  assert.ok(content.includes('DreamMilestoneActions') &&
+    content.includes('nextStage="' + nextStage + '"'),
+    'Dream stage must identify the next milestone instead of a floating action row: ' + file);
 }
+assert.ok(source('src/components/dream/DreamExperience.tsx').includes('nextStage="Floraison"'),
+  'Croissance needs the same full-width milestone footer before Floraison');
 
 for (const file of ['app/space.tsx','app/login.tsx','app/chat/[id].tsx','app/agenda.tsx']) {
   const contents = source(file);
