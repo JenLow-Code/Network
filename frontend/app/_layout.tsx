@@ -1,6 +1,6 @@
 import React,{useEffect} from 'react';
-import { Image, Platform, View, useWindowDimensions } from 'react-native';
-import { Stack, usePathname } from 'expo-router';
+import { ActivityIndicator, Image, Platform, Pressable, Text, View, useWindowDimensions } from 'react-native';
+import { Stack, router, usePathname } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
 import { handwritingFontMap } from '@/theme/handwriting';
@@ -8,7 +8,7 @@ import { Provider } from '@/context/AppContext';
 import { DreamProvider, useDreams } from '@/domain/dreamRepository';
 import { MusicWorkspaceProvider } from '@/domain/musicWorkspace';
 import { LocaleProvider } from '@/i18n/locale';
-import { AuthProvider } from '@/context/AuthProvider';
+import { AuthProvider, useAuth } from '@/context/AuthProvider';
 import { AppThemeProvider, useAppTheme } from '@/theme/AppTheme';
 import { Nav,MOBILE_NAV_HEIGHT } from '@/components/navigation/Nav';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -20,12 +20,22 @@ function ThemedStack() {
   const insets=useSafeAreaInsets();
   const desktop=Platform.OS==='web'&&workspaceLayout(width).desktop;
   const path=usePathname();
+  const {user,initialized,validationError,revalidate,noteActivity}=useAuth();
+  const isAuthRoute=path==='/'||path==='/login'||path==='/auth/callback';
+  const locked=!user&&!isAuthRoute;
   const {items:dreams}=useDreams();
   const parts=path.split('/').filter(Boolean);
   const dreamId=parts[0]==='my-dream'?
     (['flower','notes','library'].includes(parts[1])?parts[2]:parts[1]):
     parts[0]==='my-dream-participants'?parts[1]:undefined;
   const image=dreamId?dreams.find(d=>d.id===decodeURIComponent(dreamId))?.image:undefined;
+  // Applies to every deep link, direct URL, back/forward navigation and
+  // tab route, including Discovery. OAuth/password recovery remain reachable.
+  useEffect(()=>{
+    if(!initialized||validationError)return;
+    if(!user&&!isAuthRoute){router.replace('/login');return;}
+    if(user&&path==='/login')router.replace('/discover');
+  },[initialized,validationError,user,isAuthRoute,path]);
   // Expo's custom HTML may not apply global stylesheet rules during a
   // client-only web navigation. Install the scrollbar rule in the running app
   // as well: every page and modal continues to scroll normally.
@@ -52,10 +62,27 @@ function ThemedStack() {
     document.head.appendChild(style);
     return ()=>{style.remove();};
   },[]);
+  if(!initialized)return <View style={{flex:1,
+    justifyContent:'center',alignItems:'center',backgroundColor:theme.background}}>
+    <ActivityIndicator color="#CB245C"/>
+  </View>;
+  if(validationError)return <View style={{flex:1,justifyContent:'center',
+    alignItems:'center',padding:28,gap:15,backgroundColor:theme.background}}>
+    <Text style={{fontSize:17,fontWeight:'700',textAlign:'center',
+      color:theme.foreground}}>Vérification de session indisponible</Text>
+    <Text style={{fontSize:13,textAlign:'center',lineHeight:21,
+      color:theme.muted}}>Tes identifiants restent enregistrés. Réessaie
+      une fois la connexion rétablie.</Text>
+    <Pressable accessibilityRole="button" onPress={()=>{void revalidate();}}
+      style={{backgroundColor:'#CB245C',borderRadius:12,
+        paddingHorizontal:20,paddingVertical:13}}>
+      <Text style={{color:'#FFFFFF',fontWeight:'700'}}>Réessayer</Text>
+    </Pressable>
+  </View>;
   return (
     <>
       <StatusBar style={theme.dark ? 'light' : 'dark'} />
-      <View style={{
+      <View onTouchStart={noteActivity} style={{
         // 100dvh follows Android browser toolbars as they appear/disappear.
         // This keeps the root navigation anchored to the *visible* viewport.
         ...(Platform.OS==='web'?
@@ -79,15 +106,16 @@ function ThemedStack() {
         </View>:null}
         <View style={{flex:1,minWidth:0,position:'relative'}}>
           <View style={{flex:1,minHeight:0,
-            paddingBottom:desktop?0:MOBILE_NAV_HEIGHT+insets.bottom}}>
+            opacity:locked?0:1,
+            paddingBottom:desktop?0:(!user?0:MOBILE_NAV_HEIGHT+insets.bottom)}}>
             <Stack
               screenOptions={{headerShown:false,
                 contentStyle:{backgroundColor:theme.background}}}
             />
           </View>
-          {!desktop?<Nav placement="root"/>:null}
+          {!desktop&&!!user?<Nav placement="root"/>:null}
         </View>
-        {desktop?<Nav placement="desktop"/>:null}
+        {desktop&&!!user?<Nav placement="desktop"/>:null}
       </View>
     </>
   );

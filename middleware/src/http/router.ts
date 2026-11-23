@@ -26,7 +26,11 @@ export class Router {
       keys.push(key);
       return '([^/]+)';
     });
-    this.routes.push({ method, path, ...meta, handler, regex: new RegExp('^' + pattern + '$'), keys });
+    // The runtime protects private API content; route metadata agrees with it.
+    const diagnostic=path==='/api/health/ready'||path==='/api/openapi.json';
+    const enforced=path.startsWith('/api/')&&!diagnostic&&meta.auth!=='moderator';
+    this.routes.push({method,path,...meta,auth:enforced?'required':meta.auth,
+      handler,regex:new RegExp('^'+pattern+'$'),keys});
     return this;
   }
 
