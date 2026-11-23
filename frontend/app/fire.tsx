@@ -51,14 +51,14 @@ export default function FireList() {
               position: 'absolute', right: 2, bottom: 3, borderRadius: 9,
               backgroundColor: theme.background, padding: 1,
             }}>
-              <Ionicons name="add-circle" size={15} color="#CB245C"/>
+              <Ionicons name="add-circle" size={15} color={theme.accent}/>
             </View>
           </Pressable>
         </View>
         <View
           style={{
             borderWidth: 1,
-            borderColor: '#eee',
+            borderColor: theme.border,
             borderRadius: 10,
             paddingHorizontal: 12,
             height: 42,
@@ -68,7 +68,7 @@ export default function FireList() {
             marginBottom: 18,
           }}
         >
-          <Ionicons name="search" size={18} color="#777" />
+          <Ionicons name="search" size={18} color={theme.muted} />
           <TextInput
             placeholder="Rechercher dans Fire"
             value={query}
@@ -78,12 +78,12 @@ export default function FireList() {
         </View>
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 14 }} contentContainerStyle={{ alignItems: 'center', gap: 8 }}>
-          <Pressable onPress={() => setSelectedFolder(null)} style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, backgroundColor: selectedFolder === null ? '#F4DCE6' : theme.surface }}>
+          <Pressable onPress={() => setSelectedFolder(null)} style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, backgroundColor: selectedFolder === null ? (theme.dark?'#593348':'#F4DCE6') : theme.surface }}>
             <Text style={{ color: theme.foreground, fontSize: 12 }}>Tous</Text>
           </Pressable>
           {fireFolders.map(folder => (
             <Pressable key={folder.id} onPress={() => setSelectedFolder(folder.id)} onLongPress={() => { setRenaming(folder.id); setEditName(folder.name); }}
-              style={{ flexDirection: 'row', gap: 5, alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, backgroundColor: selectedFolder === folder.id ? '#F4DCE6' : theme.surface }}>
+              style={{ flexDirection: 'row', gap: 5, alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, backgroundColor: selectedFolder === folder.id ? (theme.dark?'#593348':'#F4DCE6') : theme.surface }}>
               <Ionicons name="folder-outline" size={14} color={theme.foreground}/>
               <Text style={{ color: theme.foreground, fontSize: 12 }}>{folder.name} ({folder.publicationIds.filter(id => fireIds.includes(id)).length + (folder.verseIds || []).filter(id => fireBibleVerses.some(verse => verse.id === id)).length})</Text>
             </Pressable>
@@ -93,7 +93,7 @@ export default function FireList() {
           {renaming === selectedFolder ? (
             <>
               <TextInput value={editName} onChangeText={setEditName} style={{ flex: 1, color: theme.foreground, borderBottomWidth: 1, borderColor: theme.border }} />
-              <Pressable onPress={() => { renameFireFolder(selectedFolder, editName); setRenaming(null); }}><Text style={{ color: '#CB245C' }}>Enregistrer</Text></Pressable>
+              <Pressable onPress={() => { renameFireFolder(selectedFolder, editName); setRenaming(null); }}><Text style={{ color: theme.accent }}>Enregistrer</Text></Pressable>
             </>
           ) : (
             <Pressable onPress={() => { setRenaming(selectedFolder); setEditName(fireFolders.find(f => f.id === selectedFolder)?.name || ''); }}>
@@ -101,7 +101,7 @@ export default function FireList() {
             </Pressable>
           )}
           <Pressable onPress={() => Alert.alert('Supprimer le dossier ?', 'Les publications restent dans Fire.', [{ text: 'Annuler', style: 'cancel' }, { text: 'Supprimer', style: 'destructive', onPress: () => { deleteFireFolder(selectedFolder); setSelectedFolder(null); } }])}>
-            <Text style={{ color: '#B71D53', fontSize: 12 }}>Supprimer</Text>
+            <Text style={{ color: theme.accent, fontSize: 12 }}>Supprimer</Text>
           </Pressable>
         </View>}
         {fireFolders.length > 0 && !selectedFolder && fireIds.length > 0 && (
@@ -115,7 +115,7 @@ export default function FireList() {
                     const belongs = folder.publicationIds.includes(p.id);
                     return <Pressable key={folder.id} onPress={() => toggleFireFolderItem(folder.id, p.id)}
                       accessibilityLabel={(belongs ? 'Retirer de ' : 'Ajouter à ') + folder.name}
-                      style={{ paddingVertical: 6, paddingHorizontal: 9, borderRadius: 14, backgroundColor: belongs ? '#F4DCE6' : theme.surface, flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+                      style={{ paddingVertical: 6, paddingHorizontal: 9, borderRadius: 14, backgroundColor: belongs ? (theme.dark?'#593348':'#F4DCE6') : theme.surface, flexDirection: 'row', alignItems: 'center', gap: 5 }}>
                       <Ionicons name={belongs ? 'checkmark-circle' : 'add-circle-outline'} size={14} color={belongs ? '#CB245C' : theme.foreground} />
                       <Text style={{ fontSize: 11, color: theme.foreground }}>{folder.name}</Text>
                     </Pressable>;
@@ -158,7 +158,7 @@ export default function FireList() {
                   onPress={()=>toggleFireFolderVerse(folder.id,verse.id)}
                   style={{paddingHorizontal:10,paddingVertical:7,borderRadius:16,
                     flexDirection:'row',gap:5,alignItems:'center',
-                    backgroundColor:belongs?'#F4DCE6':theme.background}}>
+                    backgroundColor:belongs?(theme.dark?'#593348':'#F4DCE6'):theme.background}}>
                   <Ionicons name={belongs?'checkmark-circle':'folder-outline'}
                     size={14} color={belongs?'#CB245C':theme.muted}/>
                   <Text style={{fontSize:11,color:theme.foreground}}>{folder.name}</Text>
@@ -168,8 +168,8 @@ export default function FireList() {
           </View>)}
         </View> : null}
         {!items.length&&!verses.length ? <View style={{ marginTop: 70, alignItems: 'center', gap: 10 }}>
-          <Ionicons name="flame-outline" size={45} color="#aaa" />
-          <Text style={{ color: '#888' }}>Aucun élément dans cette liste.</Text>
+          <Ionicons name="flame-outline" size={45} color={theme.muted} />
+          <Text style={{ color: theme.muted }}>Aucun élément dans cette liste.</Text>
         </View> : null}
       </ScrollView>
       <Modal visible={createFolderOpen} transparent animationType="fade"

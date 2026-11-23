@@ -7,6 +7,7 @@ import {
 } from 'react-native';
 import { useLocale } from './locale';
 import { translateStatic } from './uiCopy';
+import { useAppTheme } from '@/theme/AppTheme';
 
 /** Localizes only explicit UI strings. Member-written content is never translated. */
 export function Text({ children, ...props }: TextProps) {
@@ -19,11 +20,14 @@ export function Text({ children, ...props }: TextProps) {
     </NativeText>
   );
 }
-export function TextInput({ placeholder, ...props }: TextInputProps) {
+export function TextInput({ placeholder, style, placeholderTextColor, ...props }: TextInputProps) {
   const { language } = useLocale();
+  const theme=useAppTheme();
   return (
     <NativeTextInput
       {...props}
+      style={[{color:theme.foreground},style]}
+      placeholderTextColor={placeholderTextColor ?? theme.muted}
       placeholder={placeholder ? translateStatic(placeholder, language) : undefined}
     />
   );

@@ -20,11 +20,11 @@ export default function Prayers() {
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ ...workspaceCanvas(width), paddingTop:12, paddingBottom:55 }}>
         <PageHeader title="Mes prières" />
-        <Text style={{ fontSize: 12, color: '#888', marginBottom: 19 }}>
+        <Text style={{ fontSize: 12, color: theme.muted, marginBottom: 19 }}>
           Toutes mes prières, avec leur rythme de répétition.
         </Text>
         {!items.length ? (
-          <Text style={{ color: '#888', textAlign: 'center', marginTop: 60 }}>
+          <Text style={{ color: theme.muted, textAlign: 'center', marginTop: 60 }}>
             Aucun sujet de prière enregistré.
           </Text>
         ) : (
@@ -37,7 +37,7 @@ export default function Prayers() {
                 alignItems: 'center',
                 padding: 10,
                 borderWidth: 1,
-                borderColor: '#ededed',
+                borderColor: theme.border,
                 borderRadius: 12,
                 marginBottom: 11,
               }}
@@ -49,7 +49,7 @@ export default function Prayers() {
                 />
               </Pressable>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontWeight: '700', fontSize: 13 }}>{p.title}</Text>
+                <Text style={{ color:theme.foreground, fontWeight: '700', fontSize: 13 }}>{p.title}</Text>
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 5, marginTop: 8 }}>
                   {[
                     { id: 'once' as const, label: 'Une fois' },
@@ -62,13 +62,13 @@ export default function Prayers() {
                       style={{
                         borderWidth: 1,
                         borderColor:
-                          (prayerRepetitions[p.id] || 'daily') === o.id ? '#CB245C' : '#ddd',
+                          (prayerRepetitions[p.id] || 'daily') === o.id ? theme.accent : theme.border,
                         paddingHorizontal: 6,
                         paddingVertical: 5,
                         borderRadius: 8,
                       }}
                     >
-                      <Text style={{ fontSize: 9, color: '#444' }}>{o.label}</Text>
+                      <Text style={{ fontSize: 9, color: theme.foreground }}>{o.label}</Text>
                     </Pressable>
                   ))}
                 </View>
@@ -82,7 +82,7 @@ export default function Prayers() {
             </View>
           ))
         )}
-        <Text style={{ fontSize: 10, color: '#aaa', marginTop: 20 }}>
+        <Text style={{ fontSize: 10, color: theme.muted, marginTop: 20 }}>
           Les rythmes sont enregistrés localement et utilisés dans Agenda. Les notifications
           automatiques nécessitent leur propre configuration.
         </Text>

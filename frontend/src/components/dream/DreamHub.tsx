@@ -343,7 +343,7 @@ export default function DreamHub({ dream, startInSemence = false, startPhase }: 
             ) : null}
 
             <View style={{
-              position: 'absolute', left: compact ? 11 : 23, right: compact ? 11 : 23,
+              position: 'absolute', left: ws.gutter, right: ws.gutter,
               top: compact ? 7 : 16, zIndex: 8,
               flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
             }}>
@@ -375,14 +375,14 @@ export default function DreamHub({ dream, startInSemence = false, startPhase }: 
               showsVerticalScrollIndicator={false}
               contentContainerStyle={{
                 flexGrow: 1, justifyContent: 'center', alignItems: 'center',
-                paddingHorizontal: compact ? 57 : 84,
+                paddingHorizontal: compact ? 55 : 72,
                 paddingTop: compact ? 108 : 124,
                 paddingBottom: compact ? 81 : 100,
               }}>
               <View style={{ alignItems: 'center', width: '100%', maxWidth: 580 }}>
                 <Text style={{
-                  fontFamily: 'serif', fontSize: compact ? (height < 620 ? 26 : height < 730 ? 29 : 33) : 45,
-                  lineHeight: compact ? (height < 620 ? 33 : height < 730 ? 37 : 42) : 55, letterSpacing: -.7,
+                  fontFamily: 'serif', fontSize: compact ? (height < 620 ? 26 : height < 730 ? 28 : 32) : 42,
+                  lineHeight: compact ? (height < 620 ? 33 : height < 730 ? 36 : 41) : 52, letterSpacing: -.7,
                   color: ink, textAlign: 'center', marginBottom: compact ? 9 : 15,
                 }}>{dream.title}</Text>
                 {dream.summary ? (
@@ -421,14 +421,14 @@ export default function DreamHub({ dream, startInSemence = false, startPhase }: 
                   </Text>
                 ) : null}
                 {phaseIndex >= 1 && !fruit ? (
-                  <View style={{ marginTop: compact ? 8 : 18, alignItems: 'center', gap: compact?5:8 }}>
+                  <View style={{ marginTop: compact ? 12 : 17, alignItems: 'center', justifyContent:'center', flexDirection:'row', flexWrap:'wrap', gap: compact?8:14 }}>
                     {requestedTalents.length > 0 ? (
-                      <Text style={{ fontSize: 12, fontWeight: '700', color: '#D71D77', textAlign: 'center' }}>
+                      <Text style={{ fontSize: 11, fontWeight: '700', color: theme.dark ? '#F4A2C7' : '#A91C58', textAlign: 'center' }}>
                         {talentFound}/{requestedTalents.length} talents trouvés
                       </Text>
                     ) : null}
                     {otherResources.length > 0 ? (
-                      <Text style={{ fontSize: 12, fontWeight: '700', color: '#387D9F', textAlign: 'center' }}>
+                      <Text style={{ fontSize: 11, fontWeight: '700', color: theme.dark ? '#9FD6E9' : '#286684', textAlign: 'center' }}>
                         {resourceFound}/{otherResources.length} ressources trouvées
                       </Text>
                     ) : null}

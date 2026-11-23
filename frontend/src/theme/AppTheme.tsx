@@ -10,6 +10,8 @@ type AppThemeValue = {
   surface: string;
   foreground: string;
   muted: string;
+  /** Accessible magenta for icons and small text, distinct from solid button fills. */
+  accent: string;
   border: string;
 };
 const ThemeContext = createContext<AppThemeValue | null>(null);
@@ -46,8 +48,9 @@ export function AppThemeProvider({ children }: { children: React.ReactNode }) {
         background: dark ? '#111317' : '#FFFCF5',
         surface: dark ? '#202227' : '#fff',
         foreground: dark ? '#F3F3F3' : '#171717',
-        muted: dark ? '#B2B2B2' : '#777',
-        border: dark ? '#393B40' : '#e8e8e8',
+        muted: dark ? '#C2C6CC' : '#626562',
+        accent: dark ? '#FF91BE' : '#A91C58',
+        border: dark ? '#454950' : '#DDDCD6',
       }}
     >
       {children}

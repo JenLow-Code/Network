@@ -22,9 +22,9 @@ export function PageHeader({ title, center, onBack, showFire = true }: {
    <Pressable
     onPress={onBack || (()=>router.canGoBack()?router.back():router.replace('/discover'))}
     accessibilityRole="button" accessibilityLabel="Retour"
-    style={{width:44,height:44,alignItems:'flex-start',justifyContent:'center',
-      position:'absolute',left:desktop?(width>=1360?-52:-28):0,
-      top:desktop?2:0,zIndex:6}}>
+    style={{width:44,height:44,alignItems:'center',justifyContent:'center',
+      position:'absolute',left:0,
+      top:0,zIndex:6}}>
     <Ionicons name="arrow-back-outline" size={23} color={theme.foreground}/>
    </Pressable>
    {desktop&&center
@@ -34,7 +34,7 @@ export function PageHeader({ title, center, onBack, showFire = true }: {
         {center}
       </View>
     : <View style={{flex:1,minWidth:0,justifyContent:'center',
-          paddingLeft:desktop?0:45,paddingRight:12}}>
+          paddingLeft:52,paddingRight:12}}>
         {title?<Text numberOfLines={1} style={{color:theme.foreground,fontWeight:'700',
           fontSize:PAGE_TITLE_FONT_SIZE,lineHeight:PAGE_TITLE_LINE_HEIGHT,
           letterSpacing:-0.35}}>{title}</Text>:null}

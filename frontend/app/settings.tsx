@@ -40,6 +40,8 @@ export default function Settings() {
     dark,
     background,
     foreground,
+    muted,
+    surface,
     border,
   } = useAppTheme();
   const keys = [
@@ -81,9 +83,9 @@ export default function Settings() {
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ ...workspaceCanvas(width),paddingTop:12,paddingBottom:55 }}>
         <PageHeader title={t('settings')} />
         <View style={{height:23}} />
-        <Text style={{ fontSize: 16, fontWeight: '700', marginBottom: 12 }}>{t('language')}</Text>
+        <Text style={{ color:foreground, fontSize: 16, fontWeight: '700', marginBottom: 12 }}>{t('language')}</Text>
         <View
-          style={{ borderWidth: 1, borderColor: '#e8e8e8', borderRadius: 12, overflow: 'hidden' }}
+          style={{ borderWidth: 1, borderColor: border, borderRadius: 12, overflow: 'hidden' }}
         >
           {choices.map((option, i) => (
             <Pressable
@@ -96,22 +98,22 @@ export default function Settings() {
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 borderBottomWidth: i === choices.length - 1 ? 0 : 1,
-                borderColor: '#eee',
+                borderColor: border,
               }}
             >
-              <Text style={{ fontSize: 14, color: '#222' }}>{option.label}</Text>
+              <Text style={{ fontSize: 14, color: foreground }}>{option.label}</Text>
               <Ionicons
                 name={language === option.id ? 'radio-button-on' : 'radio-button-off'}
                 size={20}
-                color={language === option.id ? '#D71D77' : '#aaa'}
+                color={language === option.id ? '#D71D77' : muted}
               />
             </Pressable>
           ))}
         </View>
-        <Text style={{ fontSize: 11, lineHeight: 17, color: '#888', marginTop: 11 }}>
+        <Text style={{ fontSize: 11, lineHeight: 17, color: muted, marginTop: 11 }}>
           {tr('settingsHelp')}
         </Text>
-        <Text style={{ fontSize: 16, fontWeight: '700', marginTop: 28, marginBottom: 12 }}>
+        <Text style={{ color:foreground, fontSize: 16, fontWeight: '700', marginTop: 28, marginBottom: 12 }}>
           Apparence
         </Text>
         <View style={{ flexDirection: 'row', gap: 8 }}>
@@ -126,7 +128,7 @@ export default function Settings() {
               style={{
                 flex: 1,
                 borderWidth: 1,
-                borderColor: appearance === o.id ? '#CB245C' : '#ddd',
+                borderColor: appearance === o.id ? '#CB245C' : border,
                 backgroundColor:
                   appearance === o.id ? (dark ? '#4E2A3E' : '#FAEAF0') : dark ? '#252525' : '#fff',
                 borderRadius: 9,
@@ -138,14 +140,14 @@ export default function Settings() {
             </Pressable>
           ))}
         </View>
-        <Text style={{ fontSize: 11, color: '#888', marginTop: 8 }}>
+        <Text style={{ fontSize: 11, color: muted, marginTop: 8 }}>
           Le choix est enregistré et appliqué à la navigation. Certains écrans de démonstration
           utilisent encore des couleurs fixes.
         </Text>
         <Text style={{ fontSize: 16, fontWeight: '700', color: foreground, marginTop: 30, marginBottom: 10 }}>
           Affichage de mes morceaux
         </Text>
-        <Text style={{ fontSize: 12, color: dark ? '#B2B2B2' : '#777', marginBottom: 12 }}>
+        <Text style={{ fontSize: 12, color: muted, marginBottom: 12 }}>
           Choisis comment afficher ta bibliothèque musicale. Les cartes sont sélectionnées par défaut.
         </Text>
         <View style={{ flexDirection: 'row', gap: 9 }}>
@@ -165,7 +167,7 @@ export default function Settings() {
             </Pressable>
           ))}
         </View>
-        <Text style={{ fontSize: 16, fontWeight: '700', marginTop: 34, marginBottom: 12 }}>
+        <Text style={{ color:foreground, fontSize: 16, fontWeight: '700', marginTop: 34, marginBottom: 12 }}>
           {t('account')}
         </Text>
         <Pressable
@@ -174,7 +176,7 @@ export default function Settings() {
           onPress={confirmDemo}
           style={{
             borderWidth: 1,
-            borderColor: '#ddd',
+            borderColor: border,
             padding: 13,
             borderRadius: 9,
             flexDirection: 'row',
@@ -183,11 +185,11 @@ export default function Settings() {
           }}
         >
           <Ionicons name="trash-outline" color="#9e5163" size={20} />
-          <Text style={{ color: '#733e4b', fontSize: 13 }}>{t('demoData')}</Text>
+          <Text style={{ color: dark ? '#F3AFC5' : '#733e4b', fontSize: 13 }}>{t('demoData')}</Text>
         </Pressable>
-        <View style={{ padding: 14, backgroundColor: '#f7f7f7', borderRadius: 10, marginTop: 12 }}>
-          <Text style={{ fontSize: 14, fontWeight: '600' }}>{t('deleteAccount')}</Text>
-          <Text style={{ fontSize: 12, color: '#777', lineHeight: 19, marginTop: 7 }}>
+        <View style={{ padding: 14, backgroundColor: surface, borderRadius: 10, marginTop: 12 }}>
+          <Text style={{ color:foreground, fontSize: 14, fontWeight: '600' }}>{t('deleteAccount')}</Text>
+          <Text style={{ fontSize: 12, color: muted, lineHeight: 19, marginTop: 7 }}>
             Real account deletion will be available here when secure authentication and server-side
             deletion are implemented. This prototype currently has no real account to delete.
           </Text>

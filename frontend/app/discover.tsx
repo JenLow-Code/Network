@@ -176,9 +176,9 @@ export default function Discover() {
             marginBottom: 13,
           }}
         >
-          <Ionicons name="search" size={18} color="#777" />
+          <Ionicons name="search" size={18} color={theme.muted} />
           <TextInput
-            style={{ flex: 1, fontSize: 13, color: '#222' }}
+            style={{ flex: 1, fontSize: 13, color: theme.foreground }}
             placeholder={tr('searchPlaceholder')}
             value={query}
             onChangeText={setQuery}
@@ -264,16 +264,16 @@ export default function Discover() {
         ) : null}
         {feed.state === 'error' ? (
           <View style={{ alignItems: 'center', marginTop: 25, gap: 10 }}>
-            <Text style={{ textAlign: 'center', color: '#999' }}>
+            <Text style={{ textAlign: 'center', color: theme.muted }}>
               Impossible de charger Discovery pour le moment.
             </Text>
             <Pressable accessibilityRole="button" onPress={() => void feed.retry()} style={{ paddingVertical: 8, paddingHorizontal: 16 }}>
-              <Text style={{ color: '#D71D77', fontSize: 13 }}>Réessayer</Text>
+              <Text style={{ color: theme.accent, fontSize: 13 }}>Réessayer</Text>
             </Pressable>
           </View>
         ) : null}
         {feed.state === 'ready' && filter !== 'Talents' && filter !== 'Pour moi' && items.length === 0 && (
-          <Text style={{ textAlign: 'center', marginTop: 25, color: '#999' }}>
+          <Text style={{ textAlign: 'center', marginTop: 25, color: theme.muted }}>
             Aucune publication trouvée.
           </Text>
         )}
