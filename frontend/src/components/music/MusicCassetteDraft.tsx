@@ -1,5 +1,5 @@
 import React from 'react';
-import { View } from 'react-native';
+import { Text, View } from 'react-native';
 import Svg, { Circle, G, Line, Path, Rect, Text as SvgText } from 'react-native-svg';
 import { useAppTheme } from '@/theme/AppTheme';
 
@@ -10,14 +10,16 @@ import { useAppTheme } from '@/theme/AppTheme';
  * Deliberately independent of the project's cover image. The cover is kept
  * in the project data for publication and editing, never discarded.
  */
-export function MusicCassetteDraft({ width = 216, variant = 'standard' }: {
+export function MusicCassetteDraft({ width = 216, variant = 'standard', title }: {
   width?: number;
   variant?: 'standard' | 'tile';
+  title?: string;
 }) {
   const theme = useAppTheme();
   const ink = theme.dark ? '#EEE1D5' : '#514439';
   const background = theme.dark ? '#332D32' : '#E6DACB';
   const height = variant === 'tile' ? width : Math.round(width * 0.65);
+  const legend = title?.replace(/^\[Démo\]\s*/i, '').trim().toLocaleUpperCase('fr');
 
   return <View style={{
     width, height, borderRadius: variant === 'tile' ? 0 : 11, overflow: 'hidden',
@@ -93,5 +95,17 @@ export function MusicCassetteDraft({ width = 216, variant = 'standard' }: {
       </G>
       </G>
     </Svg>
+    {/* The drawing's original JL / MUSIQUE legend becomes the project title.
+        It is deliberately small, like a handwritten annotation on graph paper. */}
+    {variant === 'tile' && !!legend ? <View pointerEvents="none" style={{
+      position:'absolute', left:'8%', right:'8%', top:'74.6%',
+    }}>
+      <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.62}
+        style={{fontSize:Math.min(13,Math.max(10,width*0.057)),
+          fontFamily:'BiroScript', lineHeight:17, letterSpacing:0.2,
+          color:theme.dark?'#E8D8C8':'#5F5347'}}>
+        {legend}
+      </Text>
+    </View> : null}
   </View>;
 }
