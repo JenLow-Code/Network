@@ -21,16 +21,18 @@ import { colors as c } from '@/theme/colors';
 import { useDreams } from '@/domain/dreamRepository';
 import { api } from '@/lib/api/client';
 import { useAppTheme } from '@/theme/AppTheme';
-import {workspaceCanvas,PAGE_TITLE_FONT_SIZE,PAGE_TITLE_LINE_HEIGHT} from '@/theme/workspaceLayout';
+import {workspaceCanvas,workspaceLayout,DESKTOP_PAGE_CONTENT_INSET,PAGE_TITLE_FONT_SIZE,PAGE_TITLE_LINE_HEIGHT} from '@/theme/workspaceLayout';
 import { useMusicWorkspaces } from '@/domain/musicWorkspace';
 
 function ChatHeader({ name, subtitle }: { name: string; subtitle: string }) {
   const theme=useAppTheme();
   const {width}=useWindowDimensions();
+  const desktop=workspaceLayout(width).desktop;
   return (
     <View style={[s.header,workspaceCanvas(width),{borderColor:theme.border}]}>
       <Pressable onPress={() => router.back()} accessibilityLabel="Retour" accessibilityRole="button"
-        style={{width:44,height:44,alignItems:'center',justifyContent:'center'}}>
+        style={{width:44,height:44,alignItems:'center',justifyContent:'center',
+          ...(desktop?{position:'absolute' as const,left:-DESKTOP_PAGE_CONTENT_INSET,top:15}:{})}}>
         <Ionicons name="arrow-back-outline" size={23} color={theme.foreground} />
       </Pressable>
       <View style={{ flex: 1 }}>
@@ -287,7 +289,9 @@ function MusicSharedConversation({ conversationId }: { conversationId: string })
   return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
     <View style={{...workspaceCanvas(width),flexDirection:'row',alignItems:'center',gap:12,
       paddingVertical:16,borderBottomWidth:1,borderColor:theme.border}}>
-      <Pressable onPress={()=>router.back()} accessibilityLabel="Retour">
+      <Pressable onPress={()=>router.back()} accessibilityLabel="Retour"
+        style={{width:44,height:44,alignItems:'center',justifyContent:'center',
+          ...(workspaceLayout(width).desktop?{position:'absolute' as const,left:-DESKTOP_PAGE_CONTENT_INSET,top:16}:{})}}>
         <Ionicons name="arrow-back-outline" size={22} color={theme.foreground}/>
       </Pressable>
       <View style={{flex:1}}>
@@ -372,7 +376,8 @@ function DreamConversation({ dreamId }: { dreamId: string }) {
  return <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
   <View style={{...workspaceCanvas(width),paddingVertical:18,flexDirection:'row',alignItems:'center',gap:12,borderBottomWidth:1,borderColor:theme.border}}>
    <Pressable accessibilityRole="button" accessibilityLabel="Retour" onPress={() => router.back()}
-      style={{width:44,height:44,alignItems:'center',justifyContent:'center'}}>
+      style={{width:44,height:44,alignItems:'center',justifyContent:'center',
+        ...(workspaceLayout(width).desktop?{position:'absolute' as const,left:-DESKTOP_PAGE_CONTENT_INSET,top:18}:{})}}>
       <Ionicons name="arrow-back-outline" size={23} color={theme.foreground}/>
     </Pressable>
    <View style={{ flex: 1 }}><Text numberOfLines={1} style={{ color:theme.foreground,fontWeight: '700', fontSize: PAGE_TITLE_FONT_SIZE,lineHeight:PAGE_TITLE_LINE_HEIGHT }}>{dream?.title || 'Conversation du rêve'}</Text><Text style={{ color: theme.muted, fontSize: 11 }}>Espace de conversation du rêve · Sur cet appareil</Text></View>
