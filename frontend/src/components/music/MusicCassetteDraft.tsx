@@ -95,15 +95,15 @@ export function MusicCassetteDraft({ width = 216, variant = 'standard', title }:
       </G>
       </G>
     </Svg>
-    {/* The drawing's original JL / MUSIQUE legend becomes the project title.
-        It is deliberately small, like a handwritten annotation on graph paper. */}
+    {/* The unfinished drawing uses the original technical lettering,
+        never the licensed BiroScript reserved for a finished release. */}
     {variant === 'tile' && !!legend ? <View pointerEvents="none" style={{
-      position:'absolute', left:'8%', right:'8%', top:'74.6%',
+      position:'absolute', left:'8%', right:'8%', top:'75%',
     }}>
-      <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.62}
-        style={{fontSize:Math.min(13,Math.max(10,width*0.057)),
-          fontFamily:'BiroScript', lineHeight:17, letterSpacing:0.2,
-          color:theme.dark?'#E8D8C8':'#5F5347'}}>
+      <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.60}
+        style={{fontSize:Math.min(9.5,Math.max(7,width*0.043)),
+          fontFamily:'monospace', lineHeight:Math.min(14,Math.max(10,width*0.055)),
+          letterSpacing:0.7, color:theme.dark?'#E8D8C8':'#665B4E'}}>
         {legend}
       </Text>
     </View> : null}
