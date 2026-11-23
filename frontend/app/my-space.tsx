@@ -738,7 +738,7 @@ export default function MySpace() {
                   width:phasePanelWidth,
                   minHeight:compact?(dreams.length>1?158:148):214,
                   paddingLeft:phaseLeftInset,paddingRight:panelInset,
-                  paddingTop:compact?34:59,paddingBottom:compact?4:16,
+                  paddingTop:compact?40:59,paddingBottom:compact?4:16,
                   position:'relative',overflow:'hidden',
                   borderRadius:0,
                   backgroundColor:theme.background,
