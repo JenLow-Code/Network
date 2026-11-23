@@ -6,6 +6,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { router, useGlobalSearchParams, usePathname } from 'expo-router';
 import { useLocale } from '@/i18n/locale';
 import { useAppTheme } from '@/theme/AppTheme';
+import { useAuth } from '@/context/AuthProvider';
+import { useApp } from '@/context/AppContext';
 import { useDreams } from '@/domain/dreamRepository';
 import { useMusicWorkspaces } from '@/domain/musicWorkspace';
 import { musicNextState } from '@/domain/musicNext';
@@ -23,6 +25,13 @@ export const MOBILE_NAV_HEIGHT=72;
 /** Five durable destinations. Fire and Messages live in the global header. */
 export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | 'root' }) {
   const theme = useAppTheme();
+  const {user}=useAuth();
+  const {name}=useApp();
+  const avatarUrl=typeof user?.user_metadata?.avatar_url==='string' &&
+    user.user_metadata.avatar_url.trim()?user.user_metadata.avatar_url:undefined;
+  const [avatarFailed,setAvatarFailed]=useState(false);
+  useEffect(()=>setAvatarFailed(false),[avatarUrl]);
+  const avatarInitial=(name.trim()||user?.email?.trim()||'?').charAt(0).toUpperCase();
   const insets=useSafeAreaInsets();
   const path = usePathname();
   const { t } = useLocale();
@@ -137,6 +146,18 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
       active: path === '/profile' || path === '/settings',
     },
   ];
+  const profileAvatar=(size:number,active:boolean)=><View style={{
+    width:size,height:size,borderRadius:size/2,overflow:'hidden',
+    alignItems:'center',justifyContent:'center',
+    backgroundColor:'#EE3478',borderWidth:active?2:1,
+    borderColor:active?'#CB245C':theme.border,
+  }}>
+    {avatarUrl&&!avatarFailed?<Image source={{uri:avatarUrl}}
+      onError={()=>setAvatarFailed(true)}
+      style={{width:'100%',height:'100%'}} resizeMode="cover"/>:
+      <Text style={{color:'#FFF',fontWeight:'700',
+        fontSize:Math.round(size*.55)}}>{avatarInitial}</Text>}
+  </View>;
   const foreground = theme.foreground;
   const webFrost = Platform.OS === 'web'
     ? ({ backdropFilter: 'blur(30px) saturate(190%)', WebkitBackdropFilter: 'blur(30px) saturate(190%)' } as any)
@@ -182,9 +203,9 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
         {item.active?<View pointerEvents="none" style={{
           position:'absolute',left:0,top:10,bottom:10,width:3,
           backgroundColor:activeColor,borderRadius:3}}/>:null}
-        <Ionicons name={item.path==='/discover'?'ellipse-outline':
-          item.path==='/profile'?'person-outline':item.icon}
-          size={19} color={item.active?activeColor:theme.muted}/>
+        {item.path==='/profile'?profileAvatar(24,item.active):
+          <Ionicons name={item.path==='/discover'?'ellipse-outline':item.icon}
+            size={19} color={item.active?activeColor:theme.muted}/>} 
         {!collapsed?<Text numberOfLines={1} style={{
           color:item.active?activeColor:theme.foreground,
           fontSize:14,fontWeight:item.active?'700':'500',flex:1}}>
@@ -580,13 +601,7 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
               backgroundColor: x.active ? '#CB245C' : 'transparent',
             }} />
           ) : x.path === '/profile' ? (
-            <Image
-              source={{ uri: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&q=75' }}
-              style={{
-                width: 28, height: 28, borderRadius: 14,
-                borderWidth: x.active ? 2 : 1, borderColor: x.active ? '#CB245C' : '#B2B8B9',
-              }}
-            />
+            profileAvatar(28,x.active)
           ) : (
             <Ionicons
               name={
