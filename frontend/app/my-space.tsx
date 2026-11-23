@@ -495,7 +495,7 @@ export default function MySpace() {
         </View>
 
         {/* A shallow, inset gallery aligned with the common page margins. */}
-        <View style={{marginTop:compact?8:12,marginBottom:compact?19:25,
+        <View style={{marginTop:compact?8:12,marginBottom:compact?19:10,
           paddingLeft:side,paddingRight:right}}>
           <View style={{width:galleryWidth,height:galleryHeight,alignSelf:'flex-start',overflow:'visible'}}>
             {testimonies.length>0 ? (
