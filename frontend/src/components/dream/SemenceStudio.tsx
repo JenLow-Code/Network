@@ -37,7 +37,7 @@ export default function SemenceStudio({dream,onBack,onNavigate}:{
  return <View style={{flex:1,backgroundColor:theme.background}}>
   <ScrollView showsVerticalScrollIndicator={false} style={{flex:1,backgroundColor:'transparent'}}
    keyboardShouldPersistTaps="handled"
-   contentContainerStyle={{paddingHorizontal:ws.gutter,paddingTop:10,
+   contentContainerStyle={{paddingLeft:ws.contentGutter,paddingRight:ws.gutter,paddingTop:12,
      paddingBottom:100,maxWidth:ws.maxWidth,width:'100%',alignSelf:'center'}}>
    <DreamPhaseHeader dream={dream} phase="Rêve"
      onBack={onBack} onNavigate={onNavigate} readOnly={!editable}/>
