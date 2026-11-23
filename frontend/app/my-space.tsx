@@ -725,15 +725,18 @@ export default function MySpace() {
                     <Rect width="100%" height="100%"
                       fill={'url(#phase-wash-'+index+')'}/>
                   </Svg>
-                  {/* Retain the discreet phase symbol beneath the cards. */}
-                  <View pointerEvents="none" accessible={false}
-                    importantForAccessibility="no-hide-descendants"
-                    style={{position:'absolute',top:0,bottom:0,left:0,right:0,
-                      alignItems:'center',justifyContent:'center',
-                      opacity:theme.dark?0.13:0.10}}>
-                    <DreamPhaseIcon phase={panel.phase}
-                      size={compact?70:104} artworkScale={1}/>
-                  </View>
+                  {/* Show the faint phase symbol only for an empty phase.
+                      Once dreams exist, the cards provide the visual identity. */}
+                  {dreams.length===0?(
+                    <View pointerEvents="none" accessible={false}
+                      importantForAccessibility="no-hide-descendants"
+                      style={{position:'absolute',top:0,bottom:0,left:0,right:0,
+                        alignItems:'center',justifyContent:'center',
+                        opacity:theme.dark?0.13:0.10}}>
+                      <DreamPhaseIcon phase={panel.phase}
+                        size={compact?70:104} artworkScale={1}/>
+                    </View>
+                  ):null}
                   {/* The phase heading belongs in the top-right, not in a
                       dedicated left column. No decorative line above it. */}
                   <View pointerEvents="none" style={{
