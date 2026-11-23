@@ -63,10 +63,10 @@ export default function MusicHub() {
     width < 950 ? 3 : width < 1100 ? 4 : 5;
   const availableWidth = Math.min(width, ws.maxWidth || width) - ws.gutter * 2;
   const gutter = 14;
-  // Phone: a 2.5–3-up horizontally scrollable music shelf, not giant cards.
-  // Tablet and desktop: compact album tiles in the familiar multi-column grid.
+  // Keep three cassette thumbnails fully visible across a phone viewport.
+  // Extra items scroll horizontally like a music streaming app.
   const tileWidth = narrow
-    ? Math.min(136, Math.max(108, Math.floor((availableWidth - 36) / 2.5)))
+    ? Math.min(142, Math.max(70, Math.floor((availableWidth - 16) / 3)))
     : Math.min(188, Math.max(150,
         Math.floor((availableWidth - (columns - 1) * gutter) / columns)));
   const app = useApp();
@@ -247,7 +247,7 @@ export default function MusicHub() {
       ? <ScrollView horizontal showsHorizontalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           style={{flexGrow:0,marginRight:-ws.gutter}}
-          contentContainerStyle={{gap:12,paddingRight:ws.gutter+12,paddingBottom:4}}>
+          contentContainerStyle={{gap:8,paddingRight:ws.gutter+8,paddingBottom:4}}>
           {tiles}
         </ScrollView>
       : <View style={tileContainer}>{tiles}</View>;
