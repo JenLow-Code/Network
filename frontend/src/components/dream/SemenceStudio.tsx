@@ -44,12 +44,14 @@ export default function SemenceStudio({dream,onBack,onNavigate}:{
    <View style={{alignSelf:'flex-end',width:244,maxWidth:'65%',marginTop:-10,marginBottom:6}}>
      <DreamWorkspaceShortcuts dream={dream}/>
    </View>
-   {editable?<View style={{marginTop:6,
-     maxWidth:ws.desktop?700:undefined,width:'100%',alignSelf:'center'}}>
-     <View style={{flexDirection:(ws.tablet||ws.desktop)?'row':'column',gap:(ws.tablet||ws.desktop)?8:0}}>
+   {editable?<View style={{marginTop:ws.desktop?24:6,
+     maxWidth:ws.desktop?630:undefined,width:'100%',
+     alignSelf:ws.desktop?'flex-start':'center'}}>
+     <View style={{flexDirection:(ws.tablet||ws.desktop)?'row':'column',
+       gap:ws.desktop?10:(ws.tablet?8:0)}}>
      <Pressable accessibilityRole="button" accessibilityLabel="Faire germer cette semence"
        onPress={()=>setConfirm(true)}
-       style={{minHeight:(ws.tablet||ws.desktop)?43:48,flex:(ws.tablet||ws.desktop)?1.2:undefined,
+       style={{minHeight:(ws.tablet||ws.desktop)?43:48,flex:(ws.tablet||ws.desktop)?1.35:undefined,
          paddingHorizontal:(ws.tablet||ws.desktop)?8:17,paddingVertical:(ws.tablet||ws.desktop)?9:12,
          borderRadius:12,alignItems:'center',justifyContent:'center',
          backgroundColor:'#A1BA44'}}>
@@ -70,13 +72,12 @@ export default function SemenceStudio({dream,onBack,onNavigate}:{
      <Pressable onPress={uproot} accessibilityRole="button"
        accessibilityLabel="Arracher cette semence"
        style={{alignItems:'center',justifyContent:'center',
-         minHeight:(ws.tablet||ws.desktop)?43:44,flex:(ws.tablet||ws.desktop)?1:undefined,
+         minHeight:(ws.tablet||ws.desktop)?43:44,flex:(ws.tablet||ws.desktop)?.8:undefined,
          borderRadius:12,marginTop:(ws.tablet||ws.desktop)?0:13,
          paddingHorizontal:(ws.tablet||ws.desktop)?7:17,paddingVertical:(ws.tablet||ws.desktop)?9:11,
-         backgroundColor:(ws.tablet||ws.desktop)?'transparent':
-           theme.dark?'#18191B':'#242322',
-         borderWidth:(ws.tablet||ws.desktop)?1:0,borderColor:theme.border}}>
-       <Text style={{color:(ws.tablet||ws.desktop)?theme.muted:'#FFFFFF',fontSize:(ws.tablet||ws.desktop)?11:12,fontWeight:'700'}}>
+         backgroundColor:'#151515',borderWidth:theme.dark?1:0,
+         borderColor:theme.dark?'#515151':'transparent'}}>
+       <Text style={{color:'#FFFFFF',fontSize:11,fontWeight:'700'}}>
          Arracher cette semence
        </Text>
      </Pressable>
