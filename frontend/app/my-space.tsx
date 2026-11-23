@@ -404,11 +404,12 @@ export default function MySpace() {
   const [activeTestimony, setActiveTestimony] = useState(0);
   const galleryRef = useRef<React.ComponentRef<typeof ScrollView>>(null);
   const [longDream,setLongDream]=useState<DreamEntry|null>(null);
-  const side=ws.gutter;
+  const side=ws.contentGutter;
+  const right=ws.gutter;
   // Restore the established page canvas and banner alignment.
   const workspaceViewport=Math.max(0,windowWidth-(ws.desktop?212:0));
   const contentWidth=Math.min(workspaceViewport,ws.maxWidth??workspaceViewport);
-  const innerWidth=Math.max(0,contentWidth-2*side);
+  const innerWidth=Math.max(0,contentWidth-side-right);
   // Align the hero gallery with the shared inset content grid on all devices.
   // The carousel page width must match the visible banner width exactly.
   const galleryWidth=innerWidth;
@@ -468,13 +469,14 @@ export default function MySpace() {
         ...workspaceCanvas(windowWidth), paddingHorizontal:0, paddingBottom:64,
         paddingTop:12,
       }}>
-        <View style={{paddingHorizontal:side}}>
+        <View style={{paddingLeft:side,paddingRight:right}}>
           <PageHeader title="Mes projets" />
         </View>
 
         {/* A shallow, inset gallery aligned with the common page margins. */}
-        <View style={{marginTop:compact?8:12,marginBottom:compact?19:25}}>
-          <View style={{width:galleryWidth,height:galleryHeight,alignSelf:'center',overflow:'visible'}}>
+        <View style={{marginTop:compact?8:12,marginBottom:compact?19:25,
+          paddingLeft:side,paddingRight:right}}>
+          <View style={{width:galleryWidth,height:galleryHeight,alignSelf:'flex-start',overflow:'visible'}}>
             {testimonies.length>0 ? (
               <ScrollView key={roleFilter+'-'+Math.round(galleryWidth)}
                 ref={galleryRef} horizontal pagingEnabled
@@ -629,7 +631,7 @@ export default function MySpace() {
         </View>
 
         {compact?(
-          <View style={{paddingHorizontal:side,alignItems:'flex-end',
+          <View style={{paddingLeft:side,paddingRight:right,alignItems:'flex-end',
             marginTop:-11,marginBottom:10}}>
             <Pressable onPress={()=>router.push('/my-dream/new')}
               accessibilityRole="button" accessibilityLabel="Créer un projet"
@@ -663,14 +665,14 @@ export default function MySpace() {
           </View>
         ) : list ? (
           // List mode remains a single flat list, without phase sections.
-          <View style={{ paddingHorizontal: side }}>
+          <View style={{ paddingLeft: side,paddingRight:right }}>
             {visible.map(d => <DreamListRow key={d.id} dream={d} onLongPress={()=>setLongDream(d)}/>)}
           </View>
         ) : (
           // Four slim editorial banners keep the phase colors and project
           // swiping, without squeezing the content into four square quadrants.
           <View style={{
-            paddingHorizontal:side,flexDirection:'column',
+            paddingLeft:side,paddingRight:right,flexDirection:'column',
             gap:phaseGridGap,paddingBottom:compact?20:26,
           }}>
             {phasePanels.map((panel,index)=>{
