@@ -8,7 +8,7 @@ import { Nav } from '@/components/navigation/Nav';
 import { PageHeader } from '@/components/navigation/PageHeader';
 import { MusicSongCard } from '@/components/music/MusicSongCard';
 import { MusicTile } from '@/components/music/MusicTile';
-import { MusicMoreDetails } from '@/components/music/MusicMoreDetails';
+import { MusicListeningDetail, type BrowsableSong } from '@/components/music/MusicListeningDetail';
 import { DetailInfoSection } from '@/components/detail/DetailMoreDrawer';
 import type { MusicCollaborator } from '@/components/music/MusicCollaboratorAvatars';
 import { readMusicLibraryLayout, type MusicLibraryLayout } from '@/domain/musicLibraryPreferences';
@@ -209,7 +209,25 @@ export default function MusicHub() {
     !recommended.some(song => song.id === p.trackPublicationId));
   const myCount = songs.length + sharedPieces.length;
   const forMeCount = recommended.length + pendingSent.length;
-  const expandedSong=recommended.find(p=>p.id===expandedForMe);
+  // The shelf contains only personalized opportunities; the open listener also
+  // allows swiping into other existing public/demo music projects.
+  const browseSongs:BrowsableSong[]=[];
+  const seenSongs=new Set<string>();
+  const availableMusic=[
+    ...recommended,
+    ...(discovery.state==='ready'
+      ? discovery.items.filter((entry):entry is MusicPublication=>entry.type==='music' &&
+          !publishedLocalIds.has(entry.id))
+      :[]),
+    ...(demoPreview?.catalog||[]),
+  ];
+  for(const candidate of availableMusic){
+    if(!seenSongs.has(candidate.id)){
+      seenSongs.add(candidate.id);
+      browseSongs.push(candidate);
+    }
+  }
+  const expandedSong=browseSongs.find(p=>p.id===expandedForMe);
   const expandedPending=pendingSent.find(p=>p.trackPublicationId===expandedForMe);
   const toggleForMe=(id:string)=>{
     setContactError('');
@@ -368,76 +386,40 @@ export default function MusicHub() {
           'Découvrir la musique',() => router.push({
             pathname:'/discover',params:{filter:'Musique'},
           }))}
-        {/* A cassette unfolds HERE, underneath the row: the SAME complete
-            "En savoir plus" content as Discovery, not a separate summary box. */}
-        {(expandedSong||expandedPending)?<View style={{
-          width:'100%',maxWidth:780,
-          paddingTop:narrow?8:12,paddingBottom:4,gap:4,
-        }}>
-          <View style={{flexDirection:'row',alignItems:'flex-start',gap:14}}>
-            <View style={{flex:1,gap:7}}>
-              <Text style={{color:theme.muted,fontSize:10,letterSpacing:1.2}}>
-                {('Musique · '+(expandedSong?.author||
-                  expandedPending?.publisher?.displayName||'Auteur')).toLocaleUpperCase('fr')}
+        {/* Discovery-style listening unfolds beneath Pour moi, not a plain
+            summary card or a second full-screen route. */}
+        {expandedSong?<MusicListeningDetail key={expandedSong.id}
+          song={expandedSong} queue={browseSongs}
+          contentWidth={availableWidth}
+          onSelect={id=>{
+            setContactError('');
+            setExpandedForMe(id);
+          }}
+          onClose={()=>setExpandedForMe(null)}
+          onContact={handle=>{void contactAuthor(handle);}}
+          contactBusy={contactBusy} contactError={contactError}/>
+        :expandedPending?<View style={{maxWidth:760,gap:10,paddingTop:14}}>
+          <View style={{flexDirection:'row',alignItems:'center',gap:10}}>
+            <View style={{flex:1,gap:5}}>
+              <Text style={{fontSize:19,fontWeight:'700',color:theme.foreground}}>
+                {expandedPending.trackTitle}
               </Text>
-              <Text numberOfLines={2} style={{fontFamily:'serif',
-                fontSize:narrow?24:27,lineHeight:narrow?30:34,
-                color:theme.foreground}}>
-                {expandedSong?.title||expandedPending?.trackTitle}
+              <Text style={{fontSize:12,color:theme.muted}}>
+                {expandedPending.publisher?.displayName||'Auteur'}
               </Text>
             </View>
-            <Pressable onPress={()=>setExpandedForMe(null)}
-              accessibilityRole="button" accessibilityLabel="Refermer les détails"
-              style={{width:38,height:38,justifyContent:'center',
-                alignItems:'center'}}>
-              <Ionicons name="close-outline" size={22} color={theme.foreground}/>
+            <Pressable accessibilityRole="button" accessibilityLabel="Refermer la proposition"
+              onPress={()=>setExpandedForMe(null)} style={{padding:8}}>
+              <Ionicons name="close-outline" size={23} color={theme.foreground}/>
             </Pressable>
           </View>
-          {expandedSong?<MusicMoreDetails item={expandedSong}/>:null}
-          {expandedPending?<DetailInfoSection title="Proposition en cours"
-            text={expandedPending.description||'Informations du morceau non disponibles.'}/>:null}
-          <View style={{flexDirection:'row',gap:10,flexWrap:'wrap'}}>
-            {!!expandedSong?.authorHandle&&!expandedSong.isDemo?<>
-              <Pressable disabled={contactBusy}
-                onPress={()=>{void contactAuthor(expandedSong.authorHandle!);}}
-                accessibilityRole="button"
-                style={{borderRadius:11,backgroundColor:PINK,
-                  paddingHorizontal:14,minHeight:42,justifyContent:'center',
-                  opacity:contactBusy?.55:1}}>
-                <Text style={{color:'#FFFFFF',fontWeight:'700',fontSize:12}}>
-                  {contactBusy?'Ouverture…':'Contacter l’auteur'}
-                </Text>
-              </Pressable>
-              <Pressable onPress={()=>router.push({pathname:'/member/[name]',
-                params:{name:expandedSong.authorHandle!}})}
-                accessibilityRole="button"
-                style={{borderRadius:11,borderWidth:1,borderColor:PINK,
-                  paddingHorizontal:14,minHeight:42,justifyContent:'center'}}>
-                <Text style={{color:PINK,fontWeight:'700',fontSize:12}}>
-                  Voir le profil
-                </Text>
-              </Pressable>
-            </>:null}
-            {expandedSong&&!expandedSong.isDemo?
-              <Pressable onPress={()=>router.push({pathname:'/music-proposal/[id]',
-                params:{id:expandedSong.id}})}
-                accessibilityRole="button" style={{borderRadius:11,
-                  backgroundColor:PINK,paddingHorizontal:14,minHeight:42,
-                  justifyContent:'center'}}>
-                <Text style={{color:'#FFFFFF',fontSize:12,fontWeight:'700'}}>
-                  Proposer une collaboration
-                </Text>
-              </Pressable>:null}
-            {expandedPending?<Text style={{fontSize:12,color:PINK,
-              fontWeight:'600',alignSelf:'center'}}>
-              {expandedPending.status==='submitted'
-                ?'Proposition envoyée · réponse en attente'
-                :'Proposition en brouillon'}
-            </Text>:null}
-          </View>
-          {!!contactError?<Text style={{fontSize:11,color:PINK,lineHeight:18}}>
-            {contactError}
-          </Text>:null}
+          <DetailInfoSection title="Proposition en cours"
+            text={expandedPending.description||'Informations du morceau non disponibles.'}/>
+          <Text style={{fontSize:12,fontWeight:'600',color:PINK}}>
+            {expandedPending.status==='submitted'
+              ?'Proposition envoyée · réponse en attente'
+              :'Proposition en brouillon'}
+          </Text>
         </View>:null}
       </View>
     </ScrollView>
