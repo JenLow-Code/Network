@@ -55,7 +55,7 @@ const shortcuts = source('src/components/dream/DreamWorkspaceShortcuts.tsx');
 assert.ok(shortcuts.includes('!hideLeadingIcon ?') &&
   /label="Notes personnelles"[\s\S]{0,100}hideLeadingIcon/.test(shortcuts) &&
   /label="Documents & Inspirations"[\s\S]{0,100}hideLeadingIcon/.test(shortcuts) &&
-  shortcuts.includes("icon={icon}"),
+  shortcuts.includes("name={icon}"),
   'Notes and Documents links must stay right-aligned without leading icons');
 // Across all dream phases the destructive action stays visibly black and narrower,
 // while the primary action remains larger; only desktop groups move to the rail.
