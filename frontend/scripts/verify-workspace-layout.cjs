@@ -13,6 +13,8 @@ const pages=[
   'app/music-workspace/[id].tsx',
   'app/my-space.tsx',
   'app/profile.tsx',
+  'app/profile-talents.tsx',
+  'app/profile-publications.tsx',
   'app/profile-preview.tsx',
   'app/prayers.tsx',
   'app/settings.tsx',
