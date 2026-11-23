@@ -128,8 +128,12 @@ const layoutRules=[
     'Mobile phase rows must use the tightened vertical rhythm'],
   ['app/my-space.tsx',/const frontWidth=Math.min\(viewportWidth,cardHeight\);/,
     'Mobile aspiration cards must stay square by matching their width to card height'],
-  ['app/my-space.tsx',/Math.min\(104,Math.max\(88,Math.round\(phaseViewportWidth\*\.27\)\)\)/,
-    'Mobile aspiration cards must keep the compact height cap'],
+  ['app/my-space.tsx',/Math.min\(124,Math.max\(104,Math.round\(phaseViewportWidth\*\.31\)\)\)/,
+    'Mobile aspiration cards must keep the slightly larger square size'],
+  ['app/my-space.tsx',/position:'absolute',top:-32,left:0,zIndex:6/,
+    'Mobile aspiration navigation must sit discreetly at the phase top-left'],
+  ['app/my-space.tsx',/accessibilityLabel=\{'Afficher aspiration '\+\(index\+1\)\}/,
+    'Mobile aspiration navigation must use tappable bullet indicators'],
   ['app/my-space.tsx',/const phaseViewportWidth=Math.max\(0,/,
     'Carousel width must be derived from the available phase row width'],
   ['app/my-space.tsx',/LinearGradient id=\{'phase-wash-'\+index\}/,
@@ -205,6 +209,11 @@ for(const path of directWorkspacePages){
 }
 // These regressions are intentional failures, not optional style changes.
 const projectSource=read('app/my-space.tsx');
+if(/Aspiration précédente/.test(projectSource)||
+   /fontVariant:\['tabular-nums'\]/.test(projectSource)){
+  console.error('Mobile aspiration navigation must use subtle top-left bullets, not bottom counters/arrows.');
+  process.exitCode=1;
+}
 if(/borderRadius:0,borderWidth:1/.test(projectSource)||
    /presentation === 'phase' \? 0 : 11/.test(projectSource)||
    /fruit-banner-bottom-fade/.test(projectSource)||
