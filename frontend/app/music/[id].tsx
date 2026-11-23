@@ -3,9 +3,10 @@ import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { musics } from '@/mocks/publications';
 import { PublicationDetail } from '@/components/publication/PublicationDetail';
-import { DetailMoreDrawer, DetailInfoSection } from '@/components/detail/DetailMoreDrawer';
+import { DetailMoreDrawer } from '@/components/detail/DetailMoreDrawer';
 import { MusicWaveform } from '@/components/music/MusicWaveform';
-import { MusicLyrics, FullMusicLyrics } from '@/components/music/MusicLyrics';
+import { MusicLyrics } from '@/components/music/MusicLyrics';
+import { MusicMoreDetails } from '@/components/music/MusicMoreDetails';
 import { EditorialInline } from '@/components/detail/EditorialInline';
 import { usePublication } from '@/lib/api/hooks';
 import { fetchDemoMusicPublication } from '@/lib/api/musicPreview';
@@ -116,13 +117,7 @@ export default function MusicDetail() {
         </EditorialInline>
         <DetailMoreDrawer key={item.id} heading={item.title} subtitle={'Musique · ' + item.author}
           defaultOpen={openMore === '1'}>
-          <DetailInfoSection title="À propos du morceau" text={item.description}/>
-          {!!item.requestedTalents?.length && <DetailInfoSection
-            title="Talents recherchés" text={item.requestedTalents.join(' · ')}/>}
-          <DetailInfoSection title="Paroles complètes"
-            text={item.lyrics?.length ? undefined : 'Paroles non disponibles pour cet enregistrement.'}/>
-          {!!item.lyrics?.length && <FullMusicLyrics lines={item.lyrics}/>}
-          <DetailInfoSection title="Partitions" text="Aucune partition jointe."/>
+          <MusicMoreDetails item={item}/>
         </DetailMoreDrawer>
       </PublicationDetail>
     )}
