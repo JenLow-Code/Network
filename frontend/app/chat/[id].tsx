@@ -58,7 +58,7 @@ function Action({
   const theme=useAppTheme();
   return (
     <Pressable accessibilityRole="button" onPress={onPress} style={[s.action,{borderColor:theme.border,backgroundColor:theme.surface}]}>
-      <Ionicons name={icon} color={c.pink} size={19} />
+      <Ionicons name={icon} color={theme.accent} size={19} />
       <View style={{ flex: 1 }}>
         <Text style={[s.actionTitle,{color:theme.foreground}]}>{title}</Text>
         {subtitle && <Text style={[s.actionSubtitle,{color:theme.muted}]}>{subtitle}</Text>}
@@ -217,7 +217,7 @@ function PersonChat({
             style={[s.input,{backgroundColor:theme.surface,borderColor:theme.border,color:theme.foreground}]}
           />
           <Pressable onPress={submit} accessibilityLabel="Send message">
-            <Ionicons name="send" color={c.pink} size={22} />
+            <Ionicons name="send" color={theme.accent} size={22} />
           </Pressable>
         </View>
       </KeyboardAvoidingView>
@@ -334,7 +334,7 @@ function MusicSharedConversation({ conversationId }: { conversationId: string })
           {item.body||'Message indisponible'}
         </Text>
       </View>)}
-      {error?<Text style={{color:'#B44F63',fontSize:12}}>{error}</Text>:null}
+      {error?<Text style={{color:theme.accent,fontSize:12}}>{error}</Text>:null}
     </ScrollView>
     {contextId&&contextTitle?<View style={{...workspaceCanvas(width),flexDirection:'row',alignItems:'center',gap:9,
       borderTopWidth:1,borderColor:theme.border,paddingVertical:7}}>
