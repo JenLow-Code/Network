@@ -90,7 +90,7 @@ export function DreamTalentSquare({
               ) : null}
               {resource.description ? <Text style={{ color: theme.foreground, lineHeight: 23, fontSize: 14, marginBottom: 18 }}>{resource.description}</Text> : null}
               <Text style={{ color: theme.muted, fontSize: 12, lineHeight: 20, marginBottom: 15 }}>
-                {verified ? 'Cette personne a accepté de rejoindre le rêve.' : 'Ce talent reste à trouver. Seule l’acceptation de la personne invitée le confirmera.'}
+                {verified ? 'Cette personne a accepté de rejoindre l’aspiration.' : 'Ce talent reste à trouver. Seule l’acceptation de la personne invitée le confirmera.'}
               </Text>
               {onToggle && resource.category!=='person' ? (
                 <Pressable onPress={() => { onToggle(); setDetailsOpen(false); }}

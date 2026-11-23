@@ -24,12 +24,12 @@ export default function Stage() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor:theme.background }}>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{...workspaceCanvas(width),paddingTop:12,paddingBottom:65}}>
-        <PageHeader title={current || 'Mes projets'} />
+        <PageHeader title={current || 'Mes aspirations'} />
         <View style={{flexDirection:'row',justifyContent:'flex-end',marginBottom:10}}>
           <Pressable
             onPress={() => router.push('/my-dream/new')}
             style={{ padding: 8 }}
-            accessibilityLabel="Créer un rêve"
+            accessibilityLabel="Créer une aspiration"
           >
             <Ionicons name="add-circle" size={29} color="#D71D77" />
           </Pressable>
@@ -37,7 +37,7 @@ export default function Stage() {
         {filtered.map(d => (
           <Pressable
             key={d.id} onLongPress={()=>setLongDream(d)} delayLongPress={460}
-            accessibilityHint="Maintenir pour accéder aux options du rêve"
+            accessibilityHint="Maintenir pour accéder aux options de l’aspiration"
             onPress={() => router.push({ pathname: '/my-dream/[id]', params: { id: d.id, ...(d.phase==='Témoignage'?{}:{view:d.phase}) } })}
             style={{
               borderWidth: 1,
@@ -62,7 +62,7 @@ export default function Stage() {
         ))}
         {!filtered.length ? (
           <Text style={{ color: '#888', paddingTop: 30, textAlign: 'center' }}>
-            Aucun rêve dans cette phase pour l’instant.
+            Aucune aspiration dans cette phase pour l’instant.
           </Text>
         ) : null}
       </ScrollView>

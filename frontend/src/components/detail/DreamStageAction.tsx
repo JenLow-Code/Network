@@ -60,7 +60,7 @@ export function DreamStageAction({ dream }: { dream: DreamPublication }) {
     return (
       <Pressable style={s.pill} onPress={() => app.togglePrayer(dream.id)}>
         <PrayerIcon size={23} />
-        <Text style={s.label}>{praying ? 'Dans mes prières' : 'Prier pour ce rêve'}</Text>
+        <Text style={s.label}>{praying ? 'Dans mes prières' : 'Prier pour cette aspiration'}</Text>
       </Pressable>
     );
   return (

@@ -350,7 +350,7 @@ export default function DreamHub({ dream, startInSemence = false, startPhase }: 
               <Pressable
                 onPress={() => router.replace('/my-space')}
                 accessibilityRole="button"
-                accessibilityLabel="Retour à mes projets"
+                accessibilityLabel="Retour à mes aspirations"
                 style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}
               >
                 <Ionicons name="arrow-back-outline" color={ink} size={22} />
@@ -488,11 +488,11 @@ export default function DreamHub({ dream, startInSemence = false, startPhase }: 
               {phaseIndex >= 2 ? (
                 <Pressable
                   onPress={() => router.push({ pathname: '/chat/[id]', params: { id: 'dream-' + dream.id } })}
-                  accessibilityRole="button" accessibilityLabel="Ouvrir la conversation du rêve"
+                  accessibilityRole="button" accessibilityLabel="Ouvrir la conversation de l’aspiration"
                   style={{ flexDirection: 'row', alignItems: 'center', gap: 7, marginTop: compact ? 7 : 11, padding: 8 }}
                 >
                   <Ionicons name="chatbubbles-outline" size={17} color={ink} />
-                  <Text style={{ color: ink, fontSize: 12, textDecorationLine: 'underline' }}>Conversation du rêve</Text>
+                  <Text style={{ color: ink, fontSize: 12, textDecorationLine: 'underline' }}>Conversation de l’aspiration</Text>
                 </Pressable>
               ) : null}
             </View>

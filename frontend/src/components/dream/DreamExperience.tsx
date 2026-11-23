@@ -315,7 +315,7 @@ export default function DreamExperience({
  const freezeAt=(date:string)=>{
    if(historical || (dream.phase!=='Initiation' && dream.phase!=='Croissance') || frozen)return;
    if((dream.pauseCount||0)>=3){
-     Alert.alert('Limite atteinte','Ce rêve a déjà été congelé trois fois.');return;
+     Alert.alert('Limite atteinte','Cette aspiration a déjà été congelée trois fois.');return;
    }
    if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||date<=day()||Number.isNaN(Date.parse(date))){
      Alert.alert('Date requise','Sélectionne une date future dans le calendrier.');return;
@@ -329,7 +329,7 @@ export default function DreamExperience({
     contentContainerStyle={{paddingLeft:ws.contentGutter,paddingRight:ws.gutter,paddingTop:12,paddingBottom:85,
       maxWidth:ws.maxWidth,width:'100%',alignSelf:'center'}}>
   <DreamPhaseHeader dream={dream} phase={phase} onBack={onBack || (()=>router.replace('/my-space'))} onNavigate={onNavigate} readOnly={readOnly&&!recoverPastNeeds}
-    summary={phase==='Témoignage'?'Le rêve est devenu réalité. Voici ce qui a pris vie.':undefined}
+    summary={phase==='Témoignage'?'L’aspiration est devenue réalité. Voici ce qui a pris vie.':undefined}
     action={phase==='Rêve'&&!historical?<Pressable onPress={()=>setEditing(!editing)} style={{padding:8}}><Text style={{color:theme.foreground,fontWeight:'700',fontSize:12}}>{editing?'Terminer':'Composer'}</Text></Pressable>:undefined}
   />
   {phase==='Rêve' ? <>
@@ -338,7 +338,7 @@ export default function DreamExperience({
      <Text style={{color:theme.muted,fontSize:12}}>Semence non répertoriée jusqu'à la germination</Text>
    </View>
    {editing && !historical ? <Action secondary label="Changer l'image principale" onPress={()=>pickDreamImage(uri=>patch(dream.id,{image:uri}),msg=>Alert.alert('Image',msg))}/> : null}
-   {editing && !historical ? <Field label="Mon rêve, en quelques mots" value={dream.summary} onChange={v=>patch(dream.id,{summary:v})} multiline/> : dream.summary ? <Text style={{color:theme.foreground,fontSize:15,marginVertical:9,lineHeight:22}}>{dream.summary}</Text> : null}
+   {editing && !historical ? <Field label="Mon aspiration, en quelques mots" value={dream.summary} onChange={v=>patch(dream.id,{summary:v})} multiline/> : dream.summary ? <Text style={{color:theme.foreground,fontSize:15,marginVertical:9,lineHeight:22}}>{dream.summary}</Text> : null}
    <View style={{flexDirection:'row',flexWrap:'wrap',justifyContent:'space-between',marginTop:12}}>
     {blocks.map(b=><DreamBlockCard key={b.id} block={b} editable={editing} onEdit={()=>editBlock(b)} onMove={step=>moveBlock(b.id,step)}/>)}
    </View>
@@ -356,7 +356,7 @@ export default function DreamExperience({
     {editingBlock?<Action secondary label="Supprimer ce bloc" onPress={()=>{patch(dream.id,{blocks:blocks.filter(b=>b.id!==editingBlock)});setPicker(false);setEditingBlock(null);}}/>:null}
    </View>:null}
    {editing && !historical && !picker ? <Action label="+ Ajouter un bloc" onPress={()=>{setBlockKind('text');setEditingBlock(null);setPicker(true);}}/>:null}
-   {!historical ? <Action label="Faire germer ce rêve" onPress={()=>confirm('Faire germer','Ton rêve deviendra public. Tu pourras toujours retrouver tes inspirations dans son histoire.',()=>{patch(dream.id,{visibility:'public'});advance(dream.id);})}/> : null}
+   {!historical ? <Action label="Faire germer cette aspiration" onPress={()=>confirm('Faire germer','Ton aspiration deviendra publique. Tu pourras toujours retrouver tes inspirations dans son histoire.',()=>{patch(dream.id,{visibility:'public'});advance(dream.id);})}/> : null}
   </> : null}
   {phase==='Initiation' ? <>
    <View style={{alignItems:'flex-end',marginTop:-10,marginBottom:4}}>
@@ -512,7 +512,7 @@ export default function DreamExperience({
        }}
        destructiveLabel="Arracher"
        onDestructive={()=>confirm('Arracher cette plante ?',
-         'Cette action supprimera définitivement ce rêve et ses données sur cet appareil.',
+         'Cette action supprimera définitivement cette aspiration et ses données sur cet appareil.',
          ()=>{remove(dream.id);router.replace('/my-space');})}
      />
    ):null}
@@ -598,7 +598,7 @@ export default function DreamExperience({
             </Pressable>;
           })}
           {growthActive?<Pressable accessibilityRole="button"
-            accessibilityLabel="Gérer les besoins du rêve"
+            accessibilityLabel="Gérer les besoins de l’aspiration"
             onPress={()=>onRecoverResource?.('all')}
             style={{alignSelf:'flex-end',paddingVertical:5,paddingHorizontal:2,
               flexDirection:'row',alignItems:'center',gap:5}}>
@@ -652,7 +652,7 @@ export default function DreamExperience({
       }}
       onDetachHabit={habit=>{
         if(!growthActive)return;
-        confirm('Détacher cette habitude du rêve ?',
+        confirm('Détacher cette habitude de l’aspiration ?',
           'Elle restera dans Mon agenda comme habitude personnelle, avec son historique.',()=>{
             detachHabit(dream.id,habit.id);
           });
@@ -707,21 +707,21 @@ export default function DreamExperience({
         secondaryDisabled={frozen}
         onSecondary={()=>{
           if((dream.pauseCount||0)>=3){
-            Alert.alert('Limite atteinte','Ce rêve a déjà été congelé trois fois.');
+            Alert.alert('Limite atteinte','Cette aspiration a déjà été congelée trois fois.');
             return;
           }
           setFreezeDialog(true);
         }}
         destructiveLabel="Arracher cette plante"
         onDestructive={()=>confirm('Arracher cette plante ?',
-          'Cette action supprimera définitivement ce rêve et ses données sur cet appareil.',
+          'Cette action supprimera définitivement cette aspiration et ses données sur cet appareil.',
           ()=>{remove(dream.id);router.replace('/my-space');})}
       />
     </View>:null}
   </>:null}
   {phase==='Témoignage' && !isPublishedFlower(dream) ? (
     <DreamPhaseSection title="La fleur se prépare"
-      subtitle="Ton rêve est réalisé. Choisis maintenant comment raconter ce qui a fleuri.">
+      subtitle="Ton aspiration est réalisée. Choisis maintenant comment raconter ce qui a fleuri.">
       <Pressable accessibilityRole="button"
         onPress={()=>router.push({pathname:'/my-dream/flower/[id]',params:{id:dream.id}})}
         style={{minHeight:48,borderRadius:11,backgroundColor:'#D71D77',
@@ -778,7 +778,7 @@ export default function DreamExperience({
 
     <View style={{ marginTop: 30 }}>
       <Text style={{ fontSize: 10, fontWeight: '800', color: pink,
-        letterSpacing: 1.2, marginBottom: 9 }}>LE RÊVE DEVENU RÉEL</Text>
+        letterSpacing: 1.2, marginBottom: 9 }}>L’ASPIRATION DEVENUE RÉELLE</Text>
       <Text style={{ color: theme.foreground, fontFamily: 'serif',
         fontSize: 26, lineHeight: 34, marginBottom: 9 }}>
         Ce qui a pris vie
@@ -978,7 +978,7 @@ export default function DreamExperience({
            onPress={()=>{
              const id=editingHabitId;
              confirm('Supprimer cette habitude ?',
-               'Le suivi et l’historique de cette habitude seront retirés du rêve.',()=>{
+               'Le suivi et l’historique de cette habitude seront retirés de l’aspiration.',()=>{
                  setHabits(dream.id,habits.filter(h=>h.id!==id));
                  setGrowthDialog(null);setEditingHabitId(null);
                });
@@ -1062,7 +1062,7 @@ export default function DreamExperience({
              <Text style={{fontSize:11,lineHeight:16,color:theme.muted}}>
                {shareLogAsPost
                  ?'Visible publiquement dans JenLow.'
-                 :'Sinon, cette note reste uniquement dans le rêve partagé.'}
+                 :'Sinon, cette note reste uniquement dans l’aspiration partagée.'}
              </Text>
            </View>
          </Pressable>

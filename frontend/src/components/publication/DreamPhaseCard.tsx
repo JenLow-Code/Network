@@ -158,7 +158,7 @@ export function DreamPhaseCard({ item, width, variant, onOpen, forYou = false }:
   const neutral = dark ? '#282A2E' : '#F0EBE4';
   const base = { width, borderRadius: 0, overflow: 'hidden' as const };
   const withOpen = (content: React.ReactNode) => onOpen ? (
-    <Pressable onPress={onOpen} accessibilityRole="button" accessibilityLabel={'Voir le rêve : ' + item.title}>
+    <Pressable onPress={onOpen} accessibilityRole="button" accessibilityLabel={'Voir l’aspiration : ' + item.title}>
       {content}
     </Pressable>
   ) : <View>{content}</View>;
@@ -192,9 +192,9 @@ export function DreamPhaseCard({ item, width, variant, onOpen, forYou = false }:
           transform: [{ translateX: talentDrawerX }],
         }}>
           <ScrollView contentContainerStyle={{ gap: 17, paddingBottom: 30 }}>
-            <Pressable onPress={() => setInspectedTalent(null)} style={{ alignSelf: 'flex-start', flexDirection: 'row', gap: 7, alignItems: 'center', paddingVertical: 10 }} accessibilityRole="button" accessibilityLabel="Retour au rêve">
+            <Pressable onPress={() => setInspectedTalent(null)} style={{ alignSelf: 'flex-start', flexDirection: 'row', gap: 7, alignItems: 'center', paddingVertical: 10 }} accessibilityRole="button" accessibilityLabel="Retour à l’aspiration">
               <Ionicons name="chevron-back" size={19} color={ink} />
-              <Text style={{ color: ink, fontSize: 13 }}>Retour au rêve</Text>
+              <Text style={{ color: ink, fontSize: 13 }}>Retour à l’aspiration</Text>
             </Pressable>
             <Text style={{ color: subdued, fontSize: 10, letterSpacing: 1.3 }}>TALENT {inspectedTalent?.confirmed ? 'CONFIRMÉ' : 'RECHERCHÉ'}</Text>
             <Text style={{ color: ink, fontFamily: serif, fontSize: 29 }}>{inspectedTalent?.title}</Text>
@@ -203,7 +203,7 @@ export function DreamPhaseCard({ item, width, variant, onOpen, forYou = false }:
               <TalentLevelDots level={inspectedTalent.requiredLevel} align="start" />
             </View>}
             <Text style={{ color: subdued, fontSize: 14, lineHeight: 23 }}>
-              {inspectedTalent?.description?.trim() || 'Le porteur de ce rêve n’a pas encore précisé les attentes pour ce talent.'}
+              {inspectedTalent?.description?.trim() || 'Le porteur de cette aspiration n’a pas encore précisé les attentes pour ce talent.'}
             </Text>
             <Text style={{ color: inspectedTalent?.confirmed ? '#739C75' : '#C13B82', fontSize: 12 }}>
               {inspectedTalent?.confirmed ? 'Ce talent a été confirmé' : 'Ce talent est encore recherché'}
@@ -294,9 +294,9 @@ export function DreamPhaseCard({ item, width, variant, onOpen, forYou = false }:
               {!compact && (
                 <View pointerEvents="box-none" style={[StyleSheet.absoluteFill, { justifyContent: 'center', alignItems: 'center' }]}>
                   <Pressable
-                    onPress={() => router.push({ pathname: '/chat/[id]', params: { id: 'member', recipient: item.author, draft: 'Bonjour ' + item.author + ', j’aimerais échanger sur votre rêve « ' + item.title + ' ».' } })}
+                    onPress={() => router.push({ pathname: '/chat/[id]', params: { id: 'member', recipient: item.author, draft: 'Bonjour ' + item.author + ', j’aimerais échanger sur votre aspiration « ' + item.title + ' ».' } })}
                     accessibilityRole="button"
-                    accessibilityLabel="Échanger sur ce rêve"
+                    accessibilityLabel="Échanger sur cette aspiration"
                     style={{
                       minWidth: 136, paddingHorizontal: 17, paddingVertical: 11,
                       backgroundColor: dark ? 'rgba(33,33,35,0.92)' : 'rgba(248,245,241,0.94)',
@@ -373,7 +373,7 @@ export function DreamPhaseCard({ item, width, variant, onOpen, forYou = false }:
                   compact={compact} dark={dark}
                   onInspect={compact?undefined:setInspectedTalent}/>
               ):compact?<Text style={{color:subdued,fontSize:12,lineHeight:18}}>
-                Aucun talent recherché pour ce rêve.
+                Aucun talent recherché pour cette aspiration.
               </Text>:null}
             </View>
           </View>,

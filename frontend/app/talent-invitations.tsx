@@ -46,7 +46,7 @@ export default function TalentInvitations(){
     <ScrollView style={{flex:1}} contentContainerStyle={{...workspaceCanvas(width),paddingTop:12,paddingBottom:95,gap:13}}>
       <PageHeader title="Mes invitations" onBack={()=>router.back()}/>
       <Text style={{color:theme.muted,fontSize:12,lineHeight:19}}>
-        Un talent n'est confirmé que si tu acceptes explicitement de participer au rêve.
+        Un talent n'est confirmé que si tu acceptes explicitement de participer à l’aspiration.
       </Text>
       {loading?<ActivityIndicator color="#D71D77" style={{marginTop:35}}/>:null}
       {!!error?<View style={{padding:15,borderRadius:11,borderWidth:1,borderColor:theme.border,gap:9}}>

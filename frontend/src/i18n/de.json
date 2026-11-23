@@ -14,10 +14,10 @@
   "discoverTitle": "Entdecken",
   "searchPlaceholder": "Inspiration finden…",
   "all": "Alle",
-  "dreamsFilter": "Träume",
+  "dreamsFilter": "Bestrebungen",
   "bibleFilter": "Bibel",
   "musicFilter": "Musik",
   "settingsHelp": "Die Sprache wird für die Oberfläche übernommen; einige Demo-Inhalte bleiben in ihrer Originalsprache.",
-  "participantTitle": "Menschen mit demselben Traum",
-  "participantHint": "Nur die Eigentümer des Traums können diese Namen sehen."
+  "participantTitle": "Menschen mit derselben Bestrebung",
+  "participantHint": "Nur die Eigentümer der Bestrebung können diese Namen sehen."
 }

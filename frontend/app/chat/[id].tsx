@@ -380,7 +380,7 @@ function DreamConversation({ dreamId }: { dreamId: string }) {
         ...(workspaceLayout(width).desktop?{position:'absolute' as const,left:workspaceLayout(width).gutter,top:18}:{})}}>
       <Ionicons name="arrow-back-outline" size={23} color={theme.foreground}/>
     </Pressable>
-   <View style={{ flex: 1 }}><Text numberOfLines={1} style={{ color:theme.foreground,fontWeight: '700', fontSize: PAGE_TITLE_FONT_SIZE,lineHeight:PAGE_TITLE_LINE_HEIGHT }}>{dream?.title || 'Conversation du rêve'}</Text><Text style={{ color: theme.muted, fontSize: 11 }}>Espace de conversation du rêve · Sur cet appareil</Text></View>
+   <View style={{ flex: 1 }}><Text numberOfLines={1} style={{ color:theme.foreground,fontWeight: '700', fontSize: PAGE_TITLE_FONT_SIZE,lineHeight:PAGE_TITLE_LINE_HEIGHT }}>{dream?.title || 'Conversation de l’aspiration'}</Text><Text style={{ color: theme.muted, fontSize: 11 }}>Espace de conversation de l’aspiration · Sur cet appareil</Text></View>
     <TopActions/>
   </View>
   <ScrollView style={{ flex: 1 }} contentContainerStyle={{...workspaceCanvas(width),paddingTop:16,paddingBottom:20,gap:10}}>
@@ -388,7 +388,7 @@ function DreamConversation({ dreamId }: { dreamId: string }) {
    {(dream?.chat?.messages || []).map(m => <View key={m.id} style={{ backgroundColor: '#D71D77', padding: 12, borderRadius: 12, alignSelf: 'flex-end', maxWidth: '85%' }}><Text style={{ color: '#fff' }}>{m.text}</Text></View>)}
   </ScrollView>
   <View style={{...workspaceCanvas(width),paddingVertical:12,flexDirection:'row',gap:10,alignItems:'center'}}>
-   <TextInput value={input} onChangeText={setInput} onSubmitEditing={submit} placeholder="Un message pour ce rêve…" style={{ flex: 1, borderRadius: 12, padding: 12, backgroundColor: theme.surface,color:theme.foreground,borderWidth:1,borderColor:theme.border }}/>
+   <TextInput value={input} onChangeText={setInput} onSubmitEditing={submit} placeholder="Un message pour cette aspiration…" style={{ flex: 1, borderRadius: 12, padding: 12, backgroundColor: theme.surface,color:theme.foreground,borderWidth:1,borderColor:theme.border }}/>
    <Pressable accessibilityLabel="Envoyer" onPress={submit}><Ionicons name="send" size={23} color="#D71D77"/></Pressable>
   </View>
   <Nav/>

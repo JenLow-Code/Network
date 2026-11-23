@@ -30,7 +30,7 @@ export function DreamReferenceLayout({item}:{item:DreamPublication}) {
               </Text>
             </View>
           ):null}
-          <DetailInfoSection title="Pourquoi ce rêve ?" text={item.motivation}/>
+          <DetailInfoSection title="Pourquoi cette aspiration ?" text={item.motivation}/>
           {item.goalDate ? <DetailInfoSection title="Date objectif">
             <View style={{flexDirection:'row',alignItems:'center',gap:10}}>
               <Ionicons name="calendar-outline" size={19} color={theme.foreground}/>
@@ -101,7 +101,7 @@ export function DreamReferenceLayout({item}:{item:DreamPublication}) {
           ):null}
           <View style={{paddingVertical:17}}>
             <Text style={{color:theme.muted,fontSize:11,lineHeight:19}}>
-              Les informations affichées sont celles que le porteur du rêve a renseignées.
+              Les informations affichées sont celles que le porteur de l’aspiration a renseignées.
               Les ressources marquées comme recherchées ne sont pas encore confirmées.
             </Text>
           </View>

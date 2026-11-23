@@ -107,6 +107,6 @@ test('ICS escaping and folding follow RFC 5545', () => {
 });
 
 test('notification text is rendered from stored keys and parameters', () => {
-  assert.deepEqual(renderNotification('dream.phase.changed', JSON.stringify({ dream: 'Mon rêve', phase: 'Croissance' }), 'fr'), { title: 'Le rêve avance', body: 'Mon rêve entre en Croissance.' });
-  assert.equal(renderNotification('dream.phase.changed', '{}', 'de').title, 'Le rêve avance', 'falls back to French until German copy exists');
+  assert.deepEqual(renderNotification('dream.phase.changed', JSON.stringify({ dream: 'Mon aspiration', phase: 'Croissance' }), 'fr'), { title: 'L’aspiration avance', body: 'Mon aspiration entre en Croissance.' });
+  assert.equal(renderNotification('dream.phase.changed', '{}', 'de').title, 'L’aspiration avance', 'falls back to French until German copy exists');
 });

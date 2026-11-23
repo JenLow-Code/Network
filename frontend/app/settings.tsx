@@ -65,7 +65,7 @@ export default function Settings() {
   function confirmDemo() {
     Alert.alert(
       'Clear demo data?',
-      'This clears saved prototype Dreams and lists on this device. It does not delete a server account, since no real account exists yet.',
+      'This clears saved prototype aspirations and lists on this device. It does not delete a server account, since no real account exists yet.',
       [
         { text: 'Cancel', style: 'cancel' },
         {

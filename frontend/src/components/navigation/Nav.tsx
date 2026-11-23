@@ -136,7 +136,7 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
         (path.startsWith('/music/') && path !== '/music/new'),
     },
     {
-      icon: 'folder-outline' as const, title: 'Mes projets',
+      icon: 'folder-outline' as const, title: t('dreams'),
       path: '/my-space' as const,
       active: path === '/my-space' || path === '/my-dreams' || path.startsWith('/my-dream'),
     },
@@ -441,9 +441,9 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
                 borderLeftColor:theme.dark?'rgba(240,240,244,.18)':
                   'rgba(92,91,100,.14)',paddingLeft:collapsed?0:8}}>
                 <Pressable accessibilityRole="button"
-                  accessibilityLabel={'Rêve actuel : '+currentDream.title}
+                  accessibilityLabel={'Aspiration actuelle : '+currentDream.title}
                   {...(Platform.OS==='web'?({title:currentDream.title} as any):{})}
-                  accessibilityHint={collapsed?'Ouvrir le rêve':'Afficher ou masquer les étapes'}
+                  accessibilityHint={collapsed?'Ouvrir l’aspiration':'Afficher ou masquer les étapes'}
                   accessibilityState={{expanded:!collapsed&&dreamTreeOpen}}
                   onPress={()=>{
                     if(collapsed)router.push({pathname:'/my-dream/[id]',

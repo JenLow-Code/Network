@@ -10,6 +10,7 @@ import { isPublishedFlower, type DreamEntry } from '@/domain/dreamWorkspace';
 import type { DreamPhase } from '@/domain/publication';
 import { useDreams } from '@/domain/dreamRepository';
 import { useAppTheme } from '@/theme/AppTheme';
+import { useLocale } from '@/i18n/locale';
 import {workspaceCanvas,workspaceLayout} from '@/theme/workspaceLayout';
 import DreamQuickActions from '@/components/dream/DreamQuickActions';
 import {DreamPhaseIcon} from '@/icons/DreamPhaseIcon';
@@ -17,10 +18,10 @@ import {DreamPhaseIcon} from '@/icons/DreamPhaseIcon';
 type ViewFilter = 'Liste' | 'Grille';
 type RoleFilter = 'all' | 'frozen' | 'creator' | 'co_owner' | 'participant';
 const ROLE_OPTIONS: {key:RoleFilter;label:string;empty:string}[] = [
-  {key:'all',label:'Tous les projets',empty:'Tout commence par une semence'},
-  {key:'frozen',label:'Congelés',empty:'Aucun projet congelé pour le moment'},
-  {key:'creator',label:'Créés par moi',empty:'Aucun projet créé pour le moment'},
-  {key:'co_owner',label:'Co-propriétaire',empty:'Aucun projet en copropriété pour le moment'},
+  {key:'all',label:'Toutes les aspirations',empty:'Tout commence par une semence'},
+  {key:'frozen',label:'Congelées',empty:'Aucune aspiration congelée pour le moment'},
+  {key:'creator',label:'Créées par moi',empty:'Aucune aspiration créée pour le moment'},
+  {key:'co_owner',label:'Co-propriétaire',empty:'Aucune aspiration en copropriété pour le moment'},
   {key:'participant',label:'Mes participations',empty:'Aucune participation pour le moment'},
 ];
 /** Derived from trusted membership when connected; local dreams belong to the creator.
@@ -233,7 +234,7 @@ function PhaseProjectCarousel({dreams,cardWidth,cardHeight,viewportWidth,gap,com
             const disabled=direction<0?position===0:position===lastPosition;
             return <Pressable key={direction} disabled={disabled}
               accessibilityRole="button"
-              accessibilityLabel={direction<0?'Projets précédents':'Projets suivants'}
+              accessibilityLabel={direction<0?'Aspirations précédentes':'Aspirations suivantes'}
               accessibilityState={{disabled}}
               onPress={()=>go(direction)}
               style={{width:27,height:27,borderRadius:14,borderWidth:1,
@@ -361,7 +362,7 @@ function PhaseMobileOverlap({dreams,viewportWidth,cardHeight,onLongPress}:{
           return <Pressable key={direction}
             onPress={()=>switchTo(currentRef.current+direction,direction<0?1:-1)}
             disabled={disabled} accessibilityRole="button"
-            accessibilityLabel={direction<0?'Projet précédent':'Projet suivant'}
+            accessibilityLabel={direction<0?'Aspiration précédente':'Aspiration suivante'}
             accessibilityState={{disabled}}
             style={{width:27,height:28,justifyContent:'center',
               alignItems:'center',opacity:disabled?.35:1}}>
@@ -379,7 +380,7 @@ function DreamListRow({ dream, onLongPress }: { dream: DreamEntry; onLongPress:(
   const photo = coverImage(dream);
   return (
     <Pressable accessibilityRole="button" onLongPress={onLongPress} delayLongPress={460}
-      accessibilityHint="Maintenir pour voir les actions du rêve" onPress={() => {
+      accessibilityHint="Maintenir pour voir les actions de l’aspiration" onPress={() => {
       if(dream.phase==='Témoignage') { open(dream); return; }
       router.push({pathname:'/my-dream/[id]',params:{id:dream.id,view:dream.phase}});
     }}
@@ -391,7 +392,7 @@ function DreamListRow({ dream, onLongPress }: { dream: DreamEntry; onLongPress:(
         <Text numberOfLines={2} style={{ fontSize: 14, lineHeight: 19,
           fontWeight: '700', color: theme.foreground }}>{dream.title}</Text>
         <Text numberOfLines={1} style={{ color: theme.muted, fontSize: 11 }}>
-          {frozen(dream) ? 'Congelé jusqu’au ' + dream.pauseUntil : dream.summary || 'Ouvrir mon projet'}
+          {frozen(dream) ? 'Congelée jusqu’au ' + dream.pauseUntil : dream.summary || 'Ouvrir mon aspiration'}
         </Text>
       </View>
       {frozen(dream) ? <Ionicons name="snow" size={17} color="#427FA6" /> : null}
@@ -402,6 +403,7 @@ function DreamListRow({ dream, onLongPress }: { dream: DreamEntry; onLongPress:(
 
 export default function MySpace() {
   const theme = useAppTheme();
+  const {t}=useLocale();
   const { width: windowWidth } = useWindowDimensions();
   const compact = windowWidth < 600;
   const ws=workspaceLayout(windowWidth);
@@ -489,7 +491,7 @@ export default function MySpace() {
           if(measured>0)setMeasuredCanvasWidth(current=>current===measured?current:measured);
         }}>
         <View style={{paddingLeft:ws.contentGutter,paddingRight:ws.gutter}}>
-          <PageHeader title="Mes projets" />
+          <PageHeader title={t('dreams')} />
         </View>
 
         {/* A shallow, inset gallery aligned with the common page margins. */}
@@ -522,7 +524,7 @@ export default function MySpace() {
                   De nouveaux fruits à découvrir.
                 </Text>
                 <Text style={{color:theme.muted,fontSize:11,lineHeight:18,marginTop:5}}>
-                  Les projets accomplis et publiés apparaîtront ici.
+                  Les aspirations accomplies et publiées apparaîtront ici.
                 </Text>
               </View>
             )}
@@ -552,7 +554,7 @@ export default function MySpace() {
               <View style={{flexDirection:'row',alignItems:'center',gap:compact?5:8}}>
                 <Pressable onPress={()=>setRoleMenuOpen(current=>!current)}
                   accessibilityRole="button"
-                  accessibilityLabel={'Filtrer mes projets : '+roleOption.label}
+                  accessibilityLabel={'Filtrer mes aspirations : '+roleOption.label}
                   accessibilityState={{expanded:roleMenuOpen}}
                   style={({pressed})=>[heroControlBase,{
                     flexDirection:'row',flexShrink:1,minWidth:0,gap:7,
@@ -573,7 +575,7 @@ export default function MySpace() {
                 </Pressable>
                 {!compact?(
                   <Pressable onPress={()=>router.push('/my-dream/new')}
-                    accessibilityRole="button" accessibilityLabel="Créer un projet"
+                    accessibilityRole="button" accessibilityLabel="Créer une aspiration"
                     style={({pressed})=>[heroControlBase,{
                       flexDirection:'row',gap:6,paddingHorizontal:12,borderRadius:9,
                       borderColor:'rgba(255,255,255,.25)',
@@ -582,7 +584,7 @@ export default function MySpace() {
                     <Ionicons name="add" size={17} color="#FFFFFF"/>
                     <Text style={{fontSize:11,fontWeight:'600',color:'#FFFFFF',
                       letterSpacing:.15}}>
-                      Créer un projet
+                      Créer une aspiration
                     </Text>
                   </Pressable>
                 ):null}
@@ -655,7 +657,7 @@ export default function MySpace() {
           <View style={{paddingLeft:ws.contentGutter,paddingRight:ws.gutter,alignItems:'flex-end',
             marginTop:-11,marginBottom:10}}>
             <Pressable onPress={()=>router.push('/my-dream/new')}
-              accessibilityRole="button" accessibilityLabel="Créer un projet"
+              accessibilityRole="button" accessibilityLabel="Créer une aspiration"
               style={({pressed})=>({
                 flexDirection:'row',alignItems:'center',gap:6,
                 minHeight:40,paddingHorizontal:6,
@@ -663,7 +665,7 @@ export default function MySpace() {
               })}>
               <Ionicons name="add" size={18} color="#D71D77"/>
               <Text style={{fontSize:12,color:'#D71D77',fontWeight:'700'}}>
-                Créer un projet
+                Créer une aspiration
               </Text>
             </Pressable>
           </View>
@@ -674,14 +676,14 @@ export default function MySpace() {
             <Ionicons name={roleFilter==='frozen' ? 'snow' : 'sparkles-outline'} size={27}
               color={roleFilter==='frozen' ? '#427FA6' : theme.muted} />
             <Text style={{ color: theme.foreground, fontWeight: '700', fontSize: 16 }}>
-              {roleFilter==='frozen' ? 'Aucun projet congelé' : roleOption.empty}
+              {roleFilter==='frozen' ? 'Aucune aspiration congelée' : roleOption.empty}
             </Text>
             <Text style={{ color: theme.muted, fontSize: 12, textAlign: 'center', lineHeight: 19 }}>
               {roleFilter==='frozen'
-                ? 'Les projets mis en pause apparaîtront ici.'
-                : roleFilter==='participant'?'Les projets auxquels tu contribues apparaîtront après acceptation de ta ressource.'
-                : roleFilter==='co_owner'?'Les projets partagés apparaîtront après acceptation d’une invitation de copropriété.'
-                : 'Plante une semence ou retrouve tes projets existants.'}
+                ? 'Les aspirations mises en pause apparaîtront ici.'
+                : roleFilter==='participant'?'Les aspirations auxquelles tu contribues apparaîtront après acceptation de ta ressource.'
+                : roleFilter==='co_owner'?'Les aspirations partagées apparaîtront après acceptation d’une invitation de copropriété.'
+                : 'Plante une semence ou retrouve tes aspirations existants.'}
             </Text>
           </View>
         ) : list ? (
@@ -756,7 +758,7 @@ export default function MySpace() {
                       textAlign:'right',fontSize:compact?10:11,
                       fontWeight:'500',color:theme.muted,
                     }}>
-                      {dreams.length} projet{dreams.length>1?'s':''}
+                      {dreams.length} aspiration{dreams.length>1?'s':''}
                     </Text>
                   </View>
                   <View style={{width:phaseViewportWidth,minWidth:0,
@@ -780,7 +782,7 @@ export default function MySpace() {
                           textAlign:'center'}}>
                           {panel.phase==='Témoignage'
                             ? 'Aucune floraison en préparation.'
-                            : 'Aucun projet dans cette étape.'}
+                            : 'Aucune aspiration dans cette étape.'}
                         </Text>
                       </View>
                     )}

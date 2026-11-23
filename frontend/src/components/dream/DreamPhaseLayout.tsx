@@ -118,8 +118,8 @@ export function DreamPhaseHeader({
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={canChangeCover ?
-          (dream.image ? "Changer l'image de couverture du rêve" :
-            "Ajouter une couverture au rêve") : "Image de couverture du rêve"}
+          (dream.image ? "Changer l'image de couverture de l’aspiration" :
+            "Ajouter une couverture à l’aspiration") : "Image de couverture de l’aspiration"}
         accessibilityState={{disabled:!canChangeCover||savingCover||!ready}}
         disabled={!canChangeCover||savingCover||!ready}
         onPress={chooseCover}

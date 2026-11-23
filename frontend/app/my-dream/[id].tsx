@@ -22,17 +22,17 @@ class DreamRenderBoundary extends React.Component<
     style={{flex:1,justifyContent:'center',alignItems:'center',padding:24,gap:13,
       backgroundColor:this.props.dark?'#111317':'#FFFCF5'}}>
     <Text style={{fontSize:22,fontFamily:'serif',fontWeight:'600',
-      color:this.props.dark?'#F3F3F3':'#171717',textAlign:'center'}}>Impossible d’ouvrir ce rêve</Text>
+      color:this.props.dark?'#F3F3F3':'#171717',textAlign:'center'}}>Impossible d’ouvrir cette aspiration</Text>
     <Text style={{fontSize:13,color:this.props.dark?'#C2C6CC':'#626562',lineHeight:21,textAlign:'center'}}>
-      Un problème d’affichage s’est produit. Ton rêve et son contenu n’ont pas été supprimés.
+      Un problème d’affichage s’est produit. Ton aspiration et son contenu n’ont pas été supprimés.
     </Text>
-    <Pressable accessibilityRole="button" accessibilityLabel="Retour à mes rêves"
+    <Pressable accessibilityRole="button" accessibilityLabel="Retour à mes aspirations"
       onPress={()=>router.replace('/my-space')}
       style={{marginTop:12,borderRadius:10,backgroundColor:this.props.dark?'#F7F4ED':'#242322',
         paddingHorizontal:22,paddingVertical:14}}>
-      <Text style={{color:this.props.dark?'#242322':'#FFFFFF',fontSize:13,fontWeight:'700'}}>Retour à mes rêves</Text>
+      <Text style={{color:this.props.dark?'#242322':'#FFFFFF',fontSize:13,fontWeight:'700'}}>Retour à mes aspirations</Text>
     </Pressable>
-    <Pressable accessibilityRole="button" accessibilityLabel="Recharger ce rêve"
+    <Pressable accessibilityRole="button" accessibilityLabel="Recharger cette aspiration"
       onPress={()=>this.setState({failed:false})}
       style={{padding:11}}>
       <Text style={{fontSize:12,color:this.props.dark?'#C2C6CC':'#626562'}}>Réessayer</Text>
@@ -53,9 +53,9 @@ export default function Workspace() {
     <DreamHub dream={dream} startInSemence={compose==='1'} startPhase={startPhase}/>
   </DreamRenderBoundary>:
    <View style={{flex:1,padding:20,gap:16}}>
-    <Text style={{color:theme.foreground}}>Rêve introuvable.</Text>
+    <Text style={{color:theme.foreground}}>Aspiration introuvable.</Text>
     <Pressable onPress={()=>router.replace('/my-space')} accessibilityRole="button">
-      <Text style={{color:theme.foreground,fontWeight:'700'}}>Retour à mes rêves</Text>
+      <Text style={{color:theme.foreground,fontWeight:'700'}}>Retour à mes aspirations</Text>
     </Pressable>
    </View>}
   <Nav/>

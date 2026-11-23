@@ -35,7 +35,7 @@ export default function DreamParticipants(){
   return ()=>{live=false;};
  },[dream?.serverDreamId]);
  if(!dream)return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
-   <PageHeader/><Text style={{color:theme.muted,padding:20}}>Rêve introuvable.</Text>
+   <PageHeader/><Text style={{color:theme.muted,padding:20}}>Aspiration introuvable.</Text>
    <Nav/>
  </SafeAreaView>;
  const owners=(dream.coOwners||[]).filter(o=>o.accepted&&o.name?.trim());
@@ -43,11 +43,11 @@ export default function DreamParticipants(){
  const fromServer=remote?.sameDream||[];
  const entries=active==='coowners'?owners.map(o=>({key:o.userId,name:o.name,subtitle:'Co-propriétaire'})):
    [...collaborators.map(r=>({key:r.id,name:r.title,subtitle:'Talent confirmé'})),
-    ...fromServer.map((r,i)=>({key:'server-'+i,name:r.displayName||r.display_name||r.name||r.handle||'Participant',subtitle:'A rejoint ce rêve'}))];
+    ...fromServer.map((r,i)=>({key:'server-'+i,name:r.displayName||r.display_name||r.name||r.handle||'Participant',subtitle:'A rejoint cette aspiration'}))];
  return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
    <ScrollView contentContainerStyle={{...workspaceCanvas(width),paddingTop:12,
      paddingBottom:115,gap:17}}>
-     <PageHeader title="Personnes du rêve"/>
+     <PageHeader title="Personnes de l’aspiration"/>
      <Text style={{fontSize:13,color:theme.muted,lineHeight:20}}>{dream.title}</Text>
      <View style={{flexDirection:'row',borderBottomWidth:1,borderColor:theme.border}}>
        {([{key:'coowners',label:'Co-propriétaires'},

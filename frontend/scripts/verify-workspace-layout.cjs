@@ -166,8 +166,8 @@ const layoutRules=[
     'Phase watermark must render only when its section has no dream cards'],
   ['app/my-space.tsx',/DreamPhaseIcon phase=\{panel.phase\}/,
     'Empty phases must retain their faint identity illustration'],
-  ['src/components/navigation/Nav.tsx',/icon: 'folder-outline' as const, title: 'Mes projets'/,
-    'Projects navigation must use the same name as the overview page'],
+  ['src/components/navigation/Nav.tsx',/icon: 'folder-outline' as const, title: t\('dreams'\)/,
+    'Aspirations navigation must match the overview title'],
   ['src/components/navigation/Nav.tsx',/const cleanProjectsNav=path==='\/my-space';/,
     'The projects overview navigation must not inherit the legacy background'],
   ['src/components/navigation/Nav.tsx',/backgroundColor:cleanProjectsNav\?theme.background:navSurface/,
@@ -266,5 +266,54 @@ for(const [needle,reason] of talentCreationGuards){
 const talentLevelDots=read('src/components/talent/TalentLevelDots.tsx');
 if(!talentLevelDots.includes('return 0;')){
   console.error('Talent level regression: an unset level must render zero filled dots.');
+  process.exitCode=1;
+}
+
+// Branding regression: aspirations are the public-facing concept.
+// Keep historical domain identifiers (dream, Rêve, API and storage keys) stable.
+const aspirationBranding=[
+  ['src/components/navigation/Nav.tsx', "title: t('dreams')"],
+  ['app/my-space.tsx', "<PageHeader title={t('dreams')} />"],
+  ['app/my-space.tsx', "label:'Toutes les aspirations'"],
+  ['app/discover.tsx', "'Tout', 'Pour moi', 'Aspirations'"],
+  ['app/my-dream/new.tsx', '<PageHeader title="Nouvelle aspiration" />'],
+  ['app/my-dream/new.tsx', 'Nom de mon aspiration *'],
+  ['src/i18n/fr.json', '"dreamsFilter": "Aspirations"'],
+  ['src/i18n/en.json', '"dreamsFilter": "Aspirations"'],
+  ['src/i18n/de.json', '"dreamsFilter": "Bestrebungen"'],
+  ['src/i18n/pt.json', '"dreamsFilter": "Aspirações"'],
+  ['src/i18n/locale.tsx', "dreams: 'Mes aspirations'"],
+  ['src/i18n/uiCopy.ts', "'Créer une aspiration'"],
+  ['src/components/detail/PublicationPrimaryAction.tsx','Créer une aspiration inspirée'],
+  ['src/components/dream/PublicationSearchPicker.tsx', "'ASPIRATION'"],
+  ['src/domain/publication.ts', "'Rêve' | 'Initiation' | 'Croissance' | 'Témoignage'"],
+];
+for(const [path,text] of aspirationBranding){
+  if(!read(path).includes(text)){
+    console.error('Aspiration branding regression: '+path+' missing '+text);
+    process.exitCode=1;
+  }
+}
+const oldBranding=/(?:Mes projets|Mes rêves|Créer un rêve|Aucun projet|Aucun rêve|Donner naissance à un rêve)/;
+for(const path of ['app/my-space.tsx','app/my-dream/new.tsx',
+  'app/my-dreams/[phase].tsx','src/components/navigation/Nav.tsx']){
+  if(oldBranding.test(read(path))){
+    console.error('Legacy user-visible project/dream wording: '+path);
+    process.exitCode=1;
+  }
+}
+if(/(?:aspirationr|congeléee|crééee|partagéess|Créer une aspiration inspiré(?!e))/.test(
+  ['app/my-space.tsx','app/my-dream/new.tsx',
+   'src/components/dream/DreamExperience.tsx',
+   'src/components/dream/SemenceInspirations.tsx',
+   'src/components/detail/PublicationPrimaryAction.tsx']
+  .map(read).join('\n'))){
+  console.error('Aspiration grammar regression in public UI copy.');
+  process.exitCode=1;
+}
+const notificationCopy=readFileSync(join(base,'../middleware/src/services/notifications.ts'),'utf8');
+if(!notificationCopy.includes("title: 'Invitation à rejoindre une aspiration'") ||
+   !notificationCopy.includes("title: 'Aspiration invitation'")){
+  console.error('Notifications still use old dream terminology.');
   process.exitCode=1;
 }

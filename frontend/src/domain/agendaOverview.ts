@@ -58,7 +58,7 @@ export function dreamCalendarItems(dreams: readonly DreamEntry[]): DreamCalendar
     const achieved = dream.testimony?.date ||
       dream.flowerDraft?.achievedOn || dream.fruitAt;
     push(dream, 'achievement', 'reality', achieved,
-      dream.title, 'Rêve réalisé');
+      dream.title, 'Aspiration réalisée');
     push(dream, 'reminder', 'flower', dream.flowerDraft?.reminderDate,
       dream.title, 'Rappel de floraison');
     if (dream.paused && dream.pauseUntil) {
