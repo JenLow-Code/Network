@@ -166,6 +166,9 @@ export type MusicProjectFile = {
   externalUrl?: string;
   durationSeconds?: number;
   createdAt: string;
+  /** Human attribution for a Capture resource, never inferred from a public byline. */
+  editedBy?: string;
+  editedAt?: string;
 };
 export type MusicProject = {
   /** New Music UI state, retained alongside legacy versions and files. */
@@ -306,8 +309,18 @@ export function MusicWorkspaceProvider({ children }: { children: React.ReactNode
     patch: (id, changes) => {
       if (readyKey !== key) return;
       setItems(old => old.map(x => x.id === id && x.ownerEmail.toLowerCase() === email.toLowerCase()
-        ? { ...x, ...changes, id: x.id, ownerEmail: x.ownerEmail, ownerName: x.ownerName,
-          createdAt: x.createdAt, updatedAt: new Date().toISOString() } : x));
+        ? {
+          ...x, ...changes, id: x.id, ownerEmail: x.ownerEmail,
+          ownerName: x.ownerName, createdAt: x.createdAt,
+          updatedAt: new Date().toISOString(),
+          // Stamp only actually changed Capture resources. Preserving older
+          // authorship is essential when a project gains collaborators.
+          files: changes.files ? changes.files.map(file=>{
+            const previous=x.files.find(item=>item.id===file.id);
+            if(previous&&JSON.stringify(previous)===JSON.stringify(file))return file;
+            return {...file,editedBy:name||x.ownerName,editedAt:new Date().toISOString()};
+          }) : x.files,
+        } : x));
     },
     remove: id => {
       if (readyKey !== key) return;
