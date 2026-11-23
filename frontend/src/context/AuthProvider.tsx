@@ -163,6 +163,7 @@ export function AuthProvider({children}:{children:React.ReactNode}){
       if(event==='TOKEN_REFRESHED'&&next&&verifiedUser.current===next.user.id){
         // Token rotation is not user activity, and must not reset inactivity.
         if(verifiedAt.current>0&&activeAt.current>0&&
+          Date.now()-verifiedAt.current<SESSION_VALIDATION_MS&&
           Date.now()-activeAt.current<INACTIVITY_TIMEOUT_MS){
           setSession(next);
           return;
