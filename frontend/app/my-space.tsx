@@ -187,11 +187,12 @@ function PhaseProjectCarousel({dreams,cardWidth,cardHeight,viewportWidth,gap,com
   const scrollRef=useRef<React.ComponentRef<typeof ScrollView>>(null);
   const [position,setPosition]=useState(0);
   const identities=dreams.map(d=>d.id).join('|');
-  const visibleCardWidth=dreams.length===1?viewportWidth:cardWidth;
+  const visibleCardWidth=cardWidth;
   const step=visibleCardWidth+gap;
-  const lastPosition=Math.max(0,dreams.length-1);
   const contentWidth=dreams.length*visibleCardWidth+Math.max(0,dreams.length-1)*gap;
   const maxOffset=Math.max(0,contentWidth-viewportWidth);
+  // The arrows only appear for content that actually overflows the row.
+  const lastPosition=Math.max(0,Math.ceil(maxOffset/step));
   useEffect(()=>{
     scrollRef.current?.scrollTo({x:0,animated:false});
     setPosition(0);
@@ -217,13 +218,13 @@ function PhaseProjectCarousel({dreams,cardWidth,cardHeight,viewportWidth,gap,com
         width={visibleCardWidth} height={cardHeight} presentation="phase"
         onLongPress={()=>onLongPress(d)}/>)}
     </ScrollView>
-    {dreams.length>1?(
+    {lastPosition>0?(
       <View style={{flexDirection:'row',alignItems:'center',
         justifyContent:'flex-end',minHeight:27}}>
         <View style={{flexDirection:'row',alignItems:'center',gap:7}}>
           <Text style={{fontSize:10,color:theme.muted,
             fontVariant:['tabular-nums']}}>
-            {position+1} / {dreams.length}
+            {position+1} / {lastPosition+1}
           </Text>
           {([-1,1] as const).map(direction=>{
             const disabled=direction<0?position===0:position===lastPosition;
@@ -423,22 +424,23 @@ export default function MySpace() {
   const galleryHeight=compact
     ? Math.min(294,Math.max(252,Math.round(galleryWidth*.64)))
     : Math.min(318,Math.max(282,Math.round(galleryWidth*.29)));
-  // Four equal, square-edged phase columns on desktop; keep two readable
-  // columns for touch/tablet widths. All edges share the hero's content rail.
-  const phaseColumns=ws.desktop?4:2;
-  const phaseGridGap=compact?10:ws.tablet?14:12;
-  const phasePanelWidth=Math.max(0,
-    (innerWidth-(phaseColumns-1)*phaseGridGap)/phaseColumns);
-  const panelInset=compact?9:12;
-  const phaseCardGap=compact?8:9;
-  const phaseViewportWidth=Math.max(0,phasePanelWidth-2*panelInset-2);
-  // A full-size primary card with a visible next-card edge, not two
-  // unreadably small cards squeezed into each narrow desktop column.
+  // Four full-width phase ROWS, all aligned with the hero's inner page rail.
+  // Desktop/tablet: readable horizontal phase label on the left, cards right.
+  // Phone: horizontal heading above the cards within the same rectangular row.
+  const phaseGridGap=compact?10:14;
+  const phasePanelWidth=innerWidth;
+  const panelInset=compact?12:16;
+  const phaseLabelWidth=compact?0:
+    Math.min(230,Math.max(150,Math.round(innerWidth*.23)));
+  const phaseContentGap=compact?0:20;
+  const phaseCardGap=compact?8:11;
+  const phaseViewportWidth=Math.max(0,
+    phasePanelWidth-2*panelInset-2-phaseLabelWidth-phaseContentGap);
   const phaseTileWidth=compact?phaseViewportWidth:
-    Math.max(1,Math.floor(phaseViewportWidth*.84));
+    Math.min(232,Math.max(150,Math.round(phaseViewportWidth*.31)));
   const phaseTileHeight=compact
-    ? Math.min(155,Math.max(105,Math.round(phaseViewportWidth*.92)))
-    : Math.min(170,Math.max(125,Math.round(phaseViewportWidth*.74)));
+    ? Math.min(145,Math.max(108,Math.round(phaseViewportWidth*.52)))
+    : 132;
   const heroGlass=Platform.OS==='web'
     ? ({backdropFilter:'blur(14px) saturate(125%)',
         WebkitBackdropFilter:'blur(14px) saturate(125%)'} as any)
@@ -680,74 +682,78 @@ export default function MySpace() {
             {visible.map(d => <DreamListRow key={d.id} dream={d} onLongPress={()=>setLongDream(d)}/>)}
           </View>
         ) : (
-          // Four horizontal phase columns on desktop, two on smaller screens.
-          // The next project remains accessible within its phase carousel.
+          // Four separate, full-width phase rows (not four side-by-side columns).
           <View style={{
-            paddingLeft:side,paddingRight:right,flexDirection:'row',flexWrap:'wrap',
-            columnGap:phaseGridGap,rowGap:phaseGridGap,
-            paddingBottom:compact?20:26,
+            paddingLeft:side,paddingRight:right,flexDirection:'column',
+            gap:phaseGridGap,paddingBottom:compact?20:26,
           }}>
             {phasePanels.map((panel,index)=>{
               const dreams=visible.filter(d=>panel.phase==='Témoignage'
                 ? inFlower(d) : d.phase===panel.phase);
               return (
                 <View key={panel.phase} style={{
-                  width:phasePanelWidth,minHeight:compact?220:258,
-                  paddingHorizontal:panelInset,paddingTop:compact?12:16,
-                  paddingBottom:compact?12:16,
+                  width:phasePanelWidth,minHeight:compact?225:195,
+                  paddingHorizontal:panelInset,
+                  paddingVertical:compact?13:16,
                   position:'relative',overflow:'hidden',
                   borderRadius:0,borderWidth:1,
                   borderColor:theme.dark?panel.darkBorder:panel.lightBorder,
                   backgroundColor:theme.background,
+                  flexDirection:compact?'column':'row',
+                  alignItems:compact?'stretch':'center',
+                  gap:compact?11:phaseContentGap,
                 }}>
-                  {/* Strong phase colour on the LEFT; fade into the regular
-                      page background at the RIGHT, not the reverse. */}
+                  {/* Fade into the page BACKGROUND at left, with a subtle
+                      phase tint arriving on the right side of each row. */}
                   <Svg pointerEvents="none" width="100%" height="100%"
                     style={{position:'absolute',top:0,bottom:0,left:0,right:0}}>
                     <Defs>
                       <LinearGradient id={'phase-wash-'+index}
                         x1="0%" y1="0%" x2="100%" y2="0%">
                         <Stop offset="0%" stopColor={panel.accent}
-                          stopOpacity={theme.dark?0.34:0.29}/>
-                        <Stop offset="44%" stopColor={panel.accent}
-                          stopOpacity={theme.dark?0.19:0.14}/>
-                        <Stop offset="100%" stopColor={panel.accent}
                           stopOpacity={0}/>
+                        <Stop offset="48%" stopColor={panel.accent}
+                          stopOpacity={theme.dark?0.045:0.025}/>
+                        <Stop offset="100%" stopColor={panel.accent}
+                          stopOpacity={theme.dark?0.20:0.13}/>
                       </LinearGradient>
                     </Defs>
                     <Rect width="100%" height="100%"
                       fill={'url(#phase-wash-'+index+')'}/>
                   </Svg>
-                  {/* Retain the soft symbolic phase illustration behind the
-                      project cards; it must never intercept interaction. */}
+                  {/* Keep the very faint phase illustration in the
+                      background; it never blocks project interactions. */}
                   <View pointerEvents="none" accessible={false}
                     importantForAccessibility="no-hide-descendants"
                     style={{position:'absolute',top:0,bottom:0,left:0,right:0,
                       alignItems:'center',justifyContent:'center',
                       opacity:theme.dark?0.13:0.10}}>
                     <DreamPhaseIcon phase={panel.phase}
-                      size={compact?62:92} artworkScale={1}/>
+                      size={compact?70:104} artworkScale={1}/>
                   </View>
-                  <View style={{minHeight:compact?43:49,
-                    flexDirection:'row',alignItems:'flex-start',
-                    justifyContent:'space-between',gap:5}}>
-                    <View style={{flex:1,minWidth:0,gap:6}}>
-                      <View style={{width:27,height:3,
-                        backgroundColor:panel.accent}}/>
-                      <Text numberOfLines={2} style={{
-                        color:theme.foreground,fontSize:compact?10:12,
-                        lineHeight:compact?14:17,fontWeight:'700',
-                        letterSpacing:compact?0.4:0.9}}>
-                        {panel.title.toLocaleUpperCase('fr-FR')}
-                      </Text>
-                    </View>
-                    <Text style={{fontSize:10,fontWeight:'600',
-                      color:theme.foreground}}>
-                      {dreams.length}
+                  <View style={{
+                    width:compact?'100%':phaseLabelWidth,
+                    flexDirection:compact?'row':'column',
+                    justifyContent:compact?'space-between':'center',
+                    alignItems:compact?'center':'flex-start',
+                    gap:compact?8:11,
+                    alignSelf:compact?'auto':'stretch',
+                  }}>
+                    <Text numberOfLines={2} style={{
+                      color:theme.foreground,fontSize:compact?12:14,
+                      lineHeight:compact?16:21,
+                      fontWeight:'700',letterSpacing:compact?0.8:1.1,
+                      flexShrink:1}}>
+                      {panel.title.toLocaleUpperCase('fr-FR')}
+                    </Text>
+                    <Text style={{
+                      fontSize:compact?10:11,fontWeight:'500',color:theme.muted,
+                    }}>
+                      {dreams.length} projet{dreams.length>1?'s':''}
                     </Text>
                   </View>
                   <View style={{width:phaseViewportWidth,minWidth:0,
-                    justifyContent:'center',marginTop:compact?8:12}}>
+                    justifyContent:'center'}}>
                     {dreams.length>0 ? (
                       compact?
                         <PhaseMobileOverlap dreams={dreams}
@@ -761,9 +767,9 @@ export default function MySpace() {
                     ):(
                       <View style={{minHeight:phaseTileHeight,
                         width:'100%',alignItems:'center',
-                        justifyContent:'center',paddingHorizontal:5}}>
-                        <Text style={{fontSize:compact?10:12,
-                          color:theme.muted,lineHeight:compact?15:18,
+                        justifyContent:'center',paddingHorizontal:8}}>
+                        <Text style={{fontSize:compact?11:12,
+                          color:theme.muted,lineHeight:compact?16:18,
                           textAlign:'center'}}>
                           {panel.phase==='Témoignage'
                             ? 'Aucune floraison en préparation.'
