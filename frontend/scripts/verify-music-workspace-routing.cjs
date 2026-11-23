@@ -53,6 +53,10 @@ const checks=[
     home.includes("onLearnMore={() => toggleForMe(song.id)}")],
   ['Real discovery provides a direct collaboration action',
     home.includes("pathname:'/music-proposal/[id]'")],
+  ['Real cassette details offer authorized direct contact without leaving until requested',
+    home.includes("Contacter l’auteur")&&
+    home.includes("api<{conversationId:string}>('/api/conversations'")&&
+    home.includes("method:'POST',auth:'required',body:{handle}")],
   ['Legacy player links still check actual authenticated membership',
     detail.includes("+'/conversation'")&&detail.includes("auth:'required'")],
 ];
