@@ -123,7 +123,7 @@ export default function Login() {
               style={[s.input,{backgroundColor:theme.surface,borderColor:theme.border,color:theme.foreground}]}
             />
           ) : null}
-          {error ? <Text style={s.error}>{error}</Text> : null}
+          {error ? <Text style={[s.error,{color:theme.dark?'#FFB0C8':'#A91C58'}]}>{error}</Text> : null}
           {!configured ? (
             <Text style={s.error}>
               Authentication setup required. Connect your Supabase project first.
@@ -148,7 +148,7 @@ export default function Login() {
             }}
             style={{ paddingVertical: 17 }}
           >
-            <Text style={{ fontSize: 12, color: '#D71D77' }}>
+            <Text style={{ fontSize: 12, color: theme.accent }}>
               {register ? 'Déjà un compte ? Se connecter' : 'Première fois ? Créer un compte'}
             </Text>
           </Pressable>
