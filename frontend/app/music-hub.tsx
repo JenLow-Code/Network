@@ -15,13 +15,11 @@ import { matchesForMe, profileTalentStorageKey, type SavedTalent } from '@/domai
 import { useApp } from '@/context/AppContext';
 import { useDiscovery } from '@/lib/api/hooks';
 import { api } from '@/lib/api/client';
-import { fetchDemoMusicPreview, type DemoMusicPreview } from '@/lib/api/musicPreview';
 import { useAppTheme } from '@/theme/AppTheme';
 import { workspaceLayout } from '@/theme/workspaceLayout';
 import type { MusicPublication } from '@/domain/publication';
 
 const PINK = '#CB245C';
-const BETA_MUSIC_EXAMPLES = process.env.EXPO_PUBLIC_DISCOVERY_SOURCE !== 'unified';
 
 type Proposal = {
   id: string;
@@ -33,7 +31,6 @@ type Proposal = {
   reviewState?: string;
   proposer?: MusicCollaborator;
   publisher?: MusicCollaborator;
-  isDemo?: boolean;
 };
 type ProposalItem = Proposal & { direction: 'received' | 'sent' };
 type SharedPiece = {
@@ -41,7 +38,6 @@ type SharedPiece = {
   title: string;
   primary: ProposalItem;
   participants: MusicCollaborator[];
-  isDemo: boolean;
   pending: boolean;
 };
 
@@ -77,7 +73,6 @@ export default function MusicHub() {
   const [sent, setSent] = useState<Proposal[]>([]);
   const [received, setReceived] = useState<Proposal[]>([]);
   const [requestsError, setRequestsError] = useState(false);
-  const [demoPreview, setDemoPreview] = useState<DemoMusicPreview | null>(null);
 
   useFocusEffect(useCallback(() => {
     let active = true;
@@ -115,15 +110,6 @@ export default function MusicHub() {
     return () => { live = false; };
   }, [app.email]);
 
-  useEffect(() => {
-    if (!BETA_MUSIC_EXAMPLES) return;
-    let live = true;
-    void fetchDemoMusicPreview()
-      .then(value => { if (live) setDemoPreview(value); })
-      .catch(() => { if (live) setDemoPreview(null); });
-    return () => { live = false; };
-  }, []);
-
   const songs = useMemo(() => [...items].sort((a,b) =>
     (b.updatedAt || b.createdAt).localeCompare(a.updatedAt || a.createdAt)), [items]);
   const proposals = useMemo<ProposalItem[]>(() => [
@@ -132,7 +118,6 @@ export default function MusicHub() {
   ].sort((a,b) => (b.createdAt || '').localeCompare(a.createdAt || '')), [sent, received]);
 
   const accepted = proposals.filter(p => p.status === 'accepted' || p.status === 'published');
-  const acceptedWithDemo: ProposalItem[] = [...accepted, ...(demoPreview?.collaborations || [])];
   const publishedLocalIds = new Set(songs.map(song => song.publishedId).filter(
     (id): id is string => !!id,
   ));
@@ -161,7 +146,7 @@ export default function MusicHub() {
       if (!piece) {
         piece = {
           publicationId:id, title:proposal.trackTitle, primary:proposal,
-          participants:[], isDemo:!!proposal.isDemo, pending,
+          participants:[], pending,
         };
         grouped.set(id,piece);
       }
@@ -176,12 +161,12 @@ export default function MusicHub() {
       }
       return piece;
     };
-    acceptedWithDemo.forEach(p => ensure(p,false));
+    accepted.forEach(p => ensure(p,false));
     // Received requests still refer to a song I own, but are not collaborations yet.
     proposals.filter(p => p.direction === 'received' &&
       (p.status === 'submitted' || p.status === 'draft')).forEach(p => ensure(p,true));
     return [...grouped.values()];
-  }, [acceptedWithDemo, proposals, songs]);
+  }, [accepted, proposals, songs]);
 
   const opportunities = useMemo(() => discovery.state === 'ready'
     ? discovery.items.filter((p): p is MusicPublication =>
@@ -189,9 +174,7 @@ export default function MusicHub() {
       !!p.requestedTalents?.length && matchesForMe(p,talents) &&
       !publishedLocalIds.has(p.id))
     : [], [discovery.state, discovery.items, talents, songs]);
-  const recommended: (MusicPublication & {isDemo?: boolean})[] = [
-    ...opportunities, ...(demoPreview?.songs || []),
-  ];
+  const recommended: MusicPublication[] = opportunities;
   // An outgoing, unanswered proposal remains in For me, not in My pieces.
   const pendingSent = proposals.filter(p => p.direction === 'sent' &&
     (p.status === 'submitted' || p.status === 'draft') &&
@@ -199,23 +182,22 @@ export default function MusicHub() {
   const myCount = songs.length + sharedPieces.length;
   const forMeCount = recommended.length + pendingSent.length;
 
-  const openProposal = (p: ProposalItem) => {
-    if (p.isDemo) {
-      router.push({pathname:'/music/[id]',
-        params:{id:p.trackPublicationId,from:'music-tab'}});
+  // A personal music tile is ALWAYS a workspace entry, never the Discovery
+  // player. The latter is exclusively for music the viewer is exploring.
+  const openMyPiece = (p: ProposalItem) => {
+    const project=items.find(song=>song.publishedId===p.trackPublicationId);
+    if(project){
+      router.push({pathname:'/music-workspace/[id]',
+        params:{id:project.id,tab:p.direction==='received'?'collaborate':'capture'}});
       return;
     }
-    if (p.direction === 'received') {
-      const project = items.find(song => song.publishedId === p.trackPublicationId);
-      if (project) {
-        router.push({pathname:'/music-workspace/[id]',
-          params:{id:project.id,tab:'collaborate'}});
-        return;
-      }
-    }
-    router.push(p.direction === 'sent' && (p.status === 'accepted' || p.status === 'published')
-      ? {pathname:'/music-collaboration/[id]',params:{id:p.trackPublicationId}}
-      : {pathname:'/music/[id]',params:{id:p.trackPublicationId,from:'music-tab'}});
+    router.push({pathname:'/music-collaboration/[id]',
+      params:{id:p.trackPublicationId,
+        tab:p.direction==='received'?'collaborate':'capture'}});
+  };
+  const openForMeProposal = (p: ProposalItem) => {
+    router.push({pathname:'/music/[id]',
+      params:{id:p.trackPublicationId,from:'music-tab'}});
   };
 
   const sectionTitle = (title:string,count:number) => <View style={{
@@ -286,11 +268,10 @@ export default function MusicHub() {
             byline=""
             participants={piece.participants}
             status={piece.pending?'À examiner':undefined}
-            demo={piece.isDemo}
-            onPress={() => openProposal(piece.primary)}/>)
+            onPress={() => openMyPiece(piece.primary)}/>)
         ]) : ready ? empty('Ton premier morceau commence ici.',
           'Créer un morceau',() => router.push('/music/new')) : null}
-        {requestsError && !demoPreview ? <Text style={{color:theme.muted,fontSize:10}}>
+        {requestsError ? <Text style={{color:theme.muted,fontSize:10}}>
           Les morceaux partagés nécessitent une session API connectée.
         </Text> : null}
       </View>
@@ -319,7 +300,6 @@ export default function MusicHub() {
             detail={song.requestedTalents?.length
               ? 'Recherche : ' + song.requestedTalents.join(' · ') : 'À découvrir'}
             artwork={song.coverArt || song.image} audioUrl={song.audioUrl}
-            demo={!!song.isDemo}
             onPress={() => router.push({pathname:'/music/[id]',
               params:{id:song.id,from:'music-tab'}})}
             onLearnMore={() => router.push({pathname:'/music/[id]',
@@ -329,7 +309,7 @@ export default function MusicHub() {
             title={p.trackTitle} byline={p.publisher?.displayName || 'Morceau proposé'}
             detail={p.description} status={p.status === 'submitted'
               ? 'Réponse en attente' : 'Proposition en brouillon'}
-            onPress={() => openProposal(p)}
+            onPress={() => openForMeProposal(p)}
             onLearnMore={() => router.push({pathname:'/music/[id]',
               params:{id:p.trackPublicationId,from:'music-tab',openMore:'1'}})}/>)
         ]) : empty('Aucune proposition musicale pour le moment.',
