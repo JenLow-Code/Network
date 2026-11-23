@@ -10,11 +10,10 @@ import { translateStatic } from './uiCopy';
 import { useAppTheme } from '@/theme/AppTheme';
 
 /** Localizes only explicit UI strings. Member-written content is never translated. */
-export function Text({ children, style, ...props }: TextProps) {
+export function Text({ children, ...props }: TextProps) {
   const { language } = useLocale();
-  const theme=useAppTheme();
   return (
-    <NativeText {...props} style={[{color:theme.foreground},style]}>
+    <NativeText {...props}>
       {React.Children.map(children, child =>
         typeof child === 'string' ? translateStatic(child, language) : child,
       )}
