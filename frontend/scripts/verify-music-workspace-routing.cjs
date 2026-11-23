@@ -15,6 +15,7 @@ const detail=read('app/music/[id].tsx');
 const owned=read('src/components/music/MusicSongCard.tsx');
 const capture=read('src/components/music/MusicCaptureExperience.tsx');
 const demoData=read('src/lib/api/musicPreview.ts');
+const more=read('src/components/music/MusicMoreDetails.tsx');
 
 const personalBlock=home.split('const openMyPiece = ')[1]?.split('const sectionTitle = ')[0]||'';
 const checks=[
@@ -49,6 +50,16 @@ const checks=[
     home.includes('expandedForMe')&&
     home.includes("onPress={() => toggleForMe(song.id)}")&&
     home.includes('A cassette unfolds HERE, underneath the row')],
+  ['Cassette inline view renders the same complete Discover More details as the drawer',
+    home.includes('<MusicMoreDetails item={expandedSong}/>')&&
+    detail.includes('<MusicMoreDetails item={item}/>')&&
+    more.includes('À propos du morceau')&&
+    more.includes('Talents recherchés')&&
+    more.includes('Paroles complètes')&&
+    more.includes('Partitions')],
+  ['Cassette details display inline without a second summary card or extra player',
+    !home.includes('<MusicWaveform key={expandedSong.id}')&&
+    !home.includes('borderRadius:15,backgroundColor:theme.surface,gap:14,maxWidth:780')],
   ['Bottom cassette info button does not navigate to side/public detail',
     home.includes("onLearnMore={() => toggleForMe(song.id)}")],
   ['Real discovery provides a direct collaboration action',
