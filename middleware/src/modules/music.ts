@@ -243,6 +243,29 @@ export function registerMusic(r: Router): void {
     return { conversationId };
   });
 
+  // A shared project's roster is visible only to its publisher and accepted
+  // collaborators. Submitted or rejected proposals never grant membership.
+  r.add('GET', '/api/music/:id/collaborators', {
+    tag: 'Music', summary: 'Accepted collaborators and original author of a song', auth: 'required',
+  }, async ctx => {
+    const viewer = await ctx.user();
+    const track = await trackByPublication(ctx, ctx.param('id'));
+    if (track.withdrawn_at) throw notFound();
+    const accepted = await ctx.sql.all<{ proposed_by: string }>(
+      "SELECT DISTINCT proposed_by FROM music_collab_proposals WHERE original_track_id=? AND status IN ('accepted','published') ORDER BY proposed_by",
+      track.id,
+    );
+    const members = [...new Set([track.publisher_id, ...accepted.map(row => row.proposed_by)])];
+    if (!members.includes(viewer.id)) throw notFound();
+    const profiles = await authorMap(ctx, members);
+    return { members: members.map(id => ({
+      id, role: id === track.publisher_id ? 'owner' : 'collaborator',
+      displayName: profiles.get(id)?.displayName || 'Membre JenLow',
+      handle: profiles.get(id)?.handle || null,
+      avatarUrl: profiles.get(id)?.avatarUrl || null,
+    })) };
+  });
+
   // ------------------------------------------------------------------ adaptation proposals
   r.add('POST', '/api/music/:id/proposals', { tag: 'Music', summary: 'Propose an audio adaptation (credits required; publisher decides)', auth: 'required', status: 201 }, async ctx => {
     const viewer = await ctx.user();

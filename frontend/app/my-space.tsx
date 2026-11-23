@@ -247,7 +247,7 @@ function PhaseProjectCarousel({dreams,cardWidth,cardHeight,viewportWidth,gap,com
 /**
  * A single, foreground project and the edge of the next project underneath:
  * discoverable horizontal swiping in each phase, not vertical stacks.
- * The four-quadrant page raster and canvas dimensions remain untouched.
+ * Kept inside the slim phase banner to preserve swipe gestures.
  */
 function PhaseMobileOverlap({dreams,viewportWidth,cardHeight,onLongPress}:{
   dreams:DreamEntry[];viewportWidth:number;cardHeight:number;
@@ -415,18 +415,22 @@ export default function MySpace() {
   const galleryHeight=compact
     ? Math.min(294,Math.max(252,Math.round(galleryWidth*.64)))
     : Math.min(318,Math.max(282,Math.round(galleryWidth*.29)));
-  const phaseGridGap=compact?10:ws.tablet?14:18;
-  // Preserve the established 2 × 2 raster and the page's fixed canvas width.
-  // Mobile projects overlap horizontally instead of stacking vertically.
-  const phasePanelWidth=Math.max(0,(innerWidth-phaseGridGap)/2);
-  const panelInset=compact?8:17;
+  // Four compact full-width phase banners, with a dedicated label area and a
+  // horizontal project preview. On phones these stack rather than forming a 2×2 grid.
+  const phaseGridGap=compact?10:14;
+  const phasePanelWidth=innerWidth;
+  const panelInset=compact?10:16;
+  const phaseLabelWidth=compact
+    ?Math.min(118,Math.max(94,Math.round(innerWidth*.30)))
+    :Math.min(230,Math.max(170,Math.round(innerWidth*.22)));
+  const phaseContentGap=compact?10:20;
+  const phaseViewportWidth=Math.max(0,phasePanelWidth-2*panelInset-
+    phaseLabelWidth-phaseContentGap);
   const phaseCardGap=compact?8:11;
-  const phaseViewportWidth=Math.max(0,phasePanelWidth-2*panelInset);
   const phaseTileWidth=compact?phaseViewportWidth:
-    Math.max(100,Math.floor((phaseViewportWidth-2*phaseCardGap)/2.2));
-  const phaseTileHeight=compact?Math.min(155,Math.round(phaseViewportWidth*.9)):146;
-  // Give the project cards and carousel controls room without oversized empty panels.
-  const phasePanelHeight=compact?Math.max(204,phaseTileHeight+82):252;
+    Math.min(240,Math.max(155,Math.floor(phaseViewportWidth*.44)));
+  const phaseTileHeight=compact?96:122;
+  const phasePanelHeight=compact?154:180;
   const heroGlass=Platform.OS==='web'
     ? ({backdropFilter:'blur(14px) saturate(125%)',
         WebkitBackdropFilter:'blur(14px) saturate(125%)'} as any)
@@ -663,79 +667,76 @@ export default function MySpace() {
             {visible.map(d => <DreamListRow key={d.id} dream={d} onLongPress={()=>setLongDream(d)}/>)}
           </View>
         ) : (
-          // Four phase zones remain 2 × 2 on desktop and phone.
-          // On phone the next project peeks out behind the current card.
+          // Four slim editorial banners keep the phase colors and project
+          // swiping, without squeezing the content into four square quadrants.
           <View style={{
-            paddingHorizontal:side,flexDirection:'row',flexWrap:'wrap',
-            columnGap:phaseGridGap,rowGap:phaseGridGap,
-            paddingBottom:compact?20:26,
+            paddingHorizontal:side,flexDirection:'column',
+            gap:phaseGridGap,paddingBottom:compact?20:26,
           }}>
             {phasePanels.map((panel,index)=>{
               const dreams=visible.filter(d=>panel.phase==='Témoignage'
                 ? inFlower(d) : d.phase===panel.phase);
               return (
                 <View key={panel.phase} style={{
-                  width:phasePanelWidth,height:phasePanelHeight,
-                  paddingHorizontal:panelInset,paddingTop:compact?12:16,
-                  paddingBottom:compact?11:17,
-                  position:'relative',
-                  borderWidth:0,backgroundColor:'transparent',
+                  width:phasePanelWidth,minHeight:phasePanelHeight,
+                  paddingHorizontal:panelInset,paddingVertical:compact?8:10,
+                  position:'relative',overflow:'hidden',borderRadius:compact?12:15,
+                  flexDirection:'row',alignItems:'center',gap:phaseContentGap,
+                  backgroundColor:theme.dark?'#211E21':'#FAF8F4',
                 }}>
-                  {/* A quiet left-to-right color wash, with no visible frame.
-                      The phase name stays clear against the neutral left side. */}
                   <Svg pointerEvents="none" width="100%" height="100%"
                     style={{position:'absolute',top:0,bottom:0,left:0,right:0}}>
                     <Defs>
                       <LinearGradient id={'phase-wash-'+index}
                         x1="0%" y1="0%" x2="100%" y2="0%">
-                        <Stop offset="0%" stopColor={panel.accent} stopOpacity={0}/>
-                        <Stop offset="28%" stopColor={panel.accent} stopOpacity={0.015}/>
-                        <Stop offset="72%" stopColor={panel.accent}
-                          stopOpacity={theme.dark?0.09:0.06}/>
+                        <Stop offset="0%" stopColor={panel.accent} stopOpacity={0.025}/>
+                        <Stop offset="42%" stopColor={panel.accent}
+                          stopOpacity={theme.dark?0.06:0.035}/>
                         <Stop offset="100%" stopColor={panel.accent}
-                          stopOpacity={theme.dark?0.22:0.16}/>
+                          stopOpacity={theme.dark?0.24:0.16}/>
                       </LinearGradient>
                     </Defs>
                     <Rect width="100%" height="100%" fill={'url(#phase-wash-'+index+')'}/>
                   </Svg>
-                  {/* One horizontal title per phase. No extra phase numbers,
-                      subtitles, ornamental lines or icons. */}
-                  <View style={{height:compact?17:21,
-                    flexDirection:'row',alignItems:'center',
-                    marginBottom:compact?9:12}}>
-                    <Text numberOfLines={1} style={{
-                      color:panel.accent,
-                      fontSize:compact?10:14,lineHeight:compact?17:21,
-                      fontWeight:'500',letterSpacing:compact?0.8:1.8,
-                      textTransform:'uppercase',
+                  <View style={{width:phaseLabelWidth,gap:compact?8:10,
+                    alignSelf:'stretch',justifyContent:'center'}}>
+                    <Text numberOfLines={2} style={{
+                      color:panel.accent,fontSize:compact?11:14,
+                      lineHeight:compact?17:21,fontWeight:'600',
+                      letterSpacing:compact?1.1:1.8,textTransform:'uppercase',
                     }}>{panel.title}</Text>
+                    <Text numberOfLines={2} style={{
+                      color:theme.muted,fontSize:compact?10:12,
+                      lineHeight:compact?15:18}}>
+                      {dreams.length
+                        ? dreams.length+' projet'+(dreams.length>1?'s':'')
+                        : 'À venir'}
+                    </Text>
                   </View>
-                  {dreams.length>0 ? (
-                    compact?
-                      <PhaseMobileOverlap dreams={dreams}
-                        viewportWidth={phaseViewportWidth}
-                        cardHeight={phaseTileHeight}
-                        onLongPress={setLongDream}/>:
-                      <PhaseProjectCarousel dreams={dreams}
-                        cardWidth={phaseTileWidth} cardHeight={phaseTileHeight}
-                        viewportWidth={phaseViewportWidth} gap={phaseCardGap}
-                        compact={compact} onLongPress={setLongDream}/>
-                  ):(
-                    <View style={{minHeight:phaseTileHeight,
-                      width:'100%',alignItems:'center',justifyContent:'center',
-                      paddingHorizontal:compact?2:16}}>
-                      <Text style={{
-                        fontSize:compact?9:13,
-                        color:theme.foreground,opacity:0.76,
-                        fontStyle:'italic',fontWeight:'400',
-                        letterSpacing:0,
-                        lineHeight:compact?14:21,textAlign:'center'}}>
-                        {panel.phase==='Témoignage'
-                          ? 'Aucun rêve en floraison pour le moment.'
-                          : 'Aucun rêve dans cette étape pour le moment.'}
-                      </Text>
-                    </View>
-                  )}
+                  <View style={{flex:1,minWidth:0,justifyContent:'center'}}>
+                    {dreams.length>0 ? (
+                      compact ?
+                        <PhaseMobileOverlap dreams={dreams}
+                          viewportWidth={phaseViewportWidth}
+                          cardHeight={phaseTileHeight}
+                          onLongPress={setLongDream}/> :
+                        <PhaseProjectCarousel dreams={dreams}
+                          cardWidth={phaseTileWidth} cardHeight={phaseTileHeight}
+                          viewportWidth={phaseViewportWidth} gap={phaseCardGap}
+                          compact={compact} onLongPress={setLongDream}/>
+                    ) : (
+                      <View style={{minHeight:phaseTileHeight,
+                        justifyContent:'center',alignItems:'center',
+                        paddingHorizontal:compact?4:16}}>
+                        <Text style={{
+                          color:theme.muted,fontStyle:'italic',
+                          fontSize:compact?10:12,lineHeight:compact?16:19,
+                          textAlign:'center'}}>
+                          Aucun projet pour le moment
+                        </Text>
+                      </View>
+                    )}
+                  </View>
                 </View>
               );
             })}

@@ -32,7 +32,7 @@ export function MusicCassetteDraft({ width = 216, variant = 'standard', title }:
         {Array.from({length:15},(_,i) => <Line key={'h'+i}
           x1={0} y1={i*24} x2={320} y2={i*24}/>)}
       </G> : null}
-      <G transform={variant === 'tile' ? 'translate(0 55)' : undefined}>
+      <G transform={variant === 'tile' ? 'translate(19 28) scale(0.88)' : undefined}>
       <G fill="none" stroke={ink} strokeWidth={1.25}
         strokeLinecap="round" strokeLinejoin="round" opacity={0.88}>
         {/* Outer shell and the faint construction line of a second plate. */}
@@ -98,11 +98,11 @@ export function MusicCassetteDraft({ width = 216, variant = 'standard', title }:
     {/* The unfinished drawing uses the original technical lettering,
         never the licensed BiroScript reserved for a finished release. */}
     {variant === 'tile' && !!legend ? <View pointerEvents="none" style={{
-      position:'absolute', left:'8%', right:'8%', top:'75%',
+      position:'absolute', left:'8%', right:'8%', top:'73%',
     }}>
       <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.60}
-        style={{fontSize:Math.min(9.5,Math.max(7,width*0.043)),
-          fontFamily:'monospace', lineHeight:Math.min(14,Math.max(10,width*0.055)),
+        style={{fontSize:Math.min(11,Math.max(8,width*0.051)),
+          fontFamily:'monospace', lineHeight:Math.min(15,Math.max(11,width*0.064)),
           letterSpacing:0.7, color:theme.dark?'#E8D8C8':'#665B4E'}}>
         {legend}
       </Text>

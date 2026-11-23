@@ -12,10 +12,14 @@ import type {MusicProject} from '@/domain/musicWorkspace';
 const PINK='#CB245C';
 type Props={project:MusicProject;patch:(changes:Partial<MusicProject>)=>void};
 type Proposal=CollaborationRequest&{trackPublicationId:string};
+type Collaborator={id:string;role:'owner'|'collaborator';
+  displayName:string;handle?:string|null};
 
 export function MusicCollaborateExperience({project,patch}:Props){
   const theme=useAppTheme();
   const [proposals,setProposals]=useState<Proposal[]>([]);
+  const [collaborators,setCollaborators]=useState<Collaborator[]>([]);
+  const [rosterUnavailable,setRosterUnavailable]=useState(false);
   const [selected,setSelected]=useState('');
   const [demoDecision,setDemoDecision]=useState<'submitted'|'accepted'|'rejected'>('submitted');
   const [demoReview,setDemoReview]=useState<'pending'|'testing'|'archived'>('pending');
@@ -32,6 +36,17 @@ export function MusicCollaborateExperience({project,patch}:Props){
   const linked=[project.publishedId,...project.versions.map(v=>v.publishedId)]
     .filter((x):x is string=>!!x);
   const ids=[...new Set(linked)].sort().join('|');
+  const firstPublication=linked[0];
+  useEffect(()=>{
+    let live=true;
+    setCollaborators([]);setRosterUnavailable(false);
+    if(!firstPublication)return;
+    void api<{members:Collaborator[]}>('/api/music/'+
+      encodeURIComponent(firstPublication)+'/collaborators',{auth:'required'})
+      .then(answer=>{if(live)setCollaborators(answer.members||[]);})
+      .catch(()=>{if(live)setRosterUnavailable(true);});
+    return()=>{live=false;};
+  },[firstPublication]);
   useEffect(()=>{
     let live=true;
     setProposals([]);setError('');
@@ -104,6 +119,48 @@ export function MusicCollaborateExperience({project,patch}:Props){
     Number(a.reviewState==='archived')-Number(b.reviewState==='archived')||
     b.createdAt.localeCompare(a.createdAt));
   return <View style={{gap:18}}>
+    <View style={{gap:11}}>
+      <View style={{flexDirection:'row',alignItems:'baseline',gap:9}}>
+        <Text style={{fontSize:17,fontWeight:'700',color:theme.foreground}}>
+          Collaborateurs
+        </Text>
+        <Text style={{fontSize:12,color:theme.muted}}>
+          {collaborators.length||1}
+        </Text>
+      </View>
+      {(collaborators.length?collaborators:[{
+        id:project.ownerEmail,role:'owner' as const,
+        displayName:project.ownerName,
+      }]).map(person=><View key={person.id} style={{
+        flexDirection:'row',alignItems:'center',gap:11,
+        minHeight:50,borderBottomWidth:1,borderColor:theme.border,
+      }}>
+        <View style={{width:36,height:36,borderRadius:18,
+          alignItems:'center',justifyContent:'center',
+          backgroundColor:theme.dark?'#422C36':'#F7E8EF'}}>
+          <Text style={{fontSize:15,fontWeight:'700',color:PINK}}>
+            {person.displayName.slice(0,1).toLocaleUpperCase('fr')}
+          </Text>
+        </View>
+        <View style={{flex:1,gap:3}}>
+          <Text style={{fontSize:13,fontWeight:'700',color:theme.foreground}}>
+            {person.displayName}
+          </Text>
+          <Text style={{fontSize:11,color:theme.muted}}>
+            {person.role==='owner'?'Auteur du morceau':'Collaborateur'}
+          </Text>
+        </View>
+        {person.handle?<Pressable accessibilityRole="button"
+          accessibilityLabel={'Voir le profil de '+person.displayName}
+          onPress={()=>router.push({pathname:'/member/[name]',
+            params:{name:person.handle!}})}>
+          <Ionicons name="chevron-forward-outline" size={18} color={theme.muted}/>
+        </Pressable>:null}
+      </View>)}
+      {rosterUnavailable?<Text style={{fontSize:11,color:theme.muted}}>
+        Liste complète indisponible jusqu’à la mise à jour de l’API.
+      </Text>:null}
+    </View>
     {!proposals.length?<View style={{gap:10}}>
       <View style={{flexDirection:'row',alignItems:'center',gap:9,flexWrap:'wrap'}}>
         <Text style={{fontSize:16,fontWeight:'700',color:theme.foreground}}>
