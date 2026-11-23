@@ -14,6 +14,52 @@ import { Nav,MOBILE_NAV_HEIGHT } from '@/components/navigation/Nav';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { workspaceLayout } from '@/theme/workspaceLayout';
 
+
+const PRIVATE_SCREENS=[
+  'agenda',
+  'bible-library',
+  'bible/[reference]',
+  'chat/[id]',
+  'circle-call/[id]',
+  'circle',
+  'discover',
+  'dream/[id]',
+  'fire',
+  'import-verse',
+  'introduce/[id]',
+  'member/[name]',
+  'music-collaboration/[id]',
+  'music-composer/[id]',
+  'music-hub',
+  'music-library',
+  'music-lyrics/[id]',
+  'music-proposal/[id]',
+  'music-workspace/[id]',
+  'music/[id]',
+  'music/new',
+  'my-dream-participants/[id]',
+  'my-dream/[id]',
+  'my-dream/flower/[id]',
+  'my-dream/library/[id]',
+  'my-dream/new',
+  'my-dream/notes/[id]',
+  'my-dreams',
+  'my-dreams/[phase]',
+  'my-space',
+  'notifications',
+  'person/[name]',
+  'prayers',
+  'profile-preview',
+  'profile',
+  'publish/music',
+  'semence-share/[id]',
+  'settings',
+  'share/[id]',
+  'space',
+  'talent-invitations',
+  'verse-export/[id]',
+] as const;
+
 function ThemedStack() {
   const theme = useAppTheme();
   const {width}=useWindowDimensions();
@@ -110,8 +156,15 @@ function ThemedStack() {
             paddingBottom:desktop?0:(!user?0:MOBILE_NAV_HEIGHT+insets.bottom)}}>
             <Stack
               screenOptions={{headerShown:false,
-                contentStyle:{backgroundColor:theme.background}}}
-            />
+                contentStyle:{backgroundColor:theme.background}}}>
+              <Stack.Screen name="index"/>
+              <Stack.Screen name="login"/>
+              <Stack.Screen name="auth/callback"/>
+              <Stack.Protected guard={!!user} redirectTo="/login">
+                {PRIVATE_SCREENS.map(name=>
+                  <Stack.Screen key={name} name={name}/>)}
+              </Stack.Protected>
+            </Stack>
           </View>
           {!desktop&&!!user?<Nav placement="root"/>:null}
         </View>
