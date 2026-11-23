@@ -62,7 +62,7 @@ export default function Prayers() {
                       style={{
                         borderWidth: 1,
                         borderColor:
-                          (prayerRepetitions[p.id] || 'daily') === o.id ? '#CB245C' : theme.border,
+                          (prayerRepetitions[p.id] || 'daily') === o.id ? theme.accent : theme.border,
                         paddingHorizontal: 6,
                         paddingVertical: 5,
                         borderRadius: 8,
