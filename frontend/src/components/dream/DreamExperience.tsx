@@ -21,6 +21,7 @@ import { TranslatorLanguageFields } from '@/components/talent/TranslatorLanguage
 import { habitDayKey, habitKey } from '@/domain/habitProgress';
 import { GrowthLogbook } from './GrowthLogbook';
 import DreamWorkspaceShortcuts, { DreamWorkspaceShortcutRow } from './DreamWorkspaceShortcuts';
+import DreamMilestoneActions from './DreamMilestoneActions';
 import FlowerJourneyRecap from './FlowerJourneyRecap';
 import { canEditGrowthLog } from '@/domain/growthTimeline';
 
@@ -496,42 +497,24 @@ export default function DreamExperience({
       </View>
     ):null}
     </View>
-   {!historical && phase==='Initiation' ? (
-     <View style={{gap:ws.desktop?10:(ws.tablet?8:11),
-        flexDirection:(ws.tablet||ws.desktop)?'row':'column',
-        maxWidth:ws.desktop?630:ws.tablet?700:undefined,width:'100%',
-        alignSelf:ws.desktop?'flex-start':'center',
-        marginTop:ws.desktop?24:12,marginBottom:21}}>
-       {resourceEditable ? <>
-         <Pressable accessibilityRole="button" onPress={()=>setGoalDateDialog(true)}
-           style={{minHeight:(ws.tablet||ws.desktop)?43:48,
-              flex:(ws.tablet||ws.desktop)?1.35:undefined,
-              backgroundColor:'#225D42',borderRadius:11,
-             alignItems:'center',justifyContent:'center',paddingHorizontal:16}}>
-           <Text style={{color:'#FFFFFF',fontSize:13,fontWeight:'700'}}>Faire pousser</Text>
-         </Pressable>
-         <Pressable accessibilityRole="button" onPress={()=>{
-           if((dream.pauseCount||0)>=3){Alert.alert('Limite atteinte','Cette germination a déjà été congelée trois fois.');return;}
-           setFreezeDialog(true);
-         }} style={{minHeight:(ws.tablet||ws.desktop)?43:48,
-              flex:(ws.tablet||ws.desktop)?1:undefined,
-              borderWidth:1,borderColor:'#397F9E',borderRadius:11,
-           alignItems:'center',justifyContent:'center',paddingHorizontal:16}}>
-           <Text style={{color:'#397F9E',fontSize:13,fontWeight:'700'}}>Geler</Text>
-         </Pressable>
-         <Pressable accessibilityRole="button" accessibilityLabel="Arracher cette plante"
-           onPress={()=>confirm('Arracher cette plante ?',
-             'Cette action supprimera définitivement ce rêve et ses données sur cet appareil.',
-             ()=>{remove(dream.id);router.replace('/my-space');})}
-           style={{minHeight:(ws.tablet||ws.desktop)?43:48,
-              flex:(ws.tablet||ws.desktop)?.8:undefined,
-              backgroundColor:'#151515',borderWidth:theme.dark?1:0,
-              borderColor:theme.dark?'#515151':'transparent',borderRadius:11,
-             alignItems:'center',justifyContent:'center',paddingHorizontal:12}}>
-           <Text style={{color:'#FFFFFF',fontSize:12,fontWeight:'700'}}>Arracher</Text>
-         </Pressable>
-       </>:null}
-     </View>
+   {!historical && phase==='Initiation' && resourceEditable ? (
+     <DreamMilestoneActions
+       nextStage="Croissance"
+       primaryLabel="Faire pousser" primaryColor="#225D42"
+       onPrimary={()=>setGoalDateDialog(true)}
+       secondaryLabel="Geler" secondaryColor="#397F9E"
+       onSecondary={()=>{
+         if((dream.pauseCount||0)>=3){
+           Alert.alert('Limite atteinte','Cette germination a déjà été congelée trois fois.');
+           return;
+         }
+         setFreezeDialog(true);
+       }}
+       destructiveLabel="Arracher"
+       onDestructive={()=>confirm('Arracher cette plante ?',
+         'Cette action supprimera définitivement ce rêve et ses données sur cet appareil.',
+         ()=>{remove(dream.id);router.replace('/my-space');})}
+     />
    ):null}
   </> : null}
   {phase==='Croissance' ? <>
@@ -696,9 +679,7 @@ export default function DreamExperience({
         setHabits(dream.id,next);
       }}
     />
-    {growthWritable?<View style={{gap:11,marginTop:ws.desktop?24:11,marginBottom:22,
-      maxWidth:ws.desktop?630:ws.tablet?700:undefined,width:'100%',
-      alignSelf:ws.desktop?'flex-start':'center'}}>
+    {growthWritable?<View style={{gap:11,marginBottom:22,width:'100%'}}>
       {frozen ? (
         <View style={{gap:9,padding:14,borderWidth:1,
           borderColor:'#397F9E',borderRadius:11}}>
@@ -717,44 +698,25 @@ export default function DreamExperience({
           </Pressable>
         </View>
       ):null}
-      <View style={{flexDirection:(ws.tablet||ws.desktop)?'row':'column',
-        gap:ws.desktop?10:(ws.tablet?9:11)}}>
-      <Pressable accessibilityRole="button"
-        disabled={frozen}
-        onPress={()=>router.push({pathname:'/my-dream/flower/[id]',params:{id:dream.id}})}
-        style={{minHeight:(ws.tablet||ws.desktop)?43:48,flex:(ws.tablet||ws.desktop)?1.35:undefined,
-          backgroundColor:frozen?'#A8ABA6':'#D71D77',
-          borderRadius:11,alignItems:'center',justifyContent:'center',paddingHorizontal:16}}>
-        <Text style={{color:'#FFFFFF',fontSize:13,fontWeight:'700'}}>Faire fleurir</Text>
-      </Pressable>
-      <Pressable accessibilityRole="button" disabled={frozen}
-        onPress={()=>{
+      <DreamMilestoneActions
+        nextStage="Floraison"
+        primaryLabel="Faire fleurir" primaryColor="#D71D77"
+        primaryDisabled={frozen}
+        onPrimary={()=>router.push({pathname:'/my-dream/flower/[id]',params:{id:dream.id}})}
+        secondaryLabel="Geler" secondaryColor="#397F9E"
+        secondaryDisabled={frozen}
+        onSecondary={()=>{
           if((dream.pauseCount||0)>=3){
-            Alert.alert('Limite atteinte','Ce rêve a déjà été congelé trois fois.');return;
+            Alert.alert('Limite atteinte','Ce rêve a déjà été congelé trois fois.');
+            return;
           }
           setFreezeDialog(true);
         }}
-        style={{minHeight:(ws.tablet||ws.desktop)?43:48,flex:(ws.tablet||ws.desktop)?1:undefined,
-          borderRadius:11,borderWidth:1,
-          borderColor:'#397F9E',alignItems:'center',justifyContent:'center',
-          paddingHorizontal:16,opacity:frozen?.5:1}}>
-        <Text style={{color:'#397F9E',fontSize:13,fontWeight:'700'}}>Geler</Text>
-      </Pressable>
-      <Pressable accessibilityRole="button"
-        accessibilityLabel="Arracher cette plante"
-        onPress={()=>confirm('Arracher cette plante ?',
+        destructiveLabel="Arracher cette plante"
+        onDestructive={()=>confirm('Arracher cette plante ?',
           'Cette action supprimera définitivement ce rêve et ses données sur cet appareil.',
           ()=>{remove(dream.id);router.replace('/my-space');})}
-        style={{minHeight:(ws.tablet||ws.desktop)?43:48,flex:(ws.tablet||ws.desktop)?.8:undefined,
-          backgroundColor:'#151515',borderWidth:theme.dark?1:0,
-          borderColor:theme.dark?'#515151':'transparent',
-          borderRadius:11,alignItems:'center',justifyContent:'center',
-          paddingHorizontal:12}}>
-        <Text style={{color:'#FFFFFF',fontSize:12,fontWeight:'700'}}>
-          Arracher cette plante
-        </Text>
-      </Pressable>
-      </View>
+      />
     </View>:null}
   </>:null}
   {phase==='Témoignage' && !isPublishedFlower(dream) ? (
