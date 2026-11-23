@@ -88,8 +88,8 @@ if(!germinationNav.includes("{kind:'library' as const,title:'Documents & Inspira
 
 
 // Desktop content rail: titles, headers, hero and notebook body share one x
-// position. The back control alone is offset to the left. On touch/mobile,
-// retain the established narrower grid so cards never lose a column.
+// position. The back control alone is offset to the left. The Projects hero
+// and phase backgrounds intentionally bleed to both phone edges.
 const read=path=>readFileSync(join(base,path),'utf8');
 const layoutRules=[
   ['src/theme/workspaceLayout.ts',/DESKTOP_PAGE_CONTENT_INSET=52;/,
@@ -102,8 +102,12 @@ const layoutRules=[
     'Only the desktop back arrow is outside the common content rail'],
   ['src/components/navigation/PageHeader.tsx',/paddingLeft:desktop\?0:52/,
     'Desktop titles must start on the content rail; mobile retains its established spacing'],
-  ['app/my-space.tsx',/const side=ws.contentGutter;/,
-    'The projects header and panels must start on the common rail'],
+  ['app/my-space.tsx',/const side=compact\?0:ws.contentGutter;/,
+    'The Projects page removes exterior gutters on phone only'],
+  ['app/my-space.tsx',/const right=compact\?0:ws.gutter;/,
+    'The Projects hero and phase rows must reach the phone right edge'],
+  ['app/my-space.tsx',/paddingLeft:ws.contentGutter,paddingRight:ws.gutter/,
+    'Mobile page heading and independent controls retain safe reading gutters'],
   ['app/my-space.tsx',/const innerWidth=Math.max\(0,canvasWidth-side-right\);/,
     'Projects hero must fit the actual measured canvas width'],
   ['app/my-space.tsx',/paddingLeft:side,paddingRight:right/,
@@ -210,15 +214,15 @@ if(failures.length){
   console.log('Desktop content rails and notebook/music/chat/project headers verified ('+
     layoutRules.length+' assertions).');
 }
-// Responsive geometry regression: four full-width rows, preserving the
-// content rail and allowing a separate label and card area on desktop.
+// Responsive geometry regression: full-bleed hero and four rows on phones,
+// with inner controls inset; desktop retains the shared content rail.
 for(const [canvasWidth,desktop,tablet] of [
   [320,false,false],[360,false,false],[430,false,false],
   [780,false,true],[1100,true,false],[1160,true,false],
 ]){
   const compact=canvasWidth<600;
-  const side=desktop?82:tablet?24:canvasWidth<520?16:20;
-  const right=desktop?30:tablet?24:canvasWidth<520?16:20;
+  const side=compact?0:desktop?82:tablet?24:canvasWidth<520?16:20;
+  const right=compact?0:desktop?30:tablet?24:canvasWidth<520?16:20;
   const innerWidth=Math.max(0,canvasWidth-side-right);
   const phasePanelWidth=innerWidth;
   const panelInset=compact?12:16;
@@ -227,6 +231,7 @@ for(const [canvasWidth,desktop,tablet] of [
   const cardWidth=compact?viewportWidth:
     Math.min(232,Math.max(150,Math.round(viewportWidth*.31)));
   if(side+phasePanelWidth+right>canvasWidth+0.01 ||
+    (compact && (side!==0 || right!==0 || phasePanelWidth!==canvasWidth)) ||
     phasePanelWidth<1 || viewportWidth<1 || cardWidth>viewportWidth){
     console.error('Full-width project phase row overflows at '+canvasWidth+'px');
     process.exitCode=1;
