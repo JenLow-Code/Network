@@ -38,25 +38,25 @@ const phasePanels: {
     phase: 'Rêve', title: 'Mes semences',
     lightTint: 'rgba(166,114,76,0.055)', darkTint: 'rgba(190,138,93,0.13)',
     lightBorder: 'rgba(166,114,76,0.10)', darkBorder: 'rgba(190,138,93,0.21)',
-    accent: '#B88962', headingLight:'#332720', headingDark:'#F0DCC9',
+    accent: '#B88962', headingLight:'#241D19', headingDark:'#E5D8CB',
   },
   {
     phase: 'Initiation', title: 'En germination',
     lightTint: 'rgba(154,185,64,0.062)', darkTint: 'rgba(154,185,64,0.12)',
     lightBorder: 'rgba(134,164,53,0.11)', darkBorder: 'rgba(154,185,64,0.19)',
-    accent: '#A1BA44', headingLight:'#272C1F', headingDark:'#E8EFD1',
+    accent: '#A1BA44', headingLight:'#20231B', headingDark:'#E0E8D1',
   },
   {
     phase: 'Croissance', title: 'En croissance',
     lightTint: 'rgba(39,132,91,0.052)', darkTint: 'rgba(47,153,107,0.12)',
     lightBorder: 'rgba(39,132,91,0.10)', darkBorder: 'rgba(47,153,107,0.20)',
-    accent: '#27845B', headingLight:'#1D2C25', headingDark:'#D6EBDE',
+    accent: '#27845B', headingLight:'#1B2520', headingDark:'#D7E7DB',
   },
   {
     phase: 'Témoignage', title: 'En floraison',
     lightTint: 'rgba(215,29,119,0.047)', darkTint: 'rgba(215,29,119,0.115)',
     lightBorder: 'rgba(215,29,119,0.10)', darkBorder: 'rgba(215,29,119,0.19)',
-    accent: '#D71D77', headingLight:'#30202A', headingDark:'#F3D7E5',
+    accent: '#D71D77', headingLight:'#261C22', headingDark:'#EDD9E2',
   },
 ];
 /** In "Tout", active dreams open their current workspace directly.
@@ -80,9 +80,9 @@ const coverImage = (d: DreamEntry) => {
     : d.flowerDraft?.attachments?.find(media=>media.kind==='photo')?.uri || d.image;
 };
 
-function PictureCard({ dream, width, height, onLongPress, presentation = 'card' }: {
+function PictureCard({ dream, width, height, onLongPress, presentation = 'card', bannerInset = 16 }: {
   dream: DreamEntry; width: number; height: number; onLongPress:()=>void;
-  presentation?: 'card' | 'banner' | 'phase';
+  presentation?: 'card' | 'banner' | 'phase'; bannerInset?: number;
 }) {
   const theme = useAppTheme();
   const photo = coverImage(dream);
@@ -109,17 +109,8 @@ function PictureCard({ dream, width, height, onLongPress, presentation = 'card' 
                 stopColor={theme.background} stopOpacity={width<600?0.48:0.16}/>
               <Stop offset="100%" stopColor={theme.background} stopOpacity={0}/>
             </LinearGradient>
-            {/* Let the bottom of the hero melt into the same page canvas.
-                Its action buttons render above these noninteractive overlays. */}
-            <LinearGradient id="fruit-banner-bottom-fade" x1="0%" y1="0%" x2="0%" y2="100%">
-              <Stop offset="0%" stopColor={theme.background} stopOpacity={0}/>
-              <Stop offset="75%" stopColor={theme.background} stopOpacity={0}/>
-              <Stop offset="90%" stopColor={theme.background} stopOpacity={0.22}/>
-              <Stop offset="100%" stopColor={theme.background} stopOpacity={1}/>
-            </LinearGradient>
           </Defs>
           <Rect width="100%" height="100%" fill="url(#fruit-banner-shade)" />
-          <Rect width="100%" height="100%" fill="url(#fruit-banner-bottom-fade)" />
         </Svg>
       ) : (
         <View pointerEvents="none" style={{
@@ -129,7 +120,7 @@ function PictureCard({ dream, width, height, onLongPress, presentation = 'card' 
       )}
       <View style={{
         position: 'absolute', bottom: 0, left: 0, right: 0,
-        paddingHorizontal: isBanner ? (width < 540 ? 20 : width < 800 ? 30 : 46) : 13,
+        paddingHorizontal: isBanner ? bannerInset : 13,
         paddingTop: isBanner ? 12 : 36,
         paddingBottom: isBanner ? (width < 540 ? 78 : 81) : 12,
         backgroundColor: isBanner ? 'transparent' : 'rgba(0,0,0,0.30)',
@@ -508,6 +499,7 @@ export default function MySpace() {
                 {testimonies.map(d=>(
                   <PictureCard key={d.id} dream={d} width={galleryWidth}
                     height={galleryHeight} presentation="banner"
+                    bannerInset={panelInset}
                     onLongPress={()=>setLongDream(d)}/>
                 ))}
               </ScrollView>
@@ -547,7 +539,7 @@ export default function MySpace() {
 
             {/* Purpose-designed gallery action bar: dark glass controls and a clear primary CTA. */}
             <View style={{position:'absolute',zIndex:10,
-              bottom:compact?12:17,left:compact?12:24,right:compact?12:24}}>
+              bottom:compact?12:17,left:panelInset,right:panelInset}}>
               <View style={{flexDirection:'row',alignItems:'center',gap:compact?5:8}}>
                 <Pressable onPress={()=>setRoleMenuOpen(current=>!current)}
                   accessibilityRole="button"
@@ -641,11 +633,6 @@ export default function MySpace() {
                 </View>
               ):null}
             </View>
-            {/* Hide the thin lower edge of the image (not the controls). */}
-            <View pointerEvents="none" style={{
-              position:'absolute',bottom:0,left:0,right:0,height:2,
-              backgroundColor:theme.background,zIndex:11,
-            }}/>
           </View>
         </View>
 
