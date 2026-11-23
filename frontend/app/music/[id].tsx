@@ -10,6 +10,8 @@ import { EditorialInline } from '@/components/detail/EditorialInline';
 import { usePublication } from '@/lib/api/hooks';
 import { fetchDemoMusicPublication } from '@/lib/api/musicPreview';
 import { useAppTheme } from '@/theme/AppTheme';
+import { useMusicWorkspaces } from '@/domain/musicWorkspace';
+import { api } from '@/lib/api/client';
 import type { MusicPublication } from '@/domain/publication';
 
 /**
@@ -18,9 +20,12 @@ import type { MusicPublication } from '@/domain/publication';
  * the read-only demo endpoint. No demo is allowed to send a real proposal.
  */
 export default function MusicDetail() {
-  const { id, openMore } = useLocalSearchParams<{ id:string; from?:string; openMore?:string }>();
+  const { id, from, openMore } = useLocalSearchParams<{ id:string; from?:string; openMore?:string }>();
   const theme = useAppTheme();
   const demoId = !!id && /^demo-music-publication-\d{2}$/.test(id);
+  const {items:workspaces,ready:workspacesReady}=useMusicWorkspaces();
+  const [workspaceChecked,setWorkspaceChecked]=useState(false);
+  const checkPersonalRoute=from==='music-tab'&&!!id&&!demoId;
   const local = musics.find(x => x.id === id);
   const remote = usePublication(local || demoId ? undefined : id);
   const [demoItem, setDemoItem] = useState<MusicPublication | null>(null);
@@ -41,11 +46,44 @@ export default function MusicDetail() {
     return () => { alive = false; };
   }, [demoId,id]);
 
+  // Defense in depth: old links and an out-of-date music shelf may still
+  // point an accepted collaborator to the publication player. If the viewer
+  // has a local owned project, enter it directly; otherwise ask the server
+  // whether the viewer is an actual member before redirecting. No membership
+  // is inferred from a submitted or fictional proposal.
+  useEffect(()=>{
+    if(!checkPersonalRoute){setWorkspaceChecked(true);return;}
+    if(!workspacesReady)return;
+    let alive=true;
+    setWorkspaceChecked(false);
+    const localProject=workspaces.find(song=>song.id===id||song.publishedId===id);
+    if(localProject){
+      router.replace({pathname:'/music-workspace/[id]',
+        params:{id:localProject.id,tab:'capture'}});
+      return ()=>{alive=false;};
+    }
+    void api<{conversationId:string}>('/api/music/'+
+      encodeURIComponent(id!)+'/conversation',{auth:'required'})
+      .then(()=>{
+        if(alive)router.replace({pathname:'/music-collaboration/[id]',
+          params:{id:id!,tab:'capture'}});
+      })
+      .catch(()=>{if(alive)setWorkspaceChecked(true);});
+    return ()=>{alive=false;};
+  },[checkPersonalRoute,id,workspaces,workspacesReady]);
+
   const item: MusicPublication | undefined = local ??
     (demoId ? demoItem ?? undefined :
       remote.item?.type === 'music' ? remote.item : undefined);
   const loading = demoId ? (demoState === 'idle' || demoState === 'loading') :
     !local && remote.state === 'loading';
+
+  // Do not briefly flash the cassette player while verifying workspace access.
+  if (checkPersonalRoute&&(!workspacesReady||!workspaceChecked)) return <View
+    style={{flex:1,backgroundColor:theme.background,
+      justifyContent:'center',alignItems:'center'}}>
+    <ActivityIndicator color="#CB245C"/>
+  </View>;
 
   if (!item && loading) return <View style={{flex:1,backgroundColor:theme.background,
     justifyContent:'center',alignItems:'center'}}>
