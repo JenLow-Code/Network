@@ -19,9 +19,6 @@ export const phaseAccent: Record<DreamPhase, string> = {
 };
 
 
-/** Full-bleed editorial hero for the dream workspace.
- * Only the dream's title and its own summary belong over the cover image.
- * Stage navigation, dates and working actions remain outside the hero. */
 /** Compact workspace identity, shared by Semence, Germination, Croissance and Floraison.
  * Unlike the public fruit gallery, working inside a dream is not a full-screen cover.
  * The right-hand global navigation stays untouched.
