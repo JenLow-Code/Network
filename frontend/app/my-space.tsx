@@ -3,7 +3,7 @@ import { Animated, Image, PanResponder, Platform, Pressable, ScrollView, Text, V
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import Svg, { Defs, LinearGradient, Rect, Stop, Text as SvgText } from 'react-native-svg';
+import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { Nav } from '@/components/navigation/Nav';
 import { PageHeader } from '@/components/navigation/PageHeader';
 import { isPublishedFlower, type DreamEntry } from '@/domain/dreamWorkspace';
@@ -187,14 +187,15 @@ function PhaseProjectCarousel({dreams,cardWidth,cardHeight,viewportWidth,gap,com
   const scrollRef=useRef<React.ComponentRef<typeof ScrollView>>(null);
   const [position,setPosition]=useState(0);
   const identities=dreams.map(d=>d.id).join('|');
-  const step=cardWidth+gap;
+  const visibleCardWidth=dreams.length===1?viewportWidth:cardWidth;
+  const step=visibleCardWidth+gap;
   const lastPosition=Math.max(0,dreams.length-1);
-  const contentWidth=dreams.length*cardWidth+Math.max(0,dreams.length-1)*gap;
+  const contentWidth=dreams.length*visibleCardWidth+Math.max(0,dreams.length-1)*gap;
   const maxOffset=Math.max(0,contentWidth-viewportWidth);
   useEffect(()=>{
     scrollRef.current?.scrollTo({x:0,animated:false});
     setPosition(0);
-  },[identities,cardWidth,viewportWidth]);
+  },[identities,visibleCardWidth,viewportWidth]);
   const go=(direction:number)=>{
     const next=Math.max(0,Math.min(lastPosition,position+direction));
     scrollRef.current?.scrollTo({x:Math.min(maxOffset,next*step),animated:true});
@@ -213,7 +214,7 @@ function PhaseProjectCarousel({dreams,cardWidth,cardHeight,viewportWidth,gap,com
       style={{width:'100%',flexGrow:0}}
       contentContainerStyle={{gap}}>
       {dreams.map(d=><PictureCard key={d.id} dream={d}
-        width={cardWidth} height={cardHeight} presentation="phase"
+        width={visibleCardWidth} height={cardHeight} presentation="phase"
         onLongPress={()=>onLongPress(d)}/>)}
     </ScrollView>
     {dreams.length>1?(
