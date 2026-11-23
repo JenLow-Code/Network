@@ -48,7 +48,7 @@ export default function DreamMilestoneActions({
         paddingHorizontal:desktop?24:19,
         borderRadius:12,
         backgroundColor:primaryDisabled ? (theme.dark?'#555B59':'#A8ABA6') : primaryColor,
-        opacity:pressed && !primaryDisabled?.87:1,
+        opacity:pressed && !primaryDisabled ? .87 : 1,
         flexDirection:'row',justifyContent:'center',alignItems:'center',gap:10,
       })}>
       <Text style={{color:primaryDisabled?'#FFFFFF':primaryTextColor,
@@ -70,7 +70,7 @@ export default function DreamMilestoneActions({
         borderWidth:1,borderColor:secondaryColor,
         backgroundColor:pressed?(theme.dark?'#272B30':'#F6F5F0'):'transparent',
         justifyContent:'center',alignItems:'center',
-        opacity:secondaryDisabled?.5:1,
+        opacity:secondaryDisabled ? .5 : 1,
       })}>
       <Text style={{color:secondaryColor,fontSize:12,fontWeight:'700'}}>
         {secondaryLabel}
