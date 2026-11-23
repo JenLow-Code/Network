@@ -10,7 +10,7 @@ import type { DreamPhase } from '@/domain/publication';
 
 /** A rendering error must never trap the user on a blank screen. */
 class DreamRenderBoundary extends React.Component<
- {children:React.ReactNode},{failed:boolean}
+ {children:React.ReactNode;dark:boolean},{failed:boolean}
 >{
  state={failed:false};
  static getDerivedStateFromError(){return {failed:true};}
@@ -20,22 +20,22 @@ class DreamRenderBoundary extends React.Component<
  render(){
   if(this.state.failed)return <View
     style={{flex:1,justifyContent:'center',alignItems:'center',padding:24,gap:13,
-      backgroundColor:'#FAF8F4'}}>
+      backgroundColor:this.props.dark?'#111317':'#FFFCF5'}}>
     <Text style={{fontSize:22,fontFamily:'serif',fontWeight:'600',
-      color:'#282725',textAlign:'center'}}>Impossible d’ouvrir ce rêve</Text>
-    <Text style={{fontSize:13,color:'#686863',lineHeight:21,textAlign:'center'}}>
+      color:this.props.dark?'#F3F3F3':'#171717',textAlign:'center'}}>Impossible d’ouvrir ce rêve</Text>
+    <Text style={{fontSize:13,color:this.props.dark?'#C2C6CC':'#626562',lineHeight:21,textAlign:'center'}}>
       Un problème d’affichage s’est produit. Ton rêve et son contenu n’ont pas été supprimés.
     </Text>
     <Pressable accessibilityRole="button" accessibilityLabel="Retour à mes rêves"
       onPress={()=>router.replace('/my-space')}
-      style={{marginTop:12,borderRadius:10,backgroundColor:'#282725',
+      style={{marginTop:12,borderRadius:10,backgroundColor:this.props.dark?'#F7F4ED':'#242322',
         paddingHorizontal:22,paddingVertical:14}}>
-      <Text style={{color:'#FFFFFF',fontSize:13,fontWeight:'700'}}>Retour à mes rêves</Text>
+      <Text style={{color:this.props.dark?'#242322':'#FFFFFF',fontSize:13,fontWeight:'700'}}>Retour à mes rêves</Text>
     </Pressable>
     <Pressable accessibilityRole="button" accessibilityLabel="Recharger ce rêve"
       onPress={()=>this.setState({failed:false})}
       style={{padding:11}}>
-      <Text style={{fontSize:12,color:'#686863'}}>Réessayer</Text>
+      <Text style={{fontSize:12,color:this.props.dark?'#C2C6CC':'#626562'}}>Réessayer</Text>
     </Pressable>
   </View>;
   return this.props.children;
@@ -49,7 +49,7 @@ export default function Workspace() {
  const theme = useAppTheme();
  const dream = items.find(d=>d.id===id);
  return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
-  {dream?<DreamRenderBoundary key={dream.id}>
+  {dream?<DreamRenderBoundary key={dream.id} dark={theme.dark}>
     <DreamHub dream={dream} startInSemence={compose==='1'} startPhase={startPhase}/>
   </DreamRenderBoundary>:
    <View style={{flex:1,padding:20,gap:16}}>
