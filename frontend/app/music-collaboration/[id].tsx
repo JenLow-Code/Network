@@ -3,7 +3,8 @@ import { ActivityIndicator, Image, Platform, Pressable, ScrollView, Text, View, 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { api } from '@/lib/api/client';
+import { api, ApiRequestError } from '@/lib/api/client';
+import { useAuth } from '@/context/AuthProvider';
 import {fetchDemoMusicPreview} from '@/lib/api/musicPreview';
 import { useAppTheme } from '@/theme/AppTheme';
 import { workspaceLayout, PAGE_TITLE_FONT_SIZE, PAGE_TITLE_LINE_HEIGHT } from '@/theme/workspaceLayout';
@@ -38,7 +39,42 @@ const displayDate=(value?:string)=> {
  * limited to published materials and permitted proposals: the author's private
  * device-only recordings are never presented as synced or editable.
  */
+/**
+ * Defense in depth beyond Expo's Stack.Protected: never mount the workspace,
+ * start its API requests or draw its tab navigation before a verified Supabase
+ * user exists. The API may separately refuse a logged-in user until its identity
+ * bridge is deployed; that is NOT equivalent to having no app login.
+ */
 export default function SharedMusicFolder(){
+  const {initialized,user,validationError}=useAuth();
+  const theme=useAppTheme();
+  useEffect(()=>{
+    if(initialized&&!user&&!validationError)router.replace('/login');
+  },[initialized,user,validationError]);
+  if(!initialized||!user)return <SafeAreaView style={{flex:1,
+    backgroundColor:theme.background,alignItems:'center',justifyContent:'center'}}>
+    <ActivityIndicator color={PINK}/>
+  </SafeAreaView>;
+  return <AuthorizedSharedMusicFolder/>;
+}
+
+type WorkspaceFailure={kind:'api_session'|'permission'|'unavailable';message:string};
+function asWorkspaceFailure(e:unknown):WorkspaceFailure {
+  if(e instanceof ApiRequestError){
+    if(e.status===401||e.code==='not_authenticated')return {
+      kind:'api_session',
+      message:'Votre connexion JenLow Network est active, mais le serveur de collaboration ne reconnaît pas encore cette session. Vos droits sur le morceau n’ont donc pas pu être vérifiés.',
+    };
+    if(e.status===403||e.status===404)return {
+      kind:'permission',
+      message:'Ce morceau est introuvable ou votre compte n’a pas accès à cette collaboration.',
+    };
+  }
+  return {kind:'unavailable',
+    message:'Impossible de charger cet espace partagé actuellement. Réessayez ou revenez à Musique.'};
+}
+
+function AuthorizedSharedMusicFolder(){
   const {id,tab}=useLocalSearchParams<{id:string;tab?:MusicWorkspaceSpace}>();
   const theme=useAppTheme();
   const demoId=!!id&&/^demo-music-publication-\\d{2}$/.test(id);
@@ -54,7 +90,8 @@ export default function SharedMusicFolder(){
   const [collaborators,setCollaborators]=useState<Collaborator[]>([]);
   const [rosterError,setRosterError]=useState(false);
   const [loading,setLoading]=useState(true);
-  const [error,setError]=useState('');
+  const [error,setError]=useState<WorkspaceFailure|null>(null);
+  const [retryCount,setRetryCount]=useState(0);
   useEffect(()=>{
     if(tab==='capture'||tab==='create'||tab==='collaborate')setSpace(tab);
   },[tab]);
@@ -62,7 +99,7 @@ export default function SharedMusicFolder(){
     if(!id)return;
     let live=true;
     const resource=encodeURIComponent(id);
-    setLoading(true);setError('');setConversationId(null);
+    setLoading(true);setError(null);setConversationId(null);
     setCollaborators([]);setProposals([]);setMusic(undefined);
     setRosterError(false);
     // Fictional collaboration examples are intentionally read-only, but must
@@ -73,7 +110,8 @@ export default function SharedMusicFolder(){
         .then(preview=>{
           if(!live)return;
           const match=preview.collaborations.find(p=>p.trackPublicationId===id);
-          if(!match){setError('Exemple de collaboration introuvable.');return;}
+          if(!match){setError({kind:'unavailable',
+            message:'Exemple de collaboration introuvable.'});return;}
           const publication=preview.songs.find(s=>s.id===id);
           setMusic({
             title:match.trackTitle,
@@ -90,7 +128,8 @@ export default function SharedMusicFolder(){
               displayName:match.proposer.displayName},
           ]);
         })
-        .catch(()=>{if(live)setError('Cet exemple est temporairement indisponible.');})
+        .catch(()=>{if(live)setError({kind:'unavailable',
+          message:'Cet exemple est temporairement indisponible.'});})
         .finally(()=>{if(live)setLoading(false);});
       return ()=>{live=false;};
     }
@@ -107,10 +146,10 @@ export default function SharedMusicFolder(){
         {auth:'required'})
         .then(roster=>{if(live)setCollaborators(roster.members||[]);})
         .catch(()=>{if(live)setRosterError(true);});
-    }).catch(e=>{if(live)setError(e instanceof Error?e.message:'Accès refusé.');})
+    }).catch(e=>{if(live)setError(asWorkspaceFailure(e));})
       .finally(()=>{if(live)setLoading(false);});
     return ()=>{live=false;};
-  },[id,demoId]);
+  },[id,demoId,retryCount]);
 
   const title=music?.title||'Morceau partagé';
   const author=collaborators.find(person=>person.role==='owner')?.displayName||
@@ -160,7 +199,7 @@ export default function SharedMusicFolder(){
       paddingBottom:desktop?56:120,gap:compact?18:desktop?20:25,
     }}>
       <PageHeader onBack={()=>router.replace('/music-hub')} center={
-        <MusicWorkspaceTabs space={space} desktop={desktop} compact={compact}
+        error?null:<MusicWorkspaceTabs space={space} desktop={desktop} compact={compact}
           onChange={next=>{
             setSpace(next);
             router.replace({pathname:'/music-collaboration/[id]',
@@ -168,12 +207,22 @@ export default function SharedMusicFolder(){
           }}/>
       }/>
       {loading?<ActivityIndicator color={PINK}/>:null}
-      {!!error?section(<>
-        {heading('Espace partagé indisponible')}
-        <Text style={{color:theme.muted,fontSize:12,lineHeight:19}}>
-          {error}. Une candidature ne donne pas accès au projet avant acceptation
-          de son auteur.
+      {error?section(<>
+        {heading(error.kind==='api_session'?'Connexion au serveur collaboratif indisponible':
+          error.kind==='permission'?'Accès au morceau non autorisé':
+          'Espace partagé indisponible')}
+        <Text style={{color:theme.muted,fontSize:13,lineHeight:21}}>
+          {error.message}
         </Text>
+        {error.kind==='api_session'?<Text style={{fontSize:12,
+          lineHeight:19,color:theme.muted}}>
+          Il n’est pas nécessaire de vous reconnecter : le compte Supabase
+          et l’API JenLow doivent reconnaître la même identité.
+        </Text>:null}
+        <View style={{flexDirection:'row',gap:10,flexWrap:'wrap'}}>
+          {button('Retour à Musique',()=>router.replace('/music-hub'),true)}
+          {error.kind!=='permission'?button('Réessayer',()=>setRetryCount(n=>n+1)):null}
+        </View>
       </>):null}
       {(!!conversationId||demoId)&&!loading&&!error?<>
         {header}
