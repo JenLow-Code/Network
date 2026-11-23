@@ -63,7 +63,12 @@ export default function MusicHub() {
     width < 950 ? 3 : width < 1100 ? 4 : 5;
   const availableWidth = Math.min(width, ws.maxWidth || width) - ws.gutter * 2;
   const gutter = 14;
-  const tileWidth = Math.max(142, Math.floor((availableWidth - (columns - 1) * gutter) / columns));
+  // Phone: a 2.5–3-up horizontally scrollable music shelf, not giant cards.
+  // Tablet and desktop: compact album tiles in the familiar multi-column grid.
+  const tileWidth = narrow
+    ? Math.min(136, Math.max(108, Math.floor((availableWidth - 36) / 2.5)))
+    : Math.min(188, Math.max(150,
+        Math.floor((availableWidth - (columns - 1) * gutter) / columns)));
   const app = useApp();
   const { items, ready, error } = useMusicWorkspaces();
   const discovery = useDiscovery({ type: 'music' });
@@ -236,6 +241,16 @@ export default function MusicHub() {
 
   const tileContainer = {flexDirection:'row' as const,flexWrap:'wrap' as const,
     columnGap:gutter,rowGap:22,alignItems:'flex-start' as const};
+  const musicShelf = (tiles:React.ReactNode[]) => layout === 'list'
+    ? <View style={{gap:1}}>{tiles}</View>
+    : narrow
+      ? <ScrollView horizontal showsHorizontalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          style={{flexGrow:0,marginRight:-ws.gutter}}
+          contentContainerStyle={{gap:12,paddingRight:ws.gutter+12,paddingBottom:4}}>
+          {tiles}
+        </ScrollView>
+      : <View style={tileContainer}>{tiles}</View>;
 
   return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
     <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{
@@ -259,26 +274,23 @@ export default function MusicHub() {
         </View>
         {!ready ? <ActivityIndicator color={PINK}/> : null}
         {error ? <Text style={{color:PINK,fontSize:12}}>{error}</Text> : null}
-        {myCount ? <View style={layout === 'list'
-          ? {gap:1} : tileContainer}>
-          {songs.map(song => <MusicSongCard key={song.id}
+        {myCount ? musicShelf([
+          ...songs.map(song => <MusicSongCard key={song.id}
             song={song} layout={layout}
             width={tileWidth} participants={peopleForLocal(song)}
             pendingCount={proposals.filter(p => p.direction === 'received' &&
               p.status === 'submitted' && p.trackPublicationId === song.publishedId).length}/>)}
-          {sharedPieces.map(piece => <MusicTile
+          ...sharedPieces.map(piece => <MusicTile
             key={'shared-'+piece.publicationId} width={tileWidth}
             title={piece.title} mode="draft" layout={layout}
-            byline={piece.pending?'Mon morceau':'Morceau partagé'}
-            detail={piece.pending?'Proposition reçue':piece.participants
-              .map(p => p.displayName).filter(Boolean).join(' · ')}
+            byline=""
             participants={piece.participants}
-            status={piece.pending?'À examiner':'En collaboration'}
+            status={piece.pending?'À examiner':undefined}
             demo={piece.isDemo}
-            onPress={() => openProposal(piece.primary)}/>)}
-        </View> : ready ? empty('Ton premier morceau commence ici.',
+            onPress={() => openProposal(piece.primary)}/>)
+        ]) : ready ? empty('Ton premier morceau commence ici.',
           'Créer un morceau',() => router.push('/music/new')) : null}
-        {requestsError ? <Text style={{color:theme.muted,fontSize:10}}>
+        {requestsError && !demoPreview ? <Text style={{color:theme.muted,fontSize:10}}>
           Les morceaux partagés nécessitent une session API connectée.
         </Text> : null}
       </View>
@@ -300,9 +312,8 @@ export default function MusicHub() {
             Des morceaux à écouter, des talents recherchés et tes propositions en cours.
           </Text>
         </View>
-        {forMeCount ? <View style={layout === 'list'
-          ? {gap:1} : tileContainer}>
-          {recommended.map(song => <MusicTile key={song.id}
+        {forMeCount ? musicShelf([
+          ...recommended.map(song => <MusicTile key={song.id}
             width={tileWidth} layout={layout} mode="cassette"
             title={song.title} byline={song.author}
             detail={song.requestedTalents?.length
@@ -313,15 +324,15 @@ export default function MusicHub() {
               params:{id:song.id,from:'music-tab'}})}
             onLearnMore={() => router.push({pathname:'/music/[id]',
               params:{id:song.id,from:'music-tab',openMore:'1'}})}/>)}
-          {pendingSent.map(p => <MusicTile key={'pending-'+p.id}
+          ...pendingSent.map(p => <MusicTile key={'pending-'+p.id}
             width={tileWidth} layout={layout} mode="cassette"
             title={p.trackTitle} byline={p.publisher?.displayName || 'Morceau proposé'}
             detail={p.description} status={p.status === 'submitted'
               ? 'Réponse en attente' : 'Proposition en brouillon'}
             onPress={() => openProposal(p)}
             onLearnMore={() => router.push({pathname:'/music/[id]',
-              params:{id:p.trackPublicationId,from:'music-tab',openMore:'1'}})}/>)}
-        </View> : empty('Aucune proposition musicale pour le moment.',
+              params:{id:p.trackPublicationId,from:'music-tab',openMore:'1'}})}/>)
+        ]) : empty('Aucune proposition musicale pour le moment.',
           'Découvrir la musique',() => router.push({
             pathname:'/discover',params:{filter:'Musique'},
           }))}
