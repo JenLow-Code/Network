@@ -94,6 +94,8 @@ export function AuthProvider({children}:{children:React.ReactNode}){
       if(error||!data.user||data.user.id!==uid){
         if(ticket!==validationId.current)return;
         if(error && (error.status===0 || !error.status || error.status>=500)){
+          verifiedAt.current=0;
+          verifiedUser.current=null;
           setValidationError(true);
           setSession(null);
           setInitialized(true);
@@ -116,6 +118,8 @@ export function AuthProvider({children}:{children:React.ReactNode}){
         ACTIVITY_KEY+uid,String(now)).catch(()=>{});
     }catch{
       if(ticket===validationId.current){
+        verifiedAt.current=0;
+        verifiedUser.current=null;
         setValidationError(true);
         setSession(null);
         setInitialized(true);
@@ -158,7 +162,12 @@ export function AuthProvider({children}:{children:React.ReactNode}){
       if(event==='INITIAL_SESSION')return; // Explicit getSession + getUser below.
       if(event==='TOKEN_REFRESHED'&&next&&verifiedUser.current===next.user.id){
         // Token rotation is not user activity, and must not reset inactivity.
-        setSession(next);
+        if(verifiedAt.current>0&&activeAt.current>0&&
+          Date.now()-activeAt.current<INACTIVITY_TIMEOUT_MS){
+          setSession(next);
+          return;
+        }
+        void verify(next);
         return;
       }
       if(next)void verify(next);
