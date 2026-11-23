@@ -510,7 +510,7 @@ export default function MySpace() {
             ):(
               <View style={{width:galleryWidth,height:galleryHeight,
                 paddingHorizontal:compact?16:24,paddingBottom:compact?63:68,
-                backgroundColor:theme.dark?'#343137':'#E9E4E0',
+                backgroundColor:theme.background,
                 justifyContent:'flex-end'}}>
                 <Text style={{color:theme.foreground,fontSize:compact?21:28,
                   lineHeight:compact?27:35,fontWeight:'700'}}>
