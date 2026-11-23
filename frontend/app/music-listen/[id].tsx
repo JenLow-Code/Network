@@ -6,7 +6,7 @@ import {DetailAuthorHeader} from '@/components/detail/DetailAuthorHeader';
 import {DetailInfoSection} from '@/components/detail/DetailMoreDrawer';
 import {MusicListeningDetail,type BrowsableSong} from '@/components/music/MusicListeningDetail';
 import {useAppTheme} from '@/theme/AppTheme';
-import {workspaceCanvas} from '@/theme/workspaceLayout';
+import {workspaceCanvas,workspaceLayout} from '@/theme/workspaceLayout';
 import {useDiscovery,usePublication} from '@/lib/api/hooks';
 import {fetchDemoMusicPreview,type DemoMusicPreview} from '@/lib/api/musicPreview';
 import {api,ApiRequestError} from '@/lib/api/client';
