@@ -8,6 +8,9 @@ import type { MusicPublication } from '@/domain/publication';
  */
 export type DemoMusicPreview = {
   songs: (MusicPublication & { isDemo: true })[];
+  /** All existing fictional tracks for Continue discovering / mobile swiping.
+   * Only songs with an open talent request belong on the Pour moi shelf. */
+  catalog: (MusicPublication & { isDemo: true })[];
   collaborations: {
     id: string;
     trackTitle: string;
@@ -75,6 +78,7 @@ async function loadDemoMusicData(): Promise<DemoMusicResponse> {
 export async function fetchDemoMusicPreview(): Promise<DemoMusicPreview> {
   const data = await loadDemoMusicData();
   return {
+    catalog:data.songs.filter(isFictionalSong).map(toDemoPublication),
     // Only open calls appear in Pour moi; other demo songs can still be
     // inspected from their existing shared-project tile via the same detail.
     songs: data.songs.filter(song => isFictionalSong(song) &&
