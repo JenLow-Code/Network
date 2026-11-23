@@ -26,18 +26,20 @@ import {workspaceCanvas} from '@/theme/workspaceLayout';
 import { useMusicWorkspaces } from '@/domain/musicWorkspace';
 
 function ChatHeader({ name, subtitle }: { name: string; subtitle: string }) {
+  const theme=useAppTheme();
   const {width}=useWindowDimensions();
   return (
-    <View style={[s.header,workspaceCanvas(width)]}>
-      <Pressable onPress={() => router.back()} accessibilityLabel="Back">
-        <Ionicons name="chevron-back" size={24} />
+    <View style={[s.header,workspaceCanvas(width),{borderColor:theme.border}]}>
+      <Pressable onPress={() => router.back()} accessibilityLabel="Retour" accessibilityRole="button"
+        style={{width:44,height:44,alignItems:'center',justifyContent:'center'}}>
+        <Ionicons name="arrow-back-outline" size={23} color={theme.foreground} />
       </Pressable>
       <Avatar size={35} />
       <View style={{ flex: 1 }}>
-        <Text style={s.headerName}>{name}</Text>
-        <Text style={s.headerDetail}>{subtitle}</Text>
+        <Text style={[s.headerName,{color:theme.foreground}]}>{name}</Text>
+        <Text style={[s.headerDetail,{color:theme.muted}]}>{subtitle}</Text>
       </View>
-      <Ionicons name="videocam-outline" size={21} color="#111" />
+      <Ionicons name="videocam-outline" size={21} color={theme.foreground} />
       <TopActions />
     </View>
   );
@@ -53,37 +55,39 @@ function Action({
   icon: keyof typeof Ionicons.glyphMap;
   onPress: () => void;
 }) {
+  const theme=useAppTheme();
   return (
-    <Pressable accessibilityRole="button" onPress={onPress} style={s.action}>
+    <Pressable accessibilityRole="button" onPress={onPress} style={[s.action,{borderColor:theme.border,backgroundColor:theme.surface}]}>
       <Ionicons name={icon} color={c.pink} size={19} />
       <View style={{ flex: 1 }}>
-        <Text style={s.actionTitle}>{title}</Text>
-        {subtitle && <Text style={s.actionSubtitle}>{subtitle}</Text>}
+        <Text style={[s.actionTitle,{color:theme.foreground}]}>{title}</Text>
+        {subtitle && <Text style={[s.actionSubtitle,{color:theme.muted}]}>{subtitle}</Text>}
       </View>
-      <Ionicons name="chevron-forward" color="#888" size={16} />
+      <Ionicons name="chevron-forward" color={theme.muted} size={16} />
     </Pressable>
   );
 }
 function SystemChat() {
+  const theme=useAppTheme();
   const {width}=useWindowDimensions();
   const [calendarOptions, setCalendarOptions] = useState(false);
   const open = (url: string) => {
     void Linking.openURL(url).catch(() => setCalendarOptions(true));
   };
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
       <ChatHeader name="JenLow Network" subtitle="System • lesson reminder" />
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{...workspaceCanvas(width),paddingTop:40,paddingBottom:35}}
       >
-        <Text style={s.day}>Lesson reminder</Text>
-        <View style={s.systemBubble}>
-          <Text style={{ fontSize: 13, lineHeight: 21, color: '#141414' }}>
+        <Text style={[s.day,{color:theme.muted}]}>Lesson reminder</Text>
+        <View style={[s.systemBubble,{backgroundColor:theme.dark?'#442D38':'#FCE8F1'}]}>
+          <Text style={{ fontSize: 13, lineHeight: 21, color: theme.foreground }}>
             Your tandem with <Text style={{ fontWeight: '700' }}>nebulanomad</Text> is scheduled for
             tomorrow at 13:00 at JenLow Studio.
           </Text>
-          <Text style={{ fontSize: 13, lineHeight: 21, marginTop: 10 }}>
+          <Text style={{ fontSize: 13, lineHeight: 21, marginTop: 10,color:theme.foreground }}>
             What would you like to do?
           </Text>
         </View>
@@ -95,25 +99,25 @@ function SystemChat() {
             onPress={() => setCalendarOptions(v => !v)}
           />
           {calendarOptions && (
-            <View style={s.calendarChoices}>
-              <Text style={{ fontSize: 11, color: '#666', marginBottom: 8 }}>
+            <View style={[s.calendarChoices,{backgroundColor:theme.surface,borderColor:theme.border}]}>
+              <Text style={{ fontSize: 11, color: theme.muted, marginBottom: 8 }}>
                 Choose a calendar to create an event:
               </Text>
               <View style={{ flexDirection: 'row', gap: 9 }}>
                 <Pressable
-                  style={s.calendarProvider}
+                  style={[s.calendarProvider,{borderColor:theme.border}]}
                   onPress={() => open('https://calendar.google.com/calendar/u/0/r/eventedit')}
                 >
-                  <Text style={s.calendarProviderLabel}>Google Calendar ↗</Text>
+                  <Text style={[s.calendarProviderLabel,{color:theme.foreground}]}>Google Calendar ↗</Text>
                 </Pressable>
                 <Pressable
-                  style={s.calendarProvider}
+                  style={[s.calendarProvider,{borderColor:theme.border}]}
                   onPress={() => open('https://outlook.live.com/calendar/0/deeplink/compose')}
                 >
-                  <Text style={s.calendarProviderLabel}>Outlook ↗</Text>
+                  <Text style={[s.calendarProviderLabel,{color:theme.foreground}]}>Outlook ↗</Text>
                 </Pressable>
               </View>
-              <Text style={{ fontSize: 10, color: '#999', marginTop: 8 }}>
+              <Text style={{ fontSize: 10, color: theme.muted, marginTop: 8 }}>
                 These links open a new event. Automatic lesson details will follow with the backend.
               </Text>
             </View>
@@ -147,6 +151,7 @@ function PersonChat({
   sharedId?: string;
   draft?: string;
 }) {
+  const theme=useAppTheme();
   const { messages, send } = useApp();
   const {width}=useWindowDimensions();
   const [input, setInput] = useState(draft || '');
@@ -158,7 +163,7 @@ function PersonChat({
     }
   };
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -177,12 +182,12 @@ function PersonChat({
             justifyContent: 'flex-end',
           }}
         >
-          <Text style={s.day}>Demo conversation</Text>
+          <Text style={[s.day,{color:theme.muted}]}>Demo conversation</Text>
           {sharedId ? (
-            <View style={{ padding: 13, backgroundColor: '#f5f5f5', borderRadius: 10 }}>
-              <Text style={{ fontSize: 13, fontWeight: '700' }}>Publication partagée</Text>
-              <Text style={{ fontSize: 12, marginTop: 6 }}>{sharedId}</Text>
-              <Text style={{ fontSize: 11, color: '#888', marginTop: 5 }}>
+            <View style={{ padding: 13, backgroundColor: theme.surface, borderRadius: 10 }}>
+              <Text style={{ color:theme.foreground,fontSize: 13, fontWeight: '700' }}>Publication partagée</Text>
+              <Text style={{ color:theme.foreground,fontSize: 12, marginTop: 6 }}>{sharedId}</Text>
+              <Text style={{ fontSize: 11, color: theme.muted, marginTop: 5 }}>
                 Aperçu uniquement : aucun message n'a été envoyé.
               </Text>
             </View>
@@ -194,11 +199,11 @@ function PersonChat({
                 s.bubble,
                 {
                   alignSelf: m.fromMe ? 'flex-end' : 'flex-start',
-                  backgroundColor: m.fromMe ? '#000' : c.pink,
+                  backgroundColor: m.fromMe ? (theme.dark?'#454950':'#242322') : '#CB245C',
                 },
               ]}
             >
-              <Text style={{ fontSize: 13, color: m.fromMe ? '#fff' : '#111' }}>{m.text}</Text>
+              <Text style={{ fontSize: 13, color: '#FFFFFF' }}>{m.text}</Text>
             </View>
           ))}
         </ScrollView>
@@ -209,7 +214,7 @@ function PersonChat({
             onChangeText={setInput}
             onSubmitEditing={submit}
             returnKeyType="send"
-            style={s.input}
+            style={[s.input,{backgroundColor:theme.surface,borderColor:theme.border,color:theme.foreground}]}
           />
           <Pressable onPress={submit} accessibilityLabel="Send message">
             <Ionicons name="send" color={c.pink} size={22} />
@@ -356,6 +361,7 @@ function MusicSharedConversation({ conversationId }: { conversationId: string })
 }
 
 function DreamConversation({ dreamId }: { dreamId: string }) {
+ const theme=useAppTheme();
  const {width}=useWindowDimensions();
  const { items, patch } = useDreams();
  const dream = items.find(d => d.id === dreamId);
@@ -365,17 +371,20 @@ function DreamConversation({ dreamId }: { dreamId: string }) {
   patch(dream.id, { chat: { ...dream.chat, messages: [...dream.chat.messages, { id: 'msg-' + Date.now(), text: input.trim(), createdAt: new Date().toISOString() }] } });
   setInput('');
  };
- return <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFCF5' }}>
-  <View style={{...workspaceCanvas(width),paddingVertical:18,flexDirection:'row',alignItems:'center',gap:12,borderBottomWidth:1,borderColor:'#e8e8e8'}}>
-   <Pressable onPress={() => router.back()}><Ionicons name="chevron-back" size={24}/></Pressable>
-   <View style={{ flex: 1 }}><Text style={{ fontWeight: '800', fontSize: 16 }}>{dream?.title || 'Conversation du rêve'}</Text><Text style={{ color: '#777', fontSize: 11 }}>Espace de conversation du rêve · Sur cet appareil</Text></View>
+ return <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
+  <View style={{...workspaceCanvas(width),paddingVertical:18,flexDirection:'row',alignItems:'center',gap:12,borderBottomWidth:1,borderColor:theme.border}}>
+   <Pressable accessibilityRole="button" accessibilityLabel="Retour" onPress={() => router.back()}
+      style={{width:44,height:44,alignItems:'center',justifyContent:'center'}}>
+      <Ionicons name="arrow-back-outline" size={23} color={theme.foreground}/>
+    </Pressable>
+   <View style={{ flex: 1 }}><Text style={{ color:theme.foreground,fontWeight: '800', fontSize: 16 }}>{dream?.title || 'Conversation du rêve'}</Text><Text style={{ color: theme.muted, fontSize: 11 }}>Espace de conversation du rêve · Sur cet appareil</Text></View>
   </View>
   <ScrollView style={{ flex: 1 }} contentContainerStyle={{...workspaceCanvas(width),paddingTop:16,paddingBottom:20,gap:10}}>
-   <Text style={{ fontSize: 12, color: '#888', textAlign: 'center', marginBottom: 18 }}>Cette conversation est enregistrée localement. Les invitations et la messagerie entre membres ne sont pas encore connectées.</Text>
+   <Text style={{ fontSize: 12, color: theme.muted, textAlign: 'center', marginBottom: 18 }}>Cette conversation est enregistrée localement. Les invitations et la messagerie entre membres ne sont pas encore connectées.</Text>
    {(dream?.chat?.messages || []).map(m => <View key={m.id} style={{ backgroundColor: '#D71D77', padding: 12, borderRadius: 12, alignSelf: 'flex-end', maxWidth: '85%' }}><Text style={{ color: '#fff' }}>{m.text}</Text></View>)}
   </ScrollView>
   <View style={{...workspaceCanvas(width),paddingVertical:12,flexDirection:'row',gap:10,alignItems:'center'}}>
-   <TextInput value={input} onChangeText={setInput} onSubmitEditing={submit} placeholder="Un message pour ce rêve…" style={{ flex: 1, borderRadius: 12, padding: 12, backgroundColor: '#F1ECE5' }}/>
+   <TextInput value={input} onChangeText={setInput} onSubmitEditing={submit} placeholder="Un message pour ce rêve…" style={{ flex: 1, borderRadius: 12, padding: 12, backgroundColor: theme.surface,color:theme.foreground,borderWidth:1,borderColor:theme.border }}/>
    <Pressable accessibilityLabel="Envoyer" onPress={submit}><Ionicons name="send" size={23} color="#D71D77"/></Pressable>
   </View>
   <Nav/>
