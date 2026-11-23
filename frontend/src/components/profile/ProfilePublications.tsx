@@ -1,10 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { ScrollView, Text, View, Pressable, useWindowDimensions } from 'react-native';
-import { router } from 'expo-router';
+import { Text, View } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useApp } from '@/context/AppContext';
 import { useAppTheme } from '@/theme/AppTheme';
-import { workspaceCanvas, workspaceLayout } from '@/theme/workspaceLayout';
 import { ProfilePublicationFeed } from '@/components/publication/PublicationGallery';
 import SemenceSharesFeed from '@/components/dream/SemenceSharesFeed';
 import { publications } from '@/mocks/publications';
@@ -14,8 +12,6 @@ import type { Publication } from '@/domain/publication';
 
 export function ProfilePublications({contentWidth}: {contentWidth:number}) {
   const app=useApp(),theme=useAppTheme();
-  const {width}=useWindowDimensions();
-  const ws=workspaceLayout(width);
   const [featuredId, setFeaturedId] = useState<string | null>(null);
   const [serverPublications, setServerPublications] = useState<Publication[]>([]);
   const [semenceCount,setSemenceCount]=useState(0);
@@ -31,10 +27,6 @@ export function ProfilePublications({contentWidth}: {contentWidth:number}) {
   const pinKey='jenlow.public-profile.featured.v1.'+app.name;
   useEffect(()=>{let active=true;void AsyncStorage.getItem(pinKey).then(x=>{if(active)setFeaturedId(x);}).catch(()=>{});return ()=>{active=false;};},[pinKey]);
   const feature=(id:string|null)=>{setFeaturedId(id);if(id)void AsyncStorage.setItem(pinKey,id).catch(()=>{});else void AsyncStorage.removeItem(pinKey).catch(()=>{});};
-  // Tiles use the exact width inside the shared workspace canvas,
-  // including the desktop back-arrow rail and right navigation column.
-  const canvasWidth=Math.max(0,Math.min(ws.maxWidth??width,width-(ws.desktop?236:0)));
-  const areaWidth=Math.max(0,canvasWidth-ws.contentGutter-ws.gutter);
   const myPublicPosts=[
     ...serverPublications,
     ...publications.filter(p=>p.author===app.name &&

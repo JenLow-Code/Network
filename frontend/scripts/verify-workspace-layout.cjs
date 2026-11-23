@@ -241,7 +241,7 @@ for(const [canvasWidth,desktop,tablet] of [
 
 // Talent creation is a full editor: these fields must be visible and persisted
 // before the card is created, not hidden behind a second editing step.
-const talentCreation=read('app/profile-talents.tsx');
+const talentCreation=read('src/components/profile/ProfileTalents.tsx');
 const talentCreationGuards=[
   ['levelPicker(newLevel,setNewLevel)', 'level selector in add dialog'],
   ['onChangeText={setNewDescription}', 'description input in add dialog'],

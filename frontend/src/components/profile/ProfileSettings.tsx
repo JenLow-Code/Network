@@ -1,12 +1,11 @@
 import { Text } from '@/i18n/LocalizedText';
 import React, { useEffect, useState } from 'react';
-import { Alert, Pressable, ScrollView, View, useWindowDimensions } from 'react-native';
+import { Alert, Pressable, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useApp } from '@/context/AppContext';
 import { useAppTheme } from '@/theme/AppTheme';
-import {workspaceCanvas,PAGE_TITLE_FONT_SIZE,PAGE_TITLE_LINE_HEIGHT} from '@/theme/workspaceLayout';
 import { useLocale, Language, LANGUAGE_KEY } from '@/i18n/locale';
 import { readMusicLibraryLayout, writeMusicLibraryLayout, type MusicLibraryLayout } from '@/domain/musicLibraryPreferences';
 const choices: { id: Language; label: string }[] = [
@@ -16,7 +15,6 @@ const choices: { id: Language; label: string }[] = [
   { id: 'pt', label: 'Português' },
 ];
 export function Settings({onMusicLayoutChange}: {onMusicLayoutChange?:(value:MusicLibraryLayout)=>void}) {
-  const {width}=useWindowDimensions();
   const { language, setLanguage, t, tr } = useLocale();
   const { logout, email } = useApp();
   const [busy, setBusy] = useState(false);

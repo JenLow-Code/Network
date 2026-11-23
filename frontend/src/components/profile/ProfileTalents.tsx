@@ -1,12 +1,10 @@
 import { Text, TextInput } from '@/i18n/LocalizedText';
 import React, { useEffect, useState } from 'react';
-import { Modal, Pressable, ScrollView, View, useWindowDimensions } from 'react-native';
+import { Modal, Pressable, ScrollView, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useApp } from '@/context/AppContext';
 import { useAppTheme } from '@/theme/AppTheme';
-import { workspaceCanvas, workspaceLayout } from '@/theme/workspaceLayout';
 import { ProfileTalentTile } from '@/components/talent/ProfileTalentTile';
 import { DREAM_TALENT_CHOICES } from '@/components/dream/dreamTalentCatalog';
 import { TranslatorLanguageFields } from '@/components/talent/TranslatorLanguageFields';
@@ -47,9 +45,7 @@ const talentArt = (name: string): TalentIllustration | undefined => {
 
 export function ProfileTalents({contentWidth}: {contentWidth:number}) {
   const app=useApp(),theme=useAppTheme();
-  const {width}=useWindowDimensions();
-  const ws=workspaceLayout(width);
-  const [talents, setTalents] = useState<Talent[]>([]);
+  const [talents, setTalents] = useState<Talent[]>(initial);
   const [loaded, setLoaded] = useState(false);
   const [newTalent, setNewTalent] = useState('');
   const [newLevel,setNewLevel]=useState(-1);
@@ -73,7 +69,7 @@ export function ProfileTalents({contentWidth}: {contentWidth:number}) {
             const list = JSON.parse(raw);
             if (Array.isArray(list)) setTalents(list);
           } catch {
-            setTalents([]);
+            setTalents(initial);
           }
         } else setTalents([]);
       })
@@ -119,10 +115,6 @@ export function ProfileTalents({contentWidth}: {contentWidth:number}) {
         </Pressable>)}
       </View>
     </View>;
-  // Tiles use the exact width inside the shared workspace canvas,
-  // including the desktop back-arrow rail and right navigation column.
-  const canvasWidth=Math.max(0,Math.min(ws.maxWidth??width,width-(ws.desktop?236:0)));
-  const areaWidth=Math.max(0,canvasWidth-ws.contentGutter-ws.gutter);
   const columns=contentWidth<350?2:contentWidth<650?3:4;
   const cardWidth=Math.max(76,Math.min(168,Math.floor((contentWidth-10*(columns-1))/columns)));
   return <>
@@ -132,7 +124,7 @@ export function ProfileTalents({contentWidth}: {contentWidth:number}) {
         <View style={{flexDirection:'row',flexWrap:'wrap',gap:10,marginTop:4}}>
           {talents.map((t,index)=><ProfileTalentTile key={index} title={t.name} level={levels[t.level]?.name||'À définir'}
             subtitle={t.name.toLocaleLowerCase('fr')==='traducteur'&&t.sourceLanguage&&t.targetLanguage
-              ?t.sourceLanguage+' → '+t.targetLanguage:undefined}
+              ?t.sourceLanguage+' → '+t.targetLanguage:t.interests.length?t.interests.join(' · '):undefined}
             art={talentArt(t.name)} width={cardWidth} onPress={()=>setSelectedTalent(index)}/>)}
           <Pressable accessibilityRole="button" accessibilityLabel="Ajouter un talent" onPress={()=>setAddTalentOpen(true)}
             style={{width:cardWidth,height:cardWidth,borderRadius:10,borderWidth:1.5,

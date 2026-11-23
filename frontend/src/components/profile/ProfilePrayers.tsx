@@ -1,16 +1,14 @@
 import { Text } from '@/i18n/LocalizedText';
 import React from 'react';
-import { Image, Pressable, ScrollView, View, useWindowDimensions } from 'react-native';
+import { Image, Pressable, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { publications } from '@/mocks/publications';
 import { useApp } from '@/context/AppContext';
 import { publicationPath } from '@/components/publication/PublicationGallery';
 import { useAppTheme } from '@/theme/AppTheme';
-import {workspaceCanvas,WORKSPACE_TITLE_GAP,PAGE_TITLE_FONT_SIZE,PAGE_TITLE_LINE_HEIGHT} from '@/theme/workspaceLayout';
 export function Prayers() {
   const theme = useAppTheme();
-  const {width}=useWindowDimensions();
   const { prayerIds, togglePrayer, prayerRepetitions, setPrayerRepetition } = useApp();
   const items = publications.filter(p => prayerIds.includes(p.id));
   return (

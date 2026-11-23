@@ -77,7 +77,7 @@ export function BibleLibraryScreen({embedded=false}: {embedded?:boolean}){
     complete?'Bible disponible hors ligne':'Télécharger la Bible pour une lecture hors ligne';
 
   const content=<>
-      {/* One compact settings row      {/* One compact settings row instead of three stacked blocks of metadata. */}
+      {/* One compact settings row instead of three stacked blocks of metadata. */}
       <View style={{gap:5}}>
         <View style={{minHeight:37,flexDirection:'row',alignItems:'center',gap:10}}>
           <Pressable onPress={()=>setLanguageOpen(open=>!open)}

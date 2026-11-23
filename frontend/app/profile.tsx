@@ -40,10 +40,12 @@ export default function Profile() {
   const pending=useRef<SectionId|null>(null);
   const [panelWidth,setPanelWidth]=useState(0);
   const [preferredLayout,setPreferredLayout]=useState<MusicLibraryLayout>();
+  const [settingsOpen,setSettingsOpen]=useState(false);
   const inset=ws.desktop?22:14;
   const fallback=Math.max(100,Math.min(ws.maxWidth??width,width-(ws.desktop?236:0))-ws.contentGutter-ws.gutter-inset*2);
   const contentWidth=panelWidth||fallback;
   const jump=(id:SectionId)=>{
+    if(id==='settings')setSettingsOpen(true);
     pending.current=id;
     const y=anchors.current[id];
     if(y!==undefined){pending.current=null;requestAnimationFrame(()=>scroll.current?.scrollTo({y:Math.max(0,y-12),animated:true}));}
@@ -162,17 +164,17 @@ export default function Profile() {
               <Pressable key={link.id} accessibilityRole="button" accessibilityLabel={link.title}
                 onPress={()=>jump(link.id)}
                 style={{
-                  width:ws.desktop?'31.8%':ws.tablet?'48.8%':'100%',padding:ws.desktop?18:14,borderWidth:1,borderColor:theme.border,
-                  borderRadius:12,backgroundColor:theme.surface,flexDirection:'row',alignItems:'center',gap:13,
-                  minHeight:ws.desktop?89:76,
+                  width:ws.desktop?'31.8%':width>=360?'48.5%':'100%',padding:ws.desktop?18:10,borderWidth:1,borderColor:theme.border,
+                  borderRadius:12,backgroundColor:theme.surface,flexDirection:'row',alignItems:'center',gap:ws.desktop?13:8,
+                  minHeight:ws.desktop?89:70,
                 }}>
-                <View style={{width:38,height:38,borderRadius:11,backgroundColor:theme.background,
+                <View style={{width:ws.desktop?38:30,height:ws.desktop?38:30,borderRadius:11,backgroundColor:theme.background,
                   justifyContent:'center',alignItems:'center'}}>
                   <Ionicons name={link.icon} size={21} color={link.color}/>
                 </View>
                 <View style={{flex:1,gap:4}}>
-                  <Text style={{color:theme.foreground,fontWeight:'700',fontSize:14}}>{link.title}</Text>
-                  <Text style={{color:theme.muted,fontSize:11}}>{link.subtitle}</Text>
+                  <Text style={{color:theme.foreground,fontWeight:'700',fontSize:ws.desktop?14:12}}>{link.title}</Text>
+                  <Text style={{color:theme.muted,fontSize:ws.desktop?11:10}}>{link.subtitle}</Text>
                 </View>
                 <Ionicons name="arrow-down-outline" size={16} color={theme.muted}/>
               </Pressable>
@@ -187,7 +189,7 @@ export default function Profile() {
             backgroundColor:item.id==='publications'?theme.background:
               item.id==='settings'?theme.surface:
               theme.dark?item.color+'19':item.color+'0B',
-            borderWidth:item.id==='publications'?0:1,
+            borderWidth:item.id==='publications'||item.id==='music'?0:1,
             borderColor:theme.dark?theme.border:item.color+'25',
             paddingHorizontal:inset,paddingVertical:ws.desktop?22:16,gap:15}}>
             <View style={{flexDirection:'row',alignItems:'center',gap:10}}>
@@ -197,8 +199,9 @@ export default function Profile() {
               </View>
               <View style={{flex:1,gap:2}}>
                 <Text accessibilityRole="header" style={{fontSize:18,fontWeight:'700',color:theme.foreground}}>{item.title}</Text>
-                <Text style={{fontSize:12,color:theme.muted}}>{item.subtitle}</Text>
+                {item.id==='settings'?null:<Text style={{fontSize:12,color:theme.muted}}>{item.subtitle}</Text>}
               </View>
+              {item.id==='settings'?<Pressable onPress={()=>setSettingsOpen(v=>!v)} accessibilityRole="button" accessibilityLabel="Afficher les paramètres" accessibilityState={{expanded:settingsOpen}} style={{padding:10}}><Ionicons name={settingsOpen?'chevron-up':'chevron-down'} size={20} color={theme.foreground}/></Pressable>:null}
               {item.id==='bible'?<Pressable onPress={()=>router.push('/bible-library')} accessibilityRole="button" accessibilityLabel="Ouvrir le lecteur de la Bible" style={{padding:8}}>
                 <Ionicons name="expand-outline" size={20} color={theme.foreground}/>
               </Pressable>:null}
@@ -209,7 +212,7 @@ export default function Profile() {
               {item.id==='music'?<MusicLibrary embedded contentWidth={contentWidth} preferredLayout={preferredLayout}/>:null}
               {item.id==='prayers'?<Prayers/>:null}
               {item.id==='bible'?<BibleLibraryScreen embedded/>:null}
-              {item.id==='settings'?<Settings onMusicLayoutChange={setPreferredLayout}/>:null}
+              {item.id==='settings'?(settingsOpen?<Settings onMusicLayoutChange={setPreferredLayout}/>:<Pressable onPress={()=>setSettingsOpen(true)} accessibilityRole="button" style={{paddingVertical:4}}><Text style={{color:theme.muted,fontSize:12}}>Langue · Apparence · Préférences musicales · Compte</Text></Pressable>):null}
             </View>
           </View>
         ))}
