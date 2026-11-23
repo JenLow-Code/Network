@@ -286,14 +286,16 @@ function PhaseMobileOverlap({dreams,viewportWidth,cardHeight,onLongPress}:{
   // Intercept horizontal drags from the nested project card while leaving
   // vertical page scrolling and ordinary project taps untouched.
   const switchTo=(next:number,direction:number)=>{
-    if(busy.current||next===currentRef.current)return;
+    if(busy.current||dreams.length<2)return;
+    const normalized=(next+dreams.length)%dreams.length;
+    if(normalized===currentRef.current)return;
     busy.current=true;
     Animated.timing(dragX,{
       toValue:direction*viewportWidth,duration:140,
       useNativeDriver:false,
     }).start(()=>{
-      currentRef.current=next;
-      setCurrent(next);
+      currentRef.current=normalized;
+      setCurrent(normalized);
       dragX.setValue(0);
       busy.current=false;
     });
@@ -316,17 +318,19 @@ function PhaseMobileOverlap({dreams,viewportWidth,cardHeight,onLongPress}:{
     },
     onPanResponderRelease:(_,g)=>{
       const distance=Math.min(36,viewportWidth*.22);
-      if(g.dx<-distance&&currentRef.current<lastIndexRef.current)
+      if(g.dx<-distance&&dreams.length>1)
         switchTo(currentRef.current+1,-1);
-      else if(g.dx>distance&&currentRef.current>0)
+      else if(g.dx>distance&&dreams.length>1)
         switchTo(currentRef.current-1,1);
       else snapBack();
     },
     onPanResponderTerminate:()=>snapBack(),
   }),[dragX,viewportWidth]);
 
-  const previousDream=current>0?dreams[current-1]:undefined;
-  const nextDream=current<lastIndex?dreams[current+1]:undefined;
+  const previousDream=dreams.length>1
+    ?dreams[(current-1+dreams.length)%dreams.length]:undefined;
+  const nextDream=dreams.length>1
+    ?dreams[(current+1)%dreams.length]:undefined;
   const previousPhoto=previousDream?coverImage(previousDream):undefined;
   const nextPhoto=nextDream?coverImage(nextDream):undefined;
   const activeDream=dreams[current];
@@ -334,7 +338,9 @@ function PhaseMobileOverlap({dreams,viewportWidth,cardHeight,onLongPress}:{
   const sideWidth=Math.min(frontWidth,Math.max(72,Math.round(frontWidth*.78)));
   const sideHeight=Math.min(cardHeight,Math.max(72,Math.round(cardHeight*.92)));
   const sideTop=Math.round((cardHeight-sideHeight)/2);
-  const activeLeft=Math.max(0,Math.round((viewportWidth-frontWidth)/2));
+  // Bias the carousel left so the phase title remains visually clear.
+  const activeLeft=Math.max(0,
+    Math.round((viewportWidth-frontWidth)*.30));
   const sidePeek=Math.max(18,Math.round(sideWidth*.42));
   return <View style={{width:'100%',position:'relative'}}>
     {dreams.length>1?(
@@ -782,12 +788,14 @@ export default function MySpace() {
                     }}>
                       {panel.title.toLocaleUpperCase('fr-FR')}
                     </Text>
-                    <Text style={{
-                      textAlign:'right',fontSize:compact?10:11,
-                      fontWeight:'500',color:theme.muted,
-                    }}>
-                      {dreams.length} aspiration{dreams.length>1?'s':''}
-                    </Text>
+                    {!compact?(
+                      <Text style={{
+                        textAlign:'right',fontSize:11,
+                        fontWeight:'500',color:theme.muted,
+                      }}>
+                        {dreams.length} aspiration{dreams.length>1?'s':''}
+                      </Text>
+                    ):null}
                   </View>
                   <View style={{width:phaseViewportWidth,minWidth:0,
                     justifyContent:'center'}}>
