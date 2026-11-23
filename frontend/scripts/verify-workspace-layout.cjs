@@ -236,3 +236,9 @@ for(const [needle,reason] of talentCreationGuards){
     process.exitCode=1;
   }
 }
+
+const talentLevelDots=read('src/components/talent/TalentLevelDots.tsx');
+if(!talentLevelDots.includes('return 0;')){
+  console.error('Talent level regression: an unset level must render zero filled dots.');
+  process.exitCode=1;
+}
