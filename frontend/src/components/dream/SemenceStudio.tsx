@@ -9,6 +9,7 @@ import type { DreamPhase } from '@/domain/publication';
 import { DreamPhaseHeader } from './DreamPhaseLayout';
 import SemenceShare from './SemenceShare';
 import DreamWorkspaceShortcuts from './DreamWorkspaceShortcuts';
+import DreamMilestoneActions from './DreamMilestoneActions';
 
 /** Semence workspace: private notes are the only resource shortcut displayed. */
 export default function SemenceStudio({dream,onBack,onNavigate}:{
@@ -44,45 +45,17 @@ export default function SemenceStudio({dream,onBack,onNavigate}:{
    <View style={{alignSelf:'flex-end',width:244,maxWidth:'65%',marginTop:-10,marginBottom:6}}>
      <DreamWorkspaceShortcuts dream={dream}/>
    </View>
-   {editable?<View style={{marginTop:ws.desktop?24:6,
-     maxWidth:ws.desktop?630:undefined,width:'100%',
-     alignSelf:ws.desktop?'flex-start':'center'}}>
-     <View style={{flexDirection:(ws.tablet||ws.desktop)?'row':'column',
-       gap:ws.desktop?10:(ws.tablet?8:0)}}>
-     <Pressable accessibilityRole="button" accessibilityLabel="Faire germer cette semence"
-       onPress={()=>setConfirm(true)}
-       style={{minHeight:(ws.tablet||ws.desktop)?43:48,flex:(ws.tablet||ws.desktop)?1.35:undefined,
-         paddingHorizontal:(ws.tablet||ws.desktop)?8:17,paddingVertical:(ws.tablet||ws.desktop)?9:12,
-         borderRadius:12,alignItems:'center',justifyContent:'center',
-         backgroundColor:'#A1BA44'}}>
-       <Text style={{color:'#242322',fontSize:13,fontWeight:'700',textAlign:'center'}}>
-         Faire germer cette semence
-       </Text>
-     </Pressable>
-     <Pressable onPress={()=>{setShareIds(null);setShareOpen(true);}}
-       accessibilityRole="button" accessibilityLabel="Publier cette semence"
-       style={{minHeight:(ws.tablet||ws.desktop)?43:48,flex:(ws.tablet||ws.desktop)?1:undefined,
-         marginTop:(ws.tablet||ws.desktop)?0:13,paddingVertical:(ws.tablet||ws.desktop)?9:12,
-         paddingHorizontal:(ws.tablet||ws.desktop)?7:17,alignItems:'center',justifyContent:'center',borderRadius:12,
-         borderWidth:1.5,borderColor:accent,backgroundColor:'transparent'}}>
-       <Text style={{fontSize:13,fontWeight:'700',color:accent,textAlign:'center'}}>
-         Publier cette semence
-       </Text>
-     </Pressable>
-     <Pressable onPress={uproot} accessibilityRole="button"
-       accessibilityLabel="Arracher cette semence"
-       style={{alignItems:'center',justifyContent:'center',
-         minHeight:(ws.tablet||ws.desktop)?43:44,flex:(ws.tablet||ws.desktop)?.8:undefined,
-         borderRadius:12,marginTop:(ws.tablet||ws.desktop)?0:13,
-         paddingHorizontal:(ws.tablet||ws.desktop)?7:17,paddingVertical:(ws.tablet||ws.desktop)?9:11,
-         backgroundColor:'#151515',borderWidth:theme.dark?1:0,
-         borderColor:theme.dark?'#515151':'transparent'}}>
-       <Text style={{color:'#FFFFFF',fontSize:11,fontWeight:'700'}}>
-         Arracher cette semence
-       </Text>
-     </Pressable>
-     </View>
+   {editable?<View style={{width:'100%'}}>
+     <DreamMilestoneActions
+       nextStage="Germination"
+       primaryLabel="Faire germer cette semence" primaryColor="#A1BA44"
+       primaryTextColor="#242322" onPrimary={()=>setConfirm(true)}
+       secondaryLabel="Publier cette semence" secondaryColor={accent}
+       onSecondary={()=>{setShareIds(null);setShareOpen(true);}}
+       destructiveLabel="Arracher" onDestructive={uproot}
+     />
      {confirm?<View style={{backgroundColor:theme.surface,padding:16,marginTop:12,
+       maxWidth:ws.desktop?630:undefined,
        borderRadius:12,borderWidth:1,borderColor:theme.border,gap:8}}>
        <Text style={{color:theme.foreground,fontWeight:'700',fontSize:16}}>
          Prêt à faire germer ce rêve ?
