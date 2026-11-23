@@ -210,7 +210,7 @@ export default function FlowerPreparation() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
       <ScrollView style={{ flex: 1, backgroundColor:'transparent' }}
-        contentContainerStyle={{ paddingHorizontal: ws.gutter,
+        contentContainerStyle={{ paddingLeft:ws.contentGutter,paddingRight:ws.gutter,
           paddingTop: 10, paddingBottom: 70, maxWidth: ws.maxWidth, width: '100%',
           alignSelf: 'center' }}>
         <DreamPhaseHeader dream={dream} phase="Témoignage"
