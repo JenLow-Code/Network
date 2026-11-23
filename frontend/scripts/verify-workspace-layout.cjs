@@ -110,14 +110,24 @@ const layoutRules=[
     'Projects carousel must respect its inset width'],
   ['app/my-space.tsx',/onLayout=\{event=>\{/,
     'Project overview must measure its actual visible canvas'],
-  ['app/my-space.tsx',/const phasePanelWidth=Math.max\(0,\(innerWidth-phaseGridGap\)\/2\);/,
-    'Phase panels must be derived from the measured hero width'],
-  ['app/my-space.tsx',/const phaseViewportWidth=Math.max\(0,phasePanelWidth-2\*panelInset-2-/,
-    'Phase card area must account for inner label, borders and padding'],
+  ['app/my-space.tsx',/const phaseColumns=ws.desktop\?4:2;/,
+    'Desktop must show four phase columns (responsive two-column fallback)'],
+  ['app/my-space.tsx',/\(innerWidth-\(phaseColumns-1\)\*phaseGridGap\)\/phaseColumns/,
+    'Phase columns must share the exact measured hero rail'],
+  ['app/my-space.tsx',/const phaseViewportWidth=Math.max\(0,phasePanelWidth-2\*panelInset-2\);/,
+    'Every project carousel must fit within its own narrow phase panel'],
   ['app/my-space.tsx',/LinearGradient id=\{'phase-wash-'\+index\}/,
-    'All four phase panels must restore their tinted gradients'],
-  ['app/my-space.tsx',/\{phaseSideLabel\?\(/,
-    'Wide phase panels need a readable left-hand label area'],
+    'Every phase must retain a background colour wash'],
+  ['app/my-space.tsx',/stopOpacity=\{theme.dark\?0.34:0.29\}/,
+    'Phase colour must be strongest at the left edge'],
+  ['app/my-space.tsx',/offset="100%" stopColor=\{panel.accent\}/,
+    'Phase colour must fade into the page background on the right'],
+  ['app/my-space.tsx',/borderRadius:0,borderWidth:1/,
+    'Phase panels must have square, non-rounded edges'],
+  ['app/my-space.tsx',/panel.title.toLocaleUpperCase\('fr-FR'\)/,
+    'Phase titles must be uppercase and horizontal'],
+  ['app/my-space.tsx',/DreamPhaseIcon phase=\{panel.phase\}/,
+    'Soft phase illustrations must stay in the background'],
   ['app/music-hub.tsx',/\.\.\.workspaceCanvas\(width\),paddingTop:12/,
     'Music landing must use the shared page canvas'],
   ['app/music-hub.tsx',/ws.contentGutter - ws.gutter/,
@@ -151,30 +161,27 @@ if(failures.length){
   console.log('Desktop content rails and notebook/music/chat/project headers verified ('+
     layoutRules.length+' assertions).');
 }
-// Math regression for the 2 × 2 overview: no phase, hero or carousel may
-// extend beyond the measured page rail at desktop, tablet or phone widths.
-for(const [canvasWidth,compact,tablet,desktop] of [
-  [360,true,false,false],[430,true,false,false],[780,false,true,false],
-  [1100,false,false,true],[1160,false,false,true],
+// Responsive geometry regression: four columns on desktop, two on narrow
+// screens; all phase blocks stay within the exact same bounds as the hero.
+for(const [canvasWidth,desktop,tablet] of [
+  [320,false,false],[360,false,false],[430,false,false],
+  [780,false,true],[1100,true,false],[1160,true,false],
 ]){
+  const compact=canvasWidth<600;
   const side=desktop?82:tablet?24:canvasWidth<520?16:20;
   const right=desktop?30:tablet?24:canvasWidth<520?16:20;
   const innerWidth=Math.max(0,canvasWidth-side-right);
-  const gap=compact?10:tablet?14:18;
-  const panelWidth=Math.max(0,(innerWidth-gap)/2);
-  const sideLabel=!compact&&panelWidth>=390;
-  const inset=compact?10:16;
-  const labelWidth=sideLabel?110:compact?22:26;
-  const labelGap=sideLabel?12:0;
-  const viewportWidth=Math.max(0,panelWidth-2*inset-2-labelWidth-labelGap);
-  const available=panelWidth-(sideLabel?inset:inset+labelWidth)-inset-2-
-    (sideLabel?labelWidth+labelGap:0);
+  const columns=desktop?4:2;
+  const gap=compact?10:tablet?14:12;
+  const panelWidth=Math.max(0,(innerWidth-(columns-1)*gap)/columns);
+  const inset=compact?9:12;
+  const viewportWidth=Math.max(0,panelWidth-2*inset-2);
+  const tileWidth=compact?viewportWidth:Math.max(1,Math.floor(viewportWidth*.84));
   if(side+innerWidth+right>canvasWidth+0.01||
-    2*panelWidth+gap>innerWidth+0.01||
-    viewportWidth>available+0.01||
-    viewportWidth<1){
-    console.error('Measured project overview overflows at '+canvasWidth+'px');
+    columns*panelWidth+(columns-1)*gap>innerWidth+0.01||
+    viewportWidth>panelWidth-2*inset-2+0.01||
+    viewportWidth<1||tileWidth>viewportWidth){
+    console.error('Projects phase columns overflow at '+canvasWidth+'px');
     process.exitCode=1;
   }
 }
-
