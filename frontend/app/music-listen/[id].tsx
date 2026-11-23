@@ -123,7 +123,7 @@ export default function MusicListenPage(){
         paddingTop:width>=1100?12:0,paddingBottom:105,
       }}>
       {song?<View style={{width:'100%',maxWidth:960,alignSelf:'center'}}>
-        <DetailAuthorHeader item={song} previewOnly={!!song.isDemo}/>
+        <DetailAuthorHeader item={song} previewOnly={!!song.isDemo||song.source!=='api'}/>
         <MusicListeningDetail song={song} queue={queue}
           contentWidth={Math.max(0,Math.min(width,960)-36)}
           onSelect={select} onContact={handle=>{void contact(handle);}}
