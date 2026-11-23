@@ -2,6 +2,7 @@ import React, { useId, useState } from 'react';
 import { Image, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
+import { useLocalSearchParams } from 'expo-router';
 import type { Publication } from '@/domain/publication';
 import { PHASE_LABELS } from '@/domain/publication';
 import { DreamPhaseIcon } from '@/icons/DreamPhaseIcon';
@@ -28,6 +29,7 @@ export function DetailHero({
   onMusicPress?: () => void;
   musicPlaying?: boolean;
 }) {
+  const { from } = useLocalSearchParams<{from?:string}>();
   const isDream = item.type === 'dream';
   const inset = width < 420 ? 20 : 31;
   const theme = useAppTheme();
@@ -58,7 +60,8 @@ export function DetailHero({
           accessibilityLabel={'Écouter ou mettre en pause ' + item.title}
           style={{ width, height }}
         >
-          <CassetteArtwork width={width} height={height} title={item.title} artwork={item.coverArt || item.image} transparent />
+          <CassetteArtwork width={width} height={height} title={item.title} artwork={item.coverArt || item.image}
+            transparent technicalLabel={from === 'music-tab' || item.id.startsWith('demo-music-publication-')}/>
           <View pointerEvents="none" style={styles.cassettePlay}>
             <Ionicons name={musicPlaying ? "pause" : "play"} size={21} color="#FFFFFF" />
           </View>
