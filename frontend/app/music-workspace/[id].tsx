@@ -97,7 +97,7 @@ export default function MusicWorkspace() {
   return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
     <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{
       width:'100%',maxWidth:ws.maxWidth,alignSelf:'center',
-      paddingHorizontal:ws.gutter,
+      paddingLeft:ws.contentGutter,paddingRight:ws.gutter,
       paddingTop:12,paddingBottom:desktop?56:120,
       gap:compact?18:desktop?20:25}}>
       {/* Song actions replace the title in the top bar. The song title is
