@@ -14,6 +14,7 @@ import { useApp } from '@/context/AppContext';
 import { FireHeader } from '@/components/fire/FireHeader';
 import { useLocale } from '@/i18n/locale';
 import {workspaceCanvas,WORKSPACE_TITLE_GAP} from '@/theme/workspaceLayout';
+import { useAppTheme } from '@/theme/AppTheme';
 
 type Kind = 'All' | 'Chats' | 'Collabs' | 'Lessons';
 type Activity = {
@@ -76,6 +77,7 @@ const initial: Activity[] = [
 ];
 const presence = { online: '#24c967', busy: '#ef5c79', offline: '#c8c8c8' };
 export default function Space() {
+  const theme = useAppTheme();
   const {width}=useWindowDimensions();
   const { rejectContact } = useApp();
   const { t } = useLocale();
@@ -94,29 +96,29 @@ export default function Space() {
     );
   }
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
       <View style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={{...workspaceCanvas(width),paddingTop:12,paddingBottom:148}}>
           <PageHeader title={t('space')} />
           <Pressable accessibilityRole="button" onPress={()=>router.push('/notifications')}
-            style={{marginBottom:10,borderRadius:11,borderWidth:1,borderColor:'#E7DFE2',
-              padding:14,flexDirection:'row',alignItems:'center',gap:11,backgroundColor:'#FCF7F8'}}>
+            style={{marginBottom:10,borderRadius:11,borderWidth:1,borderColor:theme.border,
+              padding:14,flexDirection:'row',alignItems:'center',gap:11,backgroundColor:theme.dark?'#32242C':'#FCF7F8'}}>
             <Ionicons name="notifications-outline" size={21} color="#CB245C"/>
             <View style={{flex:1,gap:3}}>
-              <Text style={{fontSize:13,color:'#242322',fontWeight:'700'}}>Mes notifications</Text>
-              <Text style={{fontSize:11,color:'#747975'}}>Réponses à mes demandes et actualités de mes rêves</Text>
+              <Text style={{fontSize:13,color:theme.foreground,fontWeight:'700'}}>Mes notifications</Text>
+              <Text style={{fontSize:11,color:theme.muted}}>Réponses à mes demandes et actualités de mes rêves</Text>
             </View>
-            <Ionicons name="chevron-forward" size={18} color="#748477"/>
+            <Ionicons name="chevron-forward" size={18} color={theme.muted}/>
           </Pressable>
           <Pressable accessibilityRole="button" onPress={()=>router.push('/talent-invitations')}
-            style={{marginBottom:16,borderRadius:11,borderWidth:1,borderColor:'#D9DFD8',
-              padding:14,flexDirection:'row',alignItems:'center',gap:11,backgroundColor:'#F4F7F2'}}>
+            style={{marginBottom:16,borderRadius:11,borderWidth:1,borderColor:theme.border,
+              padding:14,flexDirection:'row',alignItems:'center',gap:11,backgroundColor:theme.dark?'#26352D':'#F4F7F2'}}>
             <Ionicons name="people-outline" size={21} color="#27845B"/>
             <View style={{flex:1,gap:3}}>
-              <Text style={{fontSize:13,color:'#242322',fontWeight:'700'}}>Invitations de talents</Text>
-              <Text style={{fontSize:11,color:'#747975'}}>Accepter ou refuser une invitation à participer à un rêve</Text>
+              <Text style={{fontSize:13,color:theme.foreground,fontWeight:'700'}}>Invitations de talents</Text>
+              <Text style={{fontSize:11,color:theme.muted}}>Accepter ou refuser une invitation à participer à un rêve</Text>
             </View>
-            <Ionicons name="chevron-forward" size={18} color="#748477"/>
+            <Ionicons name="chevron-forward" size={18} color={theme.muted}/>
           </Pressable>
           <View style={{ flexDirection: 'row', gap: 6, marginBottom: 20 }}>
             {(['All', 'Chats', 'Collabs', 'Lessons'] as Kind[]).map(t => (
@@ -161,20 +163,20 @@ export default function Space() {
                       justifyContent: 'center',
                     }}
                   >
-                    <Ionicons name="notifications-outline" size={22} />
+                    <Ionicons name="notifications-outline" size={22} color="#FFFFFF" />
                   </View>
                 ) : (
                   <Avatar size={39} />
                 )}
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontWeight: '700', fontSize: 12 }}>
-                    {item.name} <Text style={{ color: '#999', fontWeight: '400' }}>{item.age}</Text>
+                  <Text style={{ color:theme.foreground, fontWeight: '700', fontSize: 12 }}>
+                    {item.name} <Text style={{ color: theme.muted, fontWeight: '400' }}>{item.age}</Text>
                   </Text>
-                  <Text style={{ fontSize: 11, color: '#888', marginTop: 4 }}>{item.detail}</Text>
+                  <Text style={{ fontSize: 11, color: theme.muted, marginTop: 4 }}>{item.detail}</Text>
                 </View>
                 {item.kind === 'Collabs' ? (
                   decisions[item.id] ? (
-                    <Text style={{ fontSize: 10, color: '#888' }}>{decisions[item.id]}</Text>
+                    <Text style={{ fontSize: 10, color: theme.muted }}>{decisions[item.id]}</Text>
                   ) : (
                     <View style={{ flexDirection: 'row', gap: 4 }}>
                       <Pressable
@@ -182,7 +184,7 @@ export default function Space() {
                         style={{
                           paddingVertical: 7,
                           paddingHorizontal: 9,
-                          backgroundColor: '#f9dce3',
+                          backgroundColor: '#A51D4F',
                           borderRadius: 6,
                         }}
                       >
@@ -193,7 +195,7 @@ export default function Space() {
                         style={{
                           paddingVertical: 7,
                           paddingHorizontal: 9,
-                          backgroundColor: '#27c865',
+                          backgroundColor: '#187446',
                           borderRadius: 6,
                         }}
                       >
@@ -202,7 +204,7 @@ export default function Space() {
                     </View>
                   )
                 ) : (
-                  <Ionicons name="image-outline" size={30} color="#aaa" />
+                  <Ionicons name="image-outline" size={30} color={theme.muted} />
                 )}
               </Pressable>
             ))}
