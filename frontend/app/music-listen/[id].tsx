@@ -31,6 +31,8 @@ export default function MusicListenPage(){
   const {id}=useLocalSearchParams<{id:string;from?:string}>();
   const theme=useAppTheme();
   const {width}=useWindowDimensions();
+  const ws=workspaceLayout(width);
+  const contentWidth=Math.max(0,Math.min(width,ws.maxWidth||width)-ws.contentGutter-ws.gutter);
   const discovery=useDiscovery({type:'music'});
   const isDemo=!!id&&isFictional(id);
   const remote=usePublication(isDemo?undefined:id);
