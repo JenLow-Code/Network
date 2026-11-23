@@ -3,7 +3,7 @@ import { Animated, Image, PanResponder, Platform, Pressable, ScrollView, Text, V
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
+import Svg, { Defs, LinearGradient, Rect, Stop, Text as SvgText } from 'react-native-svg';
 import { Nav } from '@/components/navigation/Nav';
 import { PageHeader } from '@/components/navigation/PageHeader';
 import { isPublishedFlower, type DreamEntry } from '@/domain/dreamWorkspace';
@@ -668,7 +668,7 @@ export default function MySpace() {
           // Four phase zones remain 2 × 2 on desktop and phone.
           // On phone the next project peeks out behind the current card.
           <View style={{
-            paddingHorizontal:side,flexDirection:'row',flexWrap:'wrap',
+            paddingLeft:side,paddingRight:right,flexDirection:'row',flexWrap:'wrap',
             columnGap:phaseGridGap,rowGap:phaseGridGap,
             paddingBottom:compact?20:26,
           }}>
