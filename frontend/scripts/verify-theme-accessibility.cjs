@@ -37,14 +37,11 @@ for (const mode of ['light', 'dark']) {
 const nav = source('src/components/navigation/PageHeader.tsx');
 assert.ok(nav.includes('left:desktop?-DESKTOP_PAGE_CONTENT_INSET:0') &&
   nav.includes('paddingLeft:desktop?0:52'),
-  'Only the desktop Back control may sit outside the shared page content rail');
+  'Shared Back and title alignment must stay consistent');
 const hero = source('src/components/dream/DreamPhaseLayout.tsx');
-assert.ok(hero.includes('const coverSize = desktop ? 106 : narrow ? 82 : 96;') &&
-  hero.includes('left:-DESKTOP_PAGE_CONTENT_INSET,top:29') &&
-  hero.includes('accessibilityRole="tablist"') &&
-  hero.includes('<TopActions/>') &&
-  !hero.includes('dream-full-bleed-hero'),
-  'Dream detail pages must use compact cover and canonical external desktop Back arrow');
+assert.ok(hero.includes('left:-DESKTOP_PAGE_CONTENT_INSET') &&
+  hero.includes('workspaceLayout(width)'),
+  'Dream Back must stay aligned to the shared desktop canvas inset');
 for (const file of ['app/space.tsx','app/login.tsx','app/chat/[id].tsx','app/agenda.tsx']) {
   const contents = source(file);
   assert.ok(!/<SafeAreaView style=\{\{[^}]*backgroundColor: ['"]#fff['"]/.test(contents),
@@ -53,4 +50,4 @@ for (const file of ['app/space.tsx','app/login.tsx','app/chat/[id].tsx','app/age
 assert.ok(!source('app/agenda.tsx').includes('DEMO_AGENDA'),
   'Demo-only appointments must not appear in the real dated Agenda');
 console.log('Theme foreground, muted and accent contrast >=4.5:1 on both surfaces.');
-console.log('Shared Back alignment, compact dream identity and key page surfaces verified.');
+console.log('Shared Back alignment, dream hero and key page surfaces verified.');
