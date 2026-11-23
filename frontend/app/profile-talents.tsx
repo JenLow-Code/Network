@@ -89,8 +89,10 @@ export default function ProfileTalents() {
   }, [storage, loaded, talents]);
   const updateTalent = (index: number, patch: Partial<Talent>) =>
     setTalents(items => items.map((t, i) => (i === index ? { ...t, ...patch } : t)));
-  const usableViewport=Math.max(0,width-(ws.desktop?212:0));
-  const areaWidth=Math.max(0,Math.min(ws.maxWidth??usableViewport,usableViewport)-2*ws.gutter);
+  // Tiles use the exact width inside the shared workspace canvas,
+  // including the desktop back-arrow rail and right navigation column.
+  const canvasWidth=Math.max(0,Math.min(ws.maxWidth??width,width-(ws.desktop?236:0)));
+  const areaWidth=Math.max(0,canvasWidth-ws.contentGutter-ws.gutter);
   const columns=areaWidth<350?2:areaWidth<850?3:4;
   const cardWidth=Math.floor((areaWidth-10*(columns-1))/columns);
   return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
