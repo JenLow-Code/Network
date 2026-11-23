@@ -11,6 +11,8 @@ export const WORKSPACE_TITLE_GAP=16;
 /** Top-level page headings follow the same 28px line box as the Discovery brand masthead. */
 export const PAGE_TITLE_FONT_SIZE=20;
 export const PAGE_TITLE_LINE_HEIGHT=28;
+/** Desktop-only offset between the back control and the content alignment rail. */
+export const DESKTOP_PAGE_CONTENT_INSET=52;
 
 /**
  * The same page canvas for every top-level screen. Width is measured within
@@ -18,12 +20,13 @@ export const PAGE_TITLE_LINE_HEIGHT=28;
  * Inner reading columns and dialogs may still have narrower widths.
  */
 export function workspaceCanvas(viewportWidth:number){
-  const {gutter,maxWidth}=workspaceLayout(viewportWidth);
+  const {gutter,contentGutter,maxWidth}=workspaceLayout(viewportWidth);
   return {
     width:'100%' as const,
     maxWidth,
     alignSelf:'center' as const,
-    paddingHorizontal:gutter,
+    paddingLeft:contentGutter,
+    paddingRight:gutter,
   };
 }
 
@@ -35,10 +38,13 @@ export function workspaceLayout(viewportWidth:number){
   const desktop=viewportWidth>=DESKTOP_WORKSPACE_BREAKPOINT&&!primaryTouch;
   const tablet=viewportWidth>=TABLET_WORKSPACE_BREAKPOINT&&!desktop;
   const gutter=desktop?30:tablet?24:viewportWidth<520?16:20;
+  // All page content starts on the title's rail; only the back arrow sits left of it.
+  const contentGutter=gutter+(desktop?DESKTOP_PAGE_CONTENT_INSET:0);
   return {
     desktop,
     tablet,
     gutter,
+    contentGutter,
     width:'100%' as const,
     maxWidth:desktop?DESKTOP_WORKSPACE_MAX_WIDTH:undefined,
     alignSelf:'center' as const,
