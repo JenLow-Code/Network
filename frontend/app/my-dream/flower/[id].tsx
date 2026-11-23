@@ -127,7 +127,7 @@ export default function FlowerPreparation() {
 
   if (!dream) return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
-      <Text style={{ padding: 20, color: theme.foreground }}>Rêve introuvable</Text>
+      <Text style={{ padding: 20, color: theme.foreground }}>Aspiration introuvable</Text>
     </SafeAreaView>
   );
   if (isPublishedFlower(dream)) return (
@@ -176,7 +176,7 @@ export default function FlowerPreparation() {
   );
   const publish = () => {
     if (!confirmed) {
-      notify('Floraison', 'Ce rêve est encore en Croissance.');
+      notify('Floraison', 'Cette aspiration est encore en Croissance.');
       return;
     }
     if (!validDay(draft.achievedOn || '')) {
@@ -196,7 +196,7 @@ export default function FlowerPreparation() {
   };
   const uproot = () => {
     const go = () => { remove(dream.id); router.replace('/my-space'); };
-    const message = 'Cette action supprimera définitivement ce rêve, sa Floraison et les données associées.';
+    const message = 'Cette action supprimera définitivement cette aspiration, sa Floraison et les données associées.';
     if (Platform.OS === 'web') {
       if (typeof window !== 'undefined' && window.confirm('Arracher cette plante ?\n' + message)) go();
     } else Alert.alert('Arracher cette plante ?', message, [
@@ -221,7 +221,7 @@ export default function FlowerPreparation() {
               pathname: '/my-dream/[id]', params: { id: dream.id, view: phase },
             });
           }}
-          summary="Il est temps de raconter ce que ce rêve a produit." />
+          summary="Il est temps de raconter ce que cette aspiration a produit." />
 
         {/* The four existing workspace links remain beside the two dates. */}
         <View style={{ flexDirection: 'row', gap: 13, marginTop: 0, marginBottom: 21,
@@ -356,12 +356,12 @@ export default function FlowerPreparation() {
 
           {/* The achievement is a human account, not a second upload form. */}
           <Text style={{ fontSize: 10, letterSpacing: 1.2, fontWeight: '800',
-            color: MAGENTA, marginBottom: 8 }}>LE RÊVE DEVENU RÉEL</Text>
+            color: MAGENTA, marginBottom: 8 }}>L’ASPIRATION DEVENUE RÉELLE</Text>
           <Text style={{ ...sectionTitle, fontSize: 26, lineHeight: 34,
             marginBottom: 10 }}>Ce qui a pris vie</Text>
           <Text style={{ ...muted, fontSize: 13, lineHeight: 21,
             marginBottom: 17 }}>
-            Raconte le moment où ce rêve a pris forme, ce qui s’est passé
+            Raconte le moment où cette aspiration a pris forme, ce qui s’est passé
             et ce que cela représente pour toi.
           </Text>
           <Text style={{ color: theme.foreground, fontWeight: '700',
@@ -370,7 +370,7 @@ export default function FlowerPreparation() {
             onChangeText={story => patch({ story })}
             placeholder={/musique|chant|équipe/i.test(dream.title)
               ? 'Exemple : Le 12 novembre, nous nous sommes enfin retrouvés pour jouer ensemble. Ce qui n’était qu’une idée est devenu notre première répétition…'
-              : 'Exemple : Ce jour-là, nous avons enfin vu notre projet prendre vie. Voici ce que nous avons vécu ensemble…'}
+              : 'Exemple : Ce jour-là, nous avons enfin vu notre aspiration prendre vie. Voici ce que nous avons vécu ensemble…'}
             placeholderTextColor={theme.muted}
             accessibilityLabel="Raconter ce qui s’est réalisé"
             style={{ color: theme.foreground, fontSize: 15, lineHeight: 25,
@@ -473,10 +473,10 @@ export default function FlowerPreparation() {
               style={{ alignSelf: 'center' }}/>
             <Text style={{ fontFamily: 'serif', fontSize: 26,
               color: theme.foreground, textAlign: 'center' }}>
-              Ton rêve est-il devenu réalité ?
+              Ton aspiration est-elle devenue réalité ?
             </Text>
             <Text style={{ ...muted, textAlign: 'center' }}>
-              Confirme le jour où ton rêve s'est réalisé. Cette étape est définitive :
+              Confirme le jour où ton aspiration s’est réalisée. Cette étape est définitive :
               tu ne pourras pas revenir en Croissance.
             </Text>
             <Text style={{ color: theme.foreground, fontSize: 12,
@@ -506,7 +506,7 @@ export default function FlowerPreparation() {
               style={{ color: '#B24753', fontSize: 11 }}>{dateError}</Text> : null}
             <Pressable accessibilityRole="checkbox"
               accessibilityState={{ checked: acknowledged }}
-              accessibilityLabel="Je confirme que mon rêve est réellement accompli"
+              accessibilityLabel="Je confirme que mon aspiration est réellement accomplie"
               onPress={() => setAcknowledged(value => !value)}
               style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 9,
                 paddingVertical: 8 }}>
@@ -514,7 +514,7 @@ export default function FlowerPreparation() {
                 size={21} color={acknowledged ? MAGENTA : theme.muted}/>
               <Text style={{ flex: 1, color: theme.foreground, fontSize: 12,
                 lineHeight: 19 }}>
-                Je confirme que ce rêve est réellement accompli et que
+                Je confirme que cette aspiration est réellement accomplie et que
                 le passage en Floraison est irréversible.
               </Text>
             </Pressable>

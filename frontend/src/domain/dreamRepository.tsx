@@ -104,7 +104,7 @@ export function DreamProvider({ children }: { children: React.ReactNode }) {
         }
       })
       .then(()=>{if(live)setHydratedKey(key);})
-      .catch(()=>{if(live)setStorageError('Impossible de charger les rêves enregistrés sur cet appareil. Vérifie le stockage du navigateur.');});
+      .catch(()=>{if(live)setStorageError('Impossible de charger les aspirations enregistrées sur cet appareil. Vérifie le stockage du navigateur.');});
     return () => {
       live = false;
     };
@@ -148,7 +148,7 @@ export function DreamProvider({ children }: { children: React.ReactNode }) {
   };
   const createPersisted:Repo['createPersisted']=async data=>{
     if(hydratedKey!==key)throw new Error(
-      storageError || 'Les rêves de ce compte ne sont pas encore chargés.',
+      storageError || 'Les aspirations de ce compte ne sont pas encore chargées.',
     );
     const id='local-'+Date.now()+'-'+Math.random().toString(36).slice(2,6);
     const entry:DreamEntry={
@@ -164,12 +164,12 @@ export function DreamProvider({ children }: { children: React.ReactNode }) {
   };
   const setCoverImage:Repo['setCoverImage']=async(dreamId,image)=>{
     if(hydratedKey!==key)throw new Error(
-      'Les rêves de ce compte ne sont pas encore chargés.',
+      'Les aspirations de ce compte ne sont pas encore chargées.',
     );
     const existing=items.find(d=>d.id===dreamId);
-    if(!existing)throw new Error('Ce rêve est introuvable.');
+    if(!existing)throw new Error('Cette aspiration est introuvable.');
     if(existing.phase==='Témoignage')throw new Error(
-      "L'image d'un rêve en Floraison est définitive.",
+      "L'image d'une aspiration en Floraison est définitive.",
     );
     if(!image.startsWith('data:image/')&&!/^https:\/\//.test(image))
       throw new Error("Format d'image invalide.");

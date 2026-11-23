@@ -20,7 +20,7 @@ export default function Introduction() {
         <PageHeader title="Introduction de confiance" />
         <Text style={{ color: '#555', marginTop: 12, lineHeight: 22 }}>
           Tu connais personnellement {friend?.name || 'cette personne'} et tu penses que ses talents
-          pourraient aider à réaliser « {d?.title || 'ce rêve'} ».
+          pourraient aider à réaliser « {d?.title || 'cette aspiration'} ».
         </Text>
         <View
           style={{
@@ -34,7 +34,7 @@ export default function Introduction() {
         >
           <Text style={{ fontWeight: '700' }}>Étapes de l'introduction</Text>
           <Text style={{ fontSize: 13 }}>1. Demander la permission à ton contact.</Text>
-          <Text style={{ fontSize: 13 }}>2. Proposer l'introduction au porteur du rêve.</Text>
+          <Text style={{ fontSize: 13 }}>2. Proposer l'introduction au porteur de l’aspiration.</Text>
           <Text style={{ fontSize: 13 }}>
             3. Ouvrir une conversation commune seulement après leurs accords.
           </Text>

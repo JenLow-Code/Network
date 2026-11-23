@@ -29,12 +29,12 @@ export default function DreamQuickActions({dream,onClose}:{
   router.push({pathname:'/my-dream-participants/[id]',params:{id:dream.id,tab:path==='coowners'?'coowners':'participants'}});
  };
  const actions:Action[]=[
-  {label:'Voir les détails du rêve',icon:'open-outline',go:run(()=>open('view'))},
+  {label:'Voir les détails de l’aspiration',icon:'open-outline',go:run(()=>open('view'))},
   {label:dream.phase==='Rêve'?'Voir les inspirations':'Voir les documents',
     icon:'folder-open-outline',go:run(()=>open(dream.phase==='Rêve'?'inspirations':'docs'))},
   {label:'Notes',
     icon:'lock-closed-outline',go:run(()=>open('notes'))},
-  {label:'Conversation du rêve',icon:'chatbubbles-outline',go:run(()=>open('chat')),visible:active},
+  {label:'Conversation de l’aspiration',icon:'chatbubbles-outline',go:run(()=>open('chat')),visible:active},
   {label:'Co-propriétaires',icon:'people-outline',go:run(()=>open('coowners'))},
   {label:'Participants',icon:'person-add-outline',go:run(()=>open('participants')),
     visible:dream.phase!=='Rêve'},
@@ -43,7 +43,7 @@ export default function DreamQuickActions({dream,onClose}:{
    onRequestClose={onClose}>
    <View style={{flex:1,justifyContent:'flex-end'}}>
      <Pressable onPress={onClose} accessibilityRole="button"
-       accessibilityLabel="Fermer les actions du rêve"
+       accessibilityLabel="Fermer les actions de l’aspiration"
        style={{flex:1,backgroundColor:'rgba(0,0,0,.45)'}}/>
      <View style={{paddingHorizontal:19,paddingTop:18,paddingBottom:Platform.OS==='ios'?35:24,
        backgroundColor:theme.surface,borderTopLeftRadius:22,borderTopRightRadius:22,maxHeight:'83%'}}>

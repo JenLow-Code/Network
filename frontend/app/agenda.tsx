@@ -367,7 +367,7 @@ export default function Agenda() {
               <Pressable onPress={() => router.push(publicationPath(p) as any)} style={{ flex: 1 }}>
                 <Text style={{ fontSize: 13, fontWeight: '600', color: theme.foreground }}>{p.title}</Text>
                 <Text style={{ fontSize: 10, color: theme.muted, marginTop: 3 }}>
-                  {p.type === 'bible' ? 'Bible' : p.type === 'dream' ? 'Dream' : 'Music'}
+                  {p.type === 'bible' ? 'Bible' : p.type === 'dream' ? 'Aspiration' : 'Music'}
                 </Text>
               </Pressable>
               <Pressable onPress={() => togglePrayer(p.id)} accessibilityLabel="Remove prayer">

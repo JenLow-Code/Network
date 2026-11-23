@@ -51,7 +51,7 @@ export function DreamTalentInvitationPanel({
     </View>
     <Text style={{fontSize:11,color:theme.muted,lineHeight:18}}>
       Ce besoin est encore conservé localement. Les invitations nominatives ne pourront être
-      envoyées et confirmées qu'après la synchronisation de ce rêve avec JenLow Network.
+      envoyées et confirmées qu'après la synchronisation de cette aspiration avec JenLow Network.
       Aucune personne ne sera marquée comme trouvée sans sa réponse.
     </Text>
   </View>;
@@ -75,7 +75,7 @@ export function DreamTalentInvitationPanel({
     }catch(e){
       setError(e instanceof ApiRequestError && e.code==='invitation_already_active'
         ? 'Une invitation est déjà en attente ou acceptée pour ce membre.'
-        : 'La demande n’a pas été envoyée. Aucune personne n’a été ajoutée au rêve.');
+        : 'La demande n’a pas été envoyée. Aucune personne n’a été ajoutée à l’aspiration.');
     }finally{setBusy(false);}
   };
   const removeInvitation=async(inv:Invitation)=>{
@@ -88,7 +88,7 @@ export function DreamTalentInvitationPanel({
       }catch{setError('Le retrait n’a pas été effectué. Réessaie.');}
       finally{setBusy(false);}
     };
-    const question='Retirer '+inv.recipient.displayName+' de ce projet ? Une notification lui sera adressée.';
+    const question='Retirer '+inv.recipient.displayName+' de cette aspiration ? Une notification lui sera adressée.';
     if(Platform.OS==='web'){
       if(typeof window!=='undefined'&&window.confirm(question))void go();
     }else Alert.alert('Retirer la personne',question,[
@@ -113,7 +113,7 @@ export function DreamTalentInvitationPanel({
       {editable?<Pressable disabled={busy} onPress={()=>void removeInvitation(inv)}
         accessibilityRole="button" style={{alignSelf:'flex-start',paddingVertical:5}}>
         <Text style={{fontSize:11,color:'#B55164',fontWeight:'700'}}>
-          {inv.status==='accepted'?'Retirer cette personne du projet':'Annuler l’invitation'}
+          {inv.status==='accepted'?'Retirer cette personne de l’aspiration':'Annuler l’invitation'}
         </Text>
       </Pressable>:null}
     </View>)}

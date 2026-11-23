@@ -186,7 +186,7 @@ function CurrentHabitSummary({
             color:theme.foreground,marginBottom:6}}>{menuHabit?.title}</Text>
           {([
             {label:'Modifier l’habitude',icon:'pencil-outline',action:onEdit},
-            {label:'Détacher du rêve (garder dans l’agenda)',
+            {label:'Détacher de l’aspiration (garder dans l’agenda)',
               icon:'unlink-outline',action:onDetach},
             {label:'Supprimer l’habitude',icon:'trash-outline',action:onDelete},
           ] as const).map(option=>(
@@ -253,7 +253,7 @@ function CurrentHabitSummary({
             <Text style={{fontSize:12,lineHeight:20,color:theme.muted}}>
               {selectedQuantity>=selectedTarget
                 ?'Cette habitude est déjà accomplie pour cette période. Tu peux ajuster ou annuler ta réalisation.'
-                :'Un petit pas de plus vers ton rêve.'}
+                :'Un petit pas de plus vers ton aspiration.'}
             </Text>
           </View>
           {(selectedTarget!==1||checkHabit?.unit!=='fois')?
@@ -419,7 +419,7 @@ export function GrowthLogbook({
     </Pressable> : null}
     {shown.length === 0 ? <View style={{ paddingVertical: 15, gap: 7, alignItems: 'center' }}>
       <Text style={{ fontSize: 12, color: theme.muted, textAlign: 'center', lineHeight: 19 }}>
-        Les moments vécus dans ce rêve apparaîtront ici.
+        Les moments vécus dans cette aspiration apparaîtront ici.
       </Text>
     </View> : null}
     {shown.map((group, index) => <View key={group.date} style={{
@@ -580,7 +580,7 @@ export function GrowthLogbook({
                 Écrire une note
               </Text>
               <Text style={{fontSize:11,lineHeight:16,color:theme.muted}}>
-                Une feuille dans le Logbook, visible dans ton rêve
+                Une feuille dans le Logbook, visible dans ton aspiration
               </Text>
             </View>
             <Ionicons name="arrow-forward" size={17} color={theme.muted}/>

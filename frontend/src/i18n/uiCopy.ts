@@ -20,11 +20,11 @@ export const copy: Record<string, [string, string, string, string]> = {
     'Pessoas que conheço pessoalmente. As videochamadas são reservadas ao meu círculo.',
   ],
   'Ma liste Fire': ['Ma liste Fire', 'My Fire list', 'Meine Fire-Liste', 'A minha lista Fire'],
-  "Les publications qui t'inspirent, indépendamment de tes rêves.": [
-    "Les publications qui t'inspirent, indépendamment de tes rêves.",
-    'Posts that inspire you, independent of your Dreams.',
-    'Beiträge, die dich inspirieren – unabhängig von deinen Träumen.',
-    'Publicações que te inspiram, independentemente dos teus sonhos.',
+  "Les publications qui t'inspirent, indépendamment de tes aspirations.": [
+    "Les publications qui t'inspirent, indépendamment de tes aspirations.",
+    'Posts that inspire you, independent of your aspirations.',
+    'Beiträge, die dich inspirieren – unabhängig von deinen Bestrebungen.',
+    'Publicações que te inspiram, independentemente das tuas aspirações.',
   ],
   'Ta liste Fire est encore vide.': [
     'Ta liste Fire est encore vide.',
@@ -125,11 +125,11 @@ export const copy: Record<string, [string, string, string, string]> = {
     'Apenas pré-visualização: nenhuma mensagem foi enviada.',
   ],
   'Message...': ['Message...', 'Message...', 'Nachricht...', 'Mensagem...'],
-  'Rêve introuvable': [
-    'Rêve introuvable',
-    'Dream not found',
-    'Traum nicht gefunden',
-    'Sonho não encontrado',
+  'Aspiration introuvable': [
+    'Aspiration introuvable',
+    'Aspiration not found',
+    'Bestrebung nicht gefunden',
+    'Aspiração não encontrada',
   ],
   '← Retour': ['← Retour', '← Back', '← Zurück', '← Voltar'],
   'Aucune publication trouvée.': [
@@ -156,11 +156,11 @@ export const copy: Record<string, [string, string, string, string]> = {
     '1. Bitte deinen Kontakt um Erlaubnis.',
     '1. Pede autorização ao teu contacto.',
   ],
-  "2. Proposer l'introduction au porteur du rêve.": [
-    "2. Proposer l'introduction au porteur du rêve.",
-    '2. Suggest the introduction to the Dream owner.',
-    '2. Schlage dem Traumverantwortlichen die Vorstellung vor.',
-    '2. Propõe a apresentação ao responsável pelo sonho.',
+  "2. Proposer l'introduction au porteur de l’aspiration.": [
+    "2. Proposer l'introduction au porteur de l’aspiration.",
+    '2. Suggest the introduction to the aspiration owner.',
+    '2. Schlage dem Verantwortlichen der Bestrebung die Vorstellung vor.',
+    '2. Propõe a apresentação ao responsável pela aspiração.',
   ],
   '3. Ouvrir une conversation commune seulement après leurs accords.': [
     '3. Ouvrir une conversation commune seulement après leurs accords.',
@@ -236,17 +236,17 @@ export const copy: Record<string, [string, string, string, string]> = {
     'Musik nicht gefunden',
     'Música não encontrada',
   ],
-  'Qui partage mon rêve ?': [
-    'Qui partage mon rêve ?',
-    'Who shares my Dream?',
-    'Wer teilt meinen Traum?',
-    'Quem partilha o meu sonho?',
+  'Qui partage mon aspiration ?': [
+    'Qui partage mon aspiration ?',
+    'Who shares my aspiration?',
+    'Wer teilt meine Bestrebung?',
+    'Quem partilha a minha aspiração?',
   ],
-  'Clore ce rêve avec un témoignage': [
-    'Clore ce rêve avec un témoignage',
-    'Complete this Dream with a testimony',
-    'Traum mit einem Zeugnis abschließen',
-    'Concluir este sonho com um testemunho',
+  'Clore cette aspiration avec un témoignage': [
+    'Clore cette aspiration avec un témoignage',
+    'Complete this aspiration with a testimony',
+    'Bestrebung mit einem Zeugnis abschließen',
+    'Concluir esta aspiração com um testemunho',
   ],
   'Lien vers le média (démo)': [
     'Lien vers le média (démo)',
@@ -260,14 +260,14 @@ export const copy: Record<string, [string, string, string, string]> = {
     'Erzähle, was erreicht wurde…',
     'Conta o que foi realizado…',
   ],
-  'Créer un rêve': ['Créer un rêve', 'Create a Dream', 'Traum erstellen', 'Criar um sonho'],
+  'Créer une aspiration': ['Créer une aspiration', 'Create an aspiration', 'Bestrebung erstellen', 'Criar uma aspiração'],
   'Commence simplement. Le titre est définitif une fois créé; tu pourras faire grandir le reste.': [
     'Commence simplement. Le titre est définitif une fois créé; tu pourras faire grandir le reste.',
     'Start simply. The title is fixed after creation; you can develop the rest.',
     'Fang einfach an. Der Titel steht nach der Erstellung fest; alles andere kann wachsen.',
     'Começa de forma simples. O título fica definitivo; podes desenvolver o resto.',
   ],
-  'Nom du rêve *': ['Nom du rêve *', 'Dream name *', 'Traumname *', 'Nome do sonho *'],
+  'Nom de l’aspiration *': ['Nom de l’aspiration *', 'Aspiration name *', 'Name der Bestrebung *', 'Nome da aspiração *'],
   'Mon but': ['Mon but', 'My goal', 'Mein Ziel', 'O meu objetivo'],
   'Photo (URL pour cette démo)': [
     'Photo (URL pour cette démo)',
@@ -281,23 +281,23 @@ export const copy: Record<string, [string, string, string, string]> = {
     'Gesuchte Talente',
     'Talentos procurados',
   ],
-  'Créer mon rêve': [
-    'Créer mon rêve',
-    'Create my Dream',
-    'Meinen Traum erstellen',
-    'Criar o meu sonho',
+  'Créer mon aspiration': [
+    'Créer mon aspiration',
+    'Create my aspiration',
+    'Meine Bestrebung erstellen',
+    'Criar a minha aspiração',
   ],
-  'Un espace pour faire grandir tes rêves.': [
-    'Un espace pour faire grandir tes rêves.',
-    'A place to grow your Dreams.',
-    'Ein Ort, um deine Träume wachsen zu lassen.',
-    'Um espaço para fazer crescer os teus sonhos.',
+  'Un espace pour faire grandir tes aspirations.': [
+    'Un espace pour faire grandir tes aspirations.',
+    'A place to grow your aspirations.',
+    'Ein Ort, um deine Bestrebungen wachsen zu lassen.',
+    'Um espaço para fazer crescer as tuas aspirações.',
   ],
-  'Aucun rêve dans cette phase pour l’instant.': [
-    'Aucun rêve dans cette phase pour l’instant.',
-    'No Dreams in this phase yet.',
-    'Noch keine Träume in dieser Phase.',
-    'Ainda não há sonhos nesta fase.',
+  'Aucune aspiration dans cette phase pour l’instant.': [
+    'Aucune aspiration dans cette phase pour l’instant.',
+    'No aspirations in this phase yet.',
+    'Noch keine Bestrebungen in dieser Phase.',
+    'Ainda não há aspirações nesta fase.',
   ],
   'Mes prières du jour': [
     'Mes prières du jour',

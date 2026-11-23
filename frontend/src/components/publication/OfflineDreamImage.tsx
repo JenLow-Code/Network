@@ -4,7 +4,7 @@ import Svg, { Defs, LinearGradient, Stop, Rect, Path, Circle } from 'react-nativ
 export function OfflineDreamImage({
   uri,
   height = 190,
-  label = 'Dream image',
+  label = 'Aspiration image',
   radius = 12,
 }: {
   uri?: string;

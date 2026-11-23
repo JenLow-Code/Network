@@ -41,7 +41,7 @@ export default function FireList() {
         <View style={{flexDirection:'row',alignItems:'center',
           justifyContent:'space-between',marginBottom:14}}>
           <Text style={{color:theme.muted,fontSize:12,flex:1,marginRight:12}}>
-            Les publications qui t'inspirent, indépendamment de tes rêves.
+            Les publications qui t'inspirent, indépendamment de tes aspirations.
           </Text>
           <Pressable accessibilityRole="button" accessibilityLabel="Créer un dossier Fire"
             onPress={() => setCreateFolderOpen(true)}

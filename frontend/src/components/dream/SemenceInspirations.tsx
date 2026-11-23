@@ -493,7 +493,7 @@ export default function SemenceInspirations({dream,editable,onShareInspiration,a
       gap:12,paddingHorizontal:20}}>
       <Ionicons name="images-outline" size={26} color={theme.muted}/>
       <Text style={{fontSize:13,lineHeight:21,textAlign:'center',color:theme.muted}}>
-        {editable?'Une image, un verset, une citation…\nAjoute ce qui te donne envie de rêver.':
+        {editable?'Une image, un verset, une citation…\nAjoute ce qui te donne envie d’avancer.':
           'Aucune inspiration conservée.'}
       </Text>
     </View>}
@@ -511,7 +511,7 @@ export default function SemenceInspirations({dream,editable,onShareInspiration,a
         if(Platform.OS==='web'&&typeof window!=='undefined'){
           if(window.confirm('Supprimer cette inspiration ?'))doDelete();
         }else Alert.alert('Supprimer cette inspiration ?',
-          'Elle sera retirée de ce rêve.',[
+          'Elle sera retirée de cette aspiration.',[
             {text:'Annuler',style:'cancel'},
             {text:'Supprimer',style:'destructive',onPress:doDelete},
           ]);

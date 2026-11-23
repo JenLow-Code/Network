@@ -46,7 +46,7 @@ export default function NewDream() {
     } catch (error) {
       setSaveError(error instanceof Error && error.message.includes('chargés')
         ? error.message
-        : "Le rêve et son image n'ont pas pu être enregistrés. Réessaie ou vérifie le stockage de ton navigateur.");
+        : "L’aspiration et son image n’ont pas pu être enregistrées. Réessaie ou vérifie le stockage de ton navigateur.");
     } finally {
       setSaving(false);
     }
@@ -55,7 +55,7 @@ export default function NewDream() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ ...workspaceCanvas(width),paddingTop:12,paddingBottom:70 }}>
-        <PageHeader title="Donner naissance à un rêve" />
+        <PageHeader title="Nouvelle aspiration" />
         <View style={{width:'100%',maxWidth:660,alignSelf:'flex-start',
           marginTop:WORKSPACE_TITLE_GAP}}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 11, marginBottom: 17 }}>
@@ -63,10 +63,10 @@ export default function NewDream() {
             <Text style={{ color: '#B88962', fontSize: 11, fontWeight: '700', letterSpacing: 1.4 }}>SEMENCE · 01 / 04</Text>
           </View>
           <Text style={{ color: theme.muted, fontSize: 14, lineHeight: 23, marginBottom: 33 }}>
-            Une idée suffit pour commencer. Tu pourras ensuite rassembler tes inspirations et faire grandir ce projet.
+            Une idée suffit pour commencer. Tu pourras ensuite rassembler tes inspirations et faire grandir cette aspiration.
           </Text>
 
-          <DreamPhaseField label="Nom de mon rêve *" value={title} onChange={setTitle} placeholder="Qu'aimerais-tu accomplir ?" />
+          <DreamPhaseField label="Nom de mon aspiration *" value={title} onChange={setTitle} placeholder="Qu'aimerais-tu accomplir ?" />
           <Text style={{ color: theme.muted, fontSize: 11, marginTop: -6, marginBottom: 18 }}>
             Le nom sera conservé lors des étapes suivantes.
           </Text>
@@ -105,7 +105,7 @@ export default function NewDream() {
             <DreamPhaseButton label={saving?'Enregistrement…':'Planter cette semence'}
               onPress={()=>{void save();}} disabled={!valid||!canSave||saving}/>
             {!canSave&&!storageError?<Text style={{color:theme.muted,fontSize:12,marginTop:10}}>
-              Chargement de tes rêves…
+              Chargement de tes aspirations…
             </Text>:null}
             {(saveError||storageError)?<Text accessibilityRole="alert"
               style={{fontSize:12,lineHeight:19,marginTop:10,color:'#B24753'}}>

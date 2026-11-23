@@ -14,10 +14,10 @@
   "discoverTitle": "Découvrir",
   "searchPlaceholder": "Chercher une inspiration…",
   "all": "Tout",
-  "dreamsFilter": "Rêves",
+  "dreamsFilter": "Aspirations",
   "bibleFilter": "Bible",
   "musicFilter": "Musique",
   "settingsHelp": "Le choix de langue s'applique à l'interface; certains textes de démonstration restent dans leur langue originale.",
-  "participantTitle": "Personnes partageant mon rêve",
-  "participantHint": "Cette liste est visible uniquement par les propriétaires du rêve."
+  "participantTitle": "Personnes partageant mon aspiration",
+  "participantHint": "Cette liste est visible uniquement par les propriétaires de l’aspiration."
 }

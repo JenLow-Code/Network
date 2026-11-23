@@ -27,11 +27,11 @@ export function PublicationPrimaryAction({ item }: { item: Publication }) {
   const contact = (topic?: string, introduction = false, customDraft?: string) => {
     setChoosingNeed(false);
     const draft = customDraft || (introduction
-      ? 'Bonjour ' + item.author + ', je connais peut-être quelqu’un qui pourrait contribuer à votre rêve « ' + item.title + ' ». Est-ce que nous pourrions en discuter avant toute mise en relation ?'
+      ? 'Bonjour ' + item.author + ', je connais peut-être quelqu’un qui pourrait contribuer à votre aspiration « ' + item.title + ' ». Est-ce que nous pourrions en discuter avant toute mise en relation ?'
       : item.type === 'talent'
       ? 'Bonjour ' + item.author + ', j’aimerais collaborer avec vous autour de votre talent : ' + item.skill + '.'
       : topic
-        ? 'Bonjour ' + item.author + ', je peux peut-être aider pour « ' + topic + ' » dans votre projet « ' + item.title + ' ». Pouvons-nous en parler ?'
+        ? 'Bonjour ' + item.author + ', je peux peut-être aider pour « ' + topic + ' » dans votre aspiration « ' + item.title + ' ». Pouvons-nous en parler ?'
         : 'Bonjour ' + item.author + ', j’aimerais échanger à propos de « ' + item.title + ' ».');
     router.push({
       pathname: '/chat/[id]',
@@ -50,7 +50,7 @@ export function PublicationPrimaryAction({ item }: { item: Publication }) {
               </Pressable>
             </View>
             <Text style={{ color: theme.muted, fontSize: 13, lineHeight: 20 }}>
-              Choisis un besoin pour préparer un message au porteur du projet.
+              Choisis un besoin pour préparer un message au porteur de l’aspiration.
             </Text>
             {needs.map((need, index) => (
               <Pressable
@@ -98,7 +98,7 @@ export function PublicationPrimaryAction({ item }: { item: Publication }) {
       accessibilityLabel={label}
       // Only native sharing and local dream creation are functional in beta;
       // other actions must never imply a real message or collaboration was sent.
-      onPress={label === 'Partager ce verset' || label === 'Créer un rêve inspiré' || label === 'Collaborer sur ce morceau' ? onPress : () => setUnavailable(true)}
+      onPress={label === 'Partager ce verset' || label === 'Créer une aspiration inspirée' || label === 'Collaborer sur ce morceau' ? onPress : () => setUnavailable(true)}
       style={[
         styles.action,
         styles.fullAction,
@@ -126,14 +126,14 @@ export function PublicationPrimaryAction({ item }: { item: Publication }) {
     );
 
     if (item.phase === 'Croissance') return controls(
-      button('Encourager ce rêve', () => contact(undefined, false,
-        'Bonjour ' + item.author + ', je voulais vous encourager dans la croissance de votre rêve « ' + item.title + ' » !')),
+      button('Encourager cette aspiration', () => contact(undefined, false,
+        'Bonjour ' + item.author + ', je voulais vous encourager dans la croissance de votre aspiration « ' + item.title + ' » !')),
     );
 
     if (item.phase === 'Témoignage') return controls(
-      button('Créer un rêve inspiré', () => router.push({ pathname: '/my-dream/new', params: { inspiration: item.title, from: item.id } })),
-      button('Partager l’impact de ce rêve', () => contact(undefined, false,
-        'Bonjour ' + item.author + ', votre rêve « ' + item.title + ' » a eu un impact sur moi et j’aimerais vous raconter comment.'), true),
+      button('Créer une aspiration inspirée', () => router.push({ pathname: '/my-dream/new', params: { inspiration: item.title, from: item.id } })),
+      button('Partager l’impact de cette aspiration', () => contact(undefined, false,
+        'Bonjour ' + item.author + ', votre aspiration « ' + item.title + ' » a eu un impact sur moi et j’aimerais vous raconter comment.'), true),
     );
     return null;
   }
@@ -184,13 +184,13 @@ function BibleDreamPicker({
   };
   return (
     <View style={{ gap: 8, paddingTop: 7 }}>
-      {button('Ajouter à mon rêve', () => setOpen(true))}
+      {button('Ajouter à mon aspiration', () => setOpen(true))}
       {button('Partager ce verset', share, true, 'share-outline')}
       <Modal transparent animationType="fade" visible={open} onRequestClose={() => setOpen(false)}>
         <View style={styles.overlay}>
           <Pressable style={StyleSheet.absoluteFill} accessibilityLabel="Annuler" onPress={() => setOpen(false)} />
           <View style={[styles.dialog, { backgroundColor: theme.surface }]}>
-            <Text style={[styles.heading, { color: theme.foreground }]}>Ajouter ce verset à un rêve</Text>
+            <Text style={[styles.heading, { color: theme.foreground }]}>Ajouter ce verset à une aspiration</Text>
             {dreams.length ? dreams.map(dream => (
               <Pressable
                 key={dream.id}
@@ -200,7 +200,7 @@ function BibleDreamPicker({
               >
                 <Text style={{ color: theme.foreground, fontSize: 14 }}>{dream.title}</Text>
               </Pressable>
-            )) : <Text style={{ color: theme.muted, fontSize: 13 }}>Crée d’abord un rêve pour y ajouter ce verset.</Text>}
+            )) : <Text style={{ color: theme.muted, fontSize: 13 }}>Crée d’abord une aspiration pour y ajouter ce verset.</Text>}
             <Pressable onPress={() => setOpen(false)} style={{ paddingVertical: 10 }} accessibilityRole="button">
               <Text style={{ color: theme.muted, fontSize: 13 }}>Fermer</Text>
             </Pressable>

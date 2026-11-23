@@ -113,7 +113,7 @@ export function parseCreate(body: Obj): CreateDreamInput {
 /** Edit allowed fields for the current phase. Title and phase are never editable here. */
 export async function patchDream(ctx: Ctx, viewer: Viewer, dreamId: string, body: Obj): Promise<void> {
   const { dream } = await requireDreamOwner(ctx.sql, dreamId, viewer);
-  if ('title' in body) throw unprocessable('title_immutable', 'A Dream title cannot change after creation.');
+  if ('title' in body) throw unprocessable('title_immutable', 'An aspiration title cannot change after creation.');
   if ('phase' in body) throw unprocessable('use_transition_endpoint', 'Use POST /api/dreams/:id/transitions.');
   const phase = toApiPhase(dream.phase);
   const v = new V(body);

@@ -20,7 +20,7 @@ import { useAppTheme } from '@/theme/AppTheme';
 import { workspaceLayout,PAGE_TITLE_FONT_SIZE,PAGE_TITLE_LINE_HEIGHT } from '@/theme/workspaceLayout';
 import { HANDWRITING_FAMILY } from '@/theme/handwriting';
 import { matchesForMe, profileTalentStorageKey, type SavedTalent } from '@/domain/personalDiscovery';
-const filters = ['Tout', 'Pour moi', 'Rêves', 'Musique', 'Bible', 'Talents'] as const;
+const filters = ['Tout', 'Pour moi', 'Aspirations', 'Musique', 'Bible', 'Talents'] as const;
 
 /** Deterministic within a visit; a new seed gently varies tile placement on refresh. */
 function discoveryRank(id: string, seed = 0): number {
@@ -103,7 +103,7 @@ export default function Discover() {
         p =>
           (filter === 'Tout' ||
             (filter === 'Pour moi' && matchesForMe(p, savedTalents)) ||
-            (filter === 'Rêves' && p.type === 'dream') ||
+            (filter === 'Aspirations' && p.type === 'dream') ||
             (filter === 'Musique' && p.type === 'music') ||
             (filter === 'Bible' && p.type === 'bible')) &&
           [p.title, p.author, p.type, p.type === 'dream' ? p.phase : '']
@@ -198,7 +198,7 @@ export default function Discover() {
                   ? tr('all')
                   : f === 'Pour moi'
                     ? 'Pour moi'
-                  : f === 'Rêves'
+                  : f === 'Aspirations'
                     ? tr('dreamsFilter')
                     : f === 'Musique'
                       ? tr('musicFilter')
