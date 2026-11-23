@@ -268,7 +268,7 @@ export default function Discover() {
               Impossible de charger Discovery pour le moment.
             </Text>
             <Pressable accessibilityRole="button" onPress={() => void feed.retry()} style={{ paddingVertical: 8, paddingHorizontal: 16 }}>
-              <Text style={{ color: '#D71D77', fontSize: 13 }}>Réessayer</Text>
+              <Text style={{ color: theme.accent, fontSize: 13 }}>Réessayer</Text>
             </Pressable>
           </View>
         ) : null}
