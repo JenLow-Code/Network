@@ -49,9 +49,11 @@ export function MusicTile({
   }}>
     {mode === 'draft'
       ? <MusicCassetteDraft width={imageWidth} variant="tile" title={displayTitle}/>
+      : listed ? <CassetteArtwork width={imageWidth} height={imageHeight}
+          title={displayTitle} artwork={artwork} transparent technicalLabel/>
       : <>
-          <View style={{height:imageHeight * 0.71,justifyContent:'center'}}>
-            <CassetteArtwork width={imageWidth} height={imageHeight * 0.71}
+          <View style={{height:imageHeight * 0.65,justifyContent:'center'}}>
+            <CassetteArtwork width={imageWidth} height={imageHeight * 0.65}
               title={displayTitle} artwork={artwork} transparent technicalLabel/>
           </View>
           <View pointerEvents="none" style={{
@@ -68,7 +70,7 @@ export function MusicTile({
               fontSize:compactLabel?8:10,lineHeight:compactLabel?10:12}}>
               {byline}
             </Text>
-            {!!detail && <Text numberOfLines={1} style={{
+            {!!detail && imageWidth >= 94 && <Text numberOfLines={1} style={{
               color:theme.muted,fontSize:compactLabel?7:9,
               lineHeight:compactLabel?9:11
             }}>{detail.replace(/^Recherche\s*:\s*/i,'')}</Text>}
