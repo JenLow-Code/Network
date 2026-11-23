@@ -67,7 +67,8 @@ export function createApp(opts: { migrations?: boolean; env?: Partial<Env> } = {
   const r2 = new MemoryR2();
   const env: Env = {
     DB: db, MEDIA: r2, AUTH_JWT_SECRET: SECRET, BETA_INVITE_CODE: INVITE, ALLOWED_ORIGIN: ORIGIN,
-    PUBLIC_API_URL: 'https://api.test', DISCOVERY_INCLUDE_DEMO: 'true', ...opts.env,
+    PUBLIC_API_URL: 'https://api.test', DISCOVERY_INCLUDE_DEMO: 'true',
+    ENVIRONMENT: 'test', ...opts.env,
   };
   const call: TestApp['call'] = async (method, path, o = {}) => {
     const headers: Record<string, string> = { ...(o.headers || {}) };
