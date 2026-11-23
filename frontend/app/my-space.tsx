@@ -704,9 +704,9 @@ export default function MySpace() {
                     flexDirection:'row',alignItems:'center',
                     marginBottom:compact?9:12}}>
                     <Text numberOfLines={1} style={{
-                      color:theme.dark?'#FFFFFF':'#111111',
+                      color:panel.accent,
                       fontSize:compact?11:16,lineHeight:compact?17:21,
-                      fontWeight:'600',letterSpacing:compact?0:0.1,
+                      fontWeight:'500',letterSpacing:compact?0:0.1,
                     }}>{panel.title}</Text>
                   </View>
                   {dreams.length>0 ? (
