@@ -427,7 +427,7 @@ export default function MySpace() {
     Math.max(100,Math.floor((phaseViewportWidth-2*phaseCardGap)/2.2));
   const phaseTileHeight=compact?Math.min(155,Math.round(phaseViewportWidth*.9)):146;
   // Give the project cards and carousel controls room without oversized empty panels.
-  const phasePanelHeight=compact?Math.max(204,phaseTileHeight+82):244;
+  const phasePanelHeight=compact?Math.max(204,phaseTileHeight+82):252;
   const heroGlass=Platform.OS==='web'
     ? ({backdropFilter:'blur(14px) saturate(125%)',
         WebkitBackdropFilter:'blur(14px) saturate(125%)'} as any)
@@ -616,12 +616,12 @@ export default function MySpace() {
                   ))}
                 </View>
               ):null}
-              {/* Mask the thin image-edge artefact underneath the hero. */}
-              <View pointerEvents="none" style={{
-                position:'absolute',bottom:0,left:0,right:0,height:2,
-                backgroundColor:theme.background,zIndex:11,
-              }}/>
             </View>
+            {/* Hide the thin lower edge of the image (not the controls). */}
+            <View pointerEvents="none" style={{
+              position:'absolute',bottom:0,left:0,right:0,height:2,
+              backgroundColor:theme.background,zIndex:11,
+            }}/>
           </View>
         </View>
 
