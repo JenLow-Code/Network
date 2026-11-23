@@ -497,14 +497,15 @@ export default function DreamExperience({
     ):null}
     </View>
    {!historical && phase==='Initiation' ? (
-     <View style={{gap:(ws.tablet||ws.desktop)?8:11,
+     <View style={{gap:ws.desktop?10:(ws.tablet?8:11),
         flexDirection:(ws.tablet||ws.desktop)?'row':'column',
-        maxWidth:ws.desktop?700:undefined,width:'100%',
-        alignSelf:'center',marginTop:12,marginBottom:21}}>
+        maxWidth:ws.desktop?630:ws.tablet?700:undefined,width:'100%',
+        alignSelf:ws.desktop?'flex-start':'center',
+        marginTop:ws.desktop?24:12,marginBottom:21}}>
        {resourceEditable ? <>
          <Pressable accessibilityRole="button" onPress={()=>setGoalDateDialog(true)}
            style={{minHeight:(ws.tablet||ws.desktop)?43:48,
-              flex:(ws.tablet||ws.desktop)?1.2:undefined,
+              flex:(ws.tablet||ws.desktop)?1.35:undefined,
               backgroundColor:'#225D42',borderRadius:11,
              alignItems:'center',justifyContent:'center',paddingHorizontal:16}}>
            <Text style={{color:'#FFFFFF',fontSize:13,fontWeight:'700'}}>Faire pousser</Text>
@@ -523,12 +524,11 @@ export default function DreamExperience({
              'Cette action supprimera définitivement ce rêve et ses données sur cet appareil.',
              ()=>{remove(dream.id);router.replace('/my-space');})}
            style={{minHeight:(ws.tablet||ws.desktop)?43:48,
-              flex:(ws.tablet||ws.desktop)?1:undefined,
-              backgroundColor:(ws.tablet||ws.desktop)?'transparent':'#242322',
-              borderWidth:(ws.tablet||ws.desktop)?1:0,
-              borderColor:theme.border,borderRadius:11,
-             alignItems:'center',justifyContent:'center',paddingHorizontal:16}}>
-           <Text style={{color:(ws.tablet||ws.desktop)?theme.muted:'#FFFFFF',fontSize:13,fontWeight:'700'}}>Arracher</Text>
+              flex:(ws.tablet||ws.desktop)?.8:undefined,
+              backgroundColor:'#151515',borderWidth:theme.dark?1:0,
+              borderColor:theme.dark?'#515151':'transparent',borderRadius:11,
+             alignItems:'center',justifyContent:'center',paddingHorizontal:12}}>
+           <Text style={{color:'#FFFFFF',fontSize:12,fontWeight:'700'}}>Arracher</Text>
          </Pressable>
        </>:null}
      </View>
@@ -696,8 +696,9 @@ export default function DreamExperience({
         setHabits(dream.id,next);
       }}
     />
-    {growthWritable?<View style={{gap:11,marginTop:11,marginBottom:22,
-      maxWidth:ws.desktop?700:undefined,width:'100%',alignSelf:'center'}}>
+    {growthWritable?<View style={{gap:11,marginTop:ws.desktop?24:11,marginBottom:22,
+      maxWidth:ws.desktop?630:ws.tablet?700:undefined,width:'100%',
+      alignSelf:ws.desktop?'flex-start':'center'}}>
       {frozen ? (
         <View style={{gap:9,padding:14,borderWidth:1,
           borderColor:'#397F9E',borderRadius:11}}>
@@ -716,11 +717,12 @@ export default function DreamExperience({
           </Pressable>
         </View>
       ):null}
-      <View style={{flexDirection:(ws.tablet||ws.desktop)?'row':'column',gap:(ws.tablet||ws.desktop)?9:11}}>
+      <View style={{flexDirection:(ws.tablet||ws.desktop)?'row':'column',
+        gap:ws.desktop?10:(ws.tablet?9:11)}}>
       <Pressable accessibilityRole="button"
         disabled={frozen}
         onPress={()=>router.push({pathname:'/my-dream/flower/[id]',params:{id:dream.id}})}
-        style={{minHeight:(ws.tablet||ws.desktop)?43:48,flex:(ws.tablet||ws.desktop)?1.2:undefined,
+        style={{minHeight:(ws.tablet||ws.desktop)?43:48,flex:(ws.tablet||ws.desktop)?1.35:undefined,
           backgroundColor:frozen?'#A8ABA6':'#D71D77',
           borderRadius:11,alignItems:'center',justifyContent:'center',paddingHorizontal:16}}>
         <Text style={{color:'#FFFFFF',fontSize:13,fontWeight:'700'}}>Faire fleurir</Text>
@@ -743,13 +745,12 @@ export default function DreamExperience({
         onPress={()=>confirm('Arracher cette plante ?',
           'Cette action supprimera définitivement ce rêve et ses données sur cet appareil.',
           ()=>{remove(dream.id);router.replace('/my-space');})}
-        style={{minHeight:(ws.tablet||ws.desktop)?43:48,flex:(ws.tablet||ws.desktop)?1:undefined,
-          backgroundColor:(ws.tablet||ws.desktop)?'transparent':'#242322',
-          borderWidth:(ws.tablet||ws.desktop)?1:0,borderColor:theme.border,
+        style={{minHeight:(ws.tablet||ws.desktop)?43:48,flex:(ws.tablet||ws.desktop)?.8:undefined,
+          backgroundColor:'#151515',borderWidth:theme.dark?1:0,
+          borderColor:theme.dark?'#515151':'transparent',
           borderRadius:11,alignItems:'center',justifyContent:'center',
-          paddingHorizontal:16}}>
-        <Text style={{color:(ws.tablet||ws.desktop)?theme.muted:'#FFFFFF',
-          fontSize:(ws.tablet||ws.desktop)?12:13,fontWeight:'700'}}>
+          paddingHorizontal:12}}>
+        <Text style={{color:'#FFFFFF',fontSize:12,fontWeight:'700'}}>
           Arracher cette plante
         </Text>
       </Pressable>

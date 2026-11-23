@@ -7,13 +7,14 @@ import type { DreamEntry } from '@/domain/dreamWorkspace';
 
 /** One compact, right-aligned row used across all dream phases. */
 export function DreamWorkspaceShortcutRow({
-  label, icon, onPress, expanded, highlighted = false,
+  label, icon, onPress, expanded, highlighted = false, hideLeadingIcon = false,
 }: {
   label: string;
   icon: keyof typeof Ionicons.glyphMap;
   onPress: () => void;
   expanded?: boolean;
   highlighted?: boolean;
+  hideLeadingIcon?: boolean;
 }) {
   const theme = useAppTheme();
   return (
@@ -28,10 +29,10 @@ export function DreamWorkspaceShortcutRow({
         borderRadius: 10,
         backgroundColor: highlighted ? (theme.dark ? '#432D38' : '#FCECF4') : 'transparent',
       }}>
-      <View style={{width:18,alignItems:'center'}}>
+      {!hideLeadingIcon ? <View style={{width:18,alignItems:'center'}}>
         <Ionicons name={icon} size={13}
           color={highlighted ? '#D71D77' : theme.muted}/>
-      </View>
+      </View> : null}
       <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.82}
         style={{ color: theme.foreground, fontSize: 12, fontWeight: '500',
           flex:1,minWidth:0,textAlign:'right' }}>{label}</Text>
@@ -50,11 +51,11 @@ export default function DreamWorkspaceShortcuts({
   return (
     <View style={{ alignItems: 'stretch', justifyContent: 'flex-start', gap: 0, width:'100%' }}>
       <DreamWorkspaceShortcutRow label="Notes personnelles"
-        icon="lock-closed-outline" onPress={() =>
+        icon="lock-closed-outline" hideLeadingIcon onPress={() =>
           router.push({ pathname: '/my-dream/notes/[id]', params: { id: dream.id } })}/>
       {showLibrary ? (
         <DreamWorkspaceShortcutRow label="Documents & Inspirations"
-          icon="folder-open-outline" onPress={() =>
+          icon="folder-open-outline" hideLeadingIcon onPress={() =>
             router.push({ pathname: '/my-dream/library/[id]', params: { id: dream.id } })}/>
       ) : null}
     </View>
