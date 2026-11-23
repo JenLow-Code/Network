@@ -8,15 +8,13 @@ import { Nav } from '@/components/navigation/Nav';
 import { PageHeader } from '@/components/navigation/PageHeader';
 import { MusicSongCard } from '@/components/music/MusicSongCard';
 import { MusicTile } from '@/components/music/MusicTile';
-import { MusicListeningDetail, type BrowsableSong } from '@/components/music/MusicListeningDetail';
-import { DetailInfoSection } from '@/components/detail/DetailMoreDrawer';
 import type { MusicCollaborator } from '@/components/music/MusicCollaboratorAvatars';
 import { readMusicLibraryLayout, type MusicLibraryLayout } from '@/domain/musicLibraryPreferences';
 import { useMusicWorkspaces, type MusicProject } from '@/domain/musicWorkspace';
 import { matchesForMe, profileTalentStorageKey, type SavedTalent } from '@/domain/personalDiscovery';
 import { useApp } from '@/context/AppContext';
 import { useDiscovery } from '@/lib/api/hooks';
-import { api, ApiRequestError } from '@/lib/api/client';
+import { api } from '@/lib/api/client';
 import {fetchDemoMusicPreview,type DemoMusicPreview} from '@/lib/api/musicPreview';
 import { useAppTheme } from '@/theme/AppTheme';
 import { workspaceLayout, workspaceCanvas } from '@/theme/workspaceLayout';
@@ -79,11 +77,6 @@ export default function MusicHub() {
   const [sent, setSent] = useState<Proposal[]>([]);
   const [received, setReceived] = useState<Proposal[]>([]);
   const [requestsError, setRequestsError] = useState(false);
-  // Opening a cassette in Pour moi reveals its information UNDER the shelf.
-  // It does not replace the library with a full-screen public player.
-  const [expandedForMe,setExpandedForMe]=useState<string|null>(null);
-  const [contactBusy,setContactBusy]=useState(false);
-  const [contactError,setContactError]=useState('');
   const [demoPreview,setDemoPreview]=useState<DemoMusicPreview|null>(null);
 
   useFocusEffect(useCallback(() => {
@@ -209,47 +202,11 @@ export default function MusicHub() {
     !recommended.some(song => song.id === p.trackPublicationId));
   const myCount = songs.length + sharedPieces.length;
   const forMeCount = recommended.length + pendingSent.length;
-  // The shelf contains only personalized opportunities; the open listener also
-  // allows swiping into other existing public/demo music projects.
-  const browseSongs:BrowsableSong[]=[];
-  const seenSongs=new Set<string>();
-  const availableMusic=[
-    ...recommended,
-    ...(discovery.state==='ready'
-      ? discovery.items.filter((entry):entry is MusicPublication=>entry.type==='music' &&
-          !publishedLocalIds.has(entry.id))
-      :[]),
-    ...(demoPreview?.catalog||[]),
-  ];
-  for(const candidate of availableMusic){
-    if(!seenSongs.has(candidate.id)){
-      seenSongs.add(candidate.id);
-      browseSongs.push(candidate);
-    }
-  }
-  const expandedSong=browseSongs.find(p=>p.id===expandedForMe);
-  const expandedPending=pendingSent.find(p=>p.trackPublicationId===expandedForMe);
-  const toggleForMe=(id:string)=>{
-    setContactError('');
-    setExpandedForMe(current=>current===id?null:id);
-  };
-  const contactAuthor=async(handle:string)=>{
-    if(contactBusy)return;
-    setContactBusy(true);setContactError('');
-    try{
-      const result=await api<{conversationId:string}>('/api/conversations',{
-        method:'POST',auth:'required',body:{handle},
-      });
-      router.push({pathname:'/chat/[id]',params:{id:result.conversationId}});
-    }catch(e){
-      const reason=e instanceof ApiRequestError?e.code:'';
-      setContactError(reason==='contact_required'
-        ?'La discussion directe est réservée aux contacts ou aux membres de ton Circle.'
-        :reason==='not_authenticated'
-          ?'Connecte-toi pour contacter cette personne.'
-          :'Impossible d’ouvrir la conversation actuellement.');
-    }finally{setContactBusy(false);}
-  };
+  // For me is a shelf, not a detail panel: every cassette opens the
+  // dedicated, music-focused listening page. The page fetches its own
+  // catalog so direct URLs, refreshes and mobile song swipes work too.
+  const openForMe=(id:string)=>router.push({pathname:'/music-listen/[id]',
+    params:{id,from:'music-tab'}});
 
   // A personal music tile is ALWAYS a workspace entry, never the Discovery
   // player. The latter is exclusively for music the viewer is exploring.
@@ -373,54 +330,19 @@ export default function MusicHub() {
               ? 'Recherche : ' + song.requestedTalents.join(' · ') : 'À découvrir'}
             artwork={song.coverArt || song.image} audioUrl={song.audioUrl}
             demo={!!song.isDemo}
-            onPress={() => toggleForMe(song.id)}
-            onLearnMore={() => toggleForMe(song.id)}/>),
+            onPress={() => openForMe(song.id)}
+            onLearnMore={() => openForMe(song.id)}/>),
           ...pendingSent.map(p => <MusicTile key={'pending-'+p.id}
             width={tileWidth} layout={layout} mode="cassette"
             title={p.trackTitle} byline={p.publisher?.displayName || 'Morceau proposé'}
             detail={p.description} status={p.status === 'submitted'
               ? 'Réponse en attente' : 'Proposition en brouillon'}
-            onPress={() => toggleForMe(p.trackPublicationId)}
-            onLearnMore={() => toggleForMe(p.trackPublicationId)}/>)
+            onPress={() => openForMe(p.trackPublicationId)}
+            onLearnMore={() => openForMe(p.trackPublicationId)}/>)
         ]) : empty('Aucune proposition musicale pour le moment.',
           'Découvrir la musique',() => router.push({
             pathname:'/discover',params:{filter:'Musique'},
           }))}
-        {/* Discovery-style listening unfolds beneath Pour moi, not a plain
-            summary card or a second full-screen route. */}
-        {expandedSong?<MusicListeningDetail key={expandedSong.id}
-          song={expandedSong} queue={browseSongs}
-          contentWidth={availableWidth}
-          onSelect={id=>{
-            setContactError('');
-            setExpandedForMe(id);
-          }}
-          onClose={()=>setExpandedForMe(null)}
-          onContact={handle=>{void contactAuthor(handle);}}
-          contactBusy={contactBusy} contactError={contactError}/>
-        :expandedPending?<View style={{maxWidth:760,gap:10,paddingTop:14}}>
-          <View style={{flexDirection:'row',alignItems:'center',gap:10}}>
-            <View style={{flex:1,gap:5}}>
-              <Text style={{fontSize:19,fontWeight:'700',color:theme.foreground}}>
-                {expandedPending.trackTitle}
-              </Text>
-              <Text style={{fontSize:12,color:theme.muted}}>
-                {expandedPending.publisher?.displayName||'Auteur'}
-              </Text>
-            </View>
-            <Pressable accessibilityRole="button" accessibilityLabel="Refermer la proposition"
-              onPress={()=>setExpandedForMe(null)} style={{padding:8}}>
-              <Ionicons name="close-outline" size={23} color={theme.foreground}/>
-            </Pressable>
-          </View>
-          <DetailInfoSection title="Proposition en cours"
-            text={expandedPending.description||'Informations du morceau non disponibles.'}/>
-          <Text style={{fontSize:12,fontWeight:'600',color:PINK}}>
-            {expandedPending.status==='submitted'
-              ?'Proposition envoyée · réponse en attente'
-              :'Proposition en brouillon'}
-          </Text>
-        </View>:null}
       </View>
     </ScrollView>
     <Nav/>
