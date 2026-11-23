@@ -88,12 +88,22 @@ const layoutRules=[
     'Desktop titles must start on the content rail; mobile retains its established spacing'],
   ['app/my-space.tsx',/const side=ws.contentGutter;/,
     'The projects header and panels must start on the common rail'],
-  ['app/my-space.tsx',/const innerWidth=Math.max\(0,contentWidth-side-right\);/,
-    'Projects hero must account for both different side margins'],
+  ['app/my-space.tsx',/const innerWidth=Math.max\(0,canvasWidth-side-right\);/,
+    'Projects hero must fit the actual measured canvas width'],
   ['app/my-space.tsx',/paddingLeft:side,paddingRight:right/,
     'Projects hero must not bleed left of the content rail'],
   ['app/my-space.tsx',/const galleryWidth=innerWidth;/,
     'Projects carousel must respect its inset width'],
+  ['app/my-space.tsx',/onLayout=\{event=>\{/,
+    'Project overview must measure its actual visible canvas'],
+  ['app/my-space.tsx',/const phasePanelWidth=Math.max\(0,\(innerWidth-phaseGridGap\)\/2\);/,
+    'Phase panels must be derived from the measured hero width'],
+  ['app/my-space.tsx',/const phaseViewportWidth=Math.max\(0,phasePanelWidth-2\*panelInset-2-/,
+    'Phase card area must account for inner label, borders and padding'],
+  ['app/my-space.tsx',/LinearGradient id=\{'phase-wash-'\+index\}/,
+    'All four phase panels must restore their tinted gradients'],
+  ['app/my-space.tsx',/\{phaseSideLabel\?\(/,
+    'Wide phase panels need a readable left-hand label area'],
   ['app/music-hub.tsx',/\.\.\.workspaceCanvas\(width\),paddingTop:12/,
     'Music landing must use the shared page canvas'],
   ['app/music-hub.tsx',/ws.contentGutter - ws.gutter/,
@@ -127,3 +137,30 @@ if(failures.length){
   console.log('Desktop content rails and notebook/music/chat/project headers verified ('+
     layoutRules.length+' assertions).');
 }
+// Math regression for the 2 × 2 overview: no phase, hero or carousel may
+// extend beyond the measured page rail at desktop, tablet or phone widths.
+for(const [canvasWidth,compact,tablet,desktop] of [
+  [360,true,false,false],[430,true,false,false],[780,false,true,false],
+  [1100,false,false,true],[1160,false,false,true],
+]){
+  const side=desktop?82:tablet?24:canvasWidth<520?16:20;
+  const right=desktop?30:tablet?24:canvasWidth<520?16:20;
+  const innerWidth=Math.max(0,canvasWidth-side-right);
+  const gap=compact?10:tablet?14:18;
+  const panelWidth=Math.max(0,(innerWidth-gap)/2);
+  const sideLabel=!compact&&panelWidth>=390;
+  const inset=compact?10:16;
+  const labelWidth=sideLabel?110:compact?22:26;
+  const labelGap=sideLabel?12:0;
+  const viewportWidth=Math.max(0,panelWidth-2*inset-2-labelWidth-labelGap);
+  const available=panelWidth-(sideLabel?inset:inset+labelWidth)-inset-2-
+    (sideLabel?labelWidth+labelGap:0);
+  if(side+innerWidth+right>canvasWidth+0.01||
+    2*panelWidth+gap>innerWidth+0.01||
+    viewportWidth>available+0.01||
+    viewportWidth<1){
+    console.error('Measured project overview overflows at '+canvasWidth+'px');
+    process.exitCode=1;
+  }
+}
+
