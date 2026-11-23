@@ -15,6 +15,7 @@ import {isMidiSource,renderMidiSource} from '@/domain/musicMidiAudio';
 import { useAppTheme } from '@/theme/AppTheme';
 import { workspaceLayout,PAGE_TITLE_FONT_SIZE,PAGE_TITLE_LINE_HEIGHT } from '@/theme/workspaceLayout';
 import type { MusicProjectFile } from '@/domain/musicWorkspace';
+import { api } from '@/lib/api/client';
 
 type Space = 'capture'|'create'|'collaborate';
 const PINK='#CB245C';
@@ -33,6 +34,17 @@ export default function MusicWorkspace() {
     if(tab==='capture'||tab==='create'||tab==='collaborate')setSpace(tab);
   },[tab]);
   const project=items.find(item=>item.id===id);
+  const [hasCollaborators,setHasCollaborators]=useState(false);
+  useEffect(()=>{
+    let live=true;
+    const publicationId=project?.publishedId;
+    if(!publicationId){setHasCollaborators(false);return;}
+    void api<{members:{id:string}[]}>('/api/music/'+
+      encodeURIComponent(publicationId)+'/collaborators',{auth:'required'})
+      .then(response=>{if(live)setHasCollaborators(response.members.length>1);})
+      .catch(()=>{if(live)setHasCollaborators(false);});
+    return()=>{live=false;};
+  },[project?.publishedId]);
   if (!ready) return <SafeAreaView style={{flex:1,backgroundColor:theme.background,
     justifyContent:'center',alignItems:'center'}}>
     <ActivityIndicator color={PINK}/><Nav/>
@@ -122,6 +134,7 @@ export default function MusicWorkspace() {
       </Text>:null}
       {space==='capture' ? <MusicCaptureExperience project={project} patch={update}
         onStartVersion={start} onUseFile={useFile} hasVersion={!!version}
+        showEditor={hasCollaborators}
         newVersionMode={intent==='new-version'}
         quickAction={intent==='write'||intent==='upload'||intent==='play'||
           intent==='record'?intent:undefined}/> : null}
