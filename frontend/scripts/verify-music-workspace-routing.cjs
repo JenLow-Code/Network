@@ -1,44 +1,64 @@
 /**
- * Regression guard: private and accepted collaborative music belongs in the
- * shared working folder, not in the public cassette/player detail route.
- * This is intentionally a source-level routing invariant; the live API still
- * enforces the actual membership check.
+ * Regression guard for the exact JenLow Music UX contract:
+ * - Preserve the sample collaboration AND the sample discovery cassette;
+ * - all Mes morceaux tiles open a three-tab workspace;
+ * - Pour moi cassettes unfold their details below the shelf.
+ * Demo fixtures remain read-only and must never gain real permissions.
  */
 const {readFileSync}=require('node:fs');
 const {join}=require('node:path');
 const base=join(__dirname,'..');
 const read=path=>readFileSync(join(base,path),'utf8');
 const home=read('app/music-hub.tsx');
-const detail=read('app/music/[id].tsx');
 const shared=read('app/music-collaboration/[id].tsx');
+const detail=read('app/music/[id].tsx');
 const owned=read('src/components/music/MusicSongCard.tsx');
+const capture=read('src/components/music/MusicCaptureExperience.tsx');
+const demoData=read('src/lib/api/musicPreview.ts');
 
-const personalBlock=home.split('const openMyPiece = ')[1]?.split('const openForMeProposal')[0]||'';
+const personalBlock=home.split('const openMyPiece = ')[1]?.split('const sectionTitle = ')[0]||'';
 const checks=[
-  ['No fictional accepted collaboration in Mes morceaux',
-    !home.includes('demoPreview')&&!home.includes('acceptedWithDemo')],
+  ['Keep the demonstration collaboration under Mes morceaux',
+    home.includes('acceptedWithDemo.forEach')&&
+    home.includes('demoPreview?.collaborations')],
+  ['Keep the demonstration cassette under Pour moi',
+    home.includes('demoPreview?.songs')&&
+    home.includes('demo={!!song.isDemo}')],
+  ['Keep demo examples sourced from the isolated read-only API',
+    demoData.includes('DEMO_API_BASE')&&
+    !home.includes("setAccepted(true)")],
   ['Personal tiles invoke openMyPiece',
     home.includes('onPress={() => openMyPiece(piece.primary)}')],
-  ['Personal shared tiles route into the shared music workspace',
-    personalBlock.includes("pathname:'/music-collaboration/[id]'")],
-  ['Personal owned tiles route into their editable workspace',
+  ['Both real and demo shared tiles open the workspace, never the player',
+    personalBlock.includes("pathname:'/music-collaboration/[id]'")&&
+    !personalBlock.includes("pathname:'/music/[id]'")],
+  ['Owned workspaces preserve Capture, Create and Collaborate',
     personalBlock.includes("pathname:'/music-workspace/[id]'")&&
     owned.includes("pathname: '/music-workspace/[id]'")],
-  ['No fallback from personal tile to the publication player',
-    !personalBlock.includes("pathname:'/music/[id]'")],
-  ['Only discovery opportunities navigate to the public music player',
-    home.includes('const openForMeProposal =')],
-  ['Old player links recheck membership on the authenticated API',
+  ['Demo shared projects render the same three tabs without calling real APIs',
+    shared.includes('if(demoId)')&&
+    shared.includes('fetchDemoMusicPreview()')&&
+    shared.includes('<MusicWorkspaceTabs')],
+  ['Collaborative Capture identifies who added a resource',
+    capture.includes('Modifié par')&&shared.includes('Modifié par')],
+  ['Collaborate shows the participant roster',
+    shared.includes('collaborators.map(person')&&
+    read('src/components/music/MusicCollaborateExperience.tsx').includes('collaborators.length')],
+  ['For-me cassette toggles an expanded detail below its shelf',
+    home.includes('const toggleForMe=')&&
+    home.includes('expandedForMe')&&
+    home.includes("onPress={() => toggleForMe(song.id)}")&&
+    home.includes('A cassette unfolds HERE, underneath the row')],
+  ['Bottom cassette info button does not navigate to side/public detail',
+    home.includes("onLearnMore={() => toggleForMe(song.id)}")],
+  ['Real discovery provides a direct collaboration action',
+    home.includes("pathname:'/music-proposal/[id]'")],
+  ['Legacy player links still check actual authenticated membership',
     detail.includes("+'/conversation'")&&detail.includes("auth:'required'")],
-  ['Accepted viewer is redirected from player to shared workspace',
-    detail.includes("router.replace({pathname:'/music-collaboration/[id]'")],
-  ['Shared workspace exposes the same tabs as an owned workspace',
-    shared.includes('<MusicWorkspaceTabs')&&
-    read('app/music-workspace/[id].tsx').includes('<MusicWorkspaceTabs')],
 ];
 let failures=0;
-for(const [name,ok] of checks){
-  if(ok)console.log('PASS',name);
-  else {console.error('FAIL',name);failures++;}
+for(const [label,passes] of checks){
+  if(passes)console.log('PASS',label);
+  else{console.error('FAIL',label);failures++;}
 }
 if(failures)process.exitCode=1;
