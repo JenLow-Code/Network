@@ -325,7 +325,7 @@ export default function DreamExperience({
  return <View style={{flex:1,backgroundColor:theme.background}}>
   <ScrollView showsVerticalScrollIndicator={false} style={{flex:1,backgroundColor:'transparent'}}
     keyboardShouldPersistTaps="handled"
-    contentContainerStyle={{paddingHorizontal:ws.gutter,paddingTop:10,paddingBottom:85,
+    contentContainerStyle={{paddingLeft:ws.contentGutter,paddingRight:ws.gutter,paddingTop:12,paddingBottom:85,
       maxWidth:ws.maxWidth,width:'100%',alignSelf:'center'}}>
   <DreamPhaseHeader dream={dream} phase={phase} onBack={onBack || (()=>router.replace('/my-space'))} onNavigate={onNavigate} readOnly={readOnly&&!recoverPastNeeds}
     summary={phase==='Témoignage'?'Le rêve est devenu réalité. Voici ce qui a pris vie.':undefined}
