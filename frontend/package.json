@@ -14,6 +14,7 @@
     "verify:theme": "node scripts/verify-theme-accessibility.cjs",
     "verify:midi": "node scripts/verify-midi-parser.cjs",
     "verify:lyrics": "node scripts/verify-lyrics.cjs",
+    "verify:music-routing": "node scripts/verify-music-workspace-routing.cjs",
     "verify:score-scan": "node scripts/verify-music-score-scan.cjs",
     "format": "npx prettier --write \"app/**/*.{ts,tsx}\" \"src/**/*.{ts,tsx}\" \"assets/**/*.ts\""
   },
