@@ -271,8 +271,11 @@ function PhaseMobileOverlap({dreams,viewportWidth,cardHeight,onLongPress}:{
   const lastIndex=Math.max(0,dreams.length-1);
   const lastIndexRef=useRef(lastIndex);
   lastIndexRef.current=lastIndex;
-  const frontWidth=dreams.length>1
-    ?Math.max(64,Math.round(viewportWidth*.83)):viewportWidth;
+  // Mobile dream tiles stay deliberately compact so a user can perceive
+  // the current phase and the next phase within the same screen.
+  // Single-item phases must not stretch their card to the full row width.
+  const frontWidth=Math.min(viewportWidth,
+    Math.max(190,Math.round(viewportWidth*.68)));
   const peekInset=10;
 
   useEffect(()=>{
@@ -350,7 +353,7 @@ function PhaseMobileOverlap({dreams,viewportWidth,cardHeight,onLongPress}:{
       </Animated.View>
     </View>
     {dreams.length>1?(
-      <View style={{minHeight:28,flexDirection:'row',
+      <View style={{minHeight:23,flexDirection:'row',
         alignItems:'center',justifyContent:'flex-end',gap:4}}>
         <Text style={{fontSize:10,fontWeight:'500',
           color:theme.dark?'#FFFFFF':'#000000',
@@ -364,7 +367,7 @@ function PhaseMobileOverlap({dreams,viewportWidth,cardHeight,onLongPress}:{
             disabled={disabled} accessibilityRole="button"
             accessibilityLabel={direction<0?'Aspiration précédente':'Aspiration suivante'}
             accessibilityState={{disabled}}
-            style={{width:27,height:28,justifyContent:'center',
+            style={{width:25,height:23,justifyContent:'center',
               alignItems:'center',opacity:disabled?.35:1}}>
             <Ionicons name={direction<0?'chevron-back':'chevron-forward'}
               size={16} color={theme.dark?'#FFFFFF':'#000000'}/>
@@ -445,7 +448,7 @@ export default function MySpace() {
   const phaseTileWidth=compact?phaseViewportWidth:
     Math.min(232,Math.max(150,Math.round(phaseViewportWidth*.31)));
   const phaseTileHeight=compact
-    ? Math.min(145,Math.max(108,Math.round(phaseViewportWidth*.52)))
+    ? Math.min(104,Math.max(88,Math.round(phaseViewportWidth*.27)))
     : 132;
   const heroGlass=Platform.OS==='web'
     ? ({backdropFilter:'blur(14px) saturate(125%)',
@@ -702,9 +705,10 @@ export default function MySpace() {
                 ? inFlower(d) : d.phase===panel.phase);
               return (
                 <View key={panel.phase} style={{
-                  width:phasePanelWidth,minHeight:compact?225:214,
+                  width:phasePanelWidth,
+                  minHeight:compact?(dreams.length>1?178:160):214,
                   paddingLeft:phaseLeftInset,paddingRight:panelInset,
-                  paddingTop:compact?64:59,paddingBottom:compact?13:16,
+                  paddingTop:compact?46:59,paddingBottom:compact?8:16,
                   position:'relative',overflow:'hidden',
                   borderRadius:0,
                   backgroundColor:theme.background,
