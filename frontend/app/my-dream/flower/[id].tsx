@@ -17,6 +17,7 @@ import { workspaceLayout } from '@/theme/workspaceLayout';
 import { DreamPhaseHeader } from '@/components/dream/DreamPhaseLayout';
 import DreamWorkspaceShortcuts, { DreamWorkspaceShortcutRow } from '@/components/dream/DreamWorkspaceShortcuts';
 import FlowerJourneyRecap from '@/components/dream/FlowerJourneyRecap';
+import DreamMilestoneActions from '@/components/dream/DreamMilestoneActions';
 
 const MAGENTA = '#D71D77';
 const inspirationTypeLabel: Record<string, string> = {
@@ -449,39 +450,14 @@ export default function FlowerPreparation() {
             Logbook leaves are opt-in for the eventual public version. */}
         <FlowerJourneyRecap dream={dream} draft={draft} onChangeDraft={patch}/>
 
-        {/* Publication comes first; secondary edit is a magenta outline. */}
-        <View style={{paddingTop:18,marginTop:ws.desktop?24:30,
-           gap:ws.desktop?10:(ws.tablet?8:10),
-           flexDirection:(ws.tablet||ws.desktop)?'row':'column',
-           maxWidth:ws.desktop?630:ws.tablet?700:undefined,width:'100%',
-           alignSelf:ws.desktop?'flex-start':'center'}}>
-          <Pressable accessibilityRole="button" onPress={publish}
-            style={{minHeight:(ws.tablet||ws.desktop)?43:48,flex:(ws.tablet||ws.desktop)?1.35:undefined,
-               borderRadius:11,backgroundColor:MAGENTA,
-              alignItems: 'center', justifyContent: 'center', paddingHorizontal: 14 }}>
-            <Text style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '700' }}>
-              Publier cette fleur
-            </Text>
-          </Pressable>
-          <Pressable accessibilityRole="button" onPress={() => router.replace('/my-space')}
-            style={{minHeight:(ws.tablet||ws.desktop)?43:48,flex:(ws.tablet||ws.desktop)?1:undefined,
-               borderWidth:1,borderColor:MAGENTA,
-              borderRadius: 11, backgroundColor: 'transparent',
-              alignItems: 'center', justifyContent: 'center', paddingHorizontal: 14 }}>
-            <Text style={{ color: MAGENTA, fontSize: 13,
-              fontWeight: '700' }}>Continuer à éditer</Text>
-          </Pressable>
-          <Pressable accessibilityRole="button" onPress={uproot}
-            style={{minHeight:(ws.tablet||ws.desktop)?43:48,flex:(ws.tablet||ws.desktop)?.8:undefined,
-               borderRadius:11,backgroundColor:'#151515',
-               borderWidth:theme.dark?1:0,
-               borderColor:theme.dark?'#515151':'transparent',
-              alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12 }}>
-            <Text style={{color:'#FFFFFF',fontSize:12,fontWeight:'700'}}>
-              Arracher cette plante
-            </Text>
-          </Pressable>
-        </View>
+        {/* Publishing is the final destination; editing and uprooting stay secondary. */}
+        <DreamMilestoneActions nextStage="Publication"
+          primaryLabel="Publier cette fleur" primaryColor={MAGENTA}
+          onPrimary={publish}
+          secondaryLabel="Continuer à éditer" secondaryColor={MAGENTA}
+          onSecondary={()=>router.replace('/my-space')}
+          destructiveLabel="Arracher" onDestructive={uproot}
+        />
       </ScrollView>
       <Nav/>
 
