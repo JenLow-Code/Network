@@ -35,8 +35,9 @@ for (const mode of ['light', 'dark']) {
   }
 }
 const nav = source('src/components/navigation/PageHeader.tsx');
-assert.ok(nav.includes("left:0") && nav.includes('paddingLeft:52'),
-  'Shared Back and title alignment must stay consistent');
+assert.ok(nav.includes('left:desktop?-DESKTOP_PAGE_CONTENT_INSET:0') &&
+  nav.includes('paddingLeft:desktop?0:52'),
+  'Desktop Back may sit just outside the common content column; mobile Back stays inside');
 const hero = source('src/components/dream/DreamPhaseLayout.tsx');
 assert.ok(hero.includes('const coverSize = desktop ? 106 : narrow ? 82 : 96;') &&
   hero.includes("left:-54,top:29") &&
