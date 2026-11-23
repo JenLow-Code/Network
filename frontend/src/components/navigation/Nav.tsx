@@ -126,7 +126,7 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
       path: '/music-hub' as const,
       active: path === '/music-hub' || path.startsWith('/publish/music') ||
         path.startsWith('/music-proposal/') || path === '/music/new' || path.startsWith('/music-workspace/') ||
-        path.startsWith('/music-collaboration/'),
+        path.startsWith('/music-collaboration/') || path.startsWith('/music-listen/'),
     },
     {
       icon: 'ellipse-outline' as const, title: t('discover'),
