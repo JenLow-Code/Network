@@ -90,7 +90,7 @@ export function DreamPhaseHeader({
         <Rect width="100%" height="100%" fill="url(#dream-full-bleed-hero)"/>
       </Svg>
       <View style={{position:'absolute',top:desktop?18:12,
-        left:desktop?20:12,right:desktop?20:12,zIndex:4,
+        left:ws.gutter,right:ws.gutter,zIndex:4,
         flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
         <Pressable accessibilityRole="button" accessibilityLabel="Retour à mes rêves"
           onPress={onBack} style={{width:44,height:44,borderRadius:22,
@@ -117,8 +117,8 @@ export function DreamPhaseHeader({
           style={{
             color:'#FFFFFF',
             fontFamily:'serif',
-            fontSize:desktop?60:width<520?35:46,
-            lineHeight:desktop?69:width<520?42:53,
+            fontSize:desktop?52:width<520?33:42,
+            lineHeight:desktop?62:width<520?40:50,
             fontWeight:'700',
             letterSpacing:desktop?-1.4:-.6,
             ...(Platform.OS==='web'?({
