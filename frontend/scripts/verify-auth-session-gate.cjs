@@ -13,10 +13,10 @@ function allScreens(dir,prefix=''){
     if(entry.isDirectory())return allScreens(path.join(dir,entry.name),relative);
     return entry.isFile()&&entry.name.endsWith('.tsx')&&
       !entry.name.startsWith('_')&&!entry.name.startsWith('+')
-      ?[relative.replace(/\\.tsx$/,'')]:[];
+      ?[relative.replace(/\.tsx$/,'')]:[];
   });
 }
-const list=layout.match(/const PRIVATE_SCREENS=\\[([\\s\\S]*?)\\] as const;/);
+const list=layout.match(/const PRIVATE_SCREENS=\[([\s\S]*?)\] as const;/);
 assert.ok(list,'Expo private screen registry is missing');
 const protectedScreens=new Set([...list[1].matchAll(/'([^']+)'/g)].map(m=>m[1]));
 const allowedPublic=new Set(['index','login','auth/callback']);
