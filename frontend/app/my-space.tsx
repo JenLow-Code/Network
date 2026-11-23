@@ -91,7 +91,8 @@ function PictureCard({ dream, width, height, onLongPress, presentation = 'card',
     <Pressable accessibilityRole="button" accessibilityLabel={'Ouvrir ' + dream.title}
       onPress={() => open(dream)} onLongPress={onLongPress} delayLongPress={460}
       accessibilityHint="Maintenir pour voir les actions et la date objectif"
-      style={{ width, height, borderRadius: isBanner ? 0 : 11, overflow: 'hidden', backgroundColor: theme.surface }}>
+      style={{ width, height, borderRadius: isBanner ? 0 : 11, overflow: 'hidden',
+        backgroundColor: isBanner ? theme.background : theme.surface }}>
       {photo ? <Image source={{ uri: photo }} resizeMode="cover" style={{ width: '100%', height: '100%' }} /> : null}
       {isBanner ? (
         <Svg pointerEvents="none" width="100%" height="100%" style={{
@@ -430,9 +431,12 @@ export default function MySpace() {
   // Only section shells have square edges; the dreams inside stay rounded.
   const phaseGridGap=compact?10:14;
   const phasePanelWidth=innerWidth;
+  // The title, hero text, filter controls and first dream card all use the
+  // same left content rail; only the back arrow extends past it on desktop.
   const panelInset=compact?12:16;
+  const phaseLeftInset=compact?12:0;
   const phaseCardGap=compact?8:11;
-  const phaseViewportWidth=Math.max(0,phasePanelWidth-2*panelInset);
+  const phaseViewportWidth=Math.max(0,phasePanelWidth-phaseLeftInset-panelInset);
   const phaseTileWidth=compact?phaseViewportWidth:
     Math.min(232,Math.max(150,Math.round(phaseViewportWidth*.31)));
   const phaseTileHeight=compact
@@ -499,7 +503,7 @@ export default function MySpace() {
                 {testimonies.map(d=>(
                   <PictureCard key={d.id} dream={d} width={galleryWidth}
                     height={galleryHeight} presentation="banner"
-                    bannerInset={panelInset}
+                    bannerInset={phaseLeftInset}
                     onLongPress={()=>setLongDream(d)}/>
                 ))}
               </ScrollView>
@@ -539,7 +543,7 @@ export default function MySpace() {
 
             {/* Purpose-designed gallery action bar: dark glass controls and a clear primary CTA. */}
             <View style={{position:'absolute',zIndex:10,
-              bottom:compact?12:17,left:panelInset,right:panelInset}}>
+              bottom:compact?12:17,left:phaseLeftInset,right:panelInset}}>
               <View style={{flexDirection:'row',alignItems:'center',gap:compact?5:8}}>
                 <Pressable onPress={()=>setRoleMenuOpen(current=>!current)}
                   accessibilityRole="button"
@@ -632,6 +636,12 @@ export default function MySpace() {
                   ))}
                 </View>
               ):null}
+              {/* Hide a native image/SVG antialiasing hairline only. This is
+                  an opaque two-pixel seal, not a second gradient. */}
+              <View pointerEvents="none" style={{
+                position:'absolute',bottom:0,left:0,right:0,height:2,
+                backgroundColor:theme.background,zIndex:8,
+              }}/>
             </View>
           </View>
         </View>
@@ -686,7 +696,7 @@ export default function MySpace() {
               return (
                 <View key={panel.phase} style={{
                   width:phasePanelWidth,minHeight:compact?225:214,
-                  paddingHorizontal:panelInset,
+                  paddingLeft:phaseLeftInset,paddingRight:panelInset,
                   paddingTop:compact?64:59,paddingBottom:compact?13:16,
                   position:'relative',overflow:'hidden',
                   borderRadius:0,
