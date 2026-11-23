@@ -11,6 +11,7 @@ const base=join(__dirname,'..');
 const read=path=>readFileSync(join(base,path),'utf8');
 const home=read('app/music-hub.tsx');
 const shared=read('app/music-collaboration/[id].tsx');
+const authProvider=read('src/context/AuthProvider.tsx');
 const detail=read('app/music/[id].tsx');
 const owned=read('src/components/music/MusicSongCard.tsx');
 const capture=read('src/components/music/MusicCaptureExperience.tsx');
@@ -44,6 +45,25 @@ const checks=[
     shared.includes('if(demoId)')&&
     shared.includes('fetchDemoMusicPreview()')&&
     shared.includes('<MusicWorkspaceTabs')],
+  ['Anonymous users never mount shared workspace or start API calls',
+    shared.includes("if(initialized&&!user&&!validationError)router.replace('/login')")&&
+    shared.includes('if(!initialized||!user)return')&&
+    shared.includes('return <AuthorizedSharedMusicFolder/>')&&
+    authProvider.includes('client().auth.getUser()')],
+  ['Backend 401 must not be mistaken for a rejected collaboration',
+    shared.includes("e.status===401||e.code==='not_authenticated'")&&
+    shared.includes("kind:'api_session'")&&
+    shared.includes('Votre connexion JenLow Network est active')&&
+    !shared.includes('Une candidature ne donne pas accès au projet avant acceptation')],
+  ['Collaborator permissions and backend outages are separate states',
+    shared.includes("e.status===403||e.status===404")&&
+    shared.includes("kind:'permission'")&&
+    shared.includes("kind:'unavailable'")],
+  ['Failed authentication hides workspace tabs and offers return or retry',
+    shared.includes("error?null:<MusicWorkspaceTabs")&&
+    shared.includes("button('Retour à Musique'")&&
+    shared.includes("button('Réessayer'")],
+
   ['Collaborative Capture identifies who added a resource',
     capture.includes('Modifié par')&&shared.includes('Modifié par')],
   ['Collaborate shows the participant roster',
