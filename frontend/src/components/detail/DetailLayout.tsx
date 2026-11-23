@@ -109,7 +109,7 @@ export function DetailLayout({
                 {/* Both columns share the same top/bottom; the rail cannot drift above the buttons. */}
                 {previewOnly ? <View style={{paddingTop:10, paddingBottom:15, flex:1}}>
                   <Text style={{color:theme.muted,fontSize:12,lineHeight:19}}>
-                    Exemple de démonstration · aucune demande ni collaboration réelle ne peut être envoyée.
+                    Aperçu en lecture seule · aucune demande ni collaboration réelle ne peut être envoyée.
                   </Text>
                 </View> : <>
                   <View style={{ flex: 1, minWidth: 0 }}>
