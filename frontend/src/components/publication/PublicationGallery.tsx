@@ -8,6 +8,7 @@ import type { Publication } from '@/domain/publication';
 import { PHASE_LABELS } from '@/domain/publication';
 import { DreamPhaseIcon } from '@/icons/DreamPhaseIcon';
 import { TalentArt } from '@/components/talent/TalentArt';
+import { NETWORK_MAGENTA } from '@/theme/colors';
 import { useAppTheme } from '@/theme/AppTheme';
 import { verseExcerpt } from '@/mocks/publications';
 import { approvedCassetteImage } from '@/assets/approvedCassette';
@@ -254,7 +255,7 @@ export function BibleVerseCard({
             fontFamily: 'serif',
             fontSize: compact ? 17 : Math.min(32, width * 0.06),
             lineHeight: compact ? 23 : Math.min(42, width * 0.082),
-            color: '#D71D77',
+            color: theme.dark ? NETWORK_MAGENTA : '#D71D77',
           }}
         >
           {verseExcerpt(item)}
@@ -299,6 +300,9 @@ function StoryCover({
   const shadeId = useId().replace(/[^a-zA-Z0-9_-]/g, '');
   const theme = useAppTheme();
   const origin = React.useContext(GalleryOriginContext);
+  const { width: viewportWidth } = useWindowDimensions();
+  const device = workspaceLayout(viewportWidth);
+  const edgeBadge = !device.desktop && !device.tablet;
   const personalizedTalents = React.useContext(DiscoveryTalentsContext);
   const forYou = personalizedTalents !== null && matchesForMe(item, personalizedTalents);
   if (item.type === 'dream') {
@@ -411,8 +415,9 @@ function StoryCover({
           </Text>
         </View>
         {forYou ? <View pointerEvents="none" style={{
-          position:'absolute',top:inset,left:inset,zIndex:5,
-          backgroundColor:'#D71D77',borderRadius:7,
+          position:'absolute',top:edgeBadge?0:inset,left:edgeBadge?0:inset,zIndex:5,
+          backgroundColor:theme.dark?NETWORK_MAGENTA:'#D71D77',borderRadius:7,
+          borderTopLeftRadius:edgeBadge?0:7,
           paddingHorizontal:7,paddingVertical:4,
         }}>
           <Text style={{color:'#FFFFFF',fontSize:9,fontWeight:'700',letterSpacing:.2}}>
@@ -849,7 +854,7 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 21,
-    backgroundColor: 'rgba(0,0,0,0.63)',
+    backgroundColor: NETWORK_MAGENTA,
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { TalentArt } from '@/components/talent/TalentArt';
 import { TalentLevelDots } from '@/components/talent/TalentLevelDots';
 import type { DreamResource } from '@/domain/dreamWorkspace';
+import { NETWORK_MAGENTA } from '@/theme/colors';
 import { useAppTheme } from '@/theme/AppTheme';
 
 /** Talent request, not a profile or a claim that a real volunteer has joined. */
@@ -39,7 +40,7 @@ export function DreamTalentSquare({
             ? (theme.dark ? '#254635' : '#E3F3E7')
             : (theme.dark ? '#2A2B2C' : '#F9F6F2'),
           borderWidth: verified ? 1.5 : 1.6,
-          borderColor: verified ? '#318656' : '#D71D77',
+          borderColor: verified ? '#318656' : theme.dark ? NETWORK_MAGENTA : '#D71D77',
         }}
       >
         {resource.illustration

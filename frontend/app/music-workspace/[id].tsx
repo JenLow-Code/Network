@@ -45,6 +45,9 @@ export default function MusicWorkspace() {
       .catch(()=>{if(live)setHasCollaborators(false);});
     return()=>{live=false;};
   },[project?.publishedId]);
+  const addingRef=useRef(false);
+  const [midiConversionError,setMidiConversionError]=useState('');
+  const [convertingMidi,setConvertingMidi]=useState(false);
   if (!ready) return <SafeAreaView style={{flex:1,backgroundColor:theme.background,
     justifyContent:'center',alignItems:'center'}}>
     <ActivityIndicator color={PINK}/><Nav/>
@@ -62,9 +65,6 @@ export default function MusicWorkspace() {
   const music=musicNextState(project);
   const version=music.versions.find(v=>v.id===music.activeVersionId)||music.versions[0];
   const update=(value:Partial<typeof project>)=>patch(project.id,value);
-  const addingRef=useRef(false);
-  const [midiConversionError,setMidiConversionError]=useState('');
-  const [convertingMidi,setConvertingMidi]=useState(false);
   const addFromCapture=async(file:MusicProjectFile,forceNew=false)=>{
     if(addingRef.current)return;
     addingRef.current=true;setMidiConversionError('');

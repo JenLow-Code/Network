@@ -92,7 +92,7 @@ export function DetailLayout({
             // Match the Germination detail controls to the talent tiles/title inset.
             paddingHorizontal: isFloraison
               ? (heroWidth < 440 ? 23 : 32) + 16
-              : !isSeed ? (heroWidth < 440 ? 23 : 32) : 0,
+              : !isSeed ? (heroWidth < 440 ? 0 : 32) : 0,
             marginTop: 0,
             position: 'relative',
             zIndex: 1,

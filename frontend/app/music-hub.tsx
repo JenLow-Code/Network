@@ -318,9 +318,6 @@ export default function MusicHub() {
               <Ionicons name="arrow-forward-outline" color={PINK} size={16}/>
             </Pressable>
           </View>
-          <Text style={{fontSize:12,color:theme.muted}}>
-            Des morceaux à écouter, des talents recherchés et tes propositions en cours.
-          </Text>
         </View>
         {forMeCount ? musicShelf([
           ...recommended.map(song => <MusicTile key={song.id}

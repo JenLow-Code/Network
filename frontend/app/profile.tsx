@@ -128,8 +128,8 @@ export default function Profile() {
           </Text>
         </View>
         <View style={{alignItems:'center',marginTop:12,gap:4}}>
-          <Text style={{fontSize:14,color:theme.muted,textAlign:'center',maxWidth:440}}>{app.bio || 'Ajouter une description personnelle'}</Text>
-          <Text style={{fontSize:12,color:theme.muted}}>{app.church || 'Église non renseignée'}</Text>
+          {app.bio?.trim()?<Text style={{fontSize:14,color:theme.muted,textAlign:'center',maxWidth:440}}>{app.bio}</Text>:null}
+          {app.church?.trim()?<Text style={{fontSize:12,color:theme.muted}}>{app.church}</Text>:null}
           <View style={{flexDirection:'row',alignItems:'center',justifyContent:'center',
             flexWrap:'wrap',gap:8,marginTop:9}}>
             <Pressable onPress={()=>start('bio')} accessibilityRole="button"
@@ -190,7 +190,6 @@ export default function Profile() {
               <Ionicons name={item.icon} size={24} color={theme.dark?theme.foreground:item.color}/>
               <View style={{flex:1,gap:2}}>
                 <Text accessibilityRole="header" style={{fontSize:20,fontWeight:'700',color:theme.foreground}}>{item.title}</Text>
-                {item.id==='settings'?null:<Text style={{fontSize:12,color:theme.muted}}>{item.subtitle}</Text>}
               </View>
               {item.id==='settings'?<Pressable onPress={()=>setSettingsOpen(v=>!v)} accessibilityRole="button" accessibilityLabel="Afficher les paramètres" accessibilityState={{expanded:settingsOpen}} style={{padding:10}}><Ionicons name={settingsOpen?'chevron-up':'chevron-down'} size={20} color={theme.foreground}/></Pressable>:null}
               {item.id==='bible'?<Pressable onPress={()=>router.push('/bible-library')} accessibilityRole="button" accessibilityLabel="Ouvrir le lecteur de la Bible" style={{minHeight:40,paddingHorizontal:10,flexDirection:'row',alignItems:'center',gap:5,borderRadius:20,borderWidth:1,borderColor:theme.border,backgroundColor:theme.surface}}>

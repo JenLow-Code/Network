@@ -194,7 +194,7 @@ export function DreamPhaseSection({ title, subtitle, children }: {
   const theme = useAppTheme();
   return (
     <View style={{ marginTop: 14, paddingTop: 22, borderTopWidth: 1, borderColor: theme.border, marginBottom: 6 }}>
-      <Text style={{ fontSize: 19, fontWeight: '700', letterSpacing: -0.3, color: theme.foreground, marginBottom: subtitle ? 6 : 17 }}>{title}</Text>
+      <Text style={{ fontSize: 22, fontWeight: '800', letterSpacing: -0.5, color: theme.foreground, marginBottom: subtitle ? 6 : 17 }}>{title}</Text>
       {subtitle ? <Text style={{ color: theme.muted, fontSize: 12, lineHeight: 19, marginBottom: 18 }}>{subtitle}</Text> : null}
       {children}
     </View>

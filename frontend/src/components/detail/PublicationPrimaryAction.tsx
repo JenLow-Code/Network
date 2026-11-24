@@ -103,7 +103,7 @@ export function PublicationPrimaryAction({ item }: { item: Publication }) {
         styles.action,
         styles.fullAction,
         secondary && styles.secondaryAction,
-        { backgroundColor: secondary ? 'transparent' : '#CB245C', borderColor: theme.dark ? '#C89BAF' : '#B84A7A' },
+        { backgroundColor: secondary ? 'transparent' : '#CB245C', borderColor: theme.dark ? '#CB245C' : '#B84A7A' },
       ]}
     >
       {glyph && <Ionicons name={glyph} size={16} color={secondary ? (theme.dark ? '#E7B9CD' : '#963E67') : '#FFFFFF'} />}
@@ -213,10 +213,10 @@ function BibleDreamPicker({
 
 const styles = StyleSheet.create({
   action: {
-    minHeight: 44, paddingHorizontal: 17, paddingVertical: 11,
+    minHeight: 52, paddingHorizontal: 17, paddingVertical: 14,
     borderRadius: 9, flexDirection: 'row', alignItems: 'center', gap: 14,
   },
-  actionLabel: { fontSize: 13, fontWeight: '600', letterSpacing: 0.1 },
+  actionLabel: { fontSize: 14, fontWeight: '700', letterSpacing: 0.1 },
   fullAction: { alignSelf: 'stretch', justifyContent: 'center', paddingHorizontal: 14 },
   compactAction: { minWidth: 0, minHeight: 42, justifyContent: 'center', gap: 7, paddingHorizontal: 10, paddingVertical: 10 },
   secondaryAction: { backgroundColor: 'transparent', borderWidth: 1, gap: 9 },

@@ -504,7 +504,7 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
         </Pressable>;
       })}
     </ScrollView>:null}
-    {files.length?<View style={{width:'100%',gap:0,position:'relative'}}>
+    {files.length?<View style={{width:'100%',gap:0,position:'relative',minHeight:desktopList?410:undefined}}>
       {/* Decorative SVG stays underneath the real list; never captures touches. */}
       <CassetteBlueprintBackground desktop={desktopList}/>
 

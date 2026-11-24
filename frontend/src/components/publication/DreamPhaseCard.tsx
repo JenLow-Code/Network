@@ -9,6 +9,8 @@ import { DreamPhaseIcon } from '@/icons/DreamPhaseIcon';
 import { useAppTheme } from '@/theme/AppTheme';
 import { HANDWRITING_FAMILY } from '@/theme/handwriting';
 import { TalentArt, type TalentIllustration } from '@/components/talent/TalentArt';
+import { NETWORK_MAGENTA } from '@/theme/colors';
+import { workspaceLayout } from '@/theme/workspaceLayout';
 import { TalentLevelDots } from '@/components/talent/TalentLevelDots';
 
 type Props = {
@@ -103,10 +105,10 @@ function PersonResourceTiles({ resources, width, compact, dark, onInspect }: {
           accessibilityRole={onInspect ? 'button' : undefined}
           accessibilityLabel={resource.title + (resource.confirmed ? ', confirmé' : ', recherché') + (resource.requiredLevel ? ', niveau ' + resource.requiredLevel : '')}
           style={{
-            width: tileWidth, height: compact ? Math.max(70, tileWidth * 0.94) : Math.max(114,Math.min(143,tileWidth * 1.08)),
+            width: tileWidth, height: tileWidth,
             backgroundColor: resource.confirmed ? (dark ? '#324536' : '#E1ECE0') : (dark ? '#25252A' : '#FFFCF8'),
             borderRadius: 8, borderWidth: resource.confirmed ? 0 : missingTalentBorderWidth,
-            borderColor: '#D71D77', overflow: 'hidden',
+            borderColor: dark ? NETWORK_MAGENTA : '#D71D77', overflow: 'hidden',
             alignItems: 'center', justifyContent: 'center', gap: compact ? 4 : 2, paddingHorizontal: 3, paddingBottom: 3,
           }}>
             {resource.illustration ? (
@@ -148,6 +150,8 @@ export function DreamPhaseCard({ item, width, variant, onOpen, forYou = false }:
     else talentDrawerX.setValue(440);
   }, [inspectedTalent, talentDrawerX]);
   const compact = variant === 'tile';
+  const device = workspaceLayout(viewport.width);
+  const edgeBadge = compact && !device.desktop && !device.tablet;
   const dark = theme.dark;
   const inset = compact ? (width < 205 ? 13 : 17) : (width < 440 ? 23 : 32);
   const titleSize = compact ? (width < 190 ? 18 : 21) : (width < 440 ? 31 : 41);
@@ -226,8 +230,9 @@ export function DreamPhaseCard({ item, width, variant, onOpen, forYou = false }:
     : null;
   const forYouLabel = compact && forYou ? (
     <View pointerEvents="none" style={{
-      position: 'absolute', top: inset, left: inset, zIndex: 5,
-      backgroundColor: '#CB245C', borderRadius: 7,
+      position: 'absolute', top: edgeBadge ? 0 : inset, left: edgeBadge ? 0 : inset, zIndex: 5,
+      backgroundColor: NETWORK_MAGENTA, borderRadius: 7,
+      borderTopLeftRadius: edgeBadge ? 0 : 7,
       paddingHorizontal: 7, paddingVertical: 4,
     }}>
       <Text style={{ color: '#FFFFFF', fontWeight: '700',

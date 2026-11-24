@@ -36,29 +36,8 @@ export default function SemenceStudio({dream,onBack,onNavigate}:{
      {text:'Arracher',style:'destructive',onPress:run},
    ]);
  };
- return <View style={{flex:1,backgroundColor:theme.background}}>
-  <ScrollView showsVerticalScrollIndicator={false} style={{flex:1,backgroundColor:'transparent'}}
-   keyboardShouldPersistTaps="handled"
-   contentContainerStyle={{paddingLeft:ws.contentGutter,paddingRight:ws.gutter,paddingTop:12,
-     paddingBottom:24,maxWidth:ws.maxWidth,width:'100%',alignSelf:'center'}}>
-   <DreamPhaseHeader dream={dream} phase="Rêve"
-     onBack={onBack} onNavigate={onNavigate} readOnly={!editable}/>
-   <View style={{alignSelf:'flex-end',width:244,maxWidth:'65%',marginTop:-10,marginBottom:6}}>
-     <DreamWorkspaceShortcuts dream={dream}/>
-   </View>
-   {/* The private Semence moodboard must always be part of this workspace.
-       Keep persisted blocks and the existing add-document/link/photo/verse menu. */}
-   <View style={{marginTop:18,marginBottom:5,gap:12}}>
-     <Text accessibilityRole="header" style={{fontSize:19,fontWeight:'700',color:theme.foreground}}>Inspirations</Text>
-     <SemenceInspirations dream={dream} editable={editable} showAddControl={editable}
-       onShareInspiration={id=>{setShareIds([id]);setShareOpen(true);}}/>
-   </View>
-   {shareOpen?<SemenceShare key={(shareIds||[]).join('-')||'all'}
-     dream={dream} initialIds={shareIds}
-     onClose={()=>{setShareOpen(false);setShareIds(null);}}/>:null}
-  </ScrollView>
-  {editable?<View style={{width:'100%',maxWidth:ws.maxWidth,
-    alignSelf:'center',paddingLeft:ws.contentGutter,paddingRight:ws.gutter,
+ const footer = editable?<View style={{width:'100%',maxWidth:ws.maxWidth,
+    alignSelf:'center',paddingLeft:ws.desktop?ws.contentGutter:0,paddingRight:ws.desktop?ws.gutter:0,
     paddingTop:10,paddingBottom:ws.desktop?17:10,
     backgroundColor:theme.background}}>
     {confirm?<View style={{backgroundColor:theme.surface,padding:16,marginTop:12,
@@ -85,7 +64,7 @@ export default function SemenceStudio({dream,onBack,onNavigate}:{
          <Text style={{color:theme.muted,textAlign:'center'}}>Pas encore</Text>
        </Pressable>
      </View>:null}
-    <DreamMilestoneActions anchored equalUtilityButtons secondaryFirst
+    <DreamMilestoneActions anchored={ws.desktop} equalUtilityButtons secondaryFirst
       nextStage="Germination"
       primaryLabel="Faire germer cette semence" primaryColor="#A1BA44"
       primaryTextColor="#242322" onPrimary={()=>setConfirm(true)}
@@ -93,7 +72,30 @@ export default function SemenceStudio({dream,onBack,onNavigate}:{
       onSecondary={()=>{setShareIds(null);setShareOpen(true);}}
       destructiveLabel="Arracher" onDestructive={uproot}
     />
-  </View>:null}
+  </View>:null;
+ return <View style={{flex:1,backgroundColor:theme.background}}>
+  <ScrollView showsVerticalScrollIndicator={false} style={{flex:1,backgroundColor:'transparent'}}
+   keyboardShouldPersistTaps="handled"
+   contentContainerStyle={{paddingLeft:ws.contentGutter,paddingRight:ws.gutter,paddingTop:12,
+     paddingBottom:24,maxWidth:ws.maxWidth,width:'100%',alignSelf:'center'}}>
+   <DreamPhaseHeader dream={dream} phase="Rêve"
+     onBack={onBack} onNavigate={onNavigate} readOnly={!editable}/>
+   <View style={{alignSelf:'flex-end',width:244,maxWidth:'65%',marginTop:-10,marginBottom:6}}>
+     <DreamWorkspaceShortcuts dream={dream}/>
+   </View>
+   {/* The private Semence moodboard must always be part of this workspace.
+       Keep persisted blocks and the existing add-document/link/photo/verse menu. */}
+   <View style={{marginTop:18,marginBottom:5,gap:12}}>
+     <Text accessibilityRole="header" style={{fontSize:19,fontWeight:'700',color:theme.foreground}}>Inspirations</Text>
+     <SemenceInspirations dream={dream} editable={editable} showAddControl={editable}
+       onShareInspiration={id=>{setShareIds([id]);setShareOpen(true);}}/>
+   </View>
+   {shareOpen?<SemenceShare key={(shareIds||[]).join('-')||'all'}
+     dream={dream} initialIds={shareIds}
+     onClose={()=>{setShareOpen(false);setShareIds(null);}}/>:null}
+   {!ws.desktop?footer:null}
+  </ScrollView>
+  {ws.desktop?footer:null}
 
 
  </View>;

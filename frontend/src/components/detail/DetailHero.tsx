@@ -1,3 +1,4 @@
+import { NETWORK_MAGENTA } from '@/theme/colors';
 import React, { useId, useState } from 'react';
 import { Image, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
@@ -101,5 +102,5 @@ const styles = StyleSheet.create({
   talentArtwork: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10, paddingBottom: 18 },
   levelLabel: { fontSize: 9, letterSpacing: 1.4, color: '#8A8076' },
   talentLabel: { fontSize: 10, letterSpacing: 1.3, fontWeight: '700', color: '#26211D', marginTop: 5 },
-  cassettePlay: { position: 'absolute', top: '50%', left: '50%', transform: [{ translateX: -19 }, { translateY: -19 }], width: 38, height: 38, borderRadius: 19, backgroundColor: 'rgba(24,20,20,0.34)', alignItems: 'center', justifyContent: 'center' },
+  cassettePlay: { position: 'absolute', top: '50%', left: '50%', transform: [{ translateX: -19 }, { translateY: -19 }], width: 38, height: 38, borderRadius: 19, backgroundColor: NETWORK_MAGENTA, alignItems: 'center', justifyContent: 'center' },
 });

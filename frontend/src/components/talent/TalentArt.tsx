@@ -1,5 +1,5 @@
 import React from 'react';
-import { Image, View } from 'react-native';
+import { Image, Platform, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/theme/AppTheme';
 
@@ -37,7 +37,7 @@ export function TalentArt({
   const theme = useAppTheme();
   // The supplied drawings are transparent black line art.
   // Recolor strokes without altering their alpha or geometry.
-  const lineColor = theme.dark ? '#ECE7E1' : '#26211D';
+  const lineColor = theme.dark ? '#F5EFE4' : '#26211D';
   const key =
     kind === 'guitar'
       ? 'acoustic-guitar'
@@ -49,7 +49,8 @@ export function TalentArt({
   return (
     <Image
       source={drawings[key]}
-      style={{ width: size, height: size, tintColor: lineColor }}
+      style={{ width: size, height: size, tintColor: lineColor,
+        ...(Platform.OS === 'web' && theme.dark ? { filter: 'brightness(0) invert(0.95) sepia(0.12)' } : {}) } as any}
       resizeMode="contain"
       accessibilityLabel={key.replace(/-/g, ' ')}
     />

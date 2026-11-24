@@ -16,6 +16,7 @@ import { people, personPath } from '@/mocks/people';
 import { Avatar } from '@/components/ui/Avatar';
 import { FireHeader } from '@/components/fire/FireHeader';
 import { useLocale } from '@/i18n/locale';
+import { NETWORK_MAGENTA } from '@/theme/colors';
 import { useAppTheme } from '@/theme/AppTheme';
 import { workspaceLayout,PAGE_TITLE_FONT_SIZE,PAGE_TITLE_LINE_HEIGHT } from '@/theme/workspaceLayout';
 import { HANDWRITING_FAMILY } from '@/theme/handwriting';
@@ -150,7 +151,7 @@ export default function Discover() {
             }}
           >
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}>
-              <NetworkMark size={28} color="#E5006E" />
+              <NetworkMark size={28} color={theme.dark ? NETWORK_MAGENTA : "#E5006E"} />
             <Text
               accessibilityLabel="JenLow"
               style={{

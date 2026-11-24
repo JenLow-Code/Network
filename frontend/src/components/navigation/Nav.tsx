@@ -13,6 +13,7 @@ import { useMusicWorkspaces } from '@/domain/musicWorkspace';
 import { musicNextState } from '@/domain/musicNext';
 import { api } from '@/lib/api/client';
 import { MusicFolderCover } from '@/components/music/MusicFolderCover';
+import { NETWORK_MAGENTA } from '@/theme/colors';
 import { NetworkMark } from '@/components/brand/NetworkMark';
 import { AspirationNavIcon } from '@/icons/AspirationNavIcon';
 import { isPublishedFlower } from '@/domain/dreamWorkspace';
@@ -177,7 +178,7 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
     // The projects overview uses the new neutral page canvas, not the
     // legacy translucent/glass image backing of the older navigation shell.
     const cleanProjectsNav=path==='/my-space';
-    const activeColor='#CB245C';
+    const activeColor=NETWORK_MAGENTA;
     // Desktop-only translucent glass with actual dream imagery behind the navigation.
     // The content remains legible over a soft, context-aware colour wash.
     const navSurface=theme.dark?'rgba(12,21,20,.40)':'rgba(248,249,245,.29)';
@@ -203,14 +204,14 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
         borderRadius:9,flexDirection:'row',alignItems:'center',
         justifyContent:collapsed?'center':'flex-start',gap:12,
         position:'relative',
-        backgroundColor:item.active?selectedBg:'transparent'}}>
-        {item.active?<View pointerEvents="none" style={{
+        backgroundColor:item.active&&item.path!=='/profile'?selectedBg:'transparent'}}>
+        {item.active&&item.path!=='/profile'?<View pointerEvents="none" style={{
           position:'absolute',left:0,top:10,bottom:10,width:3,
           backgroundColor:activeColor,borderRadius:3}}/>:null}
         {item.path==='/profile'?profileAvatar(24,item.active):
           item.path==='/my-space'?<AspirationNavIcon size={20}
             color={item.active?activeColor:theme.muted} active={item.active}/>:
-          <Ionicons name={item.path==='/discover'?'ellipse-outline':item.icon}
+          <Ionicons name={item.path==='/discover'?(item.active?'ellipse':'ellipse-outline'):item.active&&item.path==='/agenda'?'calendar':item.active&&item.path==='/music-hub'?'musical-note':item.icon}
             size={19} color={item.active?activeColor:theme.muted}/>} 
         {!collapsed?<Text numberOfLines={1} style={{
           color:item.active?activeColor:theme.foreground,
@@ -263,7 +264,7 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
             accessibilityRole="button" accessibilityLabel="JenLow · Accueil Découvrir"
             style={{flexDirection:'row',alignItems:'center',gap:9,
               paddingVertical:8,paddingHorizontal:2}}>
-            <NetworkMark size={19} color="#CB245C"/>
+            <NetworkMark size={19} color={NETWORK_MAGENTA}/>
             <Text style={{fontWeight:'800',fontSize:15,letterSpacing:1.7,
               color:theme.foreground}}>JENLOW</Text>
           </Pressable>:null}
@@ -617,7 +618,7 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
             profileAvatar(28,x.active)
           ) : x.path === '/my-space' ? (
             <AspirationNavIcon size={24}
-              color={x.active ? (theme.dark ? theme.accent : '#CB245C') : foreground}
+              color={x.active ? NETWORK_MAGENTA : foreground}
               active={x.active}/>
           ) : (
             <Ionicons

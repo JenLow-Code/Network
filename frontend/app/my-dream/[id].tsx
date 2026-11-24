@@ -1,11 +1,12 @@
-import React from 'react';
-import { Pressable, Text, View } from 'react-native';
+import React, { useEffect } from 'react';
+import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Nav } from '@/components/navigation/Nav';
 import { useAppTheme } from '@/theme/AppTheme';
 import { useDreams } from '@/domain/dreamRepository';
 import DreamHub from '@/components/dream/DreamHub';
+import { isPublishedFlower } from '@/domain/dreamWorkspace';
 import type { DreamPhase } from '@/domain/publication';
 
 /** A rendering error must never trap the user on a blank screen. */
@@ -48,6 +49,11 @@ export default function Workspace() {
  const { items } = useDreams();
  const theme = useAppTheme();
  const dream = items.find(d=>d.id===id);
+ const needsFlower = !!dream && dream.phase==='Témoignage' && !isPublishedFlower(dream) && (!startPhase || startPhase==='Témoignage');
+ useEffect(()=>{
+   if(needsFlower)router.replace({pathname:'/my-dream/flower/[id]',params:{id}});
+ },[needsFlower,id]);
+ if(needsFlower)return <SafeAreaView style={{flex:1,backgroundColor:theme.background,alignItems:'center',justifyContent:'center'}}><ActivityIndicator color={theme.accent}/><Nav/></SafeAreaView>;
  return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
   {dream?<DreamRenderBoundary key={dream.id} dark={theme.dark}>
     <DreamHub dream={dream} startInSemence={compose==='1'} startPhase={startPhase}/>

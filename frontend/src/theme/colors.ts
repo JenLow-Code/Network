@@ -1,3 +1,5 @@
+export const NETWORK_MAGENTA = '#CB245C';
+
 export const colors = {
   pink: '#D71D77',
   ink: '#080808',
