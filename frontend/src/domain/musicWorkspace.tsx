@@ -170,6 +170,9 @@ export type MusicProjectFile = {
   createdAt: string;
   /** Human attribution for a Capture resource, never inferred from a public byline. */
   editedBy?: string;
+  editedByHandle?:string;
+  editedByAvatarUrl?:string;
+  editedByDemo?:boolean;
   editedAt?: string;
 };
 export type MusicProject = {

@@ -22,6 +22,7 @@ type DemoUser = {
   handle: string;
   display_name: string;
   avatar_asset_key?: string | null;
+  bio?:string|null;
   dreams: DemoDream[];
 };
 
@@ -107,4 +108,15 @@ export async function fetchDemoPublication(id: string): Promise<DreamPublication
   const posts = await fetchDemoDiscovery();
   const selected = posts.find(p => p.id === id);
   return selected?.type === 'dream' ? selected : null;
+}
+
+export async function fetchDemoMember(handle:string){
+  if(!/^mock\d{2}$/.test(handle))return null;
+  const id='demo-user-'+handle.slice(4);
+  const response=await fetch(DEMO_API_BASE+'/api/demo/users/'+encodeURIComponent(id));
+  if(response.status===404)return null;
+  if(!response.ok)throw makeDemoError('HTTP '+response.status);
+  const user=(await response.json() as {user?:DemoUser}).user;
+  if(!user||user.id!==id||user.handle!==handle)return null;
+  return {name:user.display_name,bio:user.bio||'',posts:(user.dreams||[]).map(d=>mapDemoDream(d,user)).filter(d=>d.phase!=='Rêve')};
 }

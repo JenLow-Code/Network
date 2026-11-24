@@ -13,7 +13,6 @@ import { useMusicWorkspaces } from '@/domain/musicWorkspace';
 import { useSharedMusicNavigation } from '@/domain/sharedMusicNavigation';
 import { musicNextState } from '@/domain/musicNext';
 import { api } from '@/lib/api/client';
-import { MusicFolderCover } from '@/components/music/MusicFolderCover';
 import { NETWORK_MAGENTA } from '@/theme/colors';
 import { NetworkMark } from '@/components/brand/NetworkMark';
 import { AspirationNavIcon } from '@/icons/AspirationNavIcon';
@@ -47,6 +46,7 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
   const {items:musicProjects,patch:patchMusic}=useMusicWorkspaces();
   const {project:sharedProject}=useSharedMusicNavigation();
   const [songTreeOpen,setSongTreeOpen]=useState(true);
+  const [captureTreeOpen,setCaptureTreeOpen]=useState(false);
   const [versionsTreeOpen,setVersionsTreeOpen]=useState(true);
   const [pendingRequests,setPendingRequests]=useState<number|null>(null);
   const segments=path.split('/').filter(Boolean);
@@ -66,6 +66,7 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
   const currentSong=isSharedSong?(sharedProject?.id===decodeURIComponent(segments[1]||'')?sharedProject:undefined):
     songId?musicProjects.find(song=>song.id===decodeURIComponent(songId)):undefined;
   const songState=currentSong?musicNextState(currentSong):null;
+  useEffect(()=>setCaptureTreeOpen(false),[currentSong?.id]);
   const activeVersion=songState?.versions.find(v=>v.id===songState.activeVersionId)
     ||songState?.versions[0];
   const publishedIds=currentSong
@@ -303,7 +304,7 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
                   }}
                   style={{flexDirection:'row',alignItems:'center',gap:9,
                     paddingVertical:7,paddingHorizontal:collapsed?2:5}}>
-                  <MusicFolderCover project={currentSong} size={collapsed?39:34}/>
+                  {collapsed?<Ionicons name="musical-note-outline" size={19} color={theme.foreground}/>:null}
                   {!collapsed?<View style={{flex:1,gap:3,minWidth:0}}>
                     <Text style={{fontWeight:'700',fontSize:12,
                       color:theme.foreground}} numberOfLines={2}>
@@ -324,20 +325,21 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
                 {!collapsed&&songTreeOpen?<View style={{marginLeft:10,
                   paddingLeft:9,borderLeftWidth:1,borderLeftColor:theme.border,
                   gap:2,marginBottom:4}}>
+                  <View style={{flexDirection:'row',alignItems:'center',borderRadius:7,backgroundColor:(path.startsWith('/music-workspace/')||isSharedSong)&&(!params.tab||params.tab==='capture')&&!params.intent?(theme.dark?'rgba(215,29,119,.13)':'rgba(215,29,119,.07)'):'transparent'}}>
                   <Pressable accessibilityRole="button"
                     accessibilityLabel="Ouvrir Capturer"
                     accessibilityState={{selected:(path.startsWith('/music-workspace/')||isSharedSong)&&
                       (!params.tab||params.tab==='capture')&&!params.intent}}
                     onPress={()=>openMusicArea('capture')}
-                    style={{minHeight:36,flexDirection:'row',alignItems:'center',
-                      gap:9,paddingHorizontal:7,borderRadius:7,
-                      backgroundColor:(path.startsWith('/music-workspace/')||isSharedSong)&&
-                        (!params.tab||params.tab==='capture')&&!params.intent?
-                        (theme.dark?'rgba(215,29,119,.13)':'rgba(215,29,119,.07)'):'transparent'}}>
+                    style={{flex:1,minWidth:0,minHeight:36,flexDirection:'row',alignItems:'center',gap:9,paddingHorizontal:7}}>
                     <Ionicons name="mic-outline" size={16} color={theme.foreground}/>
                     <Text style={{fontSize:11,fontWeight:'700',color:theme.foreground}}>Capturer</Text>
                   </Pressable>
-                  {([
+                  <Pressable accessibilityRole="button" accessibilityLabel={captureTreeOpen?'Replier les actions de Capturer':'Afficher les actions de Capturer'} accessibilityState={{expanded:captureTreeOpen}} onPress={()=>setCaptureTreeOpen(open=>!open)} style={{width:36,minHeight:36,alignItems:'center',justifyContent:'center'}}>
+                    <Ionicons name={captureTreeOpen?'remove':'add'} size={19} color={theme.muted}/>
+                  </Pressable>
+                  </View>
+                  {captureTreeOpen?([
                     {key:'thought',title:'Pensées'},
                     {key:'record',title:'Son'},
                     {key:'doc',title:'Document'},
@@ -363,7 +365,7 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
                         fontWeight:active?'700':'500',
                         color:active?'#CB245C':theme.foreground}}>{action.title}</Text>
                     </Pressable>;
-                  })}
+                  }):null}
                   <View style={{flexDirection:'row',alignItems:'center'}}>
                     <Pressable accessibilityRole="button"
                       accessibilityLabel="Ouvrir les versions du morceau"

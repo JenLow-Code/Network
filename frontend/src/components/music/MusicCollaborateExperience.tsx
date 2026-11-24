@@ -8,6 +8,7 @@ import {MusicMissingTalentAction} from './MusicMissingTalentAction';
 import {api} from '@/lib/api/client';
 import {newMusicId} from '@/domain/musicWorkspace';
 import type {MusicProject} from '@/domain/musicWorkspace';
+import {MusicMemberLink} from './MusicMemberLink';
 
 const PINK='#CB245C';
 type Props={project:MusicProject;patch:(changes:Partial<MusicProject>)=>void;
@@ -16,7 +17,7 @@ export type SharedWorkspaceAccess={members:WorkspaceCollaborator[];demo:boolean;
   proposals?:{id:string;description:string;status:string;createdAt?:string|null;proposer?:{displayName?:string}}[]};
 type Proposal=CollaborationRequest&{trackPublicationId:string};
 export type WorkspaceCollaborator={id:string;role:'owner'|'collaborator';
-  displayName:string;handle?:string|null};
+  displayName:string;handle?:string|null;avatarUrl?:string|null};
 
 export function MusicCollaborateExperience({project,patch,shared}:Props){
   const theme=useAppTheme();
@@ -133,33 +134,9 @@ export function MusicCollaborateExperience({project,patch,shared}:Props){
         </Text>
       </View>
       {(collaborators.length?collaborators:[{
-        id:project.ownerEmail,role:'owner' as const,
-        displayName:project.ownerName,
-      }]).map(person=><View key={person.id} style={{
-        flexDirection:'row',alignItems:'center',gap:11,
-        minHeight:50,borderBottomWidth:1,borderColor:theme.border,
-      }}>
-        <View style={{width:36,height:36,borderRadius:18,
-          alignItems:'center',justifyContent:'center',
-          backgroundColor:theme.dark?'#422C36':'#F7E8EF'}}>
-          <Text style={{fontSize:15,fontWeight:'700',color:PINK}}>
-            {person.displayName.slice(0,1).toLocaleUpperCase('fr')}
-          </Text>
-        </View>
-        <View style={{flex:1,gap:3}}>
-          <Text style={{fontSize:13,fontWeight:'700',color:theme.foreground}}>
-            {person.displayName}
-          </Text>
-          <Text style={{fontSize:11,color:theme.muted}}>
-            {person.role==='owner'?'Auteur du morceau':'Collaborateur'}
-          </Text>
-        </View>
-        {person.handle?<Pressable accessibilityRole="button"
-          accessibilityLabel={'Voir le profil de '+person.displayName}
-          onPress={()=>router.push({pathname:'/member/[name]',
-            params:{name:person.handle!}})}>
-          <Ionicons name="chevron-forward-outline" size={18} color={theme.muted}/>
-        </Pressable>:null}
+        id:project.ownerEmail,role:'owner' as const,displayName:project.ownerName,
+      } as WorkspaceCollaborator]).map(person=><View key={person.id} style={{minHeight:50,borderBottomWidth:1,borderColor:theme.border,justifyContent:'center'}}>
+        <MusicMemberLink size={36} person={{displayName:person.displayName,handle:person.handle,avatarUrl:person.avatarUrl,demo:shared?.demo,self:!shared&&person.role==='owner'}} subtitle={person.role==='owner'?'Auteur du morceau':'Collaborateur'}/>
       </View>)}
       {(shared?.rosterUnavailable||rosterUnavailable)?<Text style={{fontSize:11,color:theme.muted}}>
         Liste complète indisponible jusqu’à la mise à jour de l’API.

@@ -89,6 +89,10 @@ const checks=[
     shared.includes("kind:'audio' as const")&&shared.includes('createdAt:match.createdAt')&&shared.includes('contribution:match.contribution')&&
     shared.includes('demoAudioAsset:demoId?p.audioAsset')&&capture.includes('demoAudioAsset:file.demoAudioAsset')&&
     !shared.includes("kind:'note' as const,title:p.trackTitle")],
+  ['Capture sidebar actions start folded and have a separate plus toggle',
+    nav.includes('useState(false)')&&nav.includes('captureTreeOpen?([')&&nav.includes('setCaptureTreeOpen(open=>!open)')&&!nav.includes('<MusicFolderCover')],
+  ['Capture attribution uses a linked member identity',
+    capture.includes('<MusicMemberLink person={editor}')&&shared.includes('editedByHandle:p.proposer?.handle')],
   ['Pour moi cassette and Infos navigate to their own full music page',
     home.includes("pathname:'/music-listen/[id]'")&&
     home.includes("onPress={() => openForMe(song.id)}")&&

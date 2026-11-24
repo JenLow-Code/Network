@@ -23,8 +23,8 @@ export type DemoMusicPreview = {
     status: 'accepted';
     direction: 'sent';
     isDemo: true;
-    publisher: { displayName: string };
-    proposer: { displayName: string };
+    publisher: { displayName: string; handle?:string; avatarUrl?:string|null };
+    proposer: { displayName: string; handle?:string; avatarUrl?:string|null };
   }[];
 };
 
@@ -48,8 +48,8 @@ type DemoMusicResponse = {
     audioAsset?: string | null;
     mimeType?: string | null;
     status: 'accepted';
-    publisher: { displayName: string };
-    proposer: { displayName: string };
+    publisher: { displayName: string; handle?:string; avatarUrl?:string|null };
+    proposer: { displayName: string; handle?:string; avatarUrl?:string|null };
     isDemo: true;
   }[];
 };

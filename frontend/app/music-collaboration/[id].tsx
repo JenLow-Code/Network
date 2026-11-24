@@ -16,13 +16,13 @@ import { useSharedMusicNavigation } from '@/domain/sharedMusicNavigation';
 const PINK='#CB245C';
 type Proposal = {
   id:string;description:string;status:string;trackTitle:string;
-  createdAt?:string|null;proposer?:{displayName?:string};
+  createdAt?:string|null;proposer?:{displayName?:string;handle?:string;avatarUrl?:string|null};
   credits?:{displayName:string;contribution:string}[];
   contribution?:string|null;audioAsset?:string|null;mimeType?:string|null;audioUrl?:string;
 };
 type MusicDetail = {item?:{
   title?:string;description?:string;updatedAt?:string;
-  author?:{displayName?:string};
+  author?:{displayName?:string;handle?:string;avatarUrl?:string|null};
   lyrics?:{time:number;text:string}[];
 }};
 type Collaborator = {
@@ -114,9 +114,9 @@ function AuthorizedSharedMusicFolder(){
           }]);
           setCollaborators([
             {id:'demo-author',role:'owner',
-              displayName:match.publisher.displayName},
+              displayName:match.publisher.displayName,handle:match.publisher.handle,avatarUrl:match.publisher.avatarUrl},
             {id:'demo-contributor',role:'collaborator',
-              displayName:match.proposer.displayName},
+              displayName:match.proposer.displayName,handle:match.proposer.handle,avatarUrl:match.proposer.avatarUrl},
           ]);
         })
         .catch(()=>{if(live)setError({kind:'unavailable',
@@ -162,15 +162,17 @@ function AuthorizedSharedMusicFolder(){
     if(!id||loading||error||(!conversationId&&!demoId)||!music)return null;
     const author=collaborators.find(person=>person.role==='owner')?.displayName||
       music.author?.displayName||'Auteur du morceau';
+    const owner=collaborators.find(person=>person.role==='owner')||music.author;
     const date=music.updatedAt||'';
     const files:MusicProjectFile[]=[
       ...(music.lyrics?.length?[{id:id+'-published-lyrics',kind:'lyrics' as const,title:'Paroles publiées',
-        text:music.lyrics.map(part=>part.text).join('\n'),sectionIds:[],createdAt:date,editedBy:author}]:[]),
+        text:music.lyrics.map(part=>part.text).join('\n'),sectionIds:[],createdAt:date,editedBy:author,editedByHandle:owner?.handle||undefined,editedByAvatarUrl:owner?.avatarUrl||undefined,editedByDemo:demoId}]:[]),
       ...proposals.filter(p=>p.status==='accepted'||p.status==='published').map(p=>({
         id:p.id,kind:'audio' as const,
         title:p.contribution||p.credits?.find(c=>c.displayName===p.proposer?.displayName)?.contribution||
           p.credits?.[0]?.contribution||'Contribution audio',
         sectionIds:[],createdAt:p.createdAt||'',editedBy:p.proposer?.displayName||'Non renseigné',
+        editedByHandle:p.proposer?.handle||undefined,editedByAvatarUrl:p.proposer?.avatarUrl||undefined,editedByDemo:demoId,
         externalUrl:p.audioUrl, demoAudioAsset:demoId?p.audioAsset||undefined:undefined,
         mimeType:p.mimeType||undefined,
       })),

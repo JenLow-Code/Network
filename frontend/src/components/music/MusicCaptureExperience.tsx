@@ -8,6 +8,8 @@ import {deleteLocalMusicFile} from '@/domain/musicLocalStorage';
 import {workspaceLayout} from '@/theme/workspaceLayout';
 import { MusicAudioTake } from './MusicAudioTake';
 import { MusicAudioPreview } from './MusicAudioPreview';
+import { MusicMemberLink } from './MusicMemberLink';
+import { useAuth } from '@/context/AuthProvider';
 import {MusicDocumentScanner} from './MusicDocumentScanner';
 import { MusicNotePreview, type MusicWritingResult } from './MusicWritingStudio';
 
@@ -58,6 +60,7 @@ function fileGroup(file:MusicProjectFile):CaptureFilter {
 export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
   hasVersion,newVersionMode=false,quickAction,showEditor=false,readOnly=false}:Props) {
   const theme=useAppTheme();
+  const {user}=useAuth();
   const {width}=useWindowDimensions();
   const compact=width<630;
   const desktopList=Platform.OS==='web'&&workspaceLayout(width).desktop;
@@ -510,6 +513,9 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
       <CassetteBlueprintBackground desktop={desktopList}/>
 
       {displayedFiles.map((file,index)=>{
+        const displayName=file.editedBy||project.ownerName||'—';
+        const own=!readOnly&&(!file.editedBy||file.editedBy===project.ownerName);
+        const editor={displayName,handle:file.editedByHandle,avatarUrl:file.editedByAvatarUrl||(own&&typeof user?.user_metadata?.avatar_url==='string'?user.user_metadata.avatar_url:undefined),demo:file.editedByDemo,self:own};
         const image=isImage(file);
         const sound=isAudio(file)||file.kind==='audio';
         const text=content(file).trim();
@@ -664,10 +670,7 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
                   {dateLabel?<Text numberOfLines={1} style={{
                     color:theme.foreground,fontSize:11,
                     fontVariant:['tabular-nums']}}>{dateLabel}</Text>:null}
-                  {showEditor?<Text numberOfLines={1} style={{
-                    color:theme.muted,fontSize:11}}>
-                    Modifié par · {file.editedBy||project.ownerName||'—'}
-                  </Text>:null}
+                  {showEditor?<MusicMemberLink person={editor} subtitle="Modifié par" size={25}/>:null}
                 </View>
                 {detailArrow}
               </View>}
@@ -678,10 +681,7 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
               justifyContent:'center'}}>
               {representation}
             </View>
-            {desktopList&&showEditor?<Text numberOfLines={1}
-              style={{width:130,fontSize:12,color:theme.foreground}}>
-              {file.editedBy||project.ownerName||'—'}
-            </Text>:null}
+            {desktopList&&showEditor?<MusicMemberLink person={editor} width={130}/>:null}
             {desktopList?detailArrow:null}
           </View>
           {desktopList&&lyricExpanded&&!sound&&(file.kind==='lyrics'||readOnly)?
