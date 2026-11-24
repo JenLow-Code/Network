@@ -99,37 +99,24 @@ export default function DreamMilestoneActions({
   );
 
   return (
-    <View style={{width:'100%',marginTop:desktop?37:25,
-      borderTopWidth:1,borderColor:theme.border,
-      paddingTop:desktop?22:19,marginBottom:desktop?34:26}}>
-      <View style={{flexDirection:desktop?'row':'column',
-        alignItems:desktop?'center':'stretch',
-        justifyContent:'space-between',gap:desktop?22:17}}>
-        <View style={{flex:desktop?1:undefined,flexDirection:'row',
-          alignItems:'center',gap:12,minWidth:0}}>
-          <View style={{width:3,height:37,borderRadius:3,
-            backgroundColor:primaryColor}}/>
-          <View style={{gap:4,flex:1,minWidth:0}}>
-            <Text style={{color:theme.muted,fontSize:10,fontWeight:'700',
-              letterSpacing:1.2}}>PROCHAINE ÉTAPE</Text>
-            <Text style={{color:theme.foreground,fontSize:20,lineHeight:25,
-              fontFamily:'serif',fontWeight:'600'}}>{nextStage}</Text>
-          </View>
-        </View>
-        {desktop ?
-          <View style={{flexDirection:'row',alignItems:'center',gap:10}}>
-            {secondary}
+    <View style={{width:'100%',marginTop:desktop?30:23,
+      marginBottom:desktop?34:26}}>
+      {/* Primary action stays prominent; the other two are smaller, with
+          destructive on the left and secondary on the right. */}
+      {desktop ?
+        <View style={{flexDirection:'row',alignItems:'center',
+          justifyContent:'flex-end',gap:10}}>
+          {destructive}
+          {secondary}
+          <View style={{marginLeft:14}}>{primary}</View>
+        </View> :
+        <View style={{gap:10}}>
+          {primary}
+          <View style={{flexDirection:'row',gap:10}}>
             {destructive}
-            <View style={{marginLeft:14}}>{primary}</View>
-          </View> :
-          <View style={{gap:10}}>
-            {primary}
-            <View style={{flexDirection:'row',gap:10}}>
-              {secondary}
-              {destructive}
-            </View>
-          </View>}
-      </View>
+            {secondary}
+          </View>
+        </View>}
     </View>
   );
 }
