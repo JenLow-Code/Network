@@ -95,7 +95,7 @@ test('verified new Supabase user gets one D1 identity; repeated sign-in is idemp
     assert.equal(second.status,200);
     assert.equal(second.body.user.id,first.body.user.id);
     assert.ok((app.db.raw.prepare(
-      'SELECT id FROM user_preferences WHERE user_id=?'
+      'SELECT user_id FROM user_preferences WHERE user_id=?'
     ).get(first.body.user.id) as object|undefined));
     assert.equal((app.db.raw.prepare(
       'SELECT count(*) AS n FROM users WHERE email=?'
