@@ -312,7 +312,7 @@ const aspirationBranding=[
   ['src/i18n/en.json', '"dreamsFilter": "Aspirations"'],
   ['src/i18n/de.json', '"dreamsFilter": "Bestrebungen"'],
   ['src/i18n/pt.json', '"dreamsFilter": "Aspirações"'],
-  ['src/i18n/locale.tsx', "dreams: 'Mes aspirations'"],
+  ['src/i18n/locale.tsx', "dreams: 'Aspirations'"],
   ['src/i18n/uiCopy.ts', "'Créer une aspiration'"],
   ['src/components/detail/PublicationPrimaryAction.tsx','Créer une aspiration inspirée'],
   ['src/components/dream/PublicationSearchPicker.tsx', "'ASPIRATION'"],
