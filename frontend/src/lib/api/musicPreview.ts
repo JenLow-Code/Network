@@ -16,7 +16,7 @@ export type DemoMusicPreview = {
     trackTitle: string;
     trackPublicationId: string;
     description: string;
-    createdAt?: string | null;
+    createdAt?: string;
     contribution?: string | null;
     audioAsset?: string | null;
     mimeType?: string | null;
@@ -94,7 +94,7 @@ export async function fetchDemoMusicPreview(): Promise<DemoMusicPreview> {
       .map(toDemoPublication),
     collaborations: data.collaborations.filter(c => c.isDemo === true &&
       c.id.startsWith('demo-music-proposal-') && c.status === 'accepted').map(c => ({
-      ...c, direction: 'sent' as const, isDemo: true as const,
+      ...c, createdAt:c.createdAt||undefined, direction: 'sent' as const, isDemo: true as const,
     })),
   };
 }
