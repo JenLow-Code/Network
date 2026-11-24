@@ -46,6 +46,12 @@ const checks=[
     shared.includes('if(demoId)')&&
     shared.includes('fetchDemoMusicPreview()')&&
     shared.includes('<MusicWorkspaceTabs')],
+  ['Demo publication IDs use the real numeric suffix, not an escaped backslash',
+    shared.includes(String.raw`/^demo-music-publication-\d{2}$/`)&&
+    !shared.includes(String.raw`/^demo-music-publication-\\d{2}$/`)],
+  ['Unauthorized workspaces return to Music without rendering a dead-end panel',
+    shared.includes("if(!loading&&error?.kind==='permission')router.replace('/music-hub')")&&
+    !shared.includes('Accès au morceau non autorisé')],
   ['Anonymous users never mount shared workspace or start API calls',
     shared.includes("if(initialized&&!user&&!validationError)router.replace('/login')")&&
     shared.includes('if(!initialized||!user)return')&&
