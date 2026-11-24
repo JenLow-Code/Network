@@ -17,6 +17,12 @@ type Props = {
   secondaryDisabled?: boolean;
   destructiveLabel: string;
   onDestructive: () => void;
+  /** Semence can present its publication action first, before uprooting. */
+  secondaryFirst?: boolean;
+  /** Keep the two small actions at exactly the same width on desktop. */
+  equalUtilityButtons?: boolean;
+  /** Place this component inside a page-bottom footer without extra margins. */
+  anchored?: boolean;
 };
 
 /**
@@ -30,10 +36,12 @@ export default function DreamMilestoneActions({
   onPrimary, primaryDisabled = false,
   secondaryLabel, secondaryColor, onSecondary, secondaryDisabled = false,
   destructiveLabel, onDestructive,
+  secondaryFirst = false, equalUtilityButtons = false, anchored = false,
 }: Props) {
   const theme = useAppTheme();
   const {width} = useWindowDimensions();
   const desktop = workspaceLayout(width).desktop;
+  const utilityWidth = desktop && equalUtilityButtons ? 174 : undefined;
 
   const primary = (
     <Pressable accessibilityRole="button"
@@ -64,7 +72,8 @@ export default function DreamMilestoneActions({
       disabled={secondaryDisabled} onPress={onSecondary}
       style={({pressed})=>({
         minHeight:desktop?44:46,
-        minWidth:desktop?94:undefined,
+        minWidth:desktop&&!equalUtilityButtons?94:undefined,
+        width:utilityWidth,
         flex:desktop?undefined:1,
         paddingHorizontal:desktop?17:12,borderRadius:11,
         borderWidth:1,borderColor:secondaryColor,
@@ -83,7 +92,8 @@ export default function DreamMilestoneActions({
       onPress={onDestructive}
       style={({pressed})=>({
         minHeight:desktop?44:46,
-        minWidth:desktop?102:undefined,
+        minWidth:desktop&&!equalUtilityButtons?102:undefined,
+        width:utilityWidth,
         flex:desktop?undefined:1,
         paddingHorizontal:desktop?15:12,borderRadius:11,
         justifyContent:'center',alignItems:'center',
@@ -99,22 +109,21 @@ export default function DreamMilestoneActions({
   );
 
   return (
-    <View style={{width:'100%',marginTop:desktop?30:23,
-      marginBottom:desktop?34:26}}>
+    <View style={{width:'100%',
+      marginTop:anchored?0:desktop?30:23,
+      marginBottom:anchored?0:desktop?34:26}}>
       {/* Primary action stays prominent; the other two are smaller, with
           destructive on the left and secondary on the right. */}
       {desktop ?
         <View style={{flexDirection:'row',alignItems:'center',
           justifyContent:'flex-end',gap:10}}>
-          {destructive}
-          {secondary}
+          {secondaryFirst ? <>{secondary}{destructive}</> : <>{destructive}{secondary}</>}
           <View style={{marginLeft:14}}>{primary}</View>
         </View> :
         <View style={{gap:10}}>
           {primary}
           <View style={{flexDirection:'row',gap:10}}>
-            {destructive}
-            {secondary}
+            {secondaryFirst ? <>{secondary}{destructive}</> : <>{destructive}{secondary}</>}
           </View>
         </View>}
     </View>
