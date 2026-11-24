@@ -132,8 +132,6 @@ export function DetailLayout({
         {showRelated ? (
           <View style={{
             marginTop:isDream?30:42,
-            borderTopWidth:isDream?0:0.5,
-            borderTopColor:theme.border,
             paddingTop:21,
             width:relatedWidth,
             maxWidth:'100%',
