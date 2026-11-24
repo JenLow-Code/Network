@@ -10,6 +10,7 @@ import { useAuth } from '@/context/AuthProvider';
 import { useApp } from '@/context/AppContext';
 import { useDreams } from '@/domain/dreamRepository';
 import { useMusicWorkspaces } from '@/domain/musicWorkspace';
+import { useSharedMusicNavigation } from '@/domain/sharedMusicNavigation';
 import { musicNextState } from '@/domain/musicNext';
 import { api } from '@/lib/api/client';
 import { MusicFolderCover } from '@/components/music/MusicFolderCover';
@@ -44,6 +45,7 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
   const params=useGlobalSearchParams<{view?:string;section?:string;focus?:string;tab?:string;intent?:string}>();
   const {items:dreams}=useDreams();
   const {items:musicProjects,patch:patchMusic}=useMusicWorkspaces();
+  const {project:sharedProject}=useSharedMusicNavigation();
   const [songTreeOpen,setSongTreeOpen]=useState(true);
   const [versionsTreeOpen,setVersionsTreeOpen]=useState(true);
   const [pendingRequests,setPendingRequests]=useState<number|null>(null);
@@ -60,7 +62,9 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
   const currentPhaseIndex=DREAM_PHASES.indexOf(currentDream?.phase||'Rêve');
   const songId=['music-workspace','music-lyrics','music-composer'].includes(segments[0])?segments[1]:
     segments[0]==='music'&&segments[1]&&segments[1]!=='new'?segments[1]:undefined;
-  const currentSong=songId?musicProjects.find(song=>song.id===decodeURIComponent(songId)):undefined;
+  const isSharedSong=segments[0]==='music-collaboration';
+  const currentSong=isSharedSong?(sharedProject?.id===decodeURIComponent(segments[1]||'')?sharedProject:undefined):
+    songId?musicProjects.find(song=>song.id===decodeURIComponent(songId)):undefined;
   const songState=currentSong?musicNextState(currentSong):null;
   const activeVersion=songState?.versions.find(v=>v.id===songState.activeVersionId)
     ||songState?.versions[0];
@@ -72,7 +76,7 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
   useEffect(()=>{
     let live=true;
     setPendingRequests(null);
-    if(placement!=='desktop'||!desktop||!currentSong||!publishedKey)return;
+    if(isSharedSong||placement!=='desktop'||!desktop||!currentSong||!publishedKey)return;
     void api<{items:{trackPublicationId:string;status:string;reviewState?:string}[]}>(
       '/api/me/music-proposals?role=received',{auth:'required'})
       .then(result=>{
@@ -84,10 +88,11 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
       })
       .catch(()=>{if(live)setPendingRequests(null);});
     return()=>{live=false;};
-  },[placement,desktop,currentSong?.id,publishedKey,path,params.tab]);
+  },[placement,desktop,isSharedSong,currentSong?.id,publishedKey,path,params.tab]);
   const openMusicArea=(tab:'capture'|'create'|'collaborate',
     intent?:'new-version'|'write'|'upload'|'play'|'record')=>{
     if(!currentSong)return;
+    if(isSharedSong){if(!intent)router.replace({pathname:'/music-collaboration/[id]',params:{id:currentSong.id,tab}});return;}
     router.replace({pathname:'/music-workspace/[id]',
       params:{id:currentSong.id,tab,...(intent?{intent}:{})}});
   };
@@ -113,7 +118,7 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
     }
   };
   const openMusicVersion=(versionId:string)=>{
-    if(!currentSong||!songState)return;
+    if(isSharedSong||!currentSong||!songState)return;
     patchMusic(currentSong.id,{musicNext:{...songState,activeVersionId:versionId}});
     openMusicArea('create');
   };
@@ -293,8 +298,7 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
                   accessibilityLabel={'Morceau actuel : '+currentSong.title}
                   accessibilityState={{expanded:!collapsed&&songTreeOpen}}
                   onPress={()=>{
-                    if(collapsed)router.replace({pathname:'/music-workspace/[id]',
-                      params:{id:currentSong.id}});
+                    if(collapsed)openMusicArea('capture');
                     else setSongTreeOpen(value=>!value);
                   }}
                   style={{flexDirection:'row',alignItems:'center',gap:9,
@@ -322,12 +326,12 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
                   gap:2,marginBottom:4}}>
                   <Pressable accessibilityRole="button"
                     accessibilityLabel="Ouvrir Capturer"
-                    accessibilityState={{selected:path.startsWith('/music-workspace/')&&
+                    accessibilityState={{selected:(path.startsWith('/music-workspace/')||isSharedSong)&&
                       (!params.tab||params.tab==='capture')&&!params.intent}}
                     onPress={()=>openMusicArea('capture')}
                     style={{minHeight:36,flexDirection:'row',alignItems:'center',
                       gap:9,paddingHorizontal:7,borderRadius:7,
-                      backgroundColor:path.startsWith('/music-workspace/')&&
+                      backgroundColor:(path.startsWith('/music-workspace/')||isSharedSong)&&
                         (!params.tab||params.tab==='capture')&&!params.intent?
                         (theme.dark?'rgba(215,29,119,.13)':'rgba(215,29,119,.07)'):'transparent'}}>
                     <Ionicons name="mic-outline" size={16} color={theme.foreground}/>
@@ -342,15 +346,15 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
                     const active=action.key==='thought'?path.startsWith('/music-lyrics/'):
                       action.key==='idea'?path.startsWith('/music-composer/'):
                       path.startsWith('/music-workspace/')&&params.intent===(action.key==='doc'?'upload':'record');
-                    return <Pressable key={action.key}
+                    return <Pressable key={action.key} disabled={isSharedSong}
                       onPress={()=>{
                         if(action.key==='thought')router.push({pathname:'/music-lyrics/[id]',params:{id:currentSong.id}});
                         else if(action.key==='idea')router.push({pathname:'/music-composer/[id]',params:{id:currentSong.id}});
                         else openMusicArea('capture',action.key==='doc'?'upload':'record');
                       }}
                       accessibilityRole="button" accessibilityLabel={action.title}
-                      accessibilityState={{selected:active}}
-                      style={{minHeight:34,flexDirection:'row',alignItems:'center',gap:9,
+                      accessibilityState={{selected:active,disabled:isSharedSong}}
+                      style={{minHeight:34,opacity:isSharedSong?.5:1,flexDirection:'row',alignItems:'center',gap:9,
                         paddingHorizontal:7,marginLeft:21,borderRadius:7,
                         backgroundColor:active?'rgba(215,29,119,.10)':'transparent'}}>
                       <Ionicons name="add" size={16}
@@ -378,7 +382,7 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
                       </Text>
                     </Pressable>
                     <Pressable accessibilityRole="button"
-                      accessibilityLabel="Nouvelle version"
+                      accessibilityLabel="Nouvelle version" disabled={isSharedSong}
                       onPress={()=>openMusicArea('capture','new-version')}
                       style={{minHeight:34,minWidth:24,alignItems:'center',
                         justifyContent:'center'}}>

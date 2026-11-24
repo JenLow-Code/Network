@@ -25,7 +25,7 @@ import {CassetteBlueprintBackground} from './CassetteBlueprintBackground';
 const PINK='#CB245C';
 type Props={project:MusicProject;patch:(changes:Partial<MusicProject>)=>void;
   onStartVersion:(source:MusicProjectFile)=>void;onUseFile:(source:MusicProjectFile)=>void;
-  hasVersion:boolean;newVersionMode?:boolean;showEditor?:boolean;
+  hasVersion:boolean;newVersionMode?:boolean;showEditor?:boolean;readOnly?:boolean;
   quickAction?:'write'|'upload'|'play'|'record'};
 type Composer='none'|'write'|'record';
 type Writing='lyrics'|'note';
@@ -55,7 +55,7 @@ function fileGroup(file:MusicProjectFile):CaptureFilter {
 }
 
 export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
-  hasVersion,newVersionMode=false,quickAction,showEditor=false}:Props) {
+  hasVersion,newVersionMode=false,quickAction,showEditor=false,readOnly=false}:Props) {
   const theme=useAppTheme();
   const {width}=useWindowDimensions();
   const compact=width<630;
@@ -143,7 +143,7 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
     (project.musicNext?.history||[]).some(h=>h.before.tracks.some(t=>
       deletingIds.has(t.sourceFileId))):false;
   const removeCaptured=async()=>{
-    if(!deleteCandidate||deleteBusy||referencedByVersion)return;
+    if(readOnly||!deleteCandidate||deleteBusy||referencedByVersion)return;
     setDeleteBusy(true);setError('');
     const ids=deletingIds;
     const removed=files.filter(file=>ids.has(file.id));
@@ -386,11 +386,11 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
           </Text>
           <Text style={{fontSize:12,color:theme.muted}}>{files.filter(f=>!f.renderedFromMidiId).length}</Text>
         </View>
-        <Pressable onPress={()=>setActionsOpen(!actionsOpen)}
+        <Pressable disabled={readOnly} onPress={()=>setActionsOpen(!actionsOpen)}
           accessibilityRole="button"
           accessibilityLabel={actionsOpen?'Fermer les actions':'Ajouter un élément'}
-          accessibilityState={{expanded:actionsOpen}}
-          style={{width:46,height:46,borderRadius:23,backgroundColor:PINK,
+          accessibilityState={{expanded:actionsOpen,disabled:readOnly}}
+          style={{width:46,height:46,borderRadius:23,backgroundColor:PINK,opacity:readOnly?.5:1,
             alignItems:'center',justifyContent:'center'}}>
           <Ionicons name={actionsOpen?'close':'add'} size={25} color="#fff"/>
         </Pressable>
@@ -519,6 +519,7 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
         const dateLabel=Number.isNaN(created.getTime())?'':created.toLocaleDateString(
           'fr-FR',{day:'numeric',month:'short',year:'numeric'});
         const openDetails=()=>{
+          if(readOnly){setExpandedLyrics(old=>({...old,[file.id]:!old[file.id]}));return;}
           if(file.musicEvents?.length){
             openWrite('',file.id,'score');return;
           }
@@ -567,7 +568,7 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
                     color:theme.muted}}>
                   {lyricExpanded&&!desktopList?text:firstLine}
                 </Text>
-                {file.kind==='lyrics'?
+                {file.kind==='lyrics'||readOnly?
                   <Pressable accessibilityRole="button"
                     accessibilityLabel={(lyricExpanded?'Voir moins':'Voir plus')+
                       ' : '+file.title}
@@ -599,14 +600,14 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
         const detailArrow=<View style={{height:44,width:desktopList?62:68,
           alignItems:'center',justifyContent:'flex-end',
           flexDirection:'row',flexShrink:0,gap:7}}>
-          <Pressable onPress={()=>setPendingDelete(file.id)}
+          {!readOnly?<Pressable onPress={()=>setPendingDelete(file.id)}
             accessibilityRole="button"
             accessibilityLabel={'Supprimer '+file.title}
             style={{height:40,width:29,alignItems:'center',
               justifyContent:'center'}}>
             <Ionicons name="trash-outline" size={16}
               color={desktopList&&hoveredRow===file.id?PINK:theme.muted}/>
-          </Pressable>
+          </Pressable>:null}
           <Pressable onPress={openDetails}
             accessibilityRole="button"
             accessibilityLabel={'Voir les détails de '+file.title}
@@ -681,7 +682,7 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
             </Text>:null}
             {desktopList?detailArrow:null}
           </View>
-          {desktopList&&lyricExpanded&&file.kind==='lyrics'?
+          {desktopList&&lyricExpanded&&(file.kind==='lyrics'||readOnly)?
             <View style={{paddingLeft:(showEditor?185+105:210+120)+28,paddingRight:28,
               paddingBottom:14}}>
               <Text style={{fontFamily:'Georgia',fontSize:15,

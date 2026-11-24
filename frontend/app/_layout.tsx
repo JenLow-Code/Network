@@ -7,6 +7,7 @@ import { handwritingFontMap } from '@/theme/handwriting';
 import { Provider } from '@/context/AppContext';
 import { DreamProvider, useDreams } from '@/domain/dreamRepository';
 import { MusicWorkspaceProvider } from '@/domain/musicWorkspace';
+import { SharedMusicNavigationProvider } from '@/domain/sharedMusicNavigation';
 import { LocaleProvider } from '@/i18n/locale';
 import { AuthProvider, useAuth } from '@/context/AuthProvider';
 import { AppThemeProvider, useAppTheme } from '@/theme/AppTheme';
@@ -177,7 +178,7 @@ export default function Layout() {
           <Provider>
             <DreamProvider>
               <MusicWorkspaceProvider>
-                <ThemedStack />
+                <SharedMusicNavigationProvider><ThemedStack /></SharedMusicNavigationProvider>
               </MusicWorkspaceProvider>
             </DreamProvider>
           </Provider>

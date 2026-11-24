@@ -11,6 +11,9 @@ const base=join(__dirname,'..');
 const read=path=>readFileSync(join(base,path),'utf8');
 const home=read('app/music-hub.tsx');
 const shared=read('app/music-collaboration/[id].tsx');
+const personal=read('app/music-workspace/[id].tsx');
+const workspace=read('src/components/music/MusicWorkspaceScreen.tsx');
+const collaborate=read('src/components/music/MusicCollaborateExperience.tsx');
 const authProvider=read('src/context/AuthProvider.tsx');
 const detail=read('app/music/[id].tsx');
 const owned=read('src/components/music/MusicSongCard.tsx');
@@ -45,7 +48,7 @@ const checks=[
   ['Demo shared projects render the same three tabs without calling real APIs',
     shared.includes('if(demoId)')&&
     shared.includes('fetchDemoMusicPreview()')&&
-    shared.includes('<MusicWorkspaceTabs')],
+    shared.includes('<MusicWorkspaceScreen')&&workspace.includes('<MusicWorkspaceTabs')],
   ['Demo publication IDs use the real numeric suffix, not an escaped backslash',
     shared.includes(String.raw`/^demo-music-publication-\d{2}$/`)&&
     !shared.includes(String.raw`/^demo-music-publication-\\d{2}$/`)],
@@ -67,15 +70,21 @@ const checks=[
     shared.includes("kind:'permission'")&&
     shared.includes("kind:'unavailable'")],
   ['Failed authentication hides workspace tabs and offers return or retry',
-    shared.includes("error?null:<MusicWorkspaceTabs")&&
-    shared.includes("button('Retour à Musique'")&&
-    shared.includes("button('Réessayer'")],
+    shared.indexOf('if(error||!project)return')<shared.indexOf('return <MusicWorkspaceScreen')&&
+    shared.includes('Retour à Musique')&&shared.includes('Réessayer')],
 
   ['Collaborative Capture identifies who added a resource',
-    capture.includes('Modifié par')&&shared.includes('Modifié par')],
+    capture.includes('Modifié par')&&workspace.includes('showEditor={showEditor||!!shared}')],
   ['Collaborate shows the participant roster',
-    shared.includes('collaborators.map(person')&&
-    read('src/components/music/MusicCollaborateExperience.tsx').includes('collaborators.length')],
+    shared.includes('members:collaborators')&&collaborate.includes('collaborators.length')],
+  ['Both routes mount exactly the same editor components, never an alternative workspace',
+    personal.includes('<MusicWorkspaceScreen')&&shared.includes('<MusicWorkspaceScreen')&&
+    !shared.includes('<MusicWorkspaceTabs')&&!shared.includes('captureRows.map')&&
+    workspace.includes('<MusicCaptureExperience')&&workspace.includes('<MusicCreateExperience')&&workspace.includes('<MusicCollaborateExperience')],
+  ['Shared read-only adapter cannot mutate owner files or navigate to local editors',
+    workspace.includes('if(shared||addingRef.current)return;')&&workspace.includes('readOnly={!!shared}')&&
+    capture.includes('if(readOnly||!deleteCandidate')&&capture.includes('disabled={readOnly}')&&
+    shared.includes('No private')&&shared.includes('update={()=>{}}')],
   ['Pour moi cassette and Infos navigate to their own full music page',
     home.includes("pathname:'/music-listen/[id]'")&&
     home.includes("onPress={() => openForMe(song.id)}")&&

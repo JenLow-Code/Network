@@ -10,15 +10,17 @@ import {newMusicId} from '@/domain/musicWorkspace';
 import type {MusicProject} from '@/domain/musicWorkspace';
 
 const PINK='#CB245C';
-type Props={project:MusicProject;patch:(changes:Partial<MusicProject>)=>void};
+type Props={project:MusicProject;patch:(changes:Partial<MusicProject>)=>void;
+  shared?:{members:WorkspaceCollaborator[];demo:boolean;conversationId?:string|null;rosterUnavailable?:boolean}};
 type Proposal=CollaborationRequest&{trackPublicationId:string};
-type Collaborator={id:string;role:'owner'|'collaborator';
+export type WorkspaceCollaborator={id:string;role:'owner'|'collaborator';
   displayName:string;handle?:string|null};
 
-export function MusicCollaborateExperience({project,patch}:Props){
+export function MusicCollaborateExperience({project,patch,shared}:Props){
   const theme=useAppTheme();
   const [proposals,setProposals]=useState<Proposal[]>([]);
-  const [collaborators,setCollaborators]=useState<Collaborator[]>([]);
+  const [fetchedCollaborators,setCollaborators]=useState<WorkspaceCollaborator[]>([]);
+  const collaborators=shared?shared.members:fetchedCollaborators;
   const [rosterUnavailable,setRosterUnavailable]=useState(false);
   const [selected,setSelected]=useState('');
   const [demoDecision,setDemoDecision]=useState<'submitted'|'accepted'|'rejected'>('submitted');
@@ -40,24 +42,24 @@ export function MusicCollaborateExperience({project,patch}:Props){
   useEffect(()=>{
     let live=true;
     setCollaborators([]);setRosterUnavailable(false);
-    if(!firstPublication)return;
-    void api<{members:Collaborator[]}>('/api/music/'+
+    if(shared||!firstPublication)return;
+    void api<{members:WorkspaceCollaborator[]}>('/api/music/'+
       encodeURIComponent(firstPublication)+'/collaborators',{auth:'required'})
       .then(answer=>{if(live)setCollaborators(answer.members||[]);})
       .catch(()=>{if(live)setRosterUnavailable(true);});
     return()=>{live=false;};
-  },[firstPublication]);
+  },[firstPublication,!!shared]);
   useEffect(()=>{
     let live=true;
     setProposals([]);setError('');
-    if(!ids)return;
+    if(shared||!ids)return;
     void api<{items:Proposal[]}>('/api/me/music-proposals?role=received',{auth:'required'})
       .then(value=>{
         if(live)setProposals((value.items||[]).filter(p=>linked.includes(p.trackPublicationId)));
       })
       .catch(()=>{if(live)setError('Les propositions en ligne ne sont pas accessibles actuellement.');});
     return()=>{live=false;};
-  },[ids]);
+  },[ids,!!shared]);
   const open=async(p:Proposal)=>{
     if(p.id===selected){setSelected('');setAudioUrl('');return;}
     setSelected(p.id);setAudioUrl('');setLoading(true);setError('');
@@ -157,10 +159,11 @@ export function MusicCollaborateExperience({project,patch}:Props){
           <Ionicons name="chevron-forward-outline" size={18} color={theme.muted}/>
         </Pressable>:null}
       </View>)}
-      {rosterUnavailable?<Text style={{fontSize:11,color:theme.muted}}>
+      {(shared?.rosterUnavailable||rosterUnavailable)?<Text style={{fontSize:11,color:theme.muted}}>
         Liste complète indisponible jusqu’à la mise à jour de l’API.
       </Text>:null}
     </View>
+    {shared? <>{!shared.demo&&shared.conversationId?<Pressable accessibilityRole="button" onPress={()=>router.push({pathname:'/chat/[id]',params:{id:shared.conversationId!}})} style={{alignSelf:'flex-start',paddingVertical:10}}><Text style={{fontSize:13,fontWeight:'700',color:PINK}}>Ouvrir la discussion du morceau</Text></Pressable>:null}</>:<>
     {!proposals.length?<View style={{gap:10}}>
       <View style={{flexDirection:'row',alignItems:'center',gap:9,flexWrap:'wrap'}}>
         <Text style={{fontSize:16,fontWeight:'700',color:theme.foreground}}>
@@ -355,5 +358,6 @@ export function MusicCollaborateExperience({project,patch}:Props){
       </View>)}
     </View>
     {error?<Text style={{fontSize:12,lineHeight:18,color:'#B64B61'}}>{error}</Text>:null}
+    </>}
   </View>;
 }
