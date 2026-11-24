@@ -30,8 +30,10 @@ export async function signAccessToken(userId: string, env: Env, nowSeconds = Mat
 /** Returns the subject (user id) of a valid, unexpired token from this issuer, else null. */
 export async function verifyAccessToken(token: string, env: Env): Promise<string | null> {
   try {
-    const [h, p, s] = token.split('.');
-    if (!h || !p || !s || token.length > 4096) return null;
+    const parts = token.split('.');
+    if (parts.length !== 3 || token.length > 4096) return null;
+    const [h, p, s] = parts;
+    if (!h || !p || !s) return null;
     const header = JSON.parse(decoder.decode(fromB64url(h)));
     if (header?.alg !== 'HS256') return null;
     const ok = await crypto.subtle.verify('HMAC', await key(env, 'verify'), fromB64url(s), encoder.encode(h + '.' + p));

@@ -6,6 +6,7 @@ import { Router } from './http/router';
 import { ApiError } from './http/errors';
 import { errorResponse, json, legacyError } from './http/respond';
 import * as legacy from './auth/legacyRoutes';
+import { exchangeSupabase } from './auth/supabase';
 import { registerMedia } from './modules/media';
 import { registerProfiles } from './modules/profiles';
 import { registerDreams } from './modules/dreams';
@@ -44,6 +45,7 @@ export function buildRouter(): Router {
   // Beta authentication (unchanged contract)
   r.add('POST', '/v1/auth/email/register', { tag: 'Auth', summary: 'Register with email, 12+ char password and beta invite code', auth: 'none', status: 201 }, legacy.register);
   r.add('POST', '/v1/auth/email/login', { tag: 'Auth', summary: 'Sign in with email and password', auth: 'none' }, legacy.login);
+  r.add('POST', '/v1/auth/supabase/exchange', { tag: 'Auth', summary: 'Exchange a verified Supabase identity for a JenLow access token', auth: 'none' }, exchangeSupabase);
   r.add('POST', '/v1/auth/refresh', { tag: 'Auth', summary: 'Rotate the refresh token; returns a new access token', auth: 'none' }, legacy.refresh);
   r.add('GET', '/v1/auth/me', { tag: 'Auth', summary: 'Who am I (beta contract)', auth: 'required' }, legacy.me);
   r.add('POST', '/v1/auth/logout', { tag: 'Auth', summary: 'Revoke a refresh token', auth: 'none' }, legacy.logout);
