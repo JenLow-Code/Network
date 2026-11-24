@@ -84,16 +84,15 @@ export function DreamPhaseHeader({
         disabled={!reached||!onNavigate}
         onPress={()=>onNavigate?.(item)}
         style={{flex:1,minWidth:0,alignItems:'center',justifyContent:'center',
-          minHeight:iconOnlyPhases?42:phasesInTopRow?41:34,
-          gap:iconOnlyPhases?4:phasesInTopRow?5:3,opacity:reached?1:.46}}>
+          minHeight:iconOnlyPhases?34:phasesInTopRow?41:34,
+          gap:iconOnlyPhases?2:phasesInTopRow?5:3,opacity:reached?1:.46}}>
         {iconOnlyPhases ?
           <>
-            <DreamPhaseIcon phase={item} size={25}
-              artworkScale={item==='Rêve'?.85:item==='Initiation'?1:1}
+            <DreamPhaseIcon phase={item} size={21}
+              artworkScale={item==='Rêve'?.82:item==='Initiation'?.94:.94}
               tintColor={selected?activeAccent:reached?theme.muted:theme.border}/>
-            <View style={{width:'100%',height:selected?3:2,borderRadius:2,
-              backgroundColor:reached?activeAccent:theme.border,
-              opacity:selected?1:reached?.65:.55}}/>
+            <View style={{width:selected?5:3,height:selected?5:3,borderRadius:3,
+              backgroundColor:selected?activeAccent:'transparent'}}/>
           </> :
           <>
             <View style={{minHeight:phasesInTopRow?23:21,
