@@ -7,11 +7,12 @@ import { useAppTheme } from '@/theme/AppTheme';
 import { workspaceLayout,DESKTOP_PAGE_CONTENT_INSET,PAGE_TITLE_FONT_SIZE,PAGE_TITLE_LINE_HEIGHT } from '@/theme/workspaceLayout';
 
 /** Shared inside-page navigation. Discovery is the landing page and deliberately has no Back button. */
-export function PageHeader({ title, center, onBack, showFire = true }: {
+export function PageHeader({ title, center, onBack, showFire = true, centerOverlayOnMobile = false }: {
  title?: string;
  center?: React.ReactNode;
  onBack?: () => void;
  showFire?: boolean;
+ centerOverlayOnMobile?: boolean;
 }) {
  const theme = useAppTheme();
  const {width}=useWindowDimensions();
@@ -27,10 +28,10 @@ export function PageHeader({ title, center, onBack, showFire = true }: {
       top:desktop?2:0,zIndex:6}}>
     <Ionicons name="arrow-back-outline" size={23} color={theme.foreground}/>
    </Pressable>
-   {desktop&&center
+   {(desktop||centerOverlayOnMobile)&&center
     ? <View pointerEvents="box-none" style={{
-        position:'absolute',left:0,right:0,top:0,bottom:0,
-        alignItems:'center',justifyContent:'center'}}>
+        position:'absolute',left:desktop?0:52,right:desktop?0:90,
+        top:0,bottom:0,alignItems:'center',justifyContent:'center'}}>
         {center}
       </View>
     : <View style={{flex:1,minWidth:0,justifyContent:'center',
@@ -42,7 +43,7 @@ export function PageHeader({ title, center, onBack, showFire = true }: {
       </View>}
    {/* Preserve the right-side actions in the normal row flow while the
        desktop tabs are centered independently in an absolute overlay. */}
-   {desktop&&center?<View style={{flex:1,minWidth:0}}/>:null}
+   {(desktop||centerOverlayOnMobile)&&center?<View style={{flex:1,minWidth:0}}/>:null}
    <TopActions showFire={showFire}/>
   </View>
  );
