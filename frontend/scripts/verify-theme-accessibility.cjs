@@ -62,14 +62,11 @@ assert.ok(musicTabs.includes("accessibilityRole=\"tablist\"") &&
   musicTabs.includes("color={selected?'#CB245C':theme.muted}"),
   'Phone music tabs must be equally sized, icon-only and magenta when active');
 const discover = source('app/discover.tsx');
-assert.ok(discover.includes("const compact=width<600;") &&
-  discover.includes("const filterIcons: Record<") &&
-  discover.includes('accessibilityRole="tablist"') &&
-  discover.includes('accessibilityLabel={filterTitle(f)}') &&
-  discover.includes('accessibilityState={{selected:filter===f}}') &&
-  discover.includes("filter===f?'#CB245C':theme.muted") &&
-  discover.includes('<Pill key={f}'),
-  'Phone Discovery filters must show six accessible icons; desktop stays labelled');
+assert.ok(discover.includes('accessibilityRole="tablist"') &&
+  discover.includes('{filters.map(f=>(') &&
+  discover.includes('<Pill key={f} text={filterTitle(f)} active={filter===f}') &&
+  discover.includes('onPress={()=>setFilter(f)}'),
+  'Discovery must preserve the current accessible, labelled filter pills on phone and desktop');
 assert.ok(hero.includes('const iconOnlyPhases = narrow;') &&
   hero.includes("tintColor={selected?activeAccent:reached?theme.muted:theme.border}") &&
   hero.includes('accessibilityLabel={\'Ouvrir \'+PHASE_LABELS[item]}') &&
