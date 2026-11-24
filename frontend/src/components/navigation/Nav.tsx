@@ -209,7 +209,7 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
           backgroundColor:activeColor,borderRadius:3}}/>:null}
         {item.path==='/profile'?profileAvatar(24,item.active):
           item.path==='/my-space'?<AspirationNavIcon size={20}
-            color={item.active?activeColor:theme.muted}/>:
+            color={item.active?activeColor:theme.muted} active={item.active}/>:
           <Ionicons name={item.path==='/discover'?'ellipse-outline':item.icon}
             size={19} color={item.active?activeColor:theme.muted}/>} 
         {!collapsed?<Text numberOfLines={1} style={{
@@ -615,7 +615,8 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
             profileAvatar(28,x.active)
           ) : x.path === '/my-space' ? (
             <AspirationNavIcon size={24}
-              color={x.active ? (theme.dark ? theme.accent : '#CB245C') : foreground}/>
+              color={x.active ? (theme.dark ? theme.accent : '#CB245C') : foreground}
+              active={x.active}/>
           ) : (
             <Ionicons
               name={
