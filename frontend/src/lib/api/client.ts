@@ -110,7 +110,7 @@ export async function api<T>(path: string, options: Options = {}): Promise<T> {
     // A revoked or expired JenLow API identity closes the entire protected
     // application. Refresh attempts are handled above; do not keep rendering
     // Discovery or private workspaces after a second 401.
-    if (auth!=='none' && (res.status===401||res.status===403)){
+    if (auth!=='none' && res.status===401){
       setAccessToken(null);
       listeners.forEach(fn=>fn(false));
     }
