@@ -39,3 +39,21 @@ jobs:
           assert visible, 'No public Germination/Growth/Floraison dreams'
           print(f'API OK: {len(users)} demo users, {len(dreams)} D1 dreams, {len(visible)} visible.')
           PY
+      - name: Verify accepted music contribution metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --retry 2 --max-time 20 'https://jenlow-network-demo-api.jenlow-production.workers.dev/api/demo/music' > /tmp/music.json
+          python3 - <<'PY'
+          import json
+          from datetime import datetime
+          with open('/tmp/music.json',encoding='utf-8') as f:
+              data=json.load(f)
+          record=next(p for p in data['collaborations'] if p['id']=='demo-music-proposal-01')
+          assert record['contribution']=='Batterie', 'Missing credited contribution'
+          assert record['audioAsset']=='pierre-03-lumiere' and record['mimeType']=='audio/wav', 'Wrong audio reference'
+          assert record['proposer']['displayName']=='Samuel Ribeiro'
+          assert record['status']=='accepted'
+          assert datetime.fromisoformat(record['createdAt'].replace('Z','+00:00')).year >= 2026
+          print('Verified live Capture metadata:', record['contribution'], record['createdAt'], record['audioAsset'])
+          PY
