@@ -7,7 +7,7 @@ import * as WebBrowser from 'expo-web-browser';
 import {authConfigured,supabase} from '@/lib/supabaseClient';
 import {setAccessToken} from '@/lib/api/session';
 import {API_BASE} from '@/lib/authApi';
-import {refreshAccessToken,onSessionChange} from '@/lib/api/client';
+import {exchangeSupabaseBearer,latestAuthBridgeFailure,onSessionChange} from '@/lib/api/client';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -28,7 +28,10 @@ type AuthContext={
   /** Supabase may be valid while JenLow API identity is unavailable.
    * This state is never sufficient to unlock private routes. */
   apiIssue:boolean;
+  /** Safe machine-readable failure, never a secret or bearer token. */
+  authFailure:string|null;
   revalidate:()=>Promise<void>;
+  completeOAuthSession:(session:Session)=>Promise<boolean>;
   noteActivity:()=>void;
   signIn:(email:string,password:string)=>Promise<void>;
   signUp:(name:string,email:string,password:string)=>
@@ -49,6 +52,7 @@ export function AuthProvider({children}:{children:React.ReactNode}){
   const [initialized,setInitialized]=useState(false);
   const [validationError,setValidationError]=useState(false);
   const [apiIssue,setApiIssue]=useState(false);
+  const [authFailure,setAuthFailure]=useState<string|null>(null);
   const verifiedAt=useRef(0);
   const activeAt=useRef(0);
   const lastWrite=useRef(0);
@@ -65,6 +69,7 @@ export function AuthProvider({children}:{children:React.ReactNode}){
     setAccessToken(null);
     setValidationError(false);
     setApiIssue(false);
+    setAuthFailure(null);
     setInitialized(true);
   },[]);
 
@@ -117,9 +122,13 @@ export function AuthProvider({children}:{children:React.ReactNode}){
       // The Worker must independently verify and map this same user before
       // any protected screen, including Discovery, can render.
       let workerAccepted=false;
+      let failure='jenlow_identity_not_verified';
       try{
         setAccessToken(null);
-        const token=await refreshAccessToken();
+        // Unlike a generic background refresh, the OAuth callback has an
+        // authoritative, freshly exchanged Supabase session. Avoid reading
+        // an older getSession() or joining an in-flight startup refresh.
+        const token=await exchangeSupabaseBearer(candidate.access_token);
         if(token){
           const response=await fetch(API_BASE+'/v1/auth/me',{
             method:'GET',headers:{Authorization:'Bearer '+token,Accept:'application/json'},
@@ -131,9 +140,13 @@ export function AuthProvider({children}:{children:React.ReactNode}){
             workerAccepted=Boolean(data.user.email&&
               result.user?.email?.toLowerCase()===data.user.email.toLowerCase()&&
               result.user?.account_status==='active');
-          }
-        }
-      }catch{/* Fail closed, never fall back to Supabase-only access. */}
+            if(!workerAccepted)failure='jenlow_identity_mismatch';
+          }else failure='jenlow_me_http_'+response.status;
+        }else failure=latestAuthBridgeFailure()?.code||'jenlow_exchange_rejected';
+      }catch{
+        // Fail closed, never fall back to Supabase-only access.
+        failure='jenlow_worker_network_unreachable';
+      }
       if(ticket!==validationId.current)return false;
       if(!workerAccepted){
         verifiedAt.current=0;
@@ -141,6 +154,7 @@ export function AuthProvider({children}:{children:React.ReactNode}){
         setAccessToken(null);
         setSession(null);
         setApiIssue(true);
+        setAuthFailure(failure);
         setValidationError(true);
         setInitialized(true);
         return false;
@@ -152,6 +166,7 @@ export function AuthProvider({children}:{children:React.ReactNode}){
       verifiedUser.current=uid;
       setSession(candidate);
       setApiIssue(false);
+      setAuthFailure(null);
       setValidationError(false);
       setInitialized(true);
       if(!Number.isFinite(last))void AsyncStorage.setItem(
@@ -282,7 +297,8 @@ export function AuthProvider({children}:{children:React.ReactNode}){
 
   const actions=useMemo<AuthContext>(()=>({
     user:session?.user??null,session,initialized,
-    configured:authConfigured,validationError,apiIssue,revalidate,noteActivity,
+    configured:authConfigured,validationError,apiIssue,authFailure,revalidate,
+    completeOAuthSession:verify,noteActivity,
     async signIn(email,password){
       const {data,error}=await client().auth.signInWithPassword({
         email:email.trim().toLowerCase(),password,
@@ -333,7 +349,7 @@ export function AuthProvider({children}:{children:React.ReactNode}){
       if(error)throw error;
     },
     signOut,
-  }),[session,initialized,validationError,apiIssue,revalidate,noteActivity,verify,signOut]);
+  }),[session,initialized,validationError,apiIssue,authFailure,revalidate,noteActivity,verify,signOut]);
   return <Context.Provider value={actions}>{children}</Context.Provider>;
 }
 export function useAuth(){

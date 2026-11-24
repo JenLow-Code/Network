@@ -32,7 +32,7 @@ const checks=[
     layout.includes('<Stack.Protected guard={!!user&&!validationError} redirectTo="/login">')&&
     protectedScreens.has('discover')&&protectedScreens.has('music-hub')],
   ['Supabase login alone can never authorize the UI',
-    provider.includes('const token=await refreshAccessToken()')&&
+    provider.includes('const token=await exchangeSupabaseBearer(candidate.access_token)')&&
     provider.includes("API_BASE+'/v1/auth/me'")&&
     provider.includes('if(!workerAccepted)')&&
     provider.includes('setSession(null)')],
@@ -48,7 +48,9 @@ const checks=[
     api.includes("'/v1/auth/supabase/exchange'")&&
     !api.includes('currentAccessToken() ?? (auth ===')],
   ['OAuth does not bypass the Worker verification',
-    oauth.includes('await revalidate()')&&
+    oauth.includes('await completeOAuthSession(data.session)')&&
+    oauth.includes('if (attempted.current) return;')&&
+    !oauth.includes('await revalidate()')&&
     !oauth.includes("else router.replace('/discover')")],
   ['Google PKCE authorization code is exchanged exactly once (never on re-render)',
     oauth.includes("const attempted = useRef(false)")&&
@@ -56,6 +58,11 @@ const checks=[
     oauth.includes("attempted.current = true;")&&
     oauth.includes("if (!initialized) return;")&&
     !oauth.includes("if(initialized&&validationError)")],
+  ['OAuth validation passes explicit server-verified session rather than stale initial session',
+    provider.includes('completeOAuthSession:verify')&&
+    api.includes('export async function exchangeSupabaseBearer(supabaseBearer:string)')&&
+    api.includes('lastBridgeFailure={code,status:response.status}')&&
+    login.includes('Diagnostic serveur : {authFailure}')],
   ['Auth callback and login remain accessible',
     layout.includes("path==='/auth/callback'")&&layout.includes("path==='/login'")],
   ['Private screen hidden until validated',

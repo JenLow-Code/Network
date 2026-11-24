@@ -29,7 +29,7 @@ export default function Login() {
     [busy, setBusy] = useState(false),
     [error, setError] = useState('');
   const { signIn, signUp, signInWithSocial, resetPassword, configured,
-    apiIssue,validationError,revalidate,signOut } = useAuth();
+    apiIssue,validationError,authFailure,revalidate,signOut } = useAuth();
   const submit = async () => {
     if (busy) return;
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -97,6 +97,9 @@ export default function Login() {
                 ?'Supabase reconnaît ce compte, mais JenLow ne peut pas encore vérifier son identité auprès du serveur. Aucune page privée, y compris Découvrir, n’est accessible.'
                 :'La session n’a pas pu être vérifiée. Aucune page privée n’est accessible.'}
             </Text>
+            {authFailure?<Text style={{color:theme.muted,fontSize:11}}>
+              Diagnostic serveur : {authFailure}
+            </Text>:null}
             <Pressable accessibilityRole="button"
               onPress={()=>{void revalidate();}}
               style={{minHeight:38,backgroundColor:'#CB245C',

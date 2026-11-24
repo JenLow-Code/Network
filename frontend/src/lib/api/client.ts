@@ -27,6 +27,65 @@ export const onSessionChange = (fn: Listener) => {
   return () => listeners.delete(fn);
 };
 
+/**
+ * Auth exchange diagnostics contain only a stable error code and HTTP status,
+ * NEVER the Supabase token or member identity. Safe to show in Login.
+ */
+export type AuthBridgeFailure={code:string;status:number};
+let lastBridgeFailure:AuthBridgeFailure|null=null;
+export const latestAuthBridgeFailure=()=>lastBridgeFailure;
+
+/**
+ * Exchange an explicit Supabase bearer after AuthProvider has verified its
+ * owner with Supabase Auth /user. Do not depend on getSession() again here:
+ * a fresh Google PKCE session can race with the initial app restoration and
+ * with the background shared refresh promise.
+ *
+ * This only mints a Worker bearer. Private navigation still requires
+ * AuthProvider to check /v1/auth/me and match active user + email.
+ */
+export async function exchangeSupabaseBearer(supabaseBearer:string):Promise<string|null>{
+  if(!supabaseBearer){
+    lastBridgeFailure={code:'supabase_session_missing',status:0};
+    return null;
+  }
+  lastBridgeFailure=null;
+  try{
+    const response=await fetch(API_BASE+'/v1/auth/supabase/exchange',{
+      method:'POST',
+      headers:{Accept:'application/json',Authorization:'Bearer '+supabaseBearer},
+    });
+    if(!response.ok){
+      const body=await response.json().catch(()=>null) as {
+        error?:string|{code?:string};
+      }|null;
+      const rawCode=typeof body?.error==='string'?body.error:
+        body?.error?.code||'exchange_http_'+response.status;
+      // Do not render arbitrary server error bodies on the login screen.
+      const code=/^[a-z][a-z0-9_]{0,63}$/.test(rawCode)?
+        rawCode:'exchange_http_'+response.status;
+      lastBridgeFailure={code,status:response.status};
+      setAccessToken(null);
+      if(response.status===401||response.status===403)
+        listeners.forEach(fn=>fn(false));
+      return null;
+    }
+    const exchanged=await response.json() as {
+      accessToken?:string;expiresIn?:number;
+    };
+    if(!exchanged.accessToken){
+      lastBridgeFailure={code:'exchange_response_invalid',status:response.status};
+      return null;
+    }
+    setAccessToken(exchanged.accessToken,exchanged.expiresIn||900);
+    listeners.forEach(fn=>fn(true));
+    return exchanged.accessToken;
+  }catch{
+    lastBridgeFailure={code:'exchange_network_unreachable',status:0};
+    return null;
+  }
+}
+
 /** Transparently restore the API token from a validated Supabase login. */
 export function refreshAccessToken():Promise<string|null>{
   if(refreshing)return refreshing;
@@ -35,32 +94,17 @@ export function refreshAccessToken():Promise<string|null>{
       if(!supabase)return null;
       const {data,error}=await supabase.auth.getSession();
       if(error||!data.session?.access_token){
+        lastBridgeFailure={code:'supabase_session_missing',status:0};
         setAccessToken(null);
         listeners.forEach(fn=>fn(false));
         return null;
       }
-      // The server calls Supabase Auth /user. Client-decoded claims, emails
-      // and unsigned/local session objects never authorize access to D1.
-      const response=await fetch(API_BASE+'/v1/auth/supabase/exchange',{
-        method:'POST',
-        headers:{Accept:'application/json',
-          Authorization:'Bearer '+data.session.access_token},
-      });
-      if(!response.ok){
-        setAccessToken(null);
-        if(response.status===401||response.status===403)
-          listeners.forEach(fn=>fn(false));
-        return null;
-      }
-      const exchanged=await response.json() as {
-        accessToken?:string;expiresIn?:number;
-      };
-      if(!exchanged.accessToken)return null;
-      setAccessToken(exchanged.accessToken,exchanged.expiresIn||900);
-      listeners.forEach(fn=>fn(true));
-      return exchanged.accessToken;
-    }catch{return null;}
-    finally{refreshing=null;}
+      // The Worker revalidates this bearer against Supabase Auth /user.
+      return await exchangeSupabaseBearer(data.session.access_token);
+    }catch{
+      lastBridgeFailure={code:'supabase_session_read_failed',status:0};
+      return null;
+    }finally{refreshing=null;}
   })();
   return refreshing;
 }
