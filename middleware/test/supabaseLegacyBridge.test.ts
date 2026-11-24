@@ -32,7 +32,7 @@ function stubSupabase(options:{id?:string;email?:string;verified?:boolean;
       /^sb_publishable_/);
     assert.equal((init?.headers as Record<string,string>)?.Authorization,
       'Bearer validated-supabase-token');
-    assert.equal(init?.redirect,'error');
+    assert.equal(init?.redirect,'manual');
     // The legacy Cloudflare production Worker must not require an
     // AbortSignal.timeout implementation to contact Supabase Auth.
     assert.equal(init?.signal,undefined);
@@ -178,6 +178,19 @@ test('Supabase HTTP 5xx and rate limiting return safe, actionable codes',async()
       assert.equal(r.status,503);
       assert.equal(r.body.error,
         status===429?'identity_provider_rate_limited':'identity_provider_http_'+status);
+      assert.equal(up.calls(),1);
+    }finally{up.restore();}
+  }
+});
+
+test('Supabase redirects must never be followed with a bearer token',async()=>{
+  const app=createApp();
+  for(const status of [301,302,307,308]){
+    const up=stubSupabase({status});
+    try{
+      const r=await call(envFor(app.db),'validated-supabase-token');
+      assert.equal(r.status,503);
+      assert.equal(r.body.error,'identity_provider_redirect_rejected');
       assert.equal(up.calls(),1);
     }finally{up.restore();}
   }
