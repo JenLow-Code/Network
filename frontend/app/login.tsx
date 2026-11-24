@@ -28,7 +28,8 @@ export default function Login() {
     [code, setCode] = useState(''),
     [busy, setBusy] = useState(false),
     [error, setError] = useState('');
-  const { signIn, signUp, signInWithSocial, resetPassword, configured } = useAuth();
+  const { signIn, signUp, signInWithSocial, resetPassword, configured,
+    apiIssue,validationError,revalidate,signOut } = useAuth();
   const submit = async () => {
     if (busy) return;
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -63,6 +64,8 @@ export default function Login() {
         password_auth_unavailable:
           'Email sign-in is temporarily unavailable. The server needs an authentication provider.',
         request_failed: 'Unable to reach the server. Check your internet connection.',
+        jenlow_api_unavailable:
+          'Votre compte a été reconnu par Supabase, mais pas encore par JenLow. Accès bloqué jusqu’à la vérification du serveur.',
       };
       setError(errors[key] || key);
     } finally {
@@ -83,6 +86,33 @@ export default function Login() {
           <Text style={[s.subheading,{color:theme.muted}]}>
             {register ? 'Créer mon compte' : 'Se connecter à JenLow Network'}
           </Text>
+          {validationError?<View style={{width:'100%',gap:10,
+            borderWidth:1,borderRadius:12,borderColor:theme.border,
+            backgroundColor:theme.surface,padding:14,marginBottom:16}}>
+            <Text style={{fontWeight:'700',fontSize:13,color:theme.foreground}}>
+              Accès à JenLow momentanément verrouillé
+            </Text>
+            <Text style={{color:theme.muted,fontSize:12,lineHeight:19}}>
+              {apiIssue
+                ?'Supabase reconnaît ce compte, mais JenLow ne peut pas encore vérifier son identité auprès du serveur. Aucune page privée, y compris Découvrir, n’est accessible.'
+                :'La session n’a pas pu être vérifiée. Aucune page privée n’est accessible.'}
+            </Text>
+            <Pressable accessibilityRole="button"
+              onPress={()=>{void revalidate();}}
+              style={{minHeight:38,backgroundColor:'#CB245C',
+                borderRadius:9,justifyContent:'center',alignItems:'center'}}>
+              <Text style={{fontWeight:'700',fontSize:12,color:'#FFFFFF'}}>
+                Réessayer la vérification
+              </Text>
+            </Pressable>
+            <Pressable accessibilityRole="button"
+              onPress={()=>{void signOut();}}
+              style={{padding:7,alignItems:'center'}}>
+              <Text style={{fontWeight:'600',fontSize:11,color:theme.muted}}>
+                Changer de compte
+              </Text>
+            </Pressable>
+          </View>:null}
           {register ? (
             <TextInput
               value={name}
