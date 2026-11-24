@@ -1,10 +1,17 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/context/AuthProvider';
 
-/** Supports web auth callback URLs and native PKCE redirects. */
+/**
+ * Google/Apple PKCE web callback.
+ *
+ * A PKCE authorization code is SINGLE USE. The root AuthProvider may finish
+ * restoring the prior session while this page mounts, so do not run the
+ * exchange again when "initialized", "validationError", or "user" changes.
+ * Google acceptance never bypasses JenLow's independent Worker verification.
+ */
 export default function AuthCallback() {
   const params = useLocalSearchParams<{
     code?: string;
@@ -12,59 +19,68 @@ export default function AuthCallback() {
     error_description?: string;
   }>();
   const { user, revalidate, initialized, validationError } = useAuth();
+  const attempted = useRef(false);
+  const [exchanged, setExchanged] = useState(false);
   const [error, setError] = useState('');
+
   useEffect(() => {
-    let alive = true;
-    const finish = async () => {
-      if (user) {
-        router.replace('/discover');
-        return;
-      }
-      if (params.error || params.error_description) {
-        setError(params.error_description || params.error || 'OAuth failed');
-        return;
-      }
-      if (typeof params.code === 'string' && supabase) {
-        const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(params.code);
-        if (exchangeError) {
-          if (alive) setError(exchangeError.message);
-        } else {
-          // OAuth success alone is not an authenticated JenLow session.
-          // The Worker must independently recognize the identity before
-          // the protected Discovery route may open.
-          await revalidate();
-        }
-      } else if (alive) setError('No authorization code received');
-    };
-    if(initialized&&validationError){
-      router.replace('/login');
+    if (!initialized) return;
+    // AuthProvider only exposes user after Supabase AND JenLow accepted it.
+    if (user) {
+      router.replace('/discover');
       return;
     }
-    void finish();
-    return () => {
-      alive = false;
-    };
-  }, [params.code, params.error, params.error_description, user, initialized, validationError, revalidate]);
+    if (params.error || params.error_description) {
+      setError(params.error_description || params.error || 'Google login failed');
+      return;
+    }
+    const code = params.code;
+    if (typeof code !== 'string' || !code) {
+      setError('Aucun code de connexion reçu. Réessayez avec Google.');
+      return;
+    }
+    if (attempted.current) return;
+    attempted.current = true;
+    let alive = true;
+    void (async () => {
+      if (!supabase) {
+        if (alive) setError('Le service de connexion n’est pas configuré.');
+        return;
+      }
+      try {
+        const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+        if (exchangeError) throw exchangeError;
+        // The OAuth code was consumed successfully. Never consume it again.
+        // A Supabase session alone must not reveal Discovery or private pages.
+        await revalidate();
+        if (alive) setExchanged(true);
+      } catch (e) {
+        if (alive) setError(e instanceof Error ? e.message : 'Échec de la connexion Google.');
+      }
+    })();
+    return () => { alive = false; };
+  }, [initialized, user, params.code, params.error, params.error_description, revalidate]);
+
+  useEffect(() => {
+    // Remain on this public callback page and show a usable explanation
+    // rather than silently discarding the OAuth result or looping.
+    if (exchanged && validationError && !user)
+      setError('Google a reconnu votre compte, mais JenLow n’a pas pu vérifier la session. Réessayez depuis la page de connexion.');
+  }, [exchanged, validationError, user]);
+
   return (
-    <View
-      style={{
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: 28,
-        backgroundColor: '#fff',
-      }}
-    >
+    <View style={{
+      flex: 1, justifyContent: 'center', alignItems: 'center', padding: 28,
+      backgroundColor: '#fff',
+    }}>
       {error ? (
         <>
-          <Text style={{ color: '#9e3158', marginBottom: 16 }}>{error}</Text>
-          <Pressable onPress={() => router.replace('/login')}>
-            <Text>Back to sign in</Text>
+          <Text style={{ color: '#9e3158', marginBottom: 16, textAlign: 'center' }}>{error}</Text>
+          <Pressable accessibilityRole="button" onPress={() => router.replace('/login')}>
+            <Text>Retour à la connexion</Text>
           </Pressable>
         </>
-      ) : (
-        <ActivityIndicator />
-      )}
+      ) : <ActivityIndicator />}
     </View>
   );
 }

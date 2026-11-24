@@ -50,6 +50,12 @@ const checks=[
   ['OAuth does not bypass the Worker verification',
     oauth.includes('await revalidate()')&&
     !oauth.includes("else router.replace('/discover')")],
+  ['Google PKCE authorization code is exchanged exactly once (never on re-render)',
+    oauth.includes("const attempted = useRef(false)")&&
+    oauth.includes("if (attempted.current) return;")&&
+    oauth.includes("attempted.current = true;")&&
+    oauth.includes("if (!initialized) return;")&&
+    !oauth.includes("if(initialized&&validationError)")],
   ['Auth callback and login remain accessible',
     layout.includes("path==='/auth/callback'")&&layout.includes("path==='/login'")],
   ['Private screen hidden until validated',
