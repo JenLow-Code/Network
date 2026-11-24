@@ -70,18 +70,18 @@ assert.ok(hero.includes('const iconOnlyPhases = narrow;') &&
   hero.includes("tintColor={selected?activeAccent:reached?theme.muted:theme.border}") &&
   hero.includes('accessibilityLabel={\'Ouvrir \'+PHASE_LABELS[item]}') &&
   hero.includes("accessibilityState={{selected,disabled:!reached||!onNavigate}}") &&
-  hero.includes('minHeight:iconOnlyPhases?42:') &&
-  hero.includes("backgroundColor:reached?activeAccent:theme.border") &&
+  hero.includes('minHeight:iconOnlyPhases?34:') &&
+  hero.includes("backgroundColor:selected?activeAccent:'transparent'") &&
   hero.includes('{iconOnlyPhases ?'),
   'Dream phase tabs must be icon-only on phones while preserving phase colours and locking');
 
-// The four aspiration icons and the completion line live inside the single
+// The four aspiration icons and their selected stage dot live inside the single
 // PageHeader on phones. Music gets its own pill/segment surface, separate from
 // the global Back, Fire, and Chat buttons.
 assert.ok(hero.includes('<PageHeader center={advancement} centerOverlayOnMobile onBack={onBack}/>') &&
   !hero.includes('>{advancement}</View>') &&
-  /\{iconOnlyPhases \?[\s\S]*?DreamPhaseIcon[\s\S]*?backgroundColor:reached\?activeAccent:theme.border/.test(hero),
-  'Mobile phase icons and their progress underline must share the top header');
+  /\{iconOnlyPhases \?[\s\S]*?DreamPhaseIcon[\s\S]*?backgroundColor:selected\?activeAccent:'transparent'/.test(hero),
+  'Mobile phase icons and selected progress dot must share the top header');
 assert.ok(musicTabs.includes("backgroundColor:'transparent',borderWidth:0,padding:0") &&
   musicTabs.includes("width:compact?142:undefined") &&
   musicTabs.includes('accessibilityRole="tablist"'),
