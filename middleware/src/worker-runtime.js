@@ -31,14 +31,14 @@ async function logout(request,env){const b=await request.json().catch(()=>null);
  */
 const SUPABASE_DEFAULT_URL="https://ldliraxelqftisjofwgv.supabase.co";
 const SUPABASE_DEFAULT_PUBLIC_KEY="sb_publishable_cpxxQyXcEYEy3mwWAaTG9w_QNFg9tC9";
-const CONFIRMED_EMAIL=/^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$/;
+const CONFIRMED_EMAIL=/^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
 async function exchangeSupabase(request,env){
-  const token=request.headers.get('authorization')?.match(/^Bearer ([^\\s]+)$/i)?.[1];
+  const token=request.headers.get('authorization')?.match(/^Bearer ([^\s]+)$/i)?.[1];
   if(!token||token.length>8192)return error('not_authenticated',401);
-  const base=(env.SUPABASE_URL||SUPABASE_DEFAULT_URL).replace(/\\/$/,'');
+  const base=(env.SUPABASE_URL||SUPABASE_DEFAULT_URL).replace(/\/$/,'');
   const apikey=env.SUPABASE_PUBLISHABLE_KEY||SUPABASE_DEFAULT_PUBLIC_KEY;
-  if(!/^https:\/\/[a-z0-9-]+\\.supabase\\.co$/i.test(base)||!apikey)
+  if(!/^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(base)||!apikey)
     return error('identity_provider_not_configured',503);
   let upstream;
   try{
@@ -87,7 +87,7 @@ async function exchangeSupabase(request,env){
       const id=crypto.randomUUID();
       const name=String(identity.user_metadata?.display_name||
         identity.user_metadata?.full_name||email.split('@')[0]||'Membre JenLow')
-        .replace(/[\\r\\n\\t]/g,' ').trim().slice(0,90)||'Membre JenLow';
+        .replace(/[\r\n\t]/g,' ').trim().slice(0,90)||'Membre JenLow';
       const handle='jl_'+id.replace(/-/g,'').slice(0,15);
       try{
         await env.DB.batch([
