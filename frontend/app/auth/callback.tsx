@@ -11,7 +11,7 @@ export default function AuthCallback() {
     error?: string;
     error_description?: string;
   }>();
-  const { user } = useAuth();
+  const { user, revalidate, initialized, validationError } = useAuth();
   const [error, setError] = useState('');
   useEffect(() => {
     let alive = true;
@@ -28,14 +28,23 @@ export default function AuthCallback() {
         const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(params.code);
         if (exchangeError) {
           if (alive) setError(exchangeError.message);
-        } else router.replace('/discover');
+        } else {
+          // OAuth success alone is not an authenticated JenLow session.
+          // The Worker must independently recognize the identity before
+          // the protected Discovery route may open.
+          await revalidate();
+        }
       } else if (alive) setError('No authorization code received');
     };
+    if(initialized&&validationError){
+      router.replace('/login');
+      return;
+    }
     void finish();
     return () => {
       alive = false;
     };
-  }, [params.code, params.error, params.error_description, user]);
+  }, [params.code, params.error, params.error_description, user, initialized, validationError, revalidate]);
   return (
     <View
       style={{
