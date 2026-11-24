@@ -507,15 +507,17 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
                     </Pressable>;
                     // Only the dream's actual current chapter owns navigation children.
                     // Browsing historical read-only phases must not open duplicate submenus.
-                    // Semence only exposes personal notes as a workspace shortcut.
-                    if(!reached||!activeChapter||phase==='Rêve')return phaseNav;
+                    // Semence keeps its private notes below the chapter in the navigation.
+                    if(!reached||!activeChapter)return phaseNav;
                     return <React.Fragment key={phase}>
                       {phaseNav}
                       <View style={{marginLeft:14,paddingLeft:10,
                         borderLeftWidth:1,borderLeftColor:theme.dark?
                           'rgba(255,255,255,.15)':'rgba(71,77,78,.15)',
                         gap:1,marginVertical:2}}>
-                        {(phase==='Initiation'?[
+                        {(phase==='Rêve'?[
+                            {kind:'notes' as const,title:'Notes personnelles'},
+                          ]:phase==='Initiation'?[
                             {kind:'library' as const,title:'Documents & Inspirations'},
                             {kind:'notes' as const,title:'Notes personnelles'},
                           ]:[
