@@ -55,12 +55,11 @@ const musicTabs = source('src/components/music/MusicWorkspaceTabs.tsx');
 assert.ok(musicTabs.includes("accessibilityRole=\"tablist\"") &&
   musicTabs.includes('accessibilityLabel={item.title}') &&
   musicTabs.includes('accessibilityState={{selected}}') &&
-  musicTabs.includes('!compact?<Text') &&
-  musicTabs.includes('borderBottomWidth:selected?2:0') &&
-  musicTabs.includes("borderRadius:compact?12:0,padding:compact?3:0") &&
-  musicTabs.includes("backgroundColor:compact&&selected?") &&
+  musicTabs.includes("width:compact?142:undefined") &&
+  musicTabs.includes("flexDirection:compact?'column':'row'") &&
+  musicTabs.includes("backgroundColor:selected?'#CB245C':'transparent'") &&
   musicTabs.includes("color={selected?'#CB245C':theme.muted}"),
-  'Phone music tabs must be equally sized, icon-only and magenta when active');
+  'Phone Music tabs must keep accessible magenta icon-and-dot selection');
 const discover = source('app/discover.tsx');
 assert.ok(discover.includes('accessibilityRole="tablist"') &&
   discover.includes('{filters.map(f=>(') &&
@@ -83,11 +82,10 @@ assert.ok(hero.includes('<PageHeader center={advancement} centerOverlayOnMobile 
   !hero.includes('>{advancement}</View>') &&
   /\{iconOnlyPhases \?[\s\S]*?DreamPhaseIcon[\s\S]*?backgroundColor:reached\?activeAccent:theme.border/.test(hero),
   'Mobile phase icons and their progress underline must share the top header');
-assert.ok(musicTabs.includes("backgroundColor:compact?(theme.dark?'#252B2B':'#F3F0EA')") &&
-  musicTabs.includes("borderWidth:compact?1:0,borderColor:theme.border") &&
-  musicTabs.includes("backgroundColor:compact&&selected?") &&
+assert.ok(musicTabs.includes("backgroundColor:'transparent',borderWidth:0,padding:0") &&
+  musicTabs.includes("width:compact?142:undefined") &&
   musicTabs.includes('accessibilityRole="tablist"'),
-  'Mobile Music tabs need a single distinct segmented grouping around icon-only controls');
+  'Mobile Music tabs need their own light icon-only group, separate from global actions');
 
 // Semence must display the existing inspiration moodboard, its + control,
 // and the original chooser for links, documents, images, verses and references.
