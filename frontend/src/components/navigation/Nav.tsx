@@ -14,6 +14,7 @@ import { musicNextState } from '@/domain/musicNext';
 import { api } from '@/lib/api/client';
 import { MusicFolderCover } from '@/components/music/MusicFolderCover';
 import { NetworkMark } from '@/components/brand/NetworkMark';
+import { AspirationNavIcon } from '@/icons/AspirationNavIcon';
 import { isPublishedFlower } from '@/domain/dreamWorkspace';
 import { DREAM_PHASES, PHASE_LABELS, type DreamPhase } from '@/domain/publication';
 import { workspaceLayout } from '@/theme/workspaceLayout';
@@ -207,6 +208,8 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
           position:'absolute',left:0,top:10,bottom:10,width:3,
           backgroundColor:activeColor,borderRadius:3}}/>:null}
         {item.path==='/profile'?profileAvatar(24,item.active):
+          item.path==='/my-space'?<AspirationNavIcon size={20}
+            color={item.active?activeColor:theme.muted}/>:
           <Ionicons name={item.path==='/discover'?'ellipse-outline':item.icon}
             size={19} color={item.active?activeColor:theme.muted}/>} 
         {!collapsed?<Text numberOfLines={1} style={{
@@ -610,6 +613,9 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
             }} />
           ) : x.path === '/profile' ? (
             profileAvatar(28,x.active)
+          ) : x.path === '/my-space' ? (
+            <AspirationNavIcon size={24}
+              color={x.active ? (theme.dark ? theme.accent : '#CB245C') : foreground}/>
           ) : (
             <Ionicons
               name={
