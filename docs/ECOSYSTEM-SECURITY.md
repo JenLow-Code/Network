@@ -20,3 +20,5 @@ Existing account IDs, password hashes and token audience are preserved. Other pr
 ## Production bridge remediation
 
 Production D1 had zero legacy credentials and zero active legacy sessions; the admin was already linked to Supabase and active. A narrowly scoped version of the existing live Worker was uploaded with strict inheritance of the existing bindings (5c8986f4-35a0-452d-8144-e583b532ea51). It retires custom password/register/refresh/logout routes (410), rejects email-only account linking and rate-limits Supabase exchange. It is not the full rewritten TypeScript middleware. The existing Google project and redirect configuration remain unchanged. Preview smoke tests are required before promoting. Real sign-in and broader session/security acceptance remain required.
+
+The preview HTTP smoke passed (run 45445006789), and the hotfix was promoted to 100% production traffic. Previous rollback version: 5c99d936-d4c3-4306-97b5-cb8391240dc4. This is a narrow runtime hotfix, not deployment of the rewritten middleware. Production smoke and valid-user login verification remain required.
