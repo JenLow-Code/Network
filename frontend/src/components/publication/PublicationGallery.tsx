@@ -544,7 +544,11 @@ function adaptiveTileHeight(item: Publication, width: number): number {
 }
 
 function MasonryGallery({ items, viewportWidth, flushEdges = false }: { items: Publication[]; viewportWidth: number; flushEdges?: boolean }) {
-  const columns = viewportWidth >= 1100 ? 4 : viewportWidth >= 700 ? 3 : 2;
+  const {width:screenWidth}=useWindowDimensions();
+  // Column count follows the device class, never the local gallery width.
+  // This keeps Discovery and related inspiration consistent:
+  // desktop 4 · tablet 3 · phone 2.
+  const columns = screenWidth >= 1100 ? 4 : screenWidth >= 700 ? 3 : 2;
   const gap = viewportWidth < 700 ? 12 : viewportWidth < 1100 ? 17 : 19;
   const inset = flushEdges ? 0 : 15;
   const contentWidth = Math.max(0, viewportWidth - inset * 2);
