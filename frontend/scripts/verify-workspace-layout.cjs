@@ -363,10 +363,14 @@ const aspirationNav=read('src/components/navigation/Nav.tsx');
 for(const [source,needle] of [
   [aspirationIcon, 'export function AspirationNavIcon'],
   [aspirationIcon, 'viewBox="0 0 24 24"'],
-  [aspirationIcon, 'fill={color}'],
+  [aspirationIcon, "fill={active?color:'none'}"],
+  [aspirationIcon, "stroke={active?'none':color}"],
+  [aspirationIcon, 'strokeWidth={1.55}'],
   [aspirationNav, "item.path==='/my-space'?<AspirationNavIcon size={20}"],
+  [aspirationNav, 'active={item.active}'],
   [aspirationNav, "x.path === '/my-space' ? ("],
   [aspirationNav, '<AspirationNavIcon size={24}'],
+  [aspirationNav, 'active={x.active}'],
   [aspirationNav, "title: t('dreamsNav')"],
   [aspirationNav, "path: '/my-space' as const"],
 ]){
