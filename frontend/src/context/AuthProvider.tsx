@@ -6,6 +6,8 @@ import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
 import {authConfigured,supabase} from '@/lib/supabaseClient';
 import {setAccessToken} from '@/lib/api/session';
+import {API_BASE} from '@/lib/authApi';
+import {refreshAccessToken,onSessionChange} from '@/lib/api/client';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -23,6 +25,9 @@ type AuthContext={
   initialized:boolean;
   configured:boolean;
   validationError:boolean;
+  /** Supabase may be valid while JenLow API identity is unavailable.
+   * This state is never sufficient to unlock private routes. */
+  apiIssue:boolean;
   revalidate:()=>Promise<void>;
   noteActivity:()=>void;
   signIn:(email:string,password:string)=>Promise<void>;
@@ -43,6 +48,7 @@ export function AuthProvider({children}:{children:React.ReactNode}){
   const [session,setSession]=useState<Session|null>(null);
   const [initialized,setInitialized]=useState(false);
   const [validationError,setValidationError]=useState(false);
+  const [apiIssue,setApiIssue]=useState(false);
   const verifiedAt=useRef(0);
   const activeAt=useRef(0);
   const lastWrite=useRef(0);
@@ -58,6 +64,7 @@ export function AuthProvider({children}:{children:React.ReactNode}){
     setSession(null);
     setAccessToken(null);
     setValidationError(false);
+    setApiIssue(false);
     setInitialized(true);
   },[]);
 
@@ -68,54 +75,88 @@ export function AuthProvider({children}:{children:React.ReactNode}){
     if(supabase)await supabase.auth.signOut({scope:'local'});
   },[clear]);
 
-  const verify=useCallback(async(candidate:Session|null)=>{
+  const verify=useCallback(async(candidate:Session|null>):Promise<boolean>=>{
     const ticket=++validationId.current;
     if(!candidate){
       clear();
-      return;
+      return false;
     }
     try{
       const uid=candidate.user.id;
       if(!uid || candidate.user.is_anonymous){
         await client().auth.signOut({scope:'local'});
         if(ticket===validationId.current)clear();
-        return;
+        return false;
       }
       const raw=await AsyncStorage.getItem(ACTIVITY_KEY+uid);
       const last=raw?Number(raw):NaN;
       if(Number.isFinite(last)&&Date.now()-last>=INACTIVITY_TIMEOUT_MS){
         await client().auth.signOut({scope:'local'});
         if(ticket===validationId.current)clear();
-        return;
+        return false;
       }
       // getSession() alone reads untrusted local storage. The Auth server
       // validates the session before any protected screen can be mounted.
       const {data,error}=await client().auth.getUser();
       if(error||!data.user||data.user.id!==uid){
-        if(ticket!==validationId.current)return;
+        if(ticket!==validationId.current)return false;
         if(error && (error.status===0 || !error.status || error.status>=500)){
           verifiedAt.current=0;
           verifiedUser.current=null;
           setValidationError(true);
           setSession(null);
           setInitialized(true);
-          return; // Network outage: keep credentials for a later retry.
+          return false; // Network outage: keep credentials for a later retry.
         }
         await client().auth.signOut({scope:'local'}).catch(()=>{});
         if(ticket===validationId.current)clear();
-        return;
+        return false;
       }
-      if(ticket!==validationId.current)return;
+      if(ticket!==validationId.current)return false;
+      // A valid Supabase login is NOT sufficient to open JenLow Network.
+      // The Worker must independently verify and map this same user before
+      // any protected screen, including Discovery, can render.
+      let workerAccepted=false;
+      try{
+        setAccessToken(null);
+        const token=await refreshAccessToken();
+        if(token){
+          const response=await fetch(API_BASE+'/v1/auth/me',{
+            method:'GET',headers:{Authorization:'Bearer '+token,Accept:'application/json'},
+          });
+          if(response.ok){
+            const result=await response.json() as {
+              user?:{email?:string;account_status?:string};
+            };
+            workerAccepted=Boolean(data.user.email&&
+              result.user?.email?.toLowerCase()===data.user.email.toLowerCase()&&
+              result.user?.account_status==='active');
+          }
+        }
+      }catch{/* Fail closed, never fall back to Supabase-only access. */}
+      if(ticket!==validationId.current)return false;
+      if(!workerAccepted){
+        verifiedAt.current=0;
+        verifiedUser.current=null;
+        setAccessToken(null);
+        setSession(null);
+        setApiIssue(true);
+        setValidationError(true);
+        setInitialized(true);
+        return false;
+      }
       const now=Date.now();
       verifiedAt.current=now;
       activeAt.current=Number.isFinite(last)&&last>0?last:now;
       lastWrite.current=now;
       verifiedUser.current=uid;
       setSession(candidate);
+      setApiIssue(false);
       setValidationError(false);
       setInitialized(true);
       if(!Number.isFinite(last))void AsyncStorage.setItem(
         ACTIVITY_KEY+uid,String(now)).catch(()=>{});
+      return true;
     }catch{
       if(ticket===validationId.current){
         verifiedAt.current=0;
@@ -124,6 +165,7 @@ export function AuthProvider({children}:{children:React.ReactNode}){
         setSession(null);
         setInitialized(true);
       }
+      return false;
     }
   },[clear]);
 
@@ -152,6 +194,22 @@ export function AuthProvider({children}:{children:React.ReactNode}){
     lastWrite.current=now;
     void AsyncStorage.setItem(ACTIVITY_KEY+uid,String(now)).catch(()=>{});
   },[signOut,validationError]);
+
+  useEffect(()=>{
+    // A previously verified account becomes locked immediately if the
+    // API's token is later revoked; resource-specific 403 is not a logout.
+    return onSessionChange(authorized=>{
+      if(!authorized&&verifiedUser.current){
+        verifiedUser.current=null;
+        verifiedAt.current=0;
+        setAccessToken(null);
+        setSession(null);
+        setApiIssue(true);
+        setValidationError(true);
+        setInitialized(true);
+      }
+    });
+  },[]);
 
   useEffect(()=>{
     if(!supabase){setInitialized(true);return;}
@@ -223,13 +281,13 @@ export function AuthProvider({children}:{children:React.ReactNode}){
 
   const actions=useMemo<AuthContext>(()=>({
     user:session?.user??null,session,initialized,
-    configured:authConfigured,validationError,revalidate,noteActivity,
+    configured:authConfigured,validationError,apiIssue,revalidate,noteActivity,
     async signIn(email,password){
       const {data,error}=await client().auth.signInWithPassword({
         email:email.trim().toLowerCase(),password,
       });
       if(error)throw error;
-      await verify(data.session);
+      if(!await verify(data.session))throw new Error('jenlow_api_unavailable');
     },
     async signUp(name,email,password){
       const {data,error}=await client().auth.signUp({
@@ -237,7 +295,8 @@ export function AuthProvider({children}:{children:React.ReactNode}){
         options:{data:{display_name:name.trim()}},
       });
       if(error)throw error;
-      if(data.session)await verify(data.session);
+      if(data.session&&!await verify(data.session))
+        throw new Error('jenlow_api_unavailable');
       return data.session?'confirmed':'email_confirmation_required';
     },
     async signInWithSocial(provider){
@@ -263,7 +322,8 @@ export function AuthProvider({children}:{children:React.ReactNode}){
       if(!code)throw new Error('oauth_authorization_code_missing');
       const {data:exchanged,error:exchangeError}=await auth.auth.exchangeCodeForSession(code);
       if(exchangeError)throw exchangeError;
-      await verify(exchanged.session);
+      if(!await verify(exchanged.session))
+        throw new Error('jenlow_api_unavailable');
     },
     async resetPassword(email){
       const callback=Linking.createURL('auth/callback',{scheme:'jenlownetwork'});
@@ -272,7 +332,7 @@ export function AuthProvider({children}:{children:React.ReactNode}){
       if(error)throw error;
     },
     signOut,
-  }),[session,initialized,validationError,revalidate,noteActivity,verify,signOut]);
+  }),[session,initialized,validationError,apiIssue,revalidate,noteActivity,verify,signOut]);
   return <Context.Provider value={actions}>{children}</Context.Provider>;
 }
 export function useAuth(){
