@@ -108,6 +108,30 @@ assert.ok(nav.includes('centerOverlayOnMobile') &&
   hero.includes('centerOverlayOnMobile onBack={onBack}'),
   'Mobile dream phase tabs must occupy the same top header row between Back and Fire/Chat');
 
+// Empty Semence keeps the complete inspiration picker one tap away. Actions
+// sit below the scrolling inspiration canvas, rather than midway down the page.
+const navTree = source('src/components/navigation/Nav.tsx');
+const publishedCard = source('src/components/dream/PublishedSemenceCard.tsx');
+const sharePanel = source('src/components/dream/SemenceShare.tsx');
+assert.ok(inspirations.includes('showAddControl&&blocks.length>0') &&
+  inspirations.includes('accessibilityRole="link"') &&
+  inspirations.includes('Ajouter une inspiration') &&
+  inspirations.includes("setChoosing(true);setMessage('');"),
+  'Empty inspirations need a working inline link to the original media/link/document picker');
+assert.ok(semence.indexOf('</ScrollView>') < semence.indexOf('<DreamMilestoneActions') &&
+  semence.includes('<DreamMilestoneActions anchored equalUtilityButtons secondaryFirst') &&
+  semence.includes('primaryLabel="Faire germer cette semence"') &&
+  semence.includes('secondaryLabel="Publier cette semence"') &&
+  semence.includes('destructiveLabel="Arracher"'),
+  'Semence actions should anchor below scroll with equal width publication and destructive controls');
+assert.ok(navTree.includes("phase==='Rêve'?[") &&
+  navTree.includes("{kind:'notes' as const,title:'Notes personnelles'}") &&
+  !navTree.includes("||phase==='Rêve')return phaseNav;"),
+  'Semence personal notes must be reachable from the sidebar');
+assert.ok(publishedCard.includes("justifyContent:'flex-start'") &&
+  sharePanel.includes("<View style={{alignItems:'flex-start'}}>"),
+  'Semence publication headers and the publication preview default to left alignment');
+
 // The personal shortcut icons once rendered as isolated symbols on the far left
 // of full-width pages. Only those two rows should omit their leading icon.
 const shortcuts = source('src/components/dream/DreamWorkspaceShortcuts.tsx');
@@ -124,11 +148,11 @@ assert.ok(!milestone.includes('PROCHAINE ÉTAPE') &&
   !milestone.includes("fontFamily:'serif'") &&
   milestone.includes("minWidth:desktop?194:undefined") &&
   milestone.includes("backgroundColor:pressed?'#292929':'#151515'") &&
-  milestone.includes('{destructive}') && milestone.includes('{secondary}') &&
-  milestone.indexOf('{destructive}') < milestone.indexOf('{secondary}') &&
-  milestone.indexOf('{secondary}') < milestone.indexOf('{primary}') &&
+  milestone.includes('secondaryFirst ? <>{secondary}{destructive}</> : <>{destructive}{secondary}</>') &&
+  milestone.includes("equalUtilityButtons ? 174") &&
+  milestone.includes("marginTop:anchored?0:desktop?30:23") &&
   milestone.includes("accessibilityState={{disabled:primaryDisabled}}"),
-  'The three milestone buttons must stay functional without an unrequested heading, with destructive first');
+  'The three actions must retain their hierarchy with optional equal-width Semence utilities');
 for (const [file,nextStage] of [
   ['src/components/dream/SemenceStudio.tsx','Germination'],
   ['src/components/dream/DreamExperience.tsx','Croissance'],

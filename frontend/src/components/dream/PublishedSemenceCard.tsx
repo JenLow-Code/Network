@@ -35,7 +35,7 @@ export default function PublishedSemenceCard({item,width,onPress,preview=false,r
    style={{width,backgroundColor:theme.dark?'#282827':'#F4F0E9',
      borderRadius:rounded?16:11,overflow:'hidden',padding:11,gap:9,
      borderWidth:0.5,borderColor:theme.dark?'#43413F':'#EAE5DE'}}>
-   <View style={{flexDirection:'row',alignItems:'center',justifyContent:'flex-end',
+   <View style={{flexDirection:'row',alignItems:'center',justifyContent:'flex-start',
      minHeight:16,gap:5}}>
      {item.visibility==='friends'?<Ionicons name="lock-closed-outline"
        size={12} color={theme.muted}/>:null}
@@ -44,7 +44,8 @@ export default function PublishedSemenceCard({item,width,onPress,preview=false,r
    </View>
    <Text numberOfLines={preview?undefined:3}
      style={{fontFamily:'serif',fontSize:preview?22:19,
-       lineHeight:preview?29:25,color:theme.foreground,marginBottom:1}}>
+       lineHeight:preview?29:25,color:theme.foreground,marginBottom:1,
+       textAlign:'left'}}>
      {item.title}
    </Text>
    {gallery}

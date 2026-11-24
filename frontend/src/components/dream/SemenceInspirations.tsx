@@ -465,7 +465,7 @@ export default function SemenceInspirations({dream,editable,onShareInspiration,a
         borderRadius:11,backgroundColor:theme.background}}/>;
 
   return <View style={{paddingBottom:12,gap:12}}>
-    {showAddControl?<View style={{flexDirection:'row',alignItems:'center',justifyContent:'flex-end',gap:8}}>
+    {showAddControl&&blocks.length>0?<View style={{flexDirection:'row',alignItems:'center',justifyContent:'flex-end',gap:8}}>
       {editable&&showAddControl?<Pressable accessibilityRole="button" accessibilityLabel="Ajouter une inspiration"
         onPress={()=>{setChoosing(true);setMessage('');}}
         style={{width:36,height:36,alignItems:'center',justifyContent:'center',
@@ -493,9 +493,18 @@ export default function SemenceInspirations({dream,editable,onShareInspiration,a
       gap:12,paddingHorizontal:20}}>
       <Ionicons name="images-outline" size={26} color={theme.muted}/>
       <Text style={{fontSize:13,lineHeight:21,textAlign:'center',color:theme.muted}}>
-        {editable?'Une image, un verset, une citation…\nAjoute ce qui te donne envie d’avancer.':
-          'Aucune inspiration conservée.'}
+        {editable?'Une image, un verset, une citation…':'Aucune inspiration conservée.'}
       </Text>
+      {editable?<Pressable accessibilityRole="link"
+        accessibilityLabel="Ajouter une inspiration"
+        onPress={()=>{setChoosing(true);setMessage('');}}
+        style={{paddingHorizontal:14,paddingVertical:10,minHeight:44,
+          alignItems:'center',justifyContent:'center'}}>
+        <Text style={{fontSize:14,fontWeight:'600',color:'#A5713D',
+          textDecorationLine:'underline'}}>
+          Ajouter une inspiration
+        </Text>
+      </Pressable>:null}
     </View>}
     {selectedBlock?<SemenceInspirationDetail
       key={selectedBlock.id+String(selectedMenu)}
