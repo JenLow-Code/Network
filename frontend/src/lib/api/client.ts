@@ -59,8 +59,11 @@ export async function exchangeSupabaseBearer(supabaseBearer:string):Promise<stri
       const body=await response.json().catch(()=>null) as {
         error?:string|{code?:string};
       }|null;
-      const code=typeof body?.error==='string'?body.error:
+      const rawCode=typeof body?.error==='string'?body.error:
         body?.error?.code||'exchange_http_'+response.status;
+      // Do not render arbitrary server error bodies on the login screen.
+      const code=/^[a-z][a-z0-9_]{0,63}$/.test(rawCode)?
+        rawCode:'exchange_http_'+response.status;
       lastBridgeFailure={code,status:response.status};
       setAccessToken(null);
       if(response.status===401||response.status===403)
