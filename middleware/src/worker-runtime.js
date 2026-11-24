@@ -50,7 +50,10 @@ async function exchangeSupabase(request,env){
     upstream=await fetch(base+'/auth/v1/user',{
       method:'GET',
       headers:{apikey,Authorization:'Bearer '+token,Accept:'application/json'},
-      redirect:'error',
+      // workerd supports 'manual' and 'follow', NOT 'error'. Using 'error'
+      // throws a TypeError before the Supabase request leaves Cloudflare.
+      // 'manual' prevents forwarding the Supabase bearer to a redirect target.
+      redirect:'manual',
     });
   }catch(e){
     // Safe diagnostics: distinguish an outbound fetch failure from a Supabase
@@ -58,6 +61,9 @@ async function exchangeSupabase(request,env){
     console.error('supabase_identity_fetch_failed',e?.name||'unknown');
     return error('identity_provider_fetch_failed',503);
   }
+  if(upstream.status===0||upstream.type==='opaqueredirect'||
+      (upstream.status>=300&&upstream.status<400))
+    return error('identity_provider_redirect_rejected',503);
   if(upstream.status===401||upstream.status===403)
     return error('not_authenticated',401);
   if(!upstream.ok){
