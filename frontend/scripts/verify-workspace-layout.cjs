@@ -26,7 +26,6 @@ const pages=[
   'app/music-proposal/[id].tsx',
   'app/member/[name].tsx',
   'app/my-dream/new.tsx',
-  'app/my-dreams/[phase].tsx',
   'app/my-dream-participants/[id].tsx',
   'app/my-dream/flower/[id].tsx',
   'app/my-dream/library/[id].tsx',
