@@ -82,7 +82,7 @@ const checks=[
     listenPage.includes('<ScrollView key={id}')],
   ['New listening route requires the same verified login as every private screen',
     layout.includes("'music-listen/[id]'")&&
-    layout.includes('<Stack.Protected guard={!!user} redirectTo="/login">')],
+    layout.includes('<Stack.Protected guard={!!user&&!validationError} redirectTo="/login">')],
   ['Music navigation remains active within the listening page',
     nav.includes("path.startsWith('/music-listen/')")],
   ['Listening view preserves the same full Discover More sections as Discovery',
