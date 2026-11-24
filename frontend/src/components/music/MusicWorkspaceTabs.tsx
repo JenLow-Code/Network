@@ -42,6 +42,8 @@ export function MusicWorkspaceTabs({space,onChange,compact,desktop}:{
           gap:compact?2:desktop?8:9,
           minHeight:compact?34:desktop?46:52,
           flexDirection:compact?'column':'row',
+          borderBottomWidth:compact?0:selected?2:0,
+          borderBottomColor:compact?'transparent':selected?'#CB245C':'transparent',
           paddingHorizontal:compact?0:desktop?12:3
         }}>
         <Ionicons name={item.icon} size={compact?20:desktop?18:19}
