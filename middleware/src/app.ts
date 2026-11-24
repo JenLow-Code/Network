@@ -9,6 +9,8 @@ import * as auth from './authentication/routes';
 import { exchangeSupabase } from './authentication/supabase';
 import { openApi } from './core/openapi';
 export const API_VERSION='2.0.0-security';
+// Legacy local password/session handlers are only available to explicit test environments.
+const legacyOnly=(handler: (ctx:Ctx)=>Promise<Response>) => (ctx:Ctx) => ctx.env.ENVIRONMENT==='test' ? handler(ctx) : legacyError('legacy_auth_retired',410);
 export function buildRouter():Router {
  const r=new Router();
  r.add('GET','/health',{tag:'System',summary:'Liveness',auth:'none'},()=>({status:'ok',auth:'email-beta',version:API_VERSION}));
@@ -18,11 +20,11 @@ export function buildRouter():Router {
    return json({status:ready?'ready':'degraded',scope:'security',functionalBackend:'not_connected'},ready?200:503);
  });
  r.add('GET','/api/openapi.json',{tag:'System',summary:'Security API specification',auth:'none'},()=>openApi(r,API_VERSION));
- r.add('POST','/v1/auth/email/register',{tag:'Auth',summary:'Beta registration',auth:'none',status:201},auth.register);
- r.add('POST','/v1/auth/email/login',{tag:'Auth',summary:'Email login',auth:'none'},auth.login);
+ r.add('POST','/v1/auth/email/register',{tag:'Auth',summary:'Beta registration',auth:'none',status:201},legacyOnly(auth.register));
+ r.add('POST','/v1/auth/email/login',{tag:'Auth',summary:'Email login',auth:'none'},legacyOnly(auth.login));
  r.add('POST','/v1/auth/supabase/exchange',{tag:'Auth',summary:'Verified Supabase identity',auth:'none'},exchangeSupabase);
- r.add('POST','/v1/auth/refresh',{tag:'Auth',summary:'Rotate refresh token',auth:'none'},auth.refresh);
- r.add('POST','/v1/auth/logout',{tag:'Auth',summary:'Revoke refresh token',auth:'none'},auth.logout);
+ r.add('POST','/v1/auth/refresh',{tag:'Auth',summary:'Rotate refresh token',auth:'none'},legacyOnly(auth.refresh));
+ r.add('POST','/v1/auth/logout',{tag:'Auth',summary:'Revoke refresh token',auth:'none'},legacyOnly(auth.logout));
  r.add('GET','/v1/auth/me',{tag:'Auth',summary:'Current identity',auth:'required'},auth.me);
  r.add('GET','/api/me',{tag:'Auth',summary:'Current identity only; no product profile data',auth:'required'},auth.me);
  return r;

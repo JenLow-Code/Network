@@ -1,0 +1,31 @@
+name: Security bridge preview smoke
+on:
+  push:
+    branches: ['refactor/ecosystem-security-foundation']
+    paths: ['.github/workflows/security-preview-smoke.yml']
+  workflow_dispatch:
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify actual Cloudflare version and upstream denial
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="https://5c8986f4-jenlow-network-auth.jenlow-production.workers.dev"
+          check() {
+            expected="$1"; shift
+            code=$(curl -sS --connect-timeout 10 --max-time 25 -o /tmp/result.json -w '%{http_code}' "$@")
+            echo "HTTP $code expected $expected"
+            cat /tmp/result.json
+            test "$code" = "$expected"
+          }
+          check 200 "$base/health"
+          check 401 "$base/v1/auth/me"
+          check 401 -X POST "$base/v1/auth/supabase/exchange"
+          check 410 -X POST "$base/v1/auth/email/login"
+          check 410 -X POST "$base/v1/auth/email/register"
+          check 410 -X POST "$base/v1/auth/refresh"
+          check 410 -X POST "$base/v1/auth/logout"
+          check 401 -H 'Origin: https://network.jenlow.net' -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJmYWtlLXRlc3QifQ.invalid-signature' -X POST "$base/v1/auth/supabase/exchange"
+          check 403 -H 'Origin: https://invalid.example' -X POST "$base/v1/auth/supabase/exchange"

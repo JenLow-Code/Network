@@ -16,3 +16,7 @@ Existing account IDs, password hashes and token audience are preserved. Other pr
 - Extracted resource policies are conservative and incomplete for future operations. Shared media, group messaging, specialized music/talent visibility, invitation lifecycle, role scoping and cross-product access need explicit checks and positive/negative integration tests before enabling those endpoints.
 - Staging requires a separate database and secrets. Do not deploy over a live functional API. The existing frontend expects retired functional endpoints; the isolated security Worker alone cannot replace the application.
 - Authorization is enforced centrally for active routes. Future backends must independently authorize each resource and operation. No claim of total security is made.
+
+## Production bridge remediation
+
+Production D1 had zero legacy credentials and zero active legacy sessions; the admin was already linked to Supabase and active. A narrowly scoped version of the existing live Worker was uploaded with strict inheritance of the existing bindings (5c8986f4-35a0-452d-8144-e583b532ea51). It retires custom password/register/refresh/logout routes (410), rejects email-only account linking and rate-limits Supabase exchange. It is not the full rewritten TypeScript middleware. The existing Google project and redirect configuration remain unchanged. Preview smoke tests are required before promoting. Real sign-in and broader session/security acceptance remain required.
