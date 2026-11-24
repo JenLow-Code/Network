@@ -198,7 +198,7 @@ export function AuthProvider({children}:{children:React.ReactNode}){
   useEffect(()=>{
     // A previously verified account becomes locked immediately if the
     // API's token is later revoked; resource-specific 403 is not a logout.
-    return onSessionChange(authorized=>{
+    const unsubscribe=onSessionChange(authorized=>{
       if(!authorized&&verifiedUser.current){
         verifiedUser.current=null;
         verifiedAt.current=0;
@@ -209,6 +209,7 @@ export function AuthProvider({children}:{children:React.ReactNode}){
         setInitialized(true);
       }
     });
+    return ()=>{unsubscribe();};
   },[]);
 
   useEffect(()=>{
