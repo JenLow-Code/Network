@@ -71,7 +71,7 @@ if(!dreamNav.includes("if(!reached||!activeChapter)return phaseNav;")||
 
 // Germination must expose its existing shared Documents & Inspirations
 // workspace in the same sidebar as personal notes (Semence has notes only).
-const germinationNav=dreamNav.split("(phase==='Initiation'?[")[1]?.split(']:[')[0]||'';
+const germinationNav=dreamNav.split("phase==='Initiation'?[")[1]?.split(']:[')[0]||'';
 if(!germinationNav.includes("{kind:'library' as const,title:'Documents & Inspirations'}")||
    !germinationNav.includes("{kind:'notes' as const,title:'Notes personnelles'}")||
    !dreamNav.includes("'/my-dream/library/[id]'")||
