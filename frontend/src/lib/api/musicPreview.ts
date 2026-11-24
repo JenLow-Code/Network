@@ -16,6 +16,10 @@ export type DemoMusicPreview = {
     trackTitle: string;
     trackPublicationId: string;
     description: string;
+    createdAt?: string | null;
+    contribution?: string | null;
+    audioAsset?: string | null;
+    mimeType?: string | null;
     status: 'accepted';
     direction: 'sent';
     isDemo: true;
@@ -39,6 +43,10 @@ type DemoMusicResponse = {
     trackTitle: string;
     trackPublicationId: string;
     description: string;
+    createdAt?: string | null;
+    contribution?: string | null;
+    audioAsset?: string | null;
+    mimeType?: string | null;
     status: 'accepted';
     publisher: { displayName: string };
     proposer: { displayName: string };

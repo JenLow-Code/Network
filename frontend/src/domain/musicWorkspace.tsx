@@ -164,6 +164,8 @@ export type MusicProjectFile = {
   instrument?: string;
   localFileId?: string;
   externalUrl?: string;
+  /** Isolated demo fixture audio key; never used for real user recordings. */
+  demoAudioAsset?: string;
   durationSeconds?: number;
   createdAt: string;
   /** Human attribution for a Capture resource, never inferred from a public byline. */

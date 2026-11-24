@@ -7,6 +7,7 @@ import { MusicAudioCapture } from './MusicAudioCapture';
 import {deleteLocalMusicFile} from '@/domain/musicLocalStorage';
 import {workspaceLayout} from '@/theme/workspaceLayout';
 import { MusicAudioTake } from './MusicAudioTake';
+import { MusicAudioPreview } from './MusicAudioPreview';
 import {MusicDocumentScanner} from './MusicDocumentScanner';
 import { MusicNotePreview, type MusicWritingResult } from './MusicWritingStudio';
 
@@ -516,7 +517,7 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
         const lyricExpanded=!!expandedLyrics[file.id];
         const firstLine=text.split(/\r?\n/).find(line=>line.trim())?.trim()||'';
         const created=new Date(file.createdAt||'');
-        const dateLabel=Number.isNaN(created.getTime())?'':created.toLocaleDateString(
+        const dateLabel=Number.isNaN(created.getTime())?(readOnly?'—':''):created.toLocaleDateString(
           'fr-FR',{day:'numeric',month:'short',year:'numeric'});
         const openDetails=()=>{
           if(readOnly){setExpandedLyrics(old=>({...old,[file.id]:!old[file.id]}));return;}
@@ -553,6 +554,7 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
             sound&&file.localFileId?
               <MusicAudioTake file={file} compact
                 onOpen={openDetails}/>:
+            sound&&readOnly?<MusicAudioPreview source={{audioUrl:file.externalUrl,demoAudioAsset:file.demoAudioAsset}} captureStyle/>:
             file.musicEvents?.length?
               <MusicCaptureScoreStrip file={file} aligned={desktopList}/>:
             isMidiSource(file)?
@@ -682,12 +684,15 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
             </Text>:null}
             {desktopList?detailArrow:null}
           </View>
-          {desktopList&&lyricExpanded&&(file.kind==='lyrics'||readOnly)?
+          {desktopList&&lyricExpanded&&!sound&&(file.kind==='lyrics'||readOnly)?
             <View style={{paddingLeft:(showEditor?185+105:210+120)+28,paddingRight:28,
               paddingBottom:14}}>
               <Text style={{fontFamily:'Georgia',fontSize:15,
                 lineHeight:24,color:theme.muted}}>{text}</Text>
             </View>:null}
+          {readOnly&&sound&&lyricExpanded?<View style={{paddingLeft:desktopList?(showEditor?185+105:210+120)+28:0,paddingBottom:12}}>
+            <Text style={{fontSize:12,color:theme.muted}}>Audio{file.mimeType==='audio/wav'?' · WAV':''} · {file.editedBy||'Auteur non renseigné'}</Text>
+          </View>:null}
           {newVersionMode&&isMusicTrackCandidate(file)?
             <Pressable accessibilityRole="button"
               accessibilityLabel={'Créer une nouvelle version depuis '+file.title}

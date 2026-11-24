@@ -85,6 +85,10 @@ const checks=[
     workspace.includes('if(shared||addingRef.current)return;')&&workspace.includes('readOnly={!!shared}')&&
     capture.includes('if(readOnly||!deleteCandidate')&&capture.includes('disabled={readOnly}')&&
     shared.includes('No private')&&shared.includes('update={()=>{}}')],
+  ['Accepted contributions use actual audio, credit and creation date; not a note',
+    shared.includes("kind:'audio' as const")&&shared.includes('createdAt:match.createdAt')&&shared.includes('contribution:match.contribution')&&
+    shared.includes('demoAudioAsset:demoId?p.audioAsset')&&capture.includes('demoAudioAsset:file.demoAudioAsset')&&
+    !shared.includes("kind:'note' as const,title:p.trackTitle")],
   ['Pour moi cassette and Infos navigate to their own full music page',
     home.includes("pathname:'/music-listen/[id]'")&&
     home.includes("onPress={() => openForMe(song.id)}")&&

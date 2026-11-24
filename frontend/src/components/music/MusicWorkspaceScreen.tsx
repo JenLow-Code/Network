@@ -14,12 +14,12 @@ import {isMidiSource,renderMidiSource} from '@/domain/musicMidiAudio';
 import { useAppTheme } from '@/theme/AppTheme';
 import { workspaceLayout } from '@/theme/workspaceLayout';
 import type { MusicProject, MusicProjectFile } from '@/domain/musicWorkspace';
-import type { WorkspaceCollaborator } from './MusicCollaborateExperience';
+import type { SharedWorkspaceAccess } from './MusicCollaborateExperience';
 
 type Space = 'capture'|'create'|'collaborate';
 const PINK='#CB245C';
 
-type SharedAccess={members:WorkspaceCollaborator[];demo:boolean;conversationId?:string|null;rosterUnavailable?:boolean};
+type SharedAccess=SharedWorkspaceAccess;
 type Props={project:MusicProject;update:(changes:Partial<MusicProject>)=>void;tab?:Space;intent?:string;
   error?:string|null;showEditor?:boolean;shared?:SharedAccess};
 

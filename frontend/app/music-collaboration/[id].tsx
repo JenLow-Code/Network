@@ -16,7 +16,9 @@ import { useSharedMusicNavigation } from '@/domain/sharedMusicNavigation';
 const PINK='#CB245C';
 type Proposal = {
   id:string;description:string;status:string;trackTitle:string;
-  createdAt?:string;proposer?:{displayName?:string};
+  createdAt?:string|null;proposer?:{displayName?:string};
+  credits?:{displayName:string;contribution:string}[];
+  contribution?:string|null;audioAsset?:string|null;mimeType?:string|null;audioUrl?:string;
 };
 type MusicDetail = {item?:{
   title?:string;description?:string;updatedAt?:string;
@@ -107,6 +109,8 @@ function AuthorizedSharedMusicFolder(){
           setProposals([{
             id:match.id,status:match.status,trackTitle:match.trackTitle,
             description:match.description,proposer:match.proposer,
+            createdAt:match.createdAt,contribution:match.contribution,
+            audioAsset:match.audioAsset,mimeType:match.mimeType,
           }]);
           setCollaborators([
             {id:'demo-author',role:'owner',
@@ -124,11 +128,19 @@ function AuthorizedSharedMusicFolder(){
       api<{conversationId:string}>('/api/music/'+resource+'/conversation',{auth:'required'}),
       api<MusicDetail>('/api/music/'+resource,{auth:'required'}),
       api<{items:Proposal[]}>('/api/music/'+resource+'/proposals',{auth:'required'}),
-    ]).then(([chat,detail,contributions])=>{
+    ]).then(async ([chat,detail,contributions])=>{
       if(!live)return;
       setConversationId(chat.conversationId);
       setMusic(detail.item);
-      setProposals(contributions.items||[]);
+      const permitted=await Promise.all((contributions.items||[]).map(async proposal=>{
+        if(proposal.status!=='accepted'&&proposal.status!=='published')return proposal;
+        try{
+          const playback=await api<{url:string|null}>('/api/music-proposals/'+encodeURIComponent(proposal.id)+'/playback',{auth:'required'});
+          return {...proposal,audioUrl:playback.url||undefined};
+        }catch{return proposal;}
+      }));
+      if(!live)return;
+      setProposals(permitted);
       void api<{members:Collaborator[]}>('/api/music/'+resource+'/collaborators',
         {auth:'required'})
         .then(roster=>{if(live)setCollaborators(roster.members||[]);})
@@ -155,8 +167,12 @@ function AuthorizedSharedMusicFolder(){
       ...(music.lyrics?.length?[{id:id+'-published-lyrics',kind:'lyrics' as const,title:'Paroles publiées',
         text:music.lyrics.map(part=>part.text).join('\n'),sectionIds:[],createdAt:date,editedBy:author}]:[]),
       ...proposals.filter(p=>p.status==='accepted'||p.status==='published').map(p=>({
-        id:p.id,kind:'note' as const,title:p.trackTitle||'Contribution acceptée',
-        text:p.description,sectionIds:[],createdAt:p.createdAt||'',editedBy:p.proposer?.displayName||'Non renseigné',
+        id:p.id,kind:'audio' as const,
+        title:p.contribution||p.credits?.find(c=>c.displayName===p.proposer?.displayName)?.contribution||
+          p.credits?.[0]?.contribution||'Contribution audio',
+        sectionIds:[],createdAt:p.createdAt||'',editedBy:p.proposer?.displayName||'Non renseigné',
+        externalUrl:p.audioUrl, demoAudioAsset:demoId?p.audioAsset||undefined:undefined,
+        mimeType:p.mimeType||undefined,
       })),
     ];
     return {id,ownerEmail:'',ownerName:author,title:music.title||'Morceau partagé',
@@ -182,5 +198,5 @@ function AuthorizedSharedMusicFolder(){
     </View><Nav/>
   </SafeAreaView>;
   return <MusicWorkspaceScreen key={project.id} project={project} tab={tab} update={()=>{}}
-    shared={{members:collaborators,demo:demoId,conversationId,rosterUnavailable:rosterError}}/>;
+    shared={{members:collaborators,demo:demoId,conversationId,rosterUnavailable:rosterError,proposals:proposals.filter(p=>p.status==='accepted'||p.status==='published')}}/>;
 }

@@ -76,13 +76,16 @@ export default {
           "AND p.visibility='public' AND p.deleted_at IS NULL ORDER BY p.id"
         ).all();
         const { results: collaborations } = await env.DB.prepare(
-          "SELECT pr.id,pr.description,pr.status,p.id AS publication_id,p.title, " +
+          "SELECT pr.id,pr.description,pr.status,pr.created_at,p.id AS publication_id,p.title, " +
+          "m.external_url AS contribution_audio,m.mime_type AS contribution_mime, " +
+          "(SELECT pc.contribution FROM music_proposal_credits pc WHERE pc.proposal_id=pr.id ORDER BY CASE WHEN pc.contributor_id=pr.proposed_by THEN 0 ELSE 1 END,pc.credit_order LIMIT 1) AS contribution, " +
           "a.display_name AS author,a.handle AS author_handle, " +
           "c.display_name AS collaborator,c.handle AS collaborator_handle " +
           "FROM music_collab_proposals pr " +
           "JOIN music_tracks t ON t.id=pr.original_track_id " +
           "JOIN publications p ON p.id=t.publication_id " +
           "JOIN users a ON a.id=t.publisher_id JOIN users c ON c.id=pr.proposed_by " +
+          "LEFT JOIN media_assets m ON m.id=pr.audio_asset_id AND m.owner_id=pr.proposed_by AND m.id LIKE 'demo-music-audio-%' " +
           "WHERE pr.id LIKE 'demo-music-proposal-%' AND pr.status='accepted' " +
           "AND p.id LIKE 'demo-music-publication-%' " +
           "AND a.id LIKE 'demo-user-%' AND c.id LIKE 'demo-user-%' ORDER BY pr.id"
@@ -97,6 +100,10 @@ export default {
           collaborations: collaborations.map(c => ({
             id:c.id,trackTitle:c.title,trackPublicationId:c.publication_id,
             description:c.description,status:c.status,
+            createdAt:c.created_at?new Date(c.created_at.replace(' ','T')+(/Z$|[+-]\d\d:\d\d$/.test(c.created_at)?'':'Z')).toISOString():null,
+            contribution:c.contribution||null,
+            audioAsset:c.contribution_audio?.startsWith('app-asset:')?c.contribution_audio.slice(10):null,
+            mimeType:c.contribution_mime||null,
             publisher:{displayName:c.author,handle:c.author_handle},
             proposer:{displayName:c.collaborator,handle:c.collaborator_handle},
             isDemo:true

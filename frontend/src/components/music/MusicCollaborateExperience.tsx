@@ -11,7 +11,9 @@ import type {MusicProject} from '@/domain/musicWorkspace';
 
 const PINK='#CB245C';
 type Props={project:MusicProject;patch:(changes:Partial<MusicProject>)=>void;
-  shared?:{members:WorkspaceCollaborator[];demo:boolean;conversationId?:string|null;rosterUnavailable?:boolean}};
+  shared?:SharedWorkspaceAccess};
+export type SharedWorkspaceAccess={members:WorkspaceCollaborator[];demo:boolean;conversationId?:string|null;rosterUnavailable?:boolean;
+  proposals?:{id:string;description:string;status:string;createdAt?:string|null;proposer?:{displayName?:string}}[]};
 type Proposal=CollaborationRequest&{trackPublicationId:string};
 export type WorkspaceCollaborator={id:string;role:'owner'|'collaborator';
   displayName:string;handle?:string|null};
@@ -163,7 +165,14 @@ export function MusicCollaborateExperience({project,patch,shared}:Props){
         Liste complète indisponible jusqu’à la mise à jour de l’API.
       </Text>:null}
     </View>
-    {shared? <>{!shared.demo&&shared.conversationId?<Pressable accessibilityRole="button" onPress={()=>router.push({pathname:'/chat/[id]',params:{id:shared.conversationId!}})} style={{alignSelf:'flex-start',paddingVertical:10}}><Text style={{fontSize:13,fontWeight:'700',color:PINK}}>Ouvrir la discussion du morceau</Text></Pressable>:null}</>:<>
+    {shared? <>{shared.proposals?.length?<View style={{gap:10}}>
+      <Text style={{fontSize:17,fontWeight:'700',color:theme.foreground}}>Contributions acceptées</Text>
+      {shared.proposals.map(proposal=><View key={proposal.id} style={{gap:5,paddingVertical:9,borderBottomWidth:1,borderColor:theme.border}}>
+        <Text style={{fontSize:13,fontWeight:'700',color:theme.foreground}}>{proposal.proposer?.displayName||'Collaborateur'}</Text>
+        <Text style={{fontSize:12,color:theme.foreground}}>{proposal.description}</Text>
+        {proposal.createdAt?<Text style={{fontSize:11,color:theme.muted}}>{new Date(proposal.createdAt).toLocaleDateString('fr-FR')}</Text>:null}
+      </View>)}
+    </View>:null}{!shared.demo&&shared.conversationId?<Pressable accessibilityRole="button" onPress={()=>router.push({pathname:'/chat/[id]',params:{id:shared.conversationId!}})} style={{alignSelf:'flex-start',paddingVertical:10}}><Text style={{fontSize:13,fontWeight:'700',color:PINK}}>Ouvrir la discussion du morceau</Text></Pressable>:null}</>:<>
     {!proposals.length?<View style={{gap:10}}>
       <View style={{flexDirection:'row',alignItems:'center',gap:9,flexWrap:'wrap'}}>
         <Text style={{fontSize:16,fontWeight:'700',color:theme.foreground}}>
