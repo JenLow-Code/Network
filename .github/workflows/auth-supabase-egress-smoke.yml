@@ -1,0 +1,47 @@
+name: Production Supabase Auth Bridge egress check
+on:
+  push:
+    paths:
+      - '.github/workflows/auth-supabase-egress-smoke.yml'
+  workflow_dispatch:
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify auth Worker is healthy
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="https://jenlow-network-auth.jenlow-production.workers.dev"
+          status=$(curl -sS --connect-timeout 10 --max-time 20 -o /tmp/health-response -w "%{http_code}" "$base/health")
+          echo "Health HTTP: $status"
+          test "$status" = "200"
+          grep -q '"status":"ok"' /tmp/health-response
+      - name: Reject anonymous exchange before Supabase request
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="https://jenlow-network-auth.jenlow-production.workers.dev"
+          status=$(curl -sS --connect-timeout 10 --max-time 20 -o /tmp/anonymous-response -w "%{http_code}" -X POST "$base/v1/auth/supabase/exchange")
+          echo "Anonymous exchange HTTP: $status"
+          test "$status" = "401"
+          grep -q 'not_authenticated' /tmp/anonymous-response
+      - name: Verify the Worker can reach Supabase and reject an invalid JWT
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="https://jenlow-network-auth.jenlow-production.workers.dev"
+          # Deliberately fabricated public test token. NEVER log real credentials.
+          invalid="eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJmYWtlLXRlc3QifQ.invalid-signature"
+          status=$(curl -sS --connect-timeout 10 --max-time 25 -o /tmp/exchange-response -w "%{http_code}" \
+            -H "Origin: https://network.jenlow.net" \
+            -H "Authorization: Bearer $invalid" \
+            -X POST "$base/v1/auth/supabase/exchange")
+          echo "Invalid JWT exchange HTTP: $status"
+          python3 - <<'PY'
+          import json
+          r=json.load(open('/tmp/exchange-response'))
+          print('Safe error code:',r.get('error','missing'))
+          PY
+          test "$status" = "401"
+          grep -q 'not_authenticated' /tmp/exchange-response
