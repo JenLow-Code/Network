@@ -40,7 +40,7 @@ export default function SemenceStudio({dream,onBack,onNavigate}:{
   <ScrollView showsVerticalScrollIndicator={false} style={{flex:1,backgroundColor:'transparent'}}
    keyboardShouldPersistTaps="handled"
    contentContainerStyle={{paddingLeft:ws.contentGutter,paddingRight:ws.gutter,paddingTop:12,
-     paddingBottom:100,maxWidth:ws.maxWidth,width:'100%',alignSelf:'center'}}>
+     paddingBottom:24,maxWidth:ws.maxWidth,width:'100%',alignSelf:'center'}}>
    <DreamPhaseHeader dream={dream} phase="Rêve"
      onBack={onBack} onNavigate={onNavigate} readOnly={!editable}/>
    <View style={{alignSelf:'flex-end',width:244,maxWidth:'65%',marginTop:-10,marginBottom:6}}>
@@ -53,16 +53,15 @@ export default function SemenceStudio({dream,onBack,onNavigate}:{
      <SemenceInspirations dream={dream} editable={editable} showAddControl={editable}
        onShareInspiration={id=>{setShareIds([id]);setShareOpen(true);}}/>
    </View>
-   {editable?<View style={{width:'100%'}}>
-     <DreamMilestoneActions
-       nextStage="Germination"
-       primaryLabel="Faire germer cette semence" primaryColor="#A1BA44"
-       primaryTextColor="#242322" onPrimary={()=>setConfirm(true)}
-       secondaryLabel="Publier cette semence" secondaryColor={accent}
-       onSecondary={()=>{setShareIds(null);setShareOpen(true);}}
-       destructiveLabel="Arracher" onDestructive={uproot}
-     />
-     {confirm?<View style={{backgroundColor:theme.surface,padding:16,marginTop:12,
+   {shareOpen?<SemenceShare key={(shareIds||[]).join('-')||'all'}
+     dream={dream} initialIds={shareIds}
+     onClose={()=>{setShareOpen(false);setShareIds(null);}}/>:null}
+  </ScrollView>
+  {editable?<View style={{width:'100%',maxWidth:ws.maxWidth,
+    alignSelf:'center',paddingLeft:ws.contentGutter,paddingRight:ws.gutter,
+    paddingTop:10,paddingBottom:ws.desktop?17:10,
+    backgroundColor:theme.background}}>
+    {confirm?<View style={{backgroundColor:theme.surface,padding:16,marginTop:12,
        maxWidth:ws.desktop?630:undefined,
        borderRadius:12,borderWidth:1,borderColor:theme.border,gap:8}}>
        <Text style={{color:theme.foreground,fontWeight:'700',fontSize:16}}>
@@ -86,11 +85,16 @@ export default function SemenceStudio({dream,onBack,onNavigate}:{
          <Text style={{color:theme.muted,textAlign:'center'}}>Pas encore</Text>
        </Pressable>
      </View>:null}
-   </View>:null}
-   {shareOpen?<SemenceShare key={(shareIds||[]).join('-')||'all'}
-     dream={dream} initialIds={shareIds}
-     onClose={()=>{setShareOpen(false);setShareIds(null);}}/>:null}
-  </ScrollView>
+    <DreamMilestoneActions anchored equalUtilityButtons secondaryFirst
+      nextStage="Germination"
+      primaryLabel="Faire germer cette semence" primaryColor="#A1BA44"
+      primaryTextColor="#242322" onPrimary={()=>setConfirm(true)}
+      secondaryLabel="Publier cette semence" secondaryColor={accent}
+      onSecondary={()=>{setShareIds(null);setShareOpen(true);}}
+      destructiveLabel="Arracher" onDestructive={uproot}
+    />
+  </View>:null}
+
 
  </View>;
 }
