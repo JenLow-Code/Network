@@ -16,6 +16,25 @@ export function PageHeader({ title, center, onBack, showFire = true }: {
  const theme = useAppTheme();
  const {width}=useWindowDimensions();
  const desktop=Platform.OS==='web'&&workspaceLayout(width).desktop;
+ // Icon-only tabs on phones need three *fixed slots in one physical row*.
+ // The previous absolutely-positioned Back + padded center could make the
+ // tab navigation appear separated from Back/Fire/Chat on narrow screens.
+ if(!desktop&&center){
+   return <View style={{minHeight:48,width:'100%',flexDirection:'row',
+     flexWrap:'nowrap',alignItems:'center',zIndex:4}}>
+     <Pressable accessibilityRole="button" accessibilityLabel="Retour"
+       onPress={onBack||(()=>router.canGoBack()?router.back():router.replace('/discover'))}
+       style={{width:44,height:44,flexShrink:0,
+         alignItems:'center',justifyContent:'center'}}>
+       <Ionicons name="arrow-back-outline" size={23} color={theme.foreground}/>
+     </Pressable>
+     <View style={{flex:1,minWidth:0,height:44,marginHorizontal:4,
+       justifyContent:'center',alignItems:'stretch'}}>
+       {center}
+     </View>
+     <TopActions showFire={showFire}/>
+   </View>;
+ }
  return (
   <View style={{minHeight:desktop?48:44,flexDirection:'row',alignItems:'center',
     width:'100%',zIndex:4,position:'relative'}}>
