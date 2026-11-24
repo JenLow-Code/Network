@@ -9,6 +9,7 @@ import type { DreamPhase } from '@/domain/publication';
 import { DreamPhaseHeader } from './DreamPhaseLayout';
 import SemenceShare from './SemenceShare';
 import DreamWorkspaceShortcuts from './DreamWorkspaceShortcuts';
+import SemenceInspirations from './SemenceInspirations';
 import DreamMilestoneActions from './DreamMilestoneActions';
 
 /** Semence workspace: private notes are the only resource shortcut displayed. */
@@ -44,6 +45,13 @@ export default function SemenceStudio({dream,onBack,onNavigate}:{
      onBack={onBack} onNavigate={onNavigate} readOnly={!editable}/>
    <View style={{alignSelf:'flex-end',width:244,maxWidth:'65%',marginTop:-10,marginBottom:6}}>
      <DreamWorkspaceShortcuts dream={dream}/>
+   </View>
+   {/* The private Semence moodboard must always be part of this workspace.
+       Keep persisted blocks and the existing add-document/link/photo/verse menu. */}
+   <View style={{marginTop:18,marginBottom:5,gap:12}}>
+     <Text accessibilityRole="header" style={{fontSize:19,fontWeight:'700',color:theme.foreground}}>Inspirations</Text>
+     <SemenceInspirations dream={dream} editable={editable} showAddControl={editable}
+       onShareInspiration={id=>{setShareIds([id]);setShareOpen(true);}}/>
    </View>
    {editable?<View style={{width:'100%'}}>
      <DreamMilestoneActions
