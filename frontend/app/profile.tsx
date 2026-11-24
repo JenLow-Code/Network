@@ -35,7 +35,7 @@ export default function Profile() {
   const {width}=useWindowDimensions();
   const ws=workspaceLayout(width);
   const {section}=useLocalSearchParams<{section?:string}>();
-  const scroll=useRef<ScrollView>(null);
+  const scroll=useRef<React.ComponentRef<typeof ScrollView>>(null);
   const anchors=useRef<Partial<Record<SectionId,number>>>({});
   const pending=useRef<SectionId|null>(null);
   const [panelWidth,setPanelWidth]=useState(0);
