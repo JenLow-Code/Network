@@ -75,7 +75,7 @@ export function AuthProvider({children}:{children:React.ReactNode}){
     if(supabase)await supabase.auth.signOut({scope:'local'});
   },[clear]);
 
-  const verify=useCallback(async(candidate:Session|null>):Promise<boolean>=>{
+  const verify=useCallback(async(candidate:Session|null):Promise<boolean>=>{
     const ticket=++validationId.current;
     if(!candidate){
       clear();
