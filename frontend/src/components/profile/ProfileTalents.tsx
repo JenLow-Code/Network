@@ -119,17 +119,21 @@ export function ProfileTalents({contentWidth}: {contentWidth:number}) {
   const cardWidth=Math.max(76,Math.min(168,Math.floor((contentWidth-10*(columns-1))/columns)));
   return <>
       <View style={{gap:8}}>
-        <Text style={{fontSize:12,color:theme.muted,lineHeight:18}}>Développe, partage ou transmets tes talents, à ton rythme.</Text>
+        <Text style={{fontSize:12,color:theme.muted,lineHeight:18}}>Mes talents à partager, à transmettre ou à faire grandir.</Text>
         {loaded&&talents.length===0?<Text style={{fontSize:13,color:theme.foreground}}>Quels talents aimerais-tu faire grandir ?</Text>:null}
         <View style={{flexDirection:'row',flexWrap:'wrap',gap:10,marginTop:4}}>
-          {talents.map((t,index)=><ProfileTalentTile key={index} title={t.name} level={levels[t.level]?.name||'À définir'}
+          {talents.map((t,index)=><View key={index} style={{width:cardWidth,borderRadius:11,backgroundColor:theme.surface,borderWidth:1,borderColor:theme.border,overflow:'hidden'}}><ProfileTalentTile title={t.name} level={levels[t.level]?.name||'À définir'}
             subtitle={t.name.toLocaleLowerCase('fr')==='traducteur'&&t.sourceLanguage&&t.targetLanguage
               ?t.sourceLanguage+' → '+t.targetLanguage:t.interests.length?t.interests.join(' · '):undefined}
-            art={talentArt(t.name)} width={cardWidth} onPress={()=>setSelectedTalent(index)}/>)}
+            art={talentArt(t.name)} width={cardWidth-2} onPress={()=>setSelectedTalent(index)}/>
+            <Pressable onPress={()=>setSelectedTalent(index)} accessibilityRole="button" accessibilityLabel={'Mon intention pour '+t.name} style={{paddingHorizontal:9,paddingVertical:9,gap:5,minHeight:44}}>
+              {t.description?<Text numberOfLines={2} style={{fontSize:11,lineHeight:16,color:theme.foreground}}>{t.description}</Text>:null}
+              <View style={{flexDirection:'row',alignItems:'center',gap:5}}><Text numberOfLines={1} style={{flex:1,fontSize:10,color:theme.muted}}>{t.description?'Mon intention':'Personnaliser'}</Text><Ionicons name="arrow-forward-outline" size={12} color={theme.muted}/></View>
+            </Pressable></View>)}
           <Pressable accessibilityRole="button" accessibilityLabel="Ajouter un talent" onPress={()=>setAddTalentOpen(true)}
-            style={{width:cardWidth,height:cardWidth,borderRadius:10,borderWidth:1.5,
+            style={{width:cardWidth,minHeight:cardWidth,borderRadius:10,borderWidth:1.5,
               borderStyle:'dashed',borderColor:'#27845B',backgroundColor:theme.surface,
-              alignItems:'center',justifyContent:'center'}}>
+              alignItems:'center',justifyContent:'center',alignSelf:'flex-start'}}>
             <Ionicons name="add" size={25} color="#27845B"/><Text style={{fontSize:11,fontWeight:'600',color:theme.foreground,marginTop:6,textAlign:'center'}}>Ajouter un talent</Text>
           </Pressable>
         </View>

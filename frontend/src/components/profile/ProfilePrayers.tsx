@@ -13,7 +13,7 @@ export function Prayers() {
   const items = publications.filter(p => prayerIds.includes(p.id));
   return (
     <View style={{gap:6}}>
-        <Text style={{fontSize:12,color:theme.muted,lineHeight:18}}>Les personnes et les intentions que tu portes dans la prière.</Text>
+        <Text style={{fontSize:12,color:theme.muted,lineHeight:18}}>Les personnes et les intentions que je porte dans la prière.</Text>
         {!items.length ? (
           <View style={{flexDirection:'row',alignItems:'center',gap:12,paddingVertical:10}}>
             <Ionicons name="heart-outline" size={26} color={theme.muted}/>
@@ -37,7 +37,8 @@ export function Prayers() {
                 borderWidth: 1,
                 borderColor: theme.border,
                 borderRadius: 12,
-                marginBottom: 11,
+                backgroundColor:theme.surface,
+                marginBottom: 6,
               }}
             >
               <Pressable onPress={() => router.push(publicationPath(p) as any)}>
@@ -80,10 +81,7 @@ export function Prayers() {
             </View>
           ))
         )}
-        <Text style={{ fontSize: 10, color: theme.muted, marginTop: 20 }}>
-          Les rythmes sont enregistrés localement et utilisés dans Agenda. Les notifications
-          automatiques nécessitent leur propre configuration.
-        </Text>
+        {items.length?<Text style={{fontSize:11,color:theme.muted,marginTop:4}}>Mes rythmes de prière sont synchronisés avec mon agenda local.</Text>:null}
     </View>
   );
 }

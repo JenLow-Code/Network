@@ -16,7 +16,8 @@ import { ProfileTalents } from '@/components/profile/ProfileTalents';
 import { ProfilePublications } from '@/components/profile/ProfilePublications';
 import { MusicLibrary } from '@/components/profile/ProfileMusic';
 import { Prayers } from '@/components/profile/ProfilePrayers';
-import { BibleLibraryScreen } from '@/components/profile/ProfileBible';
+import { ProfileMarkedVerses } from '@/components/profile/ProfileMarkedVerses';
+import Svg, { Path } from 'react-native-svg';
 import { Settings } from '@/components/profile/ProfileSettings';
 import type { MusicLibraryLayout } from '@/domain/musicLibraryPreferences';
 
@@ -25,7 +26,7 @@ const sections=[
   {id:'publications',title:'Mes publications',subtitle:'Ce que je partage',icon:'albums-outline',color:'#CB245C'},
   {id:'music',title:'Mes musiques',subtitle:'Ce que je crée',icon:'musical-note-outline',color:'#7364A6'},
   {id:'prayers',title:'Mes prières',subtitle:'Ce que je porte dans la prière',icon:'heart-outline',color:'#C83D77'},
-  {id:'bible',title:'Ma Bible',subtitle:'Un moment dans la Parole',icon:'book-outline',color:'#B88962'},
+  {id:'bible',title:'Ma Bible',subtitle:'Mes versets marqués',icon:'book-outline',color:'#B88962'},
   {id:'settings',title:'Paramètres',subtitle:'Compte & préférences',icon:'settings-outline',color:'#647A8D'},
 ] as const;
 type SectionId=typeof sections[number]['id'];
@@ -108,7 +109,13 @@ export default function Profile() {
     <ScrollView ref={scroll} keyboardShouldPersistTaps="handled" contentContainerStyle={{...workspaceCanvas(width),
       paddingTop:12,paddingBottom:ws.desktop?100:70}}>
       <PageHeader title="Mon profil"/>
-        <View style={{ alignItems: 'center', marginTop: 23 }}>
+        <View style={{ alignItems: 'center', marginTop: 22 }}>
+          {ws.desktop?<View pointerEvents="none" style={{position:'absolute',right:6,top:0,width:260,height:154,opacity:theme.dark?.65:.8}}>
+            <Svg width="100%" height="100%" viewBox="0 0 260 154" fill="none">
+              <Path d="M260 23 C220 14 205 47 177 46 C149 44 139 16 117 30 C98 43 125 70 143 58 C167 41 132 19 105 41 C80 61 105 94 131 89 C170 80 157 45 182 52 C211 60 196 99 164 113 C124 129 78 95 54 116 C29 137 42 150 0 150" stroke={theme.dark?'#E78CAD':'#C97898'} strokeWidth="1.15" strokeLinecap="round"/>
+              <Path d="M260 23 C245 20 236 22 222 30" stroke="#B88962" strokeWidth="1.15" strokeLinecap="round"/>
+            </Svg>
+          </View>:null}
           {avatar ? (
             <Image
               source={{ uri: avatar }}
@@ -123,7 +130,7 @@ export default function Profile() {
           ) : (
             <Avatar size={94} />
           )}
-          <Text style={{ fontSize: 22, fontWeight: '700', color: theme.foreground, marginTop: 12 }}>
+          <Text style={{ fontSize: 26, fontWeight: '700', color: theme.foreground, marginTop: 12 }}>
             {app.name}
           </Text>
         </View>
@@ -157,26 +164,20 @@ export default function Profile() {
           {field('bio','Ma description')}{field('city','Ma ville')}{field('church','Ma communauté')}
           <Pressable onPress={()=>setEdit(null)} style={{padding:10,alignItems:'center'}}><Text style={{color:theme.muted}}>Fermer</Text></Pressable>
         </View>:null}
-        <View style={{marginTop:ws.desktop?46:34,marginBottom:18}}>
-          <Text style={{fontSize:11,color:theme.muted,fontWeight:'700',letterSpacing:1.25,marginBottom:12}}>MON ESPACE PERSONNEL</Text>
-          <View style={{flexDirection:'row',gap:ws.desktop?14:10,flexWrap:'wrap'}}>
+        <View style={{marginTop:ws.desktop?32:25,marginBottom:6}}>
+          <Text style={{fontSize:11,color:theme.muted,fontWeight:'700',letterSpacing:1.4,marginBottom:10}}>MON ESPACE PERSONNEL</Text>
+          <View style={{flexDirection:'row',gap:8,flexWrap:'wrap'}}>
             {sections.map(link => (
               <Pressable key={link.id} accessibilityRole="button" accessibilityLabel={link.title}
                 onPress={()=>jump(link.id)}
                 style={{
-                  width:ws.desktop?'31.8%':width>=360?'48.5%':'100%',padding:ws.desktop?18:10,borderWidth:1,borderColor:theme.border,
-                  borderRadius:12,backgroundColor:theme.surface,flexDirection:'row',alignItems:'center',gap:ws.desktop?13:8,
-                  minHeight:ws.desktop?89:70,
+                  paddingHorizontal:12,paddingVertical:9,borderWidth:1,borderColor:theme.border,
+                  borderRadius:20,backgroundColor:theme.surface,flexDirection:'row',alignItems:'center',gap:7,
+                  minHeight:40,
                 }}>
-                <View style={{width:ws.desktop?38:30,height:ws.desktop?38:30,borderRadius:11,backgroundColor:theme.background,
-                  justifyContent:'center',alignItems:'center'}}>
-                  <Ionicons name={link.icon} size={21} color={link.color}/>
-                </View>
-                <View style={{flex:1,gap:4}}>
-                  <Text style={{color:theme.foreground,fontWeight:'700',fontSize:ws.desktop?14:12}}>{link.title}</Text>
-                  <Text style={{color:theme.muted,fontSize:ws.desktop?11:10}}>{link.subtitle}</Text>
-                </View>
-                <Ionicons name="arrow-down-outline" size={16} color={theme.muted}/>
+                <Ionicons name={link.icon} size={17} color={theme.dark?theme.muted:link.color}/>
+                <Text style={{color:theme.foreground,fontWeight:'600',fontSize:12}}>{link.title}</Text>
+                <Ionicons name="arrow-down-outline" size={12} color={theme.muted}/>
               </Pressable>
             ))}
           </View>
@@ -185,25 +186,22 @@ export default function Profile() {
           <View key={item.id} onLayout={event=>{
             anchors.current[item.id]=event.nativeEvent.layout.y;
             if(pending.current===item.id)jump(item.id);
-          }} style={{marginTop:index===0?18:22,borderRadius:16,
-            backgroundColor:item.id==='publications'?theme.background:
-              item.id==='settings'?theme.surface:
-              theme.dark?item.color+'19':item.color+'0B',
-            borderWidth:item.id==='publications'||item.id==='music'?0:1,
-            borderColor:theme.dark?theme.border:item.color+'25',
+          }} style={{marginTop:index===0?18:22,borderRadius:16,overflow:'hidden',
+            backgroundColor:item.id==='talents'?(theme.dark?'#1B2220':'#F5F6EF'):
+              item.id==='music'?(theme.dark?'#24212B':'#F5F1F7'):
+              item.id==='bible'?(theme.dark?'#28231F':'#F8F1E8'):
+              item.id==='prayers'?(theme.dark?'#252023':'#FAF3F3'):theme.surface,
+            borderWidth:1,borderColor:theme.border,
             paddingHorizontal:inset,paddingVertical:ws.desktop?22:16,gap:15}}>
             <View style={{flexDirection:'row',alignItems:'center',gap:10}}>
-              <View style={{width:36,height:36,borderRadius:12,alignItems:'center',justifyContent:'center',
-                backgroundColor:theme.dark?theme.surface:item.color+'14'}}>
-                <Ionicons name={item.icon} size={20} color={theme.dark?theme.foreground:item.color}/>
-              </View>
+              <Ionicons name={item.icon} size={24} color={theme.dark?theme.foreground:item.color}/>
               <View style={{flex:1,gap:2}}>
-                <Text accessibilityRole="header" style={{fontSize:18,fontWeight:'700',color:theme.foreground}}>{item.title}</Text>
+                <Text accessibilityRole="header" style={{fontSize:20,fontWeight:'700',color:theme.foreground}}>{item.title}</Text>
                 {item.id==='settings'?null:<Text style={{fontSize:12,color:theme.muted}}>{item.subtitle}</Text>}
               </View>
               {item.id==='settings'?<Pressable onPress={()=>setSettingsOpen(v=>!v)} accessibilityRole="button" accessibilityLabel="Afficher les paramètres" accessibilityState={{expanded:settingsOpen}} style={{padding:10}}><Ionicons name={settingsOpen?'chevron-up':'chevron-down'} size={20} color={theme.foreground}/></Pressable>:null}
-              {item.id==='bible'?<Pressable onPress={()=>router.push('/bible-library')} accessibilityRole="button" accessibilityLabel="Ouvrir le lecteur de la Bible" style={{padding:8}}>
-                <Ionicons name="expand-outline" size={20} color={theme.foreground}/>
+              {item.id==='bible'?<Pressable onPress={()=>router.push('/bible-library')} accessibilityRole="button" accessibilityLabel="Ouvrir le lecteur de la Bible" style={{minHeight:40,paddingHorizontal:10,flexDirection:'row',alignItems:'center',gap:5,borderRadius:20,borderWidth:1,borderColor:theme.border,backgroundColor:theme.surface}}>
+                <Text style={{fontSize:12,fontWeight:'600',color:theme.foreground}}>Lire</Text><Ionicons name="arrow-forward-outline" size={15} color={theme.foreground}/>
               </Pressable>:null}
             </View>
             <View onLayout={item.id==='talents'?e=>setPanelWidth(e.nativeEvent.layout.width):undefined}>
@@ -211,7 +209,7 @@ export default function Profile() {
               {item.id==='publications'?<ProfilePublications contentWidth={contentWidth}/>:null}
               {item.id==='music'?<MusicLibrary embedded contentWidth={contentWidth} preferredLayout={preferredLayout}/>:null}
               {item.id==='prayers'?<Prayers/>:null}
-              {item.id==='bible'?<BibleLibraryScreen embedded/>:null}
+              {item.id==='bible'?<ProfileMarkedVerses/>:null}
               {item.id==='settings'?(settingsOpen?<Settings onMusicLayoutChange={setPreferredLayout}/>:<Pressable onPress={()=>setSettingsOpen(true)} accessibilityRole="button" style={{paddingVertical:4}}><Text style={{color:theme.muted,fontSize:12}}>Langue · Apparence · Préférences musicales · Compte</Text></Pressable>):null}
             </View>
           </View>

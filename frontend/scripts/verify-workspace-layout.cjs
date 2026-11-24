@@ -378,3 +378,6 @@ if(/<Image|LinearGradient|filter=|blur\(/.test(aspirationIcon)){
   console.error('Aspirations navigation icon must remain a simple, theme-aware vector.');
   process.exitCode=1;
 }
+
+// The private profile is a collection of bookmarks, never a full Bible reader.
+if(!personalProfile.includes('<ProfileMarkedVerses/>')||personalProfile.includes('<BibleLibraryScreen')||!personalProfile.includes('borderWidth:1,borderColor:theme.border')||!read('src/components/profile/ProfileMarkedVerses.tsx').includes('fireBibleVerses')||!read('src/components/profile/ProfileBible.tsx').includes('initialLocation={location}')){console.error('Personal Bible bookmark navigation or section border regression.');process.exitCode=1;}
