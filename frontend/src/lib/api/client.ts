@@ -1,10 +1,11 @@
 /**
- * JenLow API client. Sign-in currently stays on Supabase (unchanged on purpose), and the API
- * does not accept Supabase tokens, so these requests are anonymous reads for now. When the app
- * signs in through the API (/v1/auth), session.ts holds the tokens and they are sent here.
+ * JenLow API client. Supabase verifies the login; our own Worker exchanges
+ * that trusted identity for a short-lived JenLow API token. Neither the
+ * Worker token nor a second Worker refresh credential is stored on disk.
  */
-import { API_BASE } from '@/lib/authApi';
-import { currentAccessToken, loadSession, saveSession, setAccessToken } from './session';
+import {API_BASE} from '@/lib/authApi';
+import {supabase} from '@/lib/supabaseClient';
+import {currentAccessToken,setAccessToken} from './session';
 
 /** Error raised for non-2xx API responses; `code` is the stable machine code from the server. */
 export class ApiRequestError extends Error {
@@ -26,35 +27,40 @@ export const onSessionChange = (fn: Listener) => {
   return () => listeners.delete(fn);
 };
 
-/** Exchange the stored refresh token for a new access token (single flight). */
-export function refreshAccessToken(): Promise<string | null> {
-  if (refreshing) return refreshing;
-  refreshing = (async () => {
-    const stored = await loadSession();
-    if (!stored) return null;
-    try {
-      const res = await fetch(API_BASE + '/v1/auth/refresh', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refreshToken: stored.refreshToken }),
-      });
-      if (!res.ok) {
-        if (res.status === 401) {
-          await saveSession(null);
-          setAccessToken(null);
-          listeners.forEach(l => l(false));
-        }
+/** Transparently restore the API token from a validated Supabase login. */
+export function refreshAccessToken():Promise<string|null>{
+  if(refreshing)return refreshing;
+  refreshing=(async()=>{
+    try{
+      if(!supabase)return null;
+      const {data,error}=await supabase.auth.getSession();
+      if(error||!data.session?.access_token){
+        setAccessToken(null);
+        listeners.forEach(fn=>fn(false));
         return null;
       }
-      const data = await res.json();
-      setAccessToken(data.accessToken, data.expiresIn);
-      await saveSession({ ...stored, refreshToken: data.refreshToken });
-      return data.accessToken as string;
-    } catch {
-      return null;
-    } finally {
-      refreshing = null;
-    }
+      // The server calls Supabase Auth /user. Client-decoded claims, emails
+      // and unsigned/local session objects never authorize access to D1.
+      const response=await fetch(API_BASE+'/v1/auth/supabase/exchange',{
+        method:'POST',
+        headers:{Accept:'application/json',
+          Authorization:'Bearer '+data.session.access_token},
+      });
+      if(!response.ok){
+        setAccessToken(null);
+        if(response.status===401||response.status===403)
+          listeners.forEach(fn=>fn(false));
+        return null;
+      }
+      const exchanged=await response.json() as {
+        accessToken?:string;expiresIn?:number;
+      };
+      if(!exchanged.accessToken)return null;
+      setAccessToken(exchanged.accessToken,exchanged.expiresIn||900);
+      listeners.forEach(fn=>fn(true));
+      return exchanged.accessToken;
+    }catch{return null;}
+    finally{refreshing=null;}
   })();
   return refreshing;
 }
@@ -63,7 +69,9 @@ type Options = { method?: string; body?: unknown; auth?: 'optional' | 'required'
 
 /** JSON request to the JenLow API with transparent access-token refresh. */
 export async function api<T>(path: string, options: Options = {}): Promise<T> {
-  const auth = options.auth ?? 'optional';
+  // Private API data is never fetched as an anonymous fallback. The beta
+  // mock catalog uses a separate, explicitly fictional endpoint.
+  const auth = options.auth ?? (path.startsWith('/api/')?'required':'optional');
   const send = async (token: string | null) => {
     const headers: Record<string, string> = { Accept: 'application/json' };
     if (options.body !== undefined) headers['Content-Type'] = 'application/json';
@@ -76,7 +84,7 @@ export async function api<T>(path: string, options: Options = {}): Promise<T> {
       signal: options.signal,
     });
   };
-  let token = auth === 'none' ? null : currentAccessToken() ?? (auth === 'required' || (await loadSession()) ? await refreshAccessToken() : null);
+  let token=auth==='none'?null:currentAccessToken()??await refreshAccessToken();
   if (auth === 'required' && !token) throw new ApiRequestError(401, 'not_authenticated');
   let res: Response;
   try {
@@ -99,6 +107,13 @@ export async function api<T>(path: string, options: Options = {}): Promise<T> {
   if (!res.ok) {
     const err = data?.error;
     const code = typeof err === 'string' ? err : err?.code || 'request_failed';
+    // A revoked or expired JenLow API identity closes the entire protected
+    // application. Refresh attempts are handled above; do not keep rendering
+    // Discovery or private workspaces after a second 401.
+    if (auth!=='none' && res.status===401){
+      setAccessToken(null);
+      listeners.forEach(fn=>fn(false));
+    }
     throw new ApiRequestError(res.status, code, typeof err === 'object' ? err?.message : undefined, err?.requestId);
   }
   return data as T;
