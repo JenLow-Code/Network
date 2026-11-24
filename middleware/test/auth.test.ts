@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { createApp, INVITE, ORIGIN, SECRET } from './helpers/app.ts';
 // The script deployed today. Running it on the same database proves the TS port is compatible.
 // @ts-expect-error plain JS module without types
-import legacyWorker from '../src/worker-runtime.js';
+import legacyWorker from './fixtures/legacy-auth.js';
 
 const legacyCall = async (env: object, method: string, path: string, body?: unknown, token?: string) => {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };

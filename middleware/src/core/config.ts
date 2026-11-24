@@ -1,4 +1,4 @@
-import type { D1Database, R2Bucket } from '../platform/cf';
+import type { D1Database, R2Bucket } from './platform';
 
 /**
  * Worker bindings. Secrets are set with `wrangler secret put`, never committed.

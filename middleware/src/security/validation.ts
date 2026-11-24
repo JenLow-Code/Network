@@ -1,4 +1,4 @@
-import { ApiError, type ErrorDetail } from './errors';
+import { ApiError, type ErrorDetail } from '../core/errors';
 
 export type Obj = Record<string, unknown>;
 

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
-import type { Env } from '../../src/config/env.ts';
-import type { R2Bucket, R2Object, R2ObjectBody, R2PutOptions } from '../../src/platform/cf.ts';
+import type { Env } from '../../src/core/config.ts';
+import type { R2Bucket, R2Object, R2ObjectBody, R2PutOptions } from '../../src/core/platform.ts';
 import { handle, router } from '../../src/app.ts';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';

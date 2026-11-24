@@ -1,8 +1,8 @@
-import type { Ctx } from '../http/context';
-import { json, legacyError } from '../http/respond';
-import { withinLimit } from '../http/rateLimit';
-import { newId } from '../lib/util';
-import { ACCESS_TTL_SECONDS, signAccessToken } from './tokens';
+import type { Ctx } from '../core/context';
+import { json, legacyError } from '../core/respond';
+import { withinLimit } from '../security/rateLimit';
+import { newId } from '../core/database';
+import { ACCESS_TTL_SECONDS, signAccessToken } from '../sessions/tokens';
 
 // Public project settings, never privileged credentials. Environment overrides
 // retain compatibility with the existing login and allow configuration rotation.

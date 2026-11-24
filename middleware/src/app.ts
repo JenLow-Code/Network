@@ -1,13 +1,13 @@
-import type { Env } from './config/env';
-import type { ExecutionContext } from './platform/cf';
-import { MIN_SECRET_LENGTH,allowedOrigins } from './config/env';
-import { Ctx } from './http/context';
-import { Router } from './http/router';
-import { ApiError } from './http/errors';
-import { errorResponse,json,legacyError } from './http/respond';
-import * as auth from './auth/legacyRoutes';
-import { exchangeSupabase } from './auth/supabase';
-import { openApi } from './openapi';
+import type { Env } from './core/config';
+import type { ExecutionContext } from './core/platform';
+import { MIN_SECRET_LENGTH,allowedOrigins } from './core/config';
+import { Ctx } from './core/context';
+import { Router } from './core/router';
+import { ApiError } from './core/errors';
+import { errorResponse,json,legacyError } from './core/respond';
+import * as auth from './authentication/routes';
+import { exchangeSupabase } from './authentication/supabase';
+import { openApi } from './core/openapi';
 export const API_VERSION='2.0.0-security';
 export function buildRouter():Router {
  const r=new Router();

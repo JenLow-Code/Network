@@ -1,4 +1,4 @@
-import type { Router } from './http/router';
+import type { Router } from './router';
 
 /**
  * OpenAPI 3.1 document generated from the live route table, so it cannot drift from what the
@@ -30,11 +30,11 @@ export function openApi(router: Router, version: string): Record<string, unknown
   return {
     openapi: '3.1.0',
     info: {
-      title: 'JenLow Network API',
+      title: 'JenLow Security Middleware',
       version,
       description: 'Cloudflare Worker + D1. /v1/auth/* keeps the beta auth contract ({"error":"code"}); /api/* uses the error envelope {"error":{code,message,requestId,details?}}. Timestamps are ISO 8601 UTC. Lists use opaque keyset cursors.',
     },
-    servers: [{ url: 'https://jenlow-network-auth.jenlow-production.workers.dev' }],
+    
     components: {
       securitySchemes: { bearer: { type: 'http', scheme: 'bearer', bearerFormat: 'JWT (HS256, iss jenlow-network-api, aud jenlow-network, 15 min)' } },
       responses: {

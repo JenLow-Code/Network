@@ -1,4 +1,4 @@
-import type { Phase } from './phases';
+import type { Phase } from './aspirationPhases';
 
 /**
  * Server-side copy of the V1 action policy (frontend/src/domain/publicationRules.ts and

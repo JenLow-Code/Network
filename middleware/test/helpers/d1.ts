@@ -7,7 +7,7 @@
 import { DatabaseSync } from 'node:sqlite';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
-import type { D1Database, D1PreparedStatement, D1Result, D1Value } from '../../src/platform/cf.ts';
+import type { D1Database, D1PreparedStatement, D1Result, D1Value } from '../../src/core/platform.ts';
 
 const READER = /^\s*(SELECT|WITH|PRAGMA|VALUES)\b/i;
 

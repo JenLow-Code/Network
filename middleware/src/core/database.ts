@@ -1,4 +1,4 @@
-import type { D1Database, D1PreparedStatement, D1Value } from '../platform/cf';
+import type { D1Database, D1PreparedStatement, D1Value } from './platform';
 
 const encoder = new TextEncoder();
 

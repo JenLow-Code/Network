@@ -1,6 +1,6 @@
-import type { Sql } from '../lib/util';
-import { sha256Hex } from '../lib/util';
-import { tooMany } from './errors';
+import type { Sql } from '../core/database';
+import { sha256Hex } from '../core/database';
+import { tooMany } from '../core/errors';
 
 export const WINDOW_SECONDS = 900;
 

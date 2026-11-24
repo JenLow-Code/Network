@@ -1,11 +1,11 @@
 import { readBoundedJson } from '../security/body';
-import type { Env } from '../config/env';
-import type { Ctx } from '../http/context';
-import { json, legacyError } from '../http/respond';
-import { LIMITS, withinLimit } from '../http/rateLimit';
-import { newId, sha256Hex, hex } from '../lib/util';
+import type { Env } from '../core/config';
+import type { Ctx } from '../core/context';
+import { json, legacyError } from '../core/respond';
+import { LIMITS, withinLimit } from '../security/rateLimit';
+import { newId, sha256Hex, hex } from '../core/database';
 import { DUMMY_SALT, PASSWORD_ITERATIONS, derivePassword, sameDigest } from './password';
-import { ACCESS_TTL_SECONDS, REFRESH_TTL_DAYS, bearer, signAccessToken, verifyAccessToken } from './tokens';
+import { ACCESS_TTL_SECONDS, REFRESH_TTL_DAYS, bearer, signAccessToken, verifyAccessToken } from '../sessions/tokens';
 
 /**
  * /v1/auth/* — behaviour-preserving TypeScript port of the deployed beta Worker

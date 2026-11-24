@@ -1,4 +1,4 @@
-import type { Locale } from '../http/context';
+import type { Locale } from '../core/context';
 
 /**
  * Single source of truth for Dream phase names.

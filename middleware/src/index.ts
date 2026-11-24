@@ -1,5 +1,5 @@
-import type {Env} from './config/env';
-import type {ExecutionContext,ScheduledController} from './platform/cf';
+import type {Env} from './core/config';
+import type {ExecutionContext,ScheduledController} from './core/platform';
 import {handle} from './app';
 export default {
  fetch(request:Request,env:Env,ctx:ExecutionContext){return handle(request,env,ctx);},

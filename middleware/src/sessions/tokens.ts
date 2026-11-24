@@ -1,5 +1,5 @@
-import type { Env } from '../config/env';
-import { b64url, fromB64url } from '../lib/util';
+import type { Env } from '../core/config';
+import { b64url, fromB64url } from '../core/database';
 
 /**
  * Access tokens: HS256 JWT, iss "jenlow-network-api", aud "jenlow-network", 15-minute expiry.

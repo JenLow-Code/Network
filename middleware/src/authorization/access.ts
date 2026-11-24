@@ -1,8 +1,8 @@
-import type { Sql } from '../lib/util';
-import type { Viewer } from '../http/context';
-import type { D1PreparedStatement } from '../platform/cf';
-import { forbidden, notFound } from '../http/errors';
-import { newId } from '../lib/util';
+import type { Sql } from '../core/database';
+import type { Viewer } from '../core/context';
+import type { D1PreparedStatement } from '../core/platform';
+import { forbidden, notFound } from '../core/errors';
+import { newId } from '../core/database';
 
 export type Visibility = 'private' | 'members' | 'public';
 

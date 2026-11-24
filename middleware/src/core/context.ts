@@ -1,10 +1,10 @@
-import type { Env } from '../config/env';
-import type { ExecutionContext } from '../platform/cf';
-import { Sql } from '../lib/util';
-import { bearer, verifyAccessToken } from '../auth/tokens';
+import type { Env } from './config';
+import type { ExecutionContext } from './platform';
+import { Sql } from './database';
+import { bearer, verifyAccessToken } from '../sessions/tokens';
 import { badRequest, forbidden, unauthenticated } from './errors';
 import { readBoundedJson } from '../security/body';
-import type { Obj } from './validate';
+import type { Obj } from '../security/validation';
 
 export type Locale = 'fr' | 'en' | 'de' | 'pt';
 export const LOCALES: readonly Locale[] = ['fr', 'en', 'de', 'pt'];
