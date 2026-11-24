@@ -98,6 +98,14 @@ const layoutRules=[
     'Only the desktop back arrow is outside the common content rail'],
   ['src/components/navigation/PageHeader.tsx',/paddingLeft:desktop\?0:52/,
     'Desktop titles must start on the content rail; mobile retains its established spacing'],
+  ['src/components/publication/PublicationGallery.tsx',/const screen=workspaceLayout\(screenWidth\);/,
+    'Discovery masonry must use the shared device class rather than local container width'],
+  ['src/components/publication/PublicationGallery.tsx',/const columns = screen.desktop \? 4 : screen.tablet \? 3 : 2;/,
+    'Discovery masonry must remain 4 columns desktop, 3 tablet, 2 phone'],
+  ['src/components/detail/DetailLayout.tsx',/const relatedWidth=Math.max\(0,Math.min\(/,
+    'Related inspiration must use the full workspace reading width'],
+  ['src/components/detail/DetailLayout.tsx',/layout="masonry"\s*flushEdges\s*contentWidth=\{relatedWidth\}/,
+    'Related inspiration must reuse the same full-width masonry grid'],
   ['src/components/music/MusicWorkspaceTabs.tsx',/width:compact\?142:undefined/,
     'Mobile music workspace tabs must use a narrow lightweight icon group'],
   ['src/components/music/MusicWorkspaceTabs.tsx',/width:selected\?5:3,height:selected\?5:3,borderRadius:3/,
@@ -247,6 +255,20 @@ if(/borderRadius:0,borderWidth:1/.test(projectSource)||
    /width:27,height:3,\s*backgroundColor:panel.accent/.test(projectSource)){
   console.error('Project panels must stay borderless, dreams rounded, and the hero free of bottom fades or decorative rules.');
   process.exitCode=1;
+}
+
+// Discovery grid contract: 4 desktop, 3 tablet, 2 phone. Column width may
+// change with the available workspace, but the column count must not.
+for(const [screenWidth,expectedColumns] of [
+  [390,2],[699,2],[700,3],[900,3],[1099,3],[1100,4],[1440,4],
+]){
+  const desktop=screenWidth>=1100;
+  const tablet=screenWidth>=700&&!desktop;
+  const columns=desktop?4:tablet?3:2;
+  if(columns!==expectedColumns){
+    console.error('Discovery masonry column regression at '+screenWidth+'px');
+    process.exitCode=1;
+  }
 }
 
 const failures=layoutRules.filter(([path,pattern])=>!pattern.test(read(path)));
