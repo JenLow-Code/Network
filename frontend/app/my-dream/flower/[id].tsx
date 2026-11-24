@@ -221,7 +221,7 @@ export default function FlowerPreparation() {
               pathname: '/my-dream/[id]', params: { id: dream.id, view: phase },
             });
           }}
-          summary="Il est temps de raconter ce que cette aspiration a produit." />
+          summary={dream.summary} />
 
         {/* The four existing workspace links remain beside the two dates. */}
         <View style={{ flexDirection: 'row', gap: 13, marginTop: 0, marginBottom: 21,
@@ -355,15 +355,10 @@ export default function FlowerPreparation() {
           ) : null}
 
           {/* The achievement is a human account, not a second upload form. */}
-          <Text style={{ fontSize: 10, letterSpacing: 1.2, fontWeight: '800',
-            color: MAGENTA, marginBottom: 8 }}>L’ASPIRATION DEVENUE RÉELLE</Text>
-          <Text style={{ ...sectionTitle, fontSize: 26, lineHeight: 34,
-            marginBottom: 10 }}>Ce qui a pris vie</Text>
-          <Text style={{ ...muted, fontSize: 13, lineHeight: 21,
-            marginBottom: 17 }}>
-            Raconte le moment où cette aspiration a pris forme, ce qui s’est passé
-            et ce que cela représente pour toi.
-          </Text>
+          <Text accessibilityRole="header" style={{ color:theme.foreground,fontWeight:'800',letterSpacing:-0.5,fontSize:narrow?20:22,
+            marginBottom: 18 }}>Ce qui a pris vie</Text>
+          <View style={{flexDirection:ws.desktop?'row':'column',alignItems:'stretch',gap:ws.desktop?28:18}}>
+          <View style={{flex:ws.desktop?1:undefined,minWidth:0}}>
           <Text style={{ color: theme.foreground, fontWeight: '700',
             fontSize: 13, marginBottom: 7 }}>Le récit de cette réalisation</Text>
           <TextInput multiline value={draft.story}
@@ -375,8 +370,10 @@ export default function FlowerPreparation() {
             accessibilityLabel="Raconter ce qui s’est réalisé"
             style={{ color: theme.foreground, fontSize: 15, lineHeight: 25,
               borderBottomWidth: 1, borderColor: theme.border,
-              paddingVertical: 13, paddingHorizontal: 2, minHeight: 100,
+              paddingVertical: 13, paddingHorizontal: 2, minHeight: ws.desktop?270:140,
               textAlignVertical: 'top', marginBottom: 20 }}/>
+          </View>
+          <View style={{flex:ws.desktop?1:undefined,minWidth:0}}>
           <Text style={{ color: theme.foreground, fontWeight: '700',
             fontSize: 13, marginBottom: 9 }}>Un souvenir de ce moment</Text>
           <Pressable accessibilityRole="button"
@@ -401,7 +398,7 @@ export default function FlowerPreparation() {
                   <Text style={{ color: theme.foreground, fontSize: 13,
                     fontWeight: '700' }}>Ajouter une photo de la réalisation</Text>
                   <Text style={{ ...muted, lineHeight: 18 }}>
-                    Un instant vrai qui raconte ce qui s’est accompli.
+                    Photo, vidéo ou audio.
                   </Text>
                 </View>
                 <Ionicons name="add" size={19} color={MAGENTA}/>
@@ -444,6 +441,8 @@ export default function FlowerPreparation() {
             Photos, vidéos ou audio · sauvegarde locale provisoire,
             2 Mo maximum par fichier.
           </Text>
+          </View>
+          </View>
         </View>
 
         {/* Automatically composed from the dream's actual journey.

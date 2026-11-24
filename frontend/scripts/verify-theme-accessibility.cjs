@@ -93,7 +93,7 @@ const semence = source('src/components/dream/SemenceStudio.tsx');
 const inspirations = source('src/components/dream/SemenceInspirations.tsx');
 assert.ok(semence.includes("import SemenceInspirations from './SemenceInspirations'") &&
   semence.includes('<SemenceInspirations dream={dream} editable={editable} showAddControl={editable}') &&
-  semence.indexOf('<SemenceInspirations') < semence.indexOf('<DreamMilestoneActions') &&
+  semence.indexOf('<SemenceInspirations') < semence.indexOf('{!ws.desktop?footer:null}') &&
   inspirations.includes('accessibilityLabel="Ajouter une inspiration"') &&
   inspirations.includes("kind:'document'") &&
   inspirations.includes("kind:'link'"),
@@ -113,12 +113,13 @@ assert.ok(inspirations.includes('showAddControl&&blocks.length>0') &&
   inspirations.includes('Ajouter une inspiration') &&
   inspirations.includes("setChoosing(true);setMessage('');"),
   'Empty inspirations need a working inline link to the original media/link/document picker');
-assert.ok(semence.indexOf('</ScrollView>') < semence.indexOf('<DreamMilestoneActions') &&
-  semence.includes('<DreamMilestoneActions anchored equalUtilityButtons secondaryFirst') &&
+assert.ok(semence.indexOf('{!ws.desktop?footer:null}') < semence.indexOf('</ScrollView>') &&
+  semence.indexOf('</ScrollView>') < semence.indexOf('{ws.desktop?footer:null}') &&
+  semence.includes('<DreamMilestoneActions anchored={ws.desktop} equalUtilityButtons secondaryFirst') &&
   semence.includes('primaryLabel="Faire germer cette semence"') &&
   semence.includes('secondaryLabel="Publier cette semence"') &&
   semence.includes('destructiveLabel="Arracher"'),
-  'Semence actions should anchor below scroll with equal width publication and destructive controls');
+  'Semence actions must anchor only on desktop, scroll below inspirations on touch layouts, and keep equal utility widths');
 assert.ok(navTree.includes("phase==='Rêve'?[") &&
   navTree.includes("{kind:'notes' as const,title:'Notes personnelles'}") &&
   !navTree.includes("||phase==='Rêve')return phaseNav;"),

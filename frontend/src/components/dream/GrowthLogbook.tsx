@@ -401,7 +401,7 @@ export function GrowthLogbook({
 
   return <View style={{ gap: 11, marginTop: 10, marginBottom: 22 }}>
     <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
-      <Text style={{color:theme.foreground,fontSize:21,fontWeight:'700'}}>Logbook</Text>
+      <Text style={{color:theme.foreground,fontSize:22,fontWeight:'800',letterSpacing:-0.5}}>Logbook</Text>
       {editable && !byDate.has(today) ? <Pressable accessibilityRole="button"
         accessibilityLabel="Ajouter une note ou une habitude"
         onPress={()=>setAddMenuOpen(true)} hitSlop={9}

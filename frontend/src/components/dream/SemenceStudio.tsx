@@ -86,7 +86,7 @@ export default function SemenceStudio({dream,onBack,onNavigate}:{
    {/* The private Semence moodboard must always be part of this workspace.
        Keep persisted blocks and the existing add-document/link/photo/verse menu. */}
    <View style={{marginTop:18,marginBottom:5,gap:12}}>
-     <Text accessibilityRole="header" style={{fontSize:19,fontWeight:'700',color:theme.foreground}}>Inspirations</Text>
+     <Text accessibilityRole="header" style={{fontSize:width<700?20:22,fontWeight:'800',letterSpacing:-0.5,color:theme.foreground}}>Inspirations</Text>
      <SemenceInspirations dream={dream} editable={editable} showAddControl={editable}
        onShareInspiration={id=>{setShareIds([id]);setShareOpen(true);}}/>
    </View>

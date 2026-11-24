@@ -10,6 +10,7 @@ import { useAppTheme } from '@/theme/AppTheme';
 import { workspaceLayout, PAGE_TITLE_FONT_SIZE, PAGE_TITLE_LINE_HEIGHT } from '@/theme/workspaceLayout';
 import { PageHeader } from '@/components/navigation/PageHeader';
 import { Nav } from '@/components/navigation/Nav';
+import { CassetteBlueprintBackground } from '@/components/music/CassetteBlueprintBackground';
 import { MusicWorkspaceTabs, type MusicWorkspaceSpace } from '@/components/music/MusicWorkspaceTabs';
 
 const PINK='#CB245C';
@@ -172,11 +173,10 @@ function AuthorizedSharedMusicFolder(){
     <Text style={{fontSize:12,color:theme.muted}}>Espace de travail partagé · {author}</Text>
   </View>;
   const section=(children:React.ReactNode)=><View style={{
-    backgroundColor:theme.surface,borderWidth:1,borderColor:theme.border,
-    borderRadius:14,padding:compact?13:18,gap:12,
+    backgroundColor:'transparent',gap:12,
   }}>{children}</View>;
   const heading=(label:string)=><Text style={{
-    fontSize:17,fontWeight:'700',color:theme.foreground,
+    fontSize:width<700?20:22,fontWeight:'800',letterSpacing:-0.5,color:theme.foreground,
   }}>{label}</Text>;
   const button=(label:string,onPress:()=>void,outline=false)=>
     <Pressable onPress={onPress} accessibilityRole="button"
@@ -245,18 +245,18 @@ function AuthorizedSharedMusicFolder(){
               {heading('Capturer')}
               <Text style={{fontSize:12,color:theme.muted}}>{captureRows.length}</Text>
             </View>
-            <Text style={{fontSize:12,color:theme.muted,lineHeight:19}}>
-              Ressources disponibles dans cet espace partagé, avec leur attribution.
-            </Text>
             {captureRows.length>0?<View style={{gap:0}}>
               {desktop?<View style={{flexDirection:'row',gap:12,
                 paddingVertical:9,borderBottomWidth:1,borderColor:theme.border}}>
-                <Text style={{flex:1,color:theme.muted,fontSize:11}}>Élément</Text>
-                <Text style={{width:115,color:theme.muted,fontSize:11}}>Date</Text>
-                <Text style={{width:150,color:theme.muted,fontSize:11}}>Modifié par</Text>
+                <Text style={{flex:1,color:theme.muted,fontSize:13,fontWeight:'700'}}>Nom</Text>
+                <Text style={{width:115,color:theme.muted,fontSize:13,fontWeight:'700'}}>Date</Text>
+                <Text style={{width:120,color:theme.muted,fontSize:13,fontWeight:'700'}}>Type</Text>
+                <Text style={{width:150,color:theme.muted,fontSize:13,fontWeight:'700'}}>Modifié par</Text>
               </View>:null}
+              <View style={{position:'relative',minHeight:desktop?410:undefined}}>
+              <CassetteBlueprintBackground desktop={desktop}/>
               {captureRows.map(row=><View key={row.id} style={{
-                gap:7,paddingVertical:13,borderBottomWidth:1,
+                gap:7,paddingVertical:desktop?25:13,borderBottomWidth:desktop?0:1,
                 borderColor:theme.border,
               }}>
                 <View style={{flexDirection:desktop?'row':'column',
@@ -267,6 +267,7 @@ function AuthorizedSharedMusicFolder(){
                   </Text>
                   <Text style={{width:desktop?115:undefined,fontSize:11,
                     color:theme.muted}}>{row.date}</Text>
+                  {desktop?<Text style={{width:120,fontSize:12,color:theme.muted}}>{row.id==='published-lyrics'?'Paroles':'Contribution'}</Text>:null}
                   <Text numberOfLines={1} style={{width:desktop?150:undefined,
                     fontSize:11,color:theme.foreground}}>
                     {compact?'Modifié par · ':''}{row.editor}
@@ -276,6 +277,7 @@ function AuthorizedSharedMusicFolder(){
                   fontSize:13,lineHeight:22,color:theme.muted,marginTop:2,
                 }}>{row.detail}</Text>:null}
               </View>)}
+              </View>
             </View>:<Text style={{fontSize:12,color:theme.muted}}>
               Aucun élément partagé pour le moment.
             </Text>}

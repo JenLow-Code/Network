@@ -189,7 +189,7 @@ export default function Profile() {
             <View style={{flexDirection:'row',alignItems:'center',gap:10}}>
               <Ionicons name={item.icon} size={24} color={theme.dark?theme.foreground:item.color}/>
               <View style={{flex:1,gap:2}}>
-                <Text accessibilityRole="header" style={{fontSize:20,fontWeight:'700',color:theme.foreground}}>{item.title}</Text>
+                <Text accessibilityRole="header" style={{fontSize:width<700?20:22,fontWeight:'800',letterSpacing:-0.5,color:theme.foreground}}>{item.title}</Text>
               </View>
               {item.id==='settings'?<Pressable onPress={()=>setSettingsOpen(v=>!v)} accessibilityRole="button" accessibilityLabel="Afficher les paramètres" accessibilityState={{expanded:settingsOpen}} style={{padding:10}}><Ionicons name={settingsOpen?'chevron-up':'chevron-down'} size={20} color={theme.foreground}/></Pressable>:null}
               {item.id==='bible'?<Pressable onPress={()=>router.push('/bible-library')} accessibilityRole="button" accessibilityLabel="Ouvrir le lecteur de la Bible" style={{minHeight:40,paddingHorizontal:10,flexDirection:'row',alignItems:'center',gap:5,borderRadius:20,borderWidth:1,borderColor:theme.border,backgroundColor:theme.surface}}>
