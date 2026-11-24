@@ -77,7 +77,7 @@ function asWorkspaceFailure(e:unknown):WorkspaceFailure {
 function AuthorizedSharedMusicFolder(){
   const {id,tab}=useLocalSearchParams<{id:string;tab?:MusicWorkspaceSpace}>();
   const theme=useAppTheme();
-  const demoId=!!id&&/^demo-music-publication-\\d{2}$/.test(id);
+  const demoId=!!id&&/^demo-music-publication-\d{2}$/.test(id);
   const {width}=useWindowDimensions();
   const ws=workspaceLayout(width);
   const compact=width<600;
@@ -112,7 +112,7 @@ function AuthorizedSharedMusicFolder(){
           const match=preview.collaborations.find(p=>p.trackPublicationId===id);
           if(!match){setError({kind:'unavailable',
             message:'Exemple de collaboration introuvable.'});return;}
-          const publication=preview.songs.find(s=>s.id===id);
+          const publication=preview.catalog.find(s=>s.id===id);
           setMusic({
             title:match.trackTitle,
             description:publication?.description||match.description,
@@ -150,6 +150,17 @@ function AuthorizedSharedMusicFolder(){
       .finally(()=>{if(live)setLoading(false);});
     return ()=>{live=false;};
   },[id,demoId,retryCount]);
+
+  // A stale or unauthorized link must not leave an inaccessible project on screen.
+  // The API remains the authority; never grant access or substitute another song.
+  useEffect(()=>{
+    if(!loading&&error?.kind==='permission')router.replace('/music-hub');
+  },[loading,error?.kind]);
+
+  if(error?.kind==='permission')return <SafeAreaView style={{flex:1,
+    backgroundColor:theme.background,alignItems:'center',justifyContent:'center'}}>
+    <ActivityIndicator color={PINK}/>
+  </SafeAreaView>;
 
   const title=music?.title||'Morceau partagé';
   const author=collaborators.find(person=>person.role==='owner')?.displayName||
@@ -209,7 +220,6 @@ function AuthorizedSharedMusicFolder(){
       {loading?<ActivityIndicator color={PINK}/>:null}
       {error?section(<>
         {heading(error.kind==='api_session'?'Connexion au serveur collaboratif indisponible':
-          error.kind==='permission'?'Accès au morceau non autorisé':
           'Espace partagé indisponible')}
         <Text style={{color:theme.muted,fontSize:13,lineHeight:21}}>
           {error.message}
@@ -221,7 +231,7 @@ function AuthorizedSharedMusicFolder(){
         </Text>:null}
         <View style={{flexDirection:'row',gap:10,flexWrap:'wrap'}}>
           {button('Retour à Musique',()=>router.replace('/music-hub'),true)}
-          {error.kind!=='permission'?button('Réessayer',()=>setRetryCount(n=>n+1)):null}
+          {button('Réessayer',()=>setRetryCount(n=>n+1))}
         </View>
       </>):null}
       {(!!conversationId||demoId)&&!loading&&!error?<>
