@@ -854,7 +854,7 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 21,
-    backgroundColor: NETWORK_MAGENTA,
+    backgroundColor: 'rgba(0,0,0,0.63)',
     alignItems: 'center',
     justifyContent: 'center',
   },
