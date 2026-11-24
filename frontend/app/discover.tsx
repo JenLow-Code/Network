@@ -21,14 +21,6 @@ import { workspaceLayout,PAGE_TITLE_FONT_SIZE,PAGE_TITLE_LINE_HEIGHT } from '@/t
 import { HANDWRITING_FAMILY } from '@/theme/handwriting';
 import { matchesForMe, profileTalentStorageKey, type SavedTalent } from '@/domain/personalDiscovery';
 const filters = ['Tout', 'Pour moi', 'Aspirations', 'Musique', 'Bible', 'Talents'] as const;
-const filterIcons: Record<(typeof filters)[number], keyof typeof Ionicons.glyphMap> = {
-  Tout: 'grid-outline',
-  'Pour moi': 'sparkles-outline',
-  Aspirations: 'leaf-outline',
-  Musique: 'musical-notes-outline',
-  Bible: 'book-outline',
-  Talents: 'people-outline',
-};
 
 /** Deterministic within a visit; a new seed gently varies tile placement on refresh. */
 function discoveryRank(id: string, seed = 0): number {
@@ -50,7 +42,6 @@ export default function Discover() {
   const theme = useAppTheme();
   const {width}=useWindowDimensions();
   const desktop=Platform.OS==='web'&&workspaceLayout(width).desktop;
-  const compact=width<600;
   const ws=workspaceLayout(width);
   // Android browser chrome can change the visual viewport independently of
   // useWindowDimensions. Measure the actual gallery container instead.
@@ -200,30 +191,14 @@ export default function Discover() {
             onChangeText={setQuery}
           />
         </View>
-        {compact ?
-          <View accessibilityRole="tablist" style={{
-            flexDirection:'row',gap:4,width:'100%',alignItems:'center',
-            paddingBottom:14,
-          }}>
-            {filters.map(f=>(
-              <Pressable key={f} accessibilityRole="tab"
-                accessibilityLabel={filterTitle(f)}
-                accessibilityState={{selected:filter===f}}
-                onPress={()=>setFilter(f)}
-                style={{flex:1,minWidth:0,minHeight:46,
-                  alignItems:'center',justifyContent:'center'}}>
-                <Ionicons name={filterIcons[f]} size={23}
-                  color={filter===f?'#CB245C':theme.muted}/>
-              </Pressable>
-            ))}
-          </View> :
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{gap:7,paddingBottom:17}}>
-            {filters.map(f=>(
-              <Pill key={f} text={filterTitle(f)} active={filter===f}
-                onPress={()=>setFilter(f)}/>
-            ))}
-          </ScrollView>}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}
+          accessibilityRole="tablist"
+          contentContainerStyle={{gap:7,paddingBottom:17,paddingRight:4}}>
+          {filters.map(f=>(
+            <Pill key={f} text={filterTitle(f)} active={filter===f}
+              onPress={()=>setFilter(f)}/>
+          ))}
+        </ScrollView>
         <View style={{width:'100%',minWidth:0,overflow:'hidden'}}
           onLayout={e=>{
             const measured=Math.floor(e.nativeEvent.layout.width);
