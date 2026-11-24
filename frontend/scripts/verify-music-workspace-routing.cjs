@@ -18,6 +18,7 @@ const capture=read('src/components/music/MusicCaptureExperience.tsx');
 const demoData=read('src/lib/api/musicPreview.ts');
 const more=read('src/components/music/MusicMoreDetails.tsx');
 const listener=read('src/components/music/MusicListeningDetail.tsx');
+const outgoing=read('src/components/music/MusicOutgoingCollabDraft.tsx');
 const listenPage=read('app/music-listen/[id].tsx');
 const layout=read('app/_layout.tsx');
 const nav=read('src/components/navigation/Nav.tsx');
@@ -101,20 +102,37 @@ const checks=[
     listener.includes('onPanResponderRelease')&&
     listener.includes('onSelect(next.id)')&&
     listener.includes('onSelect(previous.id)')],
-  ['Continue discovering shows other real or read-only fixture music projects',
-    listener.includes('Continuer à découvrir')&&
-    listener.includes('related.slice(0,12).map')&&
-    listenPage.includes('preview?.catalog')&&
-    demoData.includes('catalog:data.songs.filter(isFictionalSong).map(toDemoPublication)')],
+  ['Listening page has no Continue discovering or related-project shelf',
+    !listener.includes('Continuer à découvrir')&&
+    !listener.includes('related.slice(0,12).map')&&
+    !listener.includes('<MusicTile')],
+  ['Right-side collaboration and encouragement buttons are visible for demos too',
+    listener.includes("button('Collaborer sur ce morceau'")&&
+    listener.includes("'Encourager l’artiste'")&&
+    listener.includes('<MusicOutgoingCollabDraft song={song}')],
+  ['Only outgoing requests are composed; no received-request inbox here',
+    outgoing.includes("'/api/music/'+encodeURIComponent(song.id)+'/proposals'")&&
+    outgoing.includes('submit:true')&&
+    outgoing.includes('Ma demande de collaboration')&&
+    !outgoing.includes('role=received')],
+  ['Demonstration composer never sends to a real artist',
+    outgoing.includes('if(!canSend)return;')&&
+    outgoing.includes('canSend=!previewOnly')&&
+    outgoing.includes('Envoi désactivé (démo)')],
+  ['Sending requires audio, validated role and description, and a confirmed response',
+    outgoing.includes("credits:[{displayName:app.name,contribution:role.trim()}]")&&
+    outgoing.includes("response.proposal?.status!=='submitted'")&&
+    outgoing.includes('mediaId||')&&
+    outgoing.includes("'/api/media/")===false],
   ['No extra summary panel or duplicated audio player',
     !home.includes('<MusicWaveform key={expandedSong.id}')&&
     !home.includes('borderRadius:15,backgroundColor:theme.surface,gap:14,maxWidth:780')],
   ['Bottom cassette Info uses the focused page, not a side panel',
     home.includes("onLearnMore={() => openForMe(song.id)}")&&
     !home.includes('expandedForMe')],
-  ['Real discovery offers a real collaboration action, never for demos',
-    listener.includes("pathname:'/music-proposal/[id]'")&&
-    listener.includes("previewOnly?<View")],
+  ['Real collaboration CTA opens a draft, rather than navigating into an inbox',
+    listener.includes('setComposerOpen(v=>!v)')&&
+    listener.includes('Ouvrir mon brouillon de collaboration')],
   ['Real cassette details retain authorized contact through the dedicated page',
     listener.includes("Contacter l’artiste")&&
     listenPage.includes("api<{conversationId:string}>('/api/conversations'")&&

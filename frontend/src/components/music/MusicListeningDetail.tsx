@@ -1,12 +1,13 @@
-import React, {useMemo} from 'react';
-import {PanResponder,Pressable,ScrollView,Text,View,useWindowDimensions} from 'react-native';
+import React, {useMemo,useState} from 'react';
+import {PanResponder,Pressable,Text,View,useWindowDimensions} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {router} from 'expo-router';
+import {useApp} from '@/context/AppContext';
+import {MusicOutgoingCollabDraft} from '@/components/music/MusicOutgoingCollabDraft';
 import type {MusicPublication} from '@/domain/publication';
 import {CassetteArtwork} from '@/components/publication/PublicationGallery';
 import {MusicWaveform} from '@/components/music/MusicWaveform';
 import {MusicMoreDetails} from '@/components/music/MusicMoreDetails';
-import {MusicTile} from '@/components/music/MusicTile';
 import {useAppTheme} from '@/theme/AppTheme';
 
 const PINK='#CB245C';
@@ -17,7 +18,8 @@ export type BrowsableSong=MusicPublication&{isDemo?:boolean};
  * Desktop: compact cassette + short seek line at left, real actions at right.
  * Mobile: same song detail stacked vertically, with horizontal gesture to
  * switch to adjacent songs without returning to the cassette shelf.
- * Full Discover More sections and other music projects follow below.
+ * The bottom of this page holds the complete song details, not recommendations.
+ * The actions alongside the cassette are for sending outgoing requests only.
  */
 export function MusicListeningDetail({
   song,queue,contentWidth,onSelect,onClose,onContact,contactBusy,contactError,
@@ -33,6 +35,8 @@ export function MusicListeningDetail({
   contactError:string;
 }){
   const theme=useAppTheme();
+  const app=useApp();
+  const [composerOpen,setComposerOpen]=useState(false);
   const {width:screenWidth}=useWindowDimensions();
   const mobile=screenWidth<700;
   const available=Math.max(0,Math.min(contentWidth,960));
@@ -43,7 +47,6 @@ export function MusicListeningDetail({
   const index=queue.findIndex(item=>item.id===song.id);
   const previous=index>0?queue[index-1]:null;
   const next=index>=0&&index<queue.length-1?queue[index+1]:null;
-  const related=queue.filter(item=>item.id!==song.id);
   // The beta Discovery feed also contains static editorial examples. They
   // may play bundled samples but must not pretend to be real collaborators.
   const previewOnly=!!song.isDemo||song.source!=='api';
@@ -144,50 +147,48 @@ export function MusicListeningDetail({
           </Pressable>
         </View>:null}
       </View>
-      <View style={{width:mobile?'100%':Math.min(250,Math.max(180,available-mediaWidth-35)),
-        flex:mobile?undefined:1,gap:9,alignSelf:mobile?'stretch':'center'}}>
-        {previewOnly?<View style={{gap:6,paddingVertical:10}}>
-          <Text style={{color:theme.muted,fontSize:12,lineHeight:19}}>
-            Exemple de morceau fictif · présentation en lecture seule
+      <View style={{
+        width:mobile?'100%':Math.min(365,Math.max(225,available-mediaWidth-35)),
+        flex:mobile?undefined:1,gap:10,
+        alignSelf:mobile?'stretch':'flex-start',
+      }}>
+        {button('Collaborer sur ce morceau',
+          ()=>setComposerOpen(v=>!v),true)}
+        {button(app.encouragementIds.includes(song.id)
+            ?'Encouragement ajouté':'Encourager l’artiste',
+          ()=>app.encourage(song.id),false,previewOnly)}
+        {handle?button(contactBusy?'Ouverture…':'Contacter l’artiste',
+          ()=>onContact(handle),false,contactBusy):null}
+        {handle?button('Voir le profil',
+          ()=>router.push({pathname:'/member/[name]',
+            params:{name:handle}})):null}
+        {!!contactError?<Text style={{fontSize:11,lineHeight:18,color:PINK}}>
+          {contactError}
+        </Text>:null}
+        {composerOpen?<MusicOutgoingCollabDraft song={song}
+          previewOnly={previewOnly}/>:<Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Ouvrir mon brouillon de collaboration"
+          onPress={()=>setComposerOpen(true)}
+          style={{padding:13,borderRadius:12,
+            borderColor:theme.border,borderWidth:1,
+            backgroundColor:theme.surface,gap:7}}>
+          <Text style={{fontSize:12,fontWeight:'700',
+            color:theme.foreground}}>Mon brouillon de collaboration</Text>
+          <Text numberOfLines={3} style={{fontSize:11,
+            lineHeight:18,color:theme.muted}}>
+            Bonjour {song.author}, je souhaiterais collaborer sur
+            « {song.title} ». Voici ce que je pourrais apporter…
           </Text>
-          <Text style={{color:theme.muted,fontSize:11,lineHeight:17}}>
-            Les actions de collaboration sont disponibles sur les vrais morceaux.
+          <Text style={{fontSize:11,fontWeight:'700',color:PINK}}>
+            {previewOnly?'Aperçu de la demande (démo)':
+              'Compléter et envoyer ma demande'}
           </Text>
-        </View>:<>
-          {button('Collaborer sur ce morceau',()=>
-            router.push({pathname:'/music-proposal/[id]',params:{id:song.id}}),true)}
-          {handle?button(contactBusy?'Ouverture…':'Contacter l’artiste',
-            ()=>onContact(handle),false,contactBusy):null}
-          {handle?button('Voir le profil',
-            ()=>router.push({pathname:'/member/[name]',params:{name:handle}})):null}
-          {!!contactError?<Text style={{fontSize:11,lineHeight:18,color:PINK}}>
-            {contactError}
-          </Text>:null}
-        </>}
+        </Pressable>}
       </View>
     </View>
     <View style={{paddingTop:mobile?0:5}}>
       <MusicMoreDetails item={song}/>
-    </View>
-    <View style={{paddingTop:12,borderTopWidth:1,borderColor:theme.border,gap:15}}>
-      <Text style={{fontFamily:'serif',fontSize:mobile?22:25,
-        lineHeight:mobile?28:32,color:theme.foreground}}>
-        Continuer à découvrir
-      </Text>
-      {related.length?<ScrollView horizontal showsHorizontalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-        contentContainerStyle={{gap:mobile?10:13,paddingBottom:8,paddingRight:10}}>
-        {related.slice(0,12).map(item=><MusicTile key={item.id}
-          title={item.title} byline={item.author} mode="cassette"
-          layout="cards" width={mobile?132:156}
-          artwork={item.coverArt||item.image} audioUrl={item.audioUrl}
-          demo={!!item.isDemo}
-          detail={item.requestedTalents?.join(' · ')||'À découvrir'}
-          onPress={()=>onSelect(item.id)}
-          onLearnMore={()=>onSelect(item.id)}/>)}
-      </ScrollView>:<Text style={{fontSize:12,lineHeight:19,color:theme.muted}}>
-        D’autres projets musicaux apparaîtront ici dès qu’ils seront disponibles.
-      </Text>}
     </View>
   </View>;
 }
