@@ -52,24 +52,25 @@ if(missing.length){
   console.log('Shared canvas present on '+pages.length+' desktop page shells.');
 }
 
-// Regression guard: Semence is a single inspirations stage, without the
-// 'Documents & Inspirations' or 'Notes personnelles' sidebar children.
-// A private notebook shortcut remains in Semence's own content.
+// Semence exposes its private notebook in both the existing workspace shortcut
+// and the desktop aspiration navigation, without adding a redundant library.
 const dreamNav=readFileSync(join(base,'src/components/navigation/Nav.tsx'),'utf8');
 const semence=readFileSync(join(base,'src/components/dream/SemenceStudio.tsx'),'utf8');
-if(!dreamNav.includes("||phase==='Rêve')return phaseNav;")||
-  dreamNav.includes("(phase==='Rêve'?[")||
+const semenceResources=dreamNav.split("(phase==='Rêve'?[")[1]?.split(']:phase===')[0]||'';
+if(!dreamNav.includes("if(!reached||!activeChapter)return phaseNav;")||
+  !semenceResources.includes("{kind:'notes' as const,title:'Notes personnelles'}")||
+  semenceResources.includes("'Documents & Inspirations'")||
   !semence.includes('<DreamWorkspaceShortcuts dream={dream}/>')||
   semence.includes('<DreamWorkspaceShortcuts dream={dream} showLibrary/>')){
-  console.error('Semence navigation regression: remove its sidebar children and library shortcut.');
+  console.error('Semence navigation regression: restore Notes personnelles under Semence without a second library.');
   process.exitCode=1;
 }else{
-  console.log('Semence: no sidebar child entries or redundant library shortcut.');
+  console.log('Semence: personal notes visible in sidebar and workspace; Inspirations remain in main page.');
 }
 
 
 // Germination must expose its existing shared Documents & Inspirations
-// workspace in the same sidebar as personal notes (Semence stays unchanged).
+// workspace in the same sidebar as personal notes (Semence has notes only).
 const germinationNav=dreamNav.split("(phase==='Initiation'?[")[1]?.split(']:[')[0]||'';
 if(!germinationNav.includes("{kind:'library' as const,title:'Documents & Inspirations'}")||
    !germinationNav.includes("{kind:'notes' as const,title:'Notes personnelles'}")||
