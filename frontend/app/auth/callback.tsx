@@ -3,6 +3,7 @@ import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/context/AuthProvider';
+import { latestAuthBridgeFailure } from '@/lib/api/client';
 
 /**
  * Google/Apple PKCE web callback.
@@ -18,9 +19,8 @@ export default function AuthCallback() {
     error?: string;
     error_description?: string;
   }>();
-  const { user, revalidate, initialized, validationError } = useAuth();
+  const { user, completeOAuthSession, initialized } = useAuth();
   const attempted = useRef(false);
-  const [exchanged, setExchanged] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -48,25 +48,32 @@ export default function AuthCallback() {
         return;
       }
       try {
-        const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+        const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
         if (exchangeError) throw exchangeError;
-        // The OAuth code was consumed successfully. Never consume it again.
-        // A Supabase session alone must not reveal Discovery or private pages.
-        await revalidate();
-        if (alive) setExchanged(true);
+        if (!data.session) throw new Error('session_missing_after_oauth');
+        // A successful code exchange is single-use; do not leave the code in
+        // browser history or let a later rerender consume it again.
+        if (typeof window !== 'undefined') {
+          const clean = new URL(window.location.href);
+          clean.searchParams.delete('code');
+          window.history.replaceState(window.history.state, '', clean.pathname + clean.search + clean.hash);
+        }
+        // Verify the exact session returned by PKCE. Waiting for the generic
+        // revalidate() can join a stale startup validation before the fresh
+        // Google session is available, resulting in a false failure.
+        const accepted = await completeOAuthSession(data.session);
+        if (!accepted && alive) {
+          const failure = latestAuthBridgeFailure();
+          const detail = failure ? ' (' + failure.code + ', HTTP ' + failure.status + ')' : '';
+          setError('Google a reconnu votre compte, mais JenLow n’a pas pu vérifier la session.' + detail);
+        }
       } catch (e) {
         if (alive) setError(e instanceof Error ? e.message : 'Échec de la connexion Google.');
       }
     })();
     return () => { alive = false; };
-  }, [initialized, user, params.code, params.error, params.error_description, revalidate]);
+  }, [initialized, user, params.code, params.error, params.error_description, completeOAuthSession]);
 
-  useEffect(() => {
-    // Remain on this public callback page and show a usable explanation
-    // rather than silently discarding the OAuth result or looping.
-    if (exchanged && validationError && !user)
-      setError('Google a reconnu votre compte, mais JenLow n’a pas pu vérifier la session. Réessayez depuis la page de connexion.');
-  }, [exchanged, validationError, user]);
 
   return (
     <View style={{
