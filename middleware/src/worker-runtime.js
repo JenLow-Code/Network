@@ -62,7 +62,7 @@ async function exchangeSupabase(request,env){
   if(typeof subject!=='string'||
       !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(subject)||
       !CONFIRMED_EMAIL.test(email)||email.length>254||
-      !(identity.email_confirmed_at||identity.confirmed_at)||
+      !identity.email_confirmed_at||
       identity.is_anonymous===true)
     return error('unverified_identity',403);
   const providerSubject='supabase:'+subject;
