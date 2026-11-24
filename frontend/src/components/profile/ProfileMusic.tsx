@@ -109,7 +109,7 @@ export function MusicLibrary({contentWidth,embedded=false,preferredLayout}: {con
   return <View style={{gap:12}}>
       <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
         <Text style={{color:theme.muted,fontSize:12}}>
-          {count} {count===1?'morceau':'morceaux'} · {shownLayout==='cards'?'Cartes':'Liste'}
+          {embedded?(count?count+' '+(count===1?'création':'créations'):'Mes premières créations'):(count+' '+(count===1?'morceau':'morceaux')+' · '+(shownLayout==='cards'?'Cartes':'Liste'))}
         </Text>
         <Pressable onPress={()=>router.push('/music/new')} accessibilityRole="button"
           accessibilityLabel="Créer un morceau"
@@ -136,8 +136,8 @@ export function MusicLibrary({contentWidth,embedded=false,preferredLayout}: {con
           onPress={()=>router.push(p.first.direction==='sent'
             ? {pathname:'/music-collaboration/[id]',params:{id}}
             : {pathname:'/music/[id]',params:{id}})}/>)}
-      </View>:ready?<Text style={{color:theme.muted,fontSize:13}}>
-        Tes créations et collaborations musicales prendront vie ici.
-      </Text>:null}
+      </View>:ready?<Pressable onPress={()=>router.push('/music/new')} accessibilityRole="button" style={{padding:14,borderWidth:1,borderColor:theme.border,borderStyle:'dashed',borderRadius:10,backgroundColor:theme.surface,flexDirection:'row',alignItems:'center',gap:12}}>
+        <Ionicons name="musical-notes-outline" size={26} color={theme.muted}/><View style={{flex:1,gap:4}}><Text style={{color:theme.foreground,fontWeight:'600',fontSize:14}}>Une idée, une mélodie…</Text><Text style={{color:theme.muted,fontSize:12}}>Crée ton premier morceau.</Text></View><Ionicons name="arrow-forward-outline" size={17} color={theme.muted}/>
+      </Pressable>:null}
   </View>;
 }

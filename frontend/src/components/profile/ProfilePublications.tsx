@@ -33,12 +33,12 @@ export function ProfilePublications({contentWidth}: {contentWidth:number}) {
       !serverPublications.some(remote=>remote.id===p.id)),
   ];
   return <View style={{gap:12}}>
-        <Text style={{fontSize:13,color:theme.muted}}>Les mots, les moments et les créations que tu choisis de partager.</Text>
+        <Text style={{fontSize:12,color:theme.muted}}>Les moments et les créations que j’ai choisi de partager.</Text>
         <SemenceSharesFeed mine roundedCards onCountChange={setSemenceCount}/>
         {myPublicPosts.length
           ?<ProfilePublicationFeed grid items={myPublicPosts} contentWidth={contentWidth}
             roundedCards featuredId={featuredId} onFeature={feature}/>
-          :semenceCount===0?<View style={{paddingVertical:12,gap:5}}>
+          :semenceCount===0?<View style={{paddingVertical:13,paddingHorizontal:14,gap:5,borderRadius:10,borderWidth:1,borderStyle:'dashed',borderColor:theme.border,backgroundColor:theme.background}}>
              <Text style={{color:theme.foreground,fontSize:14,fontWeight:'600'}}>Ton histoire se construit.</Text>
              <Text style={{color:theme.muted,fontSize:13}}>Tes publications apparaîtront ici quand tu partageras quelque chose.</Text>
            </View>:null}

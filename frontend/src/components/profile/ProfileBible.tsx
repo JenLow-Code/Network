@@ -4,26 +4,31 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { PageHeader } from '@/components/navigation/PageHeader';
 import { Nav } from '@/components/navigation/Nav';
 import { useAppTheme } from '@/theme/AppTheme';
+import { useApp } from '@/context/AppContext';
 import { workspaceCanvas } from '@/theme/workspaceLayout';
 import BiblePassagePicker from '@/components/bible/BiblePassagePicker';
 import BibleSaveDestinationModal from '@/components/bible/BibleSaveDestinationModal';
 import {
-  BIBLE_EDITION, bibleDownloadState, bibleReference, downloadBible,
+  BIBLE_BOOKS, BIBLE_EDITION, BIBLE_EDITION_CODE, bibleDownloadState, bibleReference, downloadBible,
   type BiblePassage,
 } from '@/domain/bibleLibrary';
 
 type SavedTarget = {kind:'fire'|'dream'|'publication';id?:string};
 
-export function BibleLibraryScreen({embedded=false}: {embedded?:boolean}){
+export function BibleLibraryScreen(){
   const theme=useAppTheme();
   const {width,height}=useWindowDimensions();
   const compact=width<720;
   const [complete,setComplete]=useState(false);
-  const [readerOpen,setReaderOpen]=useState(!embedded);
+  const {fireBibleVerses,saveBibleVerseToFire}=useApp();
+  const params=useLocalSearchParams<{book?:string;chapter?:string;verse?:string}>();
+  const book=BIBLE_BOOKS.find(([code])=>code===params.book)?.[0];
+  const chapter=Number(params.chapter),verse=Number(params.verse);
+  const location=book&&Number.isInteger(chapter)&&chapter>0&&Number.isInteger(verse)&&verse>0?{bookCode:book,chapter,verse}:undefined;
   const [progress,setProgress]=useState<number|null>(null);
   const [busy,setBusy]=useState(false);
   const [checkingDownload,setCheckingDownload]=useState(true);
@@ -55,6 +60,13 @@ export function BibleLibraryScreen({embedded=false}: {embedded?:boolean}){
       await refresh();
       setNotice('Le téléchargement a été interrompu. Tu peux le reprendre sans recommencer les livres déjà enregistrés.');
     }finally{setBusy(false);setProgress(null);}
+  };
+  const selectedId=selected?'bible:'+BIBLE_EDITION_CODE+':'+selected.bookCode+':'+selected.chapter+':'+selected.verse:'';
+  const marked=fireBibleVerses.some(item=>item.id===selectedId);
+  const mark=()=>{
+    if(!selected||marked)return;
+    saveBibleVerseToFire({id:selectedId,reference:bibleReference(selected),edition:BIBLE_EDITION,text:selected.text,addedAt:new Date().toISOString()});
+    setNotice('Verset marqué : retrouve-le dans Ma Bible sur ton profil et dans ta liste Fire.');setSavedTarget(null);
   };
   const share=()=>{
     if(!selected)return;
@@ -130,14 +142,12 @@ export function BibleLibraryScreen({embedded=false}: {embedded?:boolean}){
       </View>
 
       {/* The search, book navigation and chapter occupy the first usable space. */}
-      {embedded?<Pressable onPress={()=>{setReaderOpen(v=>!v);setSelected(null);}} accessibilityRole="button" accessibilityState={{expanded:readerOpen}} style={{flexDirection:'row',alignItems:'center',gap:12,paddingVertical:13}}>
-        <Ionicons name="book-outline" color={theme.foreground} size={30}/><View style={{flex:1,gap:4}}><Text style={{fontFamily:'serif',fontSize:20,color:theme.foreground}}>Un moment dans la Parole</Text><Text style={{fontSize:12,color:theme.muted}}>Lire, méditer et partager un verset.</Text></View><Ionicons name={readerOpen?'chevron-up':'chevron-down'} color={theme.muted} size={20}/>
-      </Pressable>:null}
-      {readerOpen?<BiblePassagePicker
+      <BiblePassagePicker key={location?location.bookCode+':'+location.chapter+':'+location.verse:'default'}
+        initialLocation={location}
         onSelect={verse=>{setSelected(verse);setNotice('');setSavedTarget(null);}}
         showHeading={false} showHint={false}
         selectedPassage={selected}
-        readerMaxHeight={embedded?340:Math.min(660,Math.max(280,height-(compact?280:215)))}/>:null}
+        readerMaxHeight={Math.min(660,Math.max(280,height-(compact?280:215)))}/>
 
       {notice&&!selected?<Text accessibilityRole="alert"
         style={{fontSize:12,lineHeight:19,color:theme.muted}}>{notice}</Text>:null}
@@ -146,7 +156,7 @@ export function BibleLibraryScreen({embedded=false}: {embedded?:boolean}){
     {/* The selection remains visible while the chapter scrolls independently. */}
     {selected?<View style={{backgroundColor:theme.surface,borderTopWidth:1,
       borderTopColor:theme.border}}>
-      <View style={{...(embedded?{}:workspaceCanvas(width)),paddingTop:10,paddingBottom:11,
+      <View style={{...workspaceCanvas(width),paddingTop:10,paddingBottom:11,
         flexDirection:compact?'column':'row',gap:compact?9:16,
         alignItems:compact?'stretch':'center'}}>
         <View style={{flex:1,minWidth:0,gap:3}}>
@@ -177,7 +187,10 @@ export function BibleLibraryScreen({embedded=false}: {embedded?:boolean}){
             </Text>
           </Pressable>:null}
         </View>
-        <View style={{flexDirection:'row',gap:8,alignItems:'center'}}>
+        <View style={{flexDirection:'row',gap:8,alignItems:'center',flexWrap:'wrap'}}>
+          <Pressable onPress={mark} disabled={marked} accessibilityRole="button" accessibilityLabel={marked?'Verset déjà marqué':'Marquer le verset dans Ma Bible et Fire'} accessibilityState={{disabled:marked,selected:marked}} style={{minHeight:42,paddingHorizontal:12,borderWidth:1,borderColor:theme.border,borderRadius:9,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:6}}>
+            <Ionicons name={marked?'bookmark':'bookmark-outline'} size={17} color={theme.accent}/><Text style={{fontSize:12,fontWeight:'700',color:theme.foreground}}>{marked?'Marqué':'Marquer'}</Text>
+          </Pressable>
           <Pressable onPress={share} accessibilityRole="button"
             accessibilityLabel="Partager le verset sélectionné"
             style={{minHeight:42,paddingHorizontal:14,borderWidth:1,
@@ -202,7 +215,6 @@ export function BibleLibraryScreen({embedded=false}: {embedded?:boolean}){
     <BibleSaveDestinationModal visible={saveOpen} passage={selected}
       onClose={()=>setSaveOpen(false)} onSaved={onSaved}/>
     </>;
-  if(embedded)return <View style={{gap:10}}>{content}{selection}</View>;
   return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
     <ScrollView style={{flex:1,minHeight:0}} keyboardShouldPersistTaps="handled" contentContainerStyle={{...workspaceCanvas(width),paddingTop:8,paddingBottom:22,gap:12}}>
       <PageHeader title="Ma Bible"/>{content}

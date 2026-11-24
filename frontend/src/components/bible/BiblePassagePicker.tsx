@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/theme/AppTheme';
@@ -16,16 +16,17 @@ type Props={
  showHint?:boolean;
  selectedPassage?:BiblePassage|null;
  readerMaxHeight?:number;
+ initialLocation?:{bookCode:BibleBookCode;chapter:number;verse:number};
 };
 
 /** Reusable book/chapter reader and reference search for Semence and the profile library. */
 export default function BiblePassagePicker({
  onSelect,title='Choisir un verset',compact=false,showHeading=true,showHint=true,
- selectedPassage=null,readerMaxHeight,
+ selectedPassage=null,readerMaxHeight,initialLocation,
 }:Props){
  const theme=useAppTheme();
- const [bookCode,setBookCode]=useState<BibleBookCode>('John');
- const [chapter,setChapter]=useState(3);
+ const [bookCode,setBookCode]=useState<BibleBookCode>(initialLocation?.bookCode??'John');
+ const [chapter,setChapter]=useState(initialLocation?.chapter??3);
  const [data,setData]=useState<StoredBibleBook|null>(null);
  const [loading,setLoading]=useState(false);
  const [error,setError]=useState('');
@@ -33,7 +34,9 @@ export default function BiblePassagePicker({
  const [matches,setMatches]=useState<BiblePassage[]>([]);
  const [searching,setSearching]=useState(false);
  const [booksOpen,setBooksOpen]=useState(false);
- const [versePreview,setVersePreview]=useState<number|null>(null);
+ const [versePreview,setVersePreview]=useState<number|null>(initialLocation?.verse??null);
+ const verseScroll=useRef<React.ComponentRef<typeof ScrollView>>(null);
+ const initialScroll=useRef(!!initialLocation);
 
  useEffect(()=>{
   let active=true;
@@ -179,7 +182,7 @@ export default function BiblePassagePicker({
    </ScrollView>:null}
    {loading?<ActivityIndicator color={theme.muted} style={{marginTop:18}}/>:null}
    {error?<Text style={{fontSize:12,color:'#B74A5F',lineHeight:19}}>{error}</Text>:null}
-   {!loading&&verses.length?<ScrollView nestedScrollEnabled
+   {!loading&&verses.length?<ScrollView ref={verseScroll} nestedScrollEnabled
       style={{maxHeight:readerMaxHeight??(compact?235:330)}}
       keyboardShouldPersistTaps="handled"
       contentContainerStyle={{gap:2,paddingBottom:7}}>
@@ -187,6 +190,7 @@ export default function BiblePassagePicker({
        const active=selectedPassage?.bookCode===bookCode&&
          selectedPassage.chapter===chapter&&selectedPassage.verse===i+1;
        return text?<Pressable key={i}
+         onLayout={event=>{if(initialScroll.current&&initialLocation?.bookCode===bookCode&&initialLocation.chapter===chapter&&initialLocation.verse===i+1){initialScroll.current=false;const y=event.nativeEvent.layout.y;requestAnimationFrame(()=>verseScroll.current?.scrollTo({y:Math.max(0,y-12),animated:false}));}}}
          onPress={()=>select(verseByNumber(i+1))}
          accessibilityRole="button"
          accessibilityLabel={'Choisir '+bibleBookName(bookCode)+' '+chapter+':'+(i+1)}
