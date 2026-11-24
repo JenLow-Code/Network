@@ -191,7 +191,7 @@ const layoutRules=[
     'Phase watermark must render only when its section has no dream cards'],
   ['app/my-space.tsx',/DreamPhaseIcon phase=\{panel.phase\}/,
     'Empty phases must retain their faint identity illustration'],
-  ['src/components/navigation/Nav.tsx',/icon: 'folder-outline' as const, title: t\('dreams'\)/,
+  ['src/components/navigation/Nav.tsx',/icon: 'folder-outline' as const, title: t\('dreamsNav'\)/,
     'Aspirations navigation must match the overview title'],
   ['src/components/navigation/Nav.tsx',/const cleanProjectsNav=path==='\/my-space';/,
     'The projects overview navigation must not inherit the legacy background'],
@@ -302,7 +302,7 @@ if(!talentLevelDots.includes('return 0;')){
 // Branding regression: aspirations are the public-facing concept.
 // Keep historical domain identifiers (dream, Rêve, API and storage keys) stable.
 const aspirationBranding=[
-  ['src/components/navigation/Nav.tsx', "title: t('dreams')"],
+  ['src/components/navigation/Nav.tsx', "title: t('dreamsNav')"],
   ['app/my-space.tsx', "<PageHeader title={t('dreams')} />"],
   ['app/my-space.tsx', "label:'Toutes les aspirations'"],
   ['app/discover.tsx', "'Tout', 'Pour moi', 'Aspirations'"],
@@ -312,7 +312,8 @@ const aspirationBranding=[
   ['src/i18n/en.json', '"dreamsFilter": "Aspirations"'],
   ['src/i18n/de.json', '"dreamsFilter": "Bestrebungen"'],
   ['src/i18n/pt.json', '"dreamsFilter": "Aspirações"'],
-  ['src/i18n/locale.tsx', "dreams: 'Aspirations'"],
+  ['src/i18n/locale.tsx', "dreams: 'Mes aspirations'"],
+  ['src/i18n/locale.tsx', "dreamsNav: 'Aspirations'"],
   ['src/i18n/uiCopy.ts', "'Créer une aspiration'"],
   ['src/components/detail/PublicationPrimaryAction.tsx','Créer une aspiration inspirée'],
   ['src/components/dream/PublicationSearchPicker.tsx', "'ASPIRATION'"],
@@ -366,7 +367,7 @@ for(const [source,needle] of [
   [aspirationNav, "item.path==='/my-space'?<AspirationNavIcon size={20}"],
   [aspirationNav, "x.path === '/my-space' ? ("],
   [aspirationNav, '<AspirationNavIcon size={24}'],
-  [aspirationNav, "title: t('dreams')"],
+  [aspirationNav, "title: t('dreamsNav')"],
   [aspirationNav, "path: '/my-space' as const"],
 ]){
   if(!source.includes(needle)){
