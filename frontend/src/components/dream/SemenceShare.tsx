@@ -200,7 +200,7 @@ export default function SemenceShare({dream,initialIds,onClose}:{
            Voilà comment cette Semence apparaîtra sur ton profil.
            Elle reste distincte de ton rêve en cours et n’apparaît pas dans Découverte.
          </Text>
-         <View style={{alignItems:'center'}}>
+         <View style={{alignItems:'flex-start'}}>
            <PublishedSemenceCard preview item={{
              title:dream.title,visibility,coverUrl:dream.image||null,
              previewImages:images(picked),
