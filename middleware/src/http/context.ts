@@ -3,6 +3,7 @@ import type { ExecutionContext } from '../platform/cf';
 import { Sql } from '../lib/util';
 import { bearer, verifyAccessToken } from '../auth/tokens';
 import { badRequest, forbidden, unauthenticated } from './errors';
+import { readBoundedJson } from '../security/body';
 import type { Obj } from './validate';
 
 export type Locale = 'fr' | 'en' | 'de' | 'pt';
@@ -100,14 +101,7 @@ export class Ctx {
     if (!type.toLowerCase().includes('application/json')) throw badRequest('json_required');
     const length = Number(this.request.headers.get('content-length') || '0');
     if (length > MAX_JSON_BYTES) throw badRequest('body_too_large');
-    const text = await this.request.text();
-    if (text.length > MAX_JSON_BYTES) throw badRequest('body_too_large');
-    let parsed: unknown;
-    try {
-      parsed = text ? JSON.parse(text) : {};
-    } catch {
-      throw badRequest('invalid_json');
-    }
+    const parsed = await readBoundedJson(this.request, MAX_JSON_BYTES);
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw badRequest('json_object_required');
     return (this.bodyCache = parsed as Obj);
   }

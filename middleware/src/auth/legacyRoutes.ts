@@ -1,3 +1,4 @@
+import { readBoundedJson } from '../security/body';
 import type { Env } from '../config/env';
 import type { Ctx } from '../http/context';
 import { json, legacyError } from '../http/respond';
@@ -15,7 +16,7 @@ const validMail = (s: string) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(s) && s.lengt
 const randomToken = (n = 32) => hex(crypto.getRandomValues(new Uint8Array(n)));
 
 async function readJson(request: Request): Promise<Record<string, unknown> | null> {
-  const body = await request.json().catch(() => null);
+  const body = await readBoundedJson(request, 16384).catch(() => null);
   return body && typeof body === 'object' && !Array.isArray(body) ? (body as Record<string, unknown>) : null;
 }
 

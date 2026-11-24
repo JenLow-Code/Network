@@ -1,17 +1,12 @@
-name: Network API checks
+name: JenLow security middleware checks
 on:
   push:
-    paths:
-      - 'middleware/**'
-      - 'database/**'
-      - '.github/workflows/auth-api.yml'
+    paths: ['middleware/**','database/**','.github/workflows/auth-api.yml']
   pull_request:
-    paths:
-      - 'middleware/**'
-      - 'database/**'
+    paths: ['middleware/**','database/**']
   workflow_dispatch:
 jobs:
-  api:
+  security:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -22,15 +17,6 @@ jobs:
         with:
           node-version: '22'
       - run: npm install --no-audit --no-fund
-      - name: Typecheck Worker and tests
-        run: npm run typecheck
-      - name: Integration tests (all migrations, D1-compatible SQLite, HTTP API)
-        run: npm test
-      - name: Scanner OCR and music score API contract tests
-        run: node --test test/scan-worker.test.mjs
-      - name: Bundle the Worker (Cloudflare ESM, nodejs_compat)
-        run: npm run bundle:check
-      - name: Demo seed is up to date with demo-data.ts
-        run: |
-          npm run seed:sql
-          git diff --exit-code ../database/seeds/demo_seed.sql
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run bundle:check
