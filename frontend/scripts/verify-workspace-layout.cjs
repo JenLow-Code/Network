@@ -10,7 +10,7 @@ const pages=[
   'app/agenda.tsx',
   'app/discover.tsx',
   'app/music-hub.tsx',
-  'app/music-workspace/[id].tsx',
+  'src/components/music/MusicWorkspaceScreen.tsx',
   'app/my-space.tsx',
   'app/profile.tsx',
   'src/components/profile/ProfileBible.tsx',
@@ -22,7 +22,6 @@ const pages=[
   'app/circle.tsx',
   'app/import-verse.tsx',
   'app/music/new.tsx',
-  'app/music-collaboration/[id].tsx',
   'app/music-proposal/[id].tsx',
   'app/member/[name].tsx',
   'app/my-dream/new.tsx',
@@ -227,9 +226,13 @@ const layoutRules=[
   ['src/components/dream/DreamPhaseLayout.tsx',/<PageHeader center=\{advancement\} centerOverlayOnMobile onBack=\{onBack\}\/>/,
     'All dream phases must use the canonical page header and Back alignment'],
 ];
+// Both route adapters must render the single verified canvas, never a separate one.
+for(const route of ['app/music-workspace/[id].tsx','app/music-collaboration/[id].tsx']){
+  layoutRules.push([route,/<MusicWorkspaceScreen\b/,
+    'Solo and collaboration must use the exact same workspace canvas']);
+}
 const directWorkspacePages=[
-  'app/music-workspace/[id].tsx',
-  'app/music-collaboration/[id].tsx',
+  'src/components/music/MusicWorkspaceScreen.tsx',
   'app/my-dream/notes/[id].tsx',
   'app/my-dream/library/[id].tsx',
   'app/my-dream/flower/[id].tsx',
