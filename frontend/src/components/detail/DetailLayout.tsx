@@ -50,6 +50,10 @@ export function DetailLayout({
   const ws=workspaceLayout(screenWidth);
   const visibleWidth=Math.max(0,screenWidth-(ws.desktop?236:0));
   const width=Math.min(760,Math.max(0,visibleWidth-2*ws.gutter));
+  // Related inspiration belongs to Discovery's grid language, not the
+  // narrower publication reading column.
+  const relatedWidth=Math.max(0,Math.min(
+    ws.maxWidth??visibleWidth,visibleWidth)-ws.contentGutter-ws.gutter);
   useEffect(()=>{
     // A publication must open at its beginning, not inherit Discovery scroll.
     if(Platform.OS==='web'&&typeof window!=='undefined')window.scrollTo(0,0);
@@ -124,8 +128,17 @@ export function DetailLayout({
             )}
           </View>
           </View>
-          {showRelated ? (
-          <View style={{ marginTop: isDream ? 30 : 42, borderTopWidth: isDream ? 0 : 0.5, borderTopColor: theme.border, paddingTop: 21, width: '100%', alignSelf: 'center' }}>
+        </View>
+        {showRelated ? (
+          <View style={{
+            marginTop:isDream?30:42,
+            borderTopWidth:isDream?0:0.5,
+            borderTopColor:theme.border,
+            paddingTop:21,
+            width:relatedWidth,
+            maxWidth:'100%',
+            alignSelf:'center',
+          }}>
             <Text
               style={{
                 color: theme.foreground,
@@ -137,10 +150,15 @@ export function DetailLayout({
             >
               Continuer l’inspiration
             </Text>
-            <PublicationGallery layout="masonry" contentWidth={heroWidth} items={relatedItems.filter(p => p.id !== item.id && (p.type !== 'dream' || p.phase !== 'Rêve'))} />
+            <PublicationGallery
+              layout="masonry"
+              flushEdges
+              contentWidth={relatedWidth}
+              items={relatedItems.filter(p =>
+                p.id !== item.id && (p.type !== 'dream' || p.phase !== 'Rêve'))}
+            />
           </View>
-          ) : null}
-        </View>
+        ) : null}
       </ScrollView>
       </View>
       <Nav />
