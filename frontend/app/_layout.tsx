@@ -117,12 +117,8 @@ function ThemedStack() {
     justifyContent:'center',alignItems:'center',backgroundColor:theme.background}}>
     <ActivityIndicator color="#CB245C"/>
   </View>;
-  // Server identity failures return to the public Login route.
-  // Never show a collaborator/Discovery error as a substitute login screen.
-  if(locked)return <View style={{flex:1,justifyContent:'center',
-    alignItems:'center',backgroundColor:theme.background}}>
-    <ActivityIndicator color="#CB245C"/>
-  </View>;
+  // Keep the root navigator mounted even while redirecting; Expo Router
+  // needs the Stack to resolve its protected-route redirect to Login.
   return (
     <>
       <StatusBar style={theme.dark ? 'light' : 'dark'} />
