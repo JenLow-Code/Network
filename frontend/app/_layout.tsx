@@ -71,7 +71,7 @@ function ThemedStack() {
   const path=usePathname();
   const {user,initialized,validationError,revalidate,noteActivity}=useAuth();
   const isAuthRoute=path==='/'||path==='/login'||path==='/auth/callback';
-  const locked=!user&&!isAuthRoute;
+  const locked=(!user||validationError)&&!isAuthRoute;
   const {items:dreams}=useDreams();
   const parts=path.split('/').filter(Boolean);
   const dreamId=parts[0]==='my-dream'?
@@ -81,9 +81,11 @@ function ThemedStack() {
   // Applies to every deep link, direct URL, back/forward navigation and
   // tab route, including Discovery. OAuth/password recovery remain reachable.
   useEffect(()=>{
-    if(!initialized||validationError)return;
-    if(!user&&!isAuthRoute){router.replace('/login');return;}
-    if(user&&path==='/login')router.replace('/discover');
+    if(!initialized)return;
+    if((!user||validationError)&&!isAuthRoute){
+      router.replace('/login');return;
+    }
+    if(user&&!validationError&&path==='/login')router.replace('/discover');
   },[initialized,validationError,user,isAuthRoute,path]);
   // Expo's custom HTML may not apply global stylesheet rules during a
   // client-only web navigation. Install the scrollbar rule in the running app
@@ -115,18 +117,11 @@ function ThemedStack() {
     justifyContent:'center',alignItems:'center',backgroundColor:theme.background}}>
     <ActivityIndicator color="#CB245C"/>
   </View>;
-  if(validationError)return <View style={{flex:1,justifyContent:'center',
-    alignItems:'center',padding:28,gap:15,backgroundColor:theme.background}}>
-    <Text style={{fontSize:17,fontWeight:'700',textAlign:'center',
-      color:theme.foreground}}>Vérification de session indisponible</Text>
-    <Text style={{fontSize:13,textAlign:'center',lineHeight:21,
-      color:theme.muted}}>Tes identifiants restent enregistrés. Réessaie
-      une fois la connexion rétablie.</Text>
-    <Pressable accessibilityRole="button" onPress={()=>{void revalidate();}}
-      style={{backgroundColor:'#CB245C',borderRadius:12,
-        paddingHorizontal:20,paddingVertical:13}}>
-      <Text style={{color:'#FFFFFF',fontWeight:'700'}}>Réessayer</Text>
-    </Pressable>
+  // Server identity failures return to the public Login route.
+  // Never show a collaborator/Discovery error as a substitute login screen.
+  if(locked)return <View style={{flex:1,justifyContent:'center',
+    alignItems:'center',backgroundColor:theme.background}}>
+    <ActivityIndicator color="#CB245C"/>
   </View>;
   return (
     <>
@@ -156,22 +151,22 @@ function ThemedStack() {
         <View style={{flex:1,minWidth:0,position:'relative'}}>
           <View style={{flex:1,minHeight:0,
             opacity:locked?0:1,
-            paddingBottom:desktop?0:(!user?0:MOBILE_NAV_HEIGHT+insets.bottom)}}>
+            paddingBottom:desktop?0:(!user||validationError?0:MOBILE_NAV_HEIGHT+insets.bottom)}}>
             <Stack
               screenOptions={{headerShown:false,
                 contentStyle:{backgroundColor:theme.background}}}>
               <Stack.Screen name="index"/>
               <Stack.Screen name="login"/>
               <Stack.Screen name="auth/callback"/>
-              <Stack.Protected guard={!!user} redirectTo="/login">
+              <Stack.Protected guard={!!user&&!validationError} redirectTo="/login">
                 {PRIVATE_SCREENS.map(name=>
                   <Stack.Screen key={name} name={name}/>)}
               </Stack.Protected>
             </Stack>
           </View>
-          {!desktop&&!!user?<Nav placement="root"/>:null}
+          {!desktop&&!!user&&!validationError?<Nav placement="root"/>:null}
         </View>
-        {desktop&&!!user?<Nav placement="desktop"/>:null}
+        {desktop&&!!user&&!validationError?<Nav placement="desktop"/>:null}
       </View>
     </>
   );
