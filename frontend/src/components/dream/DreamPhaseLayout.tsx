@@ -121,7 +121,7 @@ export function DreamPhaseHeader({
   return <View style={{marginBottom:desktop?17:18}}>
     {/* The four phases remain within the header at every screen width.
         The global Back, Fire and Messages actions keep their own positions. */}
-    <PageHeader center={advancement} onBack={onBack}/>
+    <PageHeader center={advancement} centerOverlayOnMobile onBack={onBack}/>
     {/* The dream's own title belongs beside its rounded cover, with the
         description immediately underneath. No repeated phase row follows. */}
     <View style={{flexDirection:'row',alignItems:'center',
