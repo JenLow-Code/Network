@@ -17,7 +17,6 @@ import { ProfilePublications } from '@/components/profile/ProfilePublications';
 import { MusicLibrary } from '@/components/profile/ProfileMusic';
 import { Prayers } from '@/components/profile/ProfilePrayers';
 import { ProfileMarkedVerses } from '@/components/profile/ProfileMarkedVerses';
-import Svg, { Path } from 'react-native-svg';
 import { Settings } from '@/components/profile/ProfileSettings';
 import type { MusicLibraryLayout } from '@/domain/musicLibraryPreferences';
 
@@ -110,12 +109,6 @@ export default function Profile() {
       paddingTop:12,paddingBottom:ws.desktop?100:70}}>
       <PageHeader title="Mon profil"/>
         <View style={{ alignItems: 'center', marginTop: 22 }}>
-          {ws.desktop?<View pointerEvents="none" style={{position:'absolute',right:6,top:0,width:260,height:154,opacity:theme.dark?.65:.8}}>
-            <Svg width="100%" height="100%" viewBox="0 0 260 154" fill="none">
-              <Path d="M260 23 C220 14 205 47 177 46 C149 44 139 16 117 30 C98 43 125 70 143 58 C167 41 132 19 105 41 C80 61 105 94 131 89 C170 80 157 45 182 52 C211 60 196 99 164 113 C124 129 78 95 54 116 C29 137 42 150 0 150" stroke={theme.dark?'#E78CAD':'#C97898'} strokeWidth="1.15" strokeLinecap="round"/>
-              <Path d="M260 23 C245 20 236 22 222 30" stroke="#B88962" strokeWidth="1.15" strokeLinecap="round"/>
-            </Svg>
-          </View>:null}
           {avatar ? (
             <Image
               source={{ uri: avatar }}
