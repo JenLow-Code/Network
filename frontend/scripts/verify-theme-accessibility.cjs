@@ -39,7 +39,7 @@ assert.ok(nav.includes('left:desktop?-DESKTOP_PAGE_CONTENT_INSET:0') &&
   nav.includes('paddingLeft:desktop?0:52'),
   'Shared Back and title alignment must stay consistent');
 const hero = source('src/components/dream/DreamPhaseLayout.tsx');
-assert.ok(hero.includes('<PageHeader center={advancement} onBack={onBack}/>') &&
+assert.ok(hero.includes('<PageHeader center={advancement} centerOverlayOnMobile onBack={onBack}/>') &&
   hero.includes("import { PageHeader } from '@/components/navigation/PageHeader';") &&
   hero.includes('const phasesInTopRow = width >= 760;') &&
   !hero.includes('{!phasesInTopRow ?') &&
@@ -82,7 +82,7 @@ assert.ok(hero.includes('const iconOnlyPhases = narrow;') &&
 // The four aspiration icons and the completion line live inside the single
 // PageHeader on phones. Music gets its own pill/segment surface, separate from
 // the global Back, Fire, and Chat buttons.
-assert.ok(hero.includes('<PageHeader center={advancement} onBack={onBack}/>') &&
+assert.ok(hero.includes('<PageHeader center={advancement} centerOverlayOnMobile onBack={onBack}/>') &&
   !hero.includes('>{advancement}</View>') &&
   /\{iconOnlyPhases \?[\s\S]*?DreamPhaseIcon[\s\S]*?backgroundColor:reached\?activeAccent:theme.border/.test(hero),
   'Mobile phase icons and their progress underline must share the top header');
@@ -91,6 +91,22 @@ assert.ok(musicTabs.includes("backgroundColor:compact?(theme.dark?'#252B2B':'#F3
   musicTabs.includes("backgroundColor:compact&&selected?") &&
   musicTabs.includes('accessibilityRole="tablist"'),
   'Mobile Music tabs need a single distinct segmented grouping around icon-only controls');
+
+// Semence must display the existing inspiration moodboard, its + control,
+// and the original chooser for links, documents, images, verses and references.
+const semence = source('src/components/dream/SemenceStudio.tsx');
+const inspirations = source('src/components/dream/SemenceInspirations.tsx');
+assert.ok(semence.includes("import SemenceInspirations from './SemenceInspirations'") &&
+  semence.includes('<SemenceInspirations dream={dream} editable={editable} showAddControl={editable}') &&
+  semence.indexOf('<SemenceInspirations') < semence.indexOf('<DreamMilestoneActions') &&
+  inspirations.includes('accessibilityLabel="Ajouter une inspiration"') &&
+  inspirations.includes("kind:'document'") &&
+  inspirations.includes("kind:'link'"),
+  'Semence must restore its saved inspiration board and full add-inspiration menu');
+assert.ok(nav.includes('centerOverlayOnMobile') &&
+  nav.includes('left:desktop?0:52,right:desktop?0:90') &&
+  hero.includes('centerOverlayOnMobile onBack={onBack}'),
+  'Mobile dream phase tabs must occupy the same top header row between Back and Fire/Chat');
 
 // The personal shortcut icons once rendered as isolated symbols on the far left
 // of full-width pages. Only those two rows should omit their leading icon.
@@ -104,16 +120,15 @@ assert.ok(shortcuts.includes('!hideLeadingIcon ?') &&
 // full reading rail. The forward action is visually last on desktop, first on
 // mobile. Pausing and destroying remain smaller utility actions.
 const milestone = source('src/components/dream/DreamMilestoneActions.tsx');
-assert.ok(milestone.includes('PROCHAINE ÉTAPE') &&
-  milestone.includes("borderTopWidth:1,borderColor:theme.border") &&
-  milestone.includes("width:'100%'") &&
+assert.ok(!milestone.includes('PROCHAINE ÉTAPE') &&
+  !milestone.includes("fontFamily:'serif'") &&
   milestone.includes("minWidth:desktop?194:undefined") &&
   milestone.includes("backgroundColor:pressed?'#292929':'#151515'") &&
-  milestone.includes('{secondary}') && milestone.includes('{destructive}') &&
-  milestone.includes('{primary}') &&
+  milestone.includes('{destructive}') && milestone.includes('{secondary}') &&
+  milestone.indexOf('{destructive}') < milestone.indexOf('{secondary}') &&
   milestone.indexOf('{secondary}') < milestone.indexOf('{primary}') &&
   milestone.includes("accessibilityState={{disabled:primaryDisabled}}"),
-  'Dream stage destination must keep an emphasized forward action and safer secondary controls');
+  'The three milestone buttons must stay functional without an unrequested heading, with destructive first');
 for (const [file,nextStage] of [
   ['src/components/dream/SemenceStudio.tsx','Germination'],
   ['src/components/dream/DreamExperience.tsx','Croissance'],
