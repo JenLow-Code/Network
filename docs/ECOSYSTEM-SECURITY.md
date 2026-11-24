@@ -22,3 +22,12 @@ Existing account IDs, password hashes and token audience are preserved. Other pr
 Production D1 had zero legacy credentials and zero active legacy sessions; the admin was already linked to Supabase and active. A narrowly scoped version of the existing live Worker was uploaded with strict inheritance of the existing bindings (5c8986f4-35a0-452d-8144-e583b532ea51). It retires custom password/register/refresh/logout routes (410), rejects email-only account linking and rate-limits Supabase exchange. It is not the full rewritten TypeScript middleware. The existing Google project and redirect configuration remain unchanged. Preview smoke tests are required before promoting. Real sign-in and broader session/security acceptance remain required.
 
 The preview HTTP smoke passed (run 45445006789), and the hotfix was promoted to 100% production traffic. Previous rollback version: 5c99d936-d4c3-4306-97b5-cb8391240dc4. This is a narrow runtime hotfix, not deployment of the rewritten middleware. Production smoke and valid-user login verification remain required.
+
+## Deferred security checklist — 2026-11-24
+
+- [ ] Implement Supabase MFA (authenticator TOTP) centrally for JenLow Identity; preserve Google and email/password login.
+- [ ] Require server-verified MFA assurance for administrators and sensitive actions; finalize member enrollment and recovery policy before release.
+- [ ] Validate 15-minute access tokens, silent two-hour session verification, seven-day inactivity timeout and maximum fourteen-day trusted session; server-side enforcement and revocation are not yet verified.
+- [ ] Validate real email/password sign-in, logout/revocation and resource-specific authorization before beta release.
+
+MFA implementation is deferred by product decision; no authentication or production configuration is changed by this checklist.
