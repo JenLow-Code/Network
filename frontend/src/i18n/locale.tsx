@@ -6,7 +6,8 @@ export const LANGUAGE_KEY = 'jenlow.network.settings.language.v1';
 const translations = {
   fr: {
     discover: 'Découvrir',
-    dreams: 'Aspirations',
+    dreams: 'Mes aspirations',
+    dreamsNav: 'Aspirations',
     agenda: 'Agenda',
     music: 'Musique',
     space: 'Mon espace',
@@ -21,7 +22,8 @@ const translations = {
   },
   en: {
     discover: 'Discover',
-    dreams: 'Aspirations',
+    dreams: 'My Aspirations',
+    dreamsNav: 'Aspirations',
     agenda: 'Agenda',
     music: 'Music',
     space: 'My Space',
@@ -36,7 +38,8 @@ const translations = {
   },
   de: {
     discover: 'Entdecken',
-    dreams: 'Bestrebungen',
+    dreams: 'Meine Bestrebungen',
+    dreamsNav: 'Bestrebungen',
     agenda: 'Kalender',
     music: 'Musik',
     space: 'Mein Bereich',
@@ -51,7 +54,8 @@ const translations = {
   },
   pt: {
     discover: 'Descobrir',
-    dreams: 'Aspirações',
+    dreams: 'Minhas aspirações',
+    dreamsNav: 'Aspirações',
     agenda: 'Agenda',
     music: 'Música',
     space: 'Meu espaço',
