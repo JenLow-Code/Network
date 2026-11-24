@@ -33,6 +33,9 @@ function stubSupabase(options:{id?:string;email?:string;verified?:boolean;
     assert.equal((init?.headers as Record<string,string>)?.Authorization,
       'Bearer validated-supabase-token');
     assert.equal(init?.redirect,'error');
+    // The legacy Cloudflare production Worker must not require an
+    // AbortSignal.timeout implementation to contact Supabase Auth.
+    assert.equal(init?.signal,undefined);
     if(options.networkError)throw new Error('upstream_offline');
     const status=options.status??200;
     return new Response(JSON.stringify(status===200?{
@@ -121,7 +124,7 @@ test('unverified email, anonymous user and upstream outage all fail closed',asyn
       const r=await call(envFor(app.db),'validated-supabase-token');
       assert.equal(r.status,opts.networkError?503:403);
       assert.equal(r.body.error,opts.networkError?
-        'identity_provider_unavailable':'unverified_identity');
+        'identity_provider_fetch_failed':'unverified_identity');
     }finally{up.restore();}
   }
 });
@@ -164,4 +167,18 @@ test('unknown origin blocked even if bearer is otherwise verified',async()=>{
     assert.equal(r.body.error,'origin_not_allowed');
     assert.equal(up.calls(),0);
   }finally{up.restore();}
+});
+
+test('Supabase HTTP 5xx and rate limiting return safe, actionable codes',async()=>{
+  const app=createApp();
+  for(const status of [429,500,502,503]){
+    const up=stubSupabase({status});
+    try{
+      const r=await call(envFor(app.db),'validated-supabase-token');
+      assert.equal(r.status,503);
+      assert.equal(r.body.error,
+        status===429?'identity_provider_rate_limited':'identity_provider_http_'+status);
+      assert.equal(up.calls(),1);
+    }finally{up.restore();}
+  }
 });

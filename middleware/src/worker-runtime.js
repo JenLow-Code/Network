@@ -42,19 +42,36 @@ async function exchangeSupabase(request,env){
     return error('identity_provider_not_configured',503);
   let upstream;
   try{
+    // Cloudflare's older production compatibility date and request isolation
+    // may behave differently from Node's AbortSignal.timeout() implementation.
+    // Never let an unavailable timer API prevent the outbound identity check.
+    // The runtime cancels outstanding subrequests when the incoming request
+    // ends. No token is logged, cached or returned to the browser.
     upstream=await fetch(base+'/auth/v1/user',{
       method:'GET',
       headers:{apikey,Authorization:'Bearer '+token,Accept:'application/json'},
       redirect:'error',
-      signal:AbortSignal.timeout(10000),
     });
-  }catch{return error('identity_provider_unavailable',503);}
+  }catch(e){
+    // Safe diagnostics: distinguish an outbound fetch failure from a Supabase
+    // HTTP response. Never reveal token, user ID, email, API key or URL.
+    console.error('supabase_identity_fetch_failed',e?.name||'unknown');
+    return error('identity_provider_fetch_failed',503);
+  }
   if(upstream.status===401||upstream.status===403)
     return error('not_authenticated',401);
-  if(!upstream.ok)return error('identity_provider_unavailable',503);
+  if(!upstream.ok){
+    // A constrained HTTP code makes server errors actionable without
+    // passing through any possibly sensitive upstream response body.
+    const status=Number(upstream.status);
+    console.error('supabase_identity_upstream_http',status);
+    return error(status===429?'identity_provider_rate_limited':
+      'identity_provider_http_'+(Number.isInteger(status)&&status>=400&&status<=599?status:0),503);
+  }
   let identity;
   try{identity=await upstream.json();}catch{
-    return error('identity_provider_unavailable',503);
+    console.error('supabase_identity_invalid_json');
+    return error('identity_provider_invalid_response',503);
   }
   const email=typeof identity?.email==='string'
     ?identity.email.toLowerCase().trim():'';
