@@ -353,3 +353,28 @@ const personalProfile=read('app/profile.tsx');
 if(!personalProfile.includes('onPress={()=>jump(link.id)}')||!personalProfile.includes('anchors.current[item.id]')||!personalProfile.includes('<ProfileTalents contentWidth={contentWidth}/>' )||!['profile-talents','profile-publications','prayers','settings'].every(route=>read('app/'+route+'.tsx').includes('pathname:\'/profile\''))){
   console.error('Personal profile must retain its integrated sections and legacy anchor redirects.');process.exitCode=1;
 }
+
+
+// JenLow Aspirations: shared hand-and-star glyph in both desktop and mobile nav.
+// Navigation destinations, selected states, and accessible labels remain owned by Nav.
+const aspirationIcon=read('src/icons/AspirationNavIcon.tsx');
+const aspirationNav=read('src/components/navigation/Nav.tsx');
+for(const [source,needle] of [
+  [aspirationIcon, 'export function AspirationNavIcon'],
+  [aspirationIcon, 'viewBox="0 0 24 24"'],
+  [aspirationIcon, 'fill={color}'],
+  [aspirationNav, "item.path==='/my-space'?<AspirationNavIcon size={20}"],
+  [aspirationNav, "x.path === '/my-space' ? ("],
+  [aspirationNav, '<AspirationNavIcon size={24}'],
+  [aspirationNav, "title: t('dreams')"],
+  [aspirationNav, "path: '/my-space' as const"],
+]){
+  if(!source.includes(needle)){
+    console.error('Aspirations navigation icon regression: missing '+needle);
+    process.exitCode=1;
+  }
+}
+if(/<Image|LinearGradient|filter=|blur\(/.test(aspirationIcon)){
+  console.error('Aspirations navigation icon must remain a simple, theme-aware vector.');
+  process.exitCode=1;
+}
