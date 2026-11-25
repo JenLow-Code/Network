@@ -11,7 +11,9 @@ const files=[...walk(path.join(root,'app')),...walk(path.join(root,'src'))];
 const legacy=/^src\/(?:mocks\/|lib\/api\/(?:demo|musicPreview)\.ts$|domain\/(?:mockGrowthPreview|dreamPersistence)\.ts$|components\/music\/MusicProposalDemoAudio\.tsx$)/;
 const prefs=new Set([
   'src/theme/AppTheme.tsx','src/lib/supabaseClient.ts','src/context/AuthProvider.tsx',
-  'src/domain/musicLibraryPreferences.ts'
+  'src/domain/musicLibraryPreferences.ts','src/i18n/locale.tsx','src/lib/api/session.ts',
+  // Offline public-domain scripture is a read-only content cache, not user records.
+  'src/domain/bibleLibrary.ts'
 ]);
 const fixturePaths=[],references=[],storage=[],endpointReferences=[];
 for(const file of files){
@@ -38,4 +40,4 @@ console.log('Legacy source inventory:',JSON.stringify(fixturePaths));
 console.log('Imports/references to retired modules:',JSON.stringify(references));
 console.log('Direct demo API references:',JSON.stringify(endpointReferences));
 console.log('Storage references (review all non-preference/auth uses):',JSON.stringify(storage));
-if(references.length||endpointReferences.length){console.error('Production source still references retired demo or local aspiration modules.');process.exitCode=1;}
+if(references.length||endpointReferences.length||storage.some(entry=>!entry.preferenceOrAuth)){console.error('Production source still references retired demo or local aspiration modules.');process.exitCode=1;}

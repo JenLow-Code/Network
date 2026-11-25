@@ -1,6 +1,5 @@
 import React,{useEffect,useState} from 'react';
 import {ActivityIndicator,Platform,Pressable,Text,TextInput,View} from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useAuth} from '@/context/AuthProvider';
 import {useApp} from '@/context/AppContext';
 import {useAppTheme} from '@/theme/AppTheme';
@@ -9,15 +8,7 @@ import {chooseMusicFile,uploadMusicAudioFile} from '@/domain/musicMedia';
 import type {MusicPublication} from '@/domain/publication';
 
 const PINK='#CB245C';
-type Draft={role:string;part:string;message:string;audioUrl:string};
-const keyFor=(userId:string,trackId:string)=>
-  'jenlow.music.outgoing-draft.v1.'+userId+'.'+trackId;
-
-/** An OUTGOING collaboration proposal, never an inbox or received request.
- * Requires a real verified API user to send; fictional/demo preview cannot
- * ever call the proposal endpoint. Local drafts are scoped to the signed-in
- * user and track and are never labeled as successfully sent until confirmed.
- */
+/** Transient outgoing proposal form. Only the authenticated API persists submissions. */
 export function MusicOutgoingCollabDraft({song,previewOnly}:{
   song:MusicPublication;previewOnly:boolean;
 }){
@@ -31,45 +22,20 @@ export function MusicOutgoingCollabDraft({song,previewOnly}:{
     ' ». Voici ce que je pourrais apporter : ');
   const [audioUrl,setAudioUrl]=useState('');
   const [mediaId,setMediaId]=useState('');
-  const [ready,setReady]=useState(false);
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState('');
   const [sent,setSent]=useState(false);
   const [proposalId,setProposalId]=useState('');
-  const draftKey=user?keyFor(user.id,song.id):null;
   const field={backgroundColor:theme.background,
     borderColor:theme.border,borderWidth:1,borderRadius:10,
     paddingHorizontal:11,paddingVertical:9,
     color:theme.foreground,fontSize:12} as const;
 
   useEffect(()=>{
-    let active=true;
-    setReady(false);setSent(false);setError('');
-    if(!draftKey){setReady(true);return;}
-    void AsyncStorage.getItem(draftKey)
-      .then(raw=>{
-        if(!active||!raw)return;
-        try{
-          const data=JSON.parse(raw) as Partial<Draft>;
-          if(typeof data.role==='string')setRole(data.role);
-          if(typeof data.part==='string')setPart(data.part);
-          if(typeof data.message==='string')setMessage(data.message);
-          if(typeof data.audioUrl==='string')setAudioUrl(data.audioUrl);
-        }catch{/* Do not trust invalid locally cached drafts. */}
-      }).finally(()=>{if(active)setReady(true);});
-    return()=>{active=false;};
-  },[draftKey]);
-
-  useEffect(()=>{
-    if(!ready||sent||!draftKey)return;
-    const task=setTimeout(()=>{
-      void AsyncStorage.setItem(draftKey,JSON.stringify({
-        role,part,message,audioUrl,
-      } satisfies Draft)).catch(()=>{});
-    },450);
-    return()=>clearTimeout(task);
-  },[ready,sent,draftKey,role,part,message,audioUrl]);
-
+    setRole(song.requestedTalents?.[0]||'');setPart('');
+    setMessage('Bonjour '+song.author+', je souhaiterais collaborer sur « '+song.title+' ». Voici ce que je pourrais apporter : ');
+    setAudioUrl('');setMediaId('');setSent(false);setProposalId('');setError('');
+  },[user?.id,song.id]);
   const canSend=!previewOnly&&!!user&&!busy&&!sent&&
     role.trim().length>0&&message.trim().length>=20&&
     (!!mediaId||/^https:\/\//i.test(audioUrl.trim()));
@@ -101,8 +67,6 @@ export function MusicOutgoingCollabDraft({song,previewOnly}:{
         throw new Error('Le serveur n’a pas confirmé cet envoi.');
       setProposalId(response.proposal.id);
       setSent(true);
-      app.proposeMusic(song.id);
-      if(draftKey)void AsyncStorage.removeItem(draftKey).catch(()=>{});
     }catch(e){
       setError(e instanceof ApiRequestError&&
         (e.status===401||e.code==='not_authenticated')
