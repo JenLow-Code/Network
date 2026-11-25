@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Image, Platform, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { BlurView } from 'expo-blur';
-import Svg, { Defs, LinearGradient, Stop, Rect, Filter, FeTurbulence, FeDisplacementMap } from 'react-native-svg';
+import Svg, { Defs, LinearGradient, Stop, Rect, Filter, FeTurbulence, FeDisplacementMap, Path, Circle } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useGlobalSearchParams, usePathname } from 'expo-router';
 import { useLocale } from '@/i18n/locale';
@@ -340,7 +340,7 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
                   </Pressable>
                   </View>
                   {captureTreeOpen?([
-                    {key:'thought',title:'Pensées',icon:'cloud-outline' as const},
+                    {key:'thought',title:'Pensées',icon:'chatbubble-ellipses-outline' as const},
                     {key:'record',title:'Son',icon:'mic-outline' as const},
                     {key:'doc',title:'Document',icon:'document-text-outline' as const},
                     {key:'idea',title:'Idée',icon:'bulb-outline' as const},
@@ -359,8 +359,13 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
                       style={{minHeight:34,opacity:isSharedSong?.5:1,flexDirection:'row',alignItems:'center',gap:9,
                         paddingHorizontal:7,marginLeft:21,borderRadius:7,
                         backgroundColor:active?'rgba(215,29,119,.10)':'transparent'}}>
-                      <Ionicons name={action.icon} size={16}
-                        color={active?'#D71D77':theme.muted}/>
+                      {action.key==='thought'?<Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
+                        <Path d="M7.5 16.9C4.3 16.9 2.5 14.7 2.5 12.2c0-1.9 1.3-3.6 3.1-4.1C6.1 5.8 8.1 4.5 10.4 5c1.6-1.9 4.5-2 6.2-.2 2.5-.2 4.5 1.7 4.5 4.1 1.6 1.1 2.1 3.3 1.1 5-1 1.8-3.1 2.5-5.1 2.2-2.3 1.8-5.4 1.5-7.1-.6Z"
+                          stroke={active?'#D71D77':theme.muted} strokeWidth={1.6} strokeLinejoin="round"/>
+                        <Circle cx={5.5} cy={19} r={1.5} stroke={active?'#D71D77':theme.muted} strokeWidth={1.4}/>
+                        <Circle cx={2.5} cy={22} r={0.7} fill={active?'#D71D77':theme.muted}/>
+                      </Svg>:<Ionicons name={action.icon} size={16}
+                        color={active?'#D71D77':theme.muted}/>}
                       <Text numberOfLines={1} style={{flex:1,minWidth:0,fontSize:11,
                         fontWeight:active?'700':'500',
                         color:active?'#CB245C':theme.foreground}}>{action.title}</Text>
