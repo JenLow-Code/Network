@@ -1,9 +1,9 @@
 /**
  * Regression guard for the exact JenLow Music UX contract:
- * - Preserve the sample collaboration AND the sample discovery cassette;
+ * - Never render fabricated collaborations or sample cassettes;
  * - all Mes morceaux tiles open a three-tab workspace;
  * - Pour moi cassettes navigate to a separate, music-focused page.
- * Demo fixtures remain read-only and must never gain real permissions.
+ * Application data must originate from authenticated APIs.
  */
 const {readFileSync}=require('node:fs');
 const {join}=require('node:path');
@@ -18,7 +18,8 @@ const authProvider=read('src/context/AuthProvider.tsx');
 const detail=read('app/music/[id].tsx');
 const owned=read('src/components/music/MusicSongCard.tsx');
 const capture=read('src/components/music/MusicCaptureExperience.tsx');
-const demoData=read('src/lib/api/musicPreview.ts');
+const audioPreview=read('src/components/music/MusicAudioPreview.tsx');
+const hooks=read('src/lib/api/hooks.ts');
 const more=read('src/components/music/MusicMoreDetails.tsx');
 const listener=read('src/components/music/MusicListeningDetail.tsx');
 const outgoing=read('src/components/music/MusicOutgoingCollabDraft.tsx');
@@ -28,30 +29,24 @@ const nav=read('src/components/navigation/Nav.tsx');
 
 const personalBlock=home.split('const openMyPiece = ')[1]?.split('const sectionTitle = ')[0]||'';
 const checks=[
-  ['Keep the demonstration collaboration under Mes morceaux',
-    home.includes('acceptedWithDemo.forEach')&&
-    home.includes('demoPreview?.collaborations')],
-  ['Keep the demonstration cassette under Pour moi',
-    home.includes('demoPreview?.songs')&&
-    home.includes('demo={!!song.isDemo}')],
-  ['Keep demo examples sourced from the isolated read-only API',
-    demoData.includes('DEMO_API_BASE')&&
-    !home.includes("setAccepted(true)")],
+  ['My pieces are derived from server-accepted proposals, never demo projects',
+    home.includes("p.status === 'accepted' || p.status === 'published'")&&home.includes('accepted.forEach(p => ensure(p,false))')&&!/demoPreview|acceptedWithDemo|fetchDemo/.test(home)],
+  ['For me uses the API catalogue even without matching opportunities',
+    home.includes('opportunities.length ? opportunities')&&home.includes("p.source==='api'")&&!home.includes('demoPreview')],
+  ['Discovery, shared workspace and audio preview reject synthetic sources',
+    !/fetchDemo|demoFeed|previewDiscovery/.test(hooks)&&!/fetchDemo|demoId|demoAudioAsset/.test(shared)&&
+    !audioPreview.includes('demoAudioModules')&&!audioPreview.includes('assets/audio/')&&!collaborate.includes('demo-sarah')],
   ['Personal tiles invoke openMyPiece',
     home.includes('onPress={() => openMyPiece(piece.primary)}')],
-  ['Both real and demo shared tiles open the workspace, never the player',
+  ['Shared tiles open the workspace, never the player',
     personalBlock.includes("pathname:'/music-collaboration/[id]'")&&
     !personalBlock.includes("pathname:'/music/[id]'")],
   ['Owned workspaces preserve Capture, Create and Collaborate',
     personalBlock.includes("pathname:'/music-workspace/[id]'")&&
     owned.includes("pathname: '/music-workspace/[id]'")],
-  ['Demo shared projects render the same three tabs without calling real APIs',
-    shared.includes('if(demoId)')&&
-    shared.includes('fetchDemoMusicPreview()')&&
+  ['Shared projects require server-authorized conversation and use the same three tabs',
+    shared.includes("+'/conversation'")&&shared.includes('!conversationId||!music')&&
     shared.includes('<MusicWorkspaceScreen')&&workspace.includes('<MusicWorkspaceTabs')],
-  ['Demo publication IDs use the real numeric suffix, not an escaped backslash',
-    shared.includes(String.raw`/^demo-music-publication-\d{2}$/`)&&
-    !shared.includes(String.raw`/^demo-music-publication-\\d{2}$/`)],
   ['Unauthorized workspaces return to Music without rendering a dead-end panel',
     shared.includes("if(!loading&&error?.kind==='permission')router.replace('/music-hub')")&&
     !shared.includes('Accès au morceau non autorisé')],
@@ -87,8 +82,8 @@ const checks=[
     capture.includes('{!readOnly?<Pressable onPress={()=>setActionsOpen')&&
     shared.includes('No private')&&shared.includes('update={()=>{}}')],
   ['Accepted contributions use actual audio, credit and creation date; not a note',
-    shared.includes("kind:'audio' as const")&&shared.includes('createdAt:match.createdAt')&&shared.includes('contribution:match.contribution')&&
-    shared.includes('demoAudioAsset:demoId?p.audioAsset')&&capture.includes('demoAudioAsset:file.demoAudioAsset')&&
+    shared.includes("kind:'audio' as const")&&shared.includes("createdAt:p.createdAt||''")&&shared.includes('title:p.contribution||p.credits')&&
+    shared.includes('externalUrl:p.audioUrl')&&capture.includes('audioUrl:file.externalUrl')&&
     !shared.includes("kind:'note' as const,title:p.trackTitle")],
   ['Capture sidebar actions start folded and have a separate plus toggle',
     nav.includes('useState(false)')&&nav.includes('captureTreeOpen?([')&&nav.includes('setCaptureTreeOpen(open=>!open)')&&!nav.includes('<MusicFolderCover')],
@@ -102,7 +97,7 @@ const checks=[
     nav.includes("{!isSharedSong?<Pressable accessibilityRole=\"button\"")],
   ['The music workspace displays only a known role or its read-only limitation',
     workspace.includes('roleLabel={roleLabel}')&&
-    workspace.includes("'Accès partagé · lecture seule'")&&
+    workspace.includes("'Rôle non vérifié'")&&
     workspace.includes("musicWorkspaceRoleLabel(shared.viewerRole)")&&
     shared.includes("'/v1/auth/me'")&&
     shared.includes("members.find(person=>person.id===me.user?.id)")],
@@ -150,7 +145,7 @@ const checks=[
     !listener.includes('Continuer à découvrir')&&
     !listener.includes('related.slice(0,12).map')&&
     !listener.includes('<MusicTile')],
-  ['Right-side collaboration and encouragement buttons are visible for demos too',
+  ['Right-side collaboration and encouragement controls are preserved',
     listener.includes("button('Collaborer sur ce morceau'")&&
     listener.includes("'Encourager l’artiste'")&&
     listener.includes('<MusicOutgoingCollabDraft song={song}')],
@@ -159,10 +154,10 @@ const checks=[
     outgoing.includes('submit:true')&&
     outgoing.includes('Ma demande de collaboration')&&
     !outgoing.includes('role=received')],
-  ['Demonstration composer never sends to a real artist',
+  ['Unavailable or unverified composer never sends to a real artist',
     outgoing.includes('if(!canSend)return;')&&
     outgoing.includes('canSend=!previewOnly')&&
-    outgoing.includes('Envoi désactivé (démo)')],
+    outgoing.includes('Envoi indisponible')],
   ['Sending requires audio, validated role and description, and a confirmed response',
     outgoing.includes("credits:[{displayName:app.name,contribution:role.trim()}]")&&
     outgoing.includes("response.proposal?.status!=='submitted'")&&

@@ -147,8 +147,7 @@ export function MusicOutgoingCollabDraft({song,previewOnly}:{
           placeholderTextColor={theme.muted} style={{...field,minHeight:96}}/>
       </View>
       {previewOnly?<Text style={{fontSize:11,color:theme.muted,lineHeight:17}}>
-        Exemple fictif : tu peux modifier ce brouillon, mais aucun envoi réel
-        n’est possible depuis ce morceau de démonstration.
+        Ce morceau ne dispose pas d’une référence serveur vérifiée. L’envoi est indisponible.
       </Text>:<>
         <Text style={{fontSize:11,color:theme.muted}}>
           Joindre ma proposition audio
@@ -169,7 +168,7 @@ export function MusicOutgoingCollabDraft({song,previewOnly}:{
           style={field}/>
         <Text style={{fontSize:10,lineHeight:16,color:theme.muted}}>
           Le serveur demande actuellement une piste audio pour envoyer une
-          proposition. Ton message seul reste en brouillon local.
+          proposition. Le message reste dans ce formulaire tant qu’il n’est pas envoyé.
         </Text>
       </>}
       {!!error?<Text style={{fontSize:11,color:PINK,lineHeight:17}}>{error}</Text>:null}
@@ -181,7 +180,7 @@ export function MusicOutgoingCollabDraft({song,previewOnly}:{
         {busy?<ActivityIndicator color="#FFFFFF" size="small"/>:
           <Text style={{fontSize:12,fontWeight:'700',
             color:canSend?'#FFFFFF':theme.muted}}>
-            {previewOnly?'Envoi désactivé (démo)':'Envoyer ma demande'}
+            {previewOnly?'Envoi indisponible':'Envoyer ma demande'}
           </Text>}
       </Pressable>
     </>}

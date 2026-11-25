@@ -23,20 +23,28 @@ jobs:
       - id: dependencies
         run: npm install --no-audit --no-fund
       - name: Check unified desktop page canvases
+        if: ${{ always() && steps.dependencies.outcome == 'success' }}
         run: npm run verify:layout
       - name: Verify Agenda projection and local date behavior
+        if: ${{ always() && steps.dependencies.outcome == 'success' }}
         run: npm run verify:agenda
       - name: Verify theme contrast and navigation invariants
+        if: ${{ always() && steps.dependencies.outcome == 'success' }}
         run: npm run verify:theme
       - name: Verify MIDI import-export roundtrip
+        if: ${{ always() && steps.dependencies.outcome == 'success' }}
         run: npm run verify:midi
       - name: Verify lyric annotations and comments
+        if: ${{ always() && steps.dependencies.outcome == 'success' }}
         run: npm run verify:lyrics
       - name: Verify personal music opens the workspace (never the public player)
+        if: ${{ always() && steps.dependencies.outcome == 'success' }}
         run: npm run verify:music-routing
       - name: Verify authenticated access and session inactivity policy
+        if: ${{ always() && steps.dependencies.outcome == 'success' }}
         run: npm run verify:auth-gate
       - name: Verify score scanner never accepts a collapsed multi-staff result
+        if: ${{ always() && steps.dependencies.outcome == 'success' }}
         run: npm run verify:score-scan
       - name: Typecheck independently of regression failures
         if: ${{ always() && steps.dependencies.outcome == 'success' }}
@@ -45,6 +53,8 @@ jobs:
         if: ${{ always() && steps.dependencies.outcome == 'success' }}
         run: npx expo export --platform web
       - name: Validate native Android JS export
+        if: ${{ always() && steps.dependencies.outcome == 'success' }}
         run: npx expo export --platform android
       - name: Validate native iOS JS export
+        if: ${{ always() && steps.dependencies.outcome == 'success' }}
         run: npx expo export --platform ios

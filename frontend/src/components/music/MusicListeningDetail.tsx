@@ -181,7 +181,7 @@ export function MusicListeningDetail({
             « {song.title} ». Voici ce que je pourrais apporter…
           </Text>
           <Text style={{fontSize:11,fontWeight:'700',color:PINK}}>
-            {previewOnly?'Aperçu de la demande (démo)':
+            {previewOnly?'Demande indisponible':
               'Compléter et envoyer ma demande'}
           </Text>
         </Pressable>}

@@ -529,7 +529,7 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
       {displayedFiles.map((file,index)=>{
         const displayName=file.editedBy||project.ownerName||'—';
         const own=!readOnly&&(!file.editedBy||file.editedBy===project.ownerName);
-        const editor={displayName,handle:file.editedByHandle,avatarUrl:file.editedByAvatarUrl||(own&&typeof user?.user_metadata?.avatar_url==='string'?user.user_metadata.avatar_url:undefined),demo:file.editedByDemo,self:own};
+        const editor={displayName,handle:file.editedByHandle,avatarUrl:file.editedByAvatarUrl||(own&&typeof user?.user_metadata?.avatar_url==='string'?user.user_metadata.avatar_url:undefined),self:own};
         const image=isImage(file);
         const sound=isAudio(file)||file.kind==='audio';
         const text=content(file).trim();
@@ -574,7 +574,7 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
             sound&&file.localFileId?
               <MusicAudioTake file={file} compact
                 onOpen={openDetails}/>:
-            sound&&readOnly?<MusicAudioPreview source={{audioUrl:file.externalUrl,demoAudioAsset:file.demoAudioAsset}} captureStyle/>:
+            sound&&readOnly?<MusicAudioPreview source={{audioUrl:file.externalUrl}} captureStyle/>:
             file.musicEvents?.length?
               <MusicCaptureScoreStrip file={file} aligned={desktopList}/>:
             isMidiSource(file)?
