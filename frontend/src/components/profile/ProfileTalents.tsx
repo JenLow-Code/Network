@@ -1,16 +1,31 @@
-import {Text} from '@/i18n/LocalizedText';
-import React,{useEffect,useState} from 'react';
-import {Modal,Pressable,ScrollView,View} from 'react-native';
-import {Ionicons} from '@expo/vector-icons';
-import {useApp} from '@/context/AppContext';
-import {useAppTheme} from '@/theme/AppTheme';
-import {ProfileTalentTile} from '@/components/talent/ProfileTalentTile';
-import {api} from '@/lib/api/client';
-import type {TalentIllustration} from '@/components/talent/TalentArt';
+import { Text, TextInput } from '@/i18n/LocalizedText';
+import React, { useEffect, useState } from 'react';
+import { Modal, Pressable, ScrollView, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { api } from '@/lib/api/client';
+import { useApp } from '@/context/AppContext';
+import { useAppTheme } from '@/theme/AppTheme';
+import { ProfileTalentTile } from '@/components/talent/ProfileTalentTile';
+import { DREAM_TALENT_CHOICES } from '@/components/dream/dreamTalentCatalog';
+import { TranslatorLanguageFields } from '@/components/talent/TranslatorLanguageFields';
+import type { TalentIllustration } from '@/components/talent/TalentArt';
 
-type Talent={talentId:string;name:string;level:number;description?:string|null;canTeach:boolean;wantsToLearn:boolean;wantsTandem:boolean};
-const levels=['Grand débutant','Quelques notions','Intermédiaire','Avancé','Professionnel'];
-const interests=(t:Talent)=>[t.wantsTandem?'Tandem':'',t.canTeach?'Enseigner':'',t.wantsToLearn?'Apprendre':''].filter(Boolean);
+type Talent = { talentId: string; name: string; level: number; interests: string[]; description?: string; sourceLanguage?: string; targetLanguage?: string };
+type ApiTalent={talentId:string;name:string;level:number;description?:string|null;canTeach:boolean;wantsToLearn:boolean;wantsTandem:boolean};
+type CatalogueTalent={id:string;name:string};
+const fromApi=(t:ApiTalent):Talent=>({talentId:t.talentId,name:t.name,level:t.level-1,description:t.description??'',interests:[...(t.wantsTandem?['Tandem']:[]),...(t.canTeach?['Enseigner']:[]),...(t.wantsToLearn?['Apprendre']:[])]});
+const toApi=(draft:{level:number;description?:string;interests:string[]})=>({level:draft.level+1,description:draft.description??'',canTeach:draft.interests.includes('Enseigner'),wantsToLearn:draft.interests.includes('Apprendre'),wantsTandem:draft.interests.includes('Tandem')});
+const levels = [
+  { name: 'Grand débutant', color: '#287D58' },
+  { name: 'Quelques notions', color: '#2ECA65' },
+  { name: 'Intermédiaire', color: '#EAC000' },
+  { name: 'Avancé', color: '#F38A24' },
+  { name: 'Professionnel', color: '#CB245C' },
+];
+const interests = ['Tandem', 'Enseigner', 'Apprendre'];
+const TALENT_NAMES=[...new Set([
+  'Batterie','Chant','Piano',...DREAM_TALENT_CHOICES.map(item=>item.title),
+])];
 const talentArt = (name: string): TalentIllustration | undefined => {
  const s=name.toLocaleLowerCase('fr');
  if(s.includes('batt'))return 'drums';
@@ -27,44 +42,230 @@ const talentArt = (name: string): TalentIllustration | undefined => {
  return undefined;
 };
 
-
-export function ProfileTalents({contentWidth}:{contentWidth:number}){
-  const {email}=useApp(),theme=useAppTheme();
-  const [talents,setTalents]=useState<Talent[]>([]);
-  const [status,setStatus]=useState<'loading'|'ready'|'error'>('loading');
-  const [selected,setSelected]=useState<Talent|null>(null);
+export function ProfileTalents({contentWidth}: {contentWidth:number}) {
+  const app=useApp(),theme=useAppTheme();
+  const [talents, setTalents] = useState<Talent[]>([]);
+  const [loaded, setLoaded] = useState(false);
+  const [newTalent, setNewTalent] = useState('');
+  const [newLevel,setNewLevel]=useState(-1);
+  const [newDescription,setNewDescription]=useState('');
+  const [newInterests,setNewInterests]=useState<string[]>([]);
+  const [newSourceLanguage,setNewSourceLanguage] = useState('');
+  const [newTargetLanguage,setNewTargetLanguage] = useState('');
+  const [addLanguageError,setAddLanguageError] = useState(false);
+  const [addTalentOpen,setAddTalentOpen]=useState(false);
+  const [talentPickerOpen,setTalentPickerOpen]=useState(false);
+  const [selectedTalent, setSelectedTalent] = useState<number | null>(null);
+  const [editDraft,setEditDraft]=useState<Talent|null>(null);
+  const [error,setError]=useState('');
+  const [busy,setBusy]=useState(false);
   useEffect(()=>{
-    let live=true;setTalents([]);setSelected(null);setStatus('loading');
-    void api<{items:Talent[]}>('/api/me/talents',{auth:'required'}).then(result=>{
-      if(live){setTalents(result.items);setStatus('ready');}
-    }).catch(()=>{if(live)setStatus('error');});
-    return()=>{live=false;};
-  },[email]);
+    let active=true;setLoaded(false);setTalents([]);setSelectedTalent(null);setEditDraft(null);setError('');
+    void api<{items:ApiTalent[]}>('/api/me/talents',{auth:'required'}).then(result=>{
+      if(active){setTalents(result.items.map(fromApi));setLoaded(true);}
+    }).catch(()=>{if(active)setError('Talents indisponibles actuellement.');});
+    return()=>{active=false;};
+  },[app.email]);
+  const updateTalent=(_index:number,patch:Partial<Talent>)=>setEditDraft(draft=>draft?{...draft,...patch}:null);
+  const openTalent=(index:number)=>{setError('');setEditDraft({...talents[index],interests:[...talents[index].interests]});setSelectedTalent(index);};
+  const saveTalent=async(remove=false)=>{
+    if(!editDraft||busy)return;
+    if(!remove&&editDraft.level<0){setError('Choisis ton niveau.');return;}
+    if(!remove&&editDraft.name.toLocaleLowerCase('fr')==='traducteur'){setError('La persistance des langues de traduction n’est pas encore disponible.');return;}
+    setBusy(true);setError('');
+    try{const result=await api<{items:ApiTalent[]}>('/api/me/talents/'+encodeURIComponent(editDraft.talentId),{auth:'required',method:remove?'DELETE':'PATCH',...(remove?{}:{body:toApi(editDraft)})});
+      setTalents(result.items.map(fromApi));setSelectedTalent(null);setEditDraft(null);
+    }catch{setError('Modification non confirmée par le serveur. Réessaie plus tard.');}finally{setBusy(false);}
+  };
+  // Use the same visible and accessible level selector when creating or editing.
+  const levelPicker=(value:number,onChange:(next:number)=>void)=>
+    <View style={{gap:11}}>
+      <View style={{flexDirection:'row',alignItems:'center',
+        justifyContent:'space-between',flexWrap:'wrap',gap:6}}>
+        <Text style={{fontWeight:'700',fontSize:13,color:theme.foreground}}>Mon niveau</Text>
+        <Text style={{fontSize:12,color:theme.muted}}>
+          {levels[value]?.name||'À définir'}
+        </Text>
+      </View>
+      <View accessibilityRole="radiogroup" style={{flexDirection:'row',
+        justifyContent:'space-around',alignItems:'center',gap:9,
+        paddingVertical:9,paddingHorizontal:5,
+        borderWidth:1,borderColor:theme.border,borderRadius:10}}>
+        {levels.map((l,i)=><Pressable key={l.name}
+          accessibilityRole="radio"
+          accessibilityLabel={l.name+' (niveau '+(i+1)+' sur 5)'}
+          accessibilityState={{selected:i===value}}
+          onPress={()=>onChange(i)}
+          style={{width:42,height:36,alignItems:'center',justifyContent:'center'}}>
+          <View style={{width:27,height:27,borderRadius:14,
+            backgroundColor:i<=value?l.color:theme.border,
+            borderWidth:i===value?2:0,borderColor:theme.foreground,
+            alignItems:'center',justifyContent:'center'}}>
+            {i===value?<Ionicons name="checkmark" size={14}
+              color={i===2?'#171717':'#FFFFFF'}/>:null}
+          </View>
+        </Pressable>)}
+      </View>
+    </View>;
   const columns=contentWidth<350?2:contentWidth<650?3:4;
   const cardWidth=Math.max(76,Math.min(168,Math.floor((contentWidth-10*(columns-1))/columns)));
-  return <View style={{gap:8}}>
-    <Text style={{fontSize:12,color:theme.muted,lineHeight:18}}>Mes talents à partager, à transmettre ou à faire grandir.</Text>
-    {status==='loading'?<Text style={{color:theme.muted}}>Chargement…</Text>:status==='error'?<Text style={{color:theme.muted}}>Talents indisponibles.</Text>:!talents.length?<Text style={{color:theme.muted}}>Aucun talent enregistré.</Text>:null}
-    <View style={{flexDirection:'row',flexWrap:'wrap',gap:10,marginTop:4}}>
-      {talents.map(t=><View key={t.talentId} style={{width:cardWidth,borderRadius:11,backgroundColor:theme.surface,borderWidth:1,borderColor:theme.border,overflow:'hidden'}}>
-        <ProfileTalentTile title={t.name} level={levels[t.level-1]||'À définir'} subtitle={interests(t).join(' · ')||undefined} art={talentArt(t.name)} width={cardWidth-2} onPress={()=>setSelected(t)}/>
-        <Pressable onPress={()=>setSelected(t)} style={{padding:9,minHeight:44}}>
-          {t.description?<Text numberOfLines={2} style={{fontSize:11,color:theme.foreground}}>{t.description}</Text>:null}
-          <Text style={{color:theme.muted,fontSize:10}}>Voir le détail</Text>
-        </Pressable>
-      </View>)}
-    </View>
-    <Text style={{fontSize:11,color:theme.muted}}>L’ajout et la modification des talents nécessitent la nouvelle intégration serveur.</Text>
-    <Modal visible={!!selected} transparent animationType="fade" onRequestClose={()=>setSelected(null)}>
-      <View style={{flex:1,backgroundColor:'rgba(0,0,0,.6)',justifyContent:'center',padding:18}}>
-        <ScrollView style={{backgroundColor:theme.surface,borderRadius:14,maxWidth:470,width:'100%',alignSelf:'center',maxHeight:'85%'}} contentContainerStyle={{padding:20,gap:14}}>
-          <Pressable onPress={()=>setSelected(null)} style={{alignSelf:'flex-end',padding:6}}><Ionicons name="close" size={23} color={theme.foreground}/></Pressable>
-          {selected?<><Text style={{fontSize:24,fontWeight:'700',color:theme.foreground}}>{selected.name}</Text>
-          <Text style={{color:theme.foreground}}>{levels[selected.level-1]||'À définir'}</Text>
-          {!!interests(selected).length&&<Text style={{color:theme.muted}}>{interests(selected).join(' · ')}</Text>}
-          {!!selected.description&&<Text style={{color:theme.foreground}}>{selected.description}</Text>}</>:null}
-        </ScrollView>
+  return <>
+      <View style={{gap:8}}>
+        <Text style={{fontSize:12,color:theme.muted,lineHeight:18}}>Mes talents à partager, à transmettre ou à faire grandir.</Text>
+        {error&&!addTalentOpen&&selectedTalent===null?<Text accessibilityRole="alert" style={{color:theme.muted,fontSize:12}}>{error}</Text>:null}
+        {loaded&&talents.length===0?<Text style={{fontSize:13,color:theme.foreground}}>Quels talents aimerais-tu faire grandir ?</Text>:null}
+        <View style={{flexDirection:'row',flexWrap:'wrap',gap:10,marginTop:4}}>
+          {talents.map((t,index)=><View key={t.talentId} style={{width:cardWidth,borderRadius:11,backgroundColor:theme.surface,borderWidth:1,borderColor:theme.border,overflow:'hidden'}}><ProfileTalentTile title={t.name} level={levels[t.level]?.name||'À définir'}
+            subtitle={t.name.toLocaleLowerCase('fr')==='traducteur'&&t.sourceLanguage&&t.targetLanguage
+              ?t.sourceLanguage+' → '+t.targetLanguage:t.interests.length?t.interests.join(' · '):undefined}
+            art={talentArt(t.name)} width={cardWidth-2} onPress={()=>openTalent(index)}/>
+            <Pressable onPress={()=>openTalent(index)} accessibilityRole="button" accessibilityLabel={'Mon intention pour '+t.name} style={{paddingHorizontal:9,paddingVertical:9,gap:5,minHeight:44}}>
+              {t.description?<Text numberOfLines={2} style={{fontSize:11,lineHeight:16,color:theme.foreground}}>{t.description}</Text>:null}
+              <View style={{flexDirection:'row',alignItems:'center',gap:5}}><Text numberOfLines={1} style={{flex:1,fontSize:10,color:theme.muted}}>{t.description?'Mon intention':'Personnaliser'}</Text><Ionicons name="arrow-forward-outline" size={12} color={theme.muted}/></View>
+            </Pressable></View>)}
+          <Pressable accessibilityRole="button" accessibilityLabel="Ajouter un talent" onPress={()=>{setError('');setAddTalentOpen(true);}}
+            style={{width:cardWidth,minHeight:cardWidth,borderRadius:10,borderWidth:1.5,
+              borderStyle:'dashed',borderColor:'#27845B',backgroundColor:theme.surface,
+              alignItems:'center',justifyContent:'center',alignSelf:'flex-start'}}>
+            <Ionicons name="add" size={25} color="#27845B"/><Text style={{fontSize:11,fontWeight:'600',color:theme.foreground,marginTop:6,textAlign:'center'}}>Ajouter un talent</Text>
+          </Pressable>
+        </View>
       </View>
-    </Modal>
-  </View>;
+      <Modal visible={addTalentOpen} transparent animationType="fade"
+        onRequestClose={()=>setAddTalentOpen(false)}>
+        <View style={{flex:1,backgroundColor:'rgba(0,0,0,.56)',justifyContent:'center',padding:19}}>
+          <Pressable onPress={()=>setAddTalentOpen(false)}
+            style={{position:'absolute',top:0,bottom:0,left:0,right:0}}/>
+          <ScrollView keyboardShouldPersistTaps="handled"
+            style={{backgroundColor:theme.surface,maxWidth:430,width:'100%',
+              alignSelf:'center',maxHeight:'88%',borderRadius:15}}
+            contentContainerStyle={{padding:21,gap:15}}>
+            <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
+              <Text style={{fontSize:20,fontWeight:'700',color:theme.foreground}}>Ajouter un talent</Text>
+              <Pressable onPress={()=>setAddTalentOpen(false)} accessibilityLabel="Fermer">
+                <Ionicons name="close-outline" size={23} color={theme.foreground}/>
+              </Pressable>
+            </View>
+            <Pressable accessibilityRole="button"
+              accessibilityLabel="Choisir un talent dans la liste"
+              accessibilityState={{expanded:talentPickerOpen}}
+              onPress={()=>setTalentPickerOpen(value=>!value)}
+              style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',
+                minHeight:45,paddingHorizontal:13,borderWidth:1,
+                borderColor:theme.border,borderRadius:10}}>
+              <Text style={{fontSize:13,fontWeight:'600',color:theme.foreground}}>
+                {TALENT_NAMES.includes(newTalent)?newTalent:'Choisir un talent'}
+              </Text>
+              <Ionicons name={talentPickerOpen?'chevron-up':'chevron-down'} size={18}
+                color={theme.muted}/>
+            </Pressable>
+            {talentPickerOpen?<ScrollView nestedScrollEnabled
+              keyboardShouldPersistTaps="handled" style={{maxHeight:190}}
+              contentContainerStyle={{gap:2}}>
+              {TALENT_NAMES.map(name=><Pressable key={name}
+                onPress={()=>{setNewTalent(name);setTalentPickerOpen(false);
+                  setAddLanguageError(false);}}
+                accessibilityRole="button" accessibilityLabel={'Sélectionner '+name}
+                accessibilityState={{selected:newTalent===name}}
+                style={{minHeight:40,flexDirection:'row',alignItems:'center',
+                  paddingHorizontal:12,borderRadius:8,
+                  backgroundColor:newTalent===name?
+                    (theme.dark?'#452B36':'#FAEDF2'):'transparent'}}>
+                <Text style={{flex:1,fontSize:13,color:theme.foreground}}>{name}</Text>
+                {newTalent===name?<Ionicons name="checkmark" color="#CB245C" size={17}/>:null}
+              </Pressable>)}
+            </ScrollView>:null}
+            <Text style={{fontSize:11,color:theme.muted}}>
+              Ou écris un talent personnalisé :
+            </Text>
+            <TextInput value={newTalent} onChangeText={setNewTalent} maxLength={70}
+              placeholder="Ex. Guitare, photographie, chant…"
+              style={{borderWidth:1,borderColor:theme.border,borderRadius:10,
+                padding:13,color:theme.foreground,fontSize:14}}/>
+            {newTalent.trim().toLocaleLowerCase('fr')==='traducteur'?<TranslatorLanguageFields
+              sourceLanguage={newSourceLanguage} targetLanguage={newTargetLanguage}
+              onChangeSource={v=>{setNewSourceLanguage(v);setAddLanguageError(false);}}
+              onChangeTarget={v=>{setNewTargetLanguage(v);setAddLanguageError(false);}}/>:null}
+            {addLanguageError?<Text style={{color:'#C34D65',fontSize:12}}>
+              Indique les deux langues de traduction.
+            </Text>:null}
+            {levelPicker(newLevel,setNewLevel)}
+            <View style={{gap:7}}>
+              <Text style={{fontWeight:'700',fontSize:13,color:theme.foreground}}>
+                Ma présentation
+              </Text>
+              <TextInput multiline value={newDescription}
+                onChangeText={setNewDescription}
+                placeholder="Ce que je peux partager, mon expérience…"
+                style={{minHeight:84,borderWidth:1,borderColor:theme.border,
+                  borderRadius:10,padding:12,color:theme.foreground,
+                  fontSize:13,textAlignVertical:'top'}}/>
+            </View>
+            <View style={{gap:9}}>
+              <Text style={{fontWeight:'700',fontSize:13,color:theme.foreground}}>
+                Je souhaite
+              </Text>
+              <View style={{flexDirection:'row',gap:8,flexWrap:'wrap'}}>
+                {interests.map(interest=><Pressable key={interest}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{checked:newInterests.includes(interest)}}
+                  onPress={()=>setNewInterests(items=>items.includes(interest)
+                    ?items.filter(item=>item!==interest):[...items,interest])}
+                  style={{paddingVertical:9,paddingHorizontal:11,borderWidth:1,
+                    borderColor:newInterests.includes(interest)?'#CB245C':theme.border,
+                    borderRadius:9,backgroundColor:newInterests.includes(interest)
+                      ?(theme.dark?'rgba(203,36,92,.2)':'#FAEDF2'):'transparent'}}>
+                  <Text style={{color:theme.foreground,fontSize:12}}>{interest}</Text>
+                </Pressable>)}
+              </View>
+            </View>
+            {error?<Text accessibilityRole="alert" style={{color:theme.muted,fontSize:12}}>{error}</Text>:null}
+            <Pressable accessibilityRole="button" disabled={busy} onPress={async()=>{
+              if(busy||!newTalent.trim())return;
+              if(newLevel<0){setError('Choisis ton niveau.');return;}
+              const translator=newTalent.trim().toLocaleLowerCase('fr')==='traducteur';
+              if(translator&&(!newSourceLanguage.trim()||!newTargetLanguage.trim())){setAddLanguageError(true);return;}
+              if(translator){setError('La persistance des langues de traduction n’est pas encore disponible.');return;}
+              setBusy(true);setError('');
+              try{
+                const catalogue=await api<{items:CatalogueTalent[]}>('/api/talents?q='+encodeURIComponent(newTalent.trim()),{auth:'required'});
+                const match=catalogue.items.find(t=>t.name.trim().toLocaleLowerCase('fr')===newTalent.trim().toLocaleLowerCase('fr'));
+                if(!match){setError('Ce talent n’est pas encore enregistré dans le catalogue serveur.');return;}
+                const draft={level:newLevel,description:newDescription.trim(),interests:newInterests};
+                const result=await api<{items:ApiTalent[]}>('/api/me/talents',{auth:'required',method:'POST',body:{talentId:match.id,...toApi(draft)}});
+                setTalents(result.items.map(fromApi));setLoaded(true);
+                setNewTalent('');setNewLevel(-1);setNewDescription('');setNewInterests([]);
+                setNewSourceLanguage('');setNewTargetLanguage('');setAddLanguageError(false);setAddTalentOpen(false);setTalentPickerOpen(false);
+              }catch{setError('Création non confirmée par le serveur. Réessaie plus tard.');}finally{setBusy(false);}
+            }} style={{backgroundColor:'#242322',borderRadius:10,padding:14,alignItems:'center'}}>
+              <Text style={{color:'#FFFFFF',fontSize:13,fontWeight:'700'}}>Ajouter à mon profil</Text>
+            </Pressable>
+          </ScrollView>
+        </View>
+      </Modal>
+      <Modal visible={selectedTalent!==null} transparent animationType="fade" onRequestClose={()=>setSelectedTalent(null)}>
+        <View style={{flex:1,backgroundColor:'rgba(0,0,0,0.6)',justifyContent:'center',padding:18}}>
+          <ScrollView style={{backgroundColor:theme.surface,borderRadius:14,maxWidth:470,width:'100%',alignSelf:'center',maxHeight:'85%'}} contentContainerStyle={{padding:20,gap:14}}>
+            <Pressable onPress={()=>setSelectedTalent(null)} style={{alignSelf:'flex-end',padding:6}}><Ionicons name="close" size={23} color={theme.foreground}/></Pressable>
+            {selectedTalent!==null&&editDraft ? <>
+              <Text style={{fontSize:24,fontWeight:'700',color:theme.foreground,textAlign:'center'}}>{editDraft.name}</Text>
+              {editDraft.name.toLocaleLowerCase('fr')==='traducteur'?<TranslatorLanguageFields
+                sourceLanguage={editDraft.sourceLanguage||''}
+                targetLanguage={editDraft.targetLanguage||''}
+                onChangeSource={sourceLanguage=>updateTalent(selectedTalent,{sourceLanguage})}
+                onChangeTarget={targetLanguage=>updateTalent(selectedTalent,{targetLanguage})}/>:null}
+              {levelPicker(editDraft.level,
+                level=>updateTalent(selectedTalent,{level}))}
+              <Text style={{fontWeight:'700',color:theme.foreground}}>Ma présentation</Text>
+              <TextInput multiline value={editDraft.description||''} onChangeText={description=>updateTalent(selectedTalent,{description})} placeholder="Ce que je peux partager, mon expérience…" style={{minHeight:90,borderWidth:1,borderColor:theme.border,borderRadius:9,padding:12,color:theme.foreground,textAlignVertical:'top'}}/>
+              <Text style={{fontWeight:'700',color:theme.foreground}}>Je souhaite</Text>
+              <View style={{flexDirection:'row',gap:8,flexWrap:'wrap'}}>{interests.map(interest=><Pressable key={interest} onPress={()=>{const t=editDraft;updateTalent(selectedTalent,{interests:t.interests.includes(interest)?t.interests.filter(x=>x!==interest):[...t.interests,interest]});}} style={{padding:11,borderWidth:1,borderColor:editDraft.interests.includes(interest)?'#D71D77':theme.border,borderRadius:9}}><Text style={{color:theme.foreground}}>{interest}</Text></Pressable>)}</View>
+              {error?<Text accessibilityRole="alert" style={{color:theme.muted,fontSize:12}}>{error}</Text>:null}
+              <Pressable disabled={busy} onPress={()=>{void saveTalent(true);}} style={{alignItems:'center',padding:12}}><Text style={{color:'#C34D65'}}>Retirer ce talent</Text></Pressable>
+              <Pressable disabled={busy} onPress={()=>{void saveTalent();}} style={{backgroundColor:'#D71D77',borderRadius:9,padding:13,alignItems:'center'}}><Text style={{color:'#fff',fontWeight:'700'}}>Enregistrer</Text></Pressable>
+            </>:null}
+          </ScrollView>
+        </View>
+      </Modal>
+  </>;
 }
