@@ -50,7 +50,7 @@ export function MusicListeningDetail({
   // The beta Discovery feed also contains static editorial examples. They
   // may play bundled samples but must not pretend to be real collaborators.
   const previewOnly=!!song.isDemo||song.source!=='api';
-  const canPlay=!!song.audioUrl||previewOnly;
+  const canPlay=!!song.audioUrl;
   const handle=(!previewOnly&&song.authorHandle)||null;
   const pan=useMemo(()=>PanResponder.create({
     onMoveShouldSetPanResponder:(_,g)=>

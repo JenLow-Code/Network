@@ -12,7 +12,6 @@ import { Pill } from '@/components/ui/Pill';
 import { TopActions } from '@/components/navigation/TopActions';
 import { PublicationGallery } from '@/components/publication/PublicationGallery';
 import { useDiscovery } from '@/lib/api/hooks';
-import { people, personPath } from '@/mocks/people';
 import { Avatar } from '@/components/ui/Avatar';
 import { FireHeader } from '@/components/fire/FireHeader';
 import { useLocale } from '@/i18n/locale';

@@ -66,8 +66,6 @@ const PHASE: Record<NonNullable<ApiFeedItem['phase']>, DreamPhase> = {
   croissance: 'Croissance',
   floraison: 'Témoignage',
 };
-/** Demo audio bundled in the app (assets/audio). */
-const APP_AUDIO: Record<string, 0 | 1 | 2> = { 'pierre-01-douceur': 0, 'pierre-02-esperance': 1, 'pierre-03-lumiere': 2 };
 const ILLUSTRATIONS = new Set(['drums', 'cello', 'trumpet', 'acoustic-guitar', 'singing', 'bass', 'violin', 'saxophone', 'piano', 'double-bass', 'ukulele', 'electric-guitar', 'guitar', 'cavaquinho', 'viola', 'camera']);
 
 const base = (item: ApiFeedItem) => ({
@@ -81,6 +79,8 @@ const base = (item: ApiFeedItem) => ({
 const url = (m: Media | undefined) => m?.url ?? '';
 
 export function toPublication(item: ApiFeedItem): Publication | null {
+  // Legacy API may still expose fictional records. Do not render them as member data.
+  if (item.author?.isDemo === true) return null;
   switch (item.type) {
     case 'dream': {
       if (!item.phase) return null;
@@ -134,14 +134,13 @@ export function toPublication(item: ApiFeedItem): Publication | null {
       return bible;
     }
     case 'music': {
-      const appAsset = item.playback?.appAsset ?? null;
       const music: MusicPublication = {
         ...base(item),
         type: 'music',
         title: item.title ?? '',
         coverArt: url(item.cover) || undefined,
-        audioIndex: appAsset && APP_AUDIO[appAsset] !== undefined ? APP_AUDIO[appAsset] : 0,
-        audioUrl: appAsset ? undefined : item.playback?.url ?? undefined,
+        audioIndex: 0,
+        audioUrl: item.playback?.url ?? undefined,
         songAuthor: item.songAuthor || 'Auteur non renseigné',
         lyrics: item.lyrics,
         description: item.description ?? '',

@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
-import { musics } from '@/mocks/publications';
 import { PublicationDetail } from '@/components/publication/PublicationDetail';
 import { DetailMoreDrawer } from '@/components/detail/DetailMoreDrawer';
 import { MusicWaveform } from '@/components/music/MusicWaveform';
@@ -9,7 +8,6 @@ import { MusicLyrics } from '@/components/music/MusicLyrics';
 import { MusicMoreDetails } from '@/components/music/MusicMoreDetails';
 import { EditorialInline } from '@/components/detail/EditorialInline';
 import { usePublication } from '@/lib/api/hooks';
-import { fetchDemoMusicPublication } from '@/lib/api/musicPreview';
 import { useAppTheme } from '@/theme/AppTheme';
 import { useMusicWorkspaces } from '@/domain/musicWorkspace';
 import { api } from '@/lib/api/client';
@@ -17,35 +15,15 @@ import type { MusicPublication } from '@/domain/publication';
 
 /**
  * Same editorial song detail as Discovery, but launched inside Musique.
- * Real songs use the live publication API; D1-backed fictional previews use
- * the read-only demo endpoint. No demo is allowed to send a real proposal.
+ * Only the authenticated publication API supplies songs.
  */
 export default function MusicDetail() {
   const { id, from, openMore } = useLocalSearchParams<{ id:string; from?:string; openMore?:string }>();
   const theme = useAppTheme();
-  const demoId = !!id && /^demo-music-publication-\d{2}$/.test(id);
   const {items:workspaces,ready:workspacesReady}=useMusicWorkspaces();
   const [workspaceChecked,setWorkspaceChecked]=useState(false);
-  const checkPersonalRoute=from==='music-tab'&&!!id&&!demoId;
-  const local = musics.find(x => x.id === id);
-  const remote = usePublication(local || demoId ? undefined : id);
-  const [demoItem, setDemoItem] = useState<MusicPublication | null>(null);
-  const [demoState, setDemoState] = useState<'idle'|'loading'|'ready'|'error'>('idle');
-
-  useEffect(() => {
-    if (!demoId || !id) return;
-    let alive = true;
-    setDemoState('loading');
-    setDemoItem(null);
-    void fetchDemoMusicPublication(id).then(item => {
-      if (!alive) return;
-      setDemoItem(item);
-      setDemoState(item ? 'ready' : 'error');
-    }).catch(() => {
-      if (alive) { setDemoItem(null); setDemoState('error'); }
-    });
-    return () => { alive = false; };
-  }, [demoId,id]);
+  const checkPersonalRoute=from==='music-tab'&&!!id;
+  const remote = usePublication(id);
 
   // Defense in depth: old links and an out-of-date music shelf may still
   // point an accepted collaborator to the publication player. If the viewer
@@ -73,11 +51,8 @@ export default function MusicDetail() {
     return ()=>{alive=false;};
   },[checkPersonalRoute,id,workspaces,workspacesReady]);
 
-  const item: MusicPublication | undefined = local ??
-    (demoId ? demoItem ?? undefined :
-      remote.item?.type === 'music' ? remote.item : undefined);
-  const loading = demoId ? (demoState === 'idle' || demoState === 'loading') :
-    !local && remote.state === 'loading';
+  const item: MusicPublication | undefined = remote.item?.type === 'music' ? remote.item : undefined;
+  const loading = remote.state === 'loading';
 
   // Do not briefly flash the cassette player while verifying workspace access.
   if (checkPersonalRoute&&(!workspacesReady||!workspaceChecked)) return <View
@@ -108,7 +83,7 @@ export default function MusicDetail() {
   return <MusicWaveform index={item.audioIndex} uri={item.audioUrl}
     renderLayout={(_button, wave, time, seek, togglePlayback, isPlaying) => (
       <PublicationDetail item={item} onCoverPress={togglePlayback}
-        musicPlaying={isPlaying} previewOnly={demoId}>
+        musicPlaying={isPlaying} previewOnly={false}>
         <EditorialInline bottomSpace={12}>
           <View style={{gap:9}}>
             <View>{wave}</View>

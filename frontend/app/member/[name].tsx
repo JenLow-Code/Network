@@ -1,12 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Image, Modal, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Nav } from '@/components/navigation/Nav';
 import { PageHeader } from '@/components/navigation/PageHeader';
-import { people } from '@/mocks/people';
 import { ProfilePublicationFeed } from '@/components/publication/PublicationGallery';
 import SemenceSharesFeed from '@/components/dream/SemenceSharesFeed';
 import { TalentArt } from '@/components/talent/TalentArt';
@@ -14,66 +12,36 @@ import { ProfileTalentTile } from '@/components/talent/ProfileTalentTile';
 import { TalentLevelDots } from '@/components/talent/TalentLevelDots';
 import { useAppTheme } from '@/theme/AppTheme';
 import {workspaceCanvas,workspaceLayout,PAGE_TITLE_FONT_SIZE,PAGE_TITLE_LINE_HEIGHT} from '@/theme/workspaceLayout';
-import { useApp } from '@/context/AppContext';
 import type { PersonPublication } from '@/domain/publication';
 import { useMemberProfile } from '@/lib/api/hooks';
 import { profileTalentToPublication } from '@/lib/api/adapters';
 import { api } from '@/lib/api/client';
-import { fetchDemoMember } from '@/lib/api/demo';
 
-const PIN_KEY = 'jenlow.public-profile.featured.v1.';
 export default function PublicMemberProfile() {
-  const { name,demo } = useLocalSearchParams<{ name: string;demo?:string }>();
-  const isDemo=demo==='1';
-  const [demoProfile,setDemoProfile]=useState<Awaited<ReturnType<typeof fetchDemoMember>>>(null);
-  const [demoLoading,setDemoLoading]=useState(isDemo);
-  useEffect(()=>{let live=true;setDemoProfile(null);setDemoLoading(isDemo);
-    if(isDemo&&name)void fetchDemoMember(name).then(p=>{if(live)setDemoProfile(p);}).catch(()=>{}).finally(()=>{if(live)setDemoLoading(false);});
-    return()=>{live=false;};
-  },[isDemo,name]);
-  // Profiles from the API are addressed by handle; the remaining local-demo screens use mock names.
-  const mock = isDemo?undefined:people.find(p => p.name === name);
-  const remote = useMemberProfile(mock||isDemo ? undefined : name);
-  const apiProfile = isDemo?null:remote.profile;
-  const person = isDemo?(demoProfile?{...demoProfile,church:undefined,talents:[],skills:[]}:undefined):mock ?? (apiProfile ? {
+  const { name } = useLocalSearchParams<{ name: string }>();
+  const remote = useMemberProfile(name);
+  const apiProfile = remote.profile;
+  const person = apiProfile ? {
     name: apiProfile.displayName,
     bio: apiProfile.bio,
     church: apiProfile.church ?? undefined,
     talents: apiProfile.talents.map(t => t.name),
     posts: remote.posts,
     skills: apiProfile.talents.map(t => profileTalentToPublication(apiProfile, t)),
-  } : undefined);
+  } : undefined;
   const theme = useAppTheme();
-  const app = useApp();
   const { width: screenWidth } = useWindowDimensions();
   const [selectedTalent, setSelectedTalent] = useState<PersonPublication | null>(null);
   const [featuredId, setFeaturedId] = useState<string | null>(null);
-  const isOwner = !isDemo&&(apiProfile ? apiProfile.isSelf : !!person && app.signedIn && app.name === person.name);
-  useEffect(() => {
-    let active = true;
-    setFeaturedId(null);
-    if (apiProfile) {
-      setFeaturedId(apiProfile.featured?.id ?? null);
-    } else if (person&&!isDemo) {
-      void AsyncStorage.getItem(PIN_KEY + person.name).then(id => { if (active) setFeaturedId(id); }).catch(() => {});
-    }
-    return () => { active = false; };
-  }, [person?.name, apiProfile?.featured?.id,isDemo]);
+  const isOwner = apiProfile?.isSelf === true;
+  useEffect(() => { setFeaturedId(apiProfile?.featured?.id ?? null); }, [apiProfile?.featured?.id]);
   const selectFeatured = (id: string | null) => {
-    if (!isOwner || !person) return;
-    setFeaturedId(id);
-    if (apiProfile) {
-      // Server-side featured post: only the owner's own public publication is accepted.
-      void (id
-        ? api('/api/me/featured-post', { method: 'PUT', body: { publicationId: id }, auth: 'required' })
-        : api('/api/me/featured-post', { method: 'DELETE', auth: 'required' })
-      ).catch(() => setFeaturedId(apiProfile.featured?.id ?? null));
-      return;
-    }
-    if (id) void AsyncStorage.setItem(PIN_KEY + person.name, id).catch(() => {});
-    else void AsyncStorage.removeItem(PIN_KEY + person.name).catch(() => {});
+    if (!isOwner || !apiProfile) return;
+    void (id ? api('/api/me/featured-post', { method: 'PUT', body: { publicationId: id }, auth: 'required' })
+      : api('/api/me/featured-post', { method: 'DELETE', auth: 'required' }))
+      .then(() => setFeaturedId(id)).catch(() => {});
   };
-  if ((isDemo&&demoLoading)||(!isDemo&&!mock && remote.state === 'loading')) return (
+  if (remote.state === 'loading') return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background, justifyContent: 'center' }}>
       <ActivityIndicator color={theme.foreground} />
       <Nav />
@@ -85,13 +53,7 @@ export default function PublicMemberProfile() {
       <Nav />
     </SafeAreaView>
   );
-  const female = ['Sarah', 'Esther', 'Helena', 'Léa', 'Mila'].includes(person.name);
-  // Real members show their own avatar or an initial; stock portraits remain only on mock profiles.
-  const photo = isDemo?undefined:apiProfile
-    ? apiProfile.avatarUrl
-    : female
-      ? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=320&q=80'
-      : 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=320&q=80';
+  const photo = apiProfile?.avatarUrl;
   const ws=workspaceLayout(screenWidth);
   const pageViewport=Math.max(0,screenWidth-(ws.desktop?212:0));
   const width=Math.max(0,Math.min(pageViewport,ws.maxWidth??pageViewport)-2*ws.gutter);
@@ -123,13 +85,12 @@ export default function PublicMemberProfile() {
               <ProfileTalentTile key={skill.id} title={skill.skill} level={skill.level} art={skill.instrument} width={tileWidth} onPress={() => setSelectedTalent(skill)} />
             ))}
           </View>
-        ) : <Text style={{ color: theme.muted }}>{isDemo?'Talents non disponibles dans cet aperçu.':'Aucun talent publié pour le moment.'}</Text>}
+        ) : <Text style={{ color: theme.muted }}>Aucun talent publié pour le moment.</Text>}
         <Text style={{ fontSize: 18, fontWeight: '700', color: theme.foreground, marginTop: 8 }}>Publications</Text>
-        {!isDemo&&!mock&&name?<SemenceSharesFeed handle={name}/>:null}
+        {name?<SemenceSharesFeed handle={name}/>:null}
         {person.posts.length
           ? <ProfilePublicationFeed items={person.posts} contentWidth={width} featuredId={featuredId} onFeature={isOwner ? selectFeatured : undefined} />
           : <Text style={{ color: theme.muted }}>Aucune publication pour le moment.</Text>}
-        {isDemo||mock ? <Text style={{ fontSize: 11, color: theme.muted }}>Profil de démonstration.</Text> : null}
       </ScrollView>
       <Modal visible={!!selectedTalent} transparent animationType="fade" onRequestClose={() => setSelectedTalent(null)}>
         <View style={{ flex: 1, justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.6)', padding: 20 }}>

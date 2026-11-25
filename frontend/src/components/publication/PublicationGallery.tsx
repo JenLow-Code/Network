@@ -17,11 +17,6 @@ import { DreamPhaseCard } from '@/components/publication/DreamPhaseCard';
 import { matchesForMe, type SavedTalent } from '@/domain/personalDiscovery';
 import { workspaceLayout } from '@/theme/workspaceLayout';
 
-const audio = [
-  require('../../../assets/audio/pierre-01-douceur.wav'),
-  require('../../../assets/audio/pierre-02-esperance.wav'),
-  require('../../../assets/audio/pierre-03-lumiere.wav'),
-];
 
 export const publicationPath = (p: Publication) =>
   p.type === 'dream'
@@ -60,10 +55,11 @@ function category(item: Publication): string {
   }
 }
 
-function MusicPlayback({ index, uri, size = 42 }: { index: 0 | 1 | 2; uri?: string; size?: number }) {
-  const player = useAudioPlayer(uri ? { uri } : audio[index]);
+function MusicPlayback({ uri, size = 42 }: { index: 0 | 1 | 2; uri?: string; size?: number }) {
+  const player = useAudioPlayer(uri ? { uri } : null);
   const status = useAudioPlayerStatus(player);
   const toggle = () => {
+    if (!uri) return;
     if (status.playing) player.pause();
     else {
       if (status.didJustFinish) void player.seekTo(0);
@@ -85,7 +81,7 @@ function MusicPlayback({ index, uri, size = 42 }: { index: 0 | 1 | 2; uri?: stri
 
 /** Sibling audio control: never nest a button inside the story's Pressable on web. */
 function AudioCorner({ item, width, height }: { item: Publication; width: number; height: number }) {
-  if (item.type !== 'music') return null;
+  if (item.type !== 'music' || !item.audioUrl) return null;
   // Center the control on the tape reels, below the handwritten title strip.
   const size = Math.min(42, Math.max(31, width * 0.20));
   const tiny = width < 225;

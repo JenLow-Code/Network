@@ -174,7 +174,8 @@ export default function MusicHub() {
       !!p.requestedTalents?.length && matchesForMe(p,talents) &&
       !publishedLocalIds.has(p.id))
     : [], [discovery.state, discovery.items, talents, songs]);
-  const recommended:MusicPublication[]=opportunities;
+  const recommended:MusicPublication[]=opportunities.length ? opportunities : discovery.state==='ready'
+    ? discovery.items.filter((p):p is MusicPublication=>p.type==='music'&&p.source==='api'&&!publishedLocalIds.has(p.id)) : [];
   // An outgoing, unanswered proposal remains in For me, not in My pieces.
   const pendingSent = proposals.filter(p => p.direction === 'sent' &&
     (p.status === 'submitted' || p.status === 'draft') &&

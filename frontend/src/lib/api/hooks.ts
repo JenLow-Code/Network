@@ -15,22 +15,28 @@ export function useDiscovery(params: { type?: string; q?: string } = {}) {
   const [error, setError] = useState<string | null>(null);
   const [cursor, setCursor] = useState<string | null>(null);
   const loadingMore = useRef(false);
+  const requestId = useRef(0);
   const query = new URLSearchParams();
   if (params.type) query.set('type', params.type);
   if (params.q) query.set('q', params.q);
   const key = query.toString();
 
   const load = useCallback(async () => {
+    const request = ++requestId.current;
+    setItems([]);
+    setCursor(null);
     setState('loading');
     setError(null);
     try {
       const page = await api<{ items: ApiFeedItem[]; nextCursor: string | null }>(`/api/discovery?limit=40${key ? '&' + key : ''}`);
+      if (request !== requestId.current) return;
       const mapped = toPublications(page.items);
       mapped.forEach(p => cache.set(p.id, p));
       setItems(mapped);
       setCursor(page.nextCursor);
       setState('ready');
     } catch (e) {
+      if (request !== requestId.current) return;
       setError(e instanceof ApiRequestError ? e.code : 'request_failed');
       setState('error');
     }
@@ -39,8 +45,10 @@ export function useDiscovery(params: { type?: string; q?: string } = {}) {
   const loadMore = useCallback(async () => {
     if (!cursor || loadingMore.current) return;
     loadingMore.current = true;
+    const request = requestId.current;
     try {
       const page = await api<{ items: ApiFeedItem[]; nextCursor: string | null }>(`/api/discovery?limit=40&cursor=${encodeURIComponent(cursor)}${key ? '&' + key : ''}`);
+      if (request !== requestId.current) return;
       const mapped = toPublications(page.items);
       mapped.forEach(p => cache.set(p.id, p));
       setItems(prev => [...prev, ...mapped.filter(m => !prev.some(p => p.id === m.id))]);
@@ -54,6 +62,7 @@ export function useDiscovery(params: { type?: string; q?: string } = {}) {
 
   useEffect(() => {
     void load();
+    return () => { requestId.current++; };
   }, [load]);
 
   return { items, state, error, retry: load, loadMore, hasMore: !!cursor };
@@ -75,7 +84,10 @@ export function usePublication(id: string | undefined) {
       setDetail(res);
       setState(mapped ? 'ready' : 'error');
     } catch {
-      if (!cache.get(id)) setState('error');
+      cache.delete(id);
+      setItem(null);
+      setDetail(null);
+      setState('error');
     }
   }, [id]);
   useEffect(() => {
@@ -99,10 +111,13 @@ export function useMemberProfile(handle: string | undefined) {
       ]);
       const mapped = toPublications(feed.items);
       mapped.forEach(x => cache.set(x.id, x));
+      if (p.profile.isDemo) { setProfile(null); setPosts([]); setState('not_found'); return; }
       setProfile(p.profile);
       setPosts(mapped);
       setState('ready');
     } catch (e) {
+      setProfile(null);
+      setPosts([]);
       setState(e instanceof ApiRequestError && e.status === 404 ? 'not_found' : 'error');
     }
   }, [handle]);

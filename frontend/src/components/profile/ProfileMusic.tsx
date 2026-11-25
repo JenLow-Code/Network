@@ -11,7 +11,6 @@ import { useApp } from '@/context/AppContext';
 import { useAppTheme } from '@/theme/AppTheme';
 import { workspaceCanvas, workspaceLayout } from '@/theme/workspaceLayout';
 import { api } from '@/lib/api/client';
-import { fetchDemoMusicPreview, type DemoMusicPreview } from '@/lib/api/musicPreview';
 
 type Proposal = {
   id:string;
@@ -33,7 +32,6 @@ export function MusicLibrary({contentWidth,embedded=false,preferredLayout}: {con
   const {items,ready,error} = useMusicWorkspaces();
   const [layout,setLayout] = useState<MusicLibraryLayout>('cards');
   const [proposals,setProposals] = useState<Proposal[]>([]);
-  const [preview,setPreview] = useState<DemoMusicPreview|null>(null);
 
   useFocusEffect(useCallback(() => {
     let live = true;
@@ -58,18 +56,9 @@ export function MusicLibrary({contentWidth,embedded=false,preferredLayout}: {con
     return()=>{live=false;};
   },[email]);
 
-  useEffect(() => {
-    if(process.env.EXPO_PUBLIC_DISCOVERY_SOURCE==='unified')return;
-    let live=true;
-    void fetchDemoMusicPreview().then(v=>{if(live)setPreview(v);})
-      .catch(()=>{if(live)setPreview(null);});
-    return()=>{live=false;};
-  },[]);
-
   const songs=useMemo(() => [...items].sort((a,b)=>
     (b.updatedAt||b.createdAt).localeCompare(a.updatedAt||a.createdAt)),[items]);
-  const accepted=[...proposals.filter(p=>p.status==='accepted'||p.status==='published'),
-    ...(preview?.collaborations || [])];
+  const accepted=proposals.filter(p=>!p.isDemo&&(p.status==='accepted'||p.status==='published'));
   const mineIds=new Set(songs.map(song=>song.publishedId).filter(Boolean));
   const peopleFor=(song:typeof songs[number]):MusicCollaborator[]=>{
     const acceptedPeople=song.publishedId?accepted
@@ -83,13 +72,13 @@ export function MusicLibrary({contentWidth,embedded=false,preferredLayout}: {con
     return [...acceptedPeople,...credited];
   };
   const shared=new Map<string,{
-    title:string;first:Proposal;people:MusicCollaborator[];demo:boolean;
+    title:string;first:Proposal;people:MusicCollaborator[];
   }>();
   for(const p of accepted){
     if(!p.trackPublicationId||mineIds.has(p.trackPublicationId))continue;
     let piece=shared.get(p.trackPublicationId);
     if(!piece){
-      piece={title:p.trackTitle,first:p,people:[],demo:!!p.isDemo};
+      piece={title:p.trackTitle,first:p,people:[]};
       shared.set(p.trackPublicationId,piece);
     }
     for(const person of [p.publisher,p.proposer]){
@@ -132,7 +121,7 @@ export function MusicLibrary({contentWidth,embedded=false,preferredLayout}: {con
         {[...shared.entries()].map(([id,p])=><MusicTile key={id}
           title={p.title} width={cardWidth} mode="draft" layout={shownLayout}
           byline=""
-          participants={p.people} demo={p.demo}
+          participants={p.people}
           onPress={()=>router.push(p.first.direction==='sent'
             ? {pathname:'/music-collaboration/[id]',params:{id}}
             : {pathname:'/music/[id]',params:{id}})}/>)}
