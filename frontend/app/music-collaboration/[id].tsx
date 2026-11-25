@@ -4,7 +4,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { api, ApiRequestError } from '@/lib/api/client';
 import { useAuth } from '@/context/AuthProvider';
-import {fetchDemoMusicPreview} from '@/lib/api/musicPreview';
 import { useAppTheme } from '@/theme/AppTheme';
 import { PageHeader } from '@/components/navigation/PageHeader';
 import { Nav } from '@/components/navigation/Nav';
@@ -72,7 +71,6 @@ function asWorkspaceFailure(e:unknown):WorkspaceFailure {
 function AuthorizedSharedMusicFolder(){
   const {id,tab}=useLocalSearchParams<{id:string;tab?:MusicWorkspaceSpace}>();
   const theme=useAppTheme();
-  const demoId=!!id&&/^demo-music-publication-\d{2}$/.test(id);
   const {setProject:publishNavigationProject}=useSharedMusicNavigation();
   const [music,setMusic]=useState<MusicDetail['item']>();
   const [conversationId,setConversationId]=useState<string|null>(null);
@@ -90,39 +88,6 @@ function AuthorizedSharedMusicFolder(){
     setLoading(true);setError(null);setConversationId(null);
     setCollaborators([]);setViewerRole(null);setProposals([]);setMusic(undefined);
     setRosterError(false);
-    // Fictional collaboration examples are intentionally read-only, but must
-    // enter the exact same Capturer / Créer / Collaborer interface as a real
-    // accepted collaboration. They never receive real API permissions.
-    if(demoId){
-      void fetchDemoMusicPreview()
-        .then(preview=>{
-          if(!live)return;
-          const match=preview.collaborations.find(p=>p.trackPublicationId===id);
-          if(!match){setError({kind:'unavailable',
-            message:'Exemple de collaboration introuvable.'});return;}
-          const publication=preview.catalog.find(s=>s.id===id);
-          setMusic({
-            title:match.trackTitle,
-            description:publication?.description||match.description,
-          });
-          setProposals([{
-            id:match.id,status:match.status,trackTitle:match.trackTitle,
-            description:match.description,proposer:match.proposer,
-            createdAt:match.createdAt,contribution:match.contribution,
-            audioAsset:match.audioAsset,mimeType:match.mimeType,
-          }]);
-          setCollaborators([
-            {id:'demo-author',role:'owner',
-              displayName:match.publisher.displayName,handle:match.publisher.handle,avatarUrl:match.publisher.avatarUrl},
-            {id:'demo-contributor',role:'collaborator',
-              displayName:match.proposer.displayName,handle:match.proposer.handle,avatarUrl:match.proposer.avatarUrl},
-          ]);
-        })
-        .catch(()=>{if(live)setError({kind:'unavailable',
-          message:'Cet exemple est temporairement indisponible.'});})
-        .finally(()=>{if(live)setLoading(false);});
-      return ()=>{live=false;};
-    }
     void Promise.all([
       api<{conversationId:string}>('/api/music/'+resource+'/conversation',{auth:'required'}),
       api<MusicDetail>('/api/music/'+resource,{auth:'required'}),
@@ -160,7 +125,7 @@ function AuthorizedSharedMusicFolder(){
     }).catch(e=>{if(live)setError(asWorkspaceFailure(e));})
       .finally(()=>{if(live)setLoading(false);});
     return ()=>{live=false;};
-  },[id,demoId,retryCount]);
+  },[id,retryCount]);
 
   // A stale or unauthorized link must not leave an inaccessible project on screen.
   // The API remains the authority; never grant access or substitute another song.
@@ -171,29 +136,29 @@ function AuthorizedSharedMusicFolder(){
   // Adapt only the content returned after membership verification. No private
   // owner-device files, fake tracks, or second editable project are created.
   const project=useMemo<MusicProject|null>(()=>{
-    if(!id||loading||error||(!conversationId&&!demoId)||!music)return null;
+    if(!id||loading||error||!conversationId||!music)return null;
     const author=collaborators.find(person=>person.role==='owner')?.displayName||
       music.author?.displayName||'Auteur du morceau';
     const owner=collaborators.find(person=>person.role==='owner')||music.author;
     const date=music.updatedAt||'';
     const files:MusicProjectFile[]=[
       ...(music.lyrics?.length?[{id:id+'-published-lyrics',kind:'lyrics' as const,title:'Paroles publiées',
-        text:music.lyrics.map(part=>part.text).join('\n'),sectionIds:[],createdAt:date,editedBy:author,editedByHandle:owner?.handle||undefined,editedByAvatarUrl:owner?.avatarUrl||undefined,editedByDemo:demoId}]:[]),
+        text:music.lyrics.map(part=>part.text).join('\n'),sectionIds:[],createdAt:date,editedBy:author,editedByHandle:owner?.handle||undefined,editedByAvatarUrl:owner?.avatarUrl||undefined,editedByDemo:false}]:[]),
       ...proposals.filter(p=>p.status==='accepted'||p.status==='published').map(p=>({
         id:p.id,kind:'audio' as const,
         title:p.contribution||p.credits?.find(c=>c.displayName===p.proposer?.displayName)?.contribution||
           p.credits?.[0]?.contribution||'Contribution audio',
         sectionIds:[],createdAt:p.createdAt||'',editedBy:p.proposer?.displayName||'Non renseigné',
-        editedByHandle:p.proposer?.handle||undefined,editedByAvatarUrl:p.proposer?.avatarUrl||undefined,editedByDemo:demoId,
-        externalUrl:p.audioUrl, demoAudioAsset:demoId?p.audioAsset||undefined:undefined,
+        editedByHandle:p.proposer?.handle||undefined,editedByAvatarUrl:p.proposer?.avatarUrl||undefined,editedByDemo:false,
+        externalUrl:p.audioUrl, 
         mimeType:p.mimeType||undefined,
       })),
     ];
     return {id,ownerEmail:'',ownerName:author,title:music.title||'Morceau partagé',
       description:music.description||'',originalLanguage:'',instruments:[],versions:[],files,
       sections:[],lyrics:[],layers:[],needs:[],suggestions:[],messages:[],
-      publishedId:demoId?undefined:id,createdAt:date,updatedAt:date};
-  },[id,loading,error,conversationId,demoId,music,collaborators,proposals]);
+      publishedId:id,createdAt:date,updatedAt:date};
+  },[id,loading,error,conversationId,music,collaborators,proposals]);
   useEffect(()=>{
     publishNavigationProject(project);
     return()=>publishNavigationProject(null);
@@ -212,6 +177,6 @@ function AuthorizedSharedMusicFolder(){
     </View><Nav/>
   </SafeAreaView>;
   return <MusicWorkspaceScreen key={project.id} project={project} tab={tab} update={()=>{}}
-    shared={{members:collaborators,demo:demoId,conversationId,viewerRole,
+    shared={{members:collaborators,conversationId,viewerRole,
       rosterUnavailable:rosterError,proposals:proposals.filter(p=>p.status==='accepted'||p.status==='published')}}/>;
 }
