@@ -335,11 +335,11 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
                     <Ionicons name="mic-outline" size={16} color={theme.foreground}/>
                     <Text style={{fontSize:11,fontWeight:'700',color:theme.foreground}}>Capturer</Text>
                   </Pressable>
-                  {!isSharedSong?<Pressable accessibilityRole="button" accessibilityLabel={captureTreeOpen?'Replier les actions de Capturer':'Afficher les actions de Capturer'} accessibilityState={{expanded:captureTreeOpen}} onPress={()=>setCaptureTreeOpen(open=>!open)} style={{width:36,minHeight:36,alignItems:'center',justifyContent:'center'}}>
-                    <Ionicons name={captureTreeOpen?'remove':'add'} size={19} color={theme.muted}/>
-                  </Pressable>:null}
+                  <Pressable accessibilityRole="button" accessibilityLabel={captureTreeOpen?'Replier les actions de Capturer':'Afficher les actions de Capturer'} accessibilityState={{expanded:captureTreeOpen}} onPress={()=>setCaptureTreeOpen(open=>!open)} style={{width:36,minHeight:36,alignItems:'center',justifyContent:'center'}}>
+                    <Ionicons name={isSharedSong?(captureTreeOpen?'chevron-up':'chevron-down'):(captureTreeOpen?'remove':'add')} size={isSharedSong?15:19} color={theme.muted}/>
+                  </Pressable>
                   </View>
-                  {!isSharedSong&&captureTreeOpen?([
+                  {captureTreeOpen?([
                     {key:'thought',title:'Pensées',icon:'chatbubble-ellipses-outline' as const},
                     {key:'record',title:'Son',icon:'mic-outline' as const},
                     {key:'doc',title:'Document',icon:'document-text-outline' as const},
