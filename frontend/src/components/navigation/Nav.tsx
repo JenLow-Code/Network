@@ -335,15 +335,15 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
                     <Ionicons name="mic-outline" size={16} color={theme.foreground}/>
                     <Text style={{fontSize:11,fontWeight:'700',color:theme.foreground}}>Capturer</Text>
                   </Pressable>
-                  <Pressable accessibilityRole="button" accessibilityLabel={captureTreeOpen?'Replier les actions de Capturer':'Afficher les actions de Capturer'} accessibilityState={{expanded:captureTreeOpen}} onPress={()=>setCaptureTreeOpen(open=>!open)} style={{width:36,minHeight:36,alignItems:'center',justifyContent:'center'}}>
+                  {!isSharedSong?<Pressable accessibilityRole="button" accessibilityLabel={captureTreeOpen?'Replier les actions de Capturer':'Afficher les actions de Capturer'} accessibilityState={{expanded:captureTreeOpen}} onPress={()=>setCaptureTreeOpen(open=>!open)} style={{width:36,minHeight:36,alignItems:'center',justifyContent:'center'}}>
                     <Ionicons name={captureTreeOpen?'remove':'add'} size={19} color={theme.muted}/>
-                  </Pressable>
+                  </Pressable>:null}
                   </View>
-                  {captureTreeOpen?([
-                    {key:'thought',title:'Pensées'},
-                    {key:'record',title:'Son'},
-                    {key:'doc',title:'Document'},
-                    {key:'idea',title:'Idée'},
+                  {!isSharedSong&&captureTreeOpen?([
+                    {key:'thought',title:'Pensées',icon:'chatbubble-ellipses-outline' as const},
+                    {key:'record',title:'Son',icon:'mic-outline' as const},
+                    {key:'doc',title:'Document',icon:'document-text-outline' as const},
+                    {key:'idea',title:'Idée',icon:'bulb-outline' as const},
                   ] as const).map(action=>{
                     const active=action.key==='thought'?path.startsWith('/music-lyrics/'):
                       action.key==='idea'?path.startsWith('/music-composer/'):
@@ -359,7 +359,7 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
                       style={{minHeight:34,opacity:isSharedSong?.5:1,flexDirection:'row',alignItems:'center',gap:9,
                         paddingHorizontal:7,marginLeft:21,borderRadius:7,
                         backgroundColor:active?'rgba(215,29,119,.10)':'transparent'}}>
-                      <Ionicons name="add" size={16}
+                      <Ionicons name={action.icon} size={16}
                         color={active?'#D71D77':theme.muted}/>
                       <Text numberOfLines={1} style={{flex:1,minWidth:0,fontSize:11,
                         fontWeight:active?'700':'500',
@@ -383,13 +383,13 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
                         {songState?.versions.length||0}
                       </Text>
                     </Pressable>
-                    <Pressable accessibilityRole="button"
-                      accessibilityLabel="Nouvelle version" disabled={isSharedSong}
+                    {!isSharedSong?<Pressable accessibilityRole="button"
+                      accessibilityLabel="Nouvelle version"
                       onPress={()=>openMusicArea('capture','new-version')}
                       style={{minHeight:34,minWidth:24,alignItems:'center',
                         justifyContent:'center'}}>
                       <Ionicons name="add" size={17} color={theme.muted}/>
-                    </Pressable>
+                    </Pressable>:null}
                     <Pressable accessibilityRole="button"
                       accessibilityLabel={versionsTreeOpen?'Masquer les versions':'Afficher les versions'}
                       accessibilityState={{expanded:versionsTreeOpen}}
