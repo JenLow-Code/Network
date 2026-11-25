@@ -68,9 +68,9 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
   const desktopList=Platform.OS==='web'&&workspaceLayout(width).desktop;
   // One consistent column grid for headings and rows. The editor column gets
   // enough room for the avatar, a full name and a profile link.
-  const nameWidth=showEditor?170:210;
-  const dateWidth=showEditor?103:120;
-  const editorWidth=168;
+  const nameWidth=showEditor?180:210;
+  const dateWidth=showEditor?118:120;
+  const editorWidth=180;
   const files=project.files||[];
   const [composer,setComposer]=useState<Composer>('none');
   const [unsavedRecording,setUnsavedRecording]=useState(false);
@@ -476,7 +476,7 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
     {error?<Text style={{fontSize:12,color:'#B64A60'}}>{error}</Text>:null}
     {desktopList&&files.length?<View accessibilityRole="header"
       style={{width:'100%',flexDirection:'row',alignItems:'center',
-        paddingHorizontal:12,paddingVertical:8,gap:14,
+        paddingHorizontal:12,paddingVertical:8,gap:20,
         borderBottomWidth:1,borderBottomColor:theme.border}}>
       {([
         {id:'name' as const,label:'Nom',width:nameWidth},
@@ -663,7 +663,7 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
             height:desktopList?94:undefined,
             paddingVertical:desktopList?0:compact?10:14,
             alignItems:desktopList?'center':'stretch',
-            gap:desktopList?14:4}}>
+            gap:desktopList?20:4}}>
             <Pressable onPress={openDetails} accessibilityRole="button"
               accessibilityLabel={'Ouvrir '+file.title}
               style={{width:desktopList?nameWidth:'100%',minWidth:0,
