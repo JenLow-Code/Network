@@ -83,7 +83,8 @@ const checks=[
     workspace.includes('<MusicCaptureExperience')&&workspace.includes('<MusicCreateExperience')&&workspace.includes('<MusicCollaborateExperience')],
   ['Shared read-only adapter cannot mutate owner files or navigate to local editors',
     workspace.includes('if(shared||addingRef.current)return;')&&workspace.includes('readOnly={!!shared}')&&
-    capture.includes('if(readOnly||!deleteCandidate')&&capture.includes('disabled={readOnly}')&&
+    capture.includes('if(readOnly||!deleteCandidate')&&
+    capture.includes('{!readOnly?<Pressable onPress={()=>setActionsOpen')&&
     shared.includes('No private')&&shared.includes('update={()=>{}}')],
   ['Accepted contributions use actual audio, credit and creation date; not a note',
     shared.includes("kind:'audio' as const")&&shared.includes('createdAt:match.createdAt')&&shared.includes('contribution:match.contribution')&&
