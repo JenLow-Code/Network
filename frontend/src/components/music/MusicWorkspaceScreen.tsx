@@ -14,7 +14,7 @@ import {isMidiSource,renderMidiSource} from '@/domain/musicMidiAudio';
 import { useAppTheme } from '@/theme/AppTheme';
 import { workspaceLayout } from '@/theme/workspaceLayout';
 import type { MusicProject, MusicProjectFile } from '@/domain/musicWorkspace';
-import type { SharedWorkspaceAccess } from './MusicCollaborateExperience';
+import { musicWorkspaceRoleLabel, type SharedWorkspaceAccess } from './MusicCollaborateExperience';
 
 type Space = 'capture'|'create'|'collaborate';
 const PINK='#CB245C';
@@ -43,6 +43,13 @@ export function MusicWorkspaceScreen({project,update,tab,intent,error,showEditor
     if(shared)router.replace({pathname:'/music-collaboration/[id]',params:{id:project.id,tab:next}});
     else router.replace({pathname:'/music-workspace/[id]',params:{id:project.id,tab:next}});
   };
+  // A verified roster may identify owner/co-owner/participant roles. The
+  // current shared editor is read-only for everyone; never infer active
+  // editing rights from the backend's generic 'collaborator' designation.
+  const roleLabel=!shared?'Propriétaire':shared.demo?'Aperçu · lecture seule':
+    shared.viewerRole?musicWorkspaceRoleLabel(shared.viewerRole)+
+      (shared.viewerRole==='passive'?'':' · lecture seule'):
+      'Accès partagé · lecture seule';
   const music=musicNextState(project);
   const version=music.versions.find(v=>v.id===music.activeVersionId)||music.versions[0];
   const addFromCapture=async(file:MusicProjectFile,forceNew=false)=>{
@@ -86,6 +93,14 @@ export function MusicWorkspaceScreen({project,update,tab,intent,error,showEditor
         <MusicWorkspaceTabs space={space} compact={compact} desktop={desktop}
           onChange={navigate}/>
       }/>
+      {space!=='capture'?<View style={{alignSelf:'flex-start',
+        paddingHorizontal:9,paddingVertical:5,borderRadius:13,
+        backgroundColor:theme.dark?'#422D36':'#F8EAF0'}}>
+        <Text style={{fontSize:10,fontWeight:'600',
+          color:theme.dark?'#F5C7DA':PINK}}>
+          {roleLabel}
+        </Text>
+      </View>:null}
       {shared?<Text style={{color:theme.muted,fontSize:11,lineHeight:17}}>
         {shared.demo?'Aperçu de démonstration · lecture seule':'Lecture seule · les fichiers et versions de travail partagés ne sont pas encore synchronisés.'}
       </Text>:null}
@@ -114,6 +129,7 @@ export function MusicWorkspaceScreen({project,update,tab,intent,error,showEditor
       {space==='capture' ? <MusicCaptureExperience project={project} patch={update}
         onStartVersion={start} onUseFile={useFile} hasVersion={!!version}
         showEditor={showEditor||!!shared} readOnly={!!shared}
+        roleLabel={roleLabel}
         newVersionMode={!shared&&intent==='new-version'}
         quickAction={!shared&&(intent==='write'||intent==='upload'||intent==='play'||
           intent==='record')?intent:undefined}/> : null}
