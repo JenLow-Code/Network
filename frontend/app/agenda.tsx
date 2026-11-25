@@ -9,7 +9,6 @@ import { PageHeader } from '@/components/navigation/PageHeader';
 import { PrayerIcon } from '@/icons/PrayerIcon';
 import { useApp } from '@/context/AppContext';
 import { useLocale } from '@/i18n/locale';
-import { publications } from '@/mocks/publications';
 import { useAppTheme } from '@/theme/AppTheme';
 import {workspaceCanvas} from '@/theme/workspaceLayout';
 import type { AgendaEntry } from '@/domain/agendaTypes';
@@ -28,7 +27,7 @@ export default function Agenda() {
   const {width}=useWindowDimensions();
   const { items: trackedDreams, personalHabits, setPersonalHabits, setHabits } = useDreams();
   const { language, tr } = useLocale();
-  const { prayersForDate, togglePrayer } = useApp();
+  const { prayerPublications:publications,prayersForDate, togglePrayer } = useApp();
   // Future: show a weekly overview of scheduled service / volunteer duty, separately from personal events.
   const [day, setDay] = useState(new Date());
   const [calendarOpen, setCalendarOpen] = useState(false);

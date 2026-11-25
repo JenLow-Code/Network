@@ -3,18 +3,17 @@ import React from 'react';
 import { Image, Pressable, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { publications } from '@/mocks/publications';
 import { useApp } from '@/context/AppContext';
 import { publicationPath } from '@/components/publication/PublicationGallery';
 import { useAppTheme } from '@/theme/AppTheme';
 export function Prayers() {
   const theme = useAppTheme();
-  const { prayerIds, togglePrayer, prayerRepetitions, setPrayerRepetition } = useApp();
+  const { prayerPublications:publications,prayerError,prayerIds, togglePrayer, prayerRepetitions, setPrayerRepetition } = useApp();
   const items = publications.filter(p => prayerIds.includes(p.id));
   return (
     <View style={{gap:6}}>
         <Text style={{fontSize:12,color:theme.muted,lineHeight:18}}>Les personnes et les intentions que je porte dans la prière.</Text>
-        {!items.length ? (
+        {prayerError?<Text style={{color:theme.accent,fontSize:12}}>{prayerError}</Text>:!items.length ? (
           <View style={{flexDirection:'row',alignItems:'center',gap:12,paddingVertical:10}}>
             <Ionicons name="heart-outline" size={26} color={theme.muted}/>
             <View style={{flex:1,gap:4}}>
@@ -81,7 +80,7 @@ export function Prayers() {
             </View>
           ))
         )}
-        {items.length?<Text style={{fontSize:11,color:theme.muted,marginTop:4}}>Mes rythmes de prière sont synchronisés avec mon agenda local.</Text>:null}
+        {items.length?<Text style={{fontSize:11,color:theme.muted,marginTop:4}}>Mes rythmes de prière proviennent de ma liste enregistrée sur le serveur.</Text>:null}
     </View>
   );
 }

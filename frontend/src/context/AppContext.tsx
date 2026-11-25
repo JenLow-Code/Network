@@ -1,6 +1,9 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useAuth } from './AuthProvider';
+import React,{createContext,useContext,useEffect,useState} from 'react';
+import {Alert,Platform} from 'react-native';
+import {useAuth} from './AuthProvider';
+import {api} from '@/lib/api/client';
+import {toPublications,type ApiFeedItem} from '@/lib/api/adapters';
+import type {Publication} from '@/domain/publication';
 
 type Message = { id: string; text: string; fromMe: boolean };
 export type FireFolder = { id: string; name: string; publicationIds: string[]; verseIds?: string[] };
@@ -19,7 +22,12 @@ type AppState = {
   church: string;
   login: (email: string, displayName?: string) => void;
   logout: () => void;
-  edit: (patch: Partial<ProfileChanges>) => void;
+  edit: (patch: Partial<ProfileChanges>) => Promise<boolean>;
+  profileError:string|null;
+  firePublications:Publication[];
+  prayerPublications:Publication[];
+  fireError:string|null;
+  prayerError:string|null;
   messages: Message[];
   send: (text: string) => void;
   fireIds: string[];
@@ -51,406 +59,107 @@ type AppState = {
   addToDream: (dreamId: string, publicationId: string) => void;
 };
 const Context = createContext<AppState | null>(null);
-const todayKey = () => {
-  const d = new Date();
-  return [
-    d.getFullYear(),
-    String(d.getMonth() + 1).padStart(2, '0'),
-    String(d.getDate()).padStart(2, '0'),
-  ].join('-');
+
+type Repeat='once'|'daily'|'weekly';
+type ProfileResponse={user:{email:string;displayName:string;bio?:string|null;city?:string|null;church?:string|null}};
+type PrayerRecord={repeat:Repeat;startDate:string|null;item:ApiFeedItem};
+const unavailable=()=>{
+  const message='Cette action nécessite un service serveur qui n’est pas encore disponible.';
+  if(Platform.OS==='web'&&typeof window!=='undefined')window.alert(message);
+  else Alert.alert('Service indisponible',message);
 };
-const FIRE_KEY = (email: string) => 'jenlow.network.fire.v1.' + email.toLowerCase();
-const FIRE_FOLDERS_KEY = (email: string) => 'jenlow.network.fire.folders.v1.' + email.toLowerCase();
-const FIRE_BIBLE_VERSES_KEY = (email: string) => 'jenlow.network.fire.bible.v1.' + email.toLowerCase();
-const DREAM_KEY = (email: string) => 'jenlow.network.inspirations.v1.' + email.toLowerCase();
-
-export function Provider({ children }: { children: React.ReactNode }) {
-  const { user, signOut } = useAuth();
-  const [rejectedContacts, setRejectedContacts] = useState<string[]>([]);
-  const [email, setEmail] = useState('');
-  useEffect(() => {
-    setEmail(user?.email || '');
-    if (user?.user_metadata?.display_name) setName(user.user_metadata.display_name);
-  }, [user?.id]);
-  const [name, setName] = useState('Gustav');
-  const [bio, setBio] = useState('Passionné de musique et de louange.');
-  const [city, setCity] = useState('Genève');
-  const [church, setChurch] = useState('ADD Annemasse');
-  const [messages, setMessages] = useState<Message[]>([
-    { id: '1', text: 'Oh?', fromMe: false },
-    { id: '2', text: 'Cool', fromMe: false },
-    { id: '3', text: 'How does it work?', fromMe: false },
-    { id: '4', text: 'Bienvenue sur JenLow Network !', fromMe: true },
-  ]);
-  const [fireIds, setFireIds] = useState<string[]>([]);
-  const [fireFolders, setFireFolders] = useState<FireFolder[]>([]);
-  const [fireBibleVerses, setFireBibleVerses] = useState<FireBibleVerse[]>([]);
-  const [dreamInspirations, setDreamInspirations] = useState<Record<string, string[]>>({});
-  const [myDreamIds, setMyDreamIds] = useState<string[]>([]);
-  const [encouragementIds, setEncouragementIds] = useState<string[]>([]);
-  const [musicProposalIds, setMusicProposalIds] = useState<string[]>([]);
-  const [prayerByDate, setPrayerByDate] = useState<Record<string, string[]>>({});
-  const prayerIds = Array.from(new Set(Object.values(prayerByDate).flat()));
-  const [prayerRepetitions, setPrayerRepetitions] = useState<
-    Record<string, 'once' | 'daily' | 'weekly'>
-  >({});
-  const [readyFor, setReadyFor] = useState('');
-
-  useEffect(() => {
-    let canceled = false;
-    if (!email) {
-      setFireIds([]);
-      setFireFolders([]);
-      setFireBibleVerses([]);
-      setDreamInspirations({});
-      setEncouragementIds([]);
-      setMusicProposalIds([]);
-      setMyDreamIds([]);
-      setPrayerByDate({});
-      setPrayerRepetitions({});
-      setReadyFor('');
-      return;
-    }
-    setReadyFor('');
-    Promise.all([
-      AsyncStorage.getItem(FIRE_KEY(email)),
-      AsyncStorage.getItem(FIRE_FOLDERS_KEY(email)),
-      AsyncStorage.getItem(DREAM_KEY(email)),
-      AsyncStorage.getItem('jenlow.mine.' + email),
-      AsyncStorage.getItem('jenlow.prayer.' + email),
-      AsyncStorage.getItem('jenlow.encouragement.' + email),
-      AsyncStorage.getItem('jenlow.proposals.' + email),
-      AsyncStorage.getItem('jenlow.prayer.repeats.' + email),
-      AsyncStorage.getItem(FIRE_BIBLE_VERSES_KEY(email)),
-    ])
-      .then(([fire, folders, dreams, mine, prayers, encouragement, proposals, repeats, bibleVerses]) => {
-        if (canceled) return;
-        let ids: string[] = [];
-        let links: Record<string, string[]> = {};
-        try {
-          if (fire) {
-            const parsed = JSON.parse(fire);
-            if (Array.isArray(parsed)) ids = parsed.filter(x => typeof x === 'string');
-          }
-        } catch {}
-        try {
-          if (dreams) {
-            const parsed = JSON.parse(dreams);
-            if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) links = parsed;
-          }
-        } catch {}
-        setFireIds(ids);
-        try {
-          const parsed = folders ? JSON.parse(folders) : [];
-          setFireFolders(Array.isArray(parsed) ? parsed.filter((x: any) => x && typeof x.id === 'string' && typeof x.name === 'string' && Array.isArray(x.publicationIds)).map((x: any) => ({ id: x.id, name: x.name, publicationIds: x.publicationIds.filter((v: any) => typeof v === 'string'), verseIds: Array.isArray(x.verseIds) ? x.verseIds.filter((v: unknown) => typeof v === 'string') : [] })) : []);
-        } catch { setFireFolders([]); }
-        try {
-          const parsed: unknown = bibleVerses ? JSON.parse(bibleVerses) : [];
-          setFireBibleVerses(Array.isArray(parsed) ? parsed.filter(
-            (v: any): v is FireBibleVerse =>
-              !!v && typeof v.id === 'string' && typeof v.reference === 'string' &&
-              typeof v.edition === 'string' && typeof v.text === 'string' &&
-              typeof v.addedAt === 'string',
-          ) : []);
-        } catch { setFireBibleVerses([]); }
-        setDreamInspirations(links);
-        try {
-          setMyDreamIds(mine ? JSON.parse(mine) : []);
-        } catch {
-          setMyDreamIds([]);
-        }
-        try {
-          const parsed = prayers ? JSON.parse(prayers) : {};
-          setPrayerByDate(
-            Array.isArray(parsed)
-              ? { [todayKey()]: parsed }
-              : parsed && typeof parsed === 'object'
-                ? parsed
-                : {},
-          );
-        } catch {
-          setPrayerByDate({});
-        }
-        try {
-          setEncouragementIds(encouragement ? JSON.parse(encouragement) : []);
-        } catch {
-          setEncouragementIds([]);
-        }
-        try {
-          setMusicProposalIds(proposals ? JSON.parse(proposals) : []);
-        } catch {
-          setMusicProposalIds([]);
-        }
-        try {
-          const parsed = repeats ? JSON.parse(repeats) : {};
-          setPrayerRepetitions(parsed && typeof parsed === 'object' ? parsed : {});
-        } catch {
-          setPrayerRepetitions({});
-        }
-        setReadyFor(email);
-      })
-      .catch(() => {
-        if (!canceled) {
-          setReadyFor(email);
-        }
-      });
-    return () => {
-      canceled = true;
-    };
-  }, [email]);
-
-  useEffect(() => {
-    if (email && readyFor === email) {
-      void AsyncStorage.setItem(FIRE_KEY(email), JSON.stringify(fireIds)).catch(() => {});
-    }
-  }, [fireIds, email, readyFor]);
-  useEffect(() => {
-    if (email && readyFor === email) {
-      void AsyncStorage.setItem(DREAM_KEY(email), JSON.stringify(dreamInspirations)).catch(
-        () => {},
-      );
-    }
-  }, [dreamInspirations, email, readyFor]);
-
-  useEffect(() => {
-    if (email && readyFor === email)
-      void AsyncStorage.setItem('jenlow.mine.' + email, JSON.stringify(myDreamIds)).catch(() => {});
-  }, [email, readyFor, myDreamIds]);
-  useEffect(() => {
-    if (email && readyFor === email)
-      void AsyncStorage.setItem('jenlow.prayer.' + email, JSON.stringify(prayerByDate)).catch(
-        () => {},
-      );
-  }, [email, readyFor, prayerByDate]);
-  useEffect(() => {
-    if (email && readyFor === email)
-      void AsyncStorage.setItem(
-        'jenlow.encouragement.' + email,
-        JSON.stringify(encouragementIds),
-      ).catch(() => {});
-  }, [email, readyFor, encouragementIds]);
-  useEffect(() => {
-    if (email && readyFor === email)
-      void AsyncStorage.setItem(
-        'jenlow.proposals.' + email,
-        JSON.stringify(musicProposalIds),
-      ).catch(() => {});
-  }, [email, readyFor, musicProposalIds]);
-  useEffect(() => {
-    if (email && readyFor === email)
-      void AsyncStorage.setItem(
-        'jenlow.prayer.repeats.' + email,
-        JSON.stringify(prayerRepetitions),
-      ).catch(() => {});
-  }, [email, readyFor, prayerRepetitions]);
-  useEffect(() => {
-    if (email && readyFor === email) {
-      void AsyncStorage.setItem(FIRE_FOLDERS_KEY(email), JSON.stringify(fireFolders)).catch(() => {});
-    }
-  }, [fireFolders, email, readyFor]);
-  useEffect(() => {
-    if (email && readyFor === email)
-      void AsyncStorage.setItem(FIRE_BIBLE_VERSES_KEY(email), JSON.stringify(fireBibleVerses)).catch(() => {});
-  }, [fireBibleVerses, email, readyFor]);
-  const saveBibleVerseToFire = useCallback((verse: FireBibleVerse, folderId?: string) => {
-    setFireBibleVerses(previous => previous.some(item => item.id === verse.id)
-      ? previous : [...previous, verse]);
-    if (folderId) setFireFolders(previous => previous.map(folder => {
-      if (folder.id !== folderId || (folder.verseIds || []).includes(verse.id)) return folder;
-      return { ...folder, verseIds: [...(folder.verseIds || []), verse.id] };
-    }));
-  }, []);
-  const removeBibleVerseFromFire = useCallback((verseId: string) => {
-    setFireBibleVerses(previous => previous.filter(item => item.id !== verseId));
-    setFireFolders(previous => previous.map(folder => ({
-      ...folder, verseIds: (folder.verseIds || []).filter(id => id !== verseId),
-    })));
-  }, []);
-  const toggleFireFolderVerse = useCallback((folderId: string, verseId: string) => {
-    setFireFolders(previous => previous.map(folder => {
-      if (folder.id !== folderId) return folder;
-      const current = folder.verseIds || [];
-      return { ...folder, verseIds: current.includes(verseId)
-        ? current.filter(id => id !== verseId) : [...current, verseId] };
-    }));
-  }, []);
-  const createFireFolder = useCallback((name: string) => {
-    const clean = name.trim().slice(0, 60);
-    if (!clean) return;
-    setFireFolders(prev => [...prev, { id: 'folder-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7), name: clean, publicationIds: [], verseIds: [] }]);
-  }, []);
-  const renameFireFolder = useCallback((id: string, name: string) => {
-    const clean = name.trim().slice(0, 60);
-    if (clean) setFireFolders(prev => prev.map(f => f.id === id ? { ...f, name: clean } : f));
-  }, []);
-  const deleteFireFolder = useCallback((id: string) => {
-    setFireFolders(prev => prev.filter(f => f.id !== id));
-  }, []);
-  const toggleFireFolderItem = useCallback((id: string, publicationId: string) => {
-    setFireFolders(prev => prev.map(folder => folder.id !== id ? folder : {
-      ...folder,
-      publicationIds: folder.publicationIds.includes(publicationId)
-        ? folder.publicationIds.filter(x => x !== publicationId)
-        : [...folder.publicationIds, publicationId],
-    }));
-  }, []);
-  const setPrayerRepetition = useCallback(
-    (id: string, repeat: 'once' | 'daily' | 'weekly') =>
-      setPrayerRepetitions(p => ({ ...p, [id]: repeat })),
-    [],
-  );
-  const encourage = useCallback(
-    (id: string) =>
-      setEncouragementIds(p => (p.includes(id) ? p.filter(x => x !== id) : [...p, id])),
-    [],
-  );
-  const proposeMusic = useCallback(
-    (id: string) => setMusicProposalIds(p => (p.includes(id) ? p : [...p, id])),
-    [],
-  );
-  const togglePrayer = useCallback(
-    (id: string) =>
-      setPrayerByDate(prev => {
-        const exists = Object.values(prev).some(ids => ids.includes(id));
-        if (exists)
-          return Object.fromEntries(
-            Object.entries(prev).map(([day, ids]) => [day, ids.filter(x => x !== id)]),
-          );
-        const key = todayKey();
-        return { ...prev, [key]: [...(prev[key] || []), id] };
-      }),
-    [],
-  );
-  const joinDream = useCallback(
-    (id: string) =>
-      setMyDreamIds(prev => (prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])),
-    [],
-  );
-  const toggleFire = useCallback(
-    (id: string) =>
-      setFireIds(ids => (ids.includes(id) ? ids.filter(x => x !== id) : [...ids, id])),
-    [],
-  );
-  const addToDream = useCallback((dreamId: string, publicationId: string) => {
-    setDreamInspirations(current => {
-      const previous = current[dreamId] || [];
-      return {
-        ...current,
-        [dreamId]: previous.includes(publicationId) ? previous : [...previous, publicationId],
-      };
-    });
-  }, []);
-
-  const value = useMemo<AppState>(
-    () => ({
-      rejectedContacts,
-      rejectContact: person =>
-        setRejectedContacts(prev => (prev.includes(person) ? prev : [...prev, person])),
-      signedIn: !!user,
-      email,
-      name,
-      bio,
-      city,
-      church,
-      login: (userEmail, displayName) => {
-        setEmail(userEmail);
-        if (displayName) setName(displayName);
-      },
-      logout: () => {
-        void signOut().catch(() => {});
-        setEmail('');
-      },
-      edit: patch => {
-        if (patch.name !== undefined) setName(patch.name);
-        if (patch.bio !== undefined) setBio(patch.bio);
-        if (patch.city !== undefined) setCity(patch.city);
-        if (patch.church !== undefined) setChurch(patch.church);
-      },
-      messages,
-      send: text => setMessages(prev => [...prev, { id: String(Date.now()), text, fromMe: true }]),
-      encouragementIds,
-      encourage,
-      musicProposalIds,
-      proposeMusic,
-      myDreamIds,
-      joinDream,
-      prayerIds,
-      prayerByDate,
-      prayerRepetitions,
-      setPrayerRepetition,
-      prayersForDate: (date: string) => {
-        const matching = new Set<string>();
-        Object.entries(prayerByDate).forEach(([start, ids]) =>
-          ids.forEach(id => {
-            const mode = prayerRepetitions[id] || 'daily';
-            const days = Math.round(
-              (new Date(date + 'T12:00:00').getTime() - new Date(start + 'T12:00:00').getTime()) /
-                86400000,
-            );
-            if (
-              days >= 0 &&
-              (mode === 'daily' ||
-                (mode === 'weekly' && days % 7 === 0) ||
-                (mode === 'once' && days === 0))
-            )
-              matching.add(id);
-          }),
-        );
-        return Array.from(matching);
-      },
-      togglePrayer,
-      isPraying: (id: string) => prayerIds.includes(id),
-      fireIds,
-      fireFolders,
-      fireBibleVerses,
-      saveBibleVerseToFire,
-      removeBibleVerseFromFire,
-      toggleFireFolderVerse,
-      createFireFolder,
-      renameFireFolder,
-      deleteFireFolder,
-      toggleFireFolderItem,
-      isOnFire: (id: string) => fireIds.includes(id),
-      toggleFire,
-      dreamInspirations,
-      addToDream,
-    }),
-    [
-      user?.id,
-      signOut,
-      rejectedContacts,
-      email,
-      name,
-      bio,
-      city,
-      church,
-      messages,
-      fireIds,
-      fireFolders,
-      fireBibleVerses,
-      saveBibleVerseToFire,
-      removeBibleVerseFromFire,
-      toggleFireFolderVerse,
-      createFireFolder,
-      renameFireFolder,
-      deleteFireFolder,
-      toggleFireFolderItem,
-      dreamInspirations,
-      toggleFire,
-      addToDream,
-      myDreamIds,
-      prayerByDate,
-      prayerIds,
-      joinDream,
-      togglePrayer,
-      encouragementIds,
-      musicProposalIds,
-      encourage,
-      proposeMusic,
-      prayerRepetitions,
-      setPrayerRepetition,
-    ],
-  );
+const failure=(message:string)=>{
+  if(Platform.OS==='web'&&typeof window!=='undefined')window.alert(message);
+  else Alert.alert('Action non enregistrée',message);
+};
+const encode=encodeURIComponent;
+export function Provider({children}:{children:React.ReactNode}){
+  const {user}=useAuth();
+  return <AccountProvider key={user?.id||'signed-out'}>{children}</AccountProvider>;
+}
+function AccountProvider({children}:{children:React.ReactNode}){
+  const {user,signOut}=useAuth();
+  const email=user?.email||'';
+  const [profile,setProfile]=useState<ProfileResponse['user']|null>(null);
+  const [profileError,setProfileError]=useState<string|null>(null);
+  const [firePublications,setFirePublications]=useState<Publication[]>([]);
+  const [fireFolders,setFireFolders]=useState<FireFolder[]>([]);
+  const [fireError,setFireError]=useState<string|null>(null);
+  const [prayers,setPrayers]=useState<PrayerRecord[]>([]);
+  const [prayerError,setPrayerError]=useState<string|null>(null);
+  const [fireReady,setFireReady]=useState(false);
+  const [prayersReady,setPrayersReady]=useState(false);
+  const [busy,setBusy]=useState(false);
+  const loadFire=async()=>{
+    const items:ApiFeedItem[]=[];
+    let cursor:string|null=null;
+    do{
+      const page:{items:ApiFeedItem[];nextCursor:string|null}=await api('/api/me/fire?limit=50'+(cursor?'&cursor='+encode(cursor):''),{auth:'required'});
+      items.push(...page.items);cursor=page.nextCursor;
+    }while(cursor);
+    const folders=await api<{items:FireFolder[]}>('/api/me/fire/folders',{auth:'required'});
+    setFirePublications(toPublications(items));setFireFolders(folders.items);setFireReady(true);setFireError(null);
+  };
+  const loadPrayers=async()=>{
+    const response=await api<{items:PrayerRecord[]}>('/api/me/prayers',{auth:'required'});
+    const visible=new Set(toPublications(response.items.map(p=>p.item)).map(p=>p.id));
+    setPrayers(response.items.filter(p=>visible.has(p.item.id)));setPrayersReady(true);setPrayerError(null);
+  };
+  useEffect(()=>{
+    if(!email)return;
+    void api<ProfileResponse>('/api/me',{auth:'required'}).then(result=>{
+      if(result.user.email.toLowerCase()!==email.toLowerCase())throw Error('identity_mismatch');
+      setProfile(result.user);
+    }).catch(()=>setProfileError('Profil serveur indisponible.'));
+    void loadFire().catch(()=>setFireError('Liste Fire indisponible.'));
+    void loadPrayers().catch(()=>setPrayerError('Liste de prière indisponible.'));
+  },[email]);
+  const fireIds=firePublications.map(p=>p.id);
+  const prayerPublications=toPublications(prayers.map(p=>p.item));
+  const prayerIds=prayerPublications.map(p=>p.id);
+  const prayerRepetitions=Object.fromEntries(prayers.map(p=>[p.item.id,p.repeat]));
+  const prayerByDate:Record<string,string[]>={};
+  for(const p of prayers){if(p.startDate)(prayerByDate[p.startDate]??=[]).push(p.item.id);}
+  const mutate=async(domain:'fire'|'prayer',path:string,method:'POST'|'PATCH'|'DELETE',body?:object)=>{
+    if(busy||!(domain==='fire'?fireReady:prayersReady)){unavailable();return;}
+    setBusy(true);
+    try{await api(path,{auth:'required',method,...(body?{body}:{})});await (domain==='fire'?loadFire():loadPrayers());}
+    catch{if(domain==='fire'){setFireError('Synchronisation Fire indisponible.');setFireReady(false);}else{setPrayerError('Synchronisation des prières indisponible.');setPrayersReady(false);}failure('La confirmation du serveur n’a pas pu être obtenue.');}
+    finally{setBusy(false);}
+  };
+  const folderPath=(id:string)=>'/api/me/fire/folders/'+encode(id);
+  const publicationPath=(id:string)=>'/api/publications/'+encode(id);
+  const value:AppState={
+    signedIn:!!user,email,name:profile?.displayName||(typeof user?.user_metadata?.display_name==='string'?user.user_metadata.display_name:''),bio:profile?.bio||'',city:profile?.city||'',church:profile?.church||'',profileError,
+    login:unavailable,logout:()=>{void signOut();},
+    edit:async patch=>{
+      try{
+        const {name,...fields}=patch;
+        const response=await api<ProfileResponse>('/api/me',{auth:'required',method:'PATCH',body:{...fields,...(name!==undefined?{displayName:name}:{})}});
+        if(response.user.email.toLowerCase()!==email.toLowerCase())throw Error('identity_mismatch');
+        setProfile(response.user);setProfileError(null);return true;
+      }catch{setProfileError('Modification du profil non confirmée.');failure('Le profil n’a pas pu être enregistré.');return false;}
+    },
+    rejectedContacts:[],rejectContact:unavailable,messages:[],send:unavailable,
+    fireIds,fireFolders,firePublications,fireError,fireBibleVerses:[],
+    saveBibleVerseToFire:unavailable,removeBibleVerseFromFire:unavailable,toggleFireFolderVerse:unavailable,
+    createFireFolder:name=>{void mutate('fire','/api/me/fire/folders','POST',{name});},
+    renameFireFolder:(id,name)=>{void mutate('fire',folderPath(id),'PATCH',{name});},
+    deleteFireFolder:id=>{void mutate('fire',folderPath(id),'DELETE');},
+    toggleFireFolderItem:(id,pubId)=>{void mutate('fire',folderPath(id)+'/items/'+encode(pubId),fireFolders.find(f=>f.id===id)?.publicationIds.includes(pubId)?'DELETE':'POST');},
+    isOnFire:id=>fireIds.includes(id),
+    toggleFire:id=>{void mutate('fire',publicationPath(id)+'/fire',fireIds.includes(id)?'DELETE':'POST');},
+    dreamInspirations:{},addToDream:unavailable,encouragementIds:[],encourage:unavailable,musicProposalIds:[],proposeMusic:unavailable,myDreamIds:[],joinDream:unavailable,
+    prayerIds,prayerByDate,prayerRepetitions,prayerPublications,prayerError,
+    setPrayerRepetition:(id,repeat)=>{const startDate=prayers.find(p=>p.item.id===id)?.startDate;void mutate('prayer',publicationPath(id)+'/prayer','POST',{repeat,...(startDate?{startDate}:{})});},
+    prayersForDate:date=>prayers.filter(p=>{
+      if(!p.startDate)return false;
+      const days=Math.round((Date.parse(date+'T12:00:00Z')-Date.parse(p.startDate+'T12:00:00Z'))/86400000);
+      return days>=0&&(p.repeat==='daily'||p.repeat==='weekly'&&days%7===0||p.repeat==='once'&&days===0);
+    }).map(p=>p.item.id),
+    togglePrayer:id=>{void mutate('prayer',publicationPath(id)+'/prayer',prayerIds.includes(id)?'DELETE':'POST');},
+    isPraying:id=>prayerIds.includes(id),
+  };
   return <Context.Provider value={value}>{children}</Context.Provider>;
 }
 export function useApp() {

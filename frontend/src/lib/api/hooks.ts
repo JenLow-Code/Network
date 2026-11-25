@@ -70,12 +70,12 @@ export function useDiscovery(params: { type?: string; q?: string } = {}) {
 
 /** One publication (any type) by id, as returned by GET /api/publications/:id. */
 export function usePublication(id: string | undefined) {
-  const [item, setItem] = useState<Publication | null>(id ? cache.get(id) ?? null : null);
+  const [item, setItem] = useState<Publication | null>(null);
   const [detail, setDetail] = useState<any>(null);
-  const [state, setState] = useState<LoadState>(id && cache.get(id) ? 'ready' : 'loading');
+  const [state, setState] = useState<LoadState>('loading');
   const load = useCallback(async () => {
+    setItem(null);setDetail(null);setState('loading');
     if (!id) return;
-    if (!cache.get(id)) setState('loading');
     try {
       const res = await api<{ item: ApiFeedItem; dream?: unknown; chapter?: unknown }>(`/api/publications/${encodeURIComponent(id)}`);
       const mapped = toPublication({ ...res.item, ...((res.dream as object) || {}) } as ApiFeedItem);
