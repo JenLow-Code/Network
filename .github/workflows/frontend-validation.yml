@@ -22,6 +22,9 @@ jobs:
           node-version: '22'
       - id: dependencies
         run: npm install --no-audit --no-fund
+      - name: Audit retired demo and local business-data references
+        if: ${{ always() && steps.dependencies.outcome == 'success' }}
+        run: node scripts/verify-phase-a-sources.cjs
       - name: Check unified desktop page canvases
         if: ${{ always() && steps.dependencies.outcome == 'success' }}
         run: npm run verify:layout
