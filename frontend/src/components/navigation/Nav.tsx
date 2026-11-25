@@ -340,7 +340,7 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
                   </Pressable>
                   </View>
                   {captureTreeOpen?([
-                    {key:'thought',title:'Pensées',icon:'chatbubble-ellipses-outline' as const},
+                    {key:'thought',title:'Pensées',icon:'cloud-outline' as const},
                     {key:'record',title:'Son',icon:'mic-outline' as const},
                     {key:'doc',title:'Document',icon:'document-text-outline' as const},
                     {key:'idea',title:'Idée',icon:'bulb-outline' as const},
