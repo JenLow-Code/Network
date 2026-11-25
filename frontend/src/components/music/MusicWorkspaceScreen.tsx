@@ -46,10 +46,9 @@ export function MusicWorkspaceScreen({project,update,tab,intent,error,showEditor
   // A verified roster may identify owner/co-owner/participant roles. The
   // current shared editor is read-only for everyone; never infer active
   // editing rights from the backend's generic 'collaborator' designation.
-  const roleLabel=!shared?'Propriétaire':shared.demo?'Aperçu · lecture seule':
-    shared.viewerRole?musicWorkspaceRoleLabel(shared.viewerRole)+
-      (shared.viewerRole==='passive'?'':' · lecture seule'):
-      'Accès partagé · lecture seule';
+  const roleLabel=!shared?'Propriétaire':shared.viewerRole
+    ? musicWorkspaceRoleLabel(shared.viewerRole)
+    : 'Rôle non vérifié';
   const music=musicNextState(project);
   const version=music.versions.find(v=>v.id===music.activeVersionId)||music.versions[0];
   const addFromCapture=async(file:MusicProjectFile,forceNew=false)=>{
@@ -101,7 +100,7 @@ export function MusicWorkspaceScreen({project,update,tab,intent,error,showEditor
           {roleLabel}
         </Text>
       </View>:null}
-      {shared&&!shared.demo?<Text style={{color:theme.muted,fontSize:11,lineHeight:17}}>
+      {shared?<Text style={{color:theme.muted,fontSize:11,lineHeight:17}}>
         Lecture seule · les fichiers et versions de travail partagés ne sont pas encore synchronisés.
       </Text>:null}
       {!shared&&space==='capture'&&intent==='new-version'?
