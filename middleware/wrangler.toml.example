@@ -3,7 +3,9 @@ name = "jenlow-network-security-staging"
 main = "src/index.ts"
 compatibility_date = "2026-10-25"
 compatibility_flags = ["nodejs_compat"]
-workers_dev = true
+workers_dev = false
+preview_urls = false
+# Accessible only via the Network gateway's private service binding.
 [vars]
 ENVIRONMENT = "staging"
 ALLOWED_ORIGIN = "http://localhost:8081"

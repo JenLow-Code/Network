@@ -29,3 +29,41 @@ test('Network gateway preserves authentication failures',async()=>{
   const r=await handle(new Request('https://network.example/core/identity'),{SECURITY:{async fetch(){return Response.json({error:'not_authenticated'},{status:401});}}});
   assert.equal(r.status,401);
 });
+
+// Exercise the actual security middleware and migrated SQLite fixture, not just a stub.
+import {createApp} from './helpers/app.ts';
+import {handle as securityHandle} from '../src/app.ts';
+import {signAccessToken} from '../src/sessions/tokens.ts';
+test('gateway and middleware together validate identity, token expiry and suspended accounts',async()=>{
+  const app=createApp(),member=await app.register('Gateway test member');
+  const env={SECURITY:{fetch:(request:Request)=>securityHandle(request,app.env)}};
+  const call=(token?:string)=>handle(new Request('https://network.example/core/identity',{headers:token?{authorization:'Bearer '+token}:{'x-user-id':member.id}}),env);
+  assert.equal((await call()).status,401);
+  const valid=await call(member.token);
+  assert.equal(valid.status,200);
+  assert.equal((await valid.json() as {user:{id:string}}).user.id,member.id);
+  assert.equal((await call(member.token+'.invalid')).status,401);
+  const expired=await signAccessToken(member.id,app.env,Math.floor(Date.now()/1000)-901);
+  assert.equal((await call(expired)).status,401);
+  const future=await signAccessToken(member.id,app.env,Math.floor(Date.now()/1000)+3600);
+  assert.equal((await call(future)).status,401);
+  app.db.raw.prepare("UPDATE users SET account_status='suspended' WHERE id=?").run(member.id);
+  assert.equal((await call(member.token)).status,401);
+});
+test('gateway reaches real middleware for verified upstream identity exchange',async()=>{
+  const app=createApp();
+  const env={SECURITY:{fetch:(request:Request)=>securityHandle(request,app.env)}};
+  const old=globalThis.fetch;
+  globalThis.fetch=async (_input,init)=>{
+    assert.equal(new Headers(init?.headers).get('authorization'),'Bearer provider-token');
+    return Response.json({id:'4ec693bf-0d25-4ad8-8284-9f3b8cb0ca79',email:'gateway@example.test',email_confirmed_at:'2026-11-01T00:00:00Z',is_anonymous:false});
+  };
+  try{
+    const exchange=await handle(new Request('https://network.example/core/auth/supabase/exchange',{method:'POST',headers:{authorization:'Bearer provider-token'}}),env);
+    assert.equal(exchange.status,200);
+    const data=await exchange.json() as {accessToken:string;user:{id:string}};
+    const identity=await handle(new Request('https://network.example/core/identity',{headers:{authorization:'Bearer '+data.accessToken}}),env);
+    assert.equal(identity.status,200);
+    assert.equal((await identity.json() as {user:{id:string}}).user.id,data.user.id);
+  }finally{globalThis.fetch=old;}
+});

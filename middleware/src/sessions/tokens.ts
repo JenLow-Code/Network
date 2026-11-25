@@ -40,7 +40,7 @@ export async function verifyAccessToken(token: string, env: Env): Promise<string
     if (!ok) return null;
     const payload = JSON.parse(decoder.decode(fromB64url(p)));
     const now = Math.floor(Date.now() / 1000);
-    if (payload.iss !== ISSUER || payload.aud !== AUDIENCE || typeof payload.exp !== 'number' || payload.exp <= now) return null;
+    if (payload.iss !== ISSUER || payload.aud !== AUDIENCE || !Number.isSafeInteger(payload.iat) || !Number.isSafeInteger(payload.exp) || payload.exp <= now || payload.iat > now + 30 || payload.exp <= payload.iat || payload.exp - payload.iat > ACCESS_TTL_SECONDS) return null;
     return typeof payload.sub === 'string' && payload.sub.length > 0 ? payload.sub : null;
   } catch {
     return null;
@@ -48,5 +48,5 @@ export async function verifyAccessToken(token: string, env: Env): Promise<string
 }
 
 export function bearer(request: Request): string | null {
-  return request.headers.get('authorization')?.match(/^Bearer (.+)$/i)?.[1] ?? null;
+  return request.headers.get('authorization')?.match(/^Bearer ([^\s]+)$/i)?.[1] ?? null;
 }
