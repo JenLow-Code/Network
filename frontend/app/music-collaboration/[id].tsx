@@ -10,6 +10,7 @@ import { PageHeader } from '@/components/navigation/PageHeader';
 import { Nav } from '@/components/navigation/Nav';
 import type { MusicWorkspaceSpace } from '@/components/music/MusicWorkspaceTabs';
 import { MusicWorkspaceScreen } from '@/components/music/MusicWorkspaceScreen';
+import type { WorkspaceCollaborator, MusicWorkspaceRole } from '@/components/music/MusicCollaborateExperience';
 import type { MusicProject, MusicProjectFile } from '@/domain/musicWorkspace';
 import { useSharedMusicNavigation } from '@/domain/sharedMusicNavigation';
 
@@ -25,10 +26,7 @@ type MusicDetail = {item?:{
   author?:{displayName?:string;handle?:string;avatarUrl?:string|null};
   lyrics?:{time:number;text:string}[];
 }};
-type Collaborator = {
-  id:string;role:'owner'|'collaborator';displayName:string;
-  handle?:string|null;avatarUrl?:string|null;
-};
+type Collaborator = WorkspaceCollaborator;
 
 /**
  * An accepted contributor enters the same three-space music workshop as its
@@ -80,6 +78,7 @@ function AuthorizedSharedMusicFolder(){
   const [conversationId,setConversationId]=useState<string|null>(null);
   const [proposals,setProposals]=useState<Proposal[]>([]);
   const [collaborators,setCollaborators]=useState<Collaborator[]>([]);
+  const [viewerRole,setViewerRole]=useState<MusicWorkspaceRole|null>(null);
   const [rosterError,setRosterError]=useState(false);
   const [loading,setLoading]=useState(true);
   const [error,setError]=useState<WorkspaceFailure|null>(null);
@@ -89,7 +88,7 @@ function AuthorizedSharedMusicFolder(){
     let live=true;
     const resource=encodeURIComponent(id);
     setLoading(true);setError(null);setConversationId(null);
-    setCollaborators([]);setProposals([]);setMusic(undefined);
+    setCollaborators([]);setViewerRole(null);setProposals([]);setMusic(undefined);
     setRosterError(false);
     // Fictional collaboration examples are intentionally read-only, but must
     // enter the exact same Capturer / Créer / Collaborer interface as a real
@@ -143,7 +142,20 @@ function AuthorizedSharedMusicFolder(){
       setProposals(permitted);
       void api<{members:Collaborator[]}>('/api/music/'+resource+'/collaborators',
         {auth:'required'})
-        .then(roster=>{if(live)setCollaborators(roster.members||[]);})
+        .then(roster=>{
+          if(!live)return;
+          const members=roster.members||[];
+          setCollaborators(members);
+          // The Supabase UUID is NOT the JenLow D1 user ID. Only the
+          // verified Worker /me identity may be matched against the roster.
+          void api<{user?:{id?:string}}>('/v1/auth/me',{auth:'required'})
+            .then(me=>{
+              if(!live)return;
+              const membership=members.find(person=>person.id===me.user?.id);
+              setViewerRole(membership?.role||null);
+            })
+            .catch(()=>{if(live)setViewerRole(null);});
+        })
         .catch(()=>{if(live)setRosterError(true);});
     }).catch(e=>{if(live)setError(asWorkspaceFailure(e));})
       .finally(()=>{if(live)setLoading(false);});
@@ -200,5 +212,6 @@ function AuthorizedSharedMusicFolder(){
     </View><Nav/>
   </SafeAreaView>;
   return <MusicWorkspaceScreen key={project.id} project={project} tab={tab} update={()=>{}}
-    shared={{members:collaborators,demo:demoId,conversationId,rosterUnavailable:rosterError,proposals:proposals.filter(p=>p.status==='accepted'||p.status==='published')}}/>;
+    shared={{members:collaborators,demo:demoId,conversationId,viewerRole,
+      rosterUnavailable:rosterError,proposals:proposals.filter(p=>p.status==='accepted'||p.status==='published')}}/>;
 }
