@@ -280,13 +280,6 @@ export default function DreamHub({ dream, startInSemence = false, startPhase }: 
   const muted = fruit ? '#FDE8EE' : theme.dark ? '#D1D0C9' : '#565A56';
   const coOwners = (dream.coOwners || []).filter(owner => owner.accepted && !!owner.name.trim());
 
-  // Older demo Croissance/Floraison entries existed before local dream conversations.
-  // Ensure their link is functional without pretending this is a server group chat.
-  useEffect(() => {
-    if (phaseIndex >= 2 && !dream.chat) {
-      patch(dream.id, { chat: { id: 'dream-' + dream.id, messages: [] } });
-    }
-  }, [dream.id, dream.phase, !!dream.chat]);
 
   const activeAccent = stages.find(stage => stage.phase === dream.phase)?.color || '#242322';
   const activeButtonText = dream.phase === 'Rêve' || dream.phase === 'Initiation' ? '#242322' : '#FFFFFF';
