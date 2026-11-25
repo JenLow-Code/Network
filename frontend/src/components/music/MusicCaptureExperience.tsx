@@ -29,6 +29,7 @@ const PINK='#CB245C';
 type Props={project:MusicProject;patch:(changes:Partial<MusicProject>)=>void;
   onStartVersion:(source:MusicProjectFile)=>void;onUseFile:(source:MusicProjectFile)=>void;
   hasVersion:boolean;newVersionMode?:boolean;showEditor?:boolean;readOnly?:boolean;
+  roleLabel?:string;
   quickAction?:'write'|'upload'|'play'|'record'};
 type Composer='none'|'write'|'record';
 type Writing='lyrics'|'note';
@@ -38,7 +39,7 @@ const isAudio=(file:MusicProjectFile)=>isPlayableMusicFile(file);
 const content=(file:MusicProjectFile)=>file.text??
   (file.kind==='lyrics'?file.lyricSegments?.map(v=>v.text).join('\n\n')||'':'');
 type CaptureFilter='all'|'audio'|'image'|'lyrics'|'score'|'note'|'other';
-type CaptureSort='name'|'date'|'type';
+type CaptureSort='name'|'date'|'type'|'editor';
 const filterOptions:{id:CaptureFilter;label:string}[]=[
   {id:'all',label:'Tous'},
   {id:'audio',label:'Audio'},
@@ -58,12 +59,18 @@ function fileGroup(file:MusicProjectFile):CaptureFilter {
 }
 
 export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
-  hasVersion,newVersionMode=false,quickAction,showEditor=false,readOnly=false}:Props) {
+  hasVersion,newVersionMode=false,quickAction,showEditor=false,readOnly=false,
+  roleLabel}:Props) {
   const theme=useAppTheme();
   const {user}=useAuth();
   const {width}=useWindowDimensions();
   const compact=width<630;
   const desktopList=Platform.OS==='web'&&workspaceLayout(width).desktop;
+  // One consistent column grid for headings and rows. The editor column gets
+  // enough room for the avatar, a full name and a profile link.
+  const nameWidth=showEditor?170:210;
+  const dateWidth=showEditor?103:120;
+  const editorWidth=168;
   const files=project.files||[];
   const [composer,setComposer]=useState<Composer>('none');
   const [unsavedRecording,setUnsavedRecording]=useState(false);
@@ -115,6 +122,10 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
       const typeName=(file:MusicProjectFile)=>
         filterOptions.find(option=>option.id===fileGroup(file))?.label||'Autres';
       comparison=typeName(a).localeCompare(typeName(b),'fr',
+        {sensitivity:'base',numeric:true});
+    }else if(sortBy==='editor'){
+      comparison=(a.editedBy||project.ownerName||'').localeCompare(
+        b.editedBy||project.ownerName||'','fr',
         {sensitivity:'base',numeric:true});
     }else{
       comparison=a.title.localeCompare(b.title,'fr',
@@ -384,22 +395,29 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
     <View style={{gap:8}}>
       <View style={{flexDirection:'row',alignItems:'center',
         justifyContent:'space-between',minHeight:46}}>
-        <View style={{flexDirection:'row',alignItems:'baseline',gap:8}}>
+        <View style={{flexDirection:'row',alignItems:'center',flexWrap:'wrap',gap:8,flex:1,minWidth:0}}>
           <Text style={{fontSize:compact?15:17,fontWeight:'700',color:theme.foreground}}>
             {project.title}
           </Text>
           <Text style={{fontSize:12,color:theme.muted}}>{files.filter(f=>!f.renderedFromMidiId).length}</Text>
+          {roleLabel?<View accessibilityLabel={'Votre rôle : '+roleLabel}
+            style={{borderRadius:13,paddingHorizontal:9,paddingVertical:5,
+              backgroundColor:theme.dark?'#422D36':'#F8EAF0'}}>
+            <Text style={{fontSize:10,fontWeight:'600',color:theme.dark?'#F5C7DA':PINK}}>
+              {roleLabel}
+            </Text>
+          </View>:null}
         </View>
-        <Pressable disabled={readOnly} onPress={()=>setActionsOpen(!actionsOpen)}
+        {!readOnly?<Pressable onPress={()=>setActionsOpen(!actionsOpen)}
           accessibilityRole="button"
           accessibilityLabel={actionsOpen?'Fermer les actions':'Ajouter un élément'}
           accessibilityState={{expanded:actionsOpen,disabled:readOnly}}
           style={{width:46,height:46,borderRadius:23,backgroundColor:PINK,opacity:readOnly?.5:1,
             alignItems:'center',justifyContent:'center'}}>
           <Ionicons name={actionsOpen?'close':'add'} size={25} color="#fff"/>
-        </Pressable>
+        </Pressable>:null}
       </View>
-      {actionsOpen?<View style={{flexDirection:'row',flexWrap:'wrap',gap:7,
+      {!readOnly&&actionsOpen?<View style={{flexDirection:'row',flexWrap:'wrap',gap:7,
         alignItems:'stretch',paddingBottom:5,width:'100%',
         maxWidth:compact?undefined:650,alignSelf:'flex-end'}}>
         {([
@@ -461,9 +479,10 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
         paddingHorizontal:12,paddingVertical:8,gap:14,
         borderBottomWidth:1,borderBottomColor:theme.border}}>
       {([
-        {id:'name' as const,label:'Nom',width:showEditor?185:210},
-        {id:'date' as const,label:'Date',width:showEditor?105:120},
+        {id:'name' as const,label:'Nom',width:nameWidth},
+        {id:'date' as const,label:'Date',width:dateWidth},
         {id:'type' as const,label:'Type',width:undefined},
+        ...(showEditor?[{id:'editor' as const,label:'Modifié par',width:editorWidth}]:[]),
       ]).map(column=>{
         const selected=sortBy===column.id;
         return <Pressable key={column.id}
@@ -483,11 +502,6 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
             color={selected?PINK:theme.muted}/>
         </Pressable>;
       })}
-      {showEditor?<View style={{width:130,justifyContent:'center'}}>
-        <Text style={{color:theme.muted,fontSize:13,fontWeight:'700'}}>
-          Modifié par
-        </Text>
-      </View>:null}
       <View style={{width:62}}/>
     </View>:null}
     {!desktopList&&files.length?<ScrollView horizontal showsHorizontalScrollIndicator={false}
@@ -652,14 +666,14 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
             gap:desktopList?14:4}}>
             <Pressable onPress={openDetails} accessibilityRole="button"
               accessibilityLabel={'Ouvrir '+file.title}
-              style={{width:desktopList?(showEditor?185:210):'100%',minWidth:0,
+              style={{width:desktopList?nameWidth:'100%',minWidth:0,
                 minHeight:40,justifyContent:'center'}}>
               <Text numberOfLines={1} style={{
                 color:theme.foreground,fontSize:compact?14:15,
                 fontWeight:'600'}}>{file.title}</Text>
             </Pressable>
             {desktopList?
-              <Text numberOfLines={1} style={{width:showEditor?105:120,
+              <Text numberOfLines={1} style={{width:dateWidth,
                 color:theme.foreground,fontSize:15,
                 fontWeight:'400',fontVariant:['tabular-nums']}}>
                 {dateLabel}
@@ -681,16 +695,16 @@ export function MusicCaptureExperience({project,patch,onStartVersion,onUseFile,
               justifyContent:'center'}}>
               {representation}
             </View>
-            {desktopList&&showEditor?<MusicMemberLink person={editor} width={130}/>:null}
+            {desktopList&&showEditor?<MusicMemberLink person={editor} width={editorWidth}/>:null}
             {desktopList?detailArrow:null}
           </View>
           {desktopList&&lyricExpanded&&!sound&&(file.kind==='lyrics'||readOnly)?
-            <View style={{paddingLeft:(showEditor?185+105:210+120)+28,paddingRight:28,
+            <View style={{paddingLeft:nameWidth+dateWidth+28,paddingRight:28,
               paddingBottom:14}}>
               <Text style={{fontFamily:'Georgia',fontSize:15,
                 lineHeight:24,color:theme.muted}}>{text}</Text>
             </View>:null}
-          {readOnly&&sound&&lyricExpanded?<View style={{paddingLeft:desktopList?(showEditor?185+105:210+120)+28:0,paddingBottom:12}}>
+          {readOnly&&sound&&lyricExpanded?<View style={{paddingLeft:desktopList?nameWidth+dateWidth+28:0,paddingBottom:12}}>
             <Text style={{fontSize:12,color:theme.muted}}>Audio{file.mimeType==='audio/wav'?' · WAV':''} · {file.editedBy||'Auteur non renseigné'}</Text>
           </View>:null}
           {newVersionMode&&isMusicTrackCandidate(file)?
