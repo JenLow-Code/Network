@@ -13,10 +13,19 @@ import {MusicMemberLink} from './MusicMemberLink';
 const PINK='#CB245C';
 type Props={project:MusicProject;patch:(changes:Partial<MusicProject>)=>void;
   shared?:SharedWorkspaceAccess};
+export type MusicWorkspaceRole='owner'|'co-owner'|'active'|'passive'|'collaborator';
+export const musicWorkspaceRoleLabel=(role:MusicWorkspaceRole):string=>({
+  owner:'Propriétaire',
+  'co-owner':'Co-propriétaire',
+  active:'Participant actif',
+  passive:'Participant passif',
+  collaborator:'Collaborateur',
+})[role];
 export type SharedWorkspaceAccess={members:WorkspaceCollaborator[];demo:boolean;conversationId?:string|null;rosterUnavailable?:boolean;
+  viewerRole?:MusicWorkspaceRole|null;
   proposals?:{id:string;description:string;status:string;createdAt?:string|null;proposer?:{displayName?:string}}[]};
 type Proposal=CollaborationRequest&{trackPublicationId:string};
-export type WorkspaceCollaborator={id:string;role:'owner'|'collaborator';
+export type WorkspaceCollaborator={id:string;role:MusicWorkspaceRole;
   displayName:string;handle?:string|null;avatarUrl?:string|null};
 
 export function MusicCollaborateExperience({project,patch,shared}:Props){
@@ -136,7 +145,7 @@ export function MusicCollaborateExperience({project,patch,shared}:Props){
       {(collaborators.length?collaborators:[{
         id:project.ownerEmail,role:'owner' as const,displayName:project.ownerName,
       } as WorkspaceCollaborator]).map(person=><View key={person.id} style={{minHeight:50,borderBottomWidth:1,borderColor:theme.border,justifyContent:'center'}}>
-        <MusicMemberLink size={36} person={{displayName:person.displayName,handle:person.handle,avatarUrl:person.avatarUrl,demo:shared?.demo,self:!shared&&person.role==='owner'}} subtitle={person.role==='owner'?'Auteur du morceau':'Collaborateur'}/>
+        <MusicMemberLink size={36} person={{displayName:person.displayName,handle:person.handle,avatarUrl:person.avatarUrl,demo:shared?.demo,self:!shared&&person.role==='owner'}} subtitle={person.role==='owner'?'Auteur du morceau':musicWorkspaceRoleLabel(person.role)}/>
       </View>)}
       {(shared?.rosterUnavailable||rosterUnavailable)?<Text style={{fontSize:11,color:theme.muted}}>
         Liste complète indisponible jusqu’à la mise à jour de l’API.
