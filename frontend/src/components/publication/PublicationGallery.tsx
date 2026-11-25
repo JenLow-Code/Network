@@ -10,7 +10,6 @@ import { DreamPhaseIcon } from '@/icons/DreamPhaseIcon';
 import { TalentArt } from '@/components/talent/TalentArt';
 import { NETWORK_MAGENTA } from '@/theme/colors';
 import { useAppTheme } from '@/theme/AppTheme';
-import { verseExcerpt } from '@/mocks/publications';
 import { approvedCassetteImage } from '@/assets/approvedCassette';
 import { HANDWRITING_FAMILY } from '@/theme/handwriting';
 import { DreamPhaseCard } from '@/components/publication/DreamPhaseCard';
@@ -254,7 +253,7 @@ export function BibleVerseCard({
             color: theme.dark ? NETWORK_MAGENTA : '#D71D77',
           }}
         >
-          {verseExcerpt(item)}
+          {(item.excerpt || 'Texte du verset indisponible.')}
         </Text>
       </View>
     </View>
@@ -531,7 +530,7 @@ function adaptiveTileHeight(item: Publication, width: number): number {
     const fontSize = compact ? 17 : Math.min(32, width * 0.06);
     const lineHeight = compact ? 23 : Math.min(42, width * 0.082);
     const verseWidth = width - (compact ? 28 : 52);
-    const lines = estimatedLines(verseExcerpt(item), verseWidth, fontSize);
+    const lines = estimatedLines((item.excerpt || 'Texte du verset indisponible.'), verseWidth, fontSize);
     return Math.max(160, Math.ceil(lines * lineHeight + (compact ? 94 : 112)));
   }
   if (item.type === 'dream') {

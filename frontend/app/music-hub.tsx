@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
@@ -11,7 +10,7 @@ import { MusicTile } from '@/components/music/MusicTile';
 import type { MusicCollaborator } from '@/components/music/MusicCollaboratorAvatars';
 import { readMusicLibraryLayout, type MusicLibraryLayout } from '@/domain/musicLibraryPreferences';
 import { useMusicWorkspaces, type MusicProject } from '@/domain/musicWorkspace';
-import { matchesForMe, profileTalentStorageKey, type SavedTalent } from '@/domain/personalDiscovery';
+import { matchesForMe, type SavedTalent } from '@/domain/personalDiscovery';
 import { useApp } from '@/context/AppContext';
 import { useDiscovery } from '@/lib/api/hooks';
 import { api } from '@/lib/api/client';
@@ -78,17 +77,11 @@ export default function MusicHub() {
     let active = true;
     void Promise.all([
       readMusicLibraryLayout(app.email),
-      AsyncStorage.getItem(profileTalentStorageKey(app.email)),
-    ]).then(([preferred, raw]) => {
+      api<{items:SavedTalent[]}>('/api/me/talents',{auth:'required'}),
+    ]).then(([preferred, result]) => {
       if (!active) return;
       setLayout(preferred);
-      try {
-        const parsed: unknown = raw ? JSON.parse(raw) : [];
-        setTalents(Array.isArray(parsed) ? parsed.filter(
-          (value): value is SavedTalent => !!value && typeof value === 'object' &&
-            typeof (value as SavedTalent).name === 'string',
-        ) : []);
-      } catch { setTalents([]); }
+      setTalents(result.items.filter(t=>typeof t.name==='string'&&t.name.trim().length>0));
     }).catch(() => {
       if (active) { setLayout('cards'); setTalents([]); }
     });

@@ -1,7 +1,7 @@
 import { Text, TextInput } from '@/i18n/LocalizedText';
 import React, { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, ScrollView, View, useWindowDimensions } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { api } from '@/lib/api/client';
 import { NetworkMark } from '@/components/brand/NetworkMark';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -19,7 +19,7 @@ import { NETWORK_MAGENTA } from '@/theme/colors';
 import { useAppTheme } from '@/theme/AppTheme';
 import { workspaceLayout,PAGE_TITLE_FONT_SIZE,PAGE_TITLE_LINE_HEIGHT } from '@/theme/workspaceLayout';
 import { HANDWRITING_FAMILY } from '@/theme/handwriting';
-import { matchesForMe, profileTalentStorageKey, type SavedTalent } from '@/domain/personalDiscovery';
+import { matchesForMe, type SavedTalent } from '@/domain/personalDiscovery';
 const filters = ['Tout', 'Pour moi', 'Aspirations', 'Musique', 'Bible', 'Talents'] as const;
 
 /** Deterministic within a visit; a new seed gently varies tile placement on refresh. */
@@ -70,15 +70,9 @@ export default function Discover() {
     let alive = true;
     setTalentsLoaded(false);
     setSavedTalents([]);
-    void AsyncStorage.getItem(profileTalentStorageKey(email)).then(raw => {
-      if (!alive) return;
-      try {
-        const data: unknown = raw ? JSON.parse(raw) : [];
-        setSavedTalents(Array.isArray(data) ? data.filter(
-          (t): t is SavedTalent => !!t && typeof t === 'object' && typeof t.name === 'string' && t.name.trim().length > 0,
-        ) : []);
-      } catch { setSavedTalents([]); }
-    }).catch(()=>{ if (alive) setSavedTalents([]); }).finally(()=>{ if (alive) setTalentsLoaded(true); });
+    void api<{items:SavedTalent[]}>('/api/me/talents',{auth:'required'}).then(result=>{
+      if(alive)setSavedTalents(result.items.filter(t=>typeof t.name==='string'&&t.name.trim().length>0));
+    }).catch(()=>{if(alive)setSavedTalents([]);}).finally(()=>{if(alive)setTalentsLoaded(true);});
     return () => { alive = false; };
   }, [email]);
   // Discovery is backed by D1 through the API; there is deliberately no mock fallback.
