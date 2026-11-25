@@ -101,8 +101,8 @@ export function MusicWorkspaceScreen({project,update,tab,intent,error,showEditor
           {roleLabel}
         </Text>
       </View>:null}
-      {shared?<Text style={{color:theme.muted,fontSize:11,lineHeight:17}}>
-        {shared.demo?'Aperçu de démonstration · lecture seule':'Lecture seule · les fichiers et versions de travail partagés ne sont pas encore synchronisés.'}
+      {shared&&!shared.demo?<Text style={{color:theme.muted,fontSize:11,lineHeight:17}}>
+        Lecture seule · les fichiers et versions de travail partagés ne sont pas encore synchronisés.
       </Text>:null}
       {!shared&&space==='capture'&&intent==='new-version'?
         <View style={{flexDirection:'row',alignItems:'flex-start',gap:11,
