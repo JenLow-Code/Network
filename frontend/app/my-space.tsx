@@ -524,7 +524,7 @@ export default function MySpace() {
           if(measured>0)setMeasuredCanvasWidth(current=>current===measured?current:measured);
         }}>
         <View style={{paddingLeft:ws.contentGutter,paddingRight:ws.gutter}}>
-          <PageHeader title="Aspirations" />
+          <PageHeader title={t('dreams')} />
           {storageError?<Text accessibilityRole="alert" style={{color:theme.muted,fontSize:12,lineHeight:19,marginVertical:8}}>{storageError}</Text>:null}
         </View>
 
