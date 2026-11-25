@@ -1,0 +1,12 @@
+# Staging gateway only: no production route and no public business backend.
+name = "jenlow-network-api-staging"
+main = "src/index.ts"
+compatibility_date = "2026-10-25"
+workers_dev = true
+
+[vars]
+ALLOWED_ORIGIN = "http://localhost:8081"
+
+[[services]]
+binding = "SECURITY"
+service = "jenlow-network-security-staging"
