@@ -8,7 +8,6 @@ import {MusicListeningDetail,type BrowsableSong} from '@/components/music/MusicL
 import {useAppTheme} from '@/theme/AppTheme';
 import {workspaceCanvas,workspaceLayout} from '@/theme/workspaceLayout';
 import {useDiscovery,usePublication} from '@/lib/api/hooks';
-import {fetchDemoMusicPreview,type DemoMusicPreview} from '@/lib/api/musicPreview';
 import {api,ApiRequestError} from '@/lib/api/client';
 import type {MusicPublication} from '@/domain/publication';
 
@@ -17,7 +16,6 @@ type SentProposal={
   description?:string;status:string;
   publisher?:{displayName:string};
 };
-const isFictional=(id:string)=>/^demo-music-publication-\d{2}$/.test(id);
 
 /**
  * A focused, navigable song detail page reached FROM the Pour moi cassette
@@ -34,28 +32,10 @@ export default function MusicListenPage(){
   const ws=workspaceLayout(width);
   const contentWidth=Math.max(0,Math.min(width,ws.maxWidth||width)-ws.contentGutter-ws.gutter);
   const discovery=useDiscovery({type:'music'});
-  const isDemo=!!id&&isFictional(id);
-  const remote=usePublication(isDemo?undefined:id);
-  const [preview,setPreview]=useState<DemoMusicPreview|null>(null);
-  const [previewLoading,setPreviewLoading]=useState(true);
+  const remote=usePublication(id);
   const [sent,setSent]=useState<SentProposal[]>([]);
   const [contactBusy,setContactBusy]=useState(false);
   const [contactError,setContactError]=useState('');
-
-  useEffect(()=>{
-    let active=true;
-    // These are existing, explicitly fictional read-only song records, not
-    // invented public users. Fetch also on direct demo URLs.
-    if(process.env.EXPO_PUBLIC_DISCOVERY_SOURCE==='unified'&&!isDemo){
-      setPreviewLoading(false);return;
-    }
-    setPreviewLoading(true);
-    void fetchDemoMusicPreview()
-      .then(data=>{if(active)setPreview(data);})
-      .catch(()=>{if(active)setPreview(null);})
-      .finally(()=>{if(active)setPreviewLoading(false);});
-    return()=>{active=false;};
-  },[isDemo]);
 
   useEffect(()=>{
     let active=true;
@@ -72,13 +52,10 @@ export default function MusicListenPage(){
     const items:BrowsableSong[]=[];
     const candidates=[
       ...discovery.items.filter((value):value is MusicPublication=>value.type==='music'),
-      ...(preview?.catalog||[]),
     ];
     for(const item of candidates){
       if(!seen.has(item.id)){
         seen.add(item.id);
-        // Demo catalog is explicitly read-only. Existing local editorial
-        // mock songs are also examples, not real members.
         items.push(item);
       }
     }
@@ -86,13 +63,13 @@ export default function MusicListenPage(){
       items.push(remote.item);
     }
     return items;
-  },[discovery.items,preview,remote.item]);
+  },[discovery.items,remote.item]);
 
   const song=queue.find(item=>item.id===id);
   const pending=sent.find(item=>item.trackPublicationId===id&&
     (item.status==='draft'||item.status==='submitted'));
   const loading=!song&&!pending&&(
-    discovery.state==='loading'||previewLoading||(!isDemo&&remote.state==='loading'));
+    discovery.state==='loading'||remote.state==='loading');
 
   const select=(nextId:string)=>{
     setContactError('');
