@@ -83,7 +83,8 @@ const checks=[
     workspace.includes('<MusicCaptureExperience')&&workspace.includes('<MusicCreateExperience')&&workspace.includes('<MusicCollaborateExperience')],
   ['Shared read-only adapter cannot mutate owner files or navigate to local editors',
     workspace.includes('if(shared||addingRef.current)return;')&&workspace.includes('readOnly={!!shared}')&&
-    capture.includes('if(readOnly||!deleteCandidate')&&capture.includes('disabled={readOnly}')&&
+    capture.includes('if(readOnly||!deleteCandidate')&&
+    capture.includes('{!readOnly?<Pressable onPress={()=>setActionsOpen')&&
     shared.includes('No private')&&shared.includes('update={()=>{}}')],
   ['Accepted contributions use actual audio, credit and creation date; not a note',
     shared.includes("kind:'audio' as const")&&shared.includes('createdAt:match.createdAt')&&shared.includes('contribution:match.contribution')&&
@@ -91,6 +92,26 @@ const checks=[
     !shared.includes("kind:'note' as const,title:p.trackTitle")],
   ['Capture sidebar actions start folded and have a separate plus toggle',
     nav.includes('useState(false)')&&nav.includes('captureTreeOpen?([')&&nav.includes('setCaptureTreeOpen(open=>!open)')&&!nav.includes('<MusicFolderCover')],
+  ['Capture sidebar uses contextual icons, without shared add affordances',
+    nav.includes("icon:'chatbubble-ellipses-outline'")&&
+    nav.includes("icon:'mic-outline'")&&
+    nav.includes("icon:'document-text-outline'")&&
+    nav.includes("icon:'bulb-outline'")&&
+    nav.includes("name={action.icon}")&&
+    nav.includes("isSharedSong?(captureTreeOpen?'chevron-up':'chevron-down')")&&
+    nav.includes("{!isSharedSong?<Pressable accessibilityRole=\"button\"")],
+  ['The music workspace displays only a known role or its read-only limitation',
+    workspace.includes('roleLabel={roleLabel}')&&
+    workspace.includes("'Accès partagé · lecture seule'")&&
+    workspace.includes("musicWorkspaceRoleLabel(shared.viewerRole)")&&
+    shared.includes("'/v1/auth/me'")&&
+    shared.includes("members.find(person=>person.id===me.user?.id)")],
+  ['Capture table editor is sortable and shares row-column widths',
+    capture.includes("type CaptureSort='name'|'date'|'type'|'editor'")&&
+    capture.includes("sortBy==='editor'")&&
+    capture.includes("id:'editor' as const,label:'Modifié par',width:editorWidth")&&
+    capture.includes("width={editorWidth}")&&
+    capture.includes("roleLabel?<View")],
   ['Capture attribution uses a linked member identity',
     capture.includes('<MusicMemberLink person={editor}')&&shared.includes('editedByHandle:p.proposer?.handle')],
   ['Pour moi cassette and Infos navigate to their own full music page',
