@@ -5,7 +5,6 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
-import { biblePosts, psalm150, publications, personPublications } from '@/mocks/publications';
 import { DetailAuthorHeader } from '@/components/detail/DetailAuthorHeader';
 import { DreamReactionRail } from '@/components/detail/DreamReactionRail';
 import { PublicationPrimaryAction } from '@/components/detail/PublicationPrimaryAction';
@@ -13,7 +12,7 @@ import { Nav } from '@/components/navigation/Nav';
 import { PublicationGallery } from '@/components/publication/PublicationGallery';
 import { useAppTheme } from '@/theme/AppTheme';
 import {workspaceCanvas,workspaceLayout} from '@/theme/workspaceLayout';
-import { usePublication } from '@/lib/api/hooks';
+import { usePublication, useDiscovery } from '@/lib/api/hooks';
 import type { BiblePublication } from '@/domain/publication';
 
 /**
@@ -24,12 +23,11 @@ import type { BiblePublication } from '@/domain/publication';
 export default function Bible() {
   const { verse, id } = useLocalSearchParams<{ reference: string; verse?: string; id?: string }>();
   const remote = usePublication(id);
-  const chapterTexts: string[] = remote.detail?.chapter?.verses?.map((v: { text: string }) => v.text) ?? psalm150;
+  const discovery = useDiscovery();
+  const chapterTexts: string[] = remote.detail?.chapter?.verses?.map((v: { text: string }) => v.text) ?? [];
   const selected = Math.max(1, Math.min(chapterTexts.length || 1, Number(verse || 6) || 6));
-  const post = (remote.item?.type === 'bible' ? (remote.item as BiblePublication) : undefined)
-    ?? biblePosts.find(p => p.highlightedVerse === selected)
-    ?? biblePosts[0];
-  const shared = Math.max(1, Math.min(chapterTexts.length || 1, post.highlightedVerse || selected));
+  const post = remote.item?.type === 'bible' ? (remote.item as BiblePublication) : undefined;
+  const shared = Math.max(1, Math.min(chapterTexts.length || 1, post?.highlightedVerse || selected));
   const theme = useAppTheme();
   const { width: viewportWidth } = useWindowDimensions();
   const ws=workspaceLayout(viewportWidth);
@@ -50,8 +48,9 @@ export default function Bible() {
 
   const ink = theme.foreground;
   const muted = theme.muted;
-  const verseText = chapterTexts[shared - 1] || 'Texte du verset indisponible.';
-  const verseReference = post.reference || 'Psaume 150:' + shared;
+  const verseText = chapterTexts[shared - 1] || post?.excerpt || 'Texte du verset indisponible.';
+  const verseReference = post?.reference || '';
+  if (!post) return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}><View style={{padding:24}}><Text style={{color:theme.muted}}>{remote.state==='loading'&&id?'Chargement…':'Cette publication biblique est indisponible.'}</Text></View><Nav/></SafeAreaView>;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
@@ -97,7 +96,7 @@ export default function Bible() {
           <PublicationGallery
             layout="masonry"
             contentWidth={Math.max(0,readerWidth-(compact?46:64))}
-            items={[...publications, ...personPublications].filter(p => p.id !== post.id)}
+            items={discovery.items.filter(p => p.id !== post.id)}
           />
         </View>
         </View>

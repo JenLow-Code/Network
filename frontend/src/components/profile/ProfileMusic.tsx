@@ -125,7 +125,7 @@ export function MusicLibrary({contentWidth,embedded=false,preferredLayout}: {con
           onPress={()=>router.push(p.first.direction==='sent'
             ? {pathname:'/music-collaboration/[id]',params:{id}}
             : {pathname:'/music/[id]',params:{id}})}/>)}
-      </View>:ready?<Pressable onPress={()=>router.push('/music/new')} accessibilityRole="button" style={{padding:14,borderWidth:1,borderColor:theme.border,borderStyle:'dashed',borderRadius:10,backgroundColor:theme.surface,flexDirection:'row',alignItems:'center',gap:12}}>
+      </View>:ready&&!error?<Pressable onPress={()=>router.push('/music/new')} accessibilityRole="button" style={{padding:14,borderWidth:1,borderColor:theme.border,borderStyle:'dashed',borderRadius:10,backgroundColor:theme.surface,flexDirection:'row',alignItems:'center',gap:12}}>
         <Ionicons name="musical-notes-outline" size={26} color={theme.muted}/><View style={{flex:1,gap:4}}><Text style={{color:theme.foreground,fontWeight:'600',fontSize:14}}>Une idée, une mélodie…</Text><Text style={{color:theme.muted,fontSize:12}}>Crée ton premier morceau.</Text></View><Ionicons name="arrow-forward-outline" size={17} color={theme.muted}/>
       </Pressable>:null}
   </View>;

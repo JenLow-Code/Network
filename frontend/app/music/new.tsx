@@ -72,7 +72,7 @@ export default function NewMusic(){
     });
   };
   const save=()=>{
-    if(!ready||busy||!title.trim()||!language.trim())return;
+    if(!ready||storageError||busy||!title.trim()||!language.trim())return;
     const id=create({title,description,originalLanguage:language});
     if(!id){setError('Création impossible sur cet appareil.');return;}
     patch(id,{
@@ -94,6 +94,12 @@ export default function NewMusic(){
     {id:'record',icon:'mic-outline',label:'Enregistrer maintenant',
       detail:'Commence avec ton microphone.'},
   ];
+  if (storageError) return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
+    <View style={{...workspaceCanvas(width),paddingTop:12,gap:14}}>
+      <PageHeader onBack={()=>router.replace('/music-hub')} title="Un nouveau morceau"/>
+      <Text accessibilityRole="alert" style={{color:theme.muted,fontSize:13,lineHeight:21}}>{storageError}</Text>
+    </View><Nav/>
+  </SafeAreaView>;
   return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
     <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{
       ...workspaceCanvas(width),paddingTop:12,paddingBottom:95,gap:17}}>

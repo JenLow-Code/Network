@@ -440,7 +440,7 @@ export default function MySpace() {
   const { width: windowWidth } = useWindowDimensions();
   const compact = windowWidth < 600;
   const ws=workspaceLayout(windowWidth);
-  const { items } = useDreams();
+  const { items, storageError } = useDreams();
   const [view, setView] = useState<ViewFilter>('Grille');
   const [roleFilter,setRoleFilter]=useState<RoleFilter>('all');
   const [roleMenuOpen,setRoleMenuOpen]=useState(false);
@@ -524,7 +524,8 @@ export default function MySpace() {
           if(measured>0)setMeasuredCanvasWidth(current=>current===measured?current:measured);
         }}>
         <View style={{paddingLeft:ws.contentGutter,paddingRight:ws.gutter}}>
-          <PageHeader title={t('dreams')} />
+          <PageHeader title="Aspirations" />
+          {storageError?<Text accessibilityRole="alert" style={{color:theme.muted,fontSize:12,lineHeight:19,marginVertical:8}}>{storageError}</Text>:null}
         </View>
 
         {/* A shallow, inset gallery aligned with the common page margins. */}

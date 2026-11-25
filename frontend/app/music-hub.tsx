@@ -270,7 +270,7 @@ export default function MusicHub() {
             participants={piece.participants}
             status={piece.pending?'À examiner':undefined}
             onPress={() => openMyPiece(piece.primary)}/>)
-        ]) : ready ? empty('Ton premier morceau commence ici.',
+        ]) : ready && !error ? empty('Ton premier morceau commence ici.',
           'Créer un morceau',() => router.push('/music/new')) : null}
         {requestsError ? <Text style={{color:theme.muted,fontSize:10}}>
           Les morceaux partagés nécessitent une session API connectée.

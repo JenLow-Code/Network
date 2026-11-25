@@ -22,7 +22,7 @@ export default function NewDream() {
   // Avoid storing a signed-in user's new Dream under the temporary guest key.
   const accountReady = initialized && (!user ||
     (typeof user.email === 'string' && user.email.toLowerCase() === email.toLowerCase()));
-  const canSave = ready && accountReady;
+  const canSave = ready && accountReady && !storageError;
   const theme = useAppTheme();
   const [title, setTitle] = useState(inspiration ? 'Autour de ' + inspiration : '');
   const [summary, setSummary] = useState(inspiration ? 'Cette inspiration me donne envie de créer quelque chose de nouveau.' : '');
@@ -46,7 +46,7 @@ export default function NewDream() {
     } catch (error) {
       setSaveError(error instanceof Error && error.message.includes('chargés')
         ? error.message
-        : "L’aspiration et son image n’ont pas pu être enregistrées. Réessaie ou vérifie le stockage de ton navigateur.");
+        : "L’aspiration et son image n’ont pas pu être enregistrées. Réessaie lorsque le service sera disponible.");
     } finally {
       setSaving(false);
     }

@@ -35,9 +35,9 @@ export default function MusicWorkspace() {
   if (!project) return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
     <View style={{padding:22,gap:13}}>
       <PageHeader onBack={()=>router.replace('/music-hub')}/>
-      <Text style={{color:theme.foreground,fontSize:19,fontWeight:'700'}}>Chanson introuvable</Text>
+      <Text style={{color:theme.foreground,fontSize:19,fontWeight:'700'}}>Espace de création indisponible</Text>
       <Text style={{color:theme.muted,fontSize:13,lineHeight:20}}>
-        Les brouillons enregistrés localement restent liés à cet appareil.
+        {error || 'Ce morceau est introuvable ou inaccessible.'}
       </Text>
     </View>
     <Nav/>
