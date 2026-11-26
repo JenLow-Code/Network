@@ -5,7 +5,7 @@ import { json, legacyError } from '../core/respond';
 import { LIMITS, withinLimit } from '../security/rateLimit';
 import { newId, sha256Hex, hex } from '../core/database';
 import { DUMMY_SALT, PASSWORD_ITERATIONS, derivePassword, sameDigest } from './password';
-import { ACCESS_TTL_SECONDS, REFRESH_TTL_DAYS, bearer, signAccessToken, verifyAccessToken } from '../sessions/tokens';
+import { ACCESS_TTL_SECONDS, REFRESH_TTL_DAYS, signAccessToken } from '../sessions/tokens';
 
 /**
  * /v1/auth/* — behaviour-preserving TypeScript port of the deployed beta Worker
