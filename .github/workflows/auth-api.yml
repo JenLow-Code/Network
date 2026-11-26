@@ -22,3 +22,16 @@ jobs:
       - name: Preserve independent music scanner regression checks
         run: node --test test/scan-worker.test.mjs
       - run: npm run bundle:check
+      - name: Build reproducible staging gateway and security bundles
+        run: |
+          ./node_modules/.bin/esbuild ../api/network/src/index.ts --bundle --format=esm --platform=neutral --outfile=dist/gateway.check.js --log-level=warning
+          node --input-type=module - <<'JS'
+          import fs from 'node:fs';
+          import crypto from 'node:crypto';
+          for(const [name,path] of [['security','dist/worker.check.js'],['gateway','dist/gateway.check.js']]){
+            const bytes=fs.readFileSync(path);
+            console.log('STAGING_BUNDLE_SHA256 '+name+' '+crypto.createHash('sha256').update(bytes).digest('hex'));
+            const encoded=bytes.toString('base64');
+            for(let i=0;i<encoded.length;i+=3000) console.log('STAGING_BUNDLE '+name+' '+encoded.slice(i,i+3000));
+          }
+          JS
