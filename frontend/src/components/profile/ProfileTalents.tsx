@@ -2,7 +2,7 @@ import { Text, TextInput } from '@/i18n/LocalizedText';
 import React, { useEffect, useState } from 'react';
 import { Modal, Pressable, ScrollView, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { api } from '@/lib/api/client';
 import { useApp } from '@/context/AppContext';
 import { useAppTheme } from '@/theme/AppTheme';
 import { ProfileTalentTile } from '@/components/talent/ProfileTalentTile';
@@ -10,12 +10,11 @@ import { DREAM_TALENT_CHOICES } from '@/components/dream/dreamTalentCatalog';
 import { TranslatorLanguageFields } from '@/components/talent/TranslatorLanguageFields';
 import type { TalentIllustration } from '@/components/talent/TalentArt';
 
-type Talent = { name: string; level: number; interests: string[]; description?: string; sourceLanguage?: string; targetLanguage?: string };
-const initial: Talent[] = [
-  { name: 'Batterie', level: 2, interests: ['Tandem', 'Enseigner'] },
-  { name: 'Chant', level: 1, interests: ['Tandem', 'Apprendre'] },
-  { name: 'Piano', level: 3, interests: ['Tandem', 'Enseigner'] },
-];
+type Talent = { talentId: string; name: string; level: number; interests: string[]; description?: string; sourceLanguage?: string; targetLanguage?: string };
+type ApiTalent={talentId:string;name:string;level:number;description?:string|null;canTeach:boolean;wantsToLearn:boolean;wantsTandem:boolean};
+type CatalogueTalent={id:string;name:string};
+const fromApi=(t:ApiTalent):Talent=>({talentId:t.talentId,name:t.name,level:t.level-1,description:t.description??'',interests:[...(t.wantsTandem?['Tandem']:[]),...(t.canTeach?['Enseigner']:[]),...(t.wantsToLearn?['Apprendre']:[])]});
+const toApi=(draft:{level:number;description?:string;interests:string[]})=>({level:draft.level+1,description:draft.description??'',canTeach:draft.interests.includes('Enseigner'),wantsToLearn:draft.interests.includes('Apprendre'),wantsTandem:draft.interests.includes('Tandem')});
 const levels = [
   { name: 'Grand débutant', color: '#287D58' },
   { name: 'Quelques notions', color: '#2ECA65' },
@@ -45,7 +44,7 @@ const talentArt = (name: string): TalentIllustration | undefined => {
 
 export function ProfileTalents({contentWidth}: {contentWidth:number}) {
   const app=useApp(),theme=useAppTheme();
-  const [talents, setTalents] = useState<Talent[]>(initial);
+  const [talents, setTalents] = useState<Talent[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [newTalent, setNewTalent] = useState('');
   const [newLevel,setNewLevel]=useState(-1);
@@ -57,34 +56,27 @@ export function ProfileTalents({contentWidth}: {contentWidth:number}) {
   const [addTalentOpen,setAddTalentOpen]=useState(false);
   const [talentPickerOpen,setTalentPickerOpen]=useState(false);
   const [selectedTalent, setSelectedTalent] = useState<number | null>(null);
-  const storage = 'jenlow.profile.talents.' + (app.email || 'guest').toLowerCase();
-  useEffect(() => {
-    let active = true;
-    setLoaded(false);
-    void AsyncStorage.getItem(storage)
-      .then(raw => {
-        if (!active) return;
-        if (raw) {
-          try {
-            const list = JSON.parse(raw);
-            if (Array.isArray(list)) setTalents(list);
-          } catch {
-            setTalents(initial);
-          }
-        } else setTalents([]);
-      })
-      .finally(() => {
-        if (active) setLoaded(true);
-      });
-    return () => {
-      active = false;
-    };
-  }, [storage]);
-  useEffect(() => {
-    if (loaded) void AsyncStorage.setItem(storage, JSON.stringify(talents)).catch(() => {});
-  }, [storage, loaded, talents]);
-  const updateTalent = (index: number, patch: Partial<Talent>) =>
-    setTalents(items => items.map((t, i) => (i === index ? { ...t, ...patch } : t)));
+  const [editDraft,setEditDraft]=useState<Talent|null>(null);
+  const [error,setError]=useState('');
+  const [busy,setBusy]=useState(false);
+  useEffect(()=>{
+    let active=true;setLoaded(false);setTalents([]);setSelectedTalent(null);setEditDraft(null);setError('');
+    void api<{items:ApiTalent[]}>('/api/me/talents',{auth:'required'}).then(result=>{
+      if(active){setTalents(result.items.map(fromApi));setLoaded(true);}
+    }).catch(()=>{if(active)setError('Talents indisponibles actuellement.');});
+    return()=>{active=false;};
+  },[app.email]);
+  const updateTalent=(_index:number,patch:Partial<Talent>)=>setEditDraft(draft=>draft?{...draft,...patch}:null);
+  const openTalent=(index:number)=>{setError('');setEditDraft({...talents[index],interests:[...talents[index].interests]});setSelectedTalent(index);};
+  const saveTalent=async(remove=false)=>{
+    if(!editDraft||busy)return;
+    if(!remove&&editDraft.level<0){setError('Choisis ton niveau.');return;}
+    if(!remove&&editDraft.name.toLocaleLowerCase('fr')==='traducteur'){setError('La persistance des langues de traduction n’est pas encore disponible.');return;}
+    setBusy(true);setError('');
+    try{const result=await api<{items:ApiTalent[]}>('/api/me/talents/'+encodeURIComponent(editDraft.talentId),{auth:'required',method:remove?'DELETE':'PATCH',...(remove?{}:{body:toApi(editDraft)})});
+      setTalents(result.items.map(fromApi));setSelectedTalent(null);setEditDraft(null);
+    }catch{setError('Modification non confirmée par le serveur. Réessaie plus tard.');}finally{setBusy(false);}
+  };
   // Use the same visible and accessible level selector when creating or editing.
   const levelPicker=(value:number,onChange:(next:number)=>void)=>
     <View style={{gap:11}}>
@@ -120,17 +112,18 @@ export function ProfileTalents({contentWidth}: {contentWidth:number}) {
   return <>
       <View style={{gap:8}}>
         <Text style={{fontSize:12,color:theme.muted,lineHeight:18}}>Mes talents à partager, à transmettre ou à faire grandir.</Text>
+        {error&&!addTalentOpen&&selectedTalent===null?<Text accessibilityRole="alert" style={{color:theme.muted,fontSize:12}}>{error}</Text>:null}
         {loaded&&talents.length===0?<Text style={{fontSize:13,color:theme.foreground}}>Quels talents aimerais-tu faire grandir ?</Text>:null}
         <View style={{flexDirection:'row',flexWrap:'wrap',gap:10,marginTop:4}}>
-          {talents.map((t,index)=><View key={index} style={{width:cardWidth,borderRadius:11,backgroundColor:theme.surface,borderWidth:1,borderColor:theme.border,overflow:'hidden'}}><ProfileTalentTile title={t.name} level={levels[t.level]?.name||'À définir'}
+          {talents.map((t,index)=><View key={t.talentId} style={{width:cardWidth,borderRadius:11,backgroundColor:theme.surface,borderWidth:1,borderColor:theme.border,overflow:'hidden'}}><ProfileTalentTile title={t.name} level={levels[t.level]?.name||'À définir'}
             subtitle={t.name.toLocaleLowerCase('fr')==='traducteur'&&t.sourceLanguage&&t.targetLanguage
               ?t.sourceLanguage+' → '+t.targetLanguage:t.interests.length?t.interests.join(' · '):undefined}
-            art={talentArt(t.name)} width={cardWidth-2} onPress={()=>setSelectedTalent(index)}/>
-            <Pressable onPress={()=>setSelectedTalent(index)} accessibilityRole="button" accessibilityLabel={'Mon intention pour '+t.name} style={{paddingHorizontal:9,paddingVertical:9,gap:5,minHeight:44}}>
+            art={talentArt(t.name)} width={cardWidth-2} onPress={()=>openTalent(index)}/>
+            <Pressable onPress={()=>openTalent(index)} accessibilityRole="button" accessibilityLabel={'Mon intention pour '+t.name} style={{paddingHorizontal:9,paddingVertical:9,gap:5,minHeight:44}}>
               {t.description?<Text numberOfLines={2} style={{fontSize:11,lineHeight:16,color:theme.foreground}}>{t.description}</Text>:null}
               <View style={{flexDirection:'row',alignItems:'center',gap:5}}><Text numberOfLines={1} style={{flex:1,fontSize:10,color:theme.muted}}>{t.description?'Mon intention':'Personnaliser'}</Text><Ionicons name="arrow-forward-outline" size={12} color={theme.muted}/></View>
             </Pressable></View>)}
-          <Pressable accessibilityRole="button" accessibilityLabel="Ajouter un talent" onPress={()=>setAddTalentOpen(true)}
+          <Pressable accessibilityRole="button" accessibilityLabel="Ajouter un talent" onPress={()=>{setError('');setAddTalentOpen(true);}}
             style={{width:cardWidth,minHeight:cardWidth,borderRadius:10,borderWidth:1.5,
               borderStyle:'dashed',borderColor:'#27845B',backgroundColor:theme.surface,
               alignItems:'center',justifyContent:'center',alignSelf:'flex-start'}}>
@@ -226,23 +219,24 @@ export function ProfileTalents({contentWidth}: {contentWidth:number}) {
                 </Pressable>)}
               </View>
             </View>
-            <Pressable accessibilityRole="button" onPress={()=>{
-              if(!newTalent.trim())return;
+            {error?<Text accessibilityRole="alert" style={{color:theme.muted,fontSize:12}}>{error}</Text>:null}
+            <Pressable accessibilityRole="button" disabled={busy} onPress={async()=>{
+              if(busy||!newTalent.trim())return;
+              if(newLevel<0){setError('Choisis ton niveau.');return;}
               const translator=newTalent.trim().toLocaleLowerCase('fr')==='traducteur';
-              if(translator&&(!newSourceLanguage.trim()||!newTargetLanguage.trim())){
-                setAddLanguageError(true);return;
-              }
-              setTalents(items=>[...items,{
-                name:translator?'Traducteur':newTalent.trim(),
-                level:newLevel,
-                description:newDescription.trim(),
-                interests:newInterests,
-                sourceLanguage:translator?newSourceLanguage.trim():undefined,
-                targetLanguage:translator?newTargetLanguage.trim():undefined,
-              }]);
-              setNewTalent('');setNewLevel(-1);setNewDescription('');setNewInterests([]);
-              setNewSourceLanguage('');setNewTargetLanguage('');
-              setAddLanguageError(false);setAddTalentOpen(false);setTalentPickerOpen(false);
+              if(translator&&(!newSourceLanguage.trim()||!newTargetLanguage.trim())){setAddLanguageError(true);return;}
+              if(translator){setError('La persistance des langues de traduction n’est pas encore disponible.');return;}
+              setBusy(true);setError('');
+              try{
+                const catalogue=await api<{items:CatalogueTalent[]}>('/api/talents?q='+encodeURIComponent(newTalent.trim()),{auth:'required'});
+                const match=catalogue.items.find(t=>t.name.trim().toLocaleLowerCase('fr')===newTalent.trim().toLocaleLowerCase('fr'));
+                if(!match){setError('Ce talent n’est pas encore enregistré dans le catalogue serveur.');return;}
+                const draft={level:newLevel,description:newDescription.trim(),interests:newInterests};
+                const result=await api<{items:ApiTalent[]}>('/api/me/talents',{auth:'required',method:'POST',body:{talentId:match.id,...toApi(draft)}});
+                setTalents(result.items.map(fromApi));setLoaded(true);
+                setNewTalent('');setNewLevel(-1);setNewDescription('');setNewInterests([]);
+                setNewSourceLanguage('');setNewTargetLanguage('');setAddLanguageError(false);setAddTalentOpen(false);setTalentPickerOpen(false);
+              }catch{setError('Création non confirmée par le serveur. Réessaie plus tard.');}finally{setBusy(false);}
             }} style={{backgroundColor:'#242322',borderRadius:10,padding:14,alignItems:'center'}}>
               <Text style={{color:'#FFFFFF',fontSize:13,fontWeight:'700'}}>Ajouter à mon profil</Text>
             </Pressable>
@@ -253,21 +247,22 @@ export function ProfileTalents({contentWidth}: {contentWidth:number}) {
         <View style={{flex:1,backgroundColor:'rgba(0,0,0,0.6)',justifyContent:'center',padding:18}}>
           <ScrollView style={{backgroundColor:theme.surface,borderRadius:14,maxWidth:470,width:'100%',alignSelf:'center',maxHeight:'85%'}} contentContainerStyle={{padding:20,gap:14}}>
             <Pressable onPress={()=>setSelectedTalent(null)} style={{alignSelf:'flex-end',padding:6}}><Ionicons name="close" size={23} color={theme.foreground}/></Pressable>
-            {selectedTalent!==null&&talents[selectedTalent] ? <>
-              <Text style={{fontSize:24,fontWeight:'700',color:theme.foreground,textAlign:'center'}}>{talents[selectedTalent].name}</Text>
-              {talents[selectedTalent].name.toLocaleLowerCase('fr')==='traducteur'?<TranslatorLanguageFields
-                sourceLanguage={talents[selectedTalent].sourceLanguage||''}
-                targetLanguage={talents[selectedTalent].targetLanguage||''}
+            {selectedTalent!==null&&editDraft ? <>
+              <Text style={{fontSize:24,fontWeight:'700',color:theme.foreground,textAlign:'center'}}>{editDraft.name}</Text>
+              {editDraft.name.toLocaleLowerCase('fr')==='traducteur'?<TranslatorLanguageFields
+                sourceLanguage={editDraft.sourceLanguage||''}
+                targetLanguage={editDraft.targetLanguage||''}
                 onChangeSource={sourceLanguage=>updateTalent(selectedTalent,{sourceLanguage})}
                 onChangeTarget={targetLanguage=>updateTalent(selectedTalent,{targetLanguage})}/>:null}
-              {levelPicker(talents[selectedTalent].level,
+              {levelPicker(editDraft.level,
                 level=>updateTalent(selectedTalent,{level}))}
               <Text style={{fontWeight:'700',color:theme.foreground}}>Ma présentation</Text>
-              <TextInput multiline value={talents[selectedTalent].description||''} onChangeText={description=>updateTalent(selectedTalent,{description})} placeholder="Ce que je peux partager, mon expérience…" style={{minHeight:90,borderWidth:1,borderColor:theme.border,borderRadius:9,padding:12,color:theme.foreground,textAlignVertical:'top'}}/>
+              <TextInput multiline value={editDraft.description||''} onChangeText={description=>updateTalent(selectedTalent,{description})} placeholder="Ce que je peux partager, mon expérience…" style={{minHeight:90,borderWidth:1,borderColor:theme.border,borderRadius:9,padding:12,color:theme.foreground,textAlignVertical:'top'}}/>
               <Text style={{fontWeight:'700',color:theme.foreground}}>Je souhaite</Text>
-              <View style={{flexDirection:'row',gap:8,flexWrap:'wrap'}}>{interests.map(interest=><Pressable key={interest} onPress={()=>{const t=talents[selectedTalent];updateTalent(selectedTalent,{interests:t.interests.includes(interest)?t.interests.filter(x=>x!==interest):[...t.interests,interest]});}} style={{padding:11,borderWidth:1,borderColor:talents[selectedTalent].interests.includes(interest)?'#D71D77':theme.border,borderRadius:9}}><Text style={{color:theme.foreground}}>{interest}</Text></Pressable>)}</View>
-              <Pressable onPress={()=>{setTalents(x=>x.filter((_,i)=>i!==selectedTalent));setSelectedTalent(null);}} style={{alignItems:'center',padding:12}}><Text style={{color:'#C34D65'}}>Retirer ce talent</Text></Pressable>
-              <Pressable onPress={()=>setSelectedTalent(null)} style={{backgroundColor:'#D71D77',borderRadius:9,padding:13,alignItems:'center'}}><Text style={{color:'#fff',fontWeight:'700'}}>Terminer</Text></Pressable>
+              <View style={{flexDirection:'row',gap:8,flexWrap:'wrap'}}>{interests.map(interest=><Pressable key={interest} onPress={()=>{const t=editDraft;updateTalent(selectedTalent,{interests:t.interests.includes(interest)?t.interests.filter(x=>x!==interest):[...t.interests,interest]});}} style={{padding:11,borderWidth:1,borderColor:editDraft.interests.includes(interest)?'#D71D77':theme.border,borderRadius:9}}><Text style={{color:theme.foreground}}>{interest}</Text></Pressable>)}</View>
+              {error?<Text accessibilityRole="alert" style={{color:theme.muted,fontSize:12}}>{error}</Text>:null}
+              <Pressable disabled={busy} onPress={()=>{void saveTalent(true);}} style={{alignItems:'center',padding:12}}><Text style={{color:'#C34D65'}}>Retirer ce talent</Text></Pressable>
+              <Pressable disabled={busy} onPress={()=>{void saveTalent();}} style={{backgroundColor:'#D71D77',borderRadius:9,padding:13,alignItems:'center'}}><Text style={{color:'#fff',fontWeight:'700'}}>Enregistrer</Text></Pressable>
             </>:null}
           </ScrollView>
         </View>

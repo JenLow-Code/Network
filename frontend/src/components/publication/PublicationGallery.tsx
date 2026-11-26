@@ -10,18 +10,12 @@ import { DreamPhaseIcon } from '@/icons/DreamPhaseIcon';
 import { TalentArt } from '@/components/talent/TalentArt';
 import { NETWORK_MAGENTA } from '@/theme/colors';
 import { useAppTheme } from '@/theme/AppTheme';
-import { verseExcerpt } from '@/mocks/publications';
 import { approvedCassetteImage } from '@/assets/approvedCassette';
 import { HANDWRITING_FAMILY } from '@/theme/handwriting';
 import { DreamPhaseCard } from '@/components/publication/DreamPhaseCard';
 import { matchesForMe, type SavedTalent } from '@/domain/personalDiscovery';
 import { workspaceLayout } from '@/theme/workspaceLayout';
 
-const audio = [
-  require('../../../assets/audio/pierre-01-douceur.wav'),
-  require('../../../assets/audio/pierre-02-esperance.wav'),
-  require('../../../assets/audio/pierre-03-lumiere.wav'),
-];
 
 export const publicationPath = (p: Publication) =>
   p.type === 'dream'
@@ -60,10 +54,11 @@ function category(item: Publication): string {
   }
 }
 
-function MusicPlayback({ index, uri, size = 42 }: { index: 0 | 1 | 2; uri?: string; size?: number }) {
-  const player = useAudioPlayer(uri ? { uri } : audio[index]);
+function MusicPlayback({ uri, size = 42 }: { index: 0 | 1 | 2; uri?: string; size?: number }) {
+  const player = useAudioPlayer(uri ? { uri } : null);
   const status = useAudioPlayerStatus(player);
   const toggle = () => {
+    if (!uri) return;
     if (status.playing) player.pause();
     else {
       if (status.didJustFinish) void player.seekTo(0);
@@ -85,7 +80,7 @@ function MusicPlayback({ index, uri, size = 42 }: { index: 0 | 1 | 2; uri?: stri
 
 /** Sibling audio control: never nest a button inside the story's Pressable on web. */
 function AudioCorner({ item, width, height }: { item: Publication; width: number; height: number }) {
-  if (item.type !== 'music') return null;
+  if (item.type !== 'music' || !item.audioUrl) return null;
   // Center the control on the tape reels, below the handwritten title strip.
   const size = Math.min(42, Math.max(31, width * 0.20));
   const tiny = width < 225;
@@ -258,7 +253,7 @@ export function BibleVerseCard({
             color: theme.dark ? NETWORK_MAGENTA : '#D71D77',
           }}
         >
-          {verseExcerpt(item)}
+          {(item.excerpt || 'Texte du verset indisponible.')}
         </Text>
       </View>
     </View>
@@ -535,7 +530,7 @@ function adaptiveTileHeight(item: Publication, width: number): number {
     const fontSize = compact ? 17 : Math.min(32, width * 0.06);
     const lineHeight = compact ? 23 : Math.min(42, width * 0.082);
     const verseWidth = width - (compact ? 28 : 52);
-    const lines = estimatedLines(verseExcerpt(item), verseWidth, fontSize);
+    const lines = estimatedLines((item.excerpt || 'Texte du verset indisponible.'), verseWidth, fontSize);
     return Math.max(160, Math.ceil(lines * lineHeight + (compact ? 94 : 112)));
   }
   if (item.type === 'dream') {

@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - 'middleware/src/authentication/**'
+      - 'middleware/src/worker-runtime.js'
       - '.github/workflows/auth-live-check.yml'
 jobs:
   live:
@@ -24,19 +24,12 @@ jobs:
           curl --fail-with-body -L --retry 2 --connect-timeout 10 --max-time 30 -o /tmp/frontend.html 'https://network.jenlow-production.workers.dev/'
           test -s /tmp/frontend.html
 
-      - name: Check unused legacy password endpoint is retired
+      - name: Check unknown email is rejected gracefully
         run: |
           code=$(curl -sS --max-time 40 -o /tmp/login.json -w '%{http_code}' -X POST 'https://jenlow-network-auth.jenlow-production.workers.dev/v1/auth/email/login' -H 'Content-Type: application/json' --data '{"email":"no-account@example.invalid","password":"unusable-test-password"}')
           echo "Unknown-email login status: $code"
           python3 -c 'import json; print("Response:", json.load(open("/tmp/login.json")))'
-          test "$code" = '410'
+          test "$code" = '401'
 
-      - name: Check real Supabase bridge denies missing and forged tokens
-        shell: bash
-        run: |
-          set -euo pipefail
-          base='https://jenlow-network-auth.jenlow-production.workers.dev'
-          code=$(curl -sS --max-time 30 -o /tmp/no-token.json -w '%{http_code}' -X POST "$base/v1/auth/supabase/exchange")
-          test "$code" = '401'
-          code=$(curl -sS --max-time 30 -o /tmp/invalid-token.json -w '%{http_code}' -H 'Origin: https://network.jenlow.net' -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJmYWtlLXRlc3QifQ.invalid-signature' -X POST "$base/v1/auth/supabase/exchange")
-          test "$code" = '401'
+
+

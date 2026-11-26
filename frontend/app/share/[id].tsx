@@ -1,71 +1,27 @@
 import { Text } from '@/i18n/LocalizedText';
-import React, { useState } from 'react';
-import { Pressable, ScrollView, View, useWindowDimensions } from 'react-native';
+import React from 'react';
+import { Pressable, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Nav } from '@/components/navigation/Nav';
 import { PageHeader } from '@/components/navigation/PageHeader';
-import {workspaceCanvas} from '@/theme/workspaceLayout';
-import { findPublication } from '@/mocks/publications';
+import { workspaceCanvas } from '@/theme/workspaceLayout';
+import { useAppTheme } from '@/theme/AppTheme';
+import { usePublication } from '@/lib/api/hooks';
 export default function ShareInside() {
   const {width}=useWindowDimensions();
-  const { id } = useLocalSearchParams<{ id: string }>();
-  const item = findPublication(id || '');
-  const [chosen, setChosen] = useState('');
-  const contacts = ['Elynn Lee', 'Helena Hills', 'nebulanomad', 'Sarah'];
-  return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
-      <View style={{flex:1,...workspaceCanvas(width),paddingTop:12,paddingBottom:45}}>
-        <PageHeader title="Partager dans JenLow" />
-        <Text style={{ fontSize: 13, color: '#888', marginBottom: 20 }}>
-          Envoyer « {item?.title || 'Publication'} » à un contact
-        </Text>
-        <ScrollView>
-          {contacts.map(name => (
-            <Pressable
-              key={name}
-              onPress={() => setChosen(name)}
-              style={{
-                padding: 16,
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                borderBottomWidth: 1,
-                borderColor: '#eee',
-              }}
-            >
-              <Text>{name}</Text>
-              <Ionicons
-                name={chosen === name ? 'radio-button-on' : 'radio-button-off'}
-                color={chosen === name ? '#D71D77' : '#aaa'}
-                size={22}
-              />
-            </Pressable>
-          ))}
-        </ScrollView>
-        <Pressable
-          disabled={!chosen}
-          onPress={() =>
-            router.push({
-              pathname: '/chat/[id]',
-              params: { id: 'share', recipient: chosen, sharedId: id || '' },
-            })
-          }
-          style={{
-            padding: 15,
-            borderRadius: 9,
-            backgroundColor: chosen ? '#111' : '#ccc',
-            alignItems: 'center',
-          }}
-        >
-          <Text style={{ color: '#fff' }}>Préparer le message</Text>
-        </Pressable>
-        <Text style={{ color: '#888', fontSize: 11, marginTop: 12, textAlign: 'center' }}>
-          Envoi réel disponible après connexion du backend.
-        </Text>
-      </View>
-      <Nav />
-    </SafeAreaView>
-  );
+  const {id}=useLocalSearchParams<{id:string}>();
+  const theme=useAppTheme();
+  const remote=usePublication(id);
+  const item=remote.state==='ready'&&remote.item?.id===id?remote.item:null;
+  return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
+    <View style={{flex:1,...workspaceCanvas(width),paddingTop:12,paddingBottom:45,gap:16}}>
+      <PageHeader title="Partager dans JenLow"/>
+      <Text style={{fontSize:13,color:theme.muted}}>{item?'Envoyer « '+item.title+' » à un contact':remote.state==='loading'?'Chargement…':'Publication indisponible.'}</Text>
+      <Text accessibilityRole="alert" style={{fontSize:12,color:theme.muted}}>Le partage de publications dans la messagerie sera disponible lorsque le service serveur sera connecté.</Text>
+      {remote.state==='error'?<Pressable onPress={()=>void remote.retry()}><Text style={{color:theme.foreground}}>Réessayer</Text></Pressable>:null}
+      <Pressable onPress={()=>router.back()}><Text style={{color:theme.foreground}}>Retour</Text></Pressable>
+    </View>
+    <Nav/>
+  </SafeAreaView>;
 }

@@ -11,7 +11,7 @@ import { useApp } from '@/context/AppContext';
 import { useAppTheme } from '@/theme/AppTheme';
 import { workspaceCanvas, workspaceLayout } from '@/theme/workspaceLayout';
 import { api } from '@/lib/api/client';
-import { fetchDemoMusicPreview, type DemoMusicPreview } from '@/lib/api/musicPreview';
+import {isRealProposal} from '@/lib/api/realRecords';
 
 type Proposal = {
   id:string;
@@ -33,7 +33,8 @@ export function MusicLibrary({contentWidth,embedded=false,preferredLayout}: {con
   const {items,ready,error} = useMusicWorkspaces();
   const [layout,setLayout] = useState<MusicLibraryLayout>('cards');
   const [proposals,setProposals] = useState<Proposal[]>([]);
-  const [preview,setPreview] = useState<DemoMusicPreview|null>(null);
+  const [proposalError,setProposalError]=useState(false);
+  const [proposalLoading,setProposalLoading]=useState(true);
 
   useFocusEffect(useCallback(() => {
     let live = true;
@@ -44,36 +45,28 @@ export function MusicLibrary({contentWidth,embedded=false,preferredLayout}: {con
   },[email]));
 
   useEffect(() => {
-    let live=true;
+    let live=true;setProposals([]);setProposalError(false);setProposalLoading(true);
     void Promise.allSettled([
       api<{items: Omit<Proposal,'direction'>[]}>('/api/me/music-proposals?role=sent',{auth:'required'}),
       api<{items: Omit<Proposal,'direction'>[]}>('/api/me/music-proposals?role=received',{auth:'required'}),
     ]).then(([sent,received]) => {
       if(!live)return;
+      setProposalError(sent.status==='rejected'||received.status==='rejected');setProposalLoading(false);
       setProposals([
         ...(sent.status==='fulfilled'?(sent.value.items||[]).map(p=>({...p,direction:'sent' as const})):[]),
         ...(received.status==='fulfilled'?(received.value.items||[]).map(p=>({...p,direction:'received' as const})):[]),
-      ]);
+      ].filter(isRealProposal));
     });
     return()=>{live=false;};
   },[email]);
 
-  useEffect(() => {
-    if(process.env.EXPO_PUBLIC_DISCOVERY_SOURCE==='unified')return;
-    let live=true;
-    void fetchDemoMusicPreview().then(v=>{if(live)setPreview(v);})
-      .catch(()=>{if(live)setPreview(null);});
-    return()=>{live=false;};
-  },[]);
-
   const songs=useMemo(() => [...items].sort((a,b)=>
     (b.updatedAt||b.createdAt).localeCompare(a.updatedAt||a.createdAt)),[items]);
-  const accepted=[...proposals.filter(p=>p.status==='accepted'||p.status==='published'),
-    ...(preview?.collaborations || [])];
+  const accepted=proposals.filter(p=>p.status==='accepted'||p.status==='published');
   const mineIds=new Set(songs.map(song=>song.publishedId).filter(Boolean));
   const peopleFor=(song:typeof songs[number]):MusicCollaborator[]=>{
     const acceptedPeople=song.publishedId?accepted
-      .filter(p=>p.trackPublicationId===song.publishedId&&!p.isDemo)
+      .filter(p=>p.trackPublicationId===song.publishedId)
       .map(p=>p.direction==='received'?p.proposer:p.publisher)
       .filter((person):person is MusicCollaborator=>!!person?.displayName):[];
     const credited=song.layers.filter(layer=>layer.contributor?.trim() &&
@@ -83,13 +76,13 @@ export function MusicLibrary({contentWidth,embedded=false,preferredLayout}: {con
     return [...acceptedPeople,...credited];
   };
   const shared=new Map<string,{
-    title:string;first:Proposal;people:MusicCollaborator[];demo:boolean;
+    title:string;first:Proposal;people:MusicCollaborator[];
   }>();
   for(const p of accepted){
     if(!p.trackPublicationId||mineIds.has(p.trackPublicationId))continue;
     let piece=shared.get(p.trackPublicationId);
     if(!piece){
-      piece={title:p.trackTitle,first:p,people:[],demo:!!p.isDemo};
+      piece={title:p.trackTitle,first:p,people:[]};
       shared.set(p.trackPublicationId,piece);
     }
     for(const person of [p.publisher,p.proposer]){
@@ -104,6 +97,7 @@ export function MusicLibrary({contentWidth,embedded=false,preferredLayout}: {con
   const cardWidth=Math.min(188,Math.max(76,
     Math.floor((availableWidth-(columns-1)*9)/columns)));
   const count=songs.length+shared.size;
+  const canCreate=ready&&!error;
   const shownLayout=preferredLayout??layout;
 
   return <View style={{gap:12}}>
@@ -111,16 +105,17 @@ export function MusicLibrary({contentWidth,embedded=false,preferredLayout}: {con
         <Text style={{color:theme.muted,fontSize:12}}>
           {embedded?(count?count+' '+(count===1?'création':'créations'):'Mes premières créations'):(count+' '+(count===1?'morceau':'morceaux')+' · '+(shownLayout==='cards'?'Cartes':'Liste'))}
         </Text>
-        <Pressable onPress={()=>router.push('/music/new')} accessibilityRole="button"
-          accessibilityLabel="Créer un morceau"
+        <Pressable onPress={canCreate?()=>router.push('/music/new'):undefined} accessibilityRole="button"
+          accessibilityLabel="Créer un morceau" disabled={!canCreate} accessibilityState={{disabled:!canCreate}}
           style={{paddingHorizontal:13,height:38,borderRadius:19,alignItems:'center',
-            flexDirection:'row',gap:4,backgroundColor:'#CB245C'}}>
-          <Ionicons name="add" color="#FFFFFF" size={20}/>
-          <Text style={{color:'#FFFFFF',fontWeight:'700',fontSize:12}}>Créer</Text>
+            flexDirection:'row',gap:4,backgroundColor:canCreate?'#CB245C':theme.border}}>
+          <Ionicons name="add" color={canCreate?'#FFFFFF':theme.muted} size={20}/>
+          <Text style={{color:canCreate?'#FFFFFF':theme.muted,fontWeight:'700',fontSize:12}}>Créer</Text>
         </Pressable>
       </View>
-      {!ready?<ActivityIndicator color="#CB245C"/>:null}
-      {error?<Text style={{color:'#CB245C',fontSize:12}}>{error}</Text>:null}
+      {!ready||proposalLoading?<ActivityIndicator color="#CB245C"/>:null}
+      {proposalError?<Text style={{color:theme.muted,fontSize:12}}>Collaborations indisponibles actuellement.</Text>:null}
+      {error?<Text style={{color:theme.muted,fontSize:12}}>{error}</Text>:null}
       {count?<View style={shownLayout==='list'?{gap:1}:{
         flexDirection:'row',flexWrap:'wrap',alignItems:'flex-start',
         columnGap:9,rowGap:14,
@@ -132,11 +127,9 @@ export function MusicLibrary({contentWidth,embedded=false,preferredLayout}: {con
         {[...shared.entries()].map(([id,p])=><MusicTile key={id}
           title={p.title} width={cardWidth} mode="draft" layout={shownLayout}
           byline=""
-          participants={p.people} demo={p.demo}
-          onPress={()=>router.push(p.first.direction==='sent'
-            ? {pathname:'/music-collaboration/[id]',params:{id}}
-            : {pathname:'/music/[id]',params:{id}})}/>)}
-      </View>:ready?<Pressable onPress={()=>router.push('/music/new')} accessibilityRole="button" style={{padding:14,borderWidth:1,borderColor:theme.border,borderStyle:'dashed',borderRadius:10,backgroundColor:theme.surface,flexDirection:'row',alignItems:'center',gap:12}}>
+          participants={p.people}
+          onPress={()=>router.push({pathname:'/music-collaboration/[id]',params:{id}})}/>)}
+      </View>:ready&&!error&&!proposalLoading&&!proposalError?<Pressable onPress={()=>router.push('/music/new')} accessibilityRole="button" style={{padding:14,borderWidth:1,borderColor:theme.border,borderStyle:'dashed',borderRadius:10,backgroundColor:theme.surface,flexDirection:'row',alignItems:'center',gap:12}}>
         <Ionicons name="musical-notes-outline" size={26} color={theme.muted}/><View style={{flex:1,gap:4}}><Text style={{color:theme.foreground,fontWeight:'600',fontSize:14}}>Une idée, une mélodie…</Text><Text style={{color:theme.muted,fontSize:12}}>Crée ton premier morceau.</Text></View><Ionicons name="arrow-forward-outline" size={17} color={theme.muted}/>
       </Pressable>:null}
   </View>;

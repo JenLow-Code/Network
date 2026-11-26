@@ -3,7 +3,6 @@ import {Image,Modal,Pressable,Text,View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {useAppTheme} from '@/theme/AppTheme';
 import {MusicAudioPreview} from './MusicAudioPreview';
-import {MusicProposalDemoAudio} from './MusicProposalDemoAudio';
 
 const PINK='#CB245C';
 export type CollaborationDecision='test'|'archive'|'accept'|'reject';
@@ -14,10 +13,10 @@ export type CollaborationRequest={
   proposer?:{handle?:string;displayName?:string;avatarUrl?:string|null};
 };
 export function MusicCollaborationRequestCard({
-  request,demo=false,audioUrl='',audioOpen=false,loading=false,busy=false,
+  request,audioUrl='',audioOpen=false,loading=false,busy=false,
   onListen,onAction,onProfile,
 }:{
-  request:CollaborationRequest;demo?:boolean;audioUrl?:string;
+  request:CollaborationRequest;audioUrl?:string;
   audioOpen?:boolean;loading?:boolean;busy?:boolean;
   onListen:()=>void;onAction:(action:CollaborationDecision)=>void;
   onProfile:()=>void;
@@ -68,7 +67,7 @@ export function MusicCollaborationRequestCard({
           </Text>
         </Pressable>
         <Text style={{fontSize:11,color:theme.muted}}>
-          {demo?'Profil de démonstration':'Demande de collaboration'}
+          Demande de collaboration
         </Text>
       </View>
       <Text style={{fontSize:10,fontWeight:'600',
@@ -92,8 +91,7 @@ export function MusicCollaborationRequestCard({
         {request.description}
       </Text>
     </View>
-    {demo?<MusicProposalDemoAudio/>:
-      <View style={{gap:8}}>
+    <View style={{gap:8}}>
         <Pressable accessibilityRole="button"
           accessibilityLabel={'Ouvrir et écouter la piste proposée pour '+request.trackTitle}
           onPress={onListen}
@@ -120,7 +118,7 @@ export function MusicCollaborationRequestCard({
           fontSize:11,color:theme.muted}}>
           Aucun audio lisible joint à cette demande.
         </Text>:null}
-      </View>}
+      </View>
     {awaiting?<View style={{gap:10}}>
       <View style={{flexDirection:'row',gap:7,flexWrap:'wrap'}}>
         {buttons.filter(action=>action.key!=='archive'||request.canArchive).map(action=>{

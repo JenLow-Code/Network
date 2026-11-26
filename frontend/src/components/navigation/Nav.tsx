@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Image, Platform, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { BlurView } from 'expo-blur';
-import Svg, { Defs, LinearGradient, Stop, Rect, Filter, FeTurbulence, FeDisplacementMap } from 'react-native-svg';
+import Svg, { Defs, LinearGradient, Stop, Rect, Filter, FeTurbulence, FeDisplacementMap, Path, Circle } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useGlobalSearchParams, usePathname } from 'expo-router';
 import { useLocale } from '@/i18n/locale';
@@ -13,7 +13,6 @@ import { useMusicWorkspaces } from '@/domain/musicWorkspace';
 import { useSharedMusicNavigation } from '@/domain/sharedMusicNavigation';
 import { musicNextState } from '@/domain/musicNext';
 import { api } from '@/lib/api/client';
-import { MusicFolderCover } from '@/components/music/MusicFolderCover';
 import { NETWORK_MAGENTA } from '@/theme/colors';
 import { NetworkMark } from '@/components/brand/NetworkMark';
 import { AspirationNavIcon } from '@/icons/AspirationNavIcon';
@@ -47,6 +46,7 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
   const {items:musicProjects,patch:patchMusic}=useMusicWorkspaces();
   const {project:sharedProject}=useSharedMusicNavigation();
   const [songTreeOpen,setSongTreeOpen]=useState(true);
+  const [captureTreeOpen,setCaptureTreeOpen]=useState(false);
   const [versionsTreeOpen,setVersionsTreeOpen]=useState(true);
   const [pendingRequests,setPendingRequests]=useState<number|null>(null);
   const segments=path.split('/').filter(Boolean);
@@ -66,6 +66,7 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
   const currentSong=isSharedSong?(sharedProject?.id===decodeURIComponent(segments[1]||'')?sharedProject:undefined):
     songId?musicProjects.find(song=>song.id===decodeURIComponent(songId)):undefined;
   const songState=currentSong?musicNextState(currentSong):null;
+  useEffect(()=>setCaptureTreeOpen(false),[currentSong?.id]);
   const activeVersion=songState?.versions.find(v=>v.id===songState.activeVersionId)
     ||songState?.versions[0];
   const publishedIds=currentSong
@@ -303,7 +304,7 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
                   }}
                   style={{flexDirection:'row',alignItems:'center',gap:9,
                     paddingVertical:7,paddingHorizontal:collapsed?2:5}}>
-                  <MusicFolderCover project={currentSong} size={collapsed?39:34}/>
+                  {collapsed?<Ionicons name="musical-note-outline" size={19} color={theme.foreground}/>:null}
                   {!collapsed?<View style={{flex:1,gap:3,minWidth:0}}>
                     <Text style={{fontWeight:'700',fontSize:12,
                       color:theme.foreground}} numberOfLines={2}>
@@ -324,24 +325,25 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
                 {!collapsed&&songTreeOpen?<View style={{marginLeft:10,
                   paddingLeft:9,borderLeftWidth:1,borderLeftColor:theme.border,
                   gap:2,marginBottom:4}}>
+                  <View style={{flexDirection:'row',alignItems:'center',borderRadius:7,backgroundColor:(path.startsWith('/music-workspace/')||isSharedSong)&&(!params.tab||params.tab==='capture')&&!params.intent?(theme.dark?'rgba(215,29,119,.13)':'rgba(215,29,119,.07)'):'transparent'}}>
                   <Pressable accessibilityRole="button"
                     accessibilityLabel="Ouvrir Capturer"
                     accessibilityState={{selected:(path.startsWith('/music-workspace/')||isSharedSong)&&
                       (!params.tab||params.tab==='capture')&&!params.intent}}
                     onPress={()=>openMusicArea('capture')}
-                    style={{minHeight:36,flexDirection:'row',alignItems:'center',
-                      gap:9,paddingHorizontal:7,borderRadius:7,
-                      backgroundColor:(path.startsWith('/music-workspace/')||isSharedSong)&&
-                        (!params.tab||params.tab==='capture')&&!params.intent?
-                        (theme.dark?'rgba(215,29,119,.13)':'rgba(215,29,119,.07)'):'transparent'}}>
+                    style={{flex:1,minWidth:0,minHeight:36,flexDirection:'row',alignItems:'center',gap:9,paddingHorizontal:7}}>
                     <Ionicons name="mic-outline" size={16} color={theme.foreground}/>
                     <Text style={{fontSize:11,fontWeight:'700',color:theme.foreground}}>Capturer</Text>
                   </Pressable>
-                  {([
-                    {key:'thought',title:'Pensées'},
-                    {key:'record',title:'Son'},
-                    {key:'doc',title:'Document'},
-                    {key:'idea',title:'Idée'},
+                  <Pressable accessibilityRole="button" accessibilityLabel={captureTreeOpen?'Replier les actions de Capturer':'Afficher les actions de Capturer'} accessibilityState={{expanded:captureTreeOpen}} onPress={()=>setCaptureTreeOpen(open=>!open)} style={{width:36,minHeight:36,alignItems:'center',justifyContent:'center'}}>
+                    <Ionicons name={isSharedSong?(captureTreeOpen?'chevron-up':'chevron-down'):(captureTreeOpen?'remove':'add')} size={isSharedSong?15:19} color={theme.muted}/>
+                  </Pressable>
+                  </View>
+                  {captureTreeOpen?([
+                    {key:'thought',title:'Pensées',icon:'chatbubble-ellipses-outline' as const},
+                    {key:'record',title:'Son',icon:'mic-outline' as const},
+                    {key:'doc',title:'Document',icon:'document-text-outline' as const},
+                    {key:'idea',title:'Idée',icon:'bulb-outline' as const},
                   ] as const).map(action=>{
                     const active=action.key==='thought'?path.startsWith('/music-lyrics/'):
                       action.key==='idea'?path.startsWith('/music-composer/'):
@@ -357,13 +359,18 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
                       style={{minHeight:34,opacity:isSharedSong?.5:1,flexDirection:'row',alignItems:'center',gap:9,
                         paddingHorizontal:7,marginLeft:21,borderRadius:7,
                         backgroundColor:active?'rgba(215,29,119,.10)':'transparent'}}>
-                      <Ionicons name="add" size={16}
-                        color={active?'#D71D77':theme.muted}/>
+                      {action.key==='thought'?<Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
+                        <Path d="M7.5 16.9C4.3 16.9 2.5 14.7 2.5 12.2c0-1.9 1.3-3.6 3.1-4.1C6.1 5.8 8.1 4.5 10.4 5c1.6-1.9 4.5-2 6.2-.2 2.5-.2 4.5 1.7 4.5 4.1 1.6 1.1 2.1 3.3 1.1 5-1 1.8-3.1 2.5-5.1 2.2-2.3 1.8-5.4 1.5-7.1-.6Z"
+                          stroke={active?'#D71D77':theme.muted} strokeWidth={1.6} strokeLinejoin="round"/>
+                        <Circle cx={5.5} cy={19} r={1.5} stroke={active?'#D71D77':theme.muted} strokeWidth={1.4}/>
+                        <Circle cx={2.5} cy={22} r={0.7} fill={active?'#D71D77':theme.muted}/>
+                      </Svg>:<Ionicons name={action.icon} size={16}
+                        color={active?'#D71D77':theme.muted}/>}
                       <Text numberOfLines={1} style={{flex:1,minWidth:0,fontSize:11,
                         fontWeight:active?'700':'500',
                         color:active?'#CB245C':theme.foreground}}>{action.title}</Text>
                     </Pressable>;
-                  })}
+                  }):null}
                   <View style={{flexDirection:'row',alignItems:'center'}}>
                     <Pressable accessibilityRole="button"
                       accessibilityLabel="Ouvrir les versions du morceau"
@@ -381,13 +388,13 @@ export function Nav({ placement = 'page' }: { placement?: 'page' | 'desktop' | '
                         {songState?.versions.length||0}
                       </Text>
                     </Pressable>
-                    <Pressable accessibilityRole="button"
-                      accessibilityLabel="Nouvelle version" disabled={isSharedSong}
+                    {!isSharedSong?<Pressable accessibilityRole="button"
+                      accessibilityLabel="Nouvelle version"
                       onPress={()=>openMusicArea('capture','new-version')}
                       style={{minHeight:34,minWidth:24,alignItems:'center',
                         justifyContent:'center'}}>
                       <Ionicons name="add" size={17} color={theme.muted}/>
-                    </Pressable>
+                    </Pressable>:null}
                     <Pressable accessibilityRole="button"
                       accessibilityLabel={versionsTreeOpen?'Masquer les versions':'Afficher les versions'}
                       accessibilityState={{expanded:versionsTreeOpen}}

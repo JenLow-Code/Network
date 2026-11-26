@@ -5,7 +5,6 @@ import { router } from 'expo-router';
 import type { DreamEntry, DreamGrowthEvent, DreamHabit, DreamMilestone, DreamResource } from '@/domain/dreamWorkspace';
 import { buildGrowthDays, canEditGrowthLog, countVerifiedPrayers, type GrowthDay } from '@/domain/growthTimeline';
 import { habitDayKey, habitDreamProgress, habitKey } from '@/domain/habitProgress';
-import { canPreviewGrowth, isSeedGrowthPreview, sampleGrowthPreview } from '@/domain/mockGrowthPreview';
 import { useAppTheme } from '@/theme/AppTheme';
 import { HANDWRITING_FAMILY } from '@/theme/handwriting';
 import { PrayerIcon } from '@/icons/PrayerIcon';
@@ -325,14 +324,11 @@ export function GrowthLogbook({
   const theme = useAppTheme();
   const [allOpen, setAllOpen] = useState(false);
   const [addMenuOpen, setAddMenuOpen] = useState(false);
-  const [preview, setPreview] = useState(() => isSeedGrowthPreview(dream));
-  const showPreview = canPreviewGrowth(dream) && preview;
-  const example = showPreview ? sampleGrowthPreview() : null;
   const now = new Date();
   const today = habitDayKey(now);
   const todayWritten = (dream.milestones || []).some(log => log.date === today);
 
-  // Leaves are generated only by actual dated events or explicitly labelled demo activity.
+  // Leaves are generated only by actual dated events.
   // Routine habit check-ins NEVER create their own daily leaves.
   const byDate = new Map<string, LogbookDay>(
     buildGrowthDays(dream).map(day => [day.date, { ...day, previewEvents: [] }]),
@@ -346,16 +342,6 @@ export function GrowthLogbook({
     return day;
   };
 
-  if (example) {
-    getDay(today).social = {
-      prayers: { delta: example.prayers.today, total: example.prayers.total },
-      encouragements: { delta: example.encouragements.today, total: example.encouragements.total },
-      fictitious: true,
-    };
-    for (const event of example.events) {
-      getDay(event.date).previewEvents.push(event);
-    }
-  } else {
     // These optional records can only come from trusted dated source events.
     // The all-time totals alone are NOT evidence that something happened today.
     for (const stats of dream.socialDailyActivity || []) {
@@ -393,7 +379,6 @@ export function GrowthLogbook({
       }
       activeToday.social = existing;
     }
-  }
 
   const timeline = Array.from(byDate.values()).sort((a, b) => b.date.localeCompare(a.date));
   const shown = allOpen ? timeline : timeline.slice(0, 12);
@@ -409,14 +394,6 @@ export function GrowthLogbook({
         <Ionicons name="add" size={20} color={GREEN}/>
       </Pressable>:null}
     </View>
-    {canPreviewGrowth(dream) ? <Pressable accessibilityRole="button"
-      onPress={() => setPreview(!preview)}
-      style={{ alignSelf: 'flex-start', paddingVertical: 3, flexDirection: 'row', gap: 6, alignItems: 'center' }}>
-      <Ionicons name="flask-outline" color={theme.muted} size={14} />
-      <Text style={{ fontSize: 10, color: theme.muted }}>
-        {showPreview ? 'Aperçu fictif actif · masquer' : 'Afficher des événements fictifs pour tester'}
-      </Text>
-    </Pressable> : null}
     {shown.length === 0 ? <View style={{ paddingVertical: 15, gap: 7, alignItems: 'center' }}>
       <Text style={{ fontSize: 12, color: theme.muted, textAlign: 'center', lineHeight: 19 }}>
         Les moments vécus dans cette aspiration apparaîtront ici.

@@ -3,7 +3,6 @@ import { Image, Modal, Pressable, ScrollView, Text, View, useWindowDimensions } 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useApp } from '@/context/AppContext';
 import { useAuth } from '@/context/AuthProvider';
 import { useAppTheme } from '@/theme/AppTheme';
@@ -15,12 +14,12 @@ import { ProfileTalentTile } from '@/components/talent/ProfileTalentTile';
 import { ProfilePublicationFeed } from '@/components/publication/PublicationGallery';
 import SemenceSharesFeed from '@/components/dream/SemenceSharesFeed';
 import type { TalentIllustration } from '@/components/talent/TalentArt';
-import { publications } from '@/mocks/publications';
 import { api } from '@/lib/api/client';
 import { toPublications, type ApiFeedItem } from '@/lib/api/adapters';
 import type { Publication } from '@/domain/publication';
 
 type Talent = { name:string; level:number; interests:string[]; description?:string };
+type ApiTalent={name:string;level:number;description?:string|null;visibility:string;canTeach:boolean;wantsToLearn:boolean;wantsTandem:boolean};
 const levels=['Grand débutant','Quelques notions','Intermédiaire','Avancé','Professionnel'];
 function art(name:string):TalentIllustration|undefined {
  const s=name.toLowerCase();
@@ -47,36 +46,28 @@ export default function ProfilePreview() {
  const [featuredId,setFeaturedId]=useState<string|null>(null);
  const [selectedTalent,setSelectedTalent]=useState<Talent|null>(null);
  const [serverPublications,setServerPublications]=useState<Publication[]>([]);
+ const [feedError,setFeedError]=useState(false);
+ const [talentError,setTalentError]=useState(false);
  useEffect(()=>{
    let active=true;
-   setServerPublications([]);
+   setServerPublications([]);setFeedError(false);
    void api<{items:ApiFeedItem[]}>('/api/me/publications?limit=100',{auth:'required'})
      .then(result=>{
        if(active)setServerPublications(toPublications(
          (result.items||[]).filter(item=>item.visibility==='public')));
-     }).catch(()=>{ /* Preview remains available if the API is temporarily unavailable. */ });
+     }).catch(()=>{if(active)setFeedError(true);});
    return ()=>{active=false;};
  },[app.email]);
  const avatar=typeof auth.user?.user_metadata?.avatar_url==='string'?auth.user.user_metadata.avatar_url:undefined;
- const posts=[
-   ...serverPublications,
-   ...publications.filter(p=>p.author===app.name &&
-     !serverPublications.some(remote=>remote.id===p.id)),
- ];
+ const posts=serverPublications;
  useEffect(()=>{
-   let live=true;
-   const key='jenlow.profile.talents.'+(app.email||'guest').toLowerCase();
-   void AsyncStorage.getItem(key).then(raw=>{
-     if(!live)return;
-     try{
-       const data=raw?JSON.parse(raw):[];
-       setTalents(Array.isArray(data)?data.filter((x):x is Talent=>x&&typeof x.name==='string'):[]);
-     }catch{setTalents([]);}
-   }).catch(()=>{if(live)setTalents([]);});
-   void AsyncStorage.getItem('jenlow.public-profile.featured.v1.'+app.name)
-     .then(id=>{if(live)setFeaturedId(id);}).catch(()=>{});
+   let live=true;setTalents([]);setFeaturedId(null);setTalentError(false);
+   void api<{items:ApiTalent[]}>('/api/me/talents',{auth:'required'}).then(result=>{
+     if(live)setTalents(result.items.filter(t=>t.visibility==='public'||t.visibility==='members').map(t=>({name:t.name,level:t.level-1,description:t.description??undefined,interests:[...(t.wantsTandem?['Tandem']:[]),...(t.canTeach?['Enseigner']:[]),...(t.wantsToLearn?['Apprendre']:[])]})));
+   }).catch(()=>{if(live)setTalentError(true);});
+   void api<{item?:{id:string}|null}>('/api/me/featured-post',{auth:'required'}).then(result=>{if(live)setFeaturedId(result.item?.id??null);}).catch(()=>{});
    return()=>{live=false;};
- },[app.email,app.name]);
+ },[app.email]);
  return <SafeAreaView style={{flex:1,backgroundColor:theme.background}}>
    <ScrollView contentContainerStyle={{...workspaceCanvas(width),paddingTop:12,
      paddingBottom:85}}>
@@ -97,7 +88,7 @@ export default function ProfilePreview() {
        {avatar?<Image source={{uri:avatar}} style={{width:102,height:102,borderRadius:51}}/>:<Avatar size={102}/>}
        <Text style={{color:theme.foreground,fontSize:24,fontWeight:'800'}}>{app.name}</Text>
        {!!app.bio&&<Text style={{fontSize:14,color:theme.muted,lineHeight:22,textAlign:'center',maxWidth:430}}>{app.bio}</Text>}
-       {!!app.church&&<Text style={{fontSize:12,color:theme.muted}}>{app.church}</Text>}
+       {/* Church visibility must be supplied by a server public-profile projection. */}
      </View>
      <Text style={{fontWeight:'700',fontSize:18,color:theme.foreground,marginBottom:14}}>Mes talents</Text>
      <View style={{flexDirection:'row',flexWrap:'wrap',gap:10,marginBottom:25}}>
@@ -105,10 +96,10 @@ export default function ProfilePreview() {
          level={levels[t.level]||'À définir'} art={art(t.name)} width={tileWidth}
          onPress={()=>setSelectedTalent(t)}/>)}
      </View>
-     {talents.length===0?<Text style={{fontSize:12,color:theme.muted,marginBottom:25}}>Aucun talent enregistré.</Text>:null}
+     {talentError?<Text style={{fontSize:12,color:theme.muted,marginBottom:25}}>Talents indisponibles.</Text>:talents.length===0?<Text style={{fontSize:12,color:theme.muted,marginBottom:25}}>Aucun talent enregistré.</Text>:null}
      <Text style={{fontWeight:'700',fontSize:18,color:theme.foreground,marginBottom:14}}>Mes publications</Text>
      <SemenceSharesFeed mine publicOnly roundedCards/>
-     {posts.length>0?<ProfilePublicationFeed grid items={posts} contentWidth={contentWidth} roundedCards featuredId={featuredId}/>:
+     {feedError?<Text style={{fontSize:12,color:theme.muted}}>Publications indisponibles.</Text>:posts.length>0?<ProfilePublicationFeed grid items={posts} contentWidth={contentWidth} roundedCards featuredId={featuredId}/>:
        <Text style={{fontSize:12,color:theme.muted,lineHeight:19}}>Aucune publication publique disponible dans cet aperçu pour le moment.</Text>}
    </ScrollView>
    <Modal visible={selectedTalent!==null} transparent animationType="fade"

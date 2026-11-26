@@ -318,9 +318,12 @@ const talentCreationGuards=[
   ['description:newDescription.trim()', 'description saved with new talent'],
   ['level:newLevel', 'selected level saved with new talent'],
   ['interests:newInterests', 'selected intentions saved with new talent'],
-  ['levelPicker(talents[selectedTalent].level', 'editing retains level selector'],
+  ['levelPicker(editDraft.level', 'editing retains level selector'],
   ['setNewLevel(-1);setNewDescription(\'\')', 'creation draft reset'],
   ['maxHeight:\'88%\'', 'creation form remains scrollable on small screens'],
+  ["method:'POST',body:{talentId:match.id,...toApi(draft)}", 'creation requires server confirmation'],
+  ["method:remove?'DELETE':'PATCH'", 'editing and deletion use authenticated API'],
+  ['setTalents(result.items.map(fromApi))', 'only confirmed server records replace the list'],
 ];
 for(const [needle,reason] of talentCreationGuards){
   if(!talentCreation.includes(needle)){
@@ -329,6 +332,7 @@ for(const [needle,reason] of talentCreationGuards){
   }
 }
 
+if(/AsyncStorage|const initial: Talent/.test(talentCreation)){console.error('Talent persistence regression: no local business data');process.exitCode=1;}
 const talentLevelDots=read('src/components/talent/TalentLevelDots.tsx');
 if(!talentLevelDots.includes('return 0;')){
   console.error('Talent level regression: an unset level must render zero filled dots.');

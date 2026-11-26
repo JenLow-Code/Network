@@ -2,19 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { ActivityIndicator,Platform, Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
-import { Asset } from 'expo-asset';
 import { getDraftAudio } from '@/domain/musicLocalStorage';
 import { resolveMusicAudio } from '@/domain/musicMedia';
 import { useAppTheme } from '@/theme/AppTheme';
 import {MusicCapturePlaybackBar} from './MusicCapturePlaybackBar';
 import {MusicPeakBars} from './MusicAudioPeaksNext';
 
-type Source = { audioUrl?: string; audioMediaId?: string; localAudioId?: string; demoAudioAsset?:string };
-const demoAudioModules:Record<string,number>={
-  'pierre-01-douceur':require('../../../assets/audio/pierre-01-douceur.wav'),
-  'pierre-02-esperance':require('../../../assets/audio/pierre-02-esperance.wav'),
-  'pierre-03-lumiere':require('../../../assets/audio/pierre-03-lumiere.wav'),
-};
+type Source = { audioUrl?: string; audioMediaId?: string; localAudioId?: string };
 const pink = '#CB245C';
 
 /** Only real uploaded or stored audio is played; missing references are never simulated. */
@@ -29,18 +23,12 @@ export function MusicAudioPreview({ source, transcription=false, captureStyle=fa
     let live = true;
     let temporary: string | null = null;
     setUri(null);setError('');
-    if (!source.audioUrl && !source.audioMediaId && !source.localAudioId && !source.demoAudioAsset) return;
+    if (!source.audioUrl && !source.audioMediaId && !source.localAudioId) return;
     setLoading(true);
     const read = async () => {
-      if(source.demoAudioAsset){
-        const module=demoAudioModules[source.demoAudioAsset];
-        if(module===undefined)throw Error('Audio de démonstration indisponible.');
-        const asset=await Asset.fromModule(module).downloadAsync();
-        return asset.localUri||asset.uri;
-      }
       if (source.localAudioId) {
         const blob = await getDraftAudio(source.localAudioId);
-        if (!blob) throw new Error('Enregistrement local introuvable dans ce navigateur.');
+        if (!blob) throw new Error('Enregistrement serveur indisponible.');
         temporary = URL.createObjectURL(blob);
         return temporary;
       }
@@ -55,7 +43,7 @@ export function MusicAudioPreview({ source, transcription=false, captureStyle=fa
       .catch(e=>{if(live)setError(e instanceof Error?e.message:'Audio indisponible.');})
       .finally(()=>{if(live)setLoading(false);});
     return ()=>{live=false;if(temporary)URL.revokeObjectURL(temporary);};
-  },[source.audioMediaId,source.audioUrl,source.localAudioId,source.demoAudioAsset]);
+  },[source.audioMediaId,source.audioUrl,source.localAudioId]);
   if (error) return <Text style={{color:'#B34D67',fontSize:11}}>{error}</Text>;
   if (loading) return <ActivityIndicator color={pink} size="small"/>;
   if (!uri) return <Text style={{color:theme.muted,fontSize:11}}>Pas d’enregistrement joint.</Text>;

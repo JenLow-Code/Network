@@ -44,10 +44,10 @@ export default function SemenceStudio({dream,onBack,onNavigate}:{
        maxWidth:ws.desktop?630:undefined,
        borderRadius:12,borderWidth:1,borderColor:theme.border,gap:8}}>
        <Text style={{color:theme.foreground,fontWeight:'700',fontSize:16}}>
-         Prêt à faire germer ce rêve ?
+         Prêt à faire germer cette aspiration ?
        </Text>
        <Text style={{fontSize:13,color:theme.muted,lineHeight:20}}>
-         En Germination, ton rêve devient public. Tes carnets personnels restent privés.
+         En Germination, ton aspiration devient publique. Tes carnets personnels restent privés.
        </Text>
        <Pressable accessibilityRole="button"
          onPress={()=>{patch(dream.id,{visibility:'public'});

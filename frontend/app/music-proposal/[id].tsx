@@ -3,7 +3,6 @@ import { ActivityIndicator, Platform, Pressable, ScrollView, Text, TextInput, Vi
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { musics } from '@/mocks/publications';
 import { usePublication } from '@/lib/api/hooks';
 import { useApp } from '@/context/AppContext';
 import { api } from '@/lib/api/client';
@@ -18,9 +17,8 @@ const pink = '#CB245C';
 /** A real server-side music proposal; the former mock "prepared locally" success is removed. */
 export default function MusicProposal() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const local = musics.find(m => m.id === id);
-  const remote = usePublication(local ? undefined : id);
-  const music = local ?? (remote.item?.type === 'music' ? remote.item : undefined);
+  const remote = usePublication(id);
+  const music = remote.item?.type === 'music' ? remote.item : undefined;
   const app = useApp();
   const theme = useAppTheme();
   const {width}=useWindowDimensions();
@@ -60,7 +58,6 @@ export default function MusicProposal() {
       );
       if (!response.proposal?.id || response.proposal.status !== 'submitted')
         throw new Error('Le serveur n’a pas confirmé la proposition.');
-      app.proposeMusic(id);
       setSubmitted(true);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'L’envoi a échoué.');

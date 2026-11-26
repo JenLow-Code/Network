@@ -2,11 +2,8 @@ import React, { useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/theme/AppTheme';
-import { useApp } from '@/context/AppContext';
-import { useDreams } from '@/domain/dreamRepository';
 import { BIBLE_EDITION, BIBLE_EDITION_CODE, bibleReference, type BiblePassage } from '@/domain/bibleLibrary';
 import { api, ApiRequestError } from '@/lib/api/client';
-import type { DreamBlock, DreamEntry } from '@/domain/dreamWorkspace';
 
 type Destination = {kind:'fire'|'dream'|'publication';id?:string};
 type ApiBook = {code:string;name:string};
@@ -18,38 +15,13 @@ type Props = {
   onSaved:(message:string,target:Destination)=>void;
 };
 
-/** Store the verse as a real dream inspiration or a real, locally saved Fire item. */
+/** Personal saving requires a dedicated authenticated persistence API. */
 export default function BibleSaveDestinationModal({visible,passage,onClose,onSaved}:Props){
   const theme=useAppTheme();
-  const {fireFolders,saveBibleVerseToFire}=useApp();
-  const {items,patch}=useDreams();
   const [confirmPublish,setConfirmPublish]=useState(false);
   const [publishing,setPublishing]=useState(false);
   const [publishError,setPublishError]=useState('');
-  const dreams=items.filter(d=>d.ownerIds?.includes('demo-user')&&d.phase!=='Témoignage');
   const reference=passage?bibleReference(passage):'';
-  const saveFire=(folderId?:string,folderName?:string)=>{
-    if(!passage)return;
-    saveBibleVerseToFire({
-      id:'bible:'+BIBLE_EDITION_CODE+':'+passage.bookCode+':'+passage.chapter+':'+passage.verse,
-      reference,edition:BIBLE_EDITION,text:passage.text,
-      addedAt:new Date().toISOString(),
-    },folderId);
-    onSaved(folderName?'Verset ajouté dans Ma liste Fire → '+folderName+'.':
-      'Verset ajouté à Ma liste Fire.',{kind:'fire'});
-  };
-  const saveDream=(dream:DreamEntry)=>{
-    if(!passage)return;
-    const id='bible:'+BIBLE_EDITION_CODE+':'+passage.bookCode+':'+passage.chapter+':'+passage.verse;
-    const block:DreamBlock={
-      id,kind:'bible-verse',title:reference,content:passage.text,size:'small',
-      tone:'clear',font:'serif',align:'left',frame:'none',
-    };
-    if(!(dream.blocks||[]).some(existing=>existing.id===id))
-      patch(dream.id,{blocks:[...(dream.blocks||[]),block]});
-    onSaved('Verset enregistré dans « '+dream.title+' » (Inspirations).',
-      {kind:'dream',id:dream.id});
-  };
   const publish=async()=>{
     if(!passage||publishing)return;
     setPublishing(true);setPublishError('');
@@ -161,22 +133,10 @@ export default function BibleSaveDestinationModal({visible,passage,onClose,onSav
             </View>
           </View>:null}
           <Text style={{color:theme.muted,fontWeight:'700',fontSize:11,
-            letterSpacing:1,marginTop:10}}>MES RÊVES</Text>
-          {dreams.length?dreams.map(dream=>destination('book-outline',dream.title,
-            dream.phase==='Rêve'?'Semence':dream.phase==='Initiation'?'Germination':
-            dream.phase==='Croissance'?'Croissance':dream.phase,
-            ()=>saveDream(dream),dream.id)):
-            <Text style={{color:theme.muted,fontSize:12}}>
-              Aucun rêve disponible pour enregistrer un verset.
-            </Text>}
-          <Text style={{color:theme.muted,fontWeight:'700',fontSize:11,
-            letterSpacing:1,marginTop:10}}>MA LISTE FIRE</Text>
-          {destination('flame-outline','Ma liste Fire',
-            'Enregistrer le verset sans dossier',()=>saveFire())}
-          {fireFolders.length?<Text style={{color:theme.muted,fontSize:11,
-            marginTop:6}}>OU DANS UN DOSSIER FIRE</Text>:null}
-          {fireFolders.map(folder=>destination('folder-outline',folder.name,
-            'Enregistrer dans ce dossier',()=>saveFire(folder.id,folder.name),folder.id))}
+            letterSpacing:1,marginTop:10}}>MES ASPIRATIONS</Text>
+          <Text style={{color:theme.muted,fontSize:12}}>Enregistrement dans les aspirations indisponible.</Text>
+          <Text style={{color:theme.muted,fontWeight:'700',fontSize:11,marginTop:10}}>MA LISTE FIRE</Text>
+          <Text style={{color:theme.muted,fontSize:12}}>Enregistrement personnel indisponible.</Text>
         </ScrollView>
       </View>
     </View>

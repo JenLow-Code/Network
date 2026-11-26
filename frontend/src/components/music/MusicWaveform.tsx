@@ -3,18 +3,12 @@ import { Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 
-const files = [
-  require('../../../assets/audio/pierre-01-douceur.wav'),
-  require('../../../assets/audio/pierre-02-esperance.wav'),
-  require('../../../assets/audio/pierre-03-lumiere.wav'),
-] as const;
 export function MusicWaveform({
-  index,
   uri,
   renderLayout,
 }: {
   index: 0 | 1 | 2;
-  /** Streaming URL from the API (inline playback only); falls back to the bundled demo clip. */
+  /** Streaming URL from the API (inline playback only). */
   uri?: string;
   renderLayout?: (
     button: React.ReactNode,
@@ -26,9 +20,10 @@ export function MusicWaveform({
   ) => React.ReactNode;
 }) {
   const trackWidth = useRef(0);
-  const player = useAudioPlayer(uri ? { uri } : files[index]);
+  const player = useAudioPlayer(uri ? { uri } : null);
   const status = useAudioPlayerStatus(player);
   const play = () => {
+    if (!uri) return;
     if (status.playing) {
       player.pause();
       return;
@@ -42,6 +37,7 @@ export function MusicWaveform({
   const button = (
     <Pressable
       onPress={play}
+      disabled={!uri}
       accessibilityLabel={status.playing ? 'Pause' : 'Écouter'}
       style={{
         width: 40,
@@ -55,7 +51,7 @@ export function MusicWaveform({
       <Ionicons name={status.playing ? 'pause' : 'play'} size={19} color="#fff" />
     </Pressable>
   );
-  const waveform = (
+  const waveform = !uri ? <Text style={{color:'#777',fontSize:12}}>Audio indisponible.</Text> : (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}>
       {!renderLayout ? button : null}
       <View style={{ flex: 1 }}>
@@ -96,7 +92,7 @@ export function MusicWaveform({
   return renderLayout ? (
     <>
       {renderLayout(button, waveform, status.currentTime, (seconds: number) => {
-        void player.seekTo(seconds);
+        if (uri) void player.seekTo(seconds);
       }, play, status.playing)}
     </>
   ) : (

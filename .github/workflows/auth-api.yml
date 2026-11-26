@@ -1,9 +1,9 @@
 name: JenLow security middleware checks
 on:
   push:
-    paths: ['middleware/**','database/**','.github/workflows/auth-api.yml']
+    paths: ['middleware/**','api/network/**','database/**','.github/workflows/auth-api.yml']
   pull_request:
-    paths: ['middleware/**','database/**']
+    paths: ['middleware/**','api/network/**','database/**']
   workflow_dispatch:
 jobs:
   security:
@@ -19,4 +19,6 @@ jobs:
       - run: npm install --no-audit --no-fund
       - run: npm run typecheck
       - run: npm test
+      - name: Preserve independent music scanner regression checks
+        run: node --test test/scan-worker.test.mjs
       - run: npm run bundle:check
