@@ -60,7 +60,7 @@ test('gateway reaches real middleware for verified upstream identity exchange',a
     return Response.json({id:'4ec693bf-0d25-4ad8-8284-9f3b8cb0ca79',email:'gateway@example.test',email_confirmed_at:'2026-11-01T00:00:00Z',is_anonymous:false});
   };
   try{
-    const exchange=await handle(new Request('https://network.example/core/auth/supabase/exchange',{method:'POST',headers:{authorization:'Bearer provider-token'}}),env);
+    const exchange=await handle(new Request('https://network.example/core/auth/supabase/exchange',{method:'POST',headers:{authorization:'Bearer '+providerToken}}),env);
     assert.equal(exchange.status,200);
     const data=await exchange.json() as {accessToken:string;user:{id:string}};
     const identity=await handle(new Request('https://network.example/core/identity',{headers:{authorization:'Bearer '+data.accessToken}}),env);
