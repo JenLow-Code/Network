@@ -1,0 +1,38 @@
+name: Security staging live smoke
+on:
+  workflow_dispatch:
+  push:
+    branches: [refactor/ecosystem-security-foundation]
+    paths: ['.github/workflows/security-staging-smoke.yml']
+jobs:
+  staging:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Verify gateway and private middleware on Cloudflare
+        run: |
+          python3 - <<'PY'
+          import json, subprocess
+          base='https://jenlow-network-api-staging.jenlow-production.workers.dev'
+          def check(path, expected, method='GET', headers=(), origin=base):
+              args=['curl','-sS','--max-time','25','-o','/tmp/res','-w','%{http_code}','-X',method]
+              for h in headers:
+                  args += ['-H',h]
+              code=int(subprocess.check_output(args+[origin+path]))
+              assert code==expected, (path,code,expected)
+              print(method,path,code)
+              with open('/tmp/res') as f:
+                  return json.load(f) if expected not in (204,) else {}
+          health=check('/health',200)
+          assert health['security']=='bound' and health['functionalBackend']=='not_connected'
+          assert check('/api/health/ready',200)['status']=='ready'
+          check('/core/identity',401)
+          check('/core/identity',401,headers=['Authorization: Bearer forged','X-User-Id: forged','X-Product: tools'])
+          check('/core/auth/supabase/exchange',401,'POST')
+          check('/core/auth/supabase/exchange',401,'POST',['Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJmYWtlLXRlc3QifQ.invalid-signature'])
+          check('/core/identity',405,'POST')
+          check('/tools/projects',404)
+          check('/core/identity',403,headers=['Origin: https://untrusted.example'])
+          check('/core/identity',204,'OPTIONS',['Origin: http://localhost:8081','Access-Control-Request-Method: GET','Access-Control-Request-Headers: Authorization'])
+          print('Live staging checks passed; no valid provider credentials used.')
+          PY
