@@ -3,7 +3,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {createApp, SECRET, ORIGIN} from './helpers/app.ts';
 // @ts-expect-error production Workers entry uses plain JavaScript
-import legacy from '../src/worker-runtime.js';
+import legacy from './fixtures/legacy-auth.js';
 
 const UUID='4ec693bf-0d25-4ad8-8284-9f3b8cb0ca79';
 const SECOND_UUID='ee0f45c1-7e15-43a0-a242-f2a87bcb05f8';

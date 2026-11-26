@@ -27,7 +27,7 @@ jobs:
           def fetch(url):
               print('Checking',url,flush=True)
               return subprocess.check_output(['curl','--fail-with-body','--silent','--show-error','--location','--retry','2','--max-time','30',url])
-          forbidden=[b'jenlow-network-demo-api',b'/api/demo/',b'jenlow-music-scan',b'/api/music/scan']
+          forbidden=[b'jenlow-network-demo-api',b'/api/demo/',b'jenlow-music-scan',b'/api/music/scan',b'jenlow-network-auth.jenlow-production.workers.dev']
           scripts=set()
           for route in ('/','/auth/callback','/music-hub','/profile','/discover','/my-space'):
               html=fetch(origin+route)
@@ -39,16 +39,19 @@ jobs:
                   if urllib.parse.urlparse(url).netloc==urllib.parse.urlparse(origin).netloc:
                       scripts.add(url)
           assert scripts,'No deployed script assets found'
+          gateway_found=False
           for url in sorted(scripts):
               js=fetch(url)
+              gateway_found=gateway_found or b'https://api-network.jenlow.net' in js
               assert not any(s in js for s in forbidden),'Retired API in served asset '+url
+          assert gateway_found,'Deployed frontend does not target canonical gateway'
           print('Verified six live routes and',len(scripts),'initial JS assets')
           PY
       - name: Verify live authentication refuses anonymous calls
         if: always()
         run: |
           set -eu
-          base='https://jenlow-network-auth.jenlow-production.workers.dev'
+          base='https://api-network.jenlow.net'
           curl -fsS --max-time 20 "$base/health" > /tmp/health.json
           python3 -c 'import json; assert json.load(open("/tmp/health.json"))["status"]=="ok"'
           test "$(curl -sS --max-time 20 -o /tmp/me -w '%{http_code}' "$base/v1/auth/me")" = 401
@@ -57,7 +60,7 @@ jobs:
         if: always()
         run: |
           set -eu
-          base='https://jenlow-network-auth.jenlow-production.workers.dev'
+          base='https://api-network.jenlow.net'
           code=$(curl -sS --max-time 20 -o /tmp/retired-auth -w '%{http_code}' -X POST "$base/v1/auth/email/login" -H 'Content-Type: application/json' --data '{"email":"no-account@example.invalid","password":"unusable-test-password"}')
-          test "$code" = 410
-          python3 -c 'import json; assert json.load(open("/tmp/retired-auth"))["error"]=="legacy_auth_retired"'
+          test "$code" = 404
+          python3 -c 'import json; assert json.load(open("/tmp/retired-auth"))["error"]["code"]=="route_not_found"'

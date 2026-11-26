@@ -7,7 +7,7 @@
 import { DatabaseSync } from 'node:sqlite';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
-import type { D1Database, D1PreparedStatement, D1Result, D1Value } from '../../src/platform/cf.ts';
+import type { D1Database, D1PreparedStatement, D1Result, D1Value } from '../../src/core/platform.ts';
 
 const READER = /^\s*(SELECT|WITH|PRAGMA|VALUES)\b/i;
 
@@ -85,5 +85,6 @@ export function applyMigrations(db: TestD1, upTo?: string): string[] {
     db.exec(readFileSync(join(MIGRATIONS_DIR, file), 'utf8'));
     applied.push(file);
   }
+  if(!upTo)db.exec(readFileSync(join(MIGRATIONS_DIR,'..','security','002_product_sessions.sql'),'utf8'));
   return applied;
 }

@@ -382,10 +382,10 @@ if(/(?:aspirationr|congeléee|crééee|partagéess|Créer une aspiration inspir�
   console.error('Aspiration grammar regression in public UI copy.');
   process.exitCode=1;
 }
-const notificationCopy=readFileSync(join(base,'../middleware/src/services/notifications.ts'),'utf8');
-if(!notificationCopy.includes("title: 'Invitation à rejoindre une aspiration'") ||
-   !notificationCopy.includes("title: 'Aspiration invitation'")){
-  console.error('Notifications still use old dream terminology.');
+// Notification copy belongs to the future functional backend, not security middleware.
+// Its French and English Aspiration wording must be tested when that service is connected.
+if(require('node:fs').existsSync(join(base,'../middleware/src/services/notifications.ts'))){
+  console.error('Operational notification service must not be restored in security middleware.');
   process.exitCode=1;
 }
 

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
-import type { Env } from '../../src/config/env.ts';
-import type { R2Bucket, R2Object, R2ObjectBody, R2PutOptions } from '../../src/platform/cf.ts';
+import type { Env } from '../../src/core/config.ts';
+import type { R2Bucket, R2Object, R2ObjectBody, R2PutOptions } from '../../src/core/platform.ts';
 import { handle, router } from '../../src/app.ts';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -66,7 +66,7 @@ export function createApp(opts: { migrations?: boolean; env?: Partial<Env> } = {
   if (opts.migrations !== false) applyMigrations(db);
   const r2 = new MemoryR2();
   const env: Env = {
-    DB: db, MEDIA: r2, AUTH_JWT_SECRET: SECRET, BETA_INVITE_CODE: INVITE, ALLOWED_ORIGIN: ORIGIN,
+    ENVIRONMENT: 'test', DB: db, MEDIA: r2, AUTH_JWT_SECRET: SECRET, BETA_INVITE_CODE: INVITE, ALLOWED_ORIGIN: ORIGIN,
     PUBLIC_API_URL: 'https://api.test', DISCOVERY_INCLUDE_DEMO: 'true', ...opts.env,
   };
   const call: TestApp['call'] = async (method, path, o = {}) => {

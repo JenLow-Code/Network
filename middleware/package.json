@@ -10,13 +10,8 @@
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.test.json",
     "test": "node --import tsx --test --test-concurrency=1 test/*.test.ts",
     "bundle:check": "esbuild src/index.ts --bundle --format=esm --platform=neutral --external:node:crypto --outfile=dist/worker.check.js --log-level=warning",
-    "seed:sql": "tsx scripts/build-seed.ts",
     "db:migrate:local": "wrangler d1 migrations apply network --local",
-    "db:migrate:remote": "wrangler d1 migrations apply network --remote",
-    "db:seed:local": "wrangler d1 execute network --local --file=../database/seeds/demo_seed.sql",
-    "db:seed:remote": "wrangler d1 execute network --remote --file=../database/seeds/demo_seed.sql",
-    "openapi": "tsx scripts/write-openapi.ts",
-    "coverage:routes": "tsx scripts/route-coverage.ts"
+    "db:migrate:remote": "wrangler d1 migrations apply network --remote"
   },
   "devDependencies": {
     "@types/node": "^26.6.3",
