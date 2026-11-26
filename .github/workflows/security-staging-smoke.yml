@@ -2,23 +2,15 @@ name: Security gateway live checks
 on:
   workflow_dispatch:
   push:
-    branches: [refactor/ecosystem-security-foundation]
+    branches: [main]
     paths: ['.github/workflows/security-staging-smoke.yml']
 jobs:
-  staging:
+  production:
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - base: https://jenlow-network-api-staging.jenlow-production.workers.dev
-            origin: http://localhost:8081
-          - base: https://api-network.jenlow.net
-            origin: https://network.jenlow.net
     env:
-      GATEWAY_URL: ${{ matrix.base }}
-      ALLOWED_ORIGIN: ${{ matrix.origin }}
+      GATEWAY_URL: https://api-network.jenlow.net
+      ALLOWED_ORIGIN: https://network.jenlow.net
     steps:
       - name: Verify gateway and private middleware on Cloudflare
         run: |
