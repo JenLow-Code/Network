@@ -17,13 +17,13 @@ import { useSharedMusicNavigation } from '@/domain/sharedMusicNavigation';
 const PINK='#CB245C';
 type Proposal = {
   id:string;description:string;status:string;trackTitle:string;
-  createdAt?:string|null;proposer?:{displayName?:string;handle?:string;avatarUrl?:string|null};
+  createdAt?:string|null;proposer?:{id?:string;isDemo?:boolean;displayName?:string;handle?:string;avatarUrl?:string|null};
   credits?:{displayName:string;contribution:string}[];
   contribution?:string|null;audioAsset?:string|null;mimeType?:string|null;audioUrl?:string;
 };
 type MusicDetail = {item?:{
   title?:string;description?:string;updatedAt?:string;
-  author?:{displayName?:string;handle?:string;avatarUrl?:string|null};
+  author?:{id?:string;isDemo?:boolean;displayName?:string;handle?:string;avatarUrl?:string|null};
   lyrics?:{time:number;text:string}[];
 }};
 type Collaborator = WorkspaceCollaborator;

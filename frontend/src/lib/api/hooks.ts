@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Publication } from '@/domain/publication';
 import { api, ApiRequestError } from './client';
+import {isRetiredFixture} from './realRecords';
 import { toPublication, toPublications, type ApiFeedItem, type ApiProfile } from './adapters';
 /** Items already loaded by a list are reused by detail screens for an instant first paint. */
 const cache = new Map<string, Publication>();
@@ -72,18 +73,23 @@ export function useDiscovery(params: { type?: string; q?: string } = {}) {
 export function usePublication(id: string | undefined) {
   const [item, setItem] = useState<Publication | null>(null);
   const [detail, setDetail] = useState<any>(null);
+  const requestId=useRef(0);
   const [state, setState] = useState<LoadState>('loading');
   const load = useCallback(async () => {
+    const request=++requestId.current;
     setItem(null);setDetail(null);setState('loading');
-    if (!id) return;
+    if (!id || isRetiredFixture({id})) {setState('error');return;}
     try {
       const res = await api<{ item: ApiFeedItem; dream?: unknown; chapter?: unknown }>(`/api/publications/${encodeURIComponent(id)}`);
+      if(request!==requestId.current)return;
       const mapped = toPublication({ ...res.item, ...((res.dream as object) || {}) } as ApiFeedItem);
+      if (!mapped || mapped.id !== id) {setState('error');return;}
       if (mapped) cache.set(id, mapped);
       setItem(mapped);
       setDetail(res);
       setState(mapped ? 'ready' : 'error');
     } catch {
+      if(request!==requestId.current)return;
       cache.delete(id);
       setItem(null);
       setDetail(null);
@@ -92,8 +98,9 @@ export function usePublication(id: string | undefined) {
   }, [id]);
   useEffect(() => {
     void load();
+    return ()=>{requestId.current++;};
   }, [load]);
-  return { item, detail, state, retry: load };
+  return { item:item?.id===id?item:null, detail:item?.id===id?detail:null, state, retry: load };
 }
 
 /** Public profile by handle plus its one-column publication feed. */
@@ -111,7 +118,7 @@ export function useMemberProfile(handle: string | undefined) {
       ]);
       const mapped = toPublications(feed.items);
       mapped.forEach(x => cache.set(x.id, x));
-      if (p.profile.isDemo) { setProfile(null); setPosts([]); setState('not_found'); return; }
+      if (isRetiredFixture(p.profile)) { setProfile(null); setPosts([]); setState('not_found'); return; }
       setProfile(p.profile);
       setPosts(mapped);
       setState('ready');

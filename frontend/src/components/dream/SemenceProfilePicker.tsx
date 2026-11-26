@@ -3,6 +3,7 @@ import { Image, Pressable, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/theme/AppTheme';
 import { api } from '@/lib/api/client';
+import {isRetiredFixture} from '@/lib/api/realRecords';
 
 export type InspirationProfile={
  id?:string;handle:string;displayName:string;avatarUrl?:string|null;
@@ -24,7 +25,7 @@ export default function SemenceProfilePicker({onSelect,onBack}:{
    const timeout=setTimeout(()=>{
      void api<{items:InspirationProfile[]}>('/api/users?q='+encodeURIComponent(query.trim()),{
        auth:'required',
-     }).then(result=>{if(live){setItems((result.items||[]).filter(profile=>profile.isDemo!==true));setState('ready');}})
+     }).then(result=>{if(live){setItems((result.items||[]).filter(profile=>!isRetiredFixture(profile)));setState('ready');}})
        .catch(()=>{if(live){setItems([]);setState('error');}});
    },350);
    return ()=>{live=false;clearTimeout(timeout);};
