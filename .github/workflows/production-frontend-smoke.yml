@@ -1,0 +1,55 @@
+name: Production frontend and auth smoke
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/production-frontend-smoke.yml'
+jobs:
+  live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Verify production pages and served JavaScript exclude retired API
+        run: |
+          python3 - <<'PY'
+          import urllib.request, urllib.parse
+          from html.parser import HTMLParser
+          origin='https://network.jenlow.net'
+          class Scripts(HTMLParser):
+              def __init__(self):
+                  super().__init__()
+                  self.urls=[]
+              def handle_starttag(self,tag,attrs):
+                  a=dict(attrs)
+                  if tag=='script' and a.get('src'):
+                      self.urls.append(a['src'])
+          def fetch(url):
+              with urllib.request.urlopen(url,timeout=25) as response:
+                  assert response.status==200, response.status
+                  return response.read()
+          forbidden=[b'jenlow-network-demo-api',b'/api/demo/']
+          scripts=set()
+          for route in ('/','/auth/callback','/music-hub','/profile','/discover','/my-space'):
+              html=fetch(origin+route)
+              assert not any(s in html for s in forbidden),route
+              parser=Scripts()
+              parser.feed(html.decode())
+              for src in parser.urls:
+                  url=urllib.parse.urljoin(origin+route,src)
+                  if urllib.parse.urlparse(url).netloc==urllib.parse.urlparse(origin).netloc:
+                      scripts.add(url)
+          assert scripts,'No deployed script assets found'
+          for url in sorted(scripts):
+              js=fetch(url)
+              assert not any(s in js for s in forbidden),'Retired API in served asset '+url
+          print('Verified six live routes and',len(scripts),'initial JS assets')
+          PY
+      - name: Verify live authentication refuses anonymous calls
+        run: |
+          set -eu
+          base='https://jenlow-network-auth.jenlow-production.workers.dev'
+          curl -fsS --max-time 20 "$base/health" > /tmp/health.json
+          python3 -c 'import json; assert json.load(open("/tmp/health.json"))["status"]=="ok"'
+          test "$(curl -sS --max-time 20 -o /tmp/me -w '%{http_code}' "$base/v1/auth/me")" = 401
+          test "$(curl -sS --max-time 20 -o /tmp/exchange -w '%{http_code}' -X POST "$base/v1/auth/supabase/exchange")" = 401
