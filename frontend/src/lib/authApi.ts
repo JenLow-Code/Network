@@ -1,5 +1,5 @@
 export const API_BASE = (
-  process.env.EXPO_PUBLIC_API_URL || 'https://jenlow-network-auth.jenlow-production.workers.dev'
+  process.env.EXPO_PUBLIC_API_URL || 'https://api-network.jenlow.net'
 ).replace(/\/$/, '');
 export type AuthReply = {
   user: { id: string; email: string; displayName: string; handle?: string };
