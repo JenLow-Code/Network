@@ -27,7 +27,7 @@ for(const file of files){
       const value=node.text;
       if(/(?:^|\/)mocks\/|(?:^|\/)(?:mockGrowthPreview|musicPreview|MusicProposalDemoAudio|dreamPersistence|demo)(?:\.[jt]sx?)?$/.test(value)&&!historical)
         references.push({location:location(node),reference:value});
-      if(/jenlow-network-demo-api|\/api\/demo(?:\/|$)/i.test(value)&&!historical)
+      if(/jenlow-network-demo-api|jenlow-music-scan|EXPO_PUBLIC_MUSIC_SCAN_API_URL|\/api\/demo(?:\/|$)|\/api\/music\/scan(?:\/|$)/i.test(value)&&!historical)
         endpointReferences.push({location:location(node),reference:value});
     }
     if(ts.isIdentifier(node)&&/^(AsyncStorage|localStorage|sessionStorage|indexedDB)$/.test(node.text)&&!historical)
@@ -65,3 +65,6 @@ const routeFiles=files.filter(f=>path.relative(root,f).startsWith('app'+path.sep
 console.log('Route modules inspected:',routeFiles.length);
 console.log('Route manifest:',JSON.stringify(routeFiles.map(f=>path.relative(root,f).replaceAll(path.sep,'/')).sort()));
 console.log('Retired-record and no-fabricated-activity checks passed.');
+
+assert.ok(read('src/components/music/MusicDocumentScanner.tsx').includes('accessibilityState={{disabled:true}}'));
+assert.ok(!/\bfetch\s*\(|\bonSaved\s*\(/.test(read('src/components/music/MusicDocumentScanner.tsx')));

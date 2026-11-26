@@ -27,7 +27,7 @@ jobs:
           def fetch(url):
               print('Checking',url,flush=True)
               return subprocess.check_output(['curl','--fail-with-body','--silent','--show-error','--location','--retry','2','--max-time','30',url])
-          forbidden=[b'jenlow-network-demo-api',b'/api/demo/']
+          forbidden=[b'jenlow-network-demo-api',b'/api/demo/',b'jenlow-music-scan',b'/api/music/scan']
           scripts=set()
           for route in ('/','/auth/callback','/music-hub','/profile','/discover','/my-space'):
               html=fetch(origin+route)
