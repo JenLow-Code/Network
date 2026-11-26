@@ -13,7 +13,7 @@ jobs:
       - name: Verify production pages and served JavaScript exclude retired API
         run: |
           python3 - <<'PY'
-          import urllib.request, urllib.parse
+          import subprocess, urllib.parse
           from html.parser import HTMLParser
           origin='https://network.jenlow.net'
           class Scripts(HTMLParser):
@@ -25,9 +25,8 @@ jobs:
                   if tag=='script' and a.get('src'):
                       self.urls.append(a['src'])
           def fetch(url):
-              with urllib.request.urlopen(url,timeout=25) as response:
-                  assert response.status==200, response.status
-                  return response.read()
+              print('Checking',url,flush=True)
+              return subprocess.check_output(['curl','--fail-with-body','--silent','--show-error','--location','--retry','2','--max-time','30',url])
           forbidden=[b'jenlow-network-demo-api',b'/api/demo/']
           scripts=set()
           for route in ('/','/auth/callback','/music-hub','/profile','/discover','/my-space'):
@@ -46,6 +45,7 @@ jobs:
           print('Verified six live routes and',len(scripts),'initial JS assets')
           PY
       - name: Verify live authentication refuses anonymous calls
+        if: always()
         run: |
           set -eu
           base='https://jenlow-network-auth.jenlow-production.workers.dev'
