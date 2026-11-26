@@ -12,6 +12,8 @@ import type {
   Publication,
 } from '@/domain/publication';
 
+import {isRetiredFixture} from './realRecords';
+
 type Media = { url: string | null } | null;
 type Author = { id: string; handle: string; displayName: string; avatarUrl: string | null; church: string | null; isDemo: boolean };
 type Need = { label: string; category: string; requiredLevelLabel: string | null; confirmed: boolean; illustration: string | null; description: string | null; isRequired: boolean };
@@ -80,7 +82,7 @@ const url = (m: Media | undefined) => m?.url ?? '';
 
 export function toPublication(item: ApiFeedItem): Publication | null {
   // Legacy API may still expose fictional records. Do not render them as member data.
-  if (item.author?.isDemo === true) return null;
+  if (!item.id || !item.author?.id || isRetiredFixture(item)) return null;
   switch (item.type) {
     case 'dream': {
       if (!item.phase) return null;

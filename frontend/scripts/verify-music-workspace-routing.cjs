@@ -47,9 +47,9 @@ const checks=[
   ['Shared projects require server-authorized conversation and use the same three tabs',
     shared.includes("+'/conversation'")&&shared.includes('!conversationId||!music')&&
     shared.includes('<MusicWorkspaceScreen')&&workspace.includes('<MusicWorkspaceTabs')],
-  ['Unauthorized workspaces return to Music without rendering a dead-end panel',
-    shared.includes("if(!loading&&error?.kind==='permission')router.replace('/music-hub')")&&
-    !shared.includes('Accès au morceau non autorisé')],
+  ['Unauthorized workspaces show an honest error and never mount another project',
+    shared.includes('Espace partagé indisponible')&&shared.includes('if(error||!project)')&&
+    !shared.includes("if(!loading&&error?.kind==='permission')router.replace('/music-hub')")],
   ['Anonymous users never mount shared workspace or start API calls',
     shared.includes("if(initialized&&!user&&!validationError)router.replace('/login')")&&
     shared.includes('if(!initialized||!user)return')&&

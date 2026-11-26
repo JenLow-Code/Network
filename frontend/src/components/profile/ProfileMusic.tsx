@@ -11,6 +11,7 @@ import { useApp } from '@/context/AppContext';
 import { useAppTheme } from '@/theme/AppTheme';
 import { workspaceCanvas, workspaceLayout } from '@/theme/workspaceLayout';
 import { api } from '@/lib/api/client';
+import {isRealProposal} from '@/lib/api/realRecords';
 
 type Proposal = {
   id:string;
@@ -32,6 +33,8 @@ export function MusicLibrary({contentWidth,embedded=false,preferredLayout}: {con
   const {items,ready,error} = useMusicWorkspaces();
   const [layout,setLayout] = useState<MusicLibraryLayout>('cards');
   const [proposals,setProposals] = useState<Proposal[]>([]);
+  const [proposalError,setProposalError]=useState(false);
+  const [proposalLoading,setProposalLoading]=useState(true);
 
   useFocusEffect(useCallback(() => {
     let live = true;
@@ -42,27 +45,28 @@ export function MusicLibrary({contentWidth,embedded=false,preferredLayout}: {con
   },[email]));
 
   useEffect(() => {
-    let live=true;
+    let live=true;setProposals([]);setProposalError(false);setProposalLoading(true);
     void Promise.allSettled([
       api<{items: Omit<Proposal,'direction'>[]}>('/api/me/music-proposals?role=sent',{auth:'required'}),
       api<{items: Omit<Proposal,'direction'>[]}>('/api/me/music-proposals?role=received',{auth:'required'}),
     ]).then(([sent,received]) => {
       if(!live)return;
+      setProposalError(sent.status==='rejected'||received.status==='rejected');setProposalLoading(false);
       setProposals([
         ...(sent.status==='fulfilled'?(sent.value.items||[]).map(p=>({...p,direction:'sent' as const})):[]),
         ...(received.status==='fulfilled'?(received.value.items||[]).map(p=>({...p,direction:'received' as const})):[]),
-      ]);
+      ].filter(isRealProposal));
     });
     return()=>{live=false;};
   },[email]);
 
   const songs=useMemo(() => [...items].sort((a,b)=>
     (b.updatedAt||b.createdAt).localeCompare(a.updatedAt||a.createdAt)),[items]);
-  const accepted=proposals.filter(p=>!p.isDemo&&(p.status==='accepted'||p.status==='published'));
+  const accepted=proposals.filter(p=>p.status==='accepted'||p.status==='published');
   const mineIds=new Set(songs.map(song=>song.publishedId).filter(Boolean));
   const peopleFor=(song:typeof songs[number]):MusicCollaborator[]=>{
     const acceptedPeople=song.publishedId?accepted
-      .filter(p=>p.trackPublicationId===song.publishedId&&!p.isDemo)
+      .filter(p=>p.trackPublicationId===song.publishedId)
       .map(p=>p.direction==='received'?p.proposer:p.publisher)
       .filter((person):person is MusicCollaborator=>!!person?.displayName):[];
     const credited=song.layers.filter(layer=>layer.contributor?.trim() &&
@@ -108,7 +112,8 @@ export function MusicLibrary({contentWidth,embedded=false,preferredLayout}: {con
           <Text style={{color:'#FFFFFF',fontWeight:'700',fontSize:12}}>Créer</Text>
         </Pressable>
       </View>
-      {!ready?<ActivityIndicator color="#CB245C"/>:null}
+      {!ready||proposalLoading?<ActivityIndicator color="#CB245C"/>:null}
+      {proposalError?<Text style={{color:theme.muted,fontSize:12}}>Collaborations indisponibles actuellement.</Text>:null}
       {error?<Text style={{color:'#CB245C',fontSize:12}}>{error}</Text>:null}
       {count?<View style={shownLayout==='list'?{gap:1}:{
         flexDirection:'row',flexWrap:'wrap',alignItems:'flex-start',
@@ -122,10 +127,8 @@ export function MusicLibrary({contentWidth,embedded=false,preferredLayout}: {con
           title={p.title} width={cardWidth} mode="draft" layout={shownLayout}
           byline=""
           participants={p.people}
-          onPress={()=>router.push(p.first.direction==='sent'
-            ? {pathname:'/music-collaboration/[id]',params:{id}}
-            : {pathname:'/music/[id]',params:{id}})}/>)}
-      </View>:ready&&!error?<Pressable onPress={()=>router.push('/music/new')} accessibilityRole="button" style={{padding:14,borderWidth:1,borderColor:theme.border,borderStyle:'dashed',borderRadius:10,backgroundColor:theme.surface,flexDirection:'row',alignItems:'center',gap:12}}>
+          onPress={()=>router.push({pathname:'/music-collaboration/[id]',params:{id}})}/>)}
+      </View>:ready&&!error&&!proposalLoading&&!proposalError?<Pressable onPress={()=>router.push('/music/new')} accessibilityRole="button" style={{padding:14,borderWidth:1,borderColor:theme.border,borderStyle:'dashed',borderRadius:10,backgroundColor:theme.surface,flexDirection:'row',alignItems:'center',gap:12}}>
         <Ionicons name="musical-notes-outline" size={26} color={theme.muted}/><View style={{flex:1,gap:4}}><Text style={{color:theme.foreground,fontWeight:'600',fontSize:14}}>Une idée, une mélodie…</Text><Text style={{color:theme.muted,fontSize:12}}>Crée ton premier morceau.</Text></View><Ionicons name="arrow-forward-outline" size={17} color={theme.muted}/>
       </Pressable>:null}
   </View>;

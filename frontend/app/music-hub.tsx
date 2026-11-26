@@ -13,6 +13,7 @@ import { useMusicWorkspaces, type MusicProject } from '@/domain/musicWorkspace';
 import { matchesForMe, type SavedTalent } from '@/domain/personalDiscovery';
 import { useApp } from '@/context/AppContext';
 import { useDiscovery } from '@/lib/api/hooks';
+import {isRealProposal} from '@/lib/api/realRecords';
 import { api } from '@/lib/api/client';
 import { useAppTheme } from '@/theme/AppTheme';
 import { workspaceLayout, workspaceCanvas } from '@/theme/workspaceLayout';
@@ -96,8 +97,8 @@ export default function MusicHub() {
       api<{items: Proposal[]}>('/api/me/music-proposals?role=received', {auth:'required'}),
     ]).then(([outgoing, incoming]) => {
       if (!live) return;
-      setSent(outgoing.status === 'fulfilled' ? outgoing.value.items || [] : []);
-      setReceived(incoming.status === 'fulfilled' ? incoming.value.items || [] : []);
+      setSent(outgoing.status === 'fulfilled' ? (outgoing.value.items || []).filter(isRealProposal) : []);
+      setReceived(incoming.status === 'fulfilled' ? (incoming.value.items || []).filter(isRealProposal) : []);
       setRequestsError(outgoing.status === 'rejected' || incoming.status === 'rejected');
     });
     return () => { live = false; };
