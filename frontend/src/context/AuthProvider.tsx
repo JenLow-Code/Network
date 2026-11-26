@@ -7,7 +7,7 @@ import * as WebBrowser from 'expo-web-browser';
 import {authConfigured,supabase} from '@/lib/supabaseClient';
 import {setAccessToken} from '@/lib/api/session';
 import {API_BASE} from '@/lib/authApi';
-import {api,ApiRequestError,exchangeSupabaseBearer,latestAuthBridgeFailure,onSessionChange} from '@/lib/api/client';
+import {api,exchangeSupabaseBearer,latestAuthBridgeFailure,onSessionChange} from '@/lib/api/client';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -77,8 +77,10 @@ export function AuthProvider({children}:{children:React.ReactNode}){
     const uid=verifiedUser.current;
     let revocationConfirmed=true;
     if(uid){
-      try{await api('/core/session/revoke',{method:'POST',auth:'required',signal:AbortSignal.timeout(8000)});}
-      catch(e){revocationConfirmed=e instanceof ApiRequestError&&e.status===401;}
+      const controller=new AbortController();
+      const timeout=setTimeout(()=>controller.abort(),8000);
+      try{const result=await api<{ok:boolean}>('/core/session/revoke',{method:'POST',auth:'required',signal:controller.signal});revocationConfirmed=result.ok===true;}
+      catch{revocationConfirmed=false;}finally{clearTimeout(timeout);}
     }
     clear();
     if(uid)await AsyncStorage.removeItem(ACTIVITY_KEY+uid).catch(()=>{});
@@ -155,6 +157,11 @@ export function AuthProvider({children}:{children:React.ReactNode}){
       }
       if(ticket!==validationId.current)return false;
       if(!workerAccepted){
+        if(failure==='session_revoked_or_inactive'){
+          await client().auth.signOut({scope:'local'}).catch(()=>{});
+          if(ticket===validationId.current)clear();
+          return false;
+        }
         verifiedAt.current=0;
         verifiedUser.current=null;
         setAccessToken(null);

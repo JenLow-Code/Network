@@ -83,7 +83,7 @@ const checks=[
     provider.includes('Token rotation is not user activity')],
   ['Explicit user activity and logout call the server session endpoints',
     provider.includes("api('/core/session/activity',{method:'POST',auth:'required'}")&&
-    provider.includes("api('/core/session/revoke',{method:'POST',auth:'required'")],
+    provider.includes("('/core/session/revoke',{method:'POST',auth:'required'")&&provider.includes('revocationConfirmed=result.ok===true')&&provider.includes("failure==='session_revoked_or_inactive'")],
   ['Browser and native session survives ordinary restarts',
     supabase.includes('persistSession: true')],
 ];
