@@ -98,8 +98,7 @@ export function Settings({onMusicLayoutChange}: {onMusicLayoutChange?:(value:Mus
           ))}
         </View>
         <Text style={{ fontSize: 11, color: muted, marginTop: 8 }}>
-          Le choix est enregistré et appliqué à la navigation. Certains écrans de démonstration
-          utilisent encore des couleurs fixes.
+          Le choix est enregistré et appliqué à la navigation.
         </Text>
         <Text style={{ fontSize: 16, fontWeight: '700', color: foreground, marginTop: 30, marginBottom: 10 }}>
           Affichage de mes morceaux

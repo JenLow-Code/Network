@@ -27,7 +27,10 @@ const uncovered=allScreens(appDir).filter(route=>
   !allowedPublic.has(route)&&!protectedScreens.has(route));
 assert.deepEqual(uncovered,[],'Every file-based private route must be protected');
 
+const profile=read('app/profile.tsx');
 const checks=[
+  ['Visible personal profile logout calls the real auth provider and prevents duplicate submission',
+    profile.includes("accessibilityLabel={t('logout')}")&&profile.includes('await auth.signOut()')&&profile.includes('disabled={signingOut}')&&profile.includes('name="log-out-outline"')],
   ['Every private screen requires the unified API-verified identity',
     layout.includes('<Stack.Protected guard={!!user&&!validationError} redirectTo="/login">')&&
     protectedScreens.has('discover')&&protectedScreens.has('music-hub')],

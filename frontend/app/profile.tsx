@@ -1,6 +1,6 @@
 import { Text, TextInput } from '@/i18n/LocalizedText';
 import React, { useEffect, useRef, useState } from 'react';
-import { Image, Pressable, ScrollView, View, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, Image, Pressable, ScrollView, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -10,6 +10,7 @@ import { PageHeader } from '@/components/navigation/PageHeader';
 import { useApp } from '@/context/AppContext';
 import { useAuth } from '@/context/AuthProvider';
 import { useAppTheme } from '@/theme/AppTheme';
+import {useLocale} from '@/i18n/locale';
 import { workspaceCanvas, workspaceLayout } from '@/theme/workspaceLayout';
 
 import { ProfileTalents } from '@/components/profile/ProfileTalents';
@@ -33,6 +34,13 @@ type SectionId=typeof sections[number]['id'];
 export default function Profile() {
   const app=useApp(),auth=useAuth(),theme=useAppTheme();
   const {width}=useWindowDimensions();
+  const {t}=useLocale();
+  const [signingOut,setSigningOut]=useState(false);
+  const signOut=async()=>{
+    if(signingOut)return;
+    setSigningOut(true);
+    try{await auth.signOut();}finally{setSigningOut(false);}
+  };
   const ws=workspaceLayout(width);
   const {section}=useLocalSearchParams<{section?:string}>();
   const scroll=useRef<React.ComponentRef<typeof ScrollView>>(null);
@@ -151,6 +159,10 @@ export default function Profile() {
               <Ionicons name="arrow-forward-outline" size={13} color={theme.muted}/>
             </Pressable>
           </View>
+          <Pressable accessibilityRole="button" accessibilityLabel={t('logout')} accessibilityState={{disabled:signingOut,busy:signingOut}} disabled={signingOut} onPress={()=>void signOut()} style={{minHeight:44,marginTop:4,paddingHorizontal:12,flexDirection:'row',alignItems:'center',gap:7,opacity:signingOut?.55:1}}>
+            {signingOut?<ActivityIndicator size="small" color={theme.muted}/>:<Ionicons name="log-out-outline" size={18} color={theme.muted}/>}
+            <Text style={{fontSize:13,fontWeight:'600',color:theme.foreground}}>{t('logout')}</Text>
+          </Pressable>
         </View>
         {edit!==null?<View style={{backgroundColor:theme.surface,borderWidth:1,borderColor:theme.border,borderRadius:12,padding:15,marginTop:10}}>
           {field('bio','Ma description')}{field('city','Ma ville')}{field('church','Ma communauté')}
