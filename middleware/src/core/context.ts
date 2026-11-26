@@ -1,7 +1,8 @@
 import type { Env } from './config';
 import type { ExecutionContext } from './platform';
 import { Sql } from './database';
-import { bearer, verifyAccessToken } from '../sessions/tokens';
+import { bearer, verifyTokenClaims } from '../sessions/tokens';
+import {activeProviderSession} from '../sessions/providerSessions';
 import { badRequest, forbidden, unauthenticated } from './errors';
 import { readBoundedJson } from '../security/body';
 import type { Obj } from '../security/validation';
@@ -16,6 +17,8 @@ export type Viewer = {
   locale: Locale;
   timezone: string;
   roles: string[];
+  profileId?:string;
+  product?:string;
 };
 
 const MAX_JSON_BYTES = 256 * 1024;
@@ -52,8 +55,11 @@ export class Ctx {
   async viewer(): Promise<Viewer | null> {
     if (this.viewerCache !== undefined) return this.viewerCache;
     const token = bearer(this.request);
-    const uid = token ? await verifyAccessToken(token, this.env) : null;
+    const claims = token ? await verifyTokenClaims(token, this.env) : null;
+    const uid=claims?.sub;
     if (!uid) return (this.viewerCache = null);
+    const scope=claims?.sid&&claims.product?await activeProviderSession(this,uid,claims.sid,claims.product):null;
+    if(claims?.sid&&!scope)return (this.viewerCache=null);
     const row = await this.sql.first<{ id: string; handle: string; display_name: string; account_status: string; locale: string | null; timezone: string | null; roles: string | null }>(
       `SELECT u.id,u.handle,u.display_name,u.account_status,p.locale,p.timezone,
         (SELECT group_concat(role) FROM user_roles r WHERE r.user_id=u.id) AS roles
@@ -69,7 +75,8 @@ export class Ctx {
       displayName: row.display_name,
       locale,
       timezone: row.timezone || 'Europe/Paris',
-      roles: row.roles ? row.roles.split(',') : [],
+      roles: scope?(scope.roles?scope.roles.split(','):[]):(row.roles?row.roles.split(','):[]),
+      ...(scope?{profileId:scope.profile_id,product:claims?.product}:{}),
     });
   }
 
@@ -114,7 +121,7 @@ export class Ctx {
   }
 
   ip(): string {
-    return this.request.headers.get('CF-Connecting-IP') || 'unknown';
+    return this.request.headers.get('X-JenLow-Client-IP') || (this.env.ENVIRONMENT==='test'?this.request.headers.get('CF-Connecting-IP'):null) || 'unknown';
   }
 
   idempotencyKey(): string | null {

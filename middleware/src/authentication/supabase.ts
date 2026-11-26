@@ -2,7 +2,8 @@ import type { Ctx } from '../core/context';
 import { json, legacyError } from '../core/respond';
 import { withinLimit } from '../security/rateLimit';
 import { newId } from '../core/database';
-import { ACCESS_TTL_SECONDS, signAccessToken } from '../sessions/tokens';
+import { ACCESS_TTL_SECONDS } from '../sessions/tokens';
+import {issueProviderSession,providerSessionId} from '../sessions/providerSessions';
 
 // Public project settings, never privileged credentials. Environment overrides
 // retain compatibility with the existing login and allow configuration rotation.
@@ -37,6 +38,8 @@ export async function exchangeSupabase(ctx: Ctx): Promise<Response> {
   const email = typeof identity?.email === 'string' ? identity.email.toLowerCase().trim() : '';
   const subject = identity?.id;
   if (typeof subject !== 'string' || !UUID.test(subject) || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) || email.length > 254 || typeof identity?.email_confirmed_at !== 'string' || !identity.email_confirmed_at || identity.is_anonymous === true) return legacyError('unverified_identity', 403);
+  const providerId=providerSessionId(token,subject);
+  if(!providerId)return legacyError('provider_session_missing',401);
   const providerSubject = 'supabase:' + subject;
   const lookup = () => ctx.sql.first<Member>("SELECT u.id,u.email,u.handle,u.display_name,u.account_status,u.email_verified_at FROM auth_identities i JOIN users u ON u.id=i.user_id WHERE i.provider='oidc' AND i.provider_subject=?", providerSubject);
   let member = await lookup();
@@ -65,6 +68,8 @@ export async function exchangeSupabase(ctx: Ctx): Promise<Response> {
     if (!member) return legacyError('identity_link_failed', 409);
   }
   if (member.account_status !== 'active' || member.email.toLowerCase() !== email) return legacyError('not_authenticated', 401);
+  const session=await issueProviderSession(ctx,member.id,providerId);
+  if(!session)return legacyError('session_revoked_or_inactive',401);
   await ctx.sql.run("UPDATE auth_identities SET last_sign_in_at=CURRENT_TIMESTAMP WHERE provider='oidc' AND provider_subject=? AND user_id=?", providerSubject, member.id);
-  return json({ user: { id: member.id, email, displayName: member.display_name, handle: member.handle }, accessToken: await signAccessToken(member.id, ctx.env), expiresIn: ACCESS_TTL_SECONDS, tokenType: 'Bearer' });
+  return json({ user: { id: member.id, email, displayName: member.display_name, handle: member.handle,profileId:session.profileId }, accessToken:session.accessToken, expiresIn: ACCESS_TTL_SECONDS, tokenType: 'Bearer' });
 }

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { createApp } from './helpers/app.ts';
 
 const UUID = '4ec693bf-0d25-4ad8-8284-9f3b8cb0ca79';
+const providerBearer='header.'+Buffer.from(JSON.stringify({sub:UUID,session_id:'ee0f45c1-7e15-43a0-a242-f2a87bcb05f8'})).toString('base64url')+'.fixture';
 function upstream(email: string, status = 200) {
   const old = globalThis.fetch;
   globalThis.fetch = async (_input, init) => {
@@ -22,15 +23,15 @@ test('unified Supabase exchange creates one member, preserves identity, and reje
   const app = createApp();
   const restore = upstream('new@example.test');
   try {
-    const first = await app.call('POST', '/v1/auth/supabase/exchange', { token: 'valid' });
+    const first = await app.call('POST', '/v1/auth/supabase/exchange', { token: providerBearer });
     assert.equal(first.status, 200, JSON.stringify(first.body));
-    const second = await app.call('POST', '/v1/auth/supabase/exchange', { token: 'valid' });
+    const second = await app.call('POST', '/v1/auth/supabase/exchange', { token: providerBearer });
     assert.equal(second.body.user.id, first.body.user.id);
     const me = await app.call('GET', '/v1/auth/me', { token: first.body.accessToken });
     assert.equal(me.status, 200);
     assert.equal(me.body.user.id, first.body.user.id);
     app.db.raw.prepare("UPDATE users SET account_status='suspended' WHERE id=?").run(first.body.user.id);
-    assert.equal((await app.call('POST', '/v1/auth/supabase/exchange', { token: 'valid' })).status, 401);
+    assert.equal((await app.call('POST', '/v1/auth/supabase/exchange', { token: providerBearer })).status, 401);
   } finally { restore(); }
 });
 test('unified Supabase exchange cannot claim an existing account solely by email', async () => {
@@ -38,7 +39,7 @@ test('unified Supabase exchange cannot claim an existing account solely by email
   await app.register('Existing Member', 'existing@example.test');
   const restore = upstream('existing@example.test');
   try {
-    const response = await app.call('POST', '/v1/auth/supabase/exchange', { token: 'valid' });
+    const response = await app.call('POST', '/v1/auth/supabase/exchange', { token: providerBearer });
     assert.equal(response.status, 409);
     assert.equal(response.body.error, 'identity_link_required');
   } finally { restore(); }

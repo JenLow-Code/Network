@@ -148,5 +148,5 @@ test('OpenAPI lists every route the router serves', async () => {
   const { router } = await import('../src/app.ts');
   const documented = Object.entries(res.body.paths as Record<string, Record<string, unknown>>).reduce((n, [, ops]) => n + Object.keys(ops).length, 0);
   assert.equal(documented, router.routes.length);
-  assert.equal(router.routes.length, 10);
+  assert.equal(router.routes.length, 12);
 });

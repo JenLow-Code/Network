@@ -37,6 +37,7 @@ export interface Env {
   PUBLIC_API_URL?: string;
   APP_VERSION?: string;
   ENVIRONMENT?: string;
+  PRODUCT?: 'network'|'tools'|'production'|'live';
 }
 
 export const MIN_SECRET_LENGTH = 32;

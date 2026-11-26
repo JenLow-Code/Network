@@ -94,11 +94,10 @@ export async function refresh(ctx: Ctx): Promise<Response> {
 }
 
 export async function me(ctx: Ctx): Promise<Response> {
-  const token = bearer(ctx.request);
-  const uid = token ? await verifyAccessToken(token, ctx.env) : null;
-  if (!uid) return legacyError('not_authenticated', 401);
+  const viewer=await ctx.user();
+  const uid=viewer.id;
   const user = await ctx.sql.first<{ account_status: string }>('SELECT id,handle,display_name,email,account_status FROM users WHERE id=?', uid);
-  return user?.account_status === 'active' ? json({ user }) : legacyError('not_authenticated', 401);
+  return user?.account_status === 'active' ? json({ user:{...user,profile_id:viewer.profileId,product:viewer.product,roles:viewer.roles} }) : legacyError('not_authenticated', 401);
 }
 
 export async function logout(ctx: Ctx): Promise<Response> {

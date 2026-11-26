@@ -53,9 +53,10 @@ test('gateway and middleware together validate identity, token expiry and suspen
 test('gateway reaches real middleware for verified upstream identity exchange',async()=>{
   const app=createApp();
   const env={SECURITY:{fetch:(request:Request)=>securityHandle(request,app.env)}};
+  const providerToken='header.'+Buffer.from(JSON.stringify({sub:'4ec693bf-0d25-4ad8-8284-9f3b8cb0ca79',session_id:'ee0f45c1-7e15-43a0-a242-f2a87bcb05f8'})).toString('base64url')+'.fixture';
   const old=globalThis.fetch;
   globalThis.fetch=async (_input,init)=>{
-    assert.equal(new Headers(init?.headers).get('authorization'),'Bearer provider-token');
+    assert.equal(new Headers(init?.headers).get('authorization'),'Bearer '+providerToken);
     return Response.json({id:'4ec693bf-0d25-4ad8-8284-9f3b8cb0ca79',email:'gateway@example.test',email_confirmed_at:'2026-11-01T00:00:00Z',is_anonymous:false});
   };
   try{

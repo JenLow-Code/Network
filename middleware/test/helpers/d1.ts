@@ -85,5 +85,6 @@ export function applyMigrations(db: TestD1, upTo?: string): string[] {
     db.exec(readFileSync(join(MIGRATIONS_DIR, file), 'utf8'));
     applied.push(file);
   }
+  if(!upTo)db.exec(readFileSync(join(MIGRATIONS_DIR,'..','security','002_product_sessions.sql'),'utf8'));
   return applied;
 }

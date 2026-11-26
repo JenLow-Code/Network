@@ -11,6 +11,10 @@ const routes=new Map<string,{method:string;path:string}>([
   ['/core/auth/supabase/exchange',{method:'POST',path:'/v1/auth/supabase/exchange'}],
   ['/v1/auth/me',{method:'GET',path:'/v1/auth/me'}],
   ['/v1/auth/supabase/exchange',{method:'POST',path:'/v1/auth/supabase/exchange'}],
+  ['/core/session/activity',{method:'POST',path:'/v1/auth/session/activity'}],
+  ['/core/session/revoke',{method:'POST',path:'/v1/auth/session/revoke'}],
+  ['/v1/auth/session/activity',{method:'POST',path:'/v1/auth/session/activity'}],
+  ['/v1/auth/session/revoke',{method:'POST',path:'/v1/auth/session/revoke'}],
   ['/api/health/ready',{method:'GET',path:'/api/health/ready'}],
 ]);
 export async function handle(request:Request,env:Env):Promise<Response>{
@@ -47,6 +51,8 @@ export async function handle(request:Request,env:Env):Promise<Response>{
   for(const k of ['authorization','content-type','accept']){
     const v=request.headers.get(k);if(v)headers.set(k,v);
   }
+  const clientIp=request.headers.get('CF-Connecting-IP');
+  if(clientIp)headers.set('X-JenLow-Client-IP',clientIp);
   try{
     const upstream=await env.SECURITY.fetch(new Request('https://middleware.internal'+route.path,{method:route.method,headers}));
     return finish(upstream);
