@@ -61,9 +61,8 @@ export default function Profile() {
     setEdit(key);
     setDraft(app[key] || '');
   };
-  const save = () => {
-    if (edit) app.edit({ [edit]: draft });
-    setEdit(null);
+  const save = async () => {
+    if (edit && await app.edit({ [edit]: draft })) setEdit(null);
   };
   const field = (key: 'bio' | 'city' | 'church', label: string) => (
     <View style={{ marginTop: 16, width: '100%' }}>

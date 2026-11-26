@@ -33,7 +33,7 @@ export default function PublicationSearchPicker({selectedId,onSelect,onManual,on
    </Text>
    <View style={{flexDirection:'row',flexWrap:'wrap',
      justifyContent:'space-between',alignItems:'flex-start',gap:8}}>
-     {discovery.items.filter(item=>item.type!=='talent').slice(0,18).map((item,index)=>
+     {(discovery.state==='ready'?discovery.items:[]).filter(item=>item.type!=='talent').slice(0,18).map((item,index)=>
        <Pressable key={item.id} onPress={()=>onSelect(item)}
          accessibilityRole="button" accessibilityLabel={'Sélectionner '+item.title}
          style={{width:'48.5%',borderRadius:11,overflow:'hidden',
@@ -68,7 +68,7 @@ export default function PublicationSearchPicker({selectedId,onSelect,onManual,on
      Recherche en cours…
    </Text>:null}
    {discovery.state==='error'?<Text style={{fontSize:12,color:theme.muted}}>
-     Impossible de charger les publications. Utilise leur ID.
+     Impossible de charger les publications. Réessaie lorsque le service sera disponible.
    </Text>:null}
    {!discovery.items.some(item=>item.type!=='talent')&&discovery.state==='ready'?
      <Text style={{fontSize:12,color:theme.muted}}>Aucune publication trouvée.</Text>:null}

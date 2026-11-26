@@ -1,4 +1,6 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import {api} from '@/lib/api/client';
+import {isRetiredFixture} from '@/lib/api/realRecords';
 import {
   Animated,
   Dimensions,
@@ -12,24 +14,29 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Avatar } from './Avatar';
 import { useApp } from '@/context/AppContext';
-type Status = 'online' | 'busy' | 'offline';
-const contacts: { id: string; name: string; subtitle: string; status: Status }[] = [
-  { id: 'starryskies23', name: 'starryskies23', subtitle: 'Collaboration request', status: 'busy' },
-  { id: 'elynn', name: 'Elynn Lee', subtitle: 'email@fakedomain.net', status: 'online' },
-  { id: 'helena', name: 'Helena Hills', subtitle: 'Active 11m ago', status: 'online' },
-  { id: 'nebul', name: 'nebulanomad', subtitle: 'Offline', status: 'offline' },
-  { id: 'shadow', name: 'shadowlynx', subtitle: 'Busy', status: 'busy' },
-];
-const statusColor: { [K in Status]: string } = {
-  online: '#26C768',
-  busy: '#F16B70',
-  offline: '#B6B6B6',
-};
+type Contact={member:{id:string;handle:string;displayName:string;isDemo?:boolean}};
 export function ContactSheet() {
-  const { rejectedContacts } = useApp();
+  const {email}=useApp();
+  const [contacts,setContacts]=useState<Contact[]>([]);
+  const [state,setState]=useState<'loading'|'ready'|'error'>('loading');
+  const [busy,setBusy]=useState(false);
+  const [error,setError]=useState('');
   const expandedHeight = Math.min(Dimensions.get('window').height * 0.64, 490);
   const translate = useRef(new Animated.Value(0)).current;
   const [open, setOpen] = useState(false);
+  useEffect(()=>{let active=true;setContacts([]);setError('');setState('loading');
+    if(open)void api<{items:Contact[]}>('/api/contacts',{auth:'required'}).then(result=>{
+      if(active){setContacts(result.items.filter(p=>p.member?.id&&p.member.handle&&!isRetiredFixture(p.member)));setState('ready');}
+    }).catch(()=>{if(active)setState('error');});
+    return()=>{active=false;};
+  },[email,open]);
+  const chat=async(handle:string)=>{
+    if(busy)return;setBusy(true);setError('');
+    try{const result=await api<{conversationId:string}>('/api/conversations',{auth:'required',method:'POST',body:{handle}});
+      if(!result.conversationId)throw Error('missing conversation');
+      router.push({pathname:'/chat/[id]',params:{id:result.conversationId}});
+    }catch{setError('Impossible d’ouvrir cette conversation.');}finally{setBusy(false);}
+  };
   const openRef = useRef(false);
   function go(next: boolean) {
     openRef.current = next;
@@ -63,25 +70,12 @@ export function ContactSheet() {
         </View>
       </View>
       <View style={{ flex: 1, overflow: 'hidden' }}>
-        {contacts
-          .filter(p => !rejectedContacts.includes(p.name))
-          .map((person, i) => (
-            <Pressable
-              key={person.id}
-              onPress={() => router.push('/chat/helena')}
-              style={[styles.contact, { borderBottomWidth: i === contacts.length - 1 ? 0 : 1 }]}
-            >
-              <View style={styles.avatar}>
-                <Avatar size={32} />
-                <View style={[styles.dot, { backgroundColor: statusColor[person.status] }]} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.name}>{person.name}</Text>
-                <Text style={styles.subtitle}>{person.subtitle}</Text>
-              </View>
-              <Ionicons name="chatbubble-ellipses-outline" color="#888" size={20} />
-            </Pressable>
-          ))}
+        {open?<>{state==='loading'?<Text style={{padding:12,color:'#999'}}>Chargement…</Text>:state==='error'?<Text style={{padding:12,color:'#999'}}>Contacts indisponibles.</Text>:!contacts.length?<Text style={{padding:12,color:'#999'}}>Aucun contact.</Text>:null}
+        {!!error&&<Text style={{padding:12,color:'#A51D4F'}}>{error}</Text>}
+        {contacts.map(({member})=><Pressable key={member.id} disabled={busy} onPress={()=>void chat(member.handle)} style={[styles.contact,{borderBottomWidth:1}]}>
+          <Avatar size={32}/><View style={{flex:1}}><Text style={styles.name}>{member.displayName}</Text></View>
+          <Ionicons name="chatbubble-ellipses-outline" color="#888" size={20}/>
+        </Pressable>)}</>:null}
       </View>
     </Animated.View>
   );

@@ -39,7 +39,7 @@ export function MusicTile({
   const surface = theme.dark ? '#332D32' : mode === 'draft' ? '#E6DACB' : '#EFE9E2';
   const secondary = theme.dark ? '#D6D0D3' : '#514943';
   // Audio remains available in the opened music detail; no player outside the square.
-  const displayTitle = title.replace(/^\[Démo\]\s*/i, '').trim();
+  const displayTitle = title.trim();
   const compactLabel = imageWidth < 132;
 
   const visual = <View style={{

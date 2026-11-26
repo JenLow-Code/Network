@@ -3,6 +3,7 @@ import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { api, ApiRequestError } from '@/lib/api/client';
+import {isRetiredFixture} from '@/lib/api/realRecords';
 import { useAuth } from '@/context/AuthProvider';
 import { useAppTheme } from '@/theme/AppTheme';
 import { PageHeader } from '@/components/navigation/PageHeader';
@@ -16,13 +17,13 @@ import { useSharedMusicNavigation } from '@/domain/sharedMusicNavigation';
 const PINK='#CB245C';
 type Proposal = {
   id:string;description:string;status:string;trackTitle:string;
-  createdAt?:string|null;proposer?:{displayName?:string;handle?:string;avatarUrl?:string|null};
+  createdAt?:string|null;proposer?:{id?:string;isDemo?:boolean;displayName?:string;handle?:string;avatarUrl?:string|null};
   credits?:{displayName:string;contribution:string}[];
   contribution?:string|null;audioAsset?:string|null;mimeType?:string|null;audioUrl?:string;
 };
 type MusicDetail = {item?:{
   title?:string;description?:string;updatedAt?:string;
-  author?:{displayName?:string;handle?:string;avatarUrl?:string|null};
+  author?:{id?:string;isDemo?:boolean;displayName?:string;handle?:string;avatarUrl?:string|null};
   lyrics?:{time:number;text:string}[];
 }};
 type Collaborator = WorkspaceCollaborator;
@@ -82,7 +83,7 @@ function AuthorizedSharedMusicFolder(){
   const [error,setError]=useState<WorkspaceFailure|null>(null);
   const [retryCount,setRetryCount]=useState(0);
   useEffect(()=>{
-    if(!id)return;
+    if(!id||isRetiredFixture({id})){setMusic(undefined);setConversationId(null);setError({kind:'permission',message:'Ce morceau est introuvable ou inaccessible.'});setLoading(false);return;}
     let live=true;
     const resource=encodeURIComponent(id);
     setLoading(true);setError(null);setConversationId(null);
@@ -94,9 +95,10 @@ function AuthorizedSharedMusicFolder(){
       api<{items:Proposal[]}>('/api/music/'+resource+'/proposals',{auth:'required'}),
     ]).then(async ([chat,detail,contributions])=>{
       if(!live)return;
+      if(isRetiredFixture(detail.item?.author)||!detail.item||!chat.conversationId)throw new ApiRequestError(404,'not_found');
       setConversationId(chat.conversationId);
       setMusic(detail.item);
-      const permitted=await Promise.all((contributions.items||[]).map(async proposal=>{
+      const permitted=await Promise.all((contributions.items||[]).filter(p=>!isRetiredFixture(p)&&!isRetiredFixture(p.proposer)).map(async proposal=>{
         if(proposal.status!=='accepted'&&proposal.status!=='published')return proposal;
         try{
           const playback=await api<{url:string|null}>('/api/music-proposals/'+encodeURIComponent(proposal.id)+'/playback',{auth:'required'});
@@ -127,12 +129,7 @@ function AuthorizedSharedMusicFolder(){
     return ()=>{live=false;};
   },[id,retryCount]);
 
-  // A stale or unauthorized link must not leave an inaccessible project on screen.
-  // The API remains the authority; never grant access or substitute another song.
-  useEffect(()=>{
-    if(!loading&&error?.kind==='permission')router.replace('/music-hub');
-  },[loading,error?.kind]);
-
+  // An inaccessible resource displays an explicit error; it never opens a different song.
   // Adapt only the content returned after membership verification. No private
   // owner-device files, fake tracks, or second editable project are created.
   const project=useMemo<MusicProject|null>(()=>{
@@ -143,7 +140,7 @@ function AuthorizedSharedMusicFolder(){
     const date=music.updatedAt||'';
     const files:MusicProjectFile[]=[
       ...(music.lyrics?.length?[{id:id+'-published-lyrics',kind:'lyrics' as const,title:'Paroles publiées',
-        text:music.lyrics.map(part=>part.text).join('\n'),sectionIds:[],createdAt:date,editedBy:author,editedByHandle:owner?.handle||undefined,editedByAvatarUrl:owner?.avatarUrl||undefined,editedByDemo:false}]:[]),
+        text:music.lyrics.map(part=>part.text).join('\n'),sectionIds:[],createdAt:date,editedBy:author,editedByHandle:owner?.handle||undefined,editedByAvatarUrl:owner?.avatarUrl||undefined}]:[]),
       ...proposals.filter(p=>p.status==='accepted'||p.status==='published').map(p=>({
         id:p.id,kind:'audio' as const,
         title:p.contribution||p.credits?.find(c=>c.displayName===p.proposer?.displayName)?.contribution||
@@ -163,7 +160,7 @@ function AuthorizedSharedMusicFolder(){
     publishNavigationProject(project);
     return()=>publishNavigationProject(null);
   },[project,publishNavigationProject]);
-  if(loading||error?.kind==='permission')return <SafeAreaView style={{flex:1,
+  if(loading)return <SafeAreaView style={{flex:1,
     backgroundColor:theme.background,alignItems:'center',justifyContent:'center'}}>
     <ActivityIndicator color={PINK}/>
   </SafeAreaView>;

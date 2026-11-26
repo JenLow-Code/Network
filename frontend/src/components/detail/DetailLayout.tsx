@@ -3,7 +3,6 @@ import { useLocalSearchParams } from 'expo-router';
 import { Platform, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { Publication } from '@/domain/publication';
-import { publications, personPublications } from '@/mocks/publications';
 import { DreamReactionRail } from './DreamReactionRail';
 import { PublicationPrimaryAction } from './PublicationPrimaryAction';
 import { DetailHero } from './DetailHero';
@@ -42,7 +41,7 @@ export function DetailLayout({
   // Related stories use the same source and editorial order as Discovery.
   // This prevents detail pages from silently falling back to an obsolete mock-only feed.
   const relatedFeed = useDiscovery();
-  const relatedItems = relatedFeed.state === 'ready' ? relatedFeed.items : [...publications, ...personPublications];
+  const relatedItems = relatedFeed.state === 'ready' ? relatedFeed.items : [];
   const isDream = item.type === 'dream';
   const isFloraison = isDream && item.phase === 'Témoignage';
   const isSeed = isDream && item.phase === 'Rêve';

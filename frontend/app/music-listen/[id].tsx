@@ -9,6 +9,7 @@ import {useAppTheme} from '@/theme/AppTheme';
 import {workspaceCanvas,workspaceLayout} from '@/theme/workspaceLayout';
 import {useDiscovery,usePublication} from '@/lib/api/hooks';
 import {api,ApiRequestError} from '@/lib/api/client';
+import {isRealProposal} from '@/lib/api/realRecords';
 import type {MusicPublication} from '@/domain/publication';
 
 type SentProposal={
@@ -42,7 +43,7 @@ export default function MusicListenPage(){
     // Pending proposals stay private to the authenticated sender.
     void api<{items:SentProposal[]}>('/api/me/music-proposals?role=sent',
       {auth:'required'})
-      .then(data=>{if(active)setSent(data.items||[]);})
+      .then(data=>{if(active)setSent((data.items||[]).filter(isRealProposal));})
       .catch(()=>{if(active)setSent([]);});
     return()=>{active=false;};
   },[]);

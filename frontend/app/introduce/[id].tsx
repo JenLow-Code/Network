@@ -3,24 +3,18 @@ import { Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-na
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { dreams } from '@/mocks/publications';
-import { myCircle } from '@/mocks/demoCircle';
 import { Nav } from '@/components/navigation/Nav';
 import { PageHeader } from '@/components/navigation/PageHeader';
 import {workspaceCanvas} from '@/theme/workspaceLayout';
 export default function Introduction() {
   const {width}=useWindowDimensions();
   const { id, person } = useLocalSearchParams<{ id: string; person?: string }>();
-  const d = dreams.find(x => x.id === id),
-    friend = myCircle.find(p => p.id === person);
-  const [requested, setRequested] = useState(false);
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
       <View style={{flex:1,...workspaceCanvas(width),paddingTop:12,paddingBottom:55}}>
         <PageHeader title="Introduction de confiance" />
         <Text style={{ color: '#555', marginTop: 12, lineHeight: 22 }}>
-          Tu connais personnellement {friend?.name || 'cette personne'} et tu penses que ses talents
-          pourraient aider à réaliser « {d?.title || 'cette aspiration'} ».
+          Le service d’introduction est actuellement indisponible.
         </Text>
         <View
           style={{
@@ -40,7 +34,7 @@ export default function Introduction() {
           </Text>
         </View>
         <Pressable
-          onPress={() => setRequested(true)}
+          disabled
           style={{
             marginTop: 30,
             backgroundColor: '#111',
@@ -49,14 +43,8 @@ export default function Introduction() {
             alignItems: 'center',
           }}
         >
-          <Text style={{ color: '#fff' }}>Demander l'introduction</Text>
+          <Text style={{ color: '#fff' }}>Introduction indisponible</Text>
         </Pressable>
-        {requested ? (
-          <Text style={{ marginTop: 16, color: '#888' }}>
-            Proposition enregistrée dans cette démo uniquement. Aucune vraie notification n'a été
-            envoyée.
-          </Text>
-        ) : null}
       </View>
       <Nav />
     </SafeAreaView>

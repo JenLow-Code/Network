@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
@@ -11,9 +10,10 @@ import { MusicTile } from '@/components/music/MusicTile';
 import type { MusicCollaborator } from '@/components/music/MusicCollaboratorAvatars';
 import { readMusicLibraryLayout, type MusicLibraryLayout } from '@/domain/musicLibraryPreferences';
 import { useMusicWorkspaces, type MusicProject } from '@/domain/musicWorkspace';
-import { matchesForMe, profileTalentStorageKey, type SavedTalent } from '@/domain/personalDiscovery';
+import { matchesForMe, type SavedTalent } from '@/domain/personalDiscovery';
 import { useApp } from '@/context/AppContext';
 import { useDiscovery } from '@/lib/api/hooks';
+import {isRealProposal} from '@/lib/api/realRecords';
 import { api } from '@/lib/api/client';
 import { useAppTheme } from '@/theme/AppTheme';
 import { workspaceLayout, workspaceCanvas } from '@/theme/workspaceLayout';
@@ -78,17 +78,11 @@ export default function MusicHub() {
     let active = true;
     void Promise.all([
       readMusicLibraryLayout(app.email),
-      AsyncStorage.getItem(profileTalentStorageKey(app.email)),
-    ]).then(([preferred, raw]) => {
+      api<{items:SavedTalent[]}>('/api/me/talents',{auth:'required'}),
+    ]).then(([preferred, result]) => {
       if (!active) return;
       setLayout(preferred);
-      try {
-        const parsed: unknown = raw ? JSON.parse(raw) : [];
-        setTalents(Array.isArray(parsed) ? parsed.filter(
-          (value): value is SavedTalent => !!value && typeof value === 'object' &&
-            typeof (value as SavedTalent).name === 'string',
-        ) : []);
-      } catch { setTalents([]); }
+      setTalents(result.items.filter(t=>typeof t.name==='string'&&t.name.trim().length>0));
     }).catch(() => {
       if (active) { setLayout('cards'); setTalents([]); }
     });
@@ -103,8 +97,8 @@ export default function MusicHub() {
       api<{items: Proposal[]}>('/api/me/music-proposals?role=received', {auth:'required'}),
     ]).then(([outgoing, incoming]) => {
       if (!live) return;
-      setSent(outgoing.status === 'fulfilled' ? outgoing.value.items || [] : []);
-      setReceived(incoming.status === 'fulfilled' ? incoming.value.items || [] : []);
+      setSent(outgoing.status === 'fulfilled' ? (outgoing.value.items || []).filter(isRealProposal) : []);
+      setReceived(incoming.status === 'fulfilled' ? (incoming.value.items || []).filter(isRealProposal) : []);
       setRequestsError(outgoing.status === 'rejected' || incoming.status === 'rejected');
     });
     return () => { live = false; };
@@ -174,7 +168,8 @@ export default function MusicHub() {
       !!p.requestedTalents?.length && matchesForMe(p,talents) &&
       !publishedLocalIds.has(p.id))
     : [], [discovery.state, discovery.items, talents, songs]);
-  const recommended:MusicPublication[]=opportunities;
+  const recommended:MusicPublication[]=opportunities.length ? opportunities : discovery.state==='ready'
+    ? discovery.items.filter((p):p is MusicPublication=>p.type==='music'&&p.source==='api'&&!publishedLocalIds.has(p.id)) : [];
   // An outgoing, unanswered proposal remains in For me, not in My pieces.
   const pendingSent = proposals.filter(p => p.direction === 'sent' &&
     (p.status === 'submitted' || p.status === 'draft') &&
@@ -269,7 +264,7 @@ export default function MusicHub() {
             participants={piece.participants}
             status={piece.pending?'À examiner':undefined}
             onPress={() => openMyPiece(piece.primary)}/>)
-        ]) : ready ? empty('Ton premier morceau commence ici.',
+        ]) : ready && !error ? empty('Ton premier morceau commence ici.',
           'Créer un morceau',() => router.push('/music/new')) : null}
         {requestsError ? <Text style={{color:theme.muted,fontSize:10}}>
           Les morceaux partagés nécessitent une session API connectée.

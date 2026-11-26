@@ -1,5 +1,7 @@
 import { Text } from '@/i18n/LocalizedText';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import {api} from '@/lib/api/client';
+import {isRetiredFixture} from '@/lib/api/realRecords';
 import { Alert, Pressable, ScrollView, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,85 +18,23 @@ import { useLocale } from '@/i18n/locale';
 import {workspaceCanvas,WORKSPACE_TITLE_GAP} from '@/theme/workspaceLayout';
 import { useAppTheme } from '@/theme/AppTheme';
 
-type Kind = 'All' | 'Chats' | 'Collabs' | 'Lessons';
-type Activity = {
-  id: number;
-  kind: Kind;
-  name: string;
-  detail: string;
-  age: string;
-  status: 'online' | 'busy' | 'offline';
-};
-const initial: Activity[] = [
-  {
-    id: 1,
-    kind: 'Collabs',
-    name: 'starryskies23',
-    detail: 'Requested a collab',
-    age: '1d',
-    status: 'busy',
-  },
-  {
-    id: 2,
-    kind: 'Chats',
-    name: 'nebulanomad',
-    detail: 'Liked your song',
-    age: '1d',
-    status: 'online',
-  },
-  {
-    id: 3,
-    kind: 'Lessons',
-    name: 'system',
-    detail: 'Tandem with nebulanomad\nTomorrow at 13:00, JenLow Studio',
-    age: '2d',
-    status: 'online',
-  },
-  {
-    id: 4,
-    kind: 'Chats',
-    name: 'lunavoyager',
-    detail: 'Reposted your song',
-    age: '3d',
-    status: 'online',
-  },
-  {
-    id: 5,
-    kind: 'Chats',
-    name: 'shadowlynx',
-    detail: "Replied\nI'm going in September, what about you?",
-    age: '4d',
-    status: 'offline',
-  },
-  {
-    id: 6,
-    kind: 'Chats',
-    name: 'nebulanomad',
-    detail: 'Shared something with you',
-    age: '5d',
-    status: 'online',
-  },
-];
-const presence = { online: '#24c967', busy: '#ef5c79', offline: '#c8c8c8' };
+type Kind = 'All'|'Chats'|'Collabs'|'Lessons';
+type Conversation={id:string;type:string;title?:string|null;members?:{id:string;displayName?:string;isDemo?:boolean}[];lastMessage?:{preview?:string|null;sentAt?:string|null}|null;lastActivityAt?:string|null;unread?:number};
 export default function Space() {
   const theme = useAppTheme();
   const {width}=useWindowDimensions();
-  const { rejectContact } = useApp();
+  const {email}=useApp();
   const { t } = useLocale();
   const [tab, setTab] = useState<Kind>('All');
-  const [activities, setActivities] = useState(initial);
-  const [decisions, setDecisions] = useState<Record<number, string>>({});
-  function answer(id: number, yes: boolean) {
-    if (!yes) {
-      const activity = activities.find(a => a.id === id);
-      if (activity) rejectContact(activity.name);
-    }
-    setDecisions(p => ({ ...p, [id]: yes ? 'Accepted' : 'Declined' }));
-    Alert.alert(
-      yes ? 'Invitation accepted' : 'Invitation declined',
-      'Demo only — not yet saved to the server.',
-    );
-  }
+  const [activities,setActivities]=useState<Conversation[]>([]);
+  const [state,setState]=useState<'loading'|'ready'|'error'>('loading');
+  useEffect(()=>{let active=true;setActivities([]);setState('loading');
+    void api<{items:Conversation[]}>('/api/conversations',{auth:'required'}).then(result=>{
+      if(active){setActivities(result.items.filter(c=>!isRetiredFixture(c)&&!(c.members||[]).some(isRetiredFixture)));setState('ready');}
+    }).catch(()=>{if(active)setState('error');});
+    return()=>{active=false;};
+  },[email]);
+  const visible=activities.filter(c=>tab==='All'||tab==='Chats'&&c.type==='direct'||tab==='Collabs'&&['music','dream','group'].includes(c.type)||tab==='Lessons'&&c.type==='lesson');
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
       <View style={{ flex: 1 }}>
@@ -106,7 +46,7 @@ export default function Space() {
             <Ionicons name="notifications-outline" size={21} color="#CB245C"/>
             <View style={{flex:1,gap:3}}>
               <Text style={{fontSize:13,color:theme.foreground,fontWeight:'700'}}>Mes notifications</Text>
-              <Text style={{fontSize:11,color:theme.muted}}>Réponses à mes demandes et actualités de mes rêves</Text>
+              <Text style={{fontSize:11,color:theme.muted}}>Réponses à mes demandes et actualités de mes aspirations</Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color={theme.muted}/>
           </Pressable>
@@ -116,7 +56,7 @@ export default function Space() {
             <Ionicons name="people-outline" size={21} color="#27845B"/>
             <View style={{flex:1,gap:3}}>
               <Text style={{fontSize:13,color:theme.foreground,fontWeight:'700'}}>Invitations de talents</Text>
-              <Text style={{fontSize:11,color:theme.muted}}>Accepter ou refuser une invitation à participer à un rêve</Text>
+              <Text style={{fontSize:11,color:theme.muted}}>Accepter ou refuser une invitation à participer à une aspiration</Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color={theme.muted}/>
           </Pressable>
@@ -125,89 +65,18 @@ export default function Space() {
               <Pill key={t} text={t} active={tab === t} onPress={() => setTab(t)} />
             ))}
           </View>
-          {activities
-            .filter(x => tab === 'All' || x.kind === tab)
-            .map(item => (
-              <Pressable
-                key={item.id}
-                onPress={() =>
-                  item.kind === 'Lessons'
-                    ? router.push('/chat/system')
-                    : item.kind !== 'Collabs' && router.push('/chat/helena')
-                }
-                style={{
-                  paddingHorizontal: 14,
-                  paddingVertical: 10,
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  gap: 10,
-                  minHeight: 65,
-                }}
-              >
-                <View
-                  style={{
-                    width: 5,
-                    height: 5,
-                    borderRadius: 4,
-                    backgroundColor: presence[item.status],
-                  }}
-                />
-                {item.name === 'system' ? (
-                  <View
-                    style={{
-                      width: 39,
-                      height: 39,
-                      borderRadius: 20,
-                      backgroundColor: c.pink,
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <Ionicons name="notifications-outline" size={22} color="#FFFFFF" />
-                  </View>
-                ) : (
-                  <Avatar size={39} />
-                )}
-                <View style={{ flex: 1 }}>
-                  <Text style={{ color:theme.foreground, fontWeight: '700', fontSize: 12 }}>
-                    {item.name} <Text style={{ color: theme.muted, fontWeight: '400' }}>{item.age}</Text>
-                  </Text>
-                  <Text style={{ fontSize: 11, color: theme.muted, marginTop: 4 }}>{item.detail}</Text>
-                </View>
-                {item.kind === 'Collabs' ? (
-                  decisions[item.id] ? (
-                    <Text style={{ fontSize: 10, color: theme.muted }}>{decisions[item.id]}</Text>
-                  ) : (
-                    <View style={{ flexDirection: 'row', gap: 4 }}>
-                      <Pressable
-                        onPress={() => answer(item.id, false)}
-                        style={{
-                          paddingVertical: 7,
-                          paddingHorizontal: 9,
-                          backgroundColor: '#A51D4F',
-                          borderRadius: 6,
-                        }}
-                      >
-                        <Text style={{ fontWeight: '700', fontSize: 11, color: '#fff' }}>NO</Text>
-                      </Pressable>
-                      <Pressable
-                        onPress={() => answer(item.id, true)}
-                        style={{
-                          paddingVertical: 7,
-                          paddingHorizontal: 9,
-                          backgroundColor: '#187446',
-                          borderRadius: 6,
-                        }}
-                      >
-                        <Text style={{ fontWeight: '700', fontSize: 11, color: '#fff' }}>YES</Text>
-                      </Pressable>
-                    </View>
-                  )
-                ) : (
-                  <Ionicons name="image-outline" size={30} color={theme.muted} />
-                )}
-              </Pressable>
-            ))}
+          {state==='loading'?<Text style={{color:theme.muted}}>Chargement…</Text>:state==='error'?<Text style={{color:theme.muted}}>Conversations indisponibles actuellement.</Text>:!visible.length?<Text style={{color:theme.muted}}>Aucune conversation dans cette catégorie.</Text>:null}
+          {visible.map(item=><Pressable key={item.id}
+            onPress={()=>router.push({pathname:'/chat/[id]',params:{id:item.id}})}
+            style={{paddingHorizontal:14,paddingVertical:10,flexDirection:'row',alignItems:'center',gap:10,minHeight:65}}>
+            <Avatar size={39}/>
+            <View style={{flex:1}}>
+              <Text style={{color:theme.foreground,fontWeight:'700',fontSize:12}}>{item.title||'Conversation'}</Text>
+              {!!item.lastMessage?.preview&&<Text style={{fontSize:11,color:theme.muted,marginTop:4}}>{item.lastMessage.preview}</Text>}
+            </View>
+            {!!item.unread&&<Text style={{fontSize:11,color:theme.muted}}>{item.unread}</Text>}
+            <Ionicons name="chevron-forward" size={18} color={theme.muted}/>
+          </Pressable>)}
         </ScrollView>
         <ContactSheet />
       </View>

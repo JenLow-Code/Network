@@ -3,10 +3,11 @@ import { Image, Pressable, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/theme/AppTheme';
 import { api } from '@/lib/api/client';
+import {isRetiredFixture} from '@/lib/api/realRecords';
 
 export type InspirationProfile={
  id?:string;handle:string;displayName:string;avatarUrl?:string|null;
- church?:string|null;
+ church?:string|null;isDemo?:boolean;
 };
 /** Member profiles are deliberately separate from Discovery publications. */
 export default function SemenceProfilePicker({onSelect,onBack}:{
@@ -19,11 +20,12 @@ export default function SemenceProfilePicker({onSelect,onBack}:{
  useEffect(()=>{
    let live=true;
    if(query.trim().length<2){setItems([]);setState('idle');return;}
+   setItems([]);
    setState('loading');
    const timeout=setTimeout(()=>{
      void api<{items:InspirationProfile[]}>('/api/users?q='+encodeURIComponent(query.trim()),{
        auth:'required',
-     }).then(result=>{if(live){setItems(result.items||[]);setState('ready');}})
+     }).then(result=>{if(live){setItems((result.items||[]).filter(profile=>!isRetiredFixture(profile)));setState('ready');}})
        .catch(()=>{if(live){setItems([]);setState('error');}});
    },350);
    return ()=>{live=false;clearTimeout(timeout);};

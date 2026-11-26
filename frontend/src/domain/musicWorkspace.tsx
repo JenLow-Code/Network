@@ -1,13 +1,8 @@
-import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { readMusicWorkspace, writeMusicWorkspace } from './musicLocalStorage';
+import React, { createContext, useContext } from 'react';
 import type { MusicNextState } from './musicNext';
 import type { MusicNotationEvent } from './musicNotation';
-import { useApp } from '@/context/AppContext';
 
-/**
- * Local-first music workspaces. These are PRIVATE ON THIS DEVICE until an explicit
- * server publication succeeds. No local note, chat or proposal is a remote message.
- */
+/** Music workspace contracts. Persistence must be provided by an authenticated API. */
 export type MusicSection = {
   id: string;
   title: string;
@@ -244,101 +239,15 @@ type MusicWorkspaceStore = {
 
 const MusicContext = createContext<MusicWorkspaceStore | null>(null);
 
+// No private workspace API matching this contract is deployed yet. Do not
+// read or write a device-only project as though it were a server record.
+const unavailable = 'Les espaces de création ne sont pas encore disponibles sur le serveur.';
+const rejectMutation = (): never => { throw new Error(unavailable); };
+const store: MusicWorkspaceStore = {
+  items: [], ready: true, error: unavailable,
+  create: () => null, patch: rejectMutation, remove: rejectMutation, say: rejectMutation,
+};
 export function MusicWorkspaceProvider({ children }: { children: React.ReactNode }) {
-  const { email, name } = useApp();
-  const key = musicStorageKey(email);
-  const [items, setItems] = useState<MusicProject[]>([]);
-  const [readyKey, setReadyKey] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let live = true;
-    setReadyKey(null);
-    setItems([]);
-    setError(null);
-    void readMusicWorkspace(key)
-      .then(raw => {
-        if (!live) return;
-        if (!raw) return;
-        const parsed: unknown = JSON.parse(raw);
-        if (Array.isArray(parsed)) {
-          setItems(parsed.filter((x: unknown): x is MusicProject =>
-            !!x && typeof x === 'object' && typeof (x as MusicProject).id === 'string' &&
-            typeof (x as MusicProject).title === 'string' &&
-            (x as MusicProject).ownerEmail?.toLowerCase() === email.toLowerCase()
-          ).map(project => ({
-            ...project, originalLanguage: project.originalLanguage || 'Français',
-            instruments: project.instruments || [], musicStyles: project.musicStyles || [],
-            files: (project.files || []).map(file=>({
-              ...file, sectionIds:file.sectionIds||[], regions:file.regions||[],
-            })),
-            versions: project.versions?.length ? project.versions : project.masterMediaId || project.masterUrl
-              ? [{ id:'legacy-'+project.id,title:'Version originale',createdAt:project.createdAt,
-                audioMediaId:project.masterMediaId,audioUrl:project.masterUrl,
-                selectedForPublication:false,publishedId:project.publishedId }] : [],
-            sections: project.sections || [], lyrics: project.lyrics || [],
-            layers: project.layers || [], needs: project.needs || [],
-            suggestions: project.suggestions || [], messages: project.messages || [],
-          })));
-        }
-      })
-      .catch(() => { if (live) setError('Impossible de charger les morceaux enregistrés sur cet appareil.'); })
-      .finally(() => { if (live) setReadyKey(key); });
-    return () => { live = false; };
-  }, [key, email]);
-
-  // Serialize local writes: a slower old snapshot must never overwrite the
-  // newest autosaved words, notes or score when several edits occur rapidly.
-  const writeQueue=useRef<Promise<void>>(Promise.resolve());
-  useEffect(() => {
-    if (readyKey !== key) return;
-    let live=true;
-    const snapshot=JSON.stringify(items);
-    const queued=writeQueue.current.catch(()=>{}).then(()=>
-      writeMusicWorkspace(key,snapshot));
-    writeQueue.current=queued;
-    void queued.then(()=>{if(live)setError(null);})
-      .catch(()=>{if(live)setError(
-        'Les modifications de tes morceaux ne peuvent pas être enregistrées sur cet appareil.');});
-    return ()=>{live=false;};
-  }, [key, readyKey, items]);
-
-  const store = useMemo<MusicWorkspaceStore>(() => ({
-    items, ready: readyKey === key, error,
-    create: draft => {
-      if (readyKey !== key || !draft.title.trim()) return null;
-      const project = makeMusicProject(draft, email, name);
-      setItems(old => [project, ...old]);
-      return project.id;
-    },
-    patch: (id, changes) => {
-      if (readyKey !== key) return;
-      setItems(old => old.map(x => x.id === id && x.ownerEmail.toLowerCase() === email.toLowerCase()
-        ? {
-          ...x, ...changes, id: x.id, ownerEmail: x.ownerEmail,
-          ownerName: x.ownerName, createdAt: x.createdAt,
-          updatedAt: new Date().toISOString(),
-          // Stamp only actually changed Capture resources. Preserving older
-          // authorship is essential when a project gains collaborators.
-          files: changes.files ? changes.files.map(file=>{
-            const previous=x.files.find(item=>item.id===file.id);
-            if(previous&&JSON.stringify(previous)===JSON.stringify(file))return file;
-            return {...file,editedBy:name||x.ownerName,editedAt:new Date().toISOString()};
-          }) : x.files,
-        } : x));
-    },
-    remove: id => {
-      if (readyKey !== key) return;
-      setItems(old => old.filter(x => x.id !== id || x.ownerEmail.toLowerCase() !== email.toLowerCase()));
-    },
-    say: (id, text) => {
-      if (readyKey !== key || !text.trim()) return;
-      setItems(old => old.map(x => x.id === id && x.ownerEmail.toLowerCase() === email.toLowerCase()
-        ? { ...x, updatedAt: new Date().toISOString(), messages: [
-          ...x.messages, { id: newMusicId(), text: text.trim(), author: name, createdAt: new Date().toISOString() }
-        ] } : x));
-    },
-  }), [items, readyKey, key, error, email, name]);
   return <MusicContext.Provider value={store}>{children}</MusicContext.Provider>;
 }
 export function useMusicWorkspaces(): MusicWorkspaceStore {

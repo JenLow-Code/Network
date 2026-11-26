@@ -14,8 +14,6 @@ export default function MusicSubmission() {
     [source, setSource] = useState(''),
     [rights, setRights] = useState(''),
     [credit, setCredit] = useState('');
-  const [done, setDone] = useState(false);
-  const valid = [title, creator, source, rights, credit].every(v => v.trim().length > 0);
   function field(label: string, value: string, set: (x: string) => void, placeholder: string) {
     return (
       <View style={{ marginBottom: 15 }}>
@@ -50,23 +48,17 @@ export default function MusicSubmission() {
         {field('Autorisation / licence de partage', rights, setRights, 'Licence ou accord précis')}
         {field('Crédits obligatoires', credit, setCredit, 'Composition, instruments, voix…')}
         <Pressable
-          disabled={!valid}
-          onPress={() => setDone(true)}
+          disabled
           style={{
             padding: 15,
-            backgroundColor: valid ? '#111' : '#bbb',
+            backgroundColor: '#bbb',
             borderRadius: 9,
             alignItems: 'center',
           }}
         >
-          <Text style={{ color: '#fff' }}>Vérifier le brouillon</Text>
+          <Text style={{ color: '#fff' }}>Publication indisponible</Text>
         </Pressable>
-        {done ? (
-          <Text style={{ marginTop: 17, color: '#666' }}>
-            Brouillon prêt pour vérification. Aucune publication ni autorisation juridique n'est
-            créée par cette démo.
-          </Text>
-        ) : null}
+        <Text accessibilityRole="alert" style={{marginTop:17,color:'#666'}}>Le service de publication n’est pas encore connecté. Aucun brouillon n’est enregistré sur le serveur.</Text>
         <Text style={{ fontSize: 11, color: '#999', marginTop: 21 }}>
           V1 : aucun bouton Télécharger pour les chansons. Les propositions d'adaptation ne
           permettent pas de republier sans crédit et contrôle du créateur original.

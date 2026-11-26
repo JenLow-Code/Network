@@ -6,14 +6,13 @@ import { router } from 'expo-router';
 import { useApp } from '@/context/AppContext';
 import { Nav } from '@/components/navigation/Nav';
 import { PageHeader } from '@/components/navigation/PageHeader';
-import { publications } from '@/mocks/publications';
 import { PublicationGallery } from '@/components/publication/PublicationGallery';
 import { useAppTheme } from '@/theme/AppTheme';
 import {workspaceCanvas,WORKSPACE_TITLE_GAP,PAGE_TITLE_FONT_SIZE,PAGE_TITLE_LINE_HEIGHT} from '@/theme/workspaceLayout';
 export default function FireList() {
   const theme = useAppTheme();
   const {width}=useWindowDimensions();
-  const { fireIds, fireFolders, fireBibleVerses, removeBibleVerseFromFire, toggleFireFolderVerse, createFireFolder, renameFireFolder, deleteFireFolder, toggleFireFolderItem } = useApp();
+  const { firePublications:publications,fireError,fireIds, fireFolders, fireBibleVerses, removeBibleVerseFromFire, toggleFireFolderVerse, createFireFolder, renameFireFolder, deleteFireFolder, toggleFireFolderItem } = useApp();
   const [folderName, setFolderName] = useState('');
   const [createFolderOpen, setCreateFolderOpen] = useState(false);
   const submitFolder = () => { const name = folderName.trim(); if (!name) return; createFireFolder(name); setFolderName(''); setCreateFolderOpen(false); };
@@ -38,6 +37,7 @@ export default function FireList() {
         contentContainerStyle={{ ...workspaceCanvas(width), paddingTop:12, paddingBottom:55 }}
       >
         <PageHeader title="Ma liste Fire" showFire={false} />
+        {fireError?<Text style={{color:theme.accent,fontSize:12}}>{fireError}</Text>:null}
         <View style={{flexDirection:'row',alignItems:'center',
           justifyContent:'space-between',marginBottom:14}}>
           <Text style={{color:theme.muted,fontSize:12,flex:1,marginRight:12}}>

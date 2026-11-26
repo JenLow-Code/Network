@@ -13,7 +13,7 @@ function TalentCounts({handle}: {handle:string}) {
   const songs=posts.filter(p=>p.type==='music').length;
   const talents=profile.talents.length;
   return <Text numberOfLines={2} style={{fontSize:10,color:'#EDE8E4',lineHeight:15}}>
-    {dreams} rêves · {songs} chants · {talents} talents visibles
+    {dreams} aspirations · {songs} chants · {talents} talents visibles
   </Text>;
 }
 

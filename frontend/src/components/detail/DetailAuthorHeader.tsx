@@ -3,7 +3,6 @@ import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import type { Publication } from '@/domain/publication';
-import { personPath } from '@/mocks/people';
 import { TopActions } from '@/components/navigation/TopActions';
 import { useAppTheme } from '@/theme/AppTheme';
 import { HANDWRITING_FAMILY } from '@/theme/handwriting';
@@ -35,10 +34,10 @@ export function DetailAuthorHeader({ item, flushToImage = false, previewOnly = f
         <Ionicons name="arrow-back" size={23} color={theme.foreground} />
       </Pressable>
       <Pressable
-        disabled={previewOnly}
+        disabled={previewOnly || !item.authorHandle}
         accessibilityRole="button"
-        accessibilityLabel={previewOnly ? 'Auteur fictif de démonstration' : 'Voir le profil de ' + item.author}
-        onPress={() => router.push(personPath(item.authorHandle ?? item.author))}
+        accessibilityLabel={previewOnly ? 'Profil indisponible' : 'Voir le profil de ' + item.author}
+        onPress={() => { if(item.authorHandle) router.push({pathname:'/member/[name]',params:{name:item.authorHandle}}); }}
         style={styles.member}
       >
         {item.avatar ? (

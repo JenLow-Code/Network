@@ -3,7 +3,6 @@ import React, { useEffect, useState } from 'react';
 import { Alert, Pressable, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useApp } from '@/context/AppContext';
 import { useAppTheme } from '@/theme/AppTheme';
 import { useLocale, Language, LANGUAGE_KEY } from '@/i18n/locale';
@@ -17,7 +16,6 @@ const choices: { id: Language; label: string }[] = [
 export function Settings({onMusicLayoutChange}: {onMusicLayoutChange?:(value:MusicLibraryLayout)=>void}) {
   const { language, setLanguage, t, tr } = useLocale();
   const { logout, email } = useApp();
-  const [busy, setBusy] = useState(false);
   const [musicLayout, setMusicLayout] = useState<MusicLibraryLayout>('cards');
   useEffect(() => {
     let live = true;
@@ -40,40 +38,6 @@ export function Settings({onMusicLayoutChange}: {onMusicLayoutChange?:(value:Mus
     surface,
     border,
   } = useAppTheme();
-  const keys = [
-    'jenlow.network.demo.dream.workspace.v1.' + (email || 'guest').toLowerCase(),
-    'jenlow.network.fire.v1.' + email.toLowerCase(),
-    'jenlow.network.inspirations.v1.' + email.toLowerCase(),
-    ...['jenlow.mine.', 'jenlow.prayer.', 'jenlow.encouragement.', 'jenlow.proposals.'].map(
-      s => s + email,
-    ),
-  ];
-  const clearDemo = async () => {
-    setBusy(true);
-    try {
-      await Promise.all(keys.map(k => AsyncStorage.removeItem(k)));
-      logout();
-      router.replace('/login');
-    } finally {
-      setBusy(false);
-    }
-  };
-  function confirmDemo() {
-    Alert.alert(
-      'Clear demo data?',
-      'This clears saved prototype aspirations and lists on this device. It does not delete a server account, since no real account exists yet.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Clear demo data',
-          style: 'destructive',
-          onPress: () => {
-            void clearDemo();
-          },
-        },
-      ],
-    );
-  }
   return (
     <View>
         <Text style={{ color:foreground, fontSize: 16, fontWeight: '700', marginBottom: 12 }}>{t('language')}</Text>
@@ -163,28 +127,10 @@ export function Settings({onMusicLayoutChange}: {onMusicLayoutChange?:(value:Mus
         <Text style={{ color:foreground, fontSize: 16, fontWeight: '700', marginTop: 34, marginBottom: 12 }}>
           {t('account')}
         </Text>
-        <Pressable
-          accessibilityRole="button"
-          disabled={busy}
-          onPress={confirmDemo}
-          style={{
-            borderWidth: 1,
-            borderColor: border,
-            padding: 13,
-            borderRadius: 9,
-            flexDirection: 'row',
-            gap: 8,
-            alignItems: 'center',
-          }}
-        >
-          <Ionicons name="trash-outline" color="#9e5163" size={20} />
-          <Text style={{ color: dark ? '#F3AFC5' : '#733e4b', fontSize: 13 }}>{t('demoData')}</Text>
-        </Pressable>
         <View style={{ padding: 14, backgroundColor: surface, borderRadius: 10, marginTop: 12 }}>
           <Text style={{ color:foreground, fontSize: 14, fontWeight: '600' }}>{t('deleteAccount')}</Text>
           <Text style={{ fontSize: 12, color: muted, lineHeight: 19, marginTop: 7 }}>
-            Real account deletion will be available here when secure authentication and server-side
-            deletion are implemented. This prototype currently has no real account to delete.
+            La suppression du compte n’est pas disponible depuis cette interface.
           </Text>
         </View>
     </View>

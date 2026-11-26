@@ -1,7 +1,6 @@
 import React from 'react';
 import { ActivityIndicator, Text, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
-import { personPublications } from '@/mocks/publications';
 import { PublicationDetail } from '@/components/publication/PublicationDetail';
 import { DetailMoreDrawer, DetailInfoSection } from '@/components/detail/DetailMoreDrawer';
 import { EditorialInline } from '@/components/detail/EditorialInline';
@@ -9,9 +8,8 @@ import { usePublication } from '@/lib/api/hooks';
 import type { PersonPublication } from '@/domain/publication';
 export default function PublicPerson() {
   const { name } = useLocalSearchParams<{ name: string }>();
-  const local = personPublications.find(p => p.author === name);
-  const remote = usePublication(local ? undefined : name);
-  const person = local ?? (remote.item?.type === 'talent' ? (remote.item as PersonPublication) : undefined);
+  const remote = usePublication(name);
+  const person = remote.item?.type === 'talent' ? (remote.item as PersonPublication) : undefined;
   if (!person && remote.state === 'loading')
     return (
       <View style={{ flex: 1, justifyContent: 'center' }}>

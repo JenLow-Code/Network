@@ -1,12 +1,11 @@
 import React,{useEffect,useState} from 'react';
-import {Pressable,Text,TextInput,View} from 'react-native';
+import {Pressable,Text,View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {useAppTheme} from '@/theme/AppTheme';
 import {router} from 'expo-router';
 import {MusicCollaborationRequestCard,type CollaborationDecision,type CollaborationRequest} from './MusicCollaborationRequestCard';
 import {MusicMissingTalentAction} from './MusicMissingTalentAction';
 import {api} from '@/lib/api/client';
-import {newMusicId} from '@/domain/musicWorkspace';
 import type {MusicProject} from '@/domain/musicWorkspace';
 import {MusicMemberLink} from './MusicMemberLink';
 
@@ -21,7 +20,7 @@ export const musicWorkspaceRoleLabel=(role:MusicWorkspaceRole):string=>({
   passive:'Participant passif',
   collaborator:'Collaborateur',
 })[role];
-export type SharedWorkspaceAccess={members:WorkspaceCollaborator[];demo:boolean;conversationId?:string|null;rosterUnavailable?:boolean;
+export type SharedWorkspaceAccess={members:WorkspaceCollaborator[];conversationId?:string|null;rosterUnavailable?:boolean;
   viewerRole?:MusicWorkspaceRole|null;
   proposals?:{id:string;description:string;status:string;createdAt?:string|null;proposer?:{displayName?:string}}[]};
 type Proposal=CollaborationRequest&{trackPublicationId:string};
@@ -35,15 +34,8 @@ export function MusicCollaborateExperience({project,patch,shared}:Props){
   const collaborators=shared?shared.members:fetchedCollaborators;
   const [rosterUnavailable,setRosterUnavailable]=useState(false);
   const [selected,setSelected]=useState('');
-  const [demoDecision,setDemoDecision]=useState<'submitted'|'accepted'|'rejected'>('submitted');
-  const [demoReview,setDemoReview]=useState<'pending'|'testing'|'archived'>('pending');
-  const [demoArchiveUsed,setDemoArchiveUsed]=useState(false);
-  const [demoArchiveUntil,setDemoArchiveUntil]=useState('');
   const [busyRequest,setBusyRequest]=useState('');
   const [editingNeedId,setEditingNeedId]=useState('');
-  const [shareOpen,setShareOpen]=useState(false);
-  const [recipient,setRecipient]=useState('');
-  const [shareRole,setShareRole]=useState<'participant'|'co-owner'>('participant');
   const [audioUrl,setAudioUrl]=useState('');
   const [loading,setLoading]=useState(false);
   const [error,setError]=useState('');
@@ -107,24 +99,6 @@ export function MusicCollaborateExperience({project,patch,shared}:Props){
       setError(e instanceof Error?e.message:'Impossible de traiter cette demande.');
     }finally{setBusyRequest('');}
   };
-  const handleDemo=(action:CollaborationDecision)=>{
-    if(action==='accept'||action==='reject'){
-      setDemoDecision(action==='accept'?'accepted':'rejected');
-    }else if(action==='test'){
-      setDemoReview('testing');
-    }else if(!demoArchiveUsed){
-      setDemoReview('archived');setDemoArchiveUsed(true);
-      setDemoArchiveUntil(new Date(Date.now()+30*24*60*60*1000).toISOString());
-    }
-  };
-  const demoRequest:CollaborationRequest={
-    id:'demo-sarah',trackTitle:'Guitare · refrain',
-    proposer:{displayName:'Sarah',handle:'Sarah'},
-    description:'J’ai composé une petite mélodie de guitare pour ton refrain. J’aimerais te la proposer et voir si elle trouve sa place dans ton morceau.',
-    status:demoDecision,reviewState:demoReview,
-    canArchive:!demoArchiveUsed,archiveUntil:demoArchiveUntil,
-    createdAt:'',
-  };
   const needs=project.needs||[];
   const awaiting=proposals.filter(p=>p.status==='submitted'&&p.reviewState!=='archived').length;
   const orderedProposals=[...proposals].sort((a,b)=>
@@ -139,13 +113,11 @@ export function MusicCollaborateExperience({project,patch,shared}:Props){
           Collaborateurs
         </Text>
         <Text style={{fontSize:12,color:theme.muted}}>
-          {collaborators.length||1}
+          {collaborators.length}
         </Text>
       </View>
-      {(collaborators.length?collaborators:[{
-        id:project.ownerEmail,role:'owner' as const,displayName:project.ownerName,
-      } as WorkspaceCollaborator]).map(person=><View key={person.id} style={{minHeight:50,borderBottomWidth:1,borderColor:theme.border,justifyContent:'center'}}>
-        <MusicMemberLink size={36} person={{displayName:person.displayName,handle:person.handle,avatarUrl:person.avatarUrl,demo:shared?.demo,self:!shared&&person.role==='owner'}} subtitle={person.role==='owner'?'Auteur du morceau':musicWorkspaceRoleLabel(person.role)}/>
+      {collaborators.map(person=><View key={person.id} style={{minHeight:50,borderBottomWidth:1,borderColor:theme.border,justifyContent:'center'}}>
+        <MusicMemberLink size={36} person={{displayName:person.displayName,handle:person.handle,avatarUrl:person.avatarUrl,self:false}} subtitle={person.role==='owner'?'Auteur du morceau':musicWorkspaceRoleLabel(person.role)}/>
       </View>)}
       {(shared?.rosterUnavailable||rosterUnavailable)?<Text style={{fontSize:11,color:theme.muted}}>
         Liste complète indisponible jusqu’à la mise à jour de l’API.
@@ -158,32 +130,8 @@ export function MusicCollaborateExperience({project,patch,shared}:Props){
         <Text style={{fontSize:12,color:theme.foreground}}>{proposal.description}</Text>
         {proposal.createdAt?<Text style={{fontSize:11,color:theme.muted}}>{new Date(proposal.createdAt).toLocaleDateString('fr-FR')}</Text>:null}
       </View>)}
-    </View>:null}{!shared.demo&&shared.conversationId?<Pressable accessibilityRole="button" onPress={()=>router.push({pathname:'/chat/[id]',params:{id:shared.conversationId!}})} style={{alignSelf:'flex-start',paddingVertical:10}}><Text style={{fontSize:13,fontWeight:'700',color:PINK}}>Ouvrir la discussion du morceau</Text></Pressable>:null}</>:<>
-    {!proposals.length?<View style={{gap:10}}>
-      <View style={{flexDirection:'row',alignItems:'center',gap:9,flexWrap:'wrap'}}>
-        <Text style={{fontSize:16,fontWeight:'700',color:theme.foreground}}>
-          Demande de collaboration · aperçu interactif
-        </Text>
-        <View style={{borderRadius:7,paddingHorizontal:8,paddingVertical:5,
-          backgroundColor:theme.dark?'#47343A':'#F5E5EA'}}>
-          <Text style={{fontSize:10,fontWeight:'700',color:PINK}}>
-            EXEMPLE · NON ENVOYÉ
-          </Text>
-        </View>
-      </View>
-      <MusicCollaborationRequestCard request={demoRequest} demo
-        onProfile={()=>router.push({pathname:'/member/[name]',params:{name:'Sarah'}})}
-        onListen={()=>{}}
-        onAction={handleDemo}/>
-      {demoDecision!=='submitted'?<Pressable
-        accessibilityRole="button" accessibilityLabel="Recommencer la simulation"
-        onPress={()=>{setDemoDecision('submitted');setDemoReview('pending');
-          setDemoArchiveUsed(false);setDemoArchiveUntil('');}}
-        style={{alignSelf:'flex-start',padding:9,flexDirection:'row',gap:6}}>
-        <Ionicons name="refresh-outline" color={PINK} size={17}/>
-        <Text style={{fontSize:11,color:PINK}}>Recommencer l’aperçu</Text>
-      </Pressable>:null}
-    </View>:null}
+    </View>:null}{shared.conversationId?<Pressable accessibilityRole="button" onPress={()=>router.push({pathname:'/chat/[id]',params:{id:shared.conversationId!}})} style={{alignSelf:'flex-start',paddingVertical:10}}><Text style={{fontSize:13,fontWeight:'700',color:PINK}}>Ouvrir la discussion du morceau</Text></Pressable>:null}</>:<>
+    {!proposals.length&&!error?<Text style={{fontSize:12,color:theme.muted}}>Aucune demande de collaboration reçue.</Text>:null}
     {proposals.length?<View style={{gap:12}}>
       <View style={{flexDirection:'row',alignItems:'center',gap:8}}>
         <Text style={{fontSize:17,fontWeight:'700',color:theme.foreground}}>
@@ -275,83 +223,7 @@ export function MusicCollaborateExperience({project,patch,shared}:Props){
       </View>)}
 
     </View>:null}
-    <View style={{gap:8,paddingTop:5}}>
-      <Pressable onPress={()=>setShareOpen(!shareOpen)} accessibilityRole="button"
-        accessibilityState={{expanded:shareOpen}}
-        style={{alignSelf:'flex-start',minHeight:42,flexDirection:'row',
-          alignItems:'center',gap:9}}>
-        <Ionicons name="share-social-outline" size={19} color={PINK}/>
-        <Text style={{fontSize:13,fontWeight:'600',color:theme.foreground}}>
-          Partager le projet avec une personne
-        </Text>
-        <Ionicons name={shareOpen?'chevron-up':'chevron-down'} size={16}
-          color={theme.muted}/>
-      </Pressable>
-      {shareOpen?<View style={{gap:12,padding:13,borderRadius:13,
-        borderWidth:1,borderColor:theme.border,backgroundColor:theme.surface}}>
-        <Text style={{fontSize:12,color:theme.muted,lineHeight:20}}>
-          Prépare une invitation pour participer au projet ou devenir copropriétaire.
-        </Text>
-        <TextInput value={recipient} onChangeText={setRecipient}
-          placeholder="Identifiant de la personne" placeholderTextColor={theme.muted}
-          style={{fontSize:13,color:theme.foreground,minHeight:44,
-            borderWidth:1,borderColor:theme.border,borderRadius:10,
-            paddingHorizontal:12,backgroundColor:theme.background}}/>
-        <View style={{flexDirection:'row',gap:7}}>
-          {([{role:'participant',title:'Participant'},
-            {role:'co-owner',title:'Copropriétaire'}] as const).map(option=>
-            <Pressable key={option.role} onPress={()=>setShareRole(option.role)}
-              accessibilityRole="radio"
-              accessibilityState={{selected:shareRole===option.role}}
-              style={{flex:1,minHeight:42,alignItems:'center',
-                justifyContent:'center',borderRadius:10,borderWidth:1,
-                borderColor:shareRole===option.role?PINK:theme.border,
-                backgroundColor:shareRole===option.role?
-                  (theme.dark?'#492733':'#FAEAF0'):'transparent'}}>
-              <Text style={{fontSize:12,fontWeight:'600',color:theme.foreground}}>
-                {option.title}
-              </Text>
-            </Pressable>)}
-        </View>
-        <Pressable onPress={()=>{
-          if(!recipient.trim())return;
-          patch({shareInvitations:[...(project.shareInvitations||[]),{
-            id:newMusicId(),targetHandle:recipient.trim(),role:shareRole,
-            status:'local-draft',createdAt:new Date().toISOString()
-          }]});
-          setRecipient('');setShareOpen(false);
-        }} disabled={!recipient.trim()} accessibilityRole="button"
-          style={{minHeight:43,backgroundColor:PINK,borderRadius:10,
-            paddingHorizontal:14,alignSelf:'flex-start',justifyContent:'center',
-            opacity:recipient.trim()?1:.45}}>
-          <Text style={{color:'#fff',fontWeight:'700',fontSize:12}}>
-            Préparer l’invitation
-          </Text>
-        </Pressable>
-        <Text style={{fontSize:11,lineHeight:18,color:theme.muted}}>
-          Brouillon local uniquement : aucun accès n’est accordé et aucune
-          invitation n’est envoyée tant que les permissions serveur ne sont pas connectées.
-        </Text>
-      </View>:null}
-      {(project.shareInvitations||[]).map(invitation=><View key={invitation.id}
-        style={{flexDirection:'row',alignItems:'center',gap:9,minHeight:40}}>
-        <Ionicons name="time-outline" size={16} color={theme.muted}/>
-        <View style={{flex:1,gap:3}}>
-          <Text style={{fontSize:12,color:theme.foreground}}>
-            {invitation.targetHandle} · {invitation.role==='co-owner'?
-              'Copropriétaire':'Participant'}
-          </Text>
-          <Text style={{fontSize:10,color:theme.muted}}>Brouillon non envoyé</Text>
-        </View>
-        <Pressable onPress={()=>patch({shareInvitations:
-          (project.shareInvitations||[]).filter(x=>x.id!==invitation.id)})}
-          accessibilityRole="button"
-          accessibilityLabel={'Supprimer le brouillon pour '+invitation.targetHandle}
-          style={{width:40,height:40,alignItems:'center',justifyContent:'center'}}>
-          <Ionicons name="trash-outline" size={18} color={theme.muted}/>
-        </Pressable>
-      </View>)}
-    </View>
+    <View style={{gap:8,paddingTop:5}}><Text style={{fontSize:12,color:theme.muted}}>Les invitations à ce projet seront disponibles lorsque le service serveur sera connecté.</Text></View>
     {error?<Text style={{fontSize:12,lineHeight:18,color:'#B64B61'}}>{error}</Text>:null}
     </>}
   </View>;
