@@ -1,5 +1,5 @@
 import React,{createContext,useCallback,useContext,useEffect,useMemo,useRef,useState} from 'react';
-import {AppState,Platform} from 'react-native';
+import {Alert,AppState,Platform} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type {User,Session} from '@supabase/supabase-js';
 import * as Linking from 'expo-linking';
@@ -7,7 +7,7 @@ import * as WebBrowser from 'expo-web-browser';
 import {authConfigured,supabase} from '@/lib/supabaseClient';
 import {setAccessToken} from '@/lib/api/session';
 import {API_BASE} from '@/lib/authApi';
-import {exchangeSupabaseBearer,latestAuthBridgeFailure,onSessionChange} from '@/lib/api/client';
+import {api,ApiRequestError,exchangeSupabaseBearer,latestAuthBridgeFailure,onSessionChange} from '@/lib/api/client';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -75,9 +75,15 @@ export function AuthProvider({children}:{children:React.ReactNode}){
 
   const signOut=useCallback(async()=>{
     const uid=verifiedUser.current;
+    let revocationConfirmed=true;
+    if(uid){
+      try{await api('/core/session/revoke',{method:'POST',auth:'required',signal:AbortSignal.timeout(8000)});}
+      catch(e){revocationConfirmed=e instanceof ApiRequestError&&e.status===401;}
+    }
     clear();
     if(uid)await AsyncStorage.removeItem(ACTIVITY_KEY+uid).catch(()=>{});
     if(supabase)await supabase.auth.signOut({scope:'local'});
+    if(!revocationConfirmed)Alert.alert('Déconnexion locale','La session locale est fermée, mais le serveur n’a pas confirmé sa révocation.');
   },[clear]);
 
   const verify=useCallback(async(candidate:Session|null):Promise<boolean>=>{
@@ -208,6 +214,8 @@ export function AuthProvider({children}:{children:React.ReactNode}){
     if(now-lastWrite.current<ACTIVITY_WRITE_MS)return;
     lastWrite.current=now;
     void AsyncStorage.setItem(ACTIVITY_KEY+uid,String(now)).catch(()=>{});
+    // Explicit user input only; automatic exchange/refresh never touches server activity.
+    void api('/core/session/activity',{method:'POST',auth:'required'}).catch(()=>{});
   },[signOut,validationError]);
 
   useEffect(()=>{

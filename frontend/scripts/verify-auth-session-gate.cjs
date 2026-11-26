@@ -81,6 +81,9 @@ const checks=[
   ['Background refresh never extends inactivity window',
     provider.includes("event==='TOKEN_REFRESHED'")&&
     provider.includes('Token rotation is not user activity')],
+  ['Explicit user activity and logout call the server session endpoints',
+    provider.includes("api('/core/session/activity',{method:'POST',auth:'required'}")&&
+    provider.includes("api('/core/session/revoke',{method:'POST',auth:'required'")],
   ['Browser and native session survives ordinary restarts',
     supabase.includes('persistSession: true')],
 ];
