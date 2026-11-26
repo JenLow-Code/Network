@@ -68,11 +68,13 @@ export default function MusicHub() {
   const app = useApp();
   const { items, ready, error } = useMusicWorkspaces();
   const discovery = useDiscovery({ type: 'music' });
+  const canCreate = ready && !error;
   const [layout, setLayout] = useState<MusicLibraryLayout>('cards');
   const [talents, setTalents] = useState<SavedTalent[]>([]);
   const [sent, setSent] = useState<Proposal[]>([]);
   const [received, setReceived] = useState<Proposal[]>([]);
   const [requestsError, setRequestsError] = useState(false);
+  const [requestsLoading, setRequestsLoading] = useState(true);
 
   useFocusEffect(useCallback(() => {
     let active = true;
@@ -91,7 +93,7 @@ export default function MusicHub() {
 
   useEffect(() => {
     let live = true;
-    setSent([]); setReceived([]); setRequestsError(false);
+    setSent([]); setReceived([]); setRequestsError(false); setRequestsLoading(true);
     void Promise.allSettled([
       api<{items: Proposal[]}>('/api/me/music-proposals?role=sent', {auth:'required'}),
       api<{items: Proposal[]}>('/api/me/music-proposals?role=received', {auth:'required'}),
@@ -100,6 +102,7 @@ export default function MusicHub() {
       setSent(outgoing.status === 'fulfilled' ? (outgoing.value.items || []).filter(isRealProposal) : []);
       setReceived(incoming.status === 'fulfilled' ? (incoming.value.items || []).filter(isRealProposal) : []);
       setRequestsError(outgoing.status === 'rejected' || incoming.status === 'rejected');
+      setRequestsLoading(false);
     });
     return () => { live = false; };
   }, [app.email]);
@@ -242,15 +245,17 @@ export default function MusicHub() {
           {sectionTitle('Mes morceaux',myCount)}
           <Pressable accessibilityRole="button"
             accessibilityLabel="Créer un nouveau morceau"
-            onPress={() => router.push('/music/new')}
-            style={{minHeight:37,borderRadius:20,backgroundColor:PINK,
+            accessibilityState={{disabled:!canCreate}}
+            disabled={!canCreate}
+            onPress={canCreate ? () => router.push('/music/new') : undefined}
+            style={{minHeight:37,borderRadius:20,backgroundColor:canCreate?PINK:theme.border,
               paddingHorizontal:14,flexDirection:'row',alignItems:'center',gap:5}}>
-            <Ionicons name="add" size={19} color="#FFFFFF"/>
-            <Text style={{color:'#FFFFFF',fontSize:12,fontWeight:'700'}}>Créer</Text>
+            <Ionicons name="add" size={19} color={canCreate?'#FFFFFF':theme.muted}/>
+            <Text style={{color:canCreate?'#FFFFFF':theme.muted,fontSize:12,fontWeight:'700'}}>Créer</Text>
           </Pressable>
         </View>
         {!ready ? <ActivityIndicator color={PINK}/> : null}
-        {error ? <Text style={{color:PINK,fontSize:12}}>{error}</Text> : null}
+        {error ? <Text style={{color:theme.muted,fontSize:12}}>{error}</Text> : null}
         {myCount ? musicShelf([
           ...songs.map(song => <MusicSongCard key={song.id}
             song={song} layout={layout}
@@ -301,10 +306,13 @@ export default function MusicHub() {
               ? 'Réponse en attente' : 'Proposition en brouillon'}
             onPress={() => openForMe(p.trackPublicationId)}
             onLearnMore={() => openForMe(p.trackPublicationId)}/>)
-        ]) : empty('Aucune proposition musicale pour le moment.',
-          'Découvrir la musique',() => router.push({
-            pathname:'/discover',params:{filter:'Musique'},
-          }))}
+        ]) : discovery.state==='loading'||requestsLoading
+          ? <ActivityIndicator color={PINK}/>
+          : <Text style={{color:theme.muted,fontSize:12}}>
+              {discovery.state==='error'||requestsError
+                ? 'Les suggestions musicales sont indisponibles pour le moment.'
+                : 'Aucune proposition musicale pour le moment.'}
+            </Text>}
       </View>
     </ScrollView>
     <Nav/>

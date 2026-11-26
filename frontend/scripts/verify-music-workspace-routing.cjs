@@ -185,3 +185,8 @@ for(const [label,passes] of checks){
   else{console.error('FAIL',label);failures++;}
 }
 if(failures)process.exitCode=1;
+
+// A service-unavailable state must not offer a functioning-looking creation action.
+for(const [file,source] of [['music-hub',require('node:fs').readFileSync(require('node:path').resolve(__dirname,'../app/music-hub.tsx'),'utf8')],['profile music',require('node:fs').readFileSync(require('node:path').resolve(__dirname,'../src/components/profile/ProfileMusic.tsx'),'utf8')]]){
+  if(!source.includes('disabled={!canCreate}')||!source.includes('accessibilityState={{disabled:!canCreate}}'))throw Error(file+': create action must be disabled while workspaces are unavailable');
+}

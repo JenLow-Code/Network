@@ -97,6 +97,7 @@ export function MusicLibrary({contentWidth,embedded=false,preferredLayout}: {con
   const cardWidth=Math.min(188,Math.max(76,
     Math.floor((availableWidth-(columns-1)*9)/columns)));
   const count=songs.length+shared.size;
+  const canCreate=ready&&!error;
   const shownLayout=preferredLayout??layout;
 
   return <View style={{gap:12}}>
@@ -104,17 +105,17 @@ export function MusicLibrary({contentWidth,embedded=false,preferredLayout}: {con
         <Text style={{color:theme.muted,fontSize:12}}>
           {embedded?(count?count+' '+(count===1?'création':'créations'):'Mes premières créations'):(count+' '+(count===1?'morceau':'morceaux')+' · '+(shownLayout==='cards'?'Cartes':'Liste'))}
         </Text>
-        <Pressable onPress={()=>router.push('/music/new')} accessibilityRole="button"
-          accessibilityLabel="Créer un morceau"
+        <Pressable onPress={canCreate?()=>router.push('/music/new'):undefined} accessibilityRole="button"
+          accessibilityLabel="Créer un morceau" disabled={!canCreate} accessibilityState={{disabled:!canCreate}}
           style={{paddingHorizontal:13,height:38,borderRadius:19,alignItems:'center',
-            flexDirection:'row',gap:4,backgroundColor:'#CB245C'}}>
-          <Ionicons name="add" color="#FFFFFF" size={20}/>
-          <Text style={{color:'#FFFFFF',fontWeight:'700',fontSize:12}}>Créer</Text>
+            flexDirection:'row',gap:4,backgroundColor:canCreate?'#CB245C':theme.border}}>
+          <Ionicons name="add" color={canCreate?'#FFFFFF':theme.muted} size={20}/>
+          <Text style={{color:canCreate?'#FFFFFF':theme.muted,fontWeight:'700',fontSize:12}}>Créer</Text>
         </Pressable>
       </View>
       {!ready||proposalLoading?<ActivityIndicator color="#CB245C"/>:null}
       {proposalError?<Text style={{color:theme.muted,fontSize:12}}>Collaborations indisponibles actuellement.</Text>:null}
-      {error?<Text style={{color:'#CB245C',fontSize:12}}>{error}</Text>:null}
+      {error?<Text style={{color:theme.muted,fontSize:12}}>{error}</Text>:null}
       {count?<View style={shownLayout==='list'?{gap:1}:{
         flexDirection:'row',flexWrap:'wrap',alignItems:'flex-start',
         columnGap:9,rowGap:14,
