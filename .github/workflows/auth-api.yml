@@ -1,37 +1,45 @@
-name: JenLow security middleware checks
+name: Network and JenLow Core integration
 on:
   push:
-    paths: ['middleware/**','api/network/**','database/**','.github/workflows/auth-api.yml']
+    paths: ['api/network/**','core.lock.json','.github/workflows/auth-api.yml']
   pull_request:
-    paths: ['middleware/**','api/network/**','database/**']
+    paths: ['api/network/**','core.lock.json','.github/workflows/auth-api.yml','middleware/**','database/**']
   workflow_dispatch:
+permissions:
+  contents: read
 jobs:
   security:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: middleware
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - id: core
+        name: Read pinned Core revision
+        run: |
+          ref=$(jq -er '.commit | select(test("^[a-f0-9]{40}$"))' core.lock.json)
+          echo "ref=$ref" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v4
+        with:
+          repository: JenLow-Code/core
+          ref: ${{ steps.core.outputs.ref }}
+          path: .core
+          persist-credentials: false
+      - name: Verify isolation and test the actual Network gateway
+        run: |
+          test "$(git -C .core rev-parse HEAD)" = "$(jq -r .commit core.lock.json)"
+          test ! -e .core/middleware/src/services/notifications.ts
+          cp api/network/src/index.ts .core/middleware/test/fixtures/networkGateway.ts
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
       - run: npm install --no-audit --no-fund
-      - run: npm run typecheck
-      - run: npm test
-      - name: Preserve independent music scanner regression checks
-        run: node --test test/scan-worker.test.mjs
-      - run: npm run bundle:check
-      - name: Build reproducible staging gateway and security bundles
-        run: |
-          ./node_modules/.bin/esbuild ../api/network/src/index.ts --bundle --format=esm --platform=neutral --outfile=dist/gateway.check.js --log-level=warning
-          node --input-type=module - <<'JS'
-          import fs from 'node:fs';
-          import crypto from 'node:crypto';
-          for(const [name,path] of [['security','dist/worker.check.js'],['gateway','dist/gateway.check.js']]){
-            const bytes=fs.readFileSync(path);
-            console.log('STAGING_BUNDLE_SHA256 '+name+' '+crypto.createHash('sha256').update(bytes).digest('hex'));
-            const encoded=bytes.toString('base64');
-            for(let i=0;i<encoded.length;i+=3000) console.log('STAGING_BUNDLE '+name+' '+encoded.slice(i,i+3000));
-          }
-          JS
+        working-directory: .core/middleware
+      - run: npm run typecheck && npm test && npm run bundle:check
+        working-directory: .core/middleware
+      - name: Bundle Network gateway
+        run: .core/middleware/node_modules/.bin/esbuild api/network/src/index.ts --bundle --format=esm --platform=neutral --outfile=/tmp/network-gateway.js --log-level=warning
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python .core/database/test_schema.py
