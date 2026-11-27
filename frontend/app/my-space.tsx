@@ -771,7 +771,7 @@ export default function MySpace() {
                         alignItems:'center',justifyContent:'center',
                         opacity:theme.dark?0.13:0.10}}>
                       <DreamPhaseIcon phase={panel.phase}
-                        size={compact?70:104} artworkScale={1}/>
+                        size={compact?70:104} artworkScale={panel.phase==='Rêve'?0.35:panel.phase==='Initiation'?0.85:1}/>
                     </View>
                   ):null}
                   {/* The phase heading belongs in the top-right, not in a
